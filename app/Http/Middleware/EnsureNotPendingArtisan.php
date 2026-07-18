@@ -20,9 +20,13 @@ class EnsureNotPendingArtisan
             /** @var \App\Models\User $user */
             $user = Auth::user();
 
-            if ($user->isArtisan() && $user->isPendingApproval()) {
+            if ($user->isArtisan() && !$user->isApproved()) {
                 if ($request->expectsJson() || $request->header('X-Inertia')) {
-                    abort(403, 'Your account is pending admin approval.');
+                    abort(403, 'Your account is not approved to perform this action.');
+                }
+
+                if ($user->setup_completed_at === null || $user->isRejected()) {
+                    return redirect()->route('artisan.setup');
                 }
                 return redirect()->route('artisan.pending');
             }

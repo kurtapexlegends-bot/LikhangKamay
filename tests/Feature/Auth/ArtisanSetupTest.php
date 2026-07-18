@@ -313,6 +313,21 @@ class ArtisanSetupTest extends TestCase
         $response->assertRedirect(route('artisan.pending'));
     }
 
+    public function test_rejected_artisan_is_blocked_from_buyer_routes_before_conversion(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create([
+            'role' => 'artisan',
+            'email_verified_at' => now(),
+            'artisan_status' => 'rejected',
+            'setup_completed_at' => now(),
+        ]);
+
+        // Attempting to visit profile should redirect to artisan.setup (where setup form & convert button are shown)
+        $response = $this->actingAs($user)->get(route('profile.edit'));
+        $response->assertRedirect(route('artisan.setup'));
+    }
+
     public function test_rejected_artisan_can_convert_to_buyer_account(): void
     {
         Storage::fake('public');
