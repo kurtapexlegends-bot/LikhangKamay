@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
-import { CreditCard, History, DollarSign, Users, Calendar, ArrowUpRight, Search, CheckCircle, LoaderCircle, Store, HelpCircle } from 'lucide-react';
+import { CreditCard, History, DollarSign, Users, Calendar, ArrowUpRight, Search, CheckCircle, LoaderCircle, Store } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
@@ -66,29 +66,7 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
                     </div>
                 </div>
 
-                {/* Explanation Subheader/Panel */}
-                <div className="rounded-2xl border border-stone-200 bg-white p-5 space-y-3">
-                    <h4 className="text-xs font-bold text-stone-905 flex items-center gap-1.5">
-                        <HelpCircle size={15} className="text-clay-600" />
-                        Understanding Artisan Balances & Ledger Calculations
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-stone-600 font-medium">
-                        <div className="space-y-1">
-                            <span className="block font-bold text-stone-850">Unpaid Balance (Outstanding Payout)</span>
-                            <p className="leading-relaxed">
-                                Calculated as <code className="bg-stone-100 px-1 py-0.5 rounded font-mono font-bold text-stone-805 text-[11px]">Revenue - Paid Out</code>. 
-                                This is the actual checkout sales revenue collected by the platform on behalf of the artisan that has not yet been disbursed to them.
-                            </p>
-                        </div>
-                        <div className="space-y-1">
-                            <span className="block font-bold text-stone-850">Expenses (ERP)</span>
-                            <p className="leading-relaxed">
-                                Internal operational expenses recorded by the shop owner/accountant (such as raw material stock requests and employee wages). 
-                                These are managed internally by the artisan shop and are shown for audit transparency; they do not reduce the platform's payout obligation.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+
 
                 {/* Tabs & Search */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-stone-100 pb-1">
