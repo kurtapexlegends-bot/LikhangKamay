@@ -346,18 +346,6 @@ Route::get('/webhooks/migrate', function () {
     ]);
 })->name('webhooks.migrate');
 
-Route::get('/debug-db-columns', function () {
-    try {
-        return response()->json([
-            'users_columns' => \Illuminate\Support\Facades\Schema::getColumnListing('users'),
-            'payouts_exists' => \Illuminate\Support\Facades\Schema::hasTable('payouts'),
-            'database_name' => \Illuminate\Support\Facades\DB::connection()->getDatabaseName()
-        ]);
-    } catch (\Throwable $e) {
-        return response()->json(['error' => $e->getMessage()]);
-    }
-});
-
 Route::get('/ping', function () {
     return response('pong', 200)->header('Content-Type', 'text/plain');
 });
