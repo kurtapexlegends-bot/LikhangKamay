@@ -22,6 +22,7 @@ class PayoutManagementTest extends TestCase
 
     public function test_super_admin_can_access_payouts_manager(): void
     {
+        /** @var User $admin */
         $admin = User::factory()->superAdmin()->create();
 
         $response = $this->actingAs($admin)
@@ -33,6 +34,7 @@ class PayoutManagementTest extends TestCase
 
     public function test_non_admin_cannot_access_payouts_manager(): void
     {
+        /** @var User $user */
         $user = User::factory()->create(['role' => 'buyer']);
 
         $response = $this->actingAs($user)

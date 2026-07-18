@@ -27,7 +27,7 @@ class ThreeDManagerController extends Controller
         $models = Product::where('user_id', $sellerId)
             ->whereNotNull('model_3d_path')
             ->where('model_3d_path', '!=', '')
-            ->select('id', 'name', 'model_3d_path', 'cover_photo_path', 'status', 'updated_at')
+            ->select(['id', 'name', 'model_3d_path', 'cover_photo_path', 'status', 'updated_at'])
             ->orderBy('updated_at', 'desc')
             ->get()
             ->map(function ($product) {
@@ -54,7 +54,7 @@ class ThreeDManagerController extends Controller
         $usagePercent = min(100, ($totalSize / self::MAX_STORAGE_BYTES) * 100);
 
         $availableProducts = Product::where('user_id', $sellerId)
-            ->select('id', 'name', 'model_3d_path')
+            ->select(['id', 'name', 'model_3d_path'])
             ->orderBy('name')
             ->get();
 
@@ -122,19 +122,19 @@ class ThreeDManagerController extends Controller
             : '3D model removed.');
     }
 
-    private function getFileSize($path)
+    private function getFileSize(?string $path): string
     {
         $bytes = $this->getFileSizeBytes($path);
 
         return $this->formatBytes($bytes);
     }
 
-    private function getFileSizeBytes($path)
+    private function getFileSizeBytes(?string $path): int
     {
         return $this->getStoredThreeDModelSizeBytes($path);
     }
 
-    private function formatBytes($bytes)
+    private function formatBytes(int $bytes): string
     {
         if ($bytes >= 1048576) {
             return round($bytes / 1048576, 1) . 'MB';
@@ -163,7 +163,8 @@ class ThreeDManagerController extends Controller
         }
 
         $key = 'products/models/' . \Illuminate\Support\Str::uuid() . '.' . $extension;
-        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
         $driver = config('filesystems.disks.public.driver');
 
         if ($driver === 's3') {
@@ -198,7 +199,7 @@ class ThreeDManagerController extends Controller
             return response()->json(['error' => 'No content received'], 400);
         }
 
-        \Illuminate\Support\Facades\Storage::disk('public')->put($key, $content);
+        Storage::disk('public')->put($key, $content);
 
         return response()->json(['success' => true]);
     }

@@ -198,7 +198,9 @@ class ArtisanSetupTest extends TestCase
         $this->assertNotNull($user->valid_id);
         $this->assertNotNull($user->tin_id);
 
-        Storage::disk('public')->assertExists($user->business_permit);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+        $disk->assertExists($user->business_permit);
     }
 
     public function test_artisan_setup_can_delete_legal_document(): void
@@ -219,7 +221,9 @@ class ArtisanSetupTest extends TestCase
         $response->assertRedirect();
         $user->refresh();
         $this->assertNull($user->business_permit);
-        Storage::disk('public')->assertMissing('legal_docs/permit.jpg');
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+        $disk->assertMissing('legal_docs/permit.jpg');
     }
 
     public function test_artisan_setup_can_upload_single_legal_document(): void
@@ -241,6 +245,8 @@ class ArtisanSetupTest extends TestCase
         $response->assertRedirect();
         $user->refresh();
         $this->assertNotNull($user->business_permit);
-        Storage::disk('public')->assertExists($user->business_permit);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+        $disk->assertExists($user->business_permit);
     }
 }
