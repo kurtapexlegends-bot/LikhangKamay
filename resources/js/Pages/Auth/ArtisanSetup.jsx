@@ -194,6 +194,7 @@ export default function ArtisanSetup({ auth }) {
 
                                 {step === 2 && (
                                     <DocumentsStep
+                                        errors={errors}
                                         submit={submit}
                                         processing={processing}
                                         setStep={setStep}

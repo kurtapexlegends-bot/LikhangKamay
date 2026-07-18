@@ -59,6 +59,7 @@ const compressImage = (file, maxWidth = 1600, maxHeight = 1600, quality = 0.8) =
 };
 
 export default function DocumentsStep({
+    errors = {},
     submit,
     processing,
     setStep,
@@ -89,21 +90,25 @@ export default function DocumentsStep({
                     label="Business Permit (Mayor's Permit)"
                     id="business_permit"
                     existingFileUrl={auth.user.business_permit_url}
+                    error={errors.business_permit}
                 />
                 <FileUploadField
                     label="DTI Registration"
                     id="dti_registration"
                     existingFileUrl={auth.user.dti_registration_url}
+                    error={errors.dti_registration}
                 />
                 <FileUploadField
                     label="Valid Government ID (Front)"
                     id="valid_id"
                     existingFileUrl={auth.user.valid_id_url}
+                    error={errors.valid_id}
                 />
                 <FileUploadField
                     label="TIN ID / Registration"
                     id="tin_id"
                     existingFileUrl={auth.user.tin_id_url}
+                    error={errors.tin_id}
                 />
             </div>
 
@@ -128,7 +133,7 @@ export default function DocumentsStep({
     );
 }
 
-const FileUploadField = React.memo(({ label, id, existingFileUrl }) => {
+const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
     const inputRef = useRef(null);
     const activeRequestRef = useRef(null);
     
@@ -353,7 +358,7 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl }) => {
                     disabled={uploading}
                 />
             </div>
-            <InputError message={uploadError} className="mt-2" />
+            <InputError message={uploadError || error} className="mt-2" />
         </div>
     );
 });
