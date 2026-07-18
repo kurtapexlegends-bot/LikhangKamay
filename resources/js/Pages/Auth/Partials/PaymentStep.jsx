@@ -51,8 +51,7 @@ export default function PaymentStep({
                     >
                         <option value="GCash">GCash</option>
                         <option value="Maya">Maya</option>
-                        <option value="Bank Transfer">Bank Transfer (BDO, BPI, etc.)</option>
-                        <option value="Palawan Express">Palawan Express</option>
+                        <option value="Bank Transfer" disabled>Bank Transfer (BDO, BPI, etc.) - Coming Soon</option>
                     </select>
                     <InputError message={errors.payout_method} className="mt-2" />
                 </div>
