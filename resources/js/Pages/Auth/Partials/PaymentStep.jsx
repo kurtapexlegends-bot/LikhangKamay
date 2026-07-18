@@ -69,13 +69,24 @@ export default function PaymentStep({
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="payout_account_number" value="Account/Phone Number *" />
+                    <InputLabel 
+                        htmlFor="payout_account_number" 
+                        value={
+                            data.payout_method === 'GCash' ? 'GCash Account Number *' :
+                            data.payout_method === 'Maya' ? 'Maya Account Number *' :
+                            'Account/Phone Number *'
+                        } 
+                    />
                     <TextInput
                         id="payout_account_number"
                         value={data.payout_account_number}
                         onChange={(e) => setData('payout_account_number', e.target.value)}
                         className="mt-1 block w-full rounded-xl py-3"
-                        placeholder="e.g. 0917 XXX XXXX or Bank Account No."
+                        placeholder={
+                            data.payout_method === 'GCash' || data.payout_method === 'Maya'
+                                ? 'e.g. 0917 XXX XXXX'
+                                : 'e.g. 0917 XXX XXXX or Bank Account No.'
+                        }
                     />
                     <InputError message={errors.payout_account_number} className="mt-2" />
                 </div>

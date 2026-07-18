@@ -134,7 +134,26 @@ All order operations are processed through dedicated single-responsibility Actio
 
 ---
 
-## 4. Financial Ledger Formulas
+## 4. Payout Management
+
+*   **Model File**: [Payout.php](file:///c:/laragon/www/LikhangKamay/app/Models/Payout.php)
+*   **Database Table**: `payouts`
+
+### Key Attributes
+*   `user_id` (foreign key pointing to the target artisan user)
+*   `amount` (disbursed decimal amount value)
+*   `payout_method` (payment transfer provider, e.g. GCash, Maya)
+*   `payout_account_name` (registered payee account name)
+*   `payout_account_number` (target phone number or bank account number)
+*   `reference_number` (transaction ID for payment tracking)
+*   `status` (disbursement status, e.g. Completed)
+
+### Payout Controllers & Actions
+*   [PayoutController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Admin/PayoutController.php): Manages payouts ledger, aggregates outstanding owed balances, and registers manual disbursements.
+
+---
+
+## 5. Financial Ledger Formulas
 
 Calculations are orchestrated by [AccountingLedgerService.php](file:///c:/laragon/www/LikhangKamay/app/Services/AccountingLedgerService.php):
 
@@ -144,3 +163,5 @@ Calculations are orchestrated by [AccountingLedgerService.php](file:///c:/larago
 *   **Payroll Expenses**: Sum of `total_amount` on `Paid` payroll entries.
 *   **Current Balance Equation**:
     $$\text{Balance} = \text{Base Funds} + \text{Total Revenue} - (\text{Stock Expenses} + \text{Payroll Expenses})$$
+*   **Artisan Unpaid Balance**: Balance outstanding for disbursements.
+    $$\text{Unpaid Balance} = \text{Revenue} - \text{Payouts}$$
