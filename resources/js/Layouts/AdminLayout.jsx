@@ -24,6 +24,7 @@ import {
     ShieldAlert,
     Shield,
     Activity,
+    CreditCard,
     FolderTree,
     Clock3,
     RotateCcw,
@@ -175,6 +176,7 @@ export default function AdminLayout({ title, children }) {
                 { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: isTabActive('admin.dashboard') },
                 { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: isTabActive('admin.insights') },
                 { name: 'Monetization', href: route('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, current: isTabActive('admin.settings.index', 'monetization') },
+                { name: 'Payouts', href: route('admin.payouts.index'), icon: CreditCard, current: route().current('admin.payouts.*') },
                 { name: 'Audit Logs', href: route('admin.operations'), icon: Shield, current: isTabActive('admin.operations') },
             ]
         },

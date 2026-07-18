@@ -73,15 +73,21 @@ class AccountingLedgerService
             ->where('status', 'Paid')
             ->sum('total_amount');
 
+        $totalPayouts = DB::table('payouts')
+            ->where('user_id', $userId)
+            ->where('status', 'Completed')
+            ->sum('amount');
+
         $baseFunds = (float) ($seller->base_funds ?? 0);
         $totalExpenses = (float) $stockExpenses + (float) $payrollExpenses;
-        $currentBalance = $baseFunds + (float) $totalRevenue - $totalExpenses;
+        $currentBalance = $baseFunds + (float) $totalRevenue - $totalExpenses - (float) $totalPayouts;
 
         return [
             'base_funds' => $baseFunds,
             'revenue' => (float) $totalRevenue,
             'expenses' => $totalExpenses,
             'balance' => $currentBalance,
+            'payouts' => (float) $totalPayouts,
         ];
     }
 
@@ -169,6 +175,28 @@ class AccountingLedgerService
                 ->where('orders.status', 'Completed');
         }
 
+        $payoutQuery = DB::table('payouts')
+            ->select([
+                'payouts.id',
+                DB::raw("'payout' as type"),
+                'payouts.status',
+                'payouts.created_at',
+                'payouts.updated_at',
+                'payouts.amount as amount',
+                DB::raw("NULL as requester_name"),
+                DB::raw("NULL as requester_role"),
+                'payouts.payout_method as detail_name',
+                'payouts.reference_number as detail_category',
+                DB::raw("NULL as order_number")
+            ])
+            ->where('payouts.user_id', $seller->id);
+
+        if ($statusGroup === 'pending') {
+            $payoutQuery->whereRaw('1 = 0');
+        } else {
+            $payoutQuery->where('payouts.status', 'Completed');
+        }
+
         if ($typeFilter !== 'all') {
             if ($typeFilter === 'stock_request') {
                 $unionQuery = $stockQuery;
@@ -176,14 +204,16 @@ class AccountingLedgerService
                 $unionQuery = $payrollQuery;
             } elseif ($typeFilter === 'sale' && $salesQuery) {
                 $unionQuery = $salesQuery;
+            } elseif ($typeFilter === 'payout') {
+                $unionQuery = $payoutQuery;
             } else {
                 $unionQuery = $stockQuery->whereRaw('1 = 0');
             }
         } else {
             if ($salesQuery) {
-                $unionQuery = $stockQuery->union($payrollQuery)->union($salesQuery);
+                $unionQuery = $stockQuery->union($payrollQuery)->union($salesQuery)->union($payoutQuery);
             } else {
-                $unionQuery = $stockQuery->union($payrollQuery);
+                $unionQuery = $stockQuery->union($payrollQuery)->union($payoutQuery);
             }
         }
 
@@ -217,6 +247,7 @@ class AccountingLedgerService
         $stockRequestIds = $items->where('type', 'stock_request')->pluck('id');
         $payrollIds = $items->where('type', 'payroll')->pluck('id');
         $orderIds = $items->where('type', 'sale')->pluck('id');
+        $payoutIds = $items->where('type', 'payout')->pluck('id');
 
         $stockRequests = $stockRequestIds->isEmpty()
             ? collect()
@@ -238,7 +269,14 @@ class AccountingLedgerService
                 ->get()
                 ->keyBy('id');
 
-        return $items->map(function ($item) use ($stockRequests, $payrolls, $orders, $seller, $currentBalance) {
+        $payouts = $payoutIds->isEmpty()
+            ? collect()
+            : DB::table('payouts')
+                ->whereIn('id', $payoutIds)
+                ->get()
+                ->keyBy('id');
+
+        return $items->map(function ($item) use ($stockRequests, $payrolls, $orders, $payouts, $seller, $currentBalance) {
             if ($item->type === 'stock_request') {
                 $model = $stockRequests->get($item->id);
                 return $model ? $this->serializeStockRequest($model, $currentBalance) : null;
@@ -248,6 +286,9 @@ class AccountingLedgerService
             } elseif ($item->type === 'sale') {
                 $model = $orders->get($item->id);
                 return $model ? $this->serializeOrder($model) : null;
+            } elseif ($item->type === 'payout') {
+                $model = $payouts->get($item->id);
+                return $model ? $this->serializePayout($model) : null;
             }
             return null;
         })->filter()->values()->all();
@@ -373,6 +414,44 @@ class AccountingLedgerService
                 'requested_at' => $order->created_at?->toIso8601String(),
                 'submitted_at' => $order->created_at?->toIso8601String(),
                 'last_reviewed_at' => $order->updated_at?->toIso8601String(),
+            ]
+        ];
+    }
+
+    private function serializePayout(object $payout): array
+    {
+        $createdAtStr = $payout->created_at ? \Illuminate\Support\Carbon::parse($payout->created_at)->toIso8601String() : null;
+        $updatedAtStr = $payout->updated_at ? \Illuminate\Support\Carbon::parse($payout->updated_at)->toIso8601String() : null;
+
+        return [
+            'id' => $payout->id,
+            'type' => 'payout',
+            'status' => $payout->status,
+            'created_at' => $createdAtStr,
+            'updated_at' => $updatedAtStr,
+            'amount' => (float) $payout->amount,
+            'requester' => [
+                'name' => 'System Admin',
+                'role' => 'super_admin',
+            ],
+            'detail_name' => $payout->payout_method,
+            'detail_category' => $payout->reference_number,
+            'financials' => [
+                'gross_sales' => 0.00,
+                'shipping_fee' => 0.00,
+                'platform_fee' => 0.00,
+                'convenience_fee' => 0.00,
+                'net_payout' => -((float) $payout->amount),
+                'total_charged' => -((float) $payout->amount),
+                'payout_method' => $payout->payout_method,
+                'account_name' => $payout->payout_account_name,
+                'account_number' => $payout->payout_account_number,
+                'reference_number' => $payout->reference_number,
+            ],
+            'activity' => [
+                'requested_at' => $createdAtStr,
+                'submitted_at' => $createdAtStr,
+                'last_reviewed_at' => $updatedAtStr,
             ]
         ];
     }

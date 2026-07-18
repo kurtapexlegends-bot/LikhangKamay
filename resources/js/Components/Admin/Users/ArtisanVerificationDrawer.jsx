@@ -72,6 +72,25 @@ export default function ArtisanVerificationDrawer({
                             </div>
                         </div>
 
+                        {/* Payout Preferences Section */}
+                        <div className="rounded-2xl border border-stone-200 bg-white p-5 space-y-3">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400">Payout Preferences</h4>
+                            <div className="grid grid-cols-2 gap-4 text-xs">
+                                <div>
+                                    <span className="block text-stone-500 font-medium">Method</span>
+                                    <span className="font-bold text-stone-900">{viewingArtisan.payout_method || 'GCash'}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-stone-500 font-medium">Account Name</span>
+                                    <span className="font-bold text-stone-900">{viewingArtisan.payout_account_name || 'N/A'}</span>
+                                </div>
+                                <div className="col-span-2">
+                                    <span className="block text-stone-500 font-medium">Account/Phone Number</span>
+                                    <span className="font-bold text-stone-900 tracking-wider">{viewingArtisan.payout_account_number || 'N/A'}</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <div>
                             <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">Submitted Documents</h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

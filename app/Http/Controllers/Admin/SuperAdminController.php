@@ -236,6 +236,9 @@ class SuperAdminController extends Controller
                 'dti_registration' => $user->dti_registration ? asset('storage/' . $user->dti_registration) : null,
                 'valid_id' => $user->valid_id ? asset('storage/' . $user->valid_id) : null,
                 'tin_id' => $user->tin_id ? asset('storage/' . $user->tin_id) : null,
+                'payout_method' => $user->payout_method,
+                'payout_account_name' => $user->payout_account_name,
+                'payout_account_number' => $user->payout_account_number,
                 'submitted_at' => $user->setup_completed_at->format('M d, Y h:i A'),
                 'viewed_documents' => $this->getViewedArtisanDocumentKeys($user->id),
             ]);
