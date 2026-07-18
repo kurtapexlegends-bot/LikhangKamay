@@ -182,8 +182,8 @@ export default function Insights({
                             href={route('admin.settings.index', { tab: 'monetization' })} 
                             className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl border border-transparent bg-clay-600 text-white hover:bg-clay-700 shadow-md shadow-clay-200/50 px-4 py-2 text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ease-out active:scale-[0.98]"
                         >
-                            <ArrowRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-0.5" />
                             <span>Monetization</span>
+                            <ArrowRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-0.5" />
                         </Link>
                     </div>
                 }
