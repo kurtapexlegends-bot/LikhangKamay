@@ -36,6 +36,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        /** @var \Illuminate\Filesystem\FilesystemAdapter|null $storage */
         $storage = null;
         try {
             $storage = \Illuminate\Support\Facades\Storage::disk('public');
