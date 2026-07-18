@@ -303,13 +303,13 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::patch('/reviews/{id}', [\App\Http\Controllers\Consumer\ReviewController::class, 'update'])->name('reviews.update');
         Route::delete('/reviews/{id}', [\App\Http\Controllers\Consumer\ReviewController::class, 'destroy'])->name('reviews.destroy');
 
-        // GLOBAL SEARCH
-        Route::get('/api/global-search', [\App\Http\Controllers\Consumer\GlobalSearchController::class, 'search'])->name('api.global-search');
-        Route::get('/api/search/suggestions', [\App\Http\Controllers\Consumer\SearchController::class, 'suggestions'])->name('api.search.suggestions');
-
         // REPORTING
         Route::post('/report', [\App\Http\Controllers\Compliance\FlaggedContentController::class, 'store'])->name('report.store');
     });
+
+    // GLOBAL SEARCH (Accessible to pending artisans for browsing)
+    Route::get('/api/global-search', [\App\Http\Controllers\Consumer\GlobalSearchController::class, 'search'])->name('api.global-search');
+    Route::get('/api/search/suggestions', [\App\Http\Controllers\Consumer\SearchController::class, 'suggestions'])->name('api.search.suggestions');
     
 });
 

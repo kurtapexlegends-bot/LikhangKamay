@@ -21,14 +21,14 @@ class EnsureNotPendingArtisan
             $user = Auth::user();
 
             if ($user->isArtisan() && !$user->isApproved()) {
-                if ($request->expectsJson() || $request->header('X-Inertia')) {
-                    abort(403, 'Your account is not approved to perform this action.');
+                if ($request->isMethod('get')) {
+                    if ($user->setup_completed_at === null || $user->isRejected()) {
+                        return redirect()->route('artisan.setup');
+                    }
+                    return redirect()->route('artisan.pending');
                 }
 
-                if ($user->setup_completed_at === null || $user->isRejected()) {
-                    return redirect()->route('artisan.setup');
-                }
-                return redirect()->route('artisan.pending');
+                abort(403, 'Your account is not approved to perform this action.');
             }
         }
 
