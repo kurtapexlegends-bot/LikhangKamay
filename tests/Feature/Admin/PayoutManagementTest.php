@@ -127,4 +127,26 @@ class PayoutManagementTest extends TestCase
             'user_id' => $artisan->id,
         ]);
     }
+
+    public function test_unpaid_balance_excludes_base_funds_and_expenses_in_controller(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $artisan = User::factory()->create([
+            'role' => 'artisan',
+            'artisan_status' => 'approved',
+            'base_funds' => 20000.00,
+        ]);
+
+        // Access the payout index route
+        $response = $this->actingAs($admin)
+            ->get(route('admin.payouts.index'));
+
+        $response->assertStatus(200);
+        
+        // Assert the unpaid balance is 0.00 (since revenue is 0 and payouts are 0, excluding the 20,000 base_funds)
+        $response->assertInertia(fn ($page) => $page
+            ->where('artisans.0.balance', 0)
+            ->where('artisans.0.ledger_balance', 20000)
+        );
+    }
 }

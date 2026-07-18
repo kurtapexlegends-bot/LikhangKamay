@@ -35,6 +35,7 @@ class PayoutController extends Controller
             ->map(function ($user) {
                 // Compute outstanding balance using ledger service
                 $snapshot = $this->ledgerService->buildFinancialSnapshot($user);
+                $unpaidBalance = max(0.00, $snapshot['revenue'] - ($snapshot['payouts'] ?? 0.00));
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -43,7 +44,8 @@ class PayoutController extends Controller
                     'payout_method' => $user->payout_method ?? 'GCash',
                     'payout_account_name' => $user->payout_account_name ?? '',
                     'payout_account_number' => $user->payout_account_number ?? '',
-                    'balance' => $snapshot['balance'],
+                    'balance' => $unpaidBalance,
+                    'ledger_balance' => $snapshot['balance'],
                     'revenue' => $snapshot['revenue'],
                     'expenses' => $snapshot['expenses'],
                     'payouts' => $snapshot['payouts'] ?? 0.00,
