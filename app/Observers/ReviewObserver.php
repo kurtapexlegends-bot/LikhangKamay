@@ -144,7 +144,7 @@ class ReviewObserver
         if (!$product) return;
 
         $stats = Review::where('product_id', $productId)
-            ->where('is_hidden_from_marketplace', false)
+            ->visibleToMarketplace()
             ->selectRaw('COUNT(*) as count, ROUND(AVG(rating), 2) as avg')
             ->first();
 

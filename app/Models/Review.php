@@ -53,6 +53,6 @@ class Review extends Model
 
     public function scopeVisibleToMarketplace($query)
     {
-        return $query->where('is_hidden_from_marketplace', false);
+        return $query->whereRaw('(is_hidden_from_marketplace IS NOT TRUE)');
     }
 }
