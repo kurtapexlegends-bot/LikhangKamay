@@ -240,7 +240,7 @@ class ShopAnalyticsMetricsService
             ->where('artisan_id', $sellerId)
             ->where('status', 'Completed')
             ->selectRaw("{$dayExpr} as day, {$hourExpr} as hour, COUNT(*) as count")
-            ->groupBy('day', 'hour')
+            ->groupByRaw("{$dayExpr}, {$hourExpr}")
             ->get();
 
         $velocityData = OrderItem::whereHas('order', function($q) use ($sellerId) {
@@ -248,6 +248,7 @@ class ShopAnalyticsMetricsService
             })
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->selectRaw("
+                products.id,
                 products.name,
                 AVG({$this->dateDiffExpression('order_items.created_at', 'products.created_at')}) as avg_days_to_sell
             ")
