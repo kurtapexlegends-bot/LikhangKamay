@@ -106,37 +106,43 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                 <div className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-3 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
                     <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto bg-stone-900 text-white rounded-2xl p-5 shadow-sm border border-stone-850 relative overflow-hidden flex flex-col justify-between">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Award className="text-amber-400" size={16} />
-                                <h4 className="text-stone-400 text-[10px] font-bold uppercase tracking-wider">Available Credits</h4>
+                        <div className="relative z-10 flex items-start justify-between">
+                            <div>
+                                <h4 className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1">Available Credits</h4>
+                                <h3 className="text-3xl font-bold text-white tracking-tight flex items-baseline gap-1">
+                                    {creditsAvailable}
+                                    <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider">/ 5 left</span>
+                                </h3>
                             </div>
-                            <h3 className="text-3xl font-bold text-white tracking-tight flex items-baseline gap-1">
-                                {creditsAvailable}
-                                <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider">/ 5 left</span>
-                            </h3>
+                            <div className="p-2 bg-white/10 rounded-xl border border-white/10 shrink-0">
+                                <Award className="text-amber-400" size={20} />
+                            </div>
                         </div>
                         <p className="text-[10px] text-stone-500 mt-4 leading-normal font-medium">Resets every 30 days based on billing cycle.</p>
                     </div>
 
                     <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto bg-white rounded-2xl p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
-                        <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Sparkles className="text-emerald-500" size={16} />
-                                <h4 className="text-stone-400 text-[10px] font-bold uppercase tracking-wider">Active Campaigns</h4>
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <h4 className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1">Active Campaigns</h4>
+                                <h3 className="text-3xl font-bold text-stone-950 tracking-tight">{activeSponsorshipCount}</h3>
                             </div>
-                            <h3 className="text-3xl font-bold text-stone-950 tracking-tight">{activeSponsorshipCount}</h3>
+                            <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-100 shrink-0">
+                                <Sparkles className="text-emerald-500" size={20} />
+                            </div>
                         </div>
                         <p className="text-[10px] text-stone-500 mt-4 leading-normal font-medium">Currently live in homepage promotions.</p>
                     </div>
 
                     <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto bg-white rounded-2xl p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
-                        <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Clock className="text-amber-500" size={16} />
-                                <h4 className="text-stone-400 text-[10px] font-bold uppercase tracking-wider">Awaiting Review</h4>
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <h4 className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1">Awaiting Review</h4>
+                                <h3 className="text-3xl font-bold text-stone-950 tracking-tight">{pendingCount}</h3>
                             </div>
-                            <h3 className="text-3xl font-bold text-stone-950 tracking-tight">{pendingCount}</h3>
+                            <div className="p-2 bg-amber-50 rounded-xl border border-amber-100 shrink-0">
+                                <Clock className="text-amber-500" size={20} />
+                            </div>
                         </div>
                         <p className="text-[10px] text-stone-500 mt-4 leading-normal font-medium">Sponsorship requests awaiting moderation.</p>
                     </div>

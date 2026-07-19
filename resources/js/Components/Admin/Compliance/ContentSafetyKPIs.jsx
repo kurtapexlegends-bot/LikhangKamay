@@ -1,13 +1,13 @@
 import React from 'react';
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
-    <div className="bg-white rounded-2xl border border-clay-100 p-6 flex items-center gap-4 shadow-sm transition-all hover:shadow-md w-full h-full">
-        <div className={`p-3 rounded-xl bg-stone-50 border border-stone-100 ${color} shrink-0`}>
-            <Icon size={24} />
-        </div>
+    <div className="bg-white rounded-2xl border border-stone-200 p-5 flex items-center justify-between shadow-sm transition-all hover:shadow-md w-full h-full">
         <div className="min-w-0">
-            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest leading-none mb-1 truncate">{title}</p>
+            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest leading-none mb-2 truncate">{title}</p>
             <p className="text-2xl font-black text-stone-900 tracking-tight leading-none truncate">{value}</p>
+        </div>
+        <div className={`p-3 rounded-xl bg-stone-50 border border-stone-100 ${color} shrink-0`}>
+            <Icon size={22} />
         </div>
     </div>
 );
