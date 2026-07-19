@@ -243,6 +243,7 @@ class ShopAnalyticsMetricsService
             ->groupByRaw("{$dayExpr}, {$hourExpr}")
             ->get();
 
+        $diffExpr = $this->dateDiffExpression('order_items.created_at', 'products.created_at');
         $velocityData = OrderItem::whereHas('order', function($q) use ($sellerId) {
                 $q->where('artisan_id', $sellerId)->where('status', 'Completed');
             })
@@ -250,10 +251,10 @@ class ShopAnalyticsMetricsService
             ->selectRaw("
                 products.id,
                 products.name,
-                AVG({$this->dateDiffExpression('order_items.created_at', 'products.created_at')}) as avg_days_to_sell
+                AVG({$diffExpr}) as avg_days_to_sell
             ")
             ->groupBy('products.id', 'products.name')
-            ->having('avg_days_to_sell', '>', 0)
+            ->havingRaw("AVG({$diffExpr}) > 0")
             ->orderBy('avg_days_to_sell')
             ->take(5)
             ->get();
@@ -327,7 +328,7 @@ class ShopAnalyticsMetricsService
                     WHEN 5 THEN 'Fri'
                     ELSE 'Sat'
                 END",
-            'pgsql' => "to_char({$column}, 'Dy')",
+            'pgsql' => "trim(to_char({$column}, 'Dy'))",
             default => "
                 CASE DAYOFWEEK({$column})
                     WHEN 1 THEN 'Sun'
