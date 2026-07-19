@@ -108,25 +108,48 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                                 {/* Products 3-column strip */}
                                 {store.products && store.products.length > 0 && (
                                     <div className="grid grid-cols-3 gap-2.5 mt-4">
-                                        {store.products.slice(0, 3).map((p, pIdx) => (
-                                            <Link 
-                                                key={p.id || pIdx}
-                                                href={route('product.show', p.slug)}
-                                                className="group/prod flex flex-col items-center min-w-0"
-                                            >
-                                                <div className="w-full aspect-square rounded-xl overflow-hidden border border-stone-100 relative bg-stone-50 shadow-xs group-hover/prod:border-clay-300 transition-all">
-                                                    <img 
-                                                        src={p.img ? (p.img.startsWith('http') || p.img.startsWith('/storage') || p.img.startsWith('/img') ? p.img : `/storage/${p.img}`) : '/images/no-image.png'}
-                                                        alt={p.name || ''}
-                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover/prod:scale-108"
-                                                        onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
-                                                    />
-                                                    <span className={`absolute top-1 left-1 backdrop-blur-xs text-[8px] font-bold px-1.5 py-0.5 rounded-md ${theme.productRank}`}>
-                                                        #{pIdx + 1}
-                                                    </span>
-                                                </div>
-                                            </Link>
-                                        ))}
+                                        {store.products.slice(0, 3).map((p, pIdx) => {
+                                            const ratingVal = p.rating ?? p.reviews_avg_rating ?? p.rating_avg;
+                                            const soldCount = p.sold ?? p.sold_count ?? p.total_sold ?? 0;
+
+                                            return (
+                                                <Link 
+                                                    key={p.id || pIdx}
+                                                    href={route('product.show', p.slug)}
+                                                    className="group/prod flex flex-col items-center min-w-0"
+                                                >
+                                                    <div className="w-full aspect-square rounded-xl overflow-hidden border border-stone-100 relative bg-stone-50 shadow-xs group-hover/prod:border-clay-300 transition-all">
+                                                        <img 
+                                                            src={p.img ? (p.img.startsWith('http') || p.img.startsWith('/storage') || p.img.startsWith('/img') ? p.img : `/storage/${p.img}`) : '/images/no-image.png'}
+                                                            alt={p.name || ''}
+                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover/prod:scale-108"
+                                                            onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
+                                                        />
+                                                        
+                                                        {/* Top-Left: Rank Badge */}
+                                                        <span className={`absolute top-1 left-1 backdrop-blur-xs text-[8px] font-bold px-1.5 py-0.5 rounded-md ${theme.productRank}`}>
+                                                            #{pIdx + 1}
+                                                        </span>
+
+                                                        {/* Top-Right: Rating Badge */}
+                                                        <span className="absolute top-1 right-1 bg-stone-900/80 backdrop-blur-xs text-white text-[8px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                                            <Star size={8} className="fill-amber-400 text-amber-400 shrink-0" />
+                                                            {hasRating(ratingVal) ? formatRating(ratingVal) : 'New'}
+                                                        </span>
+
+                                                        {/* Bottom: Price + Sold Count */}
+                                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-900/85 via-stone-900/40 to-transparent p-1 pt-3 text-center">
+                                                            <span className="text-[9px] font-extrabold text-white block leading-tight">
+                                                                ₱{Number(p.price || 0).toLocaleString()}
+                                                            </span>
+                                                            <span className="text-[7.5px] font-medium text-stone-300 block">
+                                                                {safeFormatSold(soldCount)} sold
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </Link>
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
@@ -193,39 +216,51 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                                     </div>
                                 </Link>
 
-                                {/* Products Strip: #1, #2, #3 Product thumbnails with subtle rank badges & price tags on hover */}
+                                {/* Products Strip: #1, #2, #3 Product thumbnails with subtle rank badges, rating stars, price & sold count */}
                                 {store.products && store.products.length > 0 && (
                                     <div className="grid grid-cols-3 gap-3 mt-4">
-                                        {store.products.slice(0, 3).map((p, pIdx) => (
-                                            <Link 
-                                                key={p.id || pIdx}
-                                                href={route('product.show', p.slug)}
-                                                className="group/prod flex flex-col items-center min-w-0"
-                                            >
-                                                <div className="w-full aspect-square rounded-xl overflow-hidden border border-stone-100 relative bg-stone-50 shadow-xs group-hover/prod:border-clay-300 group-hover/prod:shadow-md transition-all duration-300">
-                                                    <img 
-                                                        src={p.img ? (p.img.startsWith('http') || p.img.startsWith('/storage') || p.img.startsWith('/img') ? p.img : `/storage/${p.img}`) : '/images/no-image.png'}
-                                                        alt={p.name || ''}
-                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover/prod:scale-110"
-                                                        onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
-                                                    />
-                                                    
-                                                    {/* Top rank badge */}
-                                                    <span className={`absolute top-1.5 left-1.5 backdrop-blur-xs text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-xs ${theme.productRank}`}>
-                                                        #{pIdx + 1}
-                                                    </span>
+                                        {store.products.slice(0, 3).map((p, pIdx) => {
+                                            const ratingVal = p.rating ?? p.reviews_avg_rating ?? p.rating_avg;
+                                            const soldCount = p.sold ?? p.sold_count ?? p.total_sold ?? 0;
 
-                                                    {/* Price Tag Overlay on Hover */}
-                                                    {p.price && (
-                                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-900/80 via-stone-900/40 to-transparent p-1.5 pt-4 text-center opacity-0 group-hover/prod:opacity-100 transition-opacity duration-300">
-                                                            <span className="text-[10px] font-extrabold text-white">
-                                                                ₱{Number(p.price).toLocaleString()}
+                                            return (
+                                                <Link 
+                                                    key={p.id || pIdx}
+                                                    href={route('product.show', p.slug)}
+                                                    className="group/prod flex flex-col items-center min-w-0"
+                                                >
+                                                    <div className="w-full aspect-square rounded-xl overflow-hidden border border-stone-100 relative bg-stone-50 shadow-xs group-hover/prod:border-clay-300 group-hover/prod:shadow-md transition-all duration-300">
+                                                        <img 
+                                                            src={p.img ? (p.img.startsWith('http') || p.img.startsWith('/storage') || p.img.startsWith('/img') ? p.img : `/storage/${p.img}`) : '/images/no-image.png'}
+                                                            alt={p.name || ''}
+                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover/prod:scale-110"
+                                                            onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
+                                                        />
+                                                        
+                                                        {/* Top-Left: Rank Badge */}
+                                                        <span className={`absolute top-1.5 left-1.5 backdrop-blur-xs text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-xs ${theme.productRank}`}>
+                                                            #{pIdx + 1}
+                                                        </span>
+
+                                                        {/* Top-Right: Rating Badge */}
+                                                        <span className="absolute top-1.5 right-1.5 bg-stone-900/80 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                                            <Star size={9} className="fill-amber-400 text-amber-400 shrink-0" />
+                                                            {hasRating(ratingVal) ? formatRating(ratingVal) : 'New'}
+                                                        </span>
+
+                                                        {/* Bottom Overlay: Price + Sold Count */}
+                                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-900/85 via-stone-900/40 to-transparent p-1.5 pt-4 text-center">
+                                                            <span className="text-[10px] font-extrabold text-white block leading-tight">
+                                                                ₱{Number(p.price || 0).toLocaleString()}
+                                                            </span>
+                                                            <span className="text-[8.5px] font-medium text-stone-300 block mt-0.5">
+                                                                {safeFormatSold(soldCount)} sold
                                                             </span>
                                                         </div>
-                                                    )}
-                                                </div>
-                                            </Link>
-                                        ))}
+                                                    </div>
+                                                </Link>
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
