@@ -1,13 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Phone, MapPin, AlertTriangle, Calendar, CheckCircle, Eye } from 'lucide-react';
-import Checkbox from '@/Components/Checkbox';
 import { ARTISAN_DOCUMENTS } from '@/utils/userManagerHelpers';
 
 export default function ArtisanApprovalRow({
     artisan,
-    isSelected,
-    toggleArtisanSelection,
     viewedCount,
     openReviewModal
 }) {
@@ -22,10 +19,6 @@ export default function ArtisanApprovalRow({
                 <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-clay-500 scale-y-0 group-hover:scale-y-100 transition-transform origin-center" />
 
                 <div className="col-span-4 flex items-center gap-4">
-                    <Checkbox
-                        checked={isSelected}
-                        onChange={() => toggleArtisanSelection(artisan.id)}
-                    />
                     <div className="flex items-center gap-4 min-w-0">
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-clay-100 bg-clay-50/50 text-base font-bold text-clay-700 shadow-sm transition-transform group-hover:scale-105">
                             {artisan.avatar ? (
@@ -136,10 +129,6 @@ export default function ArtisanApprovalRow({
             <div className="flex flex-col gap-3 md:hidden">
                 <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                        <Checkbox
-                            checked={isSelected}
-                            onChange={() => toggleArtisanSelection(artisan.id)}
-                        />
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-clay-100 bg-clay-50/50 text-sm font-bold text-clay-700 shadow-sm">
                             {artisan.avatar ? (
                                 <img

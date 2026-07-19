@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useMemo, useDeferredValue, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { router } from '@inertiajs/react';
-import { FileText, CheckCircle, XCircle } from 'lucide-react';
+import { FileText, CheckCircle } from 'lucide-react';
 
-import Checkbox from '@/Components/Checkbox';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import CompactPagination from '@/Components/CompactPagination';
 import { TableSkeleton } from '@/Components/Skeleton';
-import BulkActionPill, { ActionTooltip } from '@/Components/Admin/Layout/BulkActionPill';
 import ArtisanVerificationDrawer from '@/Components/Admin/Users/ArtisanVerificationDrawer';
 import ArtisanApprovalRow from '@/Components/Admin/Users/Partials/ArtisanApprovalRow';
 import {
@@ -29,7 +27,6 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
     const [approvalError, setApprovalError] = useState('');
     const [viewedDocumentsByArtisan, setViewedDocumentsByArtisan] = useState(() => buildViewedDocumentMap(artisans));
     const [documentPreviewingKey, setDocumentPreviewingKey] = useState(null);
-    const [selectedArtisans, setSelectedArtisans] = useState([]);
 
     const deferredSearchQuery = useDeferredValue(searchQuery);
     const pendingOperations = useRef({});
@@ -41,24 +38,6 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
     useEffect(() => {
         setViewedDocumentsByArtisan(buildViewedDocumentMap(artisans));
     }, [artisans]);
-
-    const toggleArtisanSelection = (id) => {
-        setSelectedArtisans(prev =>
-            prev.includes(id) ? prev.filter(aId => aId !== id) : [...prev, id]
-        );
-    };
-
-    const toggleAllCurrentPage = () => {
-        const pageIds = paginatedArtisans.map(a => a.id);
-        const allSelected = pageIds.every(id => selectedArtisans.includes(id));
-        if (allSelected) {
-            setSelectedArtisans(prev => prev.filter(id => !pageIds.includes(id)));
-        } else {
-            setSelectedArtisans(prev => [...new Set([...prev, ...pageIds])]);
-        }
-    };
-
-    const clearSelection = () => setSelectedArtisans([]);
 
     const getArtisanDocuments = (artisan) =>
         ARTISAN_DOCUMENTS.map((document) => ({
@@ -192,54 +171,6 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
         });
     };
 
-    const bulkApprove = () => {
-        if (selectedArtisans.length === 0) return;
-
-        const idsToApprove = [...selectedArtisans];
-        const originalArtisans = [...localArtisans];
-        const prevSelected = [...selectedArtisans];
-
-        try {
-            const timerId = setTimeout(() => {
-                router.post(route('admin.artisan.bulk-approve'), { ids: idsToApprove }, {
-                    onSuccess: () => addToast(`Batch of ${idsToApprove.length} approved.`, 'success'),
-                    onError: () => {
-                        setLocalArtisans(originalArtisans);
-                        addToast('Bulk approval failed. Reverting...', 'error');
-                    }
-                });
-                delete pendingOperations.current[timerId];
-            }, 5000);
-
-            pendingOperations.current[timerId] = {
-                restore: () => {
-                    clearTimeout(timerId);
-                    setLocalArtisans(originalArtisans);
-                    setSelectedArtisans(prevSelected);
-                }
-            };
-
-            addToast(`Approving ${idsToApprove.length} applications...`, 'info', 5000, () => {
-                if (pendingOperations.current[timerId]) {
-                    pendingOperations.current[timerId].restore();
-                    delete pendingOperations.current[timerId];
-                }
-            });
-
-            setLocalArtisans(prev => prev.filter(a => !idsToApprove.includes(a.id)));
-            setSelectedArtisans([]);
-        } catch (e) {
-            console.error("Undo System Error: Bulk operation aborted.", e);
-            setLocalArtisans(originalArtisans);
-        }
-    };
-
-    useEffect(() => {
-        return () => {
-            Object.values(pendingOperations.current).forEach(op => op.restore());
-        };
-    }, []);
-
     return (
         <div className="space-y-6">
             {/* Approvals tab filters and search bar */}
@@ -311,11 +242,7 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                     <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
                         {/* Header Row */}
                         <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-2.5 bg-stone-50 border-b border-stone-100/80 text-[11px] font-bold uppercase tracking-wider text-stone-500">
-                            <div className="col-span-4 flex items-center gap-4">
-                                <Checkbox
-                                    checked={paginatedArtisans.length > 0 && paginatedArtisans.every(a => selectedArtisans.includes(a.id))}
-                                    onChange={toggleAllCurrentPage}
-                                />
+                            <div className="col-span-4">
                                 <span>Artisan Shop</span>
                             </div>
                             <div className="col-span-3">Contact & Location</div>
@@ -340,13 +267,10 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                                 <AnimatePresence initial={false}>
                                     {paginatedArtisans.map((artisan) => {
                                         const viewedCount = (viewedDocumentsByArtisan[artisan.id] ?? []).length;
-                                        const isSelected = selectedArtisans.includes(artisan.id);
                                         return (
                                             <ArtisanApprovalRow
                                                 key={artisan.id}
                                                 artisan={artisan}
-                                                isSelected={isSelected}
-                                                toggleArtisanSelection={toggleArtisanSelection}
                                                 viewedCount={viewedCount}
                                                 openReviewModal={openReviewModal}
                                             />
@@ -391,31 +315,6 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                 setRejectReason={setRejectReason}
                 handleRejectArtisan={handleRejectArtisan}
             />
-
-            {/* Bulk Actions Bar */}
-            <BulkActionPill selectedCount={selectedArtisans.length} onClear={clearSelection}>
-                <ActionTooltip text="Approve Selected">
-                    <button
-                        onClick={bulkApprove}
-                        className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50/40 text-emerald-600 hover:bg-emerald-100/60 hover:text-emerald-700 transition-all duration-205 active:scale-90 shadow-sm"
-                    >
-                        <CheckCircle size={18} />
-                    </button>
-                </ActionTooltip>
-
-                <ActionTooltip text="Reject Selected">
-                    <button
-                        onClick={() => {
-                            if (selectedArtisans.length > 0) {
-                                setRejectingArtisan(localArtisans.find(a => a.id === selectedArtisans[0]));
-                            }
-                        }}
-                        className="flex h-10 w-10 items-center justify-center rounded-full border border-rose-100 bg-rose-50/40 text-rose-600 hover:bg-rose-100/60 hover:text-rose-700 transition-all duration-205 active:scale-90 shadow-sm"
-                    >
-                        <XCircle size={18} />
-                    </button>
-                </ActionTooltip>
-            </BulkActionPill>
         </div>
     );
 }
