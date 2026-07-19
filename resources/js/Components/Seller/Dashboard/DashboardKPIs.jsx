@@ -62,7 +62,7 @@ const MetricCard = ({ title, value, growth, icon: Icon, bg, text, animateValue =
                 {growth !== undefined && (
                     <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${growthColor}`}>
                         <GrowthIcon size={12}/>
-                        <span>{growthPrefix}{growth}% vs last month</span>
+                        <span>{growthPrefix}{growth}% vs last 30 days</span>
                     </div>
                 )}
                 {growth === undefined && <p className="text-[10px] font-medium text-gray-400 mt-1">Real-time status</p>}

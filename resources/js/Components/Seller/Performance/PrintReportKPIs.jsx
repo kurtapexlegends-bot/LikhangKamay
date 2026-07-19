@@ -28,7 +28,7 @@ export default function PrintReportKPIs({
                             title="Total Revenue" 
                             value={metrics.total_revenue} 
                             growth={metrics.growth?.revenue} 
-                            growthSuffix=" vs last month"
+                            growthSuffix=" vs last 30 days"
                             trendData={revenueTrend}
                             breakdown={revenueBreakdown && Object.keys(revenueBreakdown || {}).length > 0 ? revenueBreakdown : null}
                             icon={DollarSign} 
@@ -42,7 +42,7 @@ export default function PrintReportKPIs({
                             title="Gross Profit" 
                             value={metrics.gross_profit} 
                             growth={metrics.growth?.profit} 
-                            growthSuffix=" vs last month"
+                            growthSuffix=" vs last 30 days"
                             trendData={profitTrend}
                             icon={TrendingUp} 
                             bg="bg-emerald-50" 
@@ -55,7 +55,7 @@ export default function PrintReportKPIs({
                             title="Profit Margin" 
                             value={`${Number(metrics.profit_margin || 0).toFixed(1)}%`} 
                             growth={metrics.growth?.margin} 
-                            growthSuffix=" vs last month"
+                            growthSuffix=" vs last 30 days"
                             icon={Activity} 
                             bg="bg-emerald-50" 
                             color="text-emerald-600" 
@@ -67,7 +67,7 @@ export default function PrintReportKPIs({
                             title="Shop Rating" 
                             value={`${metrics.average_rating} / 5.0`} 
                             growth={metrics.growth?.rating} 
-                            growthSuffix=" vs last month"
+                            growthSuffix=" vs last 30 days"
                             icon={Star} 
                             bg="bg-amber-50" 
                             color="text-amber-600" 

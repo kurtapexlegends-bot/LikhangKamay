@@ -156,7 +156,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                             title="Plan MRR"
                             value={metrics.mrr?.value || 0}
                             growth={metrics.mrr?.growth}
-                            growthSuffix=" vs 30 days ago"
+                            growthSuffix=" vs last 30 days"
                             icon={CircleDollarSign}
                             bg="bg-emerald-50"
                             color="text-emerald-600"
@@ -167,7 +167,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                             title="Transaction Fees"
                             value={metrics.platform_fees?.value || 0}
                             growth={metrics.platform_fees?.growth}
-                            growthSuffix=" vs 30 days ago"
+                            growthSuffix=" vs last 30 days"
                             icon={CircleDollarSign}
                             bg="bg-clay-50"
                             color="text-clay-600"
@@ -194,7 +194,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                             title="Sponsored"
                             value={metrics.sponsorships?.value || 0}
                             growth={metrics.sponsorships?.growth}
-                            growthSuffix=" vs 30 days ago"
+                            growthSuffix=" vs last 30 days"
                             icon={Award}
                             bg="bg-amber-50"
                             color="text-amber-600"
