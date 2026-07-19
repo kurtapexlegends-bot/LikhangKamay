@@ -56,6 +56,9 @@ const UserRowSkeleton = () => (
         <td className="sm:px-6 sm:py-4">
             <div className="h-3 w-20 bg-stone-100 rounded mx-auto sm:mx-0" />
         </td>
+        <td className="sm:px-6 sm:py-4 text-right">
+            <div className="h-6 w-16 bg-stone-100 rounded-lg ml-auto" />
+        </td>
     </tr>
 );
 
@@ -252,6 +255,9 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                 <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400">
                                     Registered
                                 </th>
+                                <th className="px-6 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                    Action
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
@@ -322,7 +328,7 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                             )}
                                         </div>
                                     </td>
-                                    <td className="sm:px-6 sm:py-4 text-[11px] sm:text-xs font-medium text-gray-400 relative">
+                                    <td className="sm:px-6 sm:py-4 text-[11px] sm:text-xs font-medium text-gray-400 whitespace-nowrap">
                                         <div className="flex items-center justify-between sm:justify-start gap-4">
                                             <span className="sm:hidden text-[10px] font-bold text-stone-400 uppercase tracking-widest">Joined</span>
                                             <span>
@@ -332,21 +338,21 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                                     year: "numeric",
                                                 })}
                                             </span>
-                                            <div className="hidden sm:block absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                                <Link
-                                                    href={user.role === "artisan" && user.artisan_status === "pending" ? route("admin.users.manager", { tab: 'approvals' }) : route("admin.users.manager", { tab: 'directory' })}
-                                                    className="inline-flex items-center gap-1 rounded-lg bg-clay-50 hover:bg-clay-100 border border-[#E7D8C9] px-2.5 py-1 text-[10px] font-bold text-clay-700 transition"
-                                                >
-                                                    {user.role === "artisan" && user.artisan_status === "pending" ? "Verify" : "Manage"} <ChevronRight size={10} />
-                                                </Link>
-                                            </div>
                                         </div>
+                                    </td>
+                                    <td className="sm:px-6 sm:py-4 text-right whitespace-nowrap">
+                                        <Link
+                                            href={user.role === "artisan" && user.artisan_status === "pending" ? route("admin.users.manager", { tab: 'approvals' }) : route("admin.users.manager", { tab: 'directory' })}
+                                            className="inline-flex items-center gap-1 rounded-lg bg-clay-50 hover:bg-clay-100 border border-[#E7D8C9] px-2.5 py-1 text-[10px] font-bold text-clay-700 transition active:scale-95 shadow-sm"
+                                        >
+                                            {user.role === "artisan" && user.artisan_status === "pending" ? "Verify" : "Manage"} <ChevronRight size={10} />
+                                        </Link>
                                     </td>
                                 </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="4" className="px-6 py-12 text-center w-full block sm:table-cell">
+                                    <td colSpan="5" className="px-6 py-12 text-center w-full block sm:table-cell">
                                         <div className="flex flex-col items-center justify-center space-y-2">
                                             <Users className="h-8 w-8 text-stone-300 animate-pulse" />
                                             <p className="text-sm font-bold text-stone-600">No registrations found</p>
