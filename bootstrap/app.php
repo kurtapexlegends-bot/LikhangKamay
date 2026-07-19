@@ -65,6 +65,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 if ($response->getStatusCode() === 419) {
                     return Inertia::location(route('login'));
                 }
+                if (in_array($response->getStatusCode(), [403, 404])) {
+                    return back()->with('error', $exception->getMessage() ?: 'Access restricted or page not found.');
+                }
             }
             return $response;
         });

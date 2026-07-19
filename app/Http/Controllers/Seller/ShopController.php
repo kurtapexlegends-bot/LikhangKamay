@@ -128,9 +128,9 @@ class ShopController extends Controller
         return Inertia::render('Seller/Settings/ShopSettings', [
             'user'  => $user,
             'stats' => [
-                'products' => $user->products_count ?? 0,
-                'sales'    => $user->total_sales ?? 0,
-                'rating'   => number_format($avgRating, 1),
+                'products' => (int) ($user->products_count ?? 0),
+                'sales'    => (int) ($user->total_sales ?? 0),
+                'rating'   => number_format((float) $avgRating, 1),
             ],
         ]);
     }
