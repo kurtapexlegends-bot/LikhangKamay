@@ -115,22 +115,22 @@ class ShopController extends Controller
 
     public function settings(Request $request)
     {
-        $user = $request->user()->getEffectiveSeller();
+        $user = $request->user()?->getEffectiveSeller();
         abort_unless($user && $user->isArtisan(), 403, 'Seller workspace access only.');
 
-        $user->loadCount(['products' => fn($q) => $q->where('status', 'Active')]);
-        $user->loadSum(['products as total_sales' => fn($q) => $q->where('status', 'Active')], 'sold');
+        $productsCount = (int) Product::where('user_id', $user->id)->where('status', 'Active')->count();
+        $totalSales = (int) Product::where('user_id', $user->id)->where('status', 'Active')->sum('sold');
 
-        $avgRating  = \App\Models\Review::whereHas('product', fn($q) => $q->where('user_id', $user->id))
+        $avgRating = (float) (\App\Models\Review::whereHas('product', fn($q) => $q->where('user_id', $user->id))
             ->visibleToMarketplace()
-            ->avg('rating') ?? 0;
+            ->avg('rating') ?? 0);
 
         return Inertia::render('Seller/Settings/ShopSettings', [
             'user'  => $user,
             'stats' => [
-                'products' => (int) ($user->products_count ?? 0),
-                'sales'    => (int) ($user->total_sales ?? 0),
-                'rating'   => number_format((float) $avgRating, 1),
+                'products' => $productsCount,
+                'sales'    => $totalSales,
+                'rating'   => number_format($avgRating, 1),
             ],
         ]);
     }
