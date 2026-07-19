@@ -23,8 +23,8 @@ class GlobalSearchTest extends TestCase
     {
         $admin = User::factory()->superAdmin()->create();
         $artisan = User::factory()->artisanApproved()->create([
-            'name' => 'John Ceramic Maker',
-            'email' => 'john.maker@example.com'
+            'name' => 'Johnathan Ceramic Maker',
+            'email' => 'johnathan.maker@example.com'
         ]);
 
         $category = Category::create([
@@ -33,16 +33,16 @@ class GlobalSearchTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin)
-            ->getJson(route('api.global-search', ['query' => 'John']))
+            ->getJson(route('api.global-search', ['query' => 'Johnathan']))
             ->assertOk();
 
         $results = $response->json('results');
         $this->assertNotEmpty($results);
 
-        // Should find the user John
+        // Should find the user Johnathan
         $userResult = collect($results)->firstWhere('type', 'User');
         $this->assertNotNull($userResult);
-        $this->assertEquals('John Ceramic Maker', $userResult['title']);
+        $this->assertEquals('Johnathan Ceramic Maker', $userResult['title']);
 
         // Should NOT run sellerSearch logic
         $this->assertEmpty(collect($results)->where('type', 'Product'));
