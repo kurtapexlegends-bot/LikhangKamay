@@ -59,8 +59,6 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
         };
     };
 
-    if (displaySellers.length === 0) return null;
-
     return (
         <section className="order-4">
             <h2 className="text-lg font-serif font-black text-stone-900 mb-5 flex items-center gap-2">
