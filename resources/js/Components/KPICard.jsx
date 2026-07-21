@@ -81,10 +81,12 @@ const KPICard = ({
         };
     }, [formatter, value, title]);
 
+    const hasSubtext = growth !== undefined || subtitle || (trendData && trendData.length > 0);
+
     const Front = (
-        <div className="flex items-center justify-between h-full">
+        <div className={`flex justify-between h-full ${hasSubtext ? 'items-start' : 'items-center'}`}>
             <div className="min-w-0">
-                <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-stone-400 truncate">
+                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1 truncate">
                     {title}
                 </p>
                 <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
@@ -102,27 +104,31 @@ const KPICard = ({
                         {typeof value === 'number' ? displayFormatter(value) : value}
                     </span>
                 </h3>
-                <div className="flex items-center gap-3 mt-1.5">
-                    {growth !== undefined && (
-                        <div className={`flex items-center gap-1 text-[10px] font-bold ${growthColor}`}>
-                            <GrowthIcon size={12} />
-                            <span>{growthPrefix}{growth}%{growthSuffix}</span>
-                        </div>
-                    )}
-                    {growth === undefined && subtitle && (
-                        <span className="text-[10px] font-medium text-stone-400 truncate block">
-                            {subtitle}
-                        </span>
-                    )}
-                    {trendData.length > 0 && (
-                        <Sparkline data={trendData} positive={growth >= 0} />
-                    )}
-                </div>
+                {hasSubtext && (
+                    <div className="flex items-center gap-2 mt-1 min-w-0">
+                        {growth !== undefined && (
+                            <div className={`flex items-center gap-1 text-[10px] font-bold ${growthColor} whitespace-nowrap shrink-0`}>
+                                <GrowthIcon size={12} />
+                                <span>{growthPrefix}{growth}%{growthSuffix}</span>
+                            </div>
+                        )}
+                        {growth === undefined && subtitle && (
+                            <span className="text-[10px] font-medium text-stone-400 truncate block">
+                                {subtitle}
+                            </span>
+                        )}
+                        {trendData && trendData.length > 0 && (
+                            <div className="shrink-0">
+                                <Sparkline data={trendData} positive={growth >= 0} />
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
             <div
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-all shadow-sm ${bg} ${color}`}
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all shadow-2xs ${bg} ${color}`}
             >
-                <Icon size={22} />
+                <Icon size={20} />
             </div>
         </div>
     );
