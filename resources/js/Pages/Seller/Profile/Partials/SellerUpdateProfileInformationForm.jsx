@@ -7,6 +7,8 @@ import { Transition } from '@headlessui/react';
 import { useForm, usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
 
+import { compressImage } from '@/utils/imageCompressor';
+
 export default function SellerUpdateProfileInformation({
     mustVerifyEmail,
     status,
@@ -82,12 +84,13 @@ export default function SellerUpdateProfileInformation({
                             </svg>
                         </label>
                         <input id="avatar" type="file" className="hidden" accept="image/*"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                                 const file = e.target.files[0];
                                 if (file) {
-                                    setData('avatar', file);
+                                    const compressed = await compressImage(file, 800, 800, 0.85);
+                                    setData('avatar', compressed);
                                     revokePreview(data.preview_url);
-                                    setData('preview_url', URL.createObjectURL(file));
+                                    setData('preview_url', URL.createObjectURL(compressed));
                                 }
                             }}
                         />

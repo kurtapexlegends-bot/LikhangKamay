@@ -10,6 +10,7 @@ import {
 import { hasRating, formatRating } from '@/utils/rating';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
+import { compressImage } from '@/utils/imageCompressor';
 
 export default function ShopSettings({ auth, user, stats }) {
     const bannerInputRef = useRef(null);
@@ -45,23 +46,25 @@ export default function ShopSettings({ auth, user, stats }) {
         revokePreview(bannerPreview);
     }, [avatarPreview, bannerPreview]);
 
-    const handleAvatarChange = (e) => {
+    const handleAvatarChange = async (e) => {
         if (!canEditShopSettings) return;
         const file = e.target.files[0];
         if (file) {
-            setData('avatar', file);
+            const compressed = await compressImage(file, 800, 800, 0.85);
+            setData('avatar', compressed);
             revokePreview(avatarPreview);
-            setAvatarPreview(URL.createObjectURL(file));
+            setAvatarPreview(URL.createObjectURL(compressed));
         }
     };
 
-    const handleBannerChange = (e) => {
+    const handleBannerChange = async (e) => {
         if (!canEditShopSettings) return;
         const file = e.target.files[0];
         if (file) {
-            setData('banner_image', file);
+            const compressed = await compressImage(file, 1920, 1080, 0.85);
+            setData('banner_image', compressed);
             revokePreview(bannerPreview);
-            setBannerPreview(URL.createObjectURL(file));
+            setBannerPreview(URL.createObjectURL(compressed));
         }
     };
 
