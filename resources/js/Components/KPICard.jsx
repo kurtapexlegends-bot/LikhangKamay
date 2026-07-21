@@ -81,13 +81,25 @@ const KPICard = ({
         };
     }, [formatter, value, title]);
 
+    const hasSubtext = growth !== undefined || subtitle || (trendData && trendData.length > 0);
+
     const Front = (
-        <div className="flex items-center justify-between h-full">
-            <div className="min-w-0">
-                <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-stone-400 truncate">
+        <div className="flex flex-col justify-between h-full">
+            {/* Top Row: Title (Left) & Icon Badge (Top Right) */}
+            <div className="flex items-start justify-between gap-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 truncate">
                     {title}
                 </p>
-                <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
+                <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all shadow-2xs ${bg} ${color}`}
+                >
+                    <Icon size={20} />
+                </div>
+            </div>
+
+            {/* Middle Row: Large Metric Value */}
+            <div className={hasSubtext ? "-mt-1" : "mt-0.5"}>
+                <h3 className="text-2xl font-bold text-stone-900 tracking-tight leading-tight">
                     <span className="print:hidden">
                         {animate && (typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.]/g, ''))))) ? (
                             <AnimatedCounter 
@@ -102,9 +114,13 @@ const KPICard = ({
                         {typeof value === 'number' ? displayFormatter(value) : value}
                     </span>
                 </h3>
-                <div className="flex items-center gap-3 mt-1.5">
+            </div>
+
+            {/* Bottom Row: Subtext / Growth indicator / Sparkline (Full width underneath) */}
+            {hasSubtext && (
+                <div className="flex items-center gap-2 mt-1 min-w-0">
                     {growth !== undefined && (
-                        <div className={`flex items-center gap-1 text-[10px] font-bold ${growthColor}`}>
+                        <div className={`flex items-center gap-1 text-[10px] font-bold ${growthColor} whitespace-nowrap shrink-0`}>
                             <GrowthIcon size={12} />
                             <span>{growthPrefix}{growth}%{growthSuffix}</span>
                         </div>
@@ -114,16 +130,11 @@ const KPICard = ({
                             {subtitle}
                         </span>
                     )}
-                    {trendData.length > 0 && (
+                    {trendData && trendData.length > 0 && (
                         <Sparkline data={trendData} positive={growth >= 0} />
                     )}
                 </div>
-            </div>
-            <div
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-all shadow-sm ${bg} ${color}`}
-            >
-                <Icon size={22} />
-            </div>
+            )}
         </div>
     );
 
