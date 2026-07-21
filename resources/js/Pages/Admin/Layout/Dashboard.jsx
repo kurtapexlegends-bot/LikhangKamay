@@ -16,7 +16,6 @@ import {
 import AdminLayout from "@/Layouts/AdminLayout";
 import UserAvatar from "@/Components/UserAvatar";
 import ActivityTicker from "@/Components/Admin/Layout/ActivityTicker";
-import KPICard from "@/Components/KPICard";
 
 const statusToneClasses = {
     danger: "bg-red-100 text-red-800 border-red-200",
@@ -67,19 +66,42 @@ const UserRowSkeleton = () => (
 const StatCard = ({ title, metric, icon: Icon, bg, text, subtitle }) => {
     const value = typeof metric === "object" ? metric.value : metric;
     const growth = typeof metric === "object" ? metric.growth : undefined;
+    const trend = typeof metric === "object" ? metric.trend : undefined;
+
+    const derivedTrend = trend || (growth > 0 ? "up" : growth < 0 ? "down" : "neutral");
 
     return (
-        <KPICard
-            title={title}
-            value={value}
-            growth={growth}
-            growthSuffix=" vs last 30 days"
-            subtitle={subtitle}
-            icon={Icon}
-            bg={bg}
-            color={text}
-            animate={false}
-        />
+        <div className="flex items-start justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
+            <div>
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                    {title}
+                </p>
+                <h3 className="text-2xl font-bold tracking-tight text-gray-900">
+                    {value !== undefined ? value.toLocaleString() : "0"}
+                </h3>
+
+                {growth !== undefined && (
+                    <div className={`mt-1 flex items-center gap-1 text-[10px] font-bold ${
+                        derivedTrend === "up" ? "text-green-600" :
+                        derivedTrend === "down" ? "text-red-600" : "text-gray-400"
+                    }`}>
+                        {derivedTrend === "up" && <TrendingUp size={12} />}
+                        {derivedTrend === "down" && <TrendingDown size={12} />}
+                        {derivedTrend === "neutral" && <Minus size={12} />}
+                        <span>{derivedTrend === "up" ? "+" : ""}{growth}% vs last 30 days</span>
+                    </div>
+                )}
+                {growth === undefined && subtitle && (
+                    <p className="mt-1 text-[10px] font-medium text-gray-400">{subtitle}</p>
+                )}
+                {growth === undefined && !subtitle && (
+                    <p className="mt-1 text-[10px] font-medium text-gray-400">Real-time status</p>
+                )}
+            </div>
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg} ${text}`}>
+                <Icon size={20} />
+            </div>
+        </div>
     );
 };
 
