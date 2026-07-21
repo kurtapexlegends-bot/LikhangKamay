@@ -160,7 +160,7 @@ export default function ProductFormRecipePanel({
                             </div>
                             <div className="pt-1">
                                 <Link
-                                    href={route('seller.subscription.index')}
+                                    href={route('seller.subscription')}
                                     className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-stone-900 text-white hover:bg-stone-800 transition-all shadow-xs active:scale-[0.98]"
                                 >
                                     <Sparkles size={14} className="text-amber-400" />
