@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useForm } from "@inertiajs/react";
 import useConstraintValidation from "@/hooks/useConstraintValidation";
 import { STANDARD_PRODUCT_CATEGORIES } from "@/utils/catalog";
+import { compressImage } from "@/utils/imageCompressor";
 import axios from "axios";
 
 export default function useProductFormState({
@@ -195,21 +196,25 @@ export default function useProductFormState({
         setProductModalOpen(false);
     };
 
-    const handleFileChange = (e, field) => {
+    const handleFileChange = async (e, field) => {
         const file = e.target.files[0];
         if (field === "gallery") {
             const files = Array.from(e.target.files);
-            setData("gallery", [...(data.gallery || []), ...files]);
+            const compressedFiles = await Promise.all(
+                files.map((f) => compressImage(f))
+            );
+            setData("gallery", [...(data.gallery || []), ...compressedFiles]);
             setPreviews((prev) => ({
                 ...prev,
-                gallery: [...(prev.gallery || []), ...files.map((f) => URL.createObjectURL(f))],
+                gallery: [...(prev.gallery || []), ...compressedFiles.map((f) => URL.createObjectURL(f))],
             }));
         } else if (field === "cover_photo") {
-            setData("cover_photo", file);
+            const compressedCover = await compressImage(file);
+            setData("cover_photo", compressedCover);
             if (previews.cover) revokeBlobUrl(previews.cover);
             setPreviews((prev) => ({
                 ...prev,
-                cover: file ? URL.createObjectURL(file) : null,
+                cover: compressedCover ? URL.createObjectURL(compressedCover) : null,
             }));
         } else if (field === "model_3d") {
             setData("model_3d", file);
@@ -286,31 +291,58 @@ export default function useProductFormState({
             return;
         }
 
-        const extension = data.model_3d?.name?.split('.').pop()?.toLowerCase();
-        if (extension === 'glb') {
-            try {
-                addToast("Uploading 3D model directly to storage...", "info");
-                
-                const presignResponse = await axios.post(route('3d.presign'), {
-                    filename: data.model_3d.name,
-                    contentType: data.model_3d.type || 'application/octet-stream'
-                });
-                const { url, key } = presignResponse.data;
-                
-                await axios.put(url, data.model_3d, {
-                    headers: {
-                        'Content-Type': data.model_3d.type || 'application/octet-stream'
-                    }
-                });
-                
-                productForm.data.model_3d = key;
-                setData("model_3d", key);
-            } catch (err) {
-                console.error("Direct 3D upload failed during product listing:", err);
-                addToast("Failed to upload 3D model. Please try again.", "error");
-                return;
+        // 1. Direct-to-Storage upload for 3D model if it's a File
+        let model3dKeyOrFile = data.model_3d;
+        if (data.model_3d instanceof File) {
+            const extension = data.model_3d.name?.split('.').pop()?.toLowerCase();
+            if (['glb', 'gltf'].includes(extension)) {
+                try {
+                    addToast("Uploading 3D model directly to storage...", "info");
+                    
+                    const presignResponse = await axios.post(route('3d.presign'), {
+                        filename: data.model_3d.name,
+                        contentType: data.model_3d.type || 'application/octet-stream'
+                    });
+                    const { url, key } = presignResponse.data;
+                    
+                    await axios.put(url, data.model_3d, {
+                        headers: {
+                            'Content-Type': data.model_3d.type || 'application/octet-stream'
+                        }
+                    });
+                    
+                    model3dKeyOrFile = key;
+                    setData("model_3d", key);
+                } catch (err) {
+                    console.error("Direct 3D upload failed during product listing:", err);
+                    addToast("Failed to upload 3D model. Please try again.", "error");
+                    return;
+                }
             }
         }
+
+        // 2. Compress images defensively before form submission
+        let compressedCover = data.cover_photo;
+        if (data.cover_photo instanceof File) {
+            compressedCover = await compressImage(data.cover_photo);
+        }
+
+        let compressedGallery = data.gallery;
+        if (Array.isArray(data.gallery) && data.gallery.length > 0) {
+            compressedGallery = await Promise.all(
+                data.gallery.map((f) => (f instanceof File ? compressImage(f) : f))
+            );
+        }
+
+        // 3. Transform Inertia payload to lightened payload for Vercel 4.5MB limit
+        productForm.transform((currentData) => ({
+            ...currentData,
+            cover_photo: compressedCover,
+            gallery: compressedGallery,
+            model_3d: model3dKeyOrFile,
+            model_3d_assets: [],
+            model_3d_asset_paths: [],
+        }));
 
         const options = {
             onSuccess: () => {
