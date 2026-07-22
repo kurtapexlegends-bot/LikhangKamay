@@ -53,6 +53,13 @@ class SubscriptionController extends Controller
             'limit' => $limit,
             'linkedStaffCount' => $linkedStaffCount,
             'recentTransactions' => $recentTransactions,
+            'planSettings' => [
+                'free_limit' => (int) \App\Facades\Settings::get('tier_free_limit', 3),
+                'premium_price' => (float) \App\Facades\Settings::get('tier_premium_price', 199),
+                'premium_limit' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
+                'super_premium_price' => (float) \App\Facades\Settings::get('tier_super_premium_price', 399),
+                'super_premium_limit' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
+            ],
             'pendingUpgrade' => $pendingUpgrade ? [
                 'plan' => $pendingUpgrade->to_plan,
                 'planLabel' => $this->formatPlanName($pendingUpgrade->to_plan),

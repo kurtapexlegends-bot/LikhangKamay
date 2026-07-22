@@ -1,5 +1,5 @@
 import React from 'react';
-import { Crown, ShieldCheck, Clock3, AlertCircle, CheckCircle2, ArrowRight, ChevronRight } from 'lucide-react';
+import { Crown, ShieldCheck, Clock3, AlertCircle, CheckCircle2, ArrowRight, ChevronRight, HelpCircle } from 'lucide-react';
 
 export default function SubscriptionPlans({
     plans,
@@ -13,26 +13,39 @@ export default function SubscriptionPlans({
     handleScroll,
     activePageIndex,
     pendingUpgradeDate,
+    onOpenComparison,
 }) {
     const currentPlanMeta = plans.find((plan) => plan.id === currentPlan) ?? plans[0];
 
     return (
         <section className="mx-auto max-w-[1020px] overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white shadow-[0_24px_60px_-42px_rgba(15,23,42,0.32)]">
             <div className="border-b border-stone-100 px-5 py-4 sm:px-6">
-                <div className="flex items-start gap-3.5">
-                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-[1.05rem] bg-gradient-to-br from-[#FFA426] to-[#FF7A00] text-white shadow-sm">
-                        <Crown className="h-[18px] w-[18px]" />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                        <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1.05rem] bg-gradient-to-br from-[#FFA426] to-[#FF7A00] text-white shadow-sm">
+                            <Crown className="h-[18px] w-[18px]" />
+                        </div>
+                        <div>
+                            <h2 className="text-[1.6rem] font-black tracking-tight text-stone-900 sm:text-[1.7rem]">Choose Your Plan</h2>
+                            <p className="mt-1 text-[13px] font-medium text-stone-500">Unlock more features for your seller workspace.</p>
+                            {pendingUpgrade && (
+                                <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-700">
+                                    Payment pending
+                                    {pendingUpgradeDate ? ` • ${pendingUpgradeDate}` : ''}
+                                </p>
+                            )}
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-[1.6rem] font-black tracking-tight text-stone-900 sm:text-[1.7rem]">Choose Your Plan</h2>
-                        <p className="mt-1 text-[13px] font-medium text-stone-500">Unlock more features for your seller workspace.</p>
-                        {pendingUpgrade && (
-                            <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-700">
-                                Payment pending
-                                {pendingUpgradeDate ? ` • ${pendingUpgradeDate}` : ''}
-                            </p>
-                        )}
-                    </div>
+                    {onOpenComparison && (
+                        <button
+                            type="button"
+                            onClick={onOpenComparison}
+                            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50/80 px-3.5 py-2 text-xs font-bold text-stone-700 transition hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900 shrink-0 min-h-[38px] w-fit"
+                        >
+                            <HelpCircle className="h-4 w-4 text-stone-500" />
+                            <span>Compare All Features</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
