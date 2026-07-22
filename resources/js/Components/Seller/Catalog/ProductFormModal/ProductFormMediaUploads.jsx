@@ -2,7 +2,7 @@ import React from "react";
 import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
 import External3DToolLink from "@/Components/ThreeD/External3DToolLink";
-import { CheckCircle, ListTodo, Check, Plus, Cuboid, X } from "lucide-react";
+import { CheckCircle, ListTodo, Check, Plus, Cuboid, X, FolderOpen, Folder } from "lucide-react";
 
 export default function ProductFormMediaUploads({
     data,
@@ -268,33 +268,44 @@ export default function ProductFormMediaUploads({
                         )}
                         <InputError message={errors.model_3d} className="mt-2" />
 
+                        {/* External 3D AI Tool recommendation banner */}
+                        <div className="mt-3">
+                            <External3DToolLink />
+                        </div>
+
                         {/* Optional 3D Assets Directory Selection */}
                         {Boolean(data.model_3d) && (
-                            <div className="mt-4 animate-fadeIn border-t border-stone-150 pt-4">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div>
-                                        <InputLabel value="Model Textures / Assets Folder (Optional)" />
-                                        <p className="text-[10px] text-stone-500">
-                                            Required if your model references external textures (.bin, images).
-                                        </p>
-                                    </div>
-                                    <External3DToolLink />
+                            <div className="mt-4 animate-fadeIn border-t border-stone-200 pt-4 space-y-2">
+                                <div>
+                                    <h4 className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                                        <FolderOpen size={14} className="text-clay-600 shrink-0" />
+                                        Model Textures / Assets Folder <span className="text-[10px] text-stone-400 font-medium">(Optional)</span>
+                                    </h4>
+                                    <p className="text-[11px] text-stone-500 mt-0.5 leading-normal">
+                                        Required if your <code className="font-mono text-[10px]">.gltf</code> model references external textures or binary files (<code className="font-mono text-[10px]">.bin</code>, images).
+                                    </p>
                                 </div>
-                                <label className="flex items-center gap-3 p-3 border border-stone-250 bg-stone-50/50 rounded-xl cursor-pointer hover:border-stone-400 hover:bg-stone-50 transition group min-h-[44px]">
-                                    <div className="flex-1">
-                                        <p className="text-xs font-bold text-stone-700">
-                                            {data.model_3d_assets?.length > 0
-                                                ? `${data.model_3d_assets.length} external assets loaded`
-                                                : "Select asset folder (with textures/bins)"}
-                                        </p>
-                                        {data.model_3d_asset_paths?.length > 0 && (
-                                            <p className="text-[10px] text-stone-500 mt-1 max-h-16 overflow-y-auto font-mono">
-                                                {data.model_3d_asset_paths.slice(0, 3).join(", ")}
-                                                {data.model_3d_asset_paths.length > 3 ? "..." : ""}
+
+                                <label className="flex items-center justify-between gap-3 p-3.5 border border-stone-200 bg-stone-50/70 hover:bg-stone-100/80 rounded-xl cursor-pointer transition group min-h-[44px]">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="p-2 bg-white rounded-lg text-clay-600 shadow-2xs border border-stone-150 shrink-0">
+                                            <Folder size={16} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-xs font-bold text-stone-800 truncate">
+                                                {data.model_3d_assets?.length > 0
+                                                    ? `${data.model_3d_assets.length} external asset files loaded`
+                                                    : "Select asset folder (with textures/bins)"}
                                             </p>
-                                        )}
+                                            {data.model_3d_asset_paths?.length > 0 && (
+                                                <p className="text-[10px] text-stone-500 mt-0.5 max-h-12 overflow-y-auto font-mono">
+                                                    {data.model_3d_asset_paths.slice(0, 3).join(", ")}
+                                                    {data.model_3d_asset_paths.length > 3 ? "..." : ""}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
-                                    <span className="text-xs font-bold text-clay-600 hover:text-clay-700">
+                                    <span className="px-3.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-clay-700 group-hover:bg-clay-600 group-hover:text-white group-hover:border-clay-600 transition shrink-0 shadow-2xs">
                                         Browse
                                     </span>
                                     <input

@@ -1,41 +1,45 @@
 import React from 'react';
-import { ArrowUpRight, Cuboid } from 'lucide-react';
+import { ArrowUpRight, Sparkles } from 'lucide-react';
 
 const MESHY_IMAGE_TO_3D_URL = 'https://www.meshy.ai/features/image-to-3d';
 const TRELLIS_2_URL = 'https://huggingface.co/spaces/microsoft/TRELLIS.2';
 
 export default function External3DToolLink({ className = '' }) {
     return (
-        <div className={`mt-3 flex items-start gap-2 rounded-xl border border-stone-200 bg-stone-50/80 px-3 py-2.5 ${className}`.trim()}>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-clay-600 shadow-sm">
-                <Cuboid size={16} />
+        <div className={`rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50/60 to-orange-50/40 p-3.5 ${className}`.trim()}>
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+                <div className="flex items-center gap-1.5">
+                    <Sparkles size={14} className="text-amber-600 shrink-0" />
+                    <span className="text-xs font-bold text-amber-900">Need a 3D model?</span>
+                </div>
+                <span className="text-[10px] font-semibold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">
+                    Free AI Generators
+                </span>
             </div>
-            <div className="min-w-0">
-                <p className="text-[11px] font-semibold leading-5 text-stone-700">
-                    Need to create a 3D file first?{' '}
-                    <a
-                        href={MESHY_IMAGE_TO_3D_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 font-bold text-clay-600 transition hover:text-clay-700 hover:underline"
-                    >
-                        Open Meshy (free tier)
-                        <ArrowUpRight size={12} />
-                    </a>
-                    <span className="mx-1 text-stone-400">|</span>
-                    <a
-                        href={TRELLIS_2_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 font-bold text-clay-600 transition hover:text-clay-700 hover:underline"
-                    >
-                        Trellis 2
-                        <ArrowUpRight size={12} />
-                    </a>
-                </p>
-                <p className="mt-0.5 text-[10px] leading-4 text-stone-500">
-                    Generate in Meshy or Trellis 2, export as .glb or .gltf, then upload it back here.
-                </p>
+
+            <p className="text-[11px] text-stone-600 mb-2.5 leading-relaxed">
+                Generate a 3D asset from photos, export as <code className="text-amber-900 font-mono text-[10px]">.glb</code>, then upload it here.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2">
+                <a
+                    href={MESHY_IMAGE_TO_3D_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-xs font-bold text-amber-800 shadow-2xs hover:bg-amber-100/50 hover:text-amber-900 transition min-h-[32px]"
+                >
+                    <span>Meshy AI</span>
+                    <ArrowUpRight size={12} className="text-amber-600" />
+                </a>
+                <a
+                    href={TRELLIS_2_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-xs font-bold text-amber-800 shadow-2xs hover:bg-amber-100/50 hover:text-amber-900 transition min-h-[32px]"
+                >
+                    <span>Trellis 2</span>
+                    <ArrowUpRight size={12} className="text-amber-600" />
+                </a>
             </div>
         </div>
     );
