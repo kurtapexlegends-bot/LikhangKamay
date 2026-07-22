@@ -1,6 +1,7 @@
 import React from "react";
 import TextInput from "@/Components/TextInput";
 import InputLabel from "@/Components/InputLabel";
+import InputError from "@/Components/InputError";
 import Checkbox from "@/Components/Checkbox";
 
 const modalFieldClass =
@@ -89,11 +90,13 @@ export default function ProductFormClaySpecs({
                             type="number"
                             min="0"
                             step="any"
-                            className="w-full mt-1 min-h-[44px] sm:min-h-0"
+                            className={`${modalFieldClass} min-h-[44px] sm:min-h-0`}
                             value={data.height}
                             onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                             onChange={(e) => setData("height", e.target.value.replace(/-/g, ""))}
+                            placeholder="0.00"
                         />
+                        <InputError message={errors?.height} className="mt-2" />
                     </div>
                     <div>
                         <InputLabel value="Width (cm)" />
@@ -101,11 +104,13 @@ export default function ProductFormClaySpecs({
                             type="number"
                             min="0"
                             step="any"
-                            className="w-full mt-1 min-h-[44px] sm:min-h-0"
+                            className={`${modalFieldClass} min-h-[44px] sm:min-h-0`}
                             value={data.width}
                             onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                             onChange={(e) => setData("width", e.target.value.replace(/-/g, ""))}
+                            placeholder="0.00"
                         />
+                        <InputError message={errors?.width} className="mt-2" />
                     </div>
                     <div>
                         <InputLabel value="Weight (g)" />
@@ -113,11 +118,13 @@ export default function ProductFormClaySpecs({
                             type="number"
                             min="0"
                             step="any"
-                            className="w-full mt-1 min-h-[44px] sm:min-h-0"
+                            className={`${modalFieldClass} min-h-[44px] sm:min-h-0`}
                             value={data.weight}
                             onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                             onChange={(e) => setData("weight", e.target.value.replace(/-/g, ""))}
+                            placeholder="0"
                         />
+                        <InputError message={errors?.weight} className="mt-2" />
                     </div>
                 </div>
             </div>

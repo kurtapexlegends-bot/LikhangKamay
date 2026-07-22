@@ -139,17 +139,18 @@ export default function ProductFormBasicDetails({
                         <div>
                             <InputLabel value="Price (₱) *" />
                             <div className="relative mt-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold z-10 select-none pointer-events-none">
                                     ₱
                                 </span>
                                 <TextInput
                                     type="number"
                                     min="0"
                                     step="any"
-                                    className="w-full pl-7 min-h-[44px] sm:min-h-0"
+                                    className="w-full rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-none focus:border-clay-500 focus:ring-clay-500 pl-7 min-h-[44px] sm:min-h-0"
                                     value={data.price}
                                     onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                                     onChange={(e) => setData("price", e.target.value.replace(/-/g, ""))}
+                                    placeholder="0.00"
                                 />
                             </div>
                             <InputError message={errors.price} className="mt-2" />
@@ -157,20 +158,21 @@ export default function ProductFormBasicDetails({
                         <div>
                             <InputLabel value="Cost Price (₱) *" />
                             <div className="relative mt-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold z-10 select-none pointer-events-none">
                                     ₱
                                 </span>
                                 <TextInput
                                     type="number"
                                     min="0"
                                     step="any"
-                                    className={`${modalFieldClass} pl-7 min-h-[44px] sm:min-h-0`}
+                                    className="w-full rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-none focus:border-clay-500 focus:ring-clay-500 pl-7 min-h-[44px] sm:min-h-0"
                                     value={data.cost_price}
                                     onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                                     onChange={(e) => setData("cost_price", e.target.value.replace(/-/g, ""))}
                                     placeholder="0.00"
                                 />
                             </div>
+                            <InputError message={errors.cost_price} className="mt-2" />
                         </div>
                         <div>
                             <InputLabel value="Stock *" />
@@ -178,10 +180,11 @@ export default function ProductFormBasicDetails({
                                 type="number"
                                 min="0"
                                 step="1"
-                                className="w-full mt-1 min-h-[44px] sm:min-h-0"
+                                className={`${modalFieldClass} min-h-[44px] sm:min-h-0`}
                                 value={data.stock}
                                 onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
                                 onChange={(e) => setData("stock", e.target.value.replace(/[-.]/g, ""))}
+                                placeholder="0"
                             />
                             <InputError message={errors.stock} className="mt-2" />
                         </div>
