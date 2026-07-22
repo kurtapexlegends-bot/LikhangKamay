@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Check, Package, Clock, Award } from 'lucide-react';
+import { Star, Check, Package, Clock, Award, AlertTriangle } from 'lucide-react';
 
 export default function ProductDetailsCard({ product, productRating }) {
     return (
@@ -64,14 +64,18 @@ export default function ProductDetailsCard({ product, productRating }) {
                             <span className="text-stone-700 font-bold truncate">{product.firing_method}</span>
                         </div>
                     )}
-                    {product.food_safe && (
-                        <div className="flex flex-col sm:flex-row sm:items-center">
-                            <span className="text-stone-400 font-bold uppercase tracking-wider mb-0.5 sm:w-24 sm:mb-0 text-[9px]">Food Safe</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center">
+                        <span className="text-stone-400 font-bold uppercase tracking-wider mb-0.5 sm:w-24 sm:mb-0 text-[9px]">Food Safe</span>
+                        {product.food_safe ? (
                             <span className="text-emerald-600 font-bold flex items-center gap-1 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] w-fit">
-                                <Check size={10} /> Yes
+                                <Check size={10} /> Yes (Safe for eating)
                             </span>
-                        </div>
-                    )}
+                        ) : (
+                            <span className="text-amber-800 font-bold flex items-center gap-1 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] w-fit">
+                                <AlertTriangle size={10} className="text-amber-600" /> Decorative Only (Not Food Safe)
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 

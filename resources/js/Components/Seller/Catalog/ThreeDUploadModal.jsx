@@ -3,6 +3,7 @@ import { useForm, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
 import External3DToolLink from '@/Components/ThreeD/External3DToolLink';
+import { compressImage } from '@/utils/imageCompressor';
 import { ThreeDModelUnavailable } from '@/Components/ThreeD/ThreeDModelBoundary';
 import ThreeDCanvasViewer from '@/Components/Seller/Catalog/ThreeDCanvasViewer';
 import { UploadCloud, Rotate3d, X, Check } from 'lucide-react';
@@ -175,19 +176,26 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
         setFileError('');
     };
 
-    const handleAssetFolderSelect = (files) => {
+    const handleAssetFolderSelect = async (files) => {
         if (!canEditThreeD) return;
-        const normalizedFiles = Array.from(files || [])
-            .filter((file) => file.name !== data.model?.name)
-            .map((file) => ({
-                file,
-                relativePath: (
-                    file.webkitRelativePath
-                        ? file.webkitRelativePath.split(/[\\/]/).filter(Boolean).join('/')
-                        : file.name
-                ) || file.name,
-            }))
-            .filter(({ relativePath }) => Boolean(relativePath));
+        const rawFiles = Array.from(files || []).filter((file) => file.name !== data.model?.name);
+        
+        const processedFiles = await Promise.all(
+            rawFiles.map(async (file) => {
+                const isImg = file.type.startsWith('image/');
+                const finalFile = isImg ? await compressImage(file) : file;
+                return {
+                    file: finalFile,
+                    relativePath: (
+                        file.webkitRelativePath
+                            ? file.webkitRelativePath.split(/[\\/]/).filter(Boolean).join('/')
+                            : file.name
+                    ) || file.name,
+                };
+            })
+        );
+
+        const normalizedFiles = processedFiles.filter(({ relativePath }) => Boolean(relativePath));
 
         setData(prevData => ({
             ...prevData,

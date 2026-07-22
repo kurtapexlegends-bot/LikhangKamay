@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Send, Paperclip, Image as ImageIcon, Smile, FileIcon, X } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
+import { compressImage } from '@/utils/imageCompressor';
 
 const BUYER_QUICK_REPLIES = [
     'Hello! Is this product available?',
@@ -95,9 +96,12 @@ export default function BuyerMessageInput({ currentChatUser, form, onSendStart, 
         });
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
+    const handleFileChange = async (e) => {
+        let file = e.target.files[0];
         if (file) {
+            if (file.type.startsWith('image/')) {
+                file = await compressImage(file);
+            }
             revokeAttachmentPreview();
             setData('attachment', file);
             setAttachment(file);
