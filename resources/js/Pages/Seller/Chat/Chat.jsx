@@ -8,7 +8,6 @@ import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import useEchoConnection from '@/hooks/useEchoConnection';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
 import { formatChatDateLabel, formatChatRelative } from '@/lib/chatTime';
-import { compressImage } from '@/utils/imageCompressor';
 
 // Subcomponents
 import ChatSidebar from '@/Components/Seller/Chat/ChatSidebar';
@@ -223,16 +222,13 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         );
     };
 
-    const handleFileChange = async (e) => {
+    const handleFileChange = (e) => {
         if (isMessagesReadOnly) {
             e.target.value = '';
             return;
         }
-        let file = e.target.files[0];
+        const file = e.target.files[0];
         if (file) {
-            if (file.type.startsWith('image/')) {
-                file = await compressImage(file);
-            }
             revokeAttachmentPreview();
             setData('attachment', file);
             setAttachment(file);

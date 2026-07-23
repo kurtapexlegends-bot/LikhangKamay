@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Send, Paperclip, FileIcon, ImageIcon, AlertCircle, X } from 'lucide-react';
 import MentionDropdown from '@/Components/Seller/Chat/MentionDropdown';
-import { compressImage } from '@/utils/imageCompressor';
 
 export default function ThreadReplyInput({
     parent,
@@ -94,13 +93,9 @@ export default function ThreadReplyInput({
         }, 10);
     };
 
-    const handleFileChange = async (event) => {
-        let file = event.target.files?.[0];
+    const handleFileChange = (event) => {
+        const file = event.target.files?.[0];
         if (!file) return;
-
-        if (file.type.startsWith('image/')) {
-            file = await compressImage(file);
-        }
 
         if (attachmentPreview?.url) {
             URL.revokeObjectURL(attachmentPreview.url);

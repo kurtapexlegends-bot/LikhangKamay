@@ -211,7 +211,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                                     return (
                                                         <div 
                                                             key={p.id}
-                                                            onClick={() => setData('product_id', isSelected ? '' : String(p.id))}
+                                                            onClick={() => setData('product_id', String(p.id))}
                                                             className={`flex items-center gap-3 p-2.5 rounded-xl border bg-white cursor-pointer transition-all duration-200 hover:border-clay-300 hover:shadow-sm select-none ${
                                                                 isSelected 
                                                                     ? 'border-clay-500 ring-1 ring-clay-500/20 bg-clay-50/5' 

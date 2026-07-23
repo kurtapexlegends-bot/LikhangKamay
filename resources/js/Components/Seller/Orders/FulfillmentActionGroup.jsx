@@ -92,7 +92,7 @@ export default function FulfillmentActionGroup({
             )}
 
             {order.status === "Accepted" && renderStickyActions(
-                <div className="space-y-2">
+                <div className="space-y-3">
                     {bomWarnings.length > 0 && (
                         <div className="rounded-xl border border-rose-100 bg-rose-50 p-3">
                             <div className="flex gap-2 text-rose-700 font-bold text-[11px] mb-1.5">
@@ -113,7 +113,7 @@ export default function FulfillmentActionGroup({
                     <button
                         disabled={!canEditOrders || bomWarnings.length > 0}
                         onClick={() => initiateStatusUpdate(order.id, "Processing")}
-                        className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white shadow-md transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] ${
+                        className={`flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] ${
                             bomWarnings.length > 0 ? "bg-stone-400 shadow-stone-200" : "bg-indigo-600 shadow-indigo-200 hover:bg-indigo-700"
                         }`}
                         type="button"
@@ -121,10 +121,12 @@ export default function FulfillmentActionGroup({
                         <Play size={18} /> Start Production
                     </button>
 
+                    <div className="h-px bg-stone-100 my-1" />
+
                     <button
                         disabled={!canEditOrders}
                         onClick={() => initiateStatusUpdate(order.id, "Rejected")}
-                        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50/50 px-4 py-2.5 text-xs font-bold text-red-600 transition-all hover:bg-red-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[40px]"
+                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-bold text-red-600 transition-all hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
                         type="button"
                     >
                         <XCircle size={14} /> Reject Order
