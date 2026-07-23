@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Check, Package, Clock, Award } from 'lucide-react';
+import { Star, Check, Package, Clock, Award, X } from 'lucide-react';
 
 export default function ProductDetailsCard({ product, productRating }) {
     return (
@@ -64,14 +64,18 @@ export default function ProductDetailsCard({ product, productRating }) {
                             <span className="text-stone-700 font-bold truncate">{product.firing_method}</span>
                         </div>
                     )}
-                    {product.food_safe && (
-                        <div className="flex flex-col sm:flex-row sm:items-center">
-                            <span className="text-stone-400 font-bold uppercase tracking-wider mb-0.5 sm:w-24 sm:mb-0 text-[9px]">Food Safe</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center">
+                        <span className="text-stone-400 font-bold uppercase tracking-wider mb-0.5 sm:w-24 sm:mb-0 text-[9px]">Food Safe</span>
+                        {product.food_safe ? (
                             <span className="text-emerald-600 font-bold flex items-center gap-1 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] w-fit">
                                 <Check size={10} /> Yes
                             </span>
-                        </div>
-                    )}
+                        ) : (
+                            <span className="text-rose-600 font-bold flex items-center gap-1 bg-rose-50 border border-rose-100/50 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] w-fit">
+                                <X size={10} /> No (Decorative only)
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 

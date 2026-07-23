@@ -110,27 +110,27 @@ export default function FulfillmentActionGroup({
                         </div>
                     )}
 
-                    <button
-                        disabled={!canEditOrders || bomWarnings.length > 0}
-                        onClick={() => initiateStatusUpdate(order.id, "Processing")}
-                        className={`flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] ${
-                            bomWarnings.length > 0 ? "bg-stone-400 shadow-stone-200" : "bg-indigo-600 shadow-indigo-200 hover:bg-indigo-700"
-                        }`}
-                        type="button"
-                    >
-                        <Play size={18} /> Start Production
-                    </button>
+                    <div className="flex flex-col gap-2">
+                        <button
+                            disabled={!canEditOrders || bomWarnings.length > 0}
+                            onClick={() => initiateStatusUpdate(order.id, "Processing")}
+                            className={`flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] ${
+                                bomWarnings.length > 0 ? "bg-stone-400 shadow-stone-200" : "bg-indigo-600 shadow-indigo-200 hover:bg-indigo-700"
+                            }`}
+                            type="button"
+                        >
+                            <Play size={18} /> Start Production
+                        </button>
 
-                    <div className="h-px bg-stone-100 my-1" />
-
-                    <button
-                        disabled={!canEditOrders}
-                        onClick={() => initiateStatusUpdate(order.id, "Rejected")}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-bold text-red-600 transition-all hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
-                        type="button"
-                    >
-                        <XCircle size={14} /> Reject Order
-                    </button>
+                        <button
+                            disabled={!canEditOrders}
+                            onClick={() => initiateStatusUpdate(order.id, "Rejected")}
+                            className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50/50 px-4 py-2 text-xs font-bold text-red-600 transition-all hover:bg-red-100/50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[40px]"
+                            type="button"
+                        >
+                            <XCircle size={14} /> Reject Order
+                        </button>
+                    </div>
                 </div>
             )}
 

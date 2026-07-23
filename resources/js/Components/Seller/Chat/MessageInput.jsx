@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import MentionsList, { useMentions } from './MentionsList';
 import TemplateDropdown from './TemplateDropdown';
+import { compressImage } from "@/utils/imageCompressor";
 
 export default function MessageInput({ 
     currentChatUser, 
@@ -243,10 +244,14 @@ export default function MessageInput({
         }
     };
 
-    const handleFileChange = (event) => {
+    const handleFileChange = async (event) => {
         if (form) {
-            const file = event.target.files?.[0];
+            let file = event.target.files?.[0];
             if (!file) return;
+
+            if (file.type.startsWith('image/')) {
+                file = await compressImage(file);
+            }
 
             if (attachmentPreview?.url) {
                 URL.revokeObjectURL(attachmentPreview.url);

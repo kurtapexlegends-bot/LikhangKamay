@@ -23,12 +23,18 @@ export default function ProductFormBasicDetails({
         <div className="space-y-6 animate-fadeIn">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
-                    <InputLabel value="Product Name *" />
+                    <div className="flex items-center justify-between mb-1">
+                        <InputLabel value="Product Name *" />
+                        <span className={`text-[10px] font-bold ${(data.name || '').length < 10 || (data.name || '').length > 60 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            {(data.name || '').length} / 60 chars (Min 10)
+                        </span>
+                    </div>
                     <TextInput
                         className={`${modalFieldClass} text-lg font-bold min-h-[44px] sm:min-h-0`}
                         value={data.name}
                         onChange={(e) => setData("name", e.target.value)}
                         placeholder="e.g. Handcrafted Stoneware Vase"
+                        maxLength={60}
                         autoFocus
                     />
                     <InputError message={errors.name} className="mt-2" />

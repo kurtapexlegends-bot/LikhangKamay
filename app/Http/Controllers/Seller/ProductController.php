@@ -126,7 +126,7 @@ class ProductController extends Controller
 
         $validated = $request->validate([
             'sku' => 'required|unique:products,sku',
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|min:10|max:60',
             'category' => ['required', 'string', Rule::in(\App\Models\Category::pluck('name')->toArray())],
             'price' => 'required|numeric|min:0',
             'cost_price' => 'required|numeric|min:0',
@@ -172,7 +172,7 @@ class ProductController extends Controller
         ]);
 
         $validated = $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|min:10|max:60',
             'price' => 'required|numeric|min:0',
             'cost_price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',

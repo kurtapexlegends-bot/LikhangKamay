@@ -32,7 +32,7 @@ class ThreeDModelUploadValidationTest extends TestCase
 
         $response = $this->actingAs($seller)->post(route('products.store'), [
             'sku' => 'LK-GLB1',
-            'name' => 'Test Vase',
+            'name' => 'Test Vase Model',
             'description' => 'A test vase for GLB upload.',
             'category' => 'Vases & Jars',
             'price' => 200,
@@ -48,7 +48,7 @@ class ThreeDModelUploadValidationTest extends TestCase
         $product = Product::where('sku', 'LK-GLB1')->firstOrFail();
 
         $this->assertNotNull($product->model_3d_path);
-        Storage::disk('public')->assertExists($product->model_3d_path);
+        $this->assertTrue(Storage::disk('public')->exists($product->model_3d_path));
     }
 
     public function test_product_update_accepts_gltf_file_with_json_mime_type(): void
@@ -88,7 +88,7 @@ class ThreeDModelUploadValidationTest extends TestCase
         $product->refresh();
 
         $this->assertNotNull($product->model_3d_path);
-        Storage::disk('public')->assertExists($product->model_3d_path);
+        $this->assertTrue(Storage::disk('public')->exists($product->model_3d_path));
     }
 
     public function test_three_d_manager_upload_accepts_gltf_file_with_json_mime_type(): void
@@ -122,6 +122,6 @@ class ThreeDModelUploadValidationTest extends TestCase
         $product->refresh();
 
         $this->assertNotNull($product->model_3d_path);
-        Storage::disk('public')->assertExists($product->model_3d_path);
+        $this->assertTrue(Storage::disk('public')->exists($product->model_3d_path));
     }
 }
