@@ -34,12 +34,12 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'first_name' => 'required_without:name|string|max:255',
-            'last_name' => 'nullable|string|max:255',
-            'name' => 'required_without:first_name|string|max:255',
+            'first_name' => 'required_without:name|string|min:2|max:50',
+            'last_name' => 'nullable|string|min:2|max:50',
+            'name' => 'required_without:first_name|string|min:2|max:50',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'shop_name' => 'nullable|string|max:255',
+            'shop_name' => 'nullable|string|min:3|max:30',
             'terms' => 'accepted', // <--- CRITICAL: Enforces terms acceptance on server
         ]);
 

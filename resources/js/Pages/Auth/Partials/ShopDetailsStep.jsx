@@ -43,13 +43,19 @@ export default function ShopDetailsStep({
 
             <div className="space-y-6">
                 <div>
-                    <InputLabel htmlFor="shop_name" value="Shop Name *" />
+                    <div className="flex items-center justify-between mb-1">
+                        <InputLabel htmlFor="shop_name" value="Shop Name *" />
+                        <span className={`text-[10px] font-bold ${(data.shop_name || '').length < 3 || (data.shop_name || '').length > 30 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            {(data.shop_name || '').length} / 30 chars (Min 3)
+                        </span>
+                    </div>
                     <div className="mt-1">
                         <TextInput
                             id="shop_name"
                             value={data.shop_name}
                             onChange={(event) => setData('shop_name', event.target.value)}
                             placeholder="e.g. Silang Pottery Works"
+                            maxLength={30}
                             icon={Store}
                         />
                     </div>

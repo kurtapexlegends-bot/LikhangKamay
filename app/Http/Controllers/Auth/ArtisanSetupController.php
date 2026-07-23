@@ -51,7 +51,7 @@ class ArtisanSetupController extends Controller
         // --- STEP 1: SHOP INFO ---
         if ($step == 1) {
             $validated = $request->validate([
-                'shop_name' => ['required', 'string', 'max:30', Rule::unique('users', 'shop_name')->ignore($user->id)],
+                'shop_name' => ['required', 'string', 'min:3', 'max:30', Rule::unique('users', 'shop_name')->ignore($user->id)],
                 'phone_number' => 'required|string|max:20',
                 'street_address' => 'required|string|max:255',
                 'region' => 'required|string|max:255',

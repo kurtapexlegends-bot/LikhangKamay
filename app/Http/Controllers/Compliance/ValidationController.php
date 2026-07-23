@@ -87,6 +87,10 @@ class ValidationController extends Controller
             return response()->json(['valid' => false, 'message' => 'Shop name must be at least 3 characters.']);
         }
 
+        if (strlen($name) > 30) {
+            return response()->json(['valid' => false, 'message' => 'Shop name cannot exceed 30 characters.']);
+        }
+
         $like = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
         $query = User::where('role', 'artisan')
             ->where('shop_name', $like, $name);

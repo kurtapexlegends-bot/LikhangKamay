@@ -76,6 +76,14 @@ export default function Register() {
         if (!data.first_name || data.first_name.trim() === '') {
             localErrors.first_name = 'First name is required';
             if (!firstInvalidRef) firstInvalidRef = firstNameRef;
+        } else if (data.first_name.trim().length < 2) {
+            localErrors.first_name = 'First name must be at least 2 characters';
+            if (!firstInvalidRef) firstInvalidRef = firstNameRef;
+        }
+
+        if (data.last_name && data.last_name.trim() !== '' && data.last_name.trim().length < 2) {
+            localErrors.last_name = 'Last name must be at least 2 characters';
+            if (!firstInvalidRef) firstInvalidRef = lastNameRef;
         }
 
         if (!data.email || data.email.trim() === '') {
@@ -250,6 +258,7 @@ export default function Register() {
                                 onChange={(e) => setData('first_name', e.target.value)}
                                 onKeyDown={handleKeyDown(lastNameRef)}
                                 hasError={!!errors.first_name}
+                                maxLength={50}
                                 required
                                 floatingLabel="First Name"
                                 icon={User}
@@ -268,6 +277,7 @@ export default function Register() {
                                 onChange={(e) => setData('last_name', e.target.value)}
                                 onKeyDown={handleKeyDown(emailRef)}
                                 hasError={!!errors.last_name}
+                                maxLength={50}
                                 floatingLabel="Last Name"
                                 icon={User}
                             />

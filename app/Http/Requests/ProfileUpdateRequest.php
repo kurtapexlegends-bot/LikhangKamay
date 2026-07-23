@@ -16,9 +16,9 @@ class ProfileUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => ['required_without:name', 'nullable', 'string', 'max:255'],
-            'last_name' => ['nullable', 'string', 'max:255'],
-            'name' => ['required_without:first_name', 'nullable', 'string', 'max:255'],
+            'first_name' => ['required_without:name', 'nullable', 'string', 'min:2', 'max:50'],
+            'last_name' => ['nullable', 'string', 'min:2', 'max:50'],
+            'name' => ['required_without:first_name', 'nullable', 'string', 'min:2', 'max:50'],
             'email' => [
                 'required',
                 'string',
@@ -28,7 +28,7 @@ class ProfileUpdateRequest extends FormRequest
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
             // Shop Details (Nullable/Optional)
-            'shop_name' => ['nullable', 'string', 'max:255'],
+            'shop_name' => ['nullable', 'string', 'min:3', 'max:30'],
             'phone_number' => ['nullable', 'string', 'max:20'],
             'street_address' => ['nullable', 'string', 'max:255'],
             'barangay' => ['nullable', 'string', 'max:255'],

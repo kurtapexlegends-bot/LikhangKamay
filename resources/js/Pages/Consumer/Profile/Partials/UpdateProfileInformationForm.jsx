@@ -52,6 +52,14 @@ export default function UpdateProfileInformation({
         if (!data.first_name || data.first_name.trim() === '') {
             localErrors.first_name = 'First name is required';
             if (!firstInvalidRef) firstInvalidRef = firstNameRef;
+        } else if (data.first_name.trim().length < 2) {
+            localErrors.first_name = 'First name must be at least 2 characters';
+            if (!firstInvalidRef) firstInvalidRef = firstNameRef;
+        }
+
+        if (data.last_name && data.last_name.trim() !== '' && data.last_name.trim().length < 2) {
+            localErrors.last_name = 'Last name must be at least 2 characters';
+            if (!firstInvalidRef) firstInvalidRef = lastNameRef;
         }
 
         if (!data.email || data.email.trim() === '') {
@@ -165,6 +173,7 @@ export default function UpdateProfileInformation({
                             value={data.first_name}
                             onChange={(e) => setData('first_name', e.target.value)}
                             hasError={!!errors.first_name}
+                            maxLength={50}
                             required
                         />
                         <InputError className="mt-2" message={errors.first_name} />
@@ -179,6 +188,7 @@ export default function UpdateProfileInformation({
                             value={data.last_name}
                             onChange={(e) => setData('last_name', e.target.value)}
                             hasError={!!errors.last_name}
+                            maxLength={50}
                         />
                         <InputError className="mt-2" message={errors.last_name} />
                     </div>
