@@ -15,18 +15,7 @@ export default function OrderCardActions({
     onOpenEscalateModal,
     onOpenRatingModal,
 }) {
-    const formatPHP = (val) => {
-        const num = Number(val);
-        return isNaN(num) ? `PHP ${val}` : `PHP ${num.toFixed(2)}`;
-    };
 
-    const getPaymentLabel = (method, status) => {
-        const isPaid = status?.toLowerCase() === 'paid';
-        if (method === 'COD') {
-            return isPaid ? 'Paid via Cash on Delivery' : 'Pay via Cash on Delivery';
-        }
-        return isPaid ? `Paid via ${method}` : `To pay via ${method}`;
-    };
 
     // Mobile Secondary Actions Selector
     const getMobileSecondaryActions = () => {
@@ -108,41 +97,7 @@ export default function OrderCardActions({
     };
 
     return (
-        <div className="flex flex-col gap-4 border-t border-stone-200/60 bg-stone-50/50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between w-full">
-            {/* Total Pricing / Breakdown summary */}
-            <div className="w-full sm:w-auto bg-stone-100/60 border border-stone-200/40 rounded-xl p-3.5 sm:min-w-[320px] shadow-sm">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2.5">Payment Breakdown</p>
-                <div className="space-y-2 text-[12px]">
-                    <div className="flex items-center justify-between text-stone-600">
-                        <span>Items Subtotal</span>
-                        <span className="font-semibold text-stone-800">{formatPHP(order.merchandise_subtotal)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-stone-600">
-                        <span>Convenience Fee (3%)</span>
-                        <span className="font-semibold text-[#c8764b]">{formatPHP(order.convenience_fee_amount)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-stone-600">
-                        <span>Shipping Fee</span>
-                        <span className="font-semibold text-stone-850">
-                            {order.shipping_method === 'Pick Up'
-                                ? 'Free'
-                                : formatPHP(order.shipping_fee_amount)}
-                        </span>
-                    </div>
-                    <div className="border-t border-stone-200 pt-2.5 mt-2.5 flex items-center justify-between">
-                        <div>
-                            <span className="block font-bold text-stone-900 text-[13px]">Total Payment</span>
-                            <span className="text-[10px] text-stone-400 leading-tight">
-                                {getPaymentLabel(order.payment_method, order.payment_status)}
-                            </span>
-                        </div>
-                        <span className="text-lg font-black tracking-tight text-clay-700 bg-clay-50 border border-clay-100 px-3 py-1 rounded-lg">
-                            {formatPHP(order.total)}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
+        <div className="flex flex-col gap-4 border-t border-stone-200/60 bg-stone-50/50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-end w-full">
             {/* --- DESKTOP FOOTER ACTIONS (Strictly Preserved) --- */}
             <div className="hidden sm:flex flex-row items-center gap-2 flex-wrap justify-end overflow-visible">
                 {/* Download Receipt */}
