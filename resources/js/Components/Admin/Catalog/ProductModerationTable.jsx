@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { router } from '@inertiajs/react';
 import { 
-    Check, 
     XCircle, 
     ShieldAlert, 
     Package, 
@@ -16,8 +15,6 @@ import {
 import { useToast } from '@/Components/ToastContext';
 import CompactPagination from '@/Components/CompactPagination';
 import EmptyState from '@/Components/WorkspaceEmptyState';
-import BulkActionPill, { ActionTooltip } from '@/Components/Admin/Layout/BulkActionPill';
-import ProductModerationModal from '@/Components/Admin/Catalog/ProductModerationModal';
 import ProductInspectionDrawer from '@/Components/Admin/Catalog/ProductInspectionDrawer';
 import TextInput from '@/Components/TextInput';
 
@@ -33,7 +30,7 @@ const ModerationMetricCard = ({ title, value, icon: Icon, tone = 'amber' }) => {
     return (
         <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm flex items-start justify-between hover:shadow-md transition-all duration-200">
             <div>
-                <p className="text-stone-500 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</p>
+                <p className="text-stone-550 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</p>
                 <h3 className="text-2xl font-black text-stone-900 tracking-tight">{value}</h3>
                 <p className="text-[10px] font-medium text-stone-400 mt-1">Listing count</p>
             </div>
@@ -46,15 +43,11 @@ const ModerationMetricCard = ({ title, value, icon: Icon, tone = 'amber' }) => {
 
 export default function ProductModerationTable({ products, filters, statusCounts, shops = [] }) {
     const { addToast } = useToast();
-    const [selectedProductIds, setSelectedProductIds] = useState([]);
     const [currentStatusFilter, setCurrentStatusFilter] = useState(filters?.product_status || 'pending_review');
     const [selectedShopId, setSelectedShopId] = useState(filters?.shop_id || '');
     const [searchQuery, setSearchQuery] = useState(filters?.search || '');
     const [isModifyingProduct, setIsModifyingProduct] = useState(false);
     const [inspectedProduct, setInspectedProduct] = useState(null);
-    const [moderationModal, setModerationModal] = useState({ isOpen: false, type: null, ids: [] });
-    const [moderationFeedback, setModerationFeedback] = useState('');
-    const [lastType, setLastType] = useState('reject');
     const [isValidating, setIsValidating] = useState(false);
 
     useEffect(() => {
@@ -90,7 +83,6 @@ export default function ProductModerationTable({ products, filters, statusCounts
 
     const handleProductStatusFilterChange = (status) => {
         setCurrentStatusFilter(status);
-        setSelectedProductIds([]);
         router.get(route('admin.catalog.index'), { 
             tab: 'moderation', 
             product_status: status,
@@ -101,29 +93,12 @@ export default function ProductModerationTable({ products, filters, statusCounts
 
     const handleShopFilterChange = (shopId) => {
         setSelectedShopId(shopId);
-        setSelectedProductIds([]);
         router.get(route('admin.catalog.index'), {
             tab: 'moderation',
             product_status: currentStatusFilter,
             shop_id: shopId,
             search: searchQuery
         }, { preserveScroll: true, preserveState: true });
-    };
-
-    const handleSelectAllProducts = (e) => {
-        if (e.target.checked) {
-            setSelectedProductIds(products?.data?.map(p => p.id) || []);
-        } else {
-            setSelectedProductIds([]);
-        }
-    };
-
-    const handleSelectProduct = (productId) => {
-        setSelectedProductIds(prev =>
-            prev.includes(productId)
-                ? prev.filter(id => id !== productId)
-                : [...prev, productId]
-        );
     };
 
     const handleDrawerApprove = (productId) => {
@@ -153,45 +128,6 @@ export default function ProductModerationTable({ products, filters, statusCounts
             },
             onError: (err) => {
                 addToast(err.feedback || 'Failed to process moderation action.', 'error');
-            },
-            onFinish: () => {
-                setIsModifyingProduct(false);
-            }
-        });
-    };
-
-    const triggerModeration = (ids, type) => {
-        setModerationFeedback('');
-        setModerationModal({ isOpen: true, type, ids: Array.isArray(ids) ? ids : [ids] });
-        if (type === 'reject' || type === 'flag') {
-            setLastType(type);
-        }
-    };
-
-    const confirmModerationAction = () => {
-        const { type, ids } = moderationModal;
-
-        if (type !== 'approve' && !moderationFeedback.trim()) {
-            addToast('Feedback/reason is required.', 'error');
-            return;
-        }
-
-        setIsModifyingProduct(true);
-        router.post(route('admin.catalog.moderate'), {
-            ids,
-            action: type,
-            feedback: moderationFeedback.trim()
-        }, {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                setSelectedProductIds([]);
-                setModerationModal({ isOpen: false, type: null, ids: [] });
-                setModerationFeedback('');
-                addToast(`Product(s) successfully ${type}d.`, 'success');
-            },
-            onError: (err) => {
-                addToast(err.feedback || 'Failed to moderate product(s).', 'error');
             },
             onFinish: () => {
                 setIsModifyingProduct(false);
@@ -303,14 +239,6 @@ export default function ProductModerationTable({ products, filters, statusCounts
                             <table className="w-full min-w-[940px] text-left border-collapse">
                                 <thead>
                                     <tr className="bg-stone-50 border-b border-stone-100">
-                                        <th className="py-4 px-2 w-12 text-center align-middle">
-                                            <input
-                                                type="checkbox"
-                                                onChange={handleSelectAllProducts}
-                                                checked={products?.data?.length > 0 && selectedProductIds.length === products.data.length}
-                                                className="rounded-md border-stone-300 text-clay-600 focus:ring-clay-500/30 focus:ring-offset-0 h-4.5 w-4.5 cursor-pointer inline-block align-middle"
-                                            />
-                                        </th>
                                         <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[30%] text-center align-middle">Product</th>
                                         <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[20%] text-center align-middle">Artisan Seller</th>
                                         <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[15%] text-center align-middle">Submitted</th>
@@ -322,14 +250,6 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                     {products?.data?.length > 0 ? (
                                         products.data.map((product) => (
                                             <tr key={product.id} className="hover:bg-stone-50/30 transition duration-150 group">
-                                                <td className="py-4 px-2 text-center align-middle w-12">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedProductIds.includes(product.id)}
-                                                        onChange={() => handleSelectProduct(product.id)}
-                                                        className="rounded-md border-stone-300 text-clay-600 focus:ring-clay-500/30 focus:ring-offset-0 h-4.5 w-4.5 cursor-pointer inline-block align-middle"
-                                                    />
-                                                </td>
                                                 <td className="py-4 px-6 text-center align-middle">
                                                     <div className="flex items-center justify-center gap-4 cursor-pointer" onClick={() => setInspectedProduct(product)}>
                                                         <div className="w-12 h-12 rounded-xl border border-stone-200 bg-stone-50 flex-shrink-0 flex items-center justify-center overflow-hidden">
@@ -402,7 +322,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="6" className="py-16">
+                                            <td colSpan="5" className="py-16">
                                                 <EmptyState
                                                     compact
                                                     icon={Package}
@@ -423,38 +343,27 @@ export default function ProductModerationTable({ products, filters, statusCounts
                     {products?.data?.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {products.data.map((product) => {
-                                const isSelected = selectedProductIds.includes(product.id);
                                 return (
                                     <div 
                                         key={product.id}
-                                        className={`bg-white border rounded-2xl p-4 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-md ${
-                                            isSelected ? 'border-clay-400 bg-clay-50/10' : 'border-stone-200/80 hover:border-stone-300'
-                                        }`}
+                                        className="bg-white border border-stone-200/80 hover:border-stone-300 rounded-2xl p-4 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-md"
                                     >
                                         <div className="flex gap-4">
-                                            {/* Left Column: Checkbox + Image */}
-                                            <div className="flex flex-col items-center gap-3">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() => handleSelectProduct(product.id)}
-                                                    className="rounded-md border-stone-300 text-clay-600 focus:ring-clay-500/30 focus:ring-offset-0 h-4.5 w-4.5 cursor-pointer"
-                                                />
-                                                <div className="w-16 h-16 rounded-xl border border-stone-200 bg-stone-50 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                                                    {product.img || product.cover_photo_path ? (
-                                                        <img
-                                                            src={product.img || (product.cover_photo_path?.startsWith('http') ? product.cover_photo_path : `/storage/${product.cover_photo_path}`)}
-                                                            alt={product.name || ''}
-                                                            className="w-full h-full object-cover"
-                                                            onError={(e) => {
-                                                                e.target.onerror = null;
-                                                                e.target.src = '/images/placeholder.svg';
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <Package className="text-stone-300" size={24} />
-                                                    )}
-                                                </div>
+                                            {/* Left Column: Image */}
+                                            <div className="w-16 h-16 rounded-xl border border-stone-200 bg-stone-50 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                                {product.img || product.cover_photo_path ? (
+                                                    <img
+                                                        src={product.img || (product.cover_photo_path?.startsWith('http') ? product.cover_photo_path : `/storage/${product.cover_photo_path}`)}
+                                                        alt={product.name || ''}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = '/images/placeholder.svg';
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <Package className="text-stone-300" size={24} />
+                                                )}
                                             </div>
 
                                             {/* Right Column: Title / Info */}
@@ -578,49 +487,6 @@ export default function ProductModerationTable({ products, filters, statusCounts
                 onFlag={handleDrawerFlag}
                 isProcessing={isModifyingProduct}
             />
-
-            {/* Moderation Modal Dialog */}
-            <ProductModerationModal
-                isOpen={moderationModal.isOpen}
-                type={moderationModal.type}
-                ids={moderationModal.ids}
-                processing={isModifyingProduct}
-                feedback={moderationFeedback}
-                setFeedback={setModerationFeedback}
-                onClose={() => setModerationModal({ isOpen: false, type: null, ids: [] })}
-                onConfirm={confirmModerationAction}
-                lastType={lastType}
-            />
-
-            {/* Sticky Bulk Actions Bar */}
-            <BulkActionPill selectedCount={selectedProductIds.length} onClear={() => setSelectedProductIds([])}>
-                <ActionTooltip text="Approve Selected">
-                    <button
-                        onClick={() => triggerModeration(selectedProductIds, 'approve')}
-                        className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50/40 text-emerald-600 hover:bg-emerald-100/60 hover:text-emerald-700 transition-all duration-205 active:scale-90 shadow-sm"
-                    >
-                        <Check size={18} strokeWidth={2.5} />
-                    </button>
-                </ActionTooltip>
-
-                <ActionTooltip text="Reject Selected">
-                    <button
-                        onClick={() => triggerModeration(selectedProductIds, 'reject')}
-                        className="flex h-10 w-10 items-center justify-center rounded-full border border-rose-100 bg-rose-50/40 text-rose-600 hover:bg-rose-100/60 hover:text-rose-700 transition-all duration-205 active:scale-90 shadow-sm"
-                    >
-                        <XCircle size={18} />
-                    </button>
-                </ActionTooltip>
-
-                <ActionTooltip text="Flag Selected">
-                    <button
-                        onClick={() => triggerModeration(selectedProductIds, 'flag')}
-                        className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-100 bg-amber-50/40 text-amber-600 hover:bg-amber-100/60 hover:text-amber-700 transition-all duration-205 active:scale-90 shadow-sm"
-                    >
-                        <ShieldAlert size={18} />
-                    </button>
-                </ActionTooltip>
-            </BulkActionPill>
         </div>
     );
 }

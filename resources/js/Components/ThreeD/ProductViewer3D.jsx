@@ -26,7 +26,8 @@ export default function ProductViewer3D({
     modelUrl,
     productName = '3D Model',
     compact = false,
-    className = ''
+    className = '',
+    adjustCamera = 1.15
 }) {
     const [autoRotate, setAutoRotate] = useState(true);
     const [zoom, setZoom] = useState(1.0);
@@ -106,7 +107,7 @@ export default function ProductViewer3D({
                 >
                     <CameraController zoom={zoom} />
                     <Suspense fallback={<Loader />}>
-                        <Stage preset="rembrandt" intensity={0.5} adjustCamera={1.1}>
+                        <Stage preset="rembrandt" intensity={0.5} adjustCamera={adjustCamera}>
                             {modelUrl ? (
                                 <GLTFModel url={modelUrl} />
                             ) : (
