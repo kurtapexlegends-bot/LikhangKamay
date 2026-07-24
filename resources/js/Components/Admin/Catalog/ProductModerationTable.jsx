@@ -296,8 +296,8 @@ export default function ProductModerationTable({ products, filters, statusCounts
                     </div>
                 </div>
 
-                {/* Products Moderation Grid/List */}
-                <div className="overflow-x-auto no-scrollbar -mx-6 sm:mx-0">
+                {/* Products Moderation Grid/List - Desktop Table */}
+                <div className="hidden lg:block overflow-x-auto no-scrollbar -mx-6 sm:mx-0">
                     <div className="inline-block min-w-full align-middle px-6 sm:px-0">
                         <div className="overflow-hidden border border-stone-200/60 rounded-xl">
                             <table className="w-full min-w-[940px] text-left border-collapse">
@@ -420,6 +420,137 @@ export default function ProductModerationTable({ products, filters, statusCounts
                             </table>
                         </div>
                     </div>
+                </div>
+
+                {/* Mobile & Tablet Card Grid (lg:hidden) */}
+                <div className="block lg:hidden space-y-4">
+                    {products?.data?.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {products.data.map((product) => {
+                                const isSelected = selectedProductIds.includes(product.id);
+                                return (
+                                    <div 
+                                        key={product.id}
+                                        className={`bg-white border rounded-2xl p-4 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-md ${
+                                            isSelected ? 'border-clay-400 bg-clay-50/10' : 'border-stone-200/80 hover:border-stone-300'
+                                        }`}
+                                    >
+                                        <div className="flex gap-4">
+                                            {/* Left Column: Checkbox + Image */}
+                                            <div className="flex flex-col items-center gap-3">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isSelected}
+                                                    onChange={() => handleSelectProduct(product.id)}
+                                                    className="rounded-md border-stone-300 text-clay-600 focus:ring-clay-500/30 focus:ring-offset-0 h-4.5 w-4.5 cursor-pointer"
+                                                />
+                                                <div className="w-16 h-16 rounded-xl border border-stone-200 bg-stone-50 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                                    {product.img || product.cover_photo_path ? (
+                                                        <img
+                                                            src={product.img || (product.cover_photo_path?.startsWith('http') ? product.cover_photo_path : `/storage/${product.cover_photo_path}`)}
+                                                            alt={product.name || ''}
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => {
+                                                                e.target.onerror = null;
+                                                                e.target.src = '/images/placeholder.svg';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <Package className="text-stone-300" size={24} />
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Right Column: Title / Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <h3 
+                                                        onClick={() => setInspectedProduct(product)}
+                                                        className="font-bold text-stone-900 text-sm hover:text-clay-600 transition-colors cursor-pointer truncate"
+                                                        title={product.name}
+                                                    >
+                                                        {product.name}
+                                                    </h3>
+                                                    <span className="text-[10px] font-bold text-stone-400 whitespace-nowrap bg-stone-50 px-2 py-0.5 rounded-md border border-stone-150">
+                                                        ₱{product.price}
+                                                    </span>
+                                                </div>
+                                                
+                                                <p className="text-[10px] text-stone-500 mt-0.5 truncate">
+                                                    SKU: {product.sku || 'N/A'}
+                                                </p>
+
+                                                <div className="mt-2 space-y-1">
+                                                    <p className="text-[11px] font-semibold text-stone-700 flex items-center gap-1">
+                                                        <span className="text-stone-400 font-normal">Shop:</span> {product.user?.shop_name || product.user?.name}
+                                                    </p>
+                                                    <p className="text-[10px] text-stone-400">
+                                                        Submitted: {new Date(product.created_at).toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Status & Actions Row */}
+                                        <div className="flex items-center justify-between gap-3 pt-3 border-t border-stone-100 mt-auto">
+                                            {/* Status Badge */}
+                                            <div>
+                                                {product.status === 'pending_review' && (
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-250">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                                        Pending Review
+                                                    </span>
+                                                )}
+                                                {product.status === 'Active' && (
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-250">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                        Approved
+                                                    </span>
+                                                )}
+                                                {product.status === 'rejected' && (
+                                                    <div className="flex flex-col">
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-250 w-fit">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                                            Rejected
+                                                        </span>
+                                                        {product.rejection_reason && (
+                                                            <span className="text-[9px] text-red-550 mt-1 max-w-[150px] truncate" title={product.rejection_reason}>
+                                                                {product.rejection_reason}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                {product.status === 'flagged' && (
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-700 border border-stone-250">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-stone-500"></span>
+                                                        Flagged
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Action Button */}
+                                            <button
+                                                onClick={() => setInspectedProduct(product)}
+                                                className="px-4 py-2 rounded-xl bg-clay-50 hover:bg-clay-600 text-clay-700 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-clay-200/60 hover:border-transparent active:scale-95 transition-all duration-200 shadow-sm"
+                                            >
+                                                <Eye size={13} />
+                                                <span>Inspect</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="py-12 bg-white rounded-2xl border border-stone-200/80">
+                            <EmptyState
+                                compact
+                                icon={Package}
+                                title="No products matching status"
+                                description="Currently no artisan listings are listed with this status moderation."
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {/* Pagination */}
