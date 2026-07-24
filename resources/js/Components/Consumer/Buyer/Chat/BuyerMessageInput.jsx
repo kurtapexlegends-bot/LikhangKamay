@@ -100,6 +100,8 @@ export default function BuyerMessageInput({ currentChatUser, form, userOrders = 
         }
 
         post(route('chat.store'), {
+            showProgress: false,
+            preserveScroll: true,
             onSuccess: () => {
                 reset('attachment');
                 revokeAttachmentPreview();

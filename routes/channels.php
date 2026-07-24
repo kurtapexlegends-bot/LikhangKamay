@@ -7,11 +7,17 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 });
 
 Broadcast::channel('chat.{userId}', function ($user, $userId) {
-    return (int) $user->id === (int) $userId;
+    if ((int) $user->id === (int) $userId) {
+        return true;
+    }
+    return $user->seller_id && (int) $user->seller_id === (int) $userId;
 });
 
 Broadcast::channel('team-chat.{userId}', function ($user, $userId) {
-    return (int) $user->id === (int) $userId;
+    if ((int) $user->id === (int) $userId) {
+        return true;
+    }
+    return $user->seller_id && (int) $user->seller_id === (int) $userId;
 });
 
 Broadcast::channel('team-channel.{channelId}', function ($user, $channelId) {

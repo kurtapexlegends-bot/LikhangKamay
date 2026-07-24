@@ -244,6 +244,7 @@ export default function MessageInput({
         } else {
             // Seller-Buyer Chat submission
             post(route('chat.store'), {
+                showProgress: false,
                 preserveScroll: true,
                 forceFormData: true,
                 onSuccess: () => {

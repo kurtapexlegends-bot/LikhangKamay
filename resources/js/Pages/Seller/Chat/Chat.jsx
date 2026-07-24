@@ -116,7 +116,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
 
     // Fallback polling when Echo is disconnected or offline
     useEffect(() => {
-        if (isEchoConnected || !currentChatUser || processing) return undefined;
+        if (isEchoConnected || !currentChatUser) return undefined;
 
         const interval = setInterval(() => {
             if (document.hidden) return;
@@ -125,16 +125,17 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                 preserveScroll: true,
                 preserveState: true,
             });
-        }, 4000);
+        }, 2000);
 
         return () => clearInterval(interval);
-    }, [isEchoConnected, currentChatUser?.id, processing]);
+    }, [isEchoConnected, currentChatUser?.id]);
 
     // Real-time WebSockets via Echo
     useEffect(() => {
         if (!auth?.user?.id || !window.Echo) return undefined;
 
-        const channel = window.Echo.private(`chat.${auth.user.id}`);
+        const activeChannelId = auth.effectiveSellerId || auth.user.id;
+        const channel = window.Echo.private(`chat.${activeChannelId}`);
 
         channel.listen('.message.sent', (e) => {
             const senderId = Number(e.message.sender_id);
