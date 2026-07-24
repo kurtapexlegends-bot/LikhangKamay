@@ -8,6 +8,14 @@ export default function OrderCardItems({ order }) {
         return isNaN(num) ? `PHP ${val}` : `PHP ${num.toFixed(2)}`;
     };
 
+    const getPaymentLabel = (method, status) => {
+        const isPaid = status?.toLowerCase() === 'paid';
+        if (method === 'COD') {
+            return isPaid ? 'Paid via Cash on Delivery' : 'Pay via Cash on Delivery';
+        }
+        return isPaid ? `Paid via ${method}` : `To pay via ${method}`;
+    };
+
     return (
         <div className="space-y-4">
             {/* Mobile View: Horizontal scrolling thumbnails and brief info */}
@@ -76,10 +84,15 @@ export default function OrderCardItems({ order }) {
                         <span className="text-stone-300 hidden sm:inline">•</span>
                         <span>Shipping: <strong className="text-stone-850 font-semibold">{order.shipping_method === 'Pick Up' ? 'Free' : formatPHP(order.shipping_fee_amount)}</strong></span>
                     </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-2.5 pt-1.5 sm:pt-0 border-t border-stone-200/40 sm:border-t-0">
-                        <span className="text-stone-500 font-bold uppercase tracking-wider text-[10px]">Total Payment</span>
-                        <span className="text-[14px] font-black tracking-tight text-clay-700 bg-clay-50 border border-clay-100/80 px-2.5 py-0.5 rounded-lg shadow-2xs">
-                            {formatPHP(order.total)}
+                    <div className="flex flex-col sm:items-end justify-center pt-1.5 sm:pt-0 border-t border-stone-200/40 sm:border-t-0">
+                        <div className="flex items-center justify-between sm:justify-end gap-2.5">
+                            <span className="text-stone-500 font-bold uppercase tracking-wider text-[10px]">Total Payment</span>
+                            <span className="text-[14px] font-black tracking-tight text-clay-700 bg-clay-50 border border-clay-100/80 px-2.5 py-0.5 rounded-lg shadow-2xs">
+                                {formatPHP(order.total)}
+                            </span>
+                        </div>
+                        <span className="text-[10px] text-stone-400 mt-0.5 text-right font-medium">
+                            {getPaymentLabel(order.payment_method, order.payment_status)}
                         </span>
                     </div>
                 </div>
