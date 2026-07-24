@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from '@inertiajs/react';
-import { Send, Paperclip, Image as ImageIcon, Smile, FileIcon, X } from 'lucide-react';
+import { Send, Paperclip, Image as ImageIcon, Smile, FileIcon, X, Package } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { compressImage } from "@/utils/imageCompressor";
+import { OrderMentionsList, useOrderMentions } from '@/Components/Chat/OrderMentionsList';
 
 const BUYER_QUICK_REPLIES = [
     'Hello! Is this product available?',
@@ -11,7 +12,7 @@ const BUYER_QUICK_REPLIES = [
     'Thank you so much!'
 ];
 
-export default function BuyerMessageInput({ currentChatUser, form, onSendStart, onSendFinished }) {
+export default function BuyerMessageInput({ currentChatUser, form, userOrders = [], onSendStart, onSendFinished }) {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [attachment, setAttachment] = useState(null);
     const [attachmentPreview, setAttachmentPreview] = useState(null);
@@ -20,9 +21,25 @@ export default function BuyerMessageInput({ currentChatUser, form, onSendStart, 
     const fileInputRef = useRef(null);
     const imageInputRef = useRef(null);
     const emojiPickerRef = useRef(null);
+    const orderMentionsRef = useRef(null);
     const lastTypingSignal = useRef(0);
 
     const { data, setData, post, reset, processing } = form;
+
+    const {
+        isDropdownVisible: isOrderDropdownVisible,
+        filteredOrders,
+        orderIndex,
+        checkOrderMentions,
+        selectOrder,
+        toggleManualPicker,
+        closeDropdown: closeOrderDropdown
+    } = useOrderMentions({
+        message: data.message,
+        setMessage: (val) => setData('message', val),
+        inputRef,
+        userOrders
+    });
 
     // Sync receiver_id and focus on chat user change
     useEffect(() => {
@@ -34,11 +51,14 @@ export default function BuyerMessageInput({ currentChatUser, form, onSendStart, 
         setShowEmojiPicker(false);
     }, [currentChatUser]);
 
-    // Handle clicks outside Emoji Picker
+    // Handle clicks outside Emoji Picker & Mentions
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
                 setShowEmojiPicker(false);
+            }
+            if (orderMentionsRef.current && !orderMentionsRef.current.contains(event.target)) {
+                closeOrderDropdown();
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -208,9 +228,19 @@ export default function BuyerMessageInput({ currentChatUser, form, onSendStart, 
                     </div>
                 )}
 
+                {/* Order Mentions Autocomplete Popup */}
+                <OrderMentionsList
+                    ref={orderMentionsRef}
+                    isVisible={isOrderDropdownVisible}
+                    orders={filteredOrders}
+                    orderIndex={orderIndex}
+                    onSelect={selectOrder}
+                    onClose={closeOrderDropdown}
+                />
+
                 <form onSubmit={handleSendMessage} className="flex w-full flex-col gap-3">
                     <div className="flex items-end gap-2 sm:gap-3 w-full">
-                        <div className="flex-1 relative bg-gray-50 border border-gray-200 focus-within:border-clay-400 focus-within:ring-4 focus-within:ring-clay-50 rounded-2xl flex items-center p-1 transition-all overflow-hidden shadow-sm">
+                        <div className="flex-1 relative bg-gray-50 border border-gray-200 focus-within:border-clay-400 focus-within:ring-4 focus-within:ring-clay-50 rounded-2xl flex items-center p-1 transition-all overflow-visible shadow-sm">
                             <div className="flex items-center gap-0.5 px-1">
                                 <button 
                                     type="button" 
@@ -228,6 +258,16 @@ export default function BuyerMessageInput({ currentChatUser, form, onSendStart, 
                                 >
                                     <Paperclip size={20} />
                                 </button>
+                                {userOrders && userOrders.length > 0 && (
+                                    <button 
+                                        type="button" 
+                                        onClick={toggleManualPicker}
+                                        className="p-2.5 sm:p-2 rounded-xl transition-all duration-200 text-gray-400 hover:bg-white hover:text-clay-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                        title="Tag Specific Order (@)"
+                                    >
+                                        <Package size={20} />
+                                    </button>
+                                )}
                             </div>
 
                             <textarea 
@@ -235,12 +275,14 @@ export default function BuyerMessageInput({ currentChatUser, form, onSendStart, 
                                 rows={1}
                                 value={data.message}
                                 onChange={(e) => {
-                                    setData('message', e.target.value);
+                                    const val = e.target.value;
+                                    setData('message', val);
+                                    checkOrderMentions(val, e.target.selectionStart);
                                     e.target.style.height = 'auto';
                                     e.target.style.height = Math.min(e.target.scrollHeight, window.innerWidth < 640 ? 70 : 120) + 'px';
                                     signalTyping();
                                 }}
-                                placeholder="Type your message here..." 
+                                placeholder="Type a message or @ to tag an order..." 
                                 className="flex-1 w-full px-3 py-2.5 bg-transparent border-none focus:ring-0 text-sm font-medium text-gray-700 placeholder-gray-400 resize-none max-h-[70px] sm:max-h-[120px] custom-scrollbar leading-relaxed"
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && !e.shiftKey) {

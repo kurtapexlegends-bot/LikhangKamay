@@ -6,12 +6,14 @@ import {
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import OrderContextCard from '@/Components/Chat/OrderContextCard';
+import OrderMentionChip from '@/Components/Chat/OrderMentionChip';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { formatChatClock, formatChatRelative } from '@/lib/chatTime';
 
 export default function MessageWindow({
     currentChatUser,
     currentOrderContext,
+    userOrders = [],
     groupedMessages,
     galleryImages,
     setActiveMedia,
@@ -143,7 +145,11 @@ export default function MessageWindow({
                                                         </div>
                                                     </a>
                                                 )}
-                                                <p className="leading-relaxed whitespace-pre-line">{msg.text}</p>
+                                                {msg.text && (
+                                                    <p className="leading-relaxed whitespace-pre-wrap word-break-words text-sm">
+                                                        <OrderMentionChip text={msg.text} userOrders={userOrders} isMe={msg.sender === 'me'} />
+                                                    </p>
+                                                )}
                                             </div>
                                             <div className={`flex items-center gap-1.5 mt-1.5 text-[10px] ${
                                                 msg.sender === 'me' ? 'justify-end text-gray-400' : 'text-gray-400'

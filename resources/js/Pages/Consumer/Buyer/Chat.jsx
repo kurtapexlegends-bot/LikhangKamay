@@ -14,7 +14,7 @@ import BuyerSellerInfoPanel from '@/Components/Consumer/Buyer/Chat/BuyerSellerIn
 
 const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 
-export default function BuyerChat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null }) {
+export default function BuyerChat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null, userOrders = [] }) {
     const isEchoConnected = useEchoConnection();
     const [searchTerm, setSearchTerm] = useState('');
     const [showMobileList, setShowMobileList] = useState(!currentChatUser);
@@ -211,13 +211,11 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
 
                     {/* Messages convo window pane */}
                     <div className={`flex-1 flex flex-col min-h-0 overflow-hidden bg-white ${!showMobileList ? 'flex' : 'hidden sm:flex'}`}>
-                        <BuyerMessageWindow
-                            currentChatUser={currentChatUser ? {
-                                ...currentChatUser,
-                                is_typing: isCounterpartTyping
-                            } : null}
-                            activeMessages={displayedMessages}
+                        <BuyerMessageWindow 
+                            currentChatUser={currentChatUser}
+                            isCounterpartTyping={isCounterpartTyping}
                             currentOrderContext={currentOrderContext}
+                            userOrders={userOrders}
                             groupedMessages={groupedMessages}
                             galleryImages={galleryImages}
                             setActiveMedia={setActiveMedia}
@@ -232,6 +230,7 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
                             <BuyerMessageInput 
                                 currentChatUser={currentChatUser} 
                                 form={form}
+                                userOrders={userOrders}
                                 onSendStart={(tempMsg) => setPendingMessages(prev => [...prev, tempMsg])}
                                 onSendFinished={(tempId, success) => {
                                     if (success) {

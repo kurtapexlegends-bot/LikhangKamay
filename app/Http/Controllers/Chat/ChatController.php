@@ -222,12 +222,44 @@ class ChatController extends Controller
         $chatPayload = $this->directMessageService->getChatData($actor, $userId, $activeChatId, $sellerPerspective);
 
         $currentOrderContext = null;
+        $userOrders = [];
         if ($activeChatId && $chatPayload['currentChatUser']) {
             $currentOrderContext = $this->resolveCurrentOrderContext->execute(
                 $actor,
                 $chatPayload['currentChatUser'],
                 $sellerPerspective
             );
+
+            $artisanId = $sellerPerspective ? $userId : $activeChatId;
+            $buyerUserId = $sellerPerspective ? $activeChatId : $userId;
+
+            $userOrders = \App\Models\Order::with('items')
+                ->where('artisan_id', $artisanId)
+                ->where('user_id', $buyerUserId)
+                ->latest()
+                ->get()
+                ->map(function ($ord) {
+                    $firstItem = $ord->items->first();
+                    $img = $firstItem?->product_img;
+                    $coverImg = $img ? (str_starts_with($img, 'http') ? $img : asset('storage/' . $img)) : null;
+
+                    return [
+                        'id' => $ord->id,
+                        'order_number' => $ord->order_number,
+                        'status' => $ord->status,
+                        'total_amount' => (float) $ord->total_amount,
+                        'created_at' => $ord->created_at ? $ord->created_at->format('M d, Y') : '',
+                        'items_summary' => $ord->items->pluck('product_name')->filter()->join(', '),
+                        'cover_img' => $coverImg,
+                        'items' => $ord->items->map(fn($item) => [
+                            'name' => $item->product_name,
+                            'price' => (float) $item->price,
+                            'qty' => $item->quantity,
+                            'variant' => $item->variant_name ?? 'Standard',
+                            'img' => $item->product_img ? (str_starts_with($item->product_img, 'http') ? $item->product_img : asset('storage/' . $item->product_img)) : null,
+                        ]),
+                    ];
+                });
         }
 
         return Inertia::render($viewName, [
@@ -235,6 +267,7 @@ class ChatController extends Controller
             'activeMessages' => fn () => $chatPayload['activeMessages'],
             'currentChatUser' => fn () => $chatPayload['currentChatUser'],
             'currentOrderContext' => fn () => $currentOrderContext,
+            'userOrders' => fn () => $userOrders,
             'chatTemplates' => $sellerPerspective ? fn () => \App\Models\ChatMessageTemplate::where('user_id', $this->sellerOwnerId())->get() : [],
         ]);
     }

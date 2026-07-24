@@ -9,15 +9,18 @@ import {
     Smile,
     X,
     MessageCircle,
+    Package,
 } from 'lucide-react';
 import MentionsList, { useMentions } from './MentionsList';
 import TemplateDropdown from './TemplateDropdown';
 import { compressImage } from "@/utils/imageCompressor";
+import { OrderMentionsList, useOrderMentions } from '@/Components/Chat/OrderMentionsList';
 
 export default function MessageInput({ 
     currentChatUser, 
     currentChannel,
     form,
+    userOrders = [],
     eligibleContacts = [],
 
     // Props passed by Chat.jsx (Seller-Buyer Chat)
@@ -90,6 +93,7 @@ export default function MessageInput({
     const emojiPickerRef = form ? localEmojiPickerRef : propEmojiPickerRef;
     
     const mentionsDropdownRef = useRef(null);
+    const orderMentionsRef = useRef(null);
 
     // 4. Typing trigger
     const lastTypingSignal = useRef(0);
@@ -111,6 +115,21 @@ export default function MessageInput({
         inputRef,
         eligibleContacts,
         currentChannel
+    });
+
+    const {
+        isDropdownVisible: isOrderDropdownVisible,
+        filteredOrders,
+        orderIndex,
+        checkOrderMentions,
+        selectOrder,
+        toggleManualPicker,
+        closeDropdown: closeOrderDropdown
+    } = useOrderMentions({
+        message: data.message,
+        setMessage: (val) => setData('message', val),
+        inputRef,
+        userOrders
     });
 
     const signalTyping = () => {
@@ -386,8 +405,18 @@ export default function MessageInput({
                     </p>
                 )}
 
+                {/* Order Mentions Autocomplete Popup */}
+                <OrderMentionsList
+                    ref={orderMentionsRef}
+                    isVisible={isOrderDropdownVisible}
+                    orders={filteredOrders}
+                    orderIndex={orderIndex}
+                    onSelect={selectOrder}
+                    onClose={closeOrderDropdown}
+                />
+
                 <form onSubmit={handleSubmit} className="flex w-full items-end gap-2 sm:gap-3">
-                    <div className="relative flex flex-1 items-center overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 p-1 shadow-sm transition-all focus-within:border-clay-400 focus-within:ring-4 focus-within:ring-clay-50">
+                    <div className="relative flex flex-1 items-center overflow-visible rounded-2xl border border-gray-200 bg-gray-50 p-1 shadow-sm transition-all focus-within:border-clay-400 focus-within:ring-4 focus-within:ring-clay-50">
                         <div className="flex items-center gap-0.5 px-1">
                             {/* Templates Button (Seller-Buyer Chat Only) */}
                             {!form && (
@@ -426,6 +455,17 @@ export default function MessageInput({
                             >
                                 <Paperclip size={20} />
                             </button>
+                            {userOrders && userOrders.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={toggleManualPicker}
+                                    disabled={isMessagesReadOnly}
+                                    className="rounded-xl p-2 text-gray-400 transition-all duration-200 hover:bg-white hover:text-clay-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Tag Specific Order (@)"
+                                >
+                                    <Package size={20} />
+                                </button>
+                            )}
                         </div>
 
                         <textarea
@@ -439,12 +479,14 @@ export default function MessageInput({
                                 event.target.style.height = `${Math.min(event.target.scrollHeight, 120)}px`;
                                 signalTyping();
                                 checkMentions(val, event.target.selectionStart);
+                                checkOrderMentions(val, event.target.selectionStart);
                             }}
                             onSelect={(event) => {
                                 checkMentions(event.target.value, event.target.selectionStart);
+                                checkOrderMentions(event.target.value, event.target.selectionStart);
                             }}
                             disabled={isMessagesReadOnly}
-                            placeholder={isMessagesReadOnly ? "Chat is read-only..." : (form ? "Message your team..." : "Type your message here...")}
+                            placeholder={isMessagesReadOnly ? "Chat is read-only..." : (form ? "Message your team..." : "Type a message or @ to tag an order...")}
                             className="custom-scrollbar max-h-[120px] min-h-[42px] w-full flex-1 resize-none border-none bg-transparent px-3 py-2.5 text-sm font-medium leading-relaxed text-gray-700 placeholder-gray-400 focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
                             onKeyDown={(event) => {
                                 if (handleMentionsKeyDown(event)) {

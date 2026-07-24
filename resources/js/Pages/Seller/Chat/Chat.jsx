@@ -19,7 +19,7 @@ import QuickTemplateSelector from '@/Components/Seller/Chat/QuickTemplateSelecto
 
 const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 
-export default function Chat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null, chatTemplates = [] }) {
+export default function Chat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null, userOrders = [], chatTemplates = [] }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const isEchoConnected = useEchoConnection();
     const [searchTerm, setSearchTerm] = useState('');
@@ -375,6 +375,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                         is_typing: isCounterpartTyping
                                     }}
                                     currentOrderContext={currentOrderContext}
+                                    userOrders={userOrders}
                                     groupedMessages={groupedMessages}
                                     galleryImages={galleryImages}
                                     setActiveMedia={setActiveMedia}
@@ -388,6 +389,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                 <MessageInput
                                     currentChatUser={currentChatUser}
                                     currentOrderContext={currentOrderContext}
+                                    userOrders={userOrders}
                                     data={data}
                                     setData={setData}
                                     post={post}
