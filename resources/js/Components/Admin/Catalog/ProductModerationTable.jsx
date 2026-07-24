@@ -234,9 +234,9 @@ export default function ProductModerationTable({ products, filters, statusCounts
             <div className="bg-white rounded-2xl border border-stone-200/80 p-6 space-y-6 shadow-sm">
                 
                 {/* Search Bar & Inline Category Filter Selection */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
                     {/* Status selection pills with count numbers */}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1.5 max-w-full -mx-2 px-2 lg:mx-0 lg:px-0">
                         {[
                             { value: 'pending_review', label: 'Pending Review', count: statusCounts?.pending_review || 0 },
                             { value: 'Active', label: 'Approved / Active', count: statusCounts?.Active || 0 },
@@ -265,7 +265,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                     </div>
 
                     {/* Search & Shop Filter Controls */}
-                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
                         {/* Per-Shop Filter Selection */}
                         {shops.length > 0 && (
                             <div className="relative w-full sm:w-56">
