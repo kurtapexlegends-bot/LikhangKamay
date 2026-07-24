@@ -252,6 +252,7 @@ export default function ProductInspectionDrawer({
                             <div className="w-full h-full">
                                 <ProductViewer3D 
                                     modelUrl={product.model_3d_url} 
+                                    adjustCamera={2.2}
                                 />
                             </div>
                         ) : (
