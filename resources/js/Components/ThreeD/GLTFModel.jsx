@@ -30,7 +30,25 @@ export default function GLTFModel({
                 child.castShadow = true;
                 child.receiveShadow = true;
                 if (child.material) {
-                    child.material.needsUpdate = true;
+                    if (Array.isArray(child.material)) {
+                        child.material = child.material.map((m) => m.clone());
+                    } else {
+                        child.material = child.material.clone();
+                    }
+                    
+                    const materials = Array.isArray(child.material) ? child.material : [child.material];
+                    materials.forEach((mat) => {
+                        mat.needsUpdate = true;
+                        if (mat.map) {
+                            mat.map.needsUpdate = true;
+                        }
+                    });
+
+                    if (child.geometry && child.geometry.attributes && child.geometry.attributes.color) {
+                        materials.forEach((mat) => {
+                            mat.vertexColors = true;
+                        });
+                    }
                 }
             }
         });

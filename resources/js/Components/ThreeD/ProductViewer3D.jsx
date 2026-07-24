@@ -99,7 +99,7 @@ export default function ProductViewer3D({
                     <directionalLight position={[5, 10, 5]} intensity={1.2} castShadow />
                     <directionalLight position={[-5, -5, -5]} intensity={0.4} />
                     <Suspense fallback={<Loader />}>
-                        <Stage environment="city" intensity={0.6} adjustCamera={false}>
+                        <Stage environment="city" intensity={0.6} adjustCamera={1.1}>
                             {modelUrl ? (
                                 <GLTFModel url={modelUrl} scale={zoom} />
                             ) : (
