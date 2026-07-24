@@ -195,7 +195,6 @@ class PlaceOrder
                     }
 
                     $product->decrement('stock', $item['qty']);
-                    $product->increment('sold', $item['qty']);
                     $product->refresh();
 
                     if ($product->track_as_supply && $product->supply) {

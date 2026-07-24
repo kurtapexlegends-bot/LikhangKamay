@@ -811,7 +811,6 @@ class LalamoveDeliveryFlowTest extends TestCase
         ]);
 
         $product->decrement('stock', 1);
-        $product->increment('sold', 1);
 
         return $order->fresh(['items', 'user', 'delivery']);
     }

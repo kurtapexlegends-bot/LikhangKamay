@@ -32,7 +32,6 @@ class CancelOrder
                 $product = Product::lockForUpdate()->find($item->product_id);
                 if ($product) {
                     $product->increment('stock', $item->quantity);
-                    $product->decrement('sold', $item->quantity);
                     $product->refresh();
                     
                     if ($product->track_as_supply && $product->supply) {

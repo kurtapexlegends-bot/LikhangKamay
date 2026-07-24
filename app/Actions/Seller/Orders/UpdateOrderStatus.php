@@ -94,6 +94,16 @@ class UpdateOrderStatus
                 } elseif ($lockedOrder->payment_status !== 'paid') {
                     throw new \Exception('Cannot complete an unpaid order.');
                 }
+
+                if ($lockedOrder->status !== 'Completed') {
+                    foreach ($lockedOrder->items as $item) {
+                        $product = Product::lockForUpdate()->find($item->product_id);
+                        if ($product) {
+                            $product->increment('sold', $item->quantity);
+                            $product->refresh();
+                        }
+                    }
+                }
             } elseif ($status === 'Shipped' || $status === 'Ready for Pickup') {
                 $updateData['shipped_at'] = now();
             } elseif ($status === 'Delivered') {
@@ -118,7 +128,6 @@ class UpdateOrderStatus
                     $product = Product::lockForUpdate()->find($item->product_id);
                     if ($product) {
                         $product->increment('stock', $item->quantity);
-                        $product->decrement('sold', $item->quantity); // Revert sold count
                         $product->refresh();
                         // Sync to linked Supply
                         if ($product->track_as_supply && $product->supply) {

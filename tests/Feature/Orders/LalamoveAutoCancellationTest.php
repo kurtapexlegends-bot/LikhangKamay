@@ -247,7 +247,7 @@ class LalamoveAutoCancellationTest extends TestCase
 
         $product->refresh();
         $this->assertEquals(4, $product->stock);
-        $this->assertEquals(1, $product->sold);
+        $this->assertEquals(0, $product->sold);
 
         $delivery = $order->delivery()->create([
             'provider' => OrderDelivery::PROVIDER_LALAMOVE,
@@ -348,7 +348,7 @@ class LalamoveAutoCancellationTest extends TestCase
         $this->assertNull($delivery->auto_cancelled_at);
 
         $this->assertEquals(4, $product->stock);
-        $this->assertEquals(1, $product->sold);
+        $this->assertEquals(0, $product->sold);
     }
 
     private function createSeller(array $overrides = []): User
@@ -424,7 +424,6 @@ class LalamoveAutoCancellationTest extends TestCase
         ]);
 
         $product->decrement('stock', 1);
-        $product->increment('sold', 1);
 
         return $order->fresh(['items', 'user', 'delivery']);
     }
