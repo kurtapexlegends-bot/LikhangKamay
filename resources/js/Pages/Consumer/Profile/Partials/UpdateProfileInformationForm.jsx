@@ -7,6 +7,7 @@ import { Link, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { AlertTriangle, CheckCircle2, AlertCircle } from 'lucide-react';
 import useConstraintValidation from '@/hooks/useConstraintValidation';
+import { compressImage } from '@/utils/imageCompressor';
 
 export default function UpdateProfileInformation({
     mustVerifyEmail,
@@ -134,12 +135,13 @@ export default function UpdateProfileInformation({
                             </svg>
                         </label>
                         <input id="avatar" type="file" className="hidden" accept="image/*"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                                 const file = e.target.files[0];
                                 if (file) {
-                                    setData('avatar', file);
+                                    const compressed = await compressImage(file, 800, 800, 0.85);
+                                    setData('avatar', compressed);
                                     revokePreview(data.preview_url);
-                                    setData('preview_url', URL.createObjectURL(file));
+                                    setData('preview_url', URL.createObjectURL(compressed));
                                 }
                             }}
                         />
