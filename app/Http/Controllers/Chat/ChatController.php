@@ -49,7 +49,7 @@ class ChatController extends Controller
 
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
-            'message' => 'nullable|string',
+            'message' => 'nullable|string|max:2000',
             'attachment' => 'nullable|file|max:10240', // 10MB max
         ]);
 

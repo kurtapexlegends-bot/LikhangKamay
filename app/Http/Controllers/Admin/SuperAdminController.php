@@ -279,7 +279,7 @@ class SuperAdminController extends Controller
     public function rejectArtisan(Request $request, int|string $id, RejectArtisan $rejectArtisan)
     {
         Gate::authorize('admin-action');
-        $request->validate(['reason' => 'required|string|min:10']);
+        $request->validate(['reason' => 'required|string|min:10|max:1000']);
 
         $rejectArtisan->execute($id, strip_tags($request->reason));
 
