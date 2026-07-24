@@ -72,11 +72,11 @@ export default function ProductInspectionDrawer({
 
     return (
         <SlideOverDrawer
-            isOpen={isOpen}
+            show={isOpen}
             onClose={onClose}
             title="Inspect Product Listing"
-            subtitle={`SKU: ${product.sku}`}
-            maxWidth="max-w-2xl"
+            widthClass="max-w-2xl"
+            position="right"
         >
             <div className="space-y-6 pb-24">
                 {/* Header Status & Artisan Summary */}
