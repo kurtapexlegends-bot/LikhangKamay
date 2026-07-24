@@ -273,7 +273,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                 <select
                                     value={selectedShopId}
                                     onChange={(e) => handleShopFilterChange(e.target.value)}
-                                    className="pl-9 pr-8 text-xs py-2 w-full min-h-[38px] bg-stone-50/20 border border-stone-200 rounded-xl font-medium text-stone-800 focus:border-clay-500 focus:ring-clay-500/20 cursor-pointer"
+                                    className="pl-9 pr-8 text-xs py-2 w-full min-h-[38px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer"
                                 >
                                     <option value="">All Artisan Shops ({shops.length})</option>
                                     {shops.map((shop) => (
@@ -290,7 +290,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
                             <TextInput 
                                 placeholder="Search by title or SKU..." 
-                                className="pl-9 text-xs py-2 w-full min-h-[38px] bg-stone-50/20"
+                                className="pl-9 text-xs py-2 w-full min-h-[38px] bg-white hover:border-stone-300 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -398,21 +398,21 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                 </td>
                                                 <td className="py-4 px-6 align-middle text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        {/* Mandatory Pre-Viewing Inspect & Moderate Action */}
+                                                        {/* Mandatory Pre-Viewing Inspect Action */}
                                                         <button
                                                             onClick={() => setInspectedProduct(product)}
-                                                            className="px-3.5 py-1.5 rounded-xl bg-clay-600 hover:bg-clay-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs shadow-clay-600/20 active:scale-95 transition-all duration-150 cursor-pointer"
-                                                            title="Inspect full listing details, photos & 3D model"
+                                                            className="px-3.5 py-1.5 rounded-xl bg-clay-50 hover:bg-clay-600 text-clay-700 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-clay-200/60 hover:border-transparent active:scale-95 transition-all duration-200 shadow-sm"
+                                                            title="Inspect Product Details"
                                                         >
-                                                            <Eye size={14} strokeWidth={2.2} />
-                                                            <span>Inspect & Moderate</span>
+                                                            <Eye size={14} />
+                                                            <span>Inspect</span>
                                                         </button>
 
                                                         {/* Flag Action for Approved Active Listings */}
                                                         {product.status === 'Active' && (
                                                             <button
                                                                 onClick={() => setInspectedProduct(product)}
-                                                                className="p-1.5 rounded-xl text-amber-600 hover:bg-amber-50 border border-amber-200/50 transition-all duration-200 min-h-[36px] min-w-[36px] flex items-center justify-center shadow-sm"
+                                                                className="p-1.5 rounded-xl text-amber-600 hover:bg-amber-50 border border-amber-200/50 hover:border-amber-305 transition-all duration-200 min-h-[36px] min-w-[36px] flex items-center justify-center active:scale-95 shadow-sm"
                                                                 title="Flag Active Listing"
                                                             >
                                                                 <ShieldAlert size={16} strokeWidth={2.2} />
