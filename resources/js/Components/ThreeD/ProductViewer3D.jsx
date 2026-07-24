@@ -95,11 +95,8 @@ export default function ProductViewer3D({
                     gl={{ preserveDrawingBuffer: true, antialias: true }}
                     className="cursor-grab active:cursor-grabbing"
                 >
-                    <ambientLight intensity={0.8} />
-                    <directionalLight position={[5, 10, 5]} intensity={1.2} castShadow />
-                    <directionalLight position={[-5, -5, -5]} intensity={0.4} />
                     <Suspense fallback={<Loader />}>
-                        <Stage environment="city" intensity={0.6} adjustCamera={1.1}>
+                        <Stage preset="rembrandt" intensity={0.5} adjustCamera={1.1}>
                             {modelUrl ? (
                                 <GLTFModel url={modelUrl} scale={zoom} />
                             ) : (

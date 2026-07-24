@@ -55,11 +55,8 @@ export default function ThreeDCanvasViewer({
                 camera={{ position: [0, 0, 4], fov: 50 }}
                 gl={{ preserveDrawingBuffer: true, antialias: true }}
             >
-                <ambientLight intensity={0.8} />
-                <directionalLight position={[5, 10, 5]} intensity={1.2} castShadow />
-                <directionalLight position={[-5, -5, -5]} intensity={0.4} />
                 <Suspense fallback={suspenseFallback}>
-                    <Stage environment="city" intensity={0.6} adjustCamera={1.1}>
+                    <Stage preset="rembrandt" intensity={0.5} adjustCamera={1.1}>
                         {modelUrl ? (
                             <GLTFModel url={modelUrl} scale={scale} />
                         ) : showDemoFallback ? (
