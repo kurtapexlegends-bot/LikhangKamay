@@ -22,10 +22,10 @@ export default function ProductCard({
             onClick={(e) => {
                 if (isBulkEdit) onToggleSelect(e, product.id);
             }}
-            className={`group flex flex-col overflow-hidden rounded-[24px] border bg-stone-50/45 transition-all duration-500 hover:bg-white hover:-translate-y-1 hover:shadow-xl hover:shadow-stone-200/80 ${
+            className={`group flex flex-col overflow-hidden rounded-[24px] border bg-white shadow-xs transition-all duration-500 hover:-translate-y-1 hover:shadow-md ${
                 isBulkEdit && isSelected 
-                    ? 'border-clay-500 ring-2 ring-clay-200' 
-                    : 'border-stone-100/80 hover:border-clay-200'
+                    ? 'border-clay-500 ring-2 ring-clay-200/80' 
+                    : 'border-stone-200/60 hover:border-clay-200'
             }`}
         >
             <div className="relative aspect-[4/3] bg-stone-50 overflow-hidden rounded-t-[23px] select-none">

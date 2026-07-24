@@ -345,7 +345,7 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                 <Link 
                                     href={route('product.show', product.slug)} 
                                     key={product.id} 
-                                    className="group relative flex flex-col overflow-hidden rounded-[24px] border border-stone-100/80 bg-stone-50/45 transition-all duration-500 hover:bg-white hover:-translate-y-1.5 active:scale-[0.98] hover:border-clay-200 hover:shadow-xl hover:shadow-stone-200/80"
+                                    className="group relative flex flex-col overflow-hidden rounded-[24px] border border-stone-200/60 bg-white shadow-xs transition-all duration-500 hover:-translate-y-1.5 active:scale-[0.98] hover:border-clay-200 hover:shadow-md"
                                 >
                                     {/* Image */}
                                     <div className="aspect-[4/3] relative bg-stone-50 overflow-hidden flex items-center justify-center rounded-t-[23px] select-none">
