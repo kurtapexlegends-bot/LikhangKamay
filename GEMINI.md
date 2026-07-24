@@ -55,6 +55,7 @@
 - **Trade-offs:** Briefly state pros/cons of major architectural decisions before coding.
 - **Diffs:** Provide clear file paths and diffs for modifications rather than full file rewrites.
 - **Task Focus:** Focus strictly on the assigned task. Do not make random, unrelated, or unnecessary changes to the codebase unless they are absolutely required to complete the specified task.
+- **Proactive Diagnostic & User Information Requests:** If a problem cannot be pinpointed with 100% certainty from existing codebase files alone (e.g. browser console errors, HTTP status headers, network tab responses, runtime UI behavior), explicitly ask the user for the exact diagnostic data or steps needed. Never rely on theoretical guesses when user-provided environment logs can surface the exact root cause.
 
 ## 9. Technology Stack & Integrations
 - **Core Frameworks:** Laravel (PHP backend) and React (SPAs built using Inertia.js).
