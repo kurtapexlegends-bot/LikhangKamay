@@ -118,11 +118,7 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
     const heading = viewer === 'seller' ? 'Current Buyer Order' : 'Current Order';
 
     const handleHeaderClick = () => {
-        if (window.innerWidth < 640) {
-            setIsDrawerOpen(true);
-        } else {
-            setIsCardExpanded(!isCardExpanded);
-        }
+        setIsDrawerOpen(true);
     };
 
     const detailsContent = (
@@ -141,7 +137,7 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-clay-600 transition hover:text-clay-700 bg-clay-50/50 hover:bg-clay-50 px-3 py-1.5 rounded-lg shadow-sm"
                 >
                     <ShoppingBag size={14} />
-                    View Full Details
+                    View Full Order Page
                 </Link>
             </div>
 
@@ -171,50 +167,58 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
                     <div className="border-t border-gray-100 px-4 py-4 bg-gray-50/30">
                         <div className="grid gap-5 md:grid-cols-[minmax(0,1.2fr)_minmax(240px,1fr)] lg:grid-cols-[minmax(0,1.25fr)_280px]">
                             <div className="space-y-3 pr-2">
-                                {orderItems.map((item) => {
-                                    const lineTotal = Number(item.price || 0) * Number(item.quantity || 0);
+                                {orderItems.length > 0 ? (
+                                    orderItems.map((item) => {
+                                        const lineTotal = Number(item.price || 0) * Number(item.quantity || 0);
 
-                                    return (
-                                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
-                                            <ItemImage item={item} />
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-bold text-gray-900">{item.name}</p>
-                                                <p className="text-xs text-gray-500 mt-0.5">{item.variant}</p>
-                                                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-medium text-gray-600">
-                                                    <span className="rounded-md bg-gray-100 px-2 py-1 leading-none">Qty {item.quantity}</span>
-                                                    <span className="text-gray-400">&times;</span>
-                                                    <span>{currency.format(item.price || 0)}</span>
+                                        return (
+                                            <div key={item.id || item.name} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
+                                                <ItemImage item={item} />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="truncate text-sm font-bold text-gray-900">{item.name}</p>
+                                                    {item.variant && <p className="text-xs text-gray-500 mt-0.5">{item.variant}</p>}
+                                                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-medium text-gray-600">
+                                                        <span className="rounded-md bg-gray-100 px-2 py-1 leading-none">Qty {item.quantity}</span>
+                                                        <span className="text-gray-400">&times;</span>
+                                                        <span>{currency.format(item.price || 0)}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="text-left sm:text-right mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+                                                    <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 hidden sm:block mb-1">Line Total</p>
+                                                    <p className="text-sm font-bold text-gray-900">{currency.format(lineTotal)}</p>
                                                 </div>
                                             </div>
-                                            <div className="text-left sm:text-right mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
-                                                <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 hidden sm:block mb-1">Line Total</p>
-                                                <p className="text-sm font-bold text-gray-900">{currency.format(lineTotal)}</p>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })
+                                ) : (
+                                    <div className="rounded-xl border border-dashed border-gray-200 bg-white p-4 text-center text-xs font-medium text-gray-500">
+                                        1 item in order • Total: {currency.format(order.totalAmount || 0)}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-4">
                                 <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
                                     <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-3 border-b border-gray-50 pb-2">Order Details</p>
                                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                                        <div>
-                                            <p className="text-xs font-semibold text-gray-500">Customer</p>
-                                            <p className="mt-1 text-sm font-medium text-gray-900">{order.customerName}</p>
-                                        </div>
+                                        {order.customerName && (
+                                            <div>
+                                                <p className="text-xs font-semibold text-gray-500">Customer</p>
+                                                <p className="mt-1 text-sm font-medium text-gray-900">{order.customerName}</p>
+                                            </div>
+                                        )}
                                         <div>
                                             <p className="text-xs font-semibold text-gray-500">Payment</p>
                                             <div className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-900">
                                                 <CreditCard size={14} className="text-clay-500" />
-                                                {order.paymentMethod}
+                                                {order.paymentMethod || 'COD'}
                                             </div>
                                         </div>
                                         <div>
                                             <p className="text-xs font-semibold text-gray-500">Shipping Method</p>
                                             <div className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-900">
                                                 <Truck size={14} className="text-clay-500" />
-                                                {order.shippingMethod}
+                                                {order.shippingMethod || 'Standard Delivery'}
                                             </div>
                                         </div>
                                         <div>
@@ -224,15 +228,17 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
                                     </div>
                                 </div>
 
-                                <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                                    <div className="flex items-start gap-2">
-                                        <MapPin size={16} className="mt-0.5 shrink-0 text-clay-500" />
-                                        <div>
-                                            <p className="text-xs font-semibold text-gray-500">Shipping Address</p>
-                                            <p className="mt-1 text-sm font-medium leading-relaxed text-gray-900">{order.shippingAddress}</p>
+                                {order.shippingAddress && (
+                                    <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                                        <div className="flex items-start gap-2">
+                                            <MapPin size={16} className="mt-0.5 shrink-0 text-clay-500" />
+                                            <div>
+                                                <p className="text-xs font-semibold text-gray-500">Shipping Address</p>
+                                                <p className="mt-1 text-sm font-medium leading-relaxed text-gray-900">{order.shippingAddress}</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
 
                                 {order.shippingNotes && (
                                     <div className="rounded-xl border border-gray-100 bg-yellow-50 p-4 shadow-sm">
@@ -276,29 +282,31 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
                 </div>
                 
                 <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                    <span className="text-xs font-bold text-clay-600 bg-clay-50 hover:bg-clay-100 px-2.5 py-1 rounded-lg transition items-center gap-1">
+                        View Details
+                    </span>
                     {hasMultipleActiveOrders && (
                         <span className="rounded-md bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600 hidden sm:block">
                             1 of {activeOrdersCount} active
                         </span>
                     )}
-                    <ChevronDown size={18} className={`text-gray-400 transition-transform duration-200 ${isCardExpanded ? 'rotate-180 text-gray-800' : ''}`} />
                 </div>
             </div>
 
-            {/* EXPANDED CONTENT (Desktop Only) */}
+            {/* EXPANDED CONTENT (Desktop Inline fallback - capped height to prevent clipping) */}
             {isCardExpanded && (
-                <div className="hidden sm:block px-3 py-3 sm:px-4 lg:px-6 overflow-y-auto custom-scrollbar w-full max-h-[60vh] bg-[#FDFBF9] border-t border-gray-100 shadow-inner animate-in slide-in-from-top-2 fade-in duration-200 pb-6">
+                <div className="hidden sm:block px-3 py-3 sm:px-4 lg:px-6 overflow-y-auto custom-scrollbar w-full max-h-[260px] bg-[#FDFBF9] border-t border-gray-100 shadow-inner animate-in slide-in-from-top-2 fade-in duration-200 pb-6">
                     {detailsContent}
                 </div>
             )}
 
-            {/* MOBILE DRAWER/BOTTOM SHEET */}
-            <Modal show={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} maxWidth="xl" bottomSheet={true}>
-                <div className="flex flex-col max-h-[85vh]">
+            {/* ORDER DETAILS MODAL / DRAWER (Clean, unclipped full view for all viewports) */}
+            <Modal show={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} maxWidth="2xl">
+                <div className="flex flex-col max-h-[85vh] bg-white rounded-2xl overflow-hidden shadow-2xl">
                     <div className="p-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
                         <div>
                             <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{heading}</h3>
-                            <p className="text-[11px] text-gray-500 font-medium mt-0.5">Order Info Summary</p>
+                            <p className="text-xs text-gray-500 font-semibold mt-0.5">{order.orderNumber}</p>
                         </div>
                         <button 
                             onClick={() => setIsDrawerOpen(false)}
@@ -308,7 +316,7 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
                             <X size={20} />
                         </button>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 bg-[#FDFBF9] pb-8">
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#FDFBF9] pb-8">
                         {detailsContent}
                     </div>
                 </div>
