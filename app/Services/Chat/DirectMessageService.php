@@ -66,8 +66,9 @@ class DirectMessageService
                 'initial' => substr($user->shop_name ?: $user->name, 0, 1),
                 'premium_tier' => $user->premium_tier,
                 'role' => $user->role,
-                'shop_name' => $user->shop_name,
-                'lastMsg' => $lastMsg ? $lastMsg->message : 'Start chatting',
+                'lastMsg' => $lastMsg 
+                    ? ($lastMsg->message ?: ($lastMsg->attachment_type === 'image' ? 'Sent an image' : 'Sent an attachment')) 
+                    : 'Start chatting',
                 'last_message_at' => $lastMsg?->created_at?->toIso8601String(),
                 'time' => $lastMsg ? $lastMsg->created_at->shortAbsoluteDiffForHumans() : '',
                 'unread' => $unreadCounts[$user->id] ?? 0,
