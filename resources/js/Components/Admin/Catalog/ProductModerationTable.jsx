@@ -311,11 +311,11 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                 className="rounded-md border-stone-300 text-clay-600 focus:ring-clay-500/30 focus:ring-offset-0 h-4.5 w-4.5 cursor-pointer inline-block align-middle"
                                             />
                                         </th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[30%]">Product</th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[20%]">Artisan Seller</th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[15%]">Submitted</th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[20%]">Status</th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[15%] text-right">Actions</th>
+                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[30%] text-center align-middle">Product</th>
+                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[20%] text-center align-middle">Artisan Seller</th>
+                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[15%] text-center align-middle">Submitted</th>
+                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[20%] text-center align-middle">Status</th>
+                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[15%] text-center align-middle">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-stone-100">
@@ -330,8 +330,8 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                         className="rounded-md border-stone-300 text-clay-600 focus:ring-clay-500/30 focus:ring-offset-0 h-4.5 w-4.5 cursor-pointer inline-block align-middle"
                                                     />
                                                 </td>
-                                                <td className="py-4 px-6 align-middle">
-                                                    <div className="flex items-center gap-4 cursor-pointer" onClick={() => setInspectedProduct(product)}>
+                                                <td className="py-4 px-6 text-center align-middle">
+                                                    <div className="flex items-center justify-center gap-4 cursor-pointer" onClick={() => setInspectedProduct(product)}>
                                                         <div className="w-12 h-12 rounded-xl border border-stone-200 bg-stone-50 flex-shrink-0 flex items-center justify-center overflow-hidden">
                                                             {product.img || product.cover_photo_path ? (
                                                                 <img
@@ -347,22 +347,22 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                                 <Package size={16} className="text-stone-300" />
                                                             )}
                                                         </div>
-                                                        <div className="max-w-[200px]">
+                                                        <div className="max-w-[200px] text-left">
                                                             <p className="text-xs font-bold text-stone-900 truncate hover:text-clay-600 transition-colors">{product.name}</p>
                                                             <p className="text-[10px] text-stone-550 font-mono tracking-wider bg-stone-100/80 rounded px-1.5 py-0.5 w-fit mt-1">SKU: {product.sku}</p>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="py-4 px-6 align-middle text-xs font-bold text-stone-850">
-                                                    <div>
+                                                <td className="py-4 px-6 text-center align-middle text-xs font-bold text-stone-850">
+                                                    <div className="inline-block text-left">
                                                         <p className="text-stone-900">{product.user?.shop_name || 'Individual Seller'}</p>
                                                         <p className="text-[10px] text-stone-500 font-medium mt-0.5">{product.user?.name}</p>
                                                     </div>
                                                 </td>
-                                                <td className="py-4 px-6 align-middle text-xs font-semibold text-stone-500">
+                                                <td className="py-4 px-6 text-center align-middle text-xs font-semibold text-stone-500">
                                                     {product.created_at ? new Date(product.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
                                                 </td>
-                                                <td className="py-4 px-6 align-middle whitespace-nowrap">
+                                                <td className="py-4 px-6 text-center align-middle whitespace-nowrap">
                                                     {product.status === 'Active' ? (
                                                         <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-emerald-100/40"><CheckCircle2 size={12}/> Active</span>
                                                     ) : product.status === 'pending_review' ? (
@@ -375,18 +375,18 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                         <span className="inline-flex items-center gap-1.5 bg-stone-50 text-stone-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-stone-200/40"><AlertTriangle size={12}/> {product.status}</span>
                                                     )}
                                                     {product.rejection_reason && (
-                                                        <p className="text-[10px] text-red-550 mt-1.5 max-w-[180px] truncate font-bold" title={product.rejection_reason}>
+                                                        <p className="text-[10px] text-red-550 mt-1.5 max-w-[180px] truncate font-bold mx-auto text-left w-fit" title={product.rejection_reason}>
                                                             Reason: {product.rejection_reason}
                                                         </p>
                                                     )}
                                                     {product.status === 'pending_review' && product.latest_resubmission?.notes && (
-                                                        <div className="mt-1.5 text-[10px] text-stone-600 bg-stone-50 p-2 rounded-lg border border-stone-200 max-w-[200px] break-words font-medium">
+                                                        <div className="mt-1.5 text-[10px] text-stone-600 bg-stone-50 p-2 rounded-lg border border-stone-200 max-w-[200px] break-words font-medium mx-auto text-left w-fit">
                                                             <span className="font-bold text-stone-700">Seller Notes:</span> "{product.latest_resubmission.notes}"
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="py-4 px-6 align-middle text-right">
-                                                    <div className="flex items-center justify-end gap-2">
+                                                <td className="py-4 px-6 text-center align-middle">
+                                                    <div className="flex items-center justify-center gap-2">
                                                         {/* Mandatory Pre-Viewing Inspect Action */}
                                                         <button
                                                             onClick={() => setInspectedProduct(product)}
