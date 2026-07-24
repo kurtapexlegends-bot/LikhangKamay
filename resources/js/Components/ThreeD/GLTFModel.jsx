@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, Suspense } from 'react';
+import React, { useRef, useEffect, useMemo, Suspense } from 'react';
 import { useGLTF, useAnimations } from '@react-three/drei';
 
 /**
@@ -22,8 +22,23 @@ export default function GLTFModel({
     const { scene, animations } = useGLTF(url);
     const { actions } = useAnimations(animations, groupRef);
     
+    const clonedScene = useMemo(() => {
+        if (!scene) return null;
+        const clone = scene.clone(true);
+        clone.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+                if (child.material) {
+                    child.material.needsUpdate = true;
+                }
+            }
+        });
+        return clone;
+    }, [scene]);
+    
     useEffect(() => {
-        if (animations.length > 0) {
+        if (animations && animations.length > 0 && actions) {
             const firstAction = Object.values(actions)[0];
             if (firstAction) {
                 firstAction.play();
@@ -31,7 +46,7 @@ export default function GLTFModel({
         }
     }, [actions, animations]);
 
-    const clonedScene = scene.clone();
+    if (!clonedScene) return null;
 
     return (
         <group ref={groupRef} {...props} dispose={null}>
