@@ -183,9 +183,19 @@ export default function useProductFormState({
             production_method: product.production_method || "resell",
             recipes: product.recipes || [],
         });
+        const resolveStorageUrl = (urlOrPath) => {
+            if (!urlOrPath) return null;
+            if (urlOrPath.startsWith('http://') || urlOrPath.startsWith('https://') || urlOrPath.startsWith('blob:') || urlOrPath.startsWith('data:')) {
+                return urlOrPath;
+            }
+            return `/storage/${urlOrPath.replace(/^\/+/, '').replace(/^storage\//, '')}`;
+        };
+
         setPreviews({
-            cover: product.img,
-            gallery: product.gallery_paths ? product.gallery_paths.map((path) => `/storage/${path}`) : [],
+            cover: product.cover_photo_url || product.img || resolveStorageUrl(product.cover_photo_path),
+            gallery: product.gallery_urls && product.gallery_urls.length > 0 
+                ? product.gallery_urls 
+                : (product.gallery_paths ? product.gallery_paths.map(resolveStorageUrl) : []),
         });
         setActiveFormTab("Essentials");
         setProductModalOpen(true);

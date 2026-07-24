@@ -5,6 +5,8 @@ namespace App\Http\Resources\Seller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+use App\Services\StorageUrl;
+
 class SellerProductResource extends JsonResource
 {
     /**
@@ -42,8 +44,11 @@ class SellerProductResource extends JsonResource
             'lead_time' => $this->lead_time,
             'sold' => $this->sold,
             'cover_photo_path' => $this->cover_photo_path,
+            'cover_photo_url' => StorageUrl::url($this->cover_photo_path),
             'gallery_paths' => $this->gallery_paths ?? [],
+            'gallery_urls' => collect($this->gallery_paths ?? [])->map(fn($p) => StorageUrl::url($p))->filter()->values()->toArray(),
             'model_3d_path' => $this->model_3d_path,
+            'model_3d_url' => StorageUrl::url($this->model_3d_path),
             'track_as_supply' => (bool) $this->track_as_supply,
             'production_method' => $this->production_method ?? 'resell',
             'rejection_reason' => $this->rejection_reason,
@@ -55,9 +60,7 @@ class SellerProductResource extends JsonResource
                 'quantity_required' => $r->quantity_required,
                 'unit' => $r->supply->unit ?? '',
             ])->toArray(),
-            'img' => $this->cover_photo_path
-                ? '/storage/' . $this->cover_photo_path
-                : '/images/placeholder.svg',
+            'img' => StorageUrl::url($this->cover_photo_path, '/images/placeholder.svg'),
             'has3D' => filled($this->model_3d_path),
         ];
     }

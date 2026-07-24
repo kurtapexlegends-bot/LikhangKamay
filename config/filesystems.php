@@ -44,7 +44,11 @@ return [
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
             'region' => env('AWS_DEFAULT_REGION'),
             'bucket' => env('AWS_BUCKET'),
-            'url' => env('AWS_URL'),
+            'url' => env('AWS_URL') ?: (
+                env('AWS_ENDPOINT') && str_contains(env('AWS_ENDPOINT'), 'supabase.co')
+                    ? str_replace('/s3', '/object/public/' . env('AWS_BUCKET'), env('AWS_ENDPOINT'))
+                    : null
+            ),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'visibility' => 'public',

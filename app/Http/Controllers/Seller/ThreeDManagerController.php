@@ -34,10 +34,8 @@ class ThreeDManagerController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
-                    'url' => asset('storage/' . $product->model_3d_path),
-                    'thumbnail' => $product->cover_photo_path
-                        ? asset('storage/' . $product->cover_photo_path)
-                        : null,
+                    'url' => \App\Services\StorageUrl::url($product->model_3d_path),
+                    'thumbnail' => \App\Services\StorageUrl::url($product->cover_photo_path),
                     'status' => $product->status,
                     'date' => $product->updated_at->format('M d, Y'),
                     'size' => $this->getFileSize($product->model_3d_path),
