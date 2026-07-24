@@ -9,13 +9,16 @@ import {
     Clock, 
     AlertTriangle, 
     Search, 
-    Loader2 
+    Loader2,
+    Eye,
+    Store
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import CompactPagination from '@/Components/CompactPagination';
 import EmptyState from '@/Components/WorkspaceEmptyState';
 import BulkActionPill, { ActionTooltip } from '@/Components/Admin/Layout/BulkActionPill';
 import ProductModerationModal from '@/Components/Admin/Catalog/ProductModerationModal';
+import ProductInspectionDrawer from '@/Components/Admin/Catalog/ProductInspectionDrawer';
 import TextInput from '@/Components/TextInput';
 
 // Custom inline MetricCard for dashboard telemetry
@@ -41,12 +44,14 @@ const ModerationMetricCard = ({ title, value, icon: Icon, tone = 'amber' }) => {
     );
 };
 
-export default function ProductModerationTable({ products, filters, statusCounts }) {
+export default function ProductModerationTable({ products, filters, statusCounts, shops = [] }) {
     const { addToast } = useToast();
     const [selectedProductIds, setSelectedProductIds] = useState([]);
     const [currentStatusFilter, setCurrentStatusFilter] = useState(filters?.product_status || 'pending_review');
+    const [selectedShopId, setSelectedShopId] = useState(filters?.shop_id || '');
     const [searchQuery, setSearchQuery] = useState(filters?.search || '');
     const [isModifyingProduct, setIsModifyingProduct] = useState(false);
+    const [inspectedProduct, setInspectedProduct] = useState(null);
     const [moderationModal, setModerationModal] = useState({ isOpen: false, type: null, ids: [] });
     const [moderationFeedback, setModerationFeedback] = useState('');
     const [lastType, setLastType] = useState('reject');
@@ -56,7 +61,10 @@ export default function ProductModerationTable({ products, filters, statusCounts
         if (filters?.product_status && filters.product_status !== currentStatusFilter) {
             setCurrentStatusFilter(filters.product_status);
         }
-    }, [filters?.product_status]);
+        if (filters?.shop_id !== undefined && filters.shop_id !== selectedShopId) {
+            setSelectedShopId(filters.shop_id || '');
+        }
+    }, [filters?.product_status, filters?.shop_id]);
 
     // Debounced Search Handler
     useEffect(() => {
@@ -67,6 +75,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
             router.get(route('admin.catalog.index'), {
                 tab: 'moderation',
                 product_status: currentStatusFilter,
+                shop_id: selectedShopId,
                 search: searchQuery
             }, {
                 preserveScroll: true,
@@ -85,6 +94,18 @@ export default function ProductModerationTable({ products, filters, statusCounts
         router.get(route('admin.catalog.index'), { 
             tab: 'moderation', 
             product_status: status,
+            shop_id: selectedShopId,
+            search: searchQuery
+        }, { preserveScroll: true, preserveState: true });
+    };
+
+    const handleShopFilterChange = (shopId) => {
+        setSelectedShopId(shopId);
+        setSelectedProductIds([]);
+        router.get(route('admin.catalog.index'), {
+            tab: 'moderation',
+            product_status: currentStatusFilter,
+            shop_id: shopId,
             search: searchQuery
         }, { preserveScroll: true, preserveState: true });
     };
@@ -103,6 +124,40 @@ export default function ProductModerationTable({ products, filters, statusCounts
                 ? prev.filter(id => id !== productId)
                 : [...prev, productId]
         );
+    };
+
+    const handleDrawerApprove = (productId) => {
+        executeSingleModeration(productId, 'approve', '');
+    };
+
+    const handleDrawerReject = (productId, feedbackReason) => {
+        executeSingleModeration(productId, 'reject', feedbackReason);
+    };
+
+    const handleDrawerFlag = (productId, feedbackReason) => {
+        executeSingleModeration(productId, 'flag', feedbackReason);
+    };
+
+    const executeSingleModeration = (productId, actionType, feedbackText = '') => {
+        setIsModifyingProduct(true);
+        router.post(route('admin.catalog.moderate'), {
+            ids: [productId],
+            action: actionType,
+            feedback: feedbackText
+        }, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                setInspectedProduct(null);
+                addToast(`Product listing successfully ${actionType}d.`, 'success');
+            },
+            onError: (err) => {
+                addToast(err.feedback || 'Failed to process moderation action.', 'error');
+            },
+            onFinish: () => {
+                setIsModifyingProduct(false);
+            }
+        });
     };
 
     const triggerModeration = (ids, type) => {
@@ -209,20 +264,42 @@ export default function ProductModerationTable({ products, filters, statusCounts
                         ))}
                     </div>
 
-                    {/* Search Input Bar */}
-                    <div className="relative w-full md:w-72">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
-                        <TextInput 
-                            placeholder="Search by title or SKU..." 
-                            className="pl-9 text-xs py-2 w-full min-h-[38px] bg-stone-50/20"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                        {isValidating && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                <Loader2 size={14} className="text-stone-400 animate-spin" />
+                    {/* Search & Shop Filter Controls */}
+                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                        {/* Per-Shop Filter Selection */}
+                        {shops.length > 0 && (
+                            <div className="relative w-full sm:w-56">
+                                <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
+                                <select
+                                    value={selectedShopId}
+                                    onChange={(e) => handleShopFilterChange(e.target.value)}
+                                    className="pl-9 pr-8 text-xs py-2 w-full min-h-[38px] bg-stone-50/20 border border-stone-200 rounded-xl font-medium text-stone-800 focus:border-clay-500 focus:ring-clay-500/20 cursor-pointer"
+                                >
+                                    <option value="">All Artisan Shops ({shops.length})</option>
+                                    {shops.map((shop) => (
+                                        <option key={shop.id} value={shop.id}>
+                                            {shop.shop_name || shop.name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         )}
+
+                        {/* Search Input Bar */}
+                        <div className="relative w-full sm:w-64">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
+                            <TextInput 
+                                placeholder="Search by title or SKU..." 
+                                className="pl-9 text-xs py-2 w-full min-h-[38px] bg-stone-50/20"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            {isValidating && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <Loader2 size={14} className="text-stone-400 animate-spin" />
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -265,7 +342,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                     </div>
                                                 </td>
                                                 <td className="py-4 px-6 align-middle">
-                                                    <div className="flex items-center gap-4">
+                                                    <div className="flex items-center gap-4 cursor-pointer" onClick={() => setInspectedProduct(product)}>
                                                         <div className="w-12 h-12 rounded-xl border border-stone-200 bg-stone-50 flex-shrink-0 flex items-center justify-center overflow-hidden">
                                                             {product.img || product.cover_photo_path ? (
                                                                 <img
@@ -282,7 +359,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                             )}
                                                         </div>
                                                         <div className="max-w-[200px]">
-                                                            <p className="text-xs font-bold text-stone-900 truncate">{product.name}</p>
+                                                            <p className="text-xs font-bold text-stone-900 truncate hover:text-clay-600 transition-colors">{product.name}</p>
                                                             <p className="text-[10px] text-stone-550 font-mono tracking-wider bg-stone-100/80 rounded px-1.5 py-0.5 w-fit mt-1">SKU: {product.sku}</p>
                                                         </div>
                                                     </div>
@@ -320,32 +397,25 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                     )}
                                                 </td>
                                                 <td className="py-4 px-6 align-middle text-right">
-                                                    <div className="flex items-center justify-end gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                                        {product.status !== 'Active' && (
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {/* Mandatory Pre-Viewing Inspect Action */}
+                                                        <button
+                                                            onClick={() => setInspectedProduct(product)}
+                                                            className="px-3 py-1.5 rounded-xl bg-clay-50 hover:bg-clay-100 text-clay-700 font-bold text-xs flex items-center gap-1.5 border border-clay-200/60 transition-all shadow-sm"
+                                                            title="Inspect Product Details"
+                                                        >
+                                                            <Eye size={14} />
+                                                            <span>Inspect</span>
+                                                        </button>
+
+                                                        {/* Flag Action for Approved Active Listings */}
+                                                        {product.status === 'Active' && (
                                                             <button
-                                                                onClick={() => triggerModeration(product.id, 'approve')}
-                                                                className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
-                                                                title="Approve Listing"
+                                                                onClick={() => setInspectedProduct(product)}
+                                                                className="p-1.5 rounded-xl text-amber-600 hover:bg-amber-50 border border-amber-200/50 transition-all duration-200 min-h-[36px] min-w-[36px] flex items-center justify-center shadow-sm"
+                                                                title="Flag Active Listing"
                                                             >
-                                                                <Check size={16} strokeWidth={2.5} />
-                                                            </button>
-                                                        )}
-                                                        {product.status !== 'rejected' && (
-                                                            <button
-                                                                onClick={() => triggerModeration(product.id, 'reject')}
-                                                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
-                                                                title="Reject Listing"
-                                                            >
-                                                                <XCircle size={16} strokeWidth={2.5} />
-                                                            </button>
-                                                        )}
-                                                        {product.status !== 'flagged' && (
-                                                            <button
-                                                                onClick={() => triggerModeration(product.id, 'flag')}
-                                                                className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 border border-transparent hover:border-amber-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm"
-                                                                title="Flag Listing"
-                                                            >
-                                                                <ShieldAlert size={16} strokeWidth={2.5} />
+                                                                <ShieldAlert size={16} strokeWidth={2.2} />
                                                             </button>
                                                         )}
                                                     </div>
@@ -380,6 +450,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                         onPageChange={(products_page) => router.get(route('admin.catalog.index'), { 
                             tab: 'moderation', 
                             product_status: currentStatusFilter, 
+                            shop_id: selectedShopId,
                             search: searchQuery,
                             products_page 
                         }, { preserveScroll: true, preserveState: true })}
@@ -387,6 +458,17 @@ export default function ProductModerationTable({ products, filters, statusCounts
                     />
                 )}
             </div>
+
+            {/* Product Inspection & Moderation Drawer */}
+            <ProductInspectionDrawer
+                isOpen={!!inspectedProduct}
+                product={inspectedProduct}
+                onClose={() => setInspectedProduct(null)}
+                onApprove={handleDrawerApprove}
+                onReject={handleDrawerReject}
+                onFlag={handleDrawerFlag}
+                isProcessing={isModifyingProduct}
+            />
 
             {/* Moderation Modal Dialog */}
             <ProductModerationModal

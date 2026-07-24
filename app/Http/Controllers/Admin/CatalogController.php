@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\SponsorshipRequest;
+use App\Models\User;
 use App\Notifications\SponsorshipStatusNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -23,24 +24,36 @@ class CatalogController extends Controller
         Gate::authorize('admin-action');
 
         $statusFilter = $request->input('product_status', 'pending_review');
+        $shopFilter = $request->input('shop_id');
         $search = $request->input('search');
 
-        $productQuery = Product::with(['user:id,name,shop_name', 'latestResubmission'])
+        $productQuery = Product::with(['user:id,name,shop_name,email', 'latestResubmission'])
             ->when($statusFilter && $statusFilter !== 'all', function ($q) use ($statusFilter) {
                 $q->where('status', $statusFilter);
+            })
+            ->when($shopFilter, function ($q) use ($shopFilter) {
+                $q->where('user_id', $shopFilter);
             })
             ->when($search, function ($q) use ($search) {
                 $q->search($search, ['name', 'sku']);
             })
             ->latest();
 
+        $countQuery = Product::when($shopFilter, fn ($q) => $q->where('user_id', $shopFilter));
+
         $statusCounts = [
-            'pending_review' => Product::where('status', 'pending_review')->count(),
-            'Active' => Product::where('status', 'Active')->count(),
-            'flagged' => Product::where('status', 'flagged')->count(),
-            'rejected' => Product::where('status', 'rejected')->count(),
-            'all' => Product::count(),
+            'pending_review' => (clone $countQuery)->where('status', 'pending_review')->count(),
+            'Active' => (clone $countQuery)->where('status', 'Active')->count(),
+            'flagged' => (clone $countQuery)->where('status', 'flagged')->count(),
+            'rejected' => (clone $countQuery)->where('status', 'rejected')->count(),
+            'all' => (clone $countQuery)->count(),
         ];
+
+        $shops = User::where('role', 'artisan')
+            ->whereHas('products')
+            ->select('id', 'name', 'shop_name')
+            ->orderBy('shop_name')
+            ->get();
 
         return Inertia::render('Admin/Catalog/CatalogManager', [
             'categories' => Inertia::defer(fn() => Category::withCount('products')->orderBy('name')->get()),
@@ -49,8 +62,10 @@ class CatalogController extends Controller
                 ->paginate(10, ['*'], 'requests_page'),
             'products' => $productQuery->paginate(10, ['*'], 'products_page'),
             'statusCounts' => $statusCounts,
+            'shops' => $shops,
             'filters' => [
                 'product_status' => $statusFilter,
+                'shop_id' => $shopFilter,
                 'search' => $search
             ]
         ]);
