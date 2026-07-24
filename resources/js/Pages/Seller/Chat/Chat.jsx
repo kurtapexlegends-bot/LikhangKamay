@@ -150,13 +150,15 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         });
 
         channel.listen('.message.seen', (e) => {
-            if (currentChatUser && Number(e.senderId) === Number(currentChatUser.id)) {
+            const sender = e.senderId ?? e.sender_id;
+            if (currentChatUser && Number(sender) === Number(currentChatUser.id)) {
                 router.reload({ only: ['activeMessages'] });
             }
         });
 
         channel.listen('.user.typing', (e) => {
-            if (currentChatUser && Number(e.senderId) === Number(currentChatUser.id)) {
+            const sender = e.senderId ?? e.sender_id;
+            if (currentChatUser && Number(sender) === Number(currentChatUser.id)) {
                 setIsCounterpartTyping(true);
                 if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
                 typingTimeoutRef.current = setTimeout(() => {
@@ -190,20 +192,22 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
             if (activeMessages.length === 0 || currentChatUser.id !== data.receiver_id) {
                 inputRef.current?.focus();
             }
-            if (document.hasFocus()) {
-                markAsRead(currentChatUser.id);
-            }
+            markAsRead(currentChatUser.id);
         }
     }, [currentChatUser, activeMessages.length]);
 
     useEffect(() => {
-        const handleFocus = () => {
-            if (currentChatUser && document.hasFocus()) {
+        const handleActivity = () => {
+            if (currentChatUser && (!document.hidden || document.hasFocus())) {
                 markAsRead(currentChatUser.id);
             }
         };
-        window.addEventListener('focus', handleFocus);
-        return () => window.removeEventListener('focus', handleFocus);
+        window.addEventListener('focus', handleActivity);
+        document.addEventListener('visibilitychange', handleActivity);
+        return () => {
+            window.removeEventListener('focus', handleActivity);
+            document.removeEventListener('visibilitychange', handleActivity);
+        };
     }, [currentChatUser]);
 
     const signalTyping = () => {

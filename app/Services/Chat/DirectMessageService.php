@@ -86,6 +86,20 @@ class DirectMessageService
             if ($activeUser) {
                 $this->authorizeConversationCounterpart($actor, $activeUser, $sellerPerspective);
                 
+                // Automatically mark unread incoming messages from activeChatId to current user as read
+                $readUpdated = Message::where('sender_id', $activeChatId)
+                    ->where('receiver_id', $userId)
+                    ->where('is_read', false)
+                    ->update(['is_read' => true]);
+
+                if ($readUpdated > 0) {
+                    try {
+                        broadcast(new \App\Events\MessageSeen($activeChatId, $userId))->toOthers();
+                    } catch (\Throwable $e) {
+                        report($e);
+                    }
+                }
+
                 // Add online status to active user
                 $activeUser->is_online = Cache::has('user-is-online-' . $activeUser->id);
                 $activeUser->last_seen_at_iso = $activeUser->last_seen_at?->toIso8601String();
