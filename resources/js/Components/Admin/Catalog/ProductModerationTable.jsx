@@ -398,14 +398,14 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                 </td>
                                                 <td className="py-4 px-6 align-middle text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        {/* Mandatory Pre-Viewing Inspect Action */}
+                                                        {/* Mandatory Pre-Viewing Inspect & Moderate Action */}
                                                         <button
                                                             onClick={() => setInspectedProduct(product)}
-                                                            className="px-3 py-1.5 rounded-xl bg-clay-50 hover:bg-clay-100 text-clay-700 font-bold text-xs flex items-center gap-1.5 border border-clay-200/60 transition-all shadow-sm"
-                                                            title="Inspect Product Details"
+                                                            className="px-3.5 py-1.5 rounded-xl bg-clay-600 hover:bg-clay-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs shadow-clay-600/20 active:scale-95 transition-all duration-150 cursor-pointer"
+                                                            title="Inspect full listing details, photos & 3D model"
                                                         >
-                                                            <Eye size={14} />
-                                                            <span>Inspect</span>
+                                                            <Eye size={14} strokeWidth={2.2} />
+                                                            <span>Inspect & Moderate</span>
                                                         </button>
 
                                                         {/* Flag Action for Approved Active Listings */}
