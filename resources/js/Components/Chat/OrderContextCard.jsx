@@ -80,10 +80,25 @@ function ItemImage({ item }) {
     );
 }
 
-export default function OrderContextCard({ order, viewer = 'buyer' }) {
+export default function OrderContextCard({ order: initialOrder, viewer = 'buyer' }) {
     const [expanded, setExpanded] = useState(true);
     const [isCardExpanded, setIsCardExpanded] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(0);
+
+    const activeOrders = useMemo(() => {
+        if (!initialOrder) return [];
+        return initialOrder.activeOrders || [initialOrder];
+    }, [initialOrder]);
+
+    const order = useMemo(() => {
+        return activeOrders[activeIndex] || initialOrder;
+    }, [activeOrders, activeIndex, initialOrder]);
+
+    // Reset index if orders list changes
+    React.useEffect(() => {
+        setActiveIndex(0);
+    }, [activeOrders.length]);
 
     const lineCount = useMemo(() => {
         if (!order) {
@@ -110,7 +125,7 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
     }
 
     const orderItems = order.items || [];
-    const activeOrdersCount = Number(order.activeOrdersCount || 1);
+    const activeOrdersCount = activeOrders.length;
     const hasMultipleActiveOrders = activeOrdersCount > 1;
 
     const statusConfig = getStatusConfig(order.status);
@@ -127,9 +142,35 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
                 <div className="flex items-center gap-2">
                     <p className="text-xs font-bold uppercase tracking-wider text-gray-500">{heading}</p>
                     {hasMultipleActiveOrders && (
-                        <span className="rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">
-                            1 of {activeOrdersCount} active
-                        </span>
+                        <div className="flex items-center gap-1 bg-gray-100/80 p-0.5 rounded-lg border border-gray-200">
+                            <button
+                                type="button"
+                                disabled={activeIndex === 0}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveIndex(prev => Math.max(0, prev - 1));
+                                }}
+                                className="p-1 rounded text-gray-500 hover:text-gray-900 hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition cursor-pointer"
+                                title="Previous Order"
+                            >
+                                <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            <span className="px-1.5 text-[10px] font-bold text-gray-700 select-none">
+                                {activeIndex + 1} of {activeOrdersCount} active
+                            </span>
+                            <button
+                                type="button"
+                                disabled={activeIndex === activeOrdersCount - 1}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveIndex(prev => Math.min(activeOrdersCount - 1, prev + 1));
+                                }}
+                                className="p-1 rounded text-gray-500 hover:text-gray-900 hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition cursor-pointer"
+                                title="Next Order"
+                            >
+                                <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                        </div>
                     )}
                 </div>
                 <Link

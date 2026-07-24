@@ -31,65 +31,69 @@ class ResolveCurrentOrderContext
                 ->where('artisan_id', $counterpart->id);
         }
 
-        $pendingOrder = (clone $orderQuery)
-            ->where('status', 'Pending')
-            ->latest('created_at')
-            ->first();
+        $orders = $orderQuery->get()->sortBy(function($o) {
+            return ($o->status === 'Pending' ? 0 : 1) . '_' . (9999999999 - ($o->created_at?->timestamp ?? 0));
+        })->values();
 
-        $activeOrdersCount = (clone $orderQuery)->count();
+        $mappedOrders = $orders->map(function ($order) use ($sellerPerspective, $actor) {
+            $canRespond = $sellerPerspective
+                && $order->status === 'Pending'
+                && $actor->canAccessSellerModule('orders');
 
-        $order = $pendingOrder ?: (clone $orderQuery)
-            ->latest('created_at')
-            ->first();
+            $lineItemsCount = $order->items->count();
+            $unitsCount = (int) $order->items->sum('quantity');
 
-        if (!$order) {
+            return [
+                'orderNumber' => $order->order_number,
+                'dbId' => $order->id,
+                'status' => $order->status,
+                'paymentStatus' => $order->payment_status ?? 'pending',
+                'customerName' => $order->customer_name,
+                'placedAt' => $order->created_at?->format('M d, Y h:i A'),
+                'shippingAddress' => $order->shipping_address,
+                'shippingMethod' => $order->shipping_method,
+                'shippingNotes' => $order->shipping_notes,
+                'paymentMethod' => $order->payment_method,
+                'trackingNumber' => $order->tracking_number,
+                'totalAmount' => (float) $order->total_amount,
+                'formattedTotal' => number_format((float) $order->total_amount, 2),
+                'canRespond' => $canRespond,
+                'isReadOnly' => !$canRespond,
+                'detailsRoute' => $sellerPerspective ? route('orders.index') : route('my-orders.index'),
+                'lineItemsCount' => $lineItemsCount,
+                'itemsCount' => $lineItemsCount,
+                'unitsCount' => $unitsCount,
+                'items' => $order->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'name' => $item->product_name,
+                        'variant' => $item->variant ?: 'Standard',
+                        'quantity' => $item->quantity,
+                        'price' => (float) $item->price,
+                        'img' => $this->resolveProductImagePath($item->product_img),
+                    ];
+                })->values()->all(),
+            ];
+        })->values()->all();
+
+        if (empty($mappedOrders)) {
             return null;
         }
 
-        $canRespond = $sellerPerspective
-            && $order->status === 'Pending'
-            && $actor->canAccessSellerModule('orders');
-
-        $lineItemsCount = $order->items->count();
-        $unitsCount = (int) $order->items->sum('quantity');
+        $primaryOrder = $mappedOrders[0];
+        $activeOrdersCount = count($mappedOrders);
+        $hasPending = $orders->contains(fn($o) => $o->status === 'Pending');
 
         return [
-            'orderNumber' => $order->order_number,
-            'dbId' => $order->id,
-            'status' => $order->status,
-            'paymentStatus' => $order->payment_status ?? 'pending',
-            'customerName' => $order->customer_name,
-            'placedAt' => $order->created_at?->format('M d, Y h:i A'),
-            'shippingAddress' => $order->shipping_address,
-            'shippingMethod' => $order->shipping_method,
-            'shippingNotes' => $order->shipping_notes,
-            'paymentMethod' => $order->payment_method,
-            'trackingNumber' => $order->tracking_number,
-            'totalAmount' => (float) $order->total_amount,
-            'formattedTotal' => number_format((float) $order->total_amount, 2),
-            'canRespond' => $canRespond,
-            'isReadOnly' => !$canRespond,
-            'detailsRoute' => $sellerPerspective ? route('orders.index') : route('my-orders.index'),
+            ...$primaryOrder,
             'activeOrdersCount' => $activeOrdersCount,
             'otherActiveOrdersCount' => max(0, $activeOrdersCount - 1),
-            'lineItemsCount' => $lineItemsCount,
-            'itemsCount' => $lineItemsCount,
-            'unitsCount' => $unitsCount,
             'selectionSummary' => $activeOrdersCount > 1
-                ? ($pendingOrder
+                ? ($hasPending
                     ? 'Showing the pending order first. View Orders to review the other active orders in this conversation.'
                     : 'Showing the latest active order. View Orders to review the rest of this conversation\'s open orders.')
                 : null,
-            'items' => $order->items->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'name' => $item->product_name,
-                    'variant' => $item->variant ?: 'Standard',
-                    'quantity' => $item->quantity,
-                    'price' => (float) $item->price,
-                    'img' => $this->resolveProductImagePath($item->product_img),
-                ];
-            })->values()->all(),
+            'activeOrders' => $mappedOrders,
         ];
     }
 
