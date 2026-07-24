@@ -189,8 +189,6 @@ class Product extends Model
             if ($product->status === 'pending_review' && ($product->wasRecentlyCreated || $product->wasChanged('status'))) {
                 $admins = \App\Models\User::where('role', 'super_admin')->get();
                 \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\ProductPendingReviewNotification($product));
-            } else if ($product->status === 'pending_review') {
-                dd('saved observer debug:', $product->wasRecentlyCreated, $product->wasChanged('status'), $product->getOriginal('status'), $product->status);
             }
         });
 
