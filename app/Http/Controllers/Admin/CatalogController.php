@@ -89,7 +89,7 @@ class CatalogController extends Controller
             ->forceDelete();
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name',
+            'name' => 'required|string|max:50|unique:categories,name',
             'icon' => 'nullable|string|max:255'
         ]);
 
@@ -123,7 +123,7 @@ class CatalogController extends Controller
             ->forceDelete();
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
+            'name' => 'required|string|max:50|unique:categories,name,' . $category->id,
             'icon' => 'nullable|string|max:255'
         ]);
 
@@ -222,7 +222,7 @@ class CatalogController extends Controller
         }
 
         $validated = $request->validate([
-            'rejection_reason' => ['required', 'string', 'max:1000'],
+            'rejection_reason' => ['required', 'string', 'max:500'],
         ]);
 
         $sponsorshipRequest->update([
