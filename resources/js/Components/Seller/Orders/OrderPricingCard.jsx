@@ -45,30 +45,41 @@ export default function OrderPricingCard({
             </button>
 
             {isExpanded && (
-                <div className="space-y-1.5 text-[10px] mt-2 px-1">
-                    <div className="flex justify-between text-stone-500 border-b border-stone-50 pb-1 mb-1">
-                        <span>Merchandise:</span>
-                        <span className="font-semibold text-stone-700">
-                            {Number(order.merchandise_subtotal).toLocaleString(undefined, {
-                                minimumFractionDigits: 2
-                            })}
+                <div className="space-y-2 text-[10.5px] mt-2.5 px-2 border-t border-stone-100 pt-2.5">
+                    <div className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-1">Your Revenue Calculation</div>
+                    <div className="flex justify-between text-stone-600">
+                        <span>Merchandise Subtotal:</span>
+                        <span className="font-semibold text-stone-800">
+                            PHP {Number(order.merchandise_subtotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
                     </div>
-                    <div className="flex justify-between text-stone-400 pt-0.5">
-                        <span>Shipping (Paid by Buyer):</span>
-                        <span className="font-medium text-stone-600">
-                            {Number(order.shipping_fee_amount).toLocaleString(undefined, {
-                                minimumFractionDigits: 2
-                            })}
+                    <div className="flex justify-between text-stone-500">
+                        <span>Platform Commission (5%):</span>
+                        <span className="font-semibold text-red-500">
+                            - PHP {Number(order.platform_commission_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
                     </div>
-                    <div className="flex justify-between text-stone-400">
-                        <span>Platform Fee (Paid by Buyer):</span>
-                        <span className="font-medium text-stone-600">
-                            {Number(order.convenience_fee_amount).toLocaleString(undefined, {
-                                minimumFractionDigits: 2
-                            })}
+                    <div className="flex justify-between font-bold pt-1.5 border-t border-stone-100/60 mb-2.5">
+                        <span className="text-stone-900">Your Net Payout:</span>
+                        <span className="text-emerald-600 font-extrabold text-[11px]">
+                            PHP {Number(order.seller_net_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
+                    </div>
+
+                    <div className="pt-2 border-t border-stone-100/60 text-stone-400 space-y-1">
+                        <div className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-1">Paid by Buyer (Separate)</div>
+                        <div className="flex justify-between">
+                            <span>Shipping Fee:</span>
+                            <span className="font-medium text-stone-600">
+                                PHP {Number(order.shipping_fee_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Convenience Fee (3%):</span>
+                            <span className="font-medium text-stone-600">
+                                PHP {Number(order.convenience_fee_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </span>
+                        </div>
                     </div>
                 </div>
             )}
