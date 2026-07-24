@@ -64,7 +64,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'role' => 'artisan',
-            'shop_name' => fake()->company().' Pottery',
+            'shop_name' => substr(fake()->company(), 0, 18).' Pottery',
             'setup_completed_at' => now(),
             'artisan_status' => 'approved',
             'approved_at' => now(),
@@ -75,7 +75,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'role' => 'artisan',
-            'shop_name' => fake()->company().' Pottery',
+            'shop_name' => substr(fake()->company(), 0, 18).' Pottery',
             'setup_completed_at' => now(),
             'artisan_status' => 'pending',
         ]);
@@ -85,7 +85,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'role' => 'artisan',
-            'shop_name' => fake()->company().' Pottery',
+            'shop_name' => substr(fake()->company(), 0, 18).' Pottery',
             'setup_completed_at' => null,
             'artisan_status' => 'pending',
         ]);

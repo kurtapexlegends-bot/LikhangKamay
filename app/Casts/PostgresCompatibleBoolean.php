@@ -27,10 +27,14 @@ class PostgresCompatibleBoolean implements CastsAttributes
      *
      * @param  array<string, mixed>  $attributes
      */
-    public function set(Model $model, string $key, mixed $value, array $attributes): string
+    public function set(Model $model, string $key, mixed $value, array $attributes): mixed
     {
         $boolVal = filter_var($value, FILTER_VALIDATE_BOOLEAN);
 
-        return $boolVal ? 'true' : 'false';
+        if ($model->getConnection()->getDriverName() === 'pgsql') {
+            return $boolVal ? 'true' : 'false';
+        }
+
+        return $boolVal;
     }
 }
