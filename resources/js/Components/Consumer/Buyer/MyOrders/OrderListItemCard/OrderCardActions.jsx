@@ -15,6 +15,19 @@ export default function OrderCardActions({
     onOpenEscalateModal,
     onOpenRatingModal,
 }) {
+    const formatPHP = (val) => {
+        const num = Number(val);
+        return isNaN(num) ? `PHP ${val}` : `PHP ${num.toFixed(2)}`;
+    };
+
+    const getPaymentLabel = (method, status) => {
+        const isPaid = status?.toLowerCase() === 'paid';
+        if (method === 'COD') {
+            return isPaid ? 'Paid via Cash on Delivery' : 'Pay via Cash on Delivery';
+        }
+        return isPaid ? `Paid via ${method}` : `To pay via ${method}`;
+    };
+
     // Mobile Secondary Actions Selector
     const getMobileSecondaryActions = () => {
         const actions = [];
@@ -97,28 +110,35 @@ export default function OrderCardActions({
     return (
         <div className="flex flex-col gap-4 border-t border-stone-200/60 bg-stone-50/50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between w-full">
             {/* Total Pricing / Breakdown summary */}
-            <div className="w-full sm:w-auto">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mb-1.5">Order Breakdown</p>
-                <div className="divide-y divide-stone-200/60 sm:divide-y-0 text-[12px] text-stone-500 sm:space-y-1">
-                    <div className="flex items-center justify-between gap-4 py-2 sm:py-0 sm:justify-start">
-                        <span className="min-w-[120px]">Subtotal</span>
-                        <span className="shrink-0 whitespace-nowrap text-right font-bold text-stone-800">PHP {order.merchandise_subtotal}</span>
+            <div className="w-full sm:w-auto bg-stone-100/60 border border-stone-200/40 rounded-xl p-3.5 sm:min-w-[320px] shadow-sm">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2.5">Payment Breakdown</p>
+                <div className="space-y-2 text-[12px]">
+                    <div className="flex items-center justify-between text-stone-600">
+                        <span>Items Subtotal</span>
+                        <span className="font-semibold text-stone-800">{formatPHP(order.merchandise_subtotal)}</span>
                     </div>
-                    <div className="flex items-center justify-between gap-4 py-2 sm:py-0 sm:justify-start">
-                        <span className="min-w-[120px]">Fee (3%)</span>
-                        <span className="shrink-0 whitespace-nowrap text-right font-bold text-[#c8764b]">PHP {order.convenience_fee_amount}</span>
+                    <div className="flex items-center justify-between text-stone-600">
+                        <span>Convenience Fee (3%)</span>
+                        <span className="font-semibold text-[#c8764b]">{formatPHP(order.convenience_fee_amount)}</span>
                     </div>
-                    <div className="flex items-center justify-between gap-4 py-2 sm:py-0 sm:justify-start">
-                        <span className="min-w-[120px]">Shipping Fee</span>
-                        <span className="shrink-0 whitespace-nowrap text-right font-bold text-stone-800">
+                    <div className="flex items-center justify-between text-stone-600">
+                        <span>Shipping Fee</span>
+                        <span className="font-semibold text-stone-850">
                             {order.shipping_method === 'Pick Up'
                                 ? 'Free'
-                                : `PHP ${order.shipping_fee_amount}`}
+                                : formatPHP(order.shipping_fee_amount)}
                         </span>
                     </div>
-                    <div className="flex items-center justify-between gap-4 py-2.5 pt-3 sm:py-0 sm:pt-1.5 sm:justify-start border-t border-stone-200/60 sm:border-t-0">
-                        <span className="min-w-[120px] font-bold text-stone-900 text-[13px]">Total</span>
-                        <span className="shrink-0 whitespace-nowrap text-right text-[15px] font-black tracking-tight text-[#c8764b]">PHP {order.total}</span>
+                    <div className="border-t border-stone-200 pt-2.5 mt-2.5 flex items-center justify-between">
+                        <div>
+                            <span className="block font-bold text-stone-900 text-[13px]">Total Payment</span>
+                            <span className="text-[10px] text-stone-400 leading-tight">
+                                {getPaymentLabel(order.payment_method, order.payment_status)}
+                            </span>
+                        </div>
+                        <span className="text-lg font-black tracking-tight text-clay-700 bg-clay-50 border border-clay-100 px-3 py-1 rounded-lg">
+                            {formatPHP(order.total)}
+                        </span>
                     </div>
                 </div>
             </div>
