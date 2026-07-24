@@ -58,9 +58,9 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'food_safe' => 'boolean',
-        'track_as_supply' => 'boolean',
-        'is_sponsored' => 'boolean',
+        'food_safe' => \App\Casts\PostgresCompatibleBoolean::class,
+        'track_as_supply' => \App\Casts\PostgresCompatibleBoolean::class,
+        'is_sponsored' => \App\Casts\PostgresCompatibleBoolean::class,
         'sponsored_until' => 'datetime',
         'colors' => 'array',        // Automatically converts JSON to Array
         'gallery_paths' => 'array', // Automatically converts JSON to Array

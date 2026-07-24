@@ -195,7 +195,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'approved_at' => 'datetime',
             'modules_enabled' => 'array',
             'staff_module_permissions' => 'array',
-            'must_change_password' => 'boolean',
+            'must_change_password' => \App\Casts\PostgresCompatibleBoolean::class,
             'staff_plan_suspended_at' => 'datetime',
             'last_seen_at' => 'datetime',
             'document_flags' => 'array',

@@ -12,7 +12,7 @@ class Message extends Model
     protected $fillable = ['sender_id', 'receiver_id', 'message', 'attachment_path', 'attachment_type', 'is_read'];
 
     protected $casts = [
-        'is_read' => 'boolean',
+        'is_read' => \App\Casts\PostgresCompatibleBoolean::class,
     ];
 
     public function sender() {

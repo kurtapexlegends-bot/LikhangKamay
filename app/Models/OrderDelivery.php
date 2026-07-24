@@ -50,7 +50,7 @@ class OrderDelivery extends Model
         'last_webhook_received_at' => 'datetime',
         'terminal_failed_at' => 'datetime',
         'auto_cancelled_at' => 'datetime',
-        'is_pod_enabled' => 'boolean',
+        'is_pod_enabled' => \App\Casts\PostgresCompatibleBoolean::class,
         'price_total' => 'decimal:2',
     ];
 

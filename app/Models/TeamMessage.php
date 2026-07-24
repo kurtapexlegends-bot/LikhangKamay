@@ -24,7 +24,7 @@ class TeamMessage extends Model
     protected function casts(): array
     {
         return [
-            'is_read' => 'boolean',
+            'is_read' => \App\Casts\PostgresCompatibleBoolean::class,
         ];
     }
 

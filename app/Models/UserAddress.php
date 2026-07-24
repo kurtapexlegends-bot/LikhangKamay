@@ -40,7 +40,7 @@ class UserAddress extends Model
     ];
 
     protected $casts = [
-        'is_default' => 'boolean',
+        'is_default' => \App\Casts\PostgresCompatibleBoolean::class,
     ];
 
     public function user()

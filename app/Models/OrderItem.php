@@ -16,7 +16,7 @@ class OrderItem extends Model
     ];
 
     protected $casts = [
-        'was_sponsored' => 'boolean',
+        'was_sponsored' => \App\Casts\PostgresCompatibleBoolean::class,
         'sponsored_at_checkout' => 'datetime',
     ];
 

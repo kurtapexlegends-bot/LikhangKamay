@@ -24,8 +24,8 @@ class Review extends Model
 
     protected $casts = [
         'photos' => 'array',
-        'is_pinned' => 'boolean',
-        'is_hidden_from_marketplace' => 'boolean',
+        'is_pinned' => \App\Casts\PostgresCompatibleBoolean::class,
+        'is_hidden_from_marketplace' => \App\Casts\PostgresCompatibleBoolean::class,
         'hidden_at' => 'datetime',
     ];
 
