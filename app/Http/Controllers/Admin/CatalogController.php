@@ -39,7 +39,8 @@ class CatalogController extends Controller
             })
             ->latest();
 
-        $countQuery = Product::when($shopFilter, fn ($q) => $q->where('user_id', $shopFilter));
+        $countQuery = Product::when($shopFilter, fn ($q) => $q->where('user_id', $shopFilter))
+            ->when($search, fn ($q) => $q->search($search, ['name', 'sku']));
 
         $statusCounts = [
             'pending_review' => (clone $countQuery)->where('status', 'pending_review')->count(),

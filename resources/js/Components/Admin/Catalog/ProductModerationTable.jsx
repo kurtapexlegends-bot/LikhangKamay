@@ -233,42 +233,35 @@ export default function ProductModerationTable({ products, filters, statusCounts
             {/* Search & Filter Dashboard Card Container */}
             <div className="bg-white rounded-2xl border border-stone-200/80 p-6 space-y-6 shadow-sm">
                 
-                {/* Search Bar & Inline Category Filter Selection */}
-                <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
-                    {/* Status selection pills with count numbers */}
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1.5 max-w-full -mx-2 px-2 lg:mx-0 lg:px-0">
-                        {[
-                            { value: 'pending_review', label: 'Pending Review', count: statusCounts?.pending_review || 0 },
-                            { value: 'Active', label: 'Approved / Active', count: statusCounts?.Active || 0 },
-                            { value: 'rejected', label: 'Rejected', count: statusCounts?.rejected || 0 },
-                            { value: 'flagged', label: 'Flagged', count: statusCounts?.flagged || 0 },
-                            { value: 'all', label: 'All Listings', count: statusCounts?.all || 0 }
-                        ].map((pill) => (
-                            <button
-                                key={pill.value}
-                                type="button"
-                                onClick={() => handleProductStatusFilterChange(pill.value)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 min-h-[38px] ${
-                                    currentStatusFilter === pill.value
-                                        ? 'bg-clay-600 text-white shadow-md shadow-clay-600/10'
-                                        : 'bg-stone-50 hover:bg-stone-100 text-stone-600 border border-stone-200/40'
-                                }`}
-                            >
-                                <span>{pill.label}</span>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-black tracking-wider ${
-                                    currentStatusFilter === pill.value ? 'bg-white/20 text-white' : 'bg-stone-200/50 text-stone-500'
-                                }`}>
-                                    {pill.count}
-                                </span>
-                            </button>
-                        ))}
+                {/* Search & Filter Controls Grid */}
+                <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                    {/* Left: Summary Title */}
+                    <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-clay-500"></span>
+                        Product Moderation Catalog
                     </div>
 
-                    {/* Search & Shop Filter Controls */}
+                    {/* Right: Filter Inputs Row */}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+                        {/* Status Filter Selection Dropdown */}
+                        <div className="relative w-full sm:w-52">
+                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
+                            <select
+                                value={currentStatusFilter}
+                                onChange={(e) => handleProductStatusFilterChange(e.target.value)}
+                                className="pl-9 pr-8 text-xs py-2 w-full min-h-[38px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer"
+                            >
+                                <option value="pending_review">Pending Review ({statusCounts?.pending_review || 0})</option>
+                                <option value="Active">Approved / Active ({statusCounts?.Active || 0})</option>
+                                <option value="rejected">Rejected ({statusCounts?.rejected || 0})</option>
+                                <option value="flagged">Flagged ({statusCounts?.flagged || 0})</option>
+                                <option value="all">All Listings ({statusCounts?.all || 0})</option>
+                            </select>
+                        </div>
+
                         {/* Per-Shop Filter Selection */}
                         {shops.length > 0 && (
-                            <div className="relative w-full sm:w-56">
+                            <div className="relative w-full sm:w-52">
                                 <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
                                 <select
                                     value={selectedShopId}
@@ -286,7 +279,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                         )}
 
                         {/* Search Input Bar */}
-                        <div className="relative w-full sm:w-64">
+                        <div className="relative w-full sm:w-60">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
                             <TextInput 
                                 placeholder="Search by title or SKU..." 
