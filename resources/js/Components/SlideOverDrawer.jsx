@@ -29,14 +29,14 @@ export default function SlideOverDrawer({
                 {/* Backdrop */}
                 <TransitionChild
                     as={Fragment}
-                    enter="ease-in-out duration-300"
+                    enter="ease-out duration-200"
                     enterFrom="opacity-0"
                     enterTo="opacity-100"
-                    leave="ease-in-out duration-300"
+                    leave="ease-in duration-150"
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm transition-opacity" />
+                    <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-[2px] transition-opacity" />
                 </TransitionChild>
 
                 {/* Sliding Panel */}
@@ -49,10 +49,10 @@ export default function SlideOverDrawer({
                         }`}>
                             <TransitionChild
                                 as={Fragment}
-                                enter="transform transition-transform duration-300 ease-in-out"
+                                enter="transform transition-transform duration-250 ease-[cubic-bezier(0.16,1,0.3,1)]"
                                 enterFrom={isRight ? 'translate-x-full' : 'translate-y-full lg:translate-y-0 lg:translate-x-full'}
                                 enterTo={isRight ? 'translate-x-0' : 'translate-y-0 lg:translate-x-0'}
-                                leave="transform transition-transform duration-300 ease-in-out"
+                                leave="transform transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
                                 leaveFrom={isRight ? 'translate-x-0' : 'translate-y-0 lg:translate-x-0'}
                                 leaveTo={isRight ? 'translate-x-full' : 'translate-y-full lg:translate-y-0 lg:translate-x-full'}
                             >
