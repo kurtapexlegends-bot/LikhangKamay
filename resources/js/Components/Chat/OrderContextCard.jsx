@@ -81,7 +81,7 @@ function ItemImage({ item }) {
 }
 
 export default function OrderContextCard({ order, viewer = 'buyer' }) {
-    const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(true);
     const [isCardExpanded, setIsCardExpanded] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -169,7 +169,7 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
                 </button>
                 {expanded && (
                     <div className="border-t border-gray-100 px-4 py-4 bg-gray-50/30">
-                        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_280px]">
+                        <div className="grid gap-5 md:grid-cols-[minmax(0,1.2fr)_minmax(240px,1fr)] lg:grid-cols-[minmax(0,1.25fr)_280px]">
                             <div className="space-y-3 pr-2">
                                 {orderItems.map((item) => {
                                     const lineTotal = Number(item.price || 0) * Number(item.quantity || 0);
@@ -287,7 +287,7 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
 
             {/* EXPANDED CONTENT (Desktop Only) */}
             {isCardExpanded && (
-                <div className="hidden sm:block px-3 py-3 sm:px-4 lg:px-6 overflow-y-auto custom-scrollbar w-full max-h-[50vh] bg-[#FDFBF9] border-t border-gray-100 shadow-inner animate-in slide-in-from-top-2 fade-in duration-200">
+                <div className="hidden sm:block px-3 py-3 sm:px-4 lg:px-6 overflow-y-auto custom-scrollbar w-full max-h-[60vh] bg-[#FDFBF9] border-t border-gray-100 shadow-inner animate-in slide-in-from-top-2 fade-in duration-200 pb-6">
                     {detailsContent}
                 </div>
             )}
@@ -308,7 +308,7 @@ export default function OrderContextCard({ order, viewer = 'buyer' }) {
                             <X size={20} />
                         </button>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 bg-[#FDFBF9]">
+                    <div className="flex-1 overflow-y-auto p-4 bg-[#FDFBF9] pb-8">
                         {detailsContent}
                     </div>
                 </div>
