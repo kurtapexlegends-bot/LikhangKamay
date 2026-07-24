@@ -57,10 +57,11 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
             setIsUploading(true);
             setUploadProgress(5);
             try {
+                const uploadContentType = extension === 'glb' ? 'model/gltf-binary' : (data.model.type || 'application/octet-stream');
                 // 1. Get presigned upload configuration from backend
                 const presignResponse = await axios.post(route('3d.presign'), {
                     filename: data.model.name,
-                    contentType: data.model.type || 'application/octet-stream'
+                    contentType: uploadContentType
                 });
                 const { url, key } = presignResponse.data;
                 setUploadProgress(20);
@@ -68,7 +69,7 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
                 // 2. Upload file directly using PUT request
                 await axios.put(url, data.model, {
                     headers: {
-                        'Content-Type': data.model.type || 'application/octet-stream'
+                        'Content-Type': uploadContentType
                     },
                     onUploadProgress: (progressEvent) => {
                         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

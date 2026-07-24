@@ -19,7 +19,9 @@ export default function GLTFModel({
 }) {
     const groupRef = useRef();
     
-    const { scene, animations } = useGLTF(url);
+    const { scene, animations } = useGLTF(url, true, true, (loader) => {
+        loader.setCrossOrigin('anonymous');
+    });
     const { actions } = useAnimations(animations, groupRef);
 
     useEffect(() => {
@@ -60,7 +62,9 @@ export default function GLTFModel({
 }
 
 GLTFModel.preload = (url) => {
-    useGLTF.preload(url);
+    useGLTF.preload(url, true, true, (loader) => {
+        loader.setCrossOrigin('anonymous');
+    });
 };
 
 export function GLTFModelWithFallback({ url, fallback, ...props }) {
