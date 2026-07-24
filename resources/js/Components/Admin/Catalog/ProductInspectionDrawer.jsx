@@ -81,8 +81,8 @@ export default function ProductInspectionDrawer({
             </button>
 
             <div className="flex items-center gap-2">
-                {/* If active, show Flag button */}
-                {product.status === 'Active' ? (
+                {/* Status-aware contextual moderation controls */}
+                {product.status === 'Active' && (
                     <button
                         type="button"
                         disabled={isProcessing}
@@ -91,7 +91,9 @@ export default function ProductInspectionDrawer({
                     >
                         <ShieldAlert size={15} /> Flag Listing
                     </button>
-                ) : (
+                )}
+
+                {product.status === 'pending_review' && (
                     <>
                         <button
                             type="button"
@@ -100,6 +102,48 @@ export default function ProductInspectionDrawer({
                             className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-rose-650/10 hover:shadow-lg hover:shadow-rose-650/15 active:scale-95 disabled:opacity-50 transition-all"
                         >
                             <XCircle size={15} /> Reject Listing
+                        </button>
+                        <button
+                            type="button"
+                            disabled={isProcessing}
+                            onClick={handleApprove}
+                            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-650/10 hover:shadow-lg hover:shadow-emerald-650/15 active:scale-95 disabled:opacity-50 transition-all"
+                        >
+                            <CheckCircle2 size={15} /> Approve Listing
+                        </button>
+                    </>
+                )}
+
+                {product.status === 'flagged' && (
+                    <>
+                        <button
+                            type="button"
+                            disabled={isProcessing}
+                            onClick={handleReject}
+                            className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-rose-650/10 hover:shadow-lg hover:shadow-rose-650/15 active:scale-95 disabled:opacity-50 transition-all"
+                        >
+                            <XCircle size={15} /> Reject Listing
+                        </button>
+                        <button
+                            type="button"
+                            disabled={isProcessing}
+                            onClick={handleApprove}
+                            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-650/10 hover:shadow-lg hover:shadow-emerald-650/15 active:scale-95 disabled:opacity-50 transition-all"
+                        >
+                            <CheckCircle2 size={15} /> Approve Listing
+                        </button>
+                    </>
+                )}
+
+                {product.status === 'rejected' && (
+                    <>
+                        <button
+                            type="button"
+                            disabled={isProcessing}
+                            onClick={handleFlag}
+                            className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-amber-600/10 hover:shadow-lg hover:shadow-amber-600/15 active:scale-95 disabled:opacity-50 transition-all"
+                        >
+                            <ShieldAlert size={15} /> Flag Listing
                         </button>
                         <button
                             type="button"

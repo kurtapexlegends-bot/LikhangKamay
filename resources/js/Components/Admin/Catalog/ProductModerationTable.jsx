@@ -400,17 +400,6 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                             <Eye size={14} />
                                                             <span>Inspect</span>
                                                         </button>
-
-                                                        {/* Flag Action for Approved Active Listings */}
-                                                        {product.status === 'Active' && (
-                                                            <button
-                                                                onClick={() => setInspectedProduct(product)}
-                                                                className="p-1.5 rounded-xl text-amber-600 hover:bg-amber-50 border border-amber-200/50 hover:border-amber-305 transition-all duration-200 min-h-[36px] min-w-[36px] flex items-center justify-center active:scale-95 shadow-sm"
-                                                                title="Flag Active Listing"
-                                                            >
-                                                                <ShieldAlert size={16} strokeWidth={2.2} />
-                                                            </button>
-                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
