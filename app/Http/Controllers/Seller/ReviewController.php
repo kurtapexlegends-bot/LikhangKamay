@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Review;
 use App\Models\ReviewDispute;
+use App\Services\StorageUrl;
 use App\Support\RichTextSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -37,9 +38,7 @@ class ReviewController extends Controller
                     'customer' => $review->user->name ?? 'Unknown',
                     'product_name' => $review->product->name ?? 'Unknown Product',
                     'product_id' => $review->product_id,
-                    'product_image' => $review->product->cover_photo_path
-                        ? (str_starts_with($review->product->cover_photo_path, 'http') ? $review->product->cover_photo_path : '/storage/' . $review->product->cover_photo_path)
-                        : null,
+                    'product_image' => StorageUrl::url($review->product?->cover_photo_path),
                     'seller_reply' => RichTextSanitizer::sanitize($review->seller_reply),
                     'is_pinned' => $review->is_pinned,
                     'is_hidden_from_marketplace' => (bool) $review->is_hidden_from_marketplace,

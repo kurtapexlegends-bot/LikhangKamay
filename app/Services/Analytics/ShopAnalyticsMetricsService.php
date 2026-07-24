@@ -193,9 +193,7 @@ class ShopAnalyticsMetricsService
                     'revenue' => $item->revenue,
                     'profit' => $profit,
                     'margin' => round($margin, 1),
-                    'img' => $item->img
-                        ? (str_starts_with($item->img, 'http') ? $item->img : asset('storage/' . $item->img))
-                        : null,
+                    'img' => \App\Services\StorageUrl::url($item->img),
                 ];
             });
     }

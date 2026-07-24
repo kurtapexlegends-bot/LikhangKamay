@@ -55,7 +55,7 @@ class PaymentController extends Controller
                 'description' => $item->product_name,
                 'name' => $item->product_name,
                 'quantity' => $item->quantity,
-                'images' => [$item->product_img ? asset('storage/' . $item->product_img) : asset('images/placeholder.svg')],
+                'images' => [\App\Services\StorageUrl::url($item->product_img, asset('images/placeholder.svg'))],
             ];
 
             $calculatedTotal += $item->price * $item->quantity;

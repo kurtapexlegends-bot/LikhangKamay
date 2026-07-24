@@ -90,11 +90,11 @@ class DashboardController extends Controller
                     return [
                         'id' => $order->order_number,
                         'customer' => $order->customer_name,
-                        'customer_avatar' => $order->user->avatar ?? null,
+                        'customer_avatar' => \App\Services\StorageUrl::url($order->user?->avatar),
                         'date' => $order->created_at->format('M d, Y'),
                         'amount' => $order->seller_net_amount,
                         'status' => $order->status,
-                        'img' => $order->items->first()->product_img ?? null,
+                        'img' => \App\Services\StorageUrl::url($order->items->first()?->product_img, '/images/placeholder.svg'),
                     ];
                 }),
                 'links' => $recentOrdersPaginator->linkCollection(),

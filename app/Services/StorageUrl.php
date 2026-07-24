@@ -24,11 +24,18 @@ class StorageUrl
             return $path;
         }
 
+        // Static public assets (e.g., /images/placeholder.svg)
+        if (str_starts_with($path, '/images/') || str_starts_with($path, 'images/')) {
+            return str_starts_with($path, '/') ? $path : '/' . $path;
+        }
+
         // Strip any accidental leading '/storage/' or 'storage/' prefix
         $cleanPath = preg_replace('#^/?storage/#', '', $path);
 
+        $disk = env('FILESYSTEM_DISK') === 's3' || env('PUBLIC_DISK_DRIVER') === 's3' ? 's3' : 'public';
+
         try {
-            return Storage::disk('public')->url($cleanPath);
+            return Storage::disk($disk)->url($cleanPath);
         } catch (\Throwable $e) {
             return asset('storage/' . ltrim($cleanPath, '/'));
         }

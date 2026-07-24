@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Product;
 use App\Models\Review;
 use App\Notifications\NewReviewNotification;
+use App\Services\StorageUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -30,9 +31,7 @@ class ReviewController extends Controller
                 'seller_reply' => $review->seller_reply,
                 'product' => [
                     'name' => $review->product?->name,
-                    'image' => $review->product?->cover_photo_path 
-                        ? (str_starts_with($review->product->cover_photo_path, 'http') ? $review->product->cover_photo_path : '/storage/' . $review->product->cover_photo_path)
-                        : null,
+                    'image' => StorageUrl::url($review->product?->cover_photo_path),
                 ]
             ]);
 

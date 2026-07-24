@@ -44,18 +44,8 @@ class HandleInertiaRequests extends Middleware
             \Illuminate\Support\Facades\Log::warning('Failed to resolve public storage disk in HandleInertiaRequests: ' . $e->getMessage());
         }
 
-        $urlHelper = function (?string $path) use ($storage) {
-            if (!$path) {
-                return null;
-            }
-            try {
-                if ($storage instanceof \Illuminate\Filesystem\FilesystemAdapter) {
-                    return $storage->url($path);
-                }
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('Failed to generate URL for path ' . $path . ': ' . $e->getMessage());
-            }
-            return asset('storage/' . $path);
+        $urlHelper = function (?string $path) {
+            return \App\Services\StorageUrl::url($path);
         };
 
         return [

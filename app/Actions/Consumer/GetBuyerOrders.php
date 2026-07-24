@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Review;
 use App\Services\PayMongoService;
 use App\Services\OrderLogisticsService;
+use App\Services\StorageUrl;
 use App\Support\OrderWorkflowHelper;
 use Illuminate\Support\Collection;
 
@@ -133,7 +134,7 @@ class GetBuyerOrders
             'shipping_fee_amount' => number_format($order->getResolvedShippingFeeAmount(), 2),
             'platform_commission_amount' => number_format($order->getResolvedPlatformCommissionAmount(), 2),
             'seller_net_amount' => number_format($order->getResolvedSellerNetAmount(), 2),
-            'proof_of_delivery' => $order->proof_of_delivery ? '/storage/' . $order->proof_of_delivery : null,
+            'proof_of_delivery' => StorageUrl::url($order->proof_of_delivery),
             'seller_id' => $order->artisan_id,
             'seller_name' => $order->artisan?->shop_name ?? $order->artisan?->name ?? 'Shop',
             'tracking_number' => $order->tracking_number,
@@ -147,7 +148,7 @@ class GetBuyerOrders
                 'id' => $order->dispute->id,
                 'status' => $order->dispute->status,
                 'reason' => $order->dispute->reason,
-                'proof_photos' => collect($order->dispute->proof_photos)->map(fn($p) => str_starts_with($p, 'http') ? $p : '/storage/' . $p)->toArray(),
+                'proof_photos' => collect($order->dispute->proof_photos ?? [])->map(fn($p) => StorageUrl::url($p))->filter()->values()->toArray(),
                 'seller_response_type' => $order->dispute->seller_response_type,
                 'seller_explanation' => $order->dispute->seller_explanation,
                 'seller_proposed_description' => $order->dispute->seller_proposed_description,
@@ -172,9 +173,7 @@ class GetBuyerOrders
                     'product_id' => $item->product_id,
                     'is_rated' => $existingReview !== null,
                     'name' => $item->product_name,
-                    'img' => $item->product_img 
-                        ? (str_starts_with($item->product_img, 'http') ? $item->product_img : '/storage/' . $item->product_img)
-                        : '/images/placeholder.svg',
+                    'img' => StorageUrl::url($item->product_img, '/images/placeholder.svg'),
                     'price' => $item->price,
                     'qty' => $item->quantity,
                     'variant' => $item->variant ?? 'Standard',
@@ -183,7 +182,8 @@ class GetBuyerOrders
                         'rating' => $existingReview->rating,
                         'comment' => $existingReview->comment,
                         'photos' => collect($existingReview->photos ?? [])
-                            ->map(fn ($photo) => str_starts_with($photo, 'http') ? $photo : '/storage/' . $photo)
+                            ->map(fn ($photo) => StorageUrl::url($photo))
+                            ->filter()
                             ->values()
                             ->all(),
                         'can_manage_review' => true,

@@ -4,6 +4,7 @@ namespace App\Actions\Chat;
 
 use App\Models\Order;
 use App\Models\User;
+use App\Services\StorageUrl;
 
 class ResolveCurrentOrderContext
 {
@@ -102,18 +103,6 @@ class ResolveCurrentOrderContext
 
     private function resolveProductImagePath(?string $path): string
     {
-        if (!$path) {
-            return '/images/placeholder.svg';
-        }
-
-        if (
-            str_starts_with($path, 'http')
-            || str_starts_with($path, '/storage/')
-            || str_starts_with($path, '/images/')
-        ) {
-            return $path;
-        }
-
-        return '/storage/' . ltrim($path, '/');
+        return StorageUrl::url($path, '/images/placeholder.svg');
     }
 }

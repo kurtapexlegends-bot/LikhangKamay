@@ -3,6 +3,7 @@
 namespace App\Actions\Consumer;
 
 use App\Models\Product;
+use App\Services\StorageUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -71,9 +72,7 @@ class PrepareCheckout
             }, $items, array_keys($items)));
 
             foreach ($items as &$item) {
-                if ($item['img'] && !str_starts_with($item['img'], 'http') && !str_starts_with($item['img'], '/storage/')) {
-                    $item['img'] = '/storage/' . $item['img'];
-                }
+                $item['img'] = StorageUrl::url($item['img'] ?? null, '/images/placeholder.svg');
             }
         }
 

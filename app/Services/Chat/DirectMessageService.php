@@ -5,6 +5,7 @@ namespace App\Services\Chat;
 use App\Models\Message;
 use App\Models\User;
 use App\Models\Order;
+use App\Services\StorageUrl;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -61,7 +62,7 @@ class DirectMessageService
                 'id' => $user->id,
                 'name' => $user->name,
                 'avatar' => $user->avatar,
-                'avatar_url' => $user->avatar ? '/storage/' . $user->avatar : null,
+                'avatar_url' => StorageUrl::url($user->avatar),
                 'initial' => substr($user->shop_name ?: $user->name, 0, 1),
                 'premium_tier' => $user->premium_tier,
                 'role' => $user->role,
