@@ -267,12 +267,15 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                 <td className="py-4 px-6 align-middle">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-12 h-12 rounded-xl border border-stone-200 bg-stone-50 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                                                            {product.cover_photo_path ? (
+                                                            {product.img || product.cover_photo_path ? (
                                                                 <img
-                                                                    src={`/storage/${product.cover_photo_path}`}
-                                                                    alt=""
+                                                                    src={product.img || (product.cover_photo_path?.startsWith('http') ? product.cover_photo_path : `/storage/${product.cover_photo_path}`)}
+                                                                    alt={product.name || ''}
                                                                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                                    onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                                                    onError={(e) => {
+                                                                        e.target.onerror = null;
+                                                                        e.target.src = '/images/placeholder.svg';
+                                                                    }}
                                                                 />
                                                             ) : (
                                                                 <Package size={16} className="text-stone-300" />

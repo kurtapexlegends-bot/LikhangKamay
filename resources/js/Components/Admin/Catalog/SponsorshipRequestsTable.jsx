@@ -235,13 +235,16 @@ export default function SponsorshipRequestsTable({ requests }) {
                                         </td>
                                         <td className="py-4 px-6 align-middle">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-xl border border-stone-250 bg-stone-50 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                                                    {req.product?.cover_photo_path ? (
+                                                <div className="w-12 h-12 rounded-xl border border-stone-200 bg-stone-50 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                                                    {req.product?.img || req.product?.cover_photo_path ? (
                                                         <img
-                                                            src={`/storage/${req.product.cover_photo_path}`}
-                                                            alt=""
+                                                            src={req.product.img || (req.product.cover_photo_path?.startsWith('http') ? req.product.cover_photo_path : `/storage/${req.product.cover_photo_path}`)}
+                                                            alt={req.product?.name || ''}
                                                             className="w-full h-full object-cover"
-                                                            onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                                            onError={(e) => {
+                                                                e.target.onerror = null;
+                                                                e.target.src = '/images/placeholder.svg';
+                                                            }}
                                                         />
                                                     ) : (
                                                         <Package size={16} className="text-stone-300" />
