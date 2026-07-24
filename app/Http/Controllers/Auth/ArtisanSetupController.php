@@ -88,7 +88,7 @@ class ArtisanSetupController extends Controller
                         'region' => $validated['region'],
                         'postal_code' => $validated['zip_code'],
                     ]),
-                    'is_default' => \Illuminate\Support\Facades\DB::raw('true'),
+                    'is_default' => true,
                 ]);
             }
 
