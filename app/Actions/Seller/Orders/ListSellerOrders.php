@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class ListSellerOrders
 {
-    private $orderLogisticsService;
+    private OrderLogisticsService $orderLogisticsService;
 
     public function __construct(OrderLogisticsService $orderLogisticsService)
     {

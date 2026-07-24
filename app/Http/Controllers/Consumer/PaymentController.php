@@ -12,7 +12,7 @@ use Inertia\Inertia;
 
 class PaymentController extends Controller
 {
-    protected $payMongoService;
+    protected PayMongoService $payMongoService;
     private const PAYABLE_ONLINE_STATUSES = ['Pending', 'Accepted'];
 
     public function __construct(PayMongoService $payMongoService)
@@ -23,7 +23,7 @@ class PaymentController extends Controller
     /**
      * Initiate Payment for an Order
      */
-    public function pay(Request $request, $orderId)
+    public function pay(Request $request, string $orderId)
     {
         $order = Order::where('order_number', $orderId)
             ->where('user_id', Auth::id())

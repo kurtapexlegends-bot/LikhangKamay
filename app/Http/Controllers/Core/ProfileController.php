@@ -129,13 +129,13 @@ class ProfileController extends Controller
         // If Super Admin, handle platform branding updates
         if ($user->role === 'super_admin') {
             if ($request->has('platform_name')) {
-                \App\Facades\Settings::set('platform_name', $request->platform_name);
+                Settings::set('platform_name', $request->platform_name);
             }
 
             if ($request->hasFile('platform_logo')) {
                 $logoPath = $request->file('platform_logo')->store('branding', 'public');
                 $logoUrl = \App\Services\StorageUrl::url($logoPath);
-                \App\Facades\Settings::set('platform_logo', $logoUrl);
+                Settings::set('platform_logo', $logoUrl);
             }
         }
 

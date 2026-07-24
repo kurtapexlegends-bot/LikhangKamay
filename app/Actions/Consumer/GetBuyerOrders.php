@@ -13,8 +13,8 @@ use Illuminate\Support\Collection;
 
 class GetBuyerOrders
 {
-    private $payMongoService;
-    private $orderLogisticsService;
+    private PayMongoService $payMongoService;
+    private OrderLogisticsService $orderLogisticsService;
 
     public function __construct(PayMongoService $payMongoService, OrderLogisticsService $orderLogisticsService)
     {

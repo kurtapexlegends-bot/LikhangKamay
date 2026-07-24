@@ -72,7 +72,7 @@ class ReviewController extends Controller
         ]);
     }
 
-    public function reply(Request $request, $id)
+    public function reply(Request $request, int $id)
     {
         $request->validate([
             'seller_reply' => 'required|string|max:2000',
@@ -88,7 +88,7 @@ class ReviewController extends Controller
         return back()->with('success', 'Reply posted successfully!');
     }
 
-    public function destroyReply($id)
+    public function destroyReply(int $id)
     {
         $review = Review::with('product')->findOrFail($id);
         $this->authorizeSellerOwnership($review->product->user_id);
@@ -100,7 +100,7 @@ class ReviewController extends Controller
         return back()->with('success', 'Reply deleted successfully!');
     }
 
-    public function dispute(Request $request, $id)
+    public function dispute(Request $request, int $id)
     {
         $validated = $request->validate([
             'reason' => 'required|string|max:120',
@@ -191,7 +191,7 @@ class ReviewController extends Controller
         return $cache[$column] ??= Schema::hasColumn('review_disputes', $column);
     }
 
-    public function togglePin($id)
+    public function togglePin(int $id)
     {
         $review = Review::with('product')->findOrFail($id);
         $this->authorizeSellerOwnership($review->product->user_id);

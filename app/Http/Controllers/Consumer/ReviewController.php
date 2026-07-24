@@ -98,7 +98,7 @@ class ReviewController extends Controller
         return back()->with('success', 'Review submitted successfully!');
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id)
     {
         $review = Review::where('user_id', Auth::id())->findOrFail($id);
 
@@ -132,7 +132,7 @@ class ReviewController extends Controller
         return back()->with('success', 'Review updated successfully!');
     }
 
-    public function destroy($id)
+    public function destroy(int $id)
     {
         $review = Review::where('user_id', Auth::id())->findOrFail($id);
 

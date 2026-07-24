@@ -52,7 +52,7 @@ class CatalogController extends Controller
 
         $shops = User::where('role', 'artisan')
             ->whereHas('products')
-            ->select('id', 'name', 'shop_name')
+            ->select(['id', 'name', 'shop_name'])
             ->orderBy('shop_name')
             ->get();
 
