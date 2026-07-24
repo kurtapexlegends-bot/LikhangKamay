@@ -1,9 +1,18 @@
-import React, { Suspense, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { Suspense, useState, useEffect } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Stage, Html, useProgress } from '@react-three/drei';
 import GLTFModel from './GLTFModel';
 import { Loader2, Box, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import { ThreeDModelBoundary, ThreeDModelUnavailable } from './ThreeDModelBoundary';
+
+function CameraController({ zoom }) {
+    const { camera } = useThree();
+    useEffect(() => {
+        camera.zoom = zoom;
+        camera.updateProjectionMatrix();
+    }, [zoom, camera]);
+    return null;
+}
 
 /**
  * ProductViewer3D Component
@@ -95,10 +104,11 @@ export default function ProductViewer3D({
                     gl={{ preserveDrawingBuffer: true, antialias: true }}
                     className="cursor-grab active:cursor-grabbing"
                 >
+                    <CameraController zoom={zoom} />
                     <Suspense fallback={<Loader />}>
                         <Stage preset="rembrandt" intensity={0.5} adjustCamera={1.1}>
                             {modelUrl ? (
-                                <GLTFModel url={modelUrl} scale={zoom} />
+                                <GLTFModel url={modelUrl} />
                             ) : (
                                 <PlaceholderModel />
                             )}
