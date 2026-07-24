@@ -240,8 +240,7 @@ class ChatController extends Controller
                 ->get()
                 ->map(function ($ord) {
                     $firstItem = $ord->items->first();
-                    $img = $firstItem?->product_img;
-                    $coverImg = $img ? (str_starts_with($img, 'http') ? $img : asset('storage/' . $img)) : null;
+                    $coverImg = \App\Services\StorageUrl::url($firstItem?->product_img, '/images/placeholder.svg');
 
                     return [
                         'id' => $ord->id,
@@ -256,7 +255,7 @@ class ChatController extends Controller
                             'price' => (float) $item->price,
                             'qty' => $item->quantity,
                             'variant' => $item->variant_name ?? 'Standard',
-                            'img' => $item->product_img ? (str_starts_with($item->product_img, 'http') ? $item->product_img : asset('storage/' . $item->product_img)) : null,
+                            'img' => \App\Services\StorageUrl::url($item->product_img, '/images/placeholder.svg'),
                         ]),
                     ];
                 });

@@ -126,11 +126,12 @@ export default function OrderMentionChip({ text, userOrders = [], isMe = false }
                                         {selectedOrder.items.map((item, idx) => (
                                             <div key={idx} className="p-2.5 flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-lg bg-stone-100 border border-stone-200 shrink-0 overflow-hidden">
-                                                    {item.img ? (
-                                                        <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <ShoppingBag size={16} className="text-stone-400 m-auto mt-2.5" />
-                                                    )}
+                                                    <img 
+                                                        src={item.img || '/images/placeholder.svg'} 
+                                                        alt={item.name} 
+                                                        className="w-full h-full object-cover" 
+                                                        onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
+                                                    />
                                                 </div>
                                                 <div className="min-w-0 flex-1">
                                                     <p className="font-bold text-stone-900 text-xs truncate">{item.name}</p>

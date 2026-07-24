@@ -47,16 +47,12 @@ export const OrderMentionsList = forwardRef(({
                             }`}
                         >
                             <div className="w-10 h-10 rounded-lg border border-stone-200 bg-stone-100 shrink-0 overflow-hidden flex items-center justify-center">
-                                {ord.cover_img ? (
-                                    <img 
-                                        src={ord.cover_img} 
-                                        alt={ord.order_number} 
-                                        className="w-full h-full object-cover" 
-                                        onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
-                                    />
-                                ) : (
-                                    <Package size={18} className="text-stone-400" />
-                                )}
+                                <img 
+                                    src={ord.cover_img || '/images/placeholder.svg'} 
+                                    alt={ord.order_number} 
+                                    className="w-full h-full object-cover" 
+                                    onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
+                                />
                             </div>
 
                             <div className="min-w-0 flex-1">
