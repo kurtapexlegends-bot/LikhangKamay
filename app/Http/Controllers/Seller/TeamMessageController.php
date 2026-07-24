@@ -310,12 +310,13 @@ class TeamMessageController extends Controller
             ->where('seller_owner_id', $sellerOwner->id)
             ->where('sender_id', $sender->id)
             ->where('receiver_id', $actor->id)
-            ->update(['is_read' => true]);
+            ->whereRaw('is_read = false')
+            ->update(['is_read' => \App\Casts\PostgresCompatibleBoolean::dbVal(true)]);
 
         try {
             broadcast(new \App\Events\TeamMessageSeen($sender->id, $actor->id))->toOthers();
         } catch (\Throwable $e) {
-            report($e);
+            // Broadcast error should not fail HTTP response
         }
 
         return response()->json(['success' => true]);

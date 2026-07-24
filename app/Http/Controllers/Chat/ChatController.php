@@ -122,12 +122,13 @@ class ChatController extends Controller
 
         Message::where('sender_id', $request->sender_id)
             ->where('receiver_id', $conversationUserId)
-            ->update(['is_read' => true]);
+            ->whereRaw('is_read = false')
+            ->update(['is_read' => \App\Casts\PostgresCompatibleBoolean::dbVal(true)]);
 
         try {
             broadcast(new \App\Events\MessageSeen($request->sender_id, $conversationUserId))->toOthers();
         } catch (\Throwable $e) {
-            report($e);
+            // Broadcast failure should never fail HTTP response
         }
 
         return response()->json(['success' => true]);

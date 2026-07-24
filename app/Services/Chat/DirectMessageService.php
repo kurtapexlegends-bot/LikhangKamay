@@ -89,14 +89,14 @@ class DirectMessageService
                 // Automatically mark unread incoming messages from activeChatId to current user as read
                 $readUpdated = Message::where('sender_id', $activeChatId)
                     ->where('receiver_id', $userId)
-                    ->where('is_read', false)
-                    ->update(['is_read' => true]);
+                    ->whereRaw('is_read = false')
+                    ->update(['is_read' => \App\Casts\PostgresCompatibleBoolean::dbVal(true)]);
 
                 if ($readUpdated > 0) {
                     try {
                         broadcast(new \App\Events\MessageSeen($activeChatId, $userId))->toOthers();
                     } catch (\Throwable $e) {
-                        report($e);
+                        // Broadcast failure should never fail HTTP request
                     }
                 }
 

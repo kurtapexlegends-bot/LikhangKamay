@@ -37,4 +37,17 @@ class PostgresCompatibleBoolean implements CastsAttributes
 
         return $boolVal;
     }
+
+    /**
+     * Get a driver-safe boolean value for direct query builder updates/wheres.
+     */
+    public static function dbVal(bool $value): mixed
+    {
+        try {
+            $isPg = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql';
+            return $isPg ? ($value ? 'true' : 'false') : ($value ? 1 : 0);
+        } catch (\Throwable $e) {
+            return $value;
+        }
+    }
 }
