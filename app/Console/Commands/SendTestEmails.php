@@ -96,13 +96,20 @@ class SendTestEmails extends Command
         $order = Order::with('items')->latest()->first();
         if (!$order) {
             $this->info("No orders found. Creating one...");
+            $financeService = new \App\Services\OrderFinanceService();
+            $finance = $financeService->calculateAmounts(250.00, 'Delivery', 10.00);
+
             $order = Order::create([
                 'artisan_id' => $seller->id,
                 'user_id' => $buyer->id,
                 'order_number' => 'ORD-TEST-1001',
                 'customer_name' => $buyer->name,
-                'merchandise_subtotal' => 250.00,
-                'total_amount' => 250.00,
+                'merchandise_subtotal' => $finance['merchandise_subtotal'],
+                'convenience_fee_amount' => $finance['convenience_fee_amount'],
+                'shipping_fee_amount' => $finance['shipping_fee_amount'],
+                'platform_commission_amount' => $finance['platform_commission_amount'],
+                'seller_net_amount' => $finance['seller_net_amount'],
+                'total_amount' => $finance['total_amount'],
                 'status' => 'Accepted',
                 'payment_method' => 'COD',
                 'payment_status' => 'pending',
