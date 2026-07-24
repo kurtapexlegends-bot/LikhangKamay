@@ -68,7 +68,7 @@ class Product extends Model
     ];
 
     // Helper to check if it has a 3D model (for Frontend)
-    protected $appends = ['img', 'has3D'];
+    protected $appends = ['img', 'has3D', 'model_3d_url', 'gallery_urls'];
 
     public function getImgAttribute()
     {
@@ -85,6 +85,18 @@ class Product extends Model
     public function getHas3DAttribute()
     {
         return !empty($this->model_3d_path);
+    }
+
+    public function getModel3dUrlAttribute()
+    {
+        return \App\Services\StorageUrl::url($this->model_3d_path);
+    }
+
+    public function getGalleryUrlsAttribute()
+    {
+        return collect($this->gallery_paths ?? [])->map(function ($path) {
+            return \App\Services\StorageUrl::url($path);
+        })->all();
     }
 
     public function user()

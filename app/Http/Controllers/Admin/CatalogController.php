@@ -27,7 +27,7 @@ class CatalogController extends Controller
         $shopFilter = $request->input('shop_id');
         $search = $request->input('search');
 
-        $productQuery = Product::with(['user:id,name,shop_name,email', 'latestResubmission'])
+        $productQuery = Product::with(['user:id,name,shop_name,email,avatar,premium_tier', 'latestResubmission'])
             ->when($statusFilter && $statusFilter !== 'all', function ($q) use ($statusFilter) {
                 $q->where('status', $statusFilter);
             })

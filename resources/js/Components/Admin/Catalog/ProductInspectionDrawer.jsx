@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import { 
     CheckCircle2, 
@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import GLTFModel from '@/Components/ThreeD/GLTFModel';
 import ProductViewer3D from '@/Components/ThreeD/ProductViewer3D';
+import UserAvatar from '@/Components/UserAvatar';
 
 export default function ProductInspectionDrawer({
     isOpen,
@@ -35,16 +36,17 @@ export default function ProductInspectionDrawer({
     const [feedback, setFeedback] = useState('');
     const [actionError, setActionError] = useState('');
 
+    useEffect(() => {
+        setSelectedImage(null);
+        setViewingMode('image');
+        setFeedback('');
+        setActionError('');
+    }, [product?.id]);
+
     if (!product) return null;
 
-    const coverUrl = product.img || (product.cover_photo_path?.startsWith('http')
-        ? product.cover_photo_path
-        : (product.cover_photo_path ? `/storage/${product.cover_photo_path}` : '/images/placeholder.svg'));
-
-    const galleryUrls = (product.gallery_paths || []).map(path => 
-        path?.startsWith('http') ? path : `/storage/${path}`
-    );
-
+    const coverUrl = product.img || '/images/placeholder.svg';
+    const galleryUrls = product.gallery_urls || [];
     const activeImageUrl = selectedImage || coverUrl;
 
     const handleApprove = () => {
@@ -172,11 +174,22 @@ export default function ProductInspectionDrawer({
                 {/* Header Status & Artisan Summary */}
                 <div className="flex items-center justify-between p-4 bg-stone-50 rounded-2xl border border-stone-200/80">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-clay-50 border border-clay-100 flex items-center justify-center text-clay-700 font-bold">
-                            {product.user?.shop_name?.charAt(0) || <User size={18} />}
-                        </div>
+                        <UserAvatar user={product.user} className="w-10 h-10" />
                         <div>
-                            <p className="text-xs font-bold text-stone-900">{product.user?.shop_name || 'Individual Seller'}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-xs font-bold text-stone-900">{product.user?.shop_name || 'Individual Seller'}</p>
+                                {product.user && (
+                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold border ${
+                                        product.user.premium_tier === 'super_premium'
+                                            ? 'bg-violet-50 text-violet-700 border-violet-200/40'
+                                            : product.user.premium_tier === 'premium'
+                                                ? 'bg-amber-50 text-amber-800 border-amber-250/30'
+                                                : 'bg-stone-100 text-stone-600 border-stone-200'
+                                    }`}>
+                                        {product.user.premium_tier === 'super_premium' ? 'Elite' : product.user.premium_tier === 'premium' ? 'Premium' : 'Standard'}
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-[11px] text-stone-500 font-medium">{product.user?.name} {product.user?.email ? `• ${product.user.email}` : ''}</p>
                         </div>
                     </div>
@@ -238,7 +251,7 @@ export default function ProductInspectionDrawer({
                         {viewingMode === '3d' && product.model_3d_path ? (
                             <div className="w-full h-full">
                                 <ProductViewer3D 
-                                    modelUrl={product.model_3d_url || (product.model_3d_path?.startsWith('http') ? product.model_3d_path : `/storage/${product.model_3d_path}`)} 
+                                    modelUrl={product.model_3d_url} 
                                 />
                             </div>
                         ) : (
