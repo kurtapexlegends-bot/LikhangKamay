@@ -165,7 +165,7 @@ export default function ProductInspectionDrawer({
             onClose={onClose}
             title="Inspect Product Listing"
             widthClass="max-w-2xl"
-            position="right"
+            position="bottom"
             footer={renderFooter()}
         >
             <div className="space-y-6 pb-6">
