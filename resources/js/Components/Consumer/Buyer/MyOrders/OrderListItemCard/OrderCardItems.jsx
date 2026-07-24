@@ -8,14 +8,6 @@ export default function OrderCardItems({ order }) {
         return isNaN(num) ? `PHP ${val}` : `PHP ${num.toFixed(2)}`;
     };
 
-    const getPaymentLabel = (method, status) => {
-        const isPaid = status?.toLowerCase() === 'paid';
-        if (method === 'COD') {
-            return isPaid ? 'Paid via Cash on Delivery' : 'Pay via Cash on Delivery';
-        }
-        return isPaid ? `Paid via ${method}` : `To pay via ${method}`;
-    };
-
     return (
         <div className="space-y-4">
             {/* Mobile View: Horizontal scrolling thumbnails and brief info */}
@@ -36,47 +28,15 @@ export default function OrderCardItems({ order }) {
                         <div className="min-w-0 flex-1">
                             <h4 className="font-bold text-stone-900 text-[11px] truncate leading-tight">{item.name}</h4>
                             <p className="text-[10px] text-stone-500 mt-0.5">Qty: {item.qty} | {item.variant}</p>
-                            <p className="font-black text-stone-955 text-[12px] mt-1">PHP {Number(item.price).toLocaleString()}</p>
+                            <p className="font-black text-stone-950 text-[12px] mt-1">{formatPHP(item.price)}</p>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Mobile View Breakdown */}
-            <div className="sm:hidden bg-stone-50/70 border border-stone-200/50 rounded-xl p-3.5 mt-2">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2">Payment Breakdown</p>
-                <div className="space-y-1.5 text-[11px] text-stone-650">
-                    <div className="flex justify-between">
-                        <span>Items Subtotal</span>
-                        <span className="font-semibold text-stone-800">{formatPHP(order.merchandise_subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span>Convenience Fee (3%)</span>
-                        <span className="font-semibold text-[#c8764b]">{formatPHP(order.convenience_fee_amount)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span>Shipping Fee</span>
-                        <span className="font-semibold text-stone-800">
-                            {order.shipping_method === 'Pick Up' ? 'Free' : formatPHP(order.shipping_fee_amount)}
-                        </span>
-                    </div>
-                    <div className="border-t border-stone-200 pt-2 mt-2 flex justify-between items-center font-bold text-stone-900">
-                        <div>
-                            <span className="block text-[12px]">Total Payment</span>
-                            <span className="text-[9px] text-stone-400 font-normal leading-tight">
-                                {getPaymentLabel(order.payment_method, order.payment_status)}
-                            </span>
-                        </div>
-                        <span className="text-md font-black tracking-tight text-clay-700 bg-clay-50 border border-clay-100 px-2.5 py-0.5 rounded-lg">
-                            {formatPHP(order.total)}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
             {/* Desktop & Tablet View: Vertical stacked list layout */}
-            <div className="hidden sm:block overflow-hidden rounded-xl border border-stone-200 bg-[#FCFAF7] shadow-sm">
-                <div className="divide-y divide-stone-150/70">
+            <div className="overflow-hidden rounded-xl border border-stone-200/80 bg-[#FCFAF7] shadow-sm">
+                <div className="hidden sm:block divide-y divide-stone-100/70">
                     {order.items.map((item, idx) => (
                         <div key={idx} className="flex items-start sm:items-center gap-4 p-4 transition-colors hover:bg-white w-full min-w-0">
                             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-lg border border-stone-200 overflow-hidden shrink-0 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.06)]">
@@ -96,45 +56,31 @@ export default function OrderCardItems({ order }) {
                                         <span>Qty: {item.qty}</span>
                                     </div>
                                     <div className="mt-1.5 sm:hidden">
-                                        <p className="font-black tracking-tight text-stone-900 text-[14px]">PHP {Number(item.price).toLocaleString()}</p>
+                                        <p className="font-black tracking-tight text-stone-900 text-[14px]">{formatPHP(item.price)}</p>
                                     </div>
                                 </div>
                                 <div className="hidden sm:block shrink-0 text-right">
-                                    <p className="font-black tracking-tight text-stone-900 text-[16px]">PHP {Number(item.price).toLocaleString()}</p>
+                                    <p className="font-black tracking-tight text-stone-900 text-[16px]">{formatPHP(item.price)}</p>
                                 </div>
                             </div>
                         </div>
                     ))}
                 </div>
 
-                {/* Pricing Breakdown inside the items container */}
-                <div className="border-t border-stone-200 bg-stone-50/50 p-4 flex justify-end">
-                    <div className="w-full sm:max-w-xs space-y-2 text-[12px]">
-                        <div className="flex justify-between text-stone-600">
-                            <span>Subtotal</span>
-                            <span className="font-semibold text-stone-800">{formatPHP(order.merchandise_subtotal)}</span>
-                        </div>
-                        <div className="flex justify-between text-stone-600">
-                            <span>Fee (3%)</span>
-                            <span className="font-semibold text-[#c8764b]">{formatPHP(order.convenience_fee_amount)}</span>
-                        </div>
-                        <div className="flex justify-between text-stone-600">
-                            <span>Shipping Fee</span>
-                            <span className="font-semibold text-stone-800">
-                                {order.shipping_method === 'Pick Up' ? 'Free' : formatPHP(order.shipping_fee_amount)}
-                            </span>
-                        </div>
-                        <div className="border-t border-stone-200 pt-2.5 mt-2.5 flex items-center justify-between font-bold text-stone-900">
-                            <div>
-                                <span className="block text-[13px]">Total</span>
-                                <span className="text-[10px] text-stone-400 font-normal leading-tight">
-                                    {getPaymentLabel(order.payment_method, order.payment_status)}
-                                </span>
-                            </div>
-                            <span className="text-lg font-black tracking-tight text-clay-700 bg-clay-50 border border-clay-100 px-3 py-1 rounded-lg">
-                                {formatPHP(order.total)}
-                            </span>
-                        </div>
+                {/* Integrated Payment Breakdown Footer */}
+                <div className="border-t border-stone-200/70 bg-stone-100/50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between text-[11.5px] text-stone-600 gap-2">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span>Items Subtotal: <strong className="text-stone-850 font-semibold">{formatPHP(order.merchandise_subtotal)}</strong></span>
+                        <span className="text-stone-300 hidden sm:inline">•</span>
+                        <span>Fee (3%): <strong className="text-[#c8764b] font-semibold">{formatPHP(order.convenience_fee_amount)}</strong></span>
+                        <span className="text-stone-300 hidden sm:inline">•</span>
+                        <span>Shipping: <strong className="text-stone-850 font-semibold">{order.shipping_method === 'Pick Up' ? 'Free' : formatPHP(order.shipping_fee_amount)}</strong></span>
+                    </div>
+                    <div className="flex items-center justify-between sm:justify-end gap-2.5 pt-1.5 sm:pt-0 border-t border-stone-200/40 sm:border-t-0">
+                        <span className="text-stone-500 font-bold uppercase tracking-wider text-[10px]">Total Payment</span>
+                        <span className="text-[14px] font-black tracking-tight text-clay-700 bg-clay-50 border border-clay-100/80 px-2.5 py-0.5 rounded-lg shadow-2xs">
+                            {formatPHP(order.total)}
+                        </span>
                     </div>
                 </div>
             </div>

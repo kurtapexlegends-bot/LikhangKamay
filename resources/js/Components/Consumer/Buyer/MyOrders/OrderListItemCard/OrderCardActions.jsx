@@ -15,7 +15,18 @@ export default function OrderCardActions({
     onOpenEscalateModal,
     onOpenRatingModal,
 }) {
+    const formatPHP = (val) => {
+        const num = Number(val);
+        return isNaN(num) ? `PHP ${val}` : `PHP ${num.toFixed(2)}`;
+    };
 
+    const getPaymentLabel = (method, status) => {
+        const isPaid = status?.toLowerCase() === 'paid';
+        if (method === 'COD') {
+            return isPaid ? 'Paid via Cash on Delivery' : 'Pay via Cash on Delivery';
+        }
+        return isPaid ? `Paid via ${method}` : `To pay via ${method}`;
+    };
 
     // Mobile Secondary Actions Selector
     const getMobileSecondaryActions = () => {
@@ -97,7 +108,20 @@ export default function OrderCardActions({
     };
 
     return (
-        <div className="flex flex-col gap-4 border-t border-stone-200/60 bg-stone-50/50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-end w-full">
+        <div className="flex flex-col gap-3 border-t border-stone-200/60 bg-stone-50/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between w-full">
+            {/* Total Pricing / Payment summary */}
+            <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400">Total</span>
+                    <span className="text-base font-black tracking-tight text-clay-700">
+                        {formatPHP(order.total)}
+                    </span>
+                </div>
+                <p className="text-[10.5px] text-stone-400 mt-0.5">
+                    {getPaymentLabel(order.payment_method, order.payment_status)}
+                </p>
+            </div>
+
             {/* --- DESKTOP FOOTER ACTIONS (Strictly Preserved) --- */}
             <div className="hidden sm:flex flex-row items-center gap-2 flex-wrap justify-end overflow-visible">
                 {/* Download Receipt */}
