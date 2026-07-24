@@ -239,19 +239,19 @@ export default function ProductModerationTable({ products, filters, statusCounts
                             <table className="w-full min-w-[940px] text-left border-collapse">
                                 <thead>
                                     <tr className="bg-stone-50 border-b border-stone-100">
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[30%] text-center align-middle">Product</th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[20%] text-center align-middle">Artisan Seller</th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[15%] text-center align-middle">Submitted</th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[20%] text-center align-middle">Status</th>
-                                        <th className="py-4 px-6 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[15%] text-center align-middle">Actions</th>
+                                        <th className="py-4 pl-8 pr-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[32%] text-left align-middle">Product</th>
+                                        <th className="py-4 px-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[22%] text-left align-middle">Artisan Seller</th>
+                                        <th className="py-4 px-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[14%] text-center align-middle">Submitted</th>
+                                        <th className="py-4 px-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[18%] text-center align-middle">Status</th>
+                                        <th className="py-4 pl-4 pr-8 text-[10px] font-bold text-stone-500 uppercase tracking-widest w-[14%] text-right align-middle">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-stone-100">
                                     {products?.data?.length > 0 ? (
                                         products.data.map((product) => (
                                             <tr key={product.id} className="hover:bg-stone-50/30 transition duration-150 group">
-                                                <td className="py-4 px-6 text-center align-middle">
-                                                    <div className="flex items-center justify-center gap-4 cursor-pointer" onClick={() => setInspectedProduct(product)}>
+                                                <td className="py-4 pl-8 pr-4 align-middle">
+                                                    <div className="flex items-center justify-start gap-4 cursor-pointer" onClick={() => setInspectedProduct(product)}>
                                                         <div className="w-12 h-12 rounded-xl border border-stone-200 bg-stone-50 flex-shrink-0 flex items-center justify-center overflow-hidden">
                                                             {product.img || product.cover_photo_path ? (
                                                                 <img
@@ -273,22 +273,22 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="py-4 px-6 text-center align-middle text-xs font-bold text-stone-850">
-                                                    <div className="inline-block text-left">
+                                                <td className="py-4 px-4 align-middle text-xs font-bold text-stone-850">
+                                                    <div className="text-left">
                                                         <p className="text-stone-900">{product.user?.shop_name || 'Individual Seller'}</p>
                                                         <p className="text-[10px] text-stone-500 font-medium mt-0.5">{product.user?.name}</p>
                                                     </div>
                                                 </td>
-                                                <td className="py-4 px-6 text-center align-middle text-xs font-semibold text-stone-500">
+                                                <td className="py-4 px-4 text-center align-middle text-xs font-semibold text-stone-500">
                                                     {product.created_at ? new Date(product.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
                                                 </td>
-                                                <td className="py-4 px-6 text-center align-middle whitespace-nowrap">
+                                                <td className="py-4 px-4 text-center align-middle whitespace-nowrap">
                                                     {product.status === 'Active' ? (
                                                         <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-emerald-100/40"><CheckCircle2 size={12}/> Active</span>
                                                     ) : product.status === 'pending_review' ? (
                                                         <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-amber-100/40"><Clock size={12}/> Pending Review</span>
                                                     ) : product.status === 'rejected' ? (
-                                                        <span className="inline-flex items-center gap-1.5 bg-red-50 text-red-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-red-100/40"><XCircle size={12}/> Rejected</span>
+                                                        <span className="inline-flex items-center gap-1.5 bg-red-55/10 text-red-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-red-100/40"><XCircle size={12}/> Rejected</span>
                                                     ) : product.status === 'flagged' ? (
                                                         <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-rose-200/40"><ShieldAlert size={12}/> Flagged</span>
                                                     ) : (
@@ -305,8 +305,8 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="py-4 px-6 text-center align-middle">
-                                                    <div className="flex items-center justify-center gap-2">
+                                                <td className="py-4 pl-4 pr-8 align-middle">
+                                                    <div className="flex items-center justify-end gap-2">
                                                         {/* Mandatory Pre-Viewing Inspect Action */}
                                                         <button
                                                             onClick={() => setInspectedProduct(product)}
