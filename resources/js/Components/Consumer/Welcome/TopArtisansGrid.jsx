@@ -82,6 +82,7 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                                         <UserAvatar 
                                             user={{ 
                                                 avatar: store.store_avatar, 
+                                                avatar_url: store.store_avatar,
                                                 name: store.store_name, 
                                                 premium_tier: store.premium_tier || store.subscription_tier,
                                                 role: 'artisan'
@@ -185,6 +186,7 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                                         <UserAvatar 
                                             user={{ 
                                                 avatar: store.store_avatar, 
+                                                avatar_url: store.store_avatar,
                                                 name: store.store_name, 
                                                 premium_tier: store.premium_tier || store.subscription_tier,
                                                 role: 'artisan'

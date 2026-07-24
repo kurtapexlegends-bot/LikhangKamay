@@ -139,7 +139,7 @@ class CatalogService
                     'rank' => $rank + 1,
                     'store_name' => $seller->shop_name ?? $seller->name,
                     'store_slug' => $seller->shop_slug,
-                    'store_avatar' => $seller->avatar,
+                    'store_avatar' => $seller->avatar_url,
                     'premium_tier' => $seller->premium_tier,
                     'total_sold' => (int) $store->total_sold,
                     'products' => $products->all(),

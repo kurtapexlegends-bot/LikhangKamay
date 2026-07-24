@@ -87,7 +87,7 @@ export default function ProductImageGallery({
                 ) : (
                     <Suspense fallback={<div className="flex h-full items-center justify-center bg-gradient-to-b from-gray-50 to-white text-sm font-medium text-gray-500">Loading 3D view...</div>}>
                         <ProductViewer3D
-                            modelUrl={product.model_url}
+                            modelUrl={product.model_3d_url || product.model_url}
                             productName={product.name}
                             compact
                             className="h-full rounded-none border-0 bg-gradient-to-b from-gray-50 to-white"

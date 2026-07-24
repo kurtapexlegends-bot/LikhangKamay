@@ -60,8 +60,9 @@ class ProductDetailResource extends JsonResource
             : 'Philippines';
 
         return array_merge(parent::toArray($request), [
-            'model_url' => $this->model_3d_path ? asset('storage/' . $this->model_3d_path) : null,
+            'model_url' => $this->model_3d_path ? \App\Services\StorageUrl::url($this->model_3d_path) : null,
             'image' => $this->img,
+            'gallery_urls' => $this->gallery_urls,
             'reviews' => $this->reviews->map(function ($review) {
                 return array_merge($review->toArray(), [
                     'seller_reply' => RichTextSanitizer::sanitize($review->seller_reply),
@@ -76,6 +77,8 @@ class ProductDetailResource extends JsonResource
                 'shop_name' => $seller->shop_name ?? null,
                 'slug' => $seller->shop_slug,
                 'avatar' => $seller->avatar,
+                'avatar_url' => $seller->avatar_url,
+                'role' => 'artisan',
                 'location' => $sellerLocation,
                 'premium_tier' => $seller->premium_tier,
             ] : null,

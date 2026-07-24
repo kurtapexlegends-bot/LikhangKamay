@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
-import { MessageCircle, Store, MapPin } from 'lucide-react';
+import { MessageCircle, Store, MapPin, Crown, Sparkles } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 
 export default function SellerAboutPanel({ product, handleChatSeller, chatRequirementMessage }) {
@@ -16,6 +16,16 @@ export default function SellerAboutPanel({ product, handleChatSeller, chatRequir
                         <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-gray-900 text-base truncate flex items-center gap-1.5">
                                 {product.seller?.shop_name || product.seller?.name || 'Artisan'}
+                                {product.seller?.premium_tier === 'premium' && (
+                                    <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-100/80 text-amber-900 border border-amber-200/70 shadow-2xs">
+                                        <Crown size={10} className="fill-amber-500 text-amber-500" /> Pro
+                                    </span>
+                                )}
+                                {product.seller?.premium_tier === 'super_premium' && (
+                                    <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-violet-100/80 text-violet-900 border border-violet-200/70 shadow-2xs">
+                                        <Sparkles size={10} className="fill-violet-500 text-violet-500" /> Elite
+                                    </span>
+                                )}
                             </h3>
                             <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
                                 <MapPin size={12} className="text-gray-400" />

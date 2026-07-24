@@ -71,7 +71,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     // Build gallery
     const gallery = [
         product.image || product.img,
-        ...(product.gallery_paths || []).map(path => `/storage/${path}`)
+        ...(product.gallery_urls || [])
     ].filter(Boolean);
 
     // Review Form
