@@ -189,15 +189,38 @@ export default function SuppliesTable({
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col min-h-[400px] relative">
             {/* Table Header / Toolbar */}
             <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-3 bg-gray-50/30 rounded-t-2xl">
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
-                    <h3 className="font-bold text-gray-900 text-xs shrink-0">Supply Inventory</h3>
-                    
-                    {/* Unified Popover Filter Button */}
+                <h3 className="font-bold text-gray-900 text-xs shrink-0">Supply Inventory</h3>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                    {/* Search Input */}
+                    <div className="relative flex-1 sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                        <input 
+                            type="text" 
+                            disabled={!canEditProcurement}
+                            placeholder="Search supplies..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow min-h-[38px]"
+                        />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchTerm('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition p-1"
+                                title="Clear search"
+                            >
+                                <X size={12} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Unified Popover Filter Button (Right Aligned) */}
                     <div className="relative inline-block text-left" ref={popoverRef}>
                         <button
                             type="button"
                             onClick={handleOpenFilters}
-                            className={`inline-flex h-[38px] items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-bold transition-all shadow-sm active:scale-95 ${
+                            className={`inline-flex h-[38px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-bold transition-all shadow-sm active:scale-95 ${
                                 activeFiltersCount > 0
                                     ? 'bg-clay-700 text-white border-clay-800 shadow-clay-200 hover:bg-clay-800'
                                     : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300 hover:bg-stone-50'
@@ -215,7 +238,7 @@ export default function SuppliesTable({
 
                         {/* Desktop Popover Card */}
                         {isPopoverOpen && (
-                            <div className="hidden lg:block absolute left-0 z-[100] mt-2 w-[380px] rounded-2xl border border-stone-200 bg-white p-5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+                            <div className="hidden lg:block absolute right-0 z-[100] mt-2 w-[380px] rounded-2xl border border-stone-200 bg-white p-5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
                                 <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
                                     <div className="flex items-center gap-2">
                                         <Filter size={15} className="text-clay-700" />
@@ -258,28 +281,6 @@ export default function SuppliesTable({
                             </div>
                         )}
                     </div>
-                </div>
-
-                <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                    <input 
-                        type="text" 
-                        disabled={!canEditProcurement}
-                        placeholder="Search supplies..." 
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow min-h-[38px]"
-                    />
-                    {searchTerm && (
-                        <button
-                            type="button"
-                            onClick={() => setSearchTerm('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition p-1"
-                            title="Clear search"
-                        >
-                            <X size={12} />
-                        </button>
-                    )}
                 </div>
             </div>
 
