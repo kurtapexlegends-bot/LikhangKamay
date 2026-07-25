@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, AlertTriangle, Search, X, Banknote, Trash2 } from 'lucide-react';
+import { Package, AlertTriangle, Search, X, Banknote, Trash2, SlidersHorizontal, ChevronDown, RotateCcw, Filter } from 'lucide-react';
 import QuickRestock from '@/Components/Seller/Shared/QuickRestock';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import { TableBodySkeleton } from '@/Components/Skeleton';
 
 export default function SuppliesTable({
     supplies,
-    categoriesList,
+    categoriesList = [],
+    unitsList = [],
     canEditProcurement,
     canEditStockRequests,
     isNavigating,
@@ -20,31 +22,244 @@ export default function SuppliesTable({
     onDelete,
     onOpenAddSupply
 }) {
-    // Filter supplies locally based on props
+    const [stockStatus, setStockStatus] = useState('all');
+    const [unitType, setUnitType] = useState('all');
+
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const popoverRef = useRef(null);
+
+    // Staged local draft filter state
+    const [draftCategory, setDraftCategory] = useState(filterCategory || 'all');
+    const [draftStockStatus, setDraftStockStatus] = useState(stockStatus);
+    const [draftUnitType, setDraftUnitType] = useState(unitType);
+
+    const availableUnits = unitsList.length > 0
+        ? unitsList
+        : Array.from(new Set(supplies.map(s => s.unit).filter(Boolean)));
+
+    // Sync draft states when popover/drawer opens
+    useEffect(() => {
+        if (isPopoverOpen || isDrawerOpen) {
+            setDraftCategory(filterCategory || 'all');
+            setDraftStockStatus(stockStatus);
+            setDraftUnitType(unitType);
+        }
+    }, [isPopoverOpen, isDrawerOpen, filterCategory, stockStatus, unitType]);
+
+    // Outside click detection for desktop popover
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+                setIsPopoverOpen(false);
+            }
+        };
+        if (isPopoverOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isPopoverOpen]);
+
+    const handleOpenFilters = () => {
+        setDraftCategory(filterCategory || 'all');
+        setDraftStockStatus(stockStatus);
+        setDraftUnitType(unitType);
+        if (window.innerWidth < 1024) {
+            setIsDrawerOpen(true);
+        } else {
+            setIsPopoverOpen((prev) => !prev);
+        }
+    };
+
+    const applyDraftFilters = () => {
+        setFilterCategory(draftCategory);
+        setStockStatus(draftStockStatus);
+        setUnitType(draftUnitType);
+        setIsPopoverOpen(false);
+        setIsDrawerOpen(false);
+    };
+
+    const resetFilters = () => {
+        setDraftCategory('all');
+        setDraftStockStatus('all');
+        setDraftUnitType('all');
+        setFilterCategory('all');
+        setStockStatus('all');
+        setUnitType('all');
+        setIsPopoverOpen(false);
+        setIsDrawerOpen(false);
+    };
+
+    // Filter supplies locally based on props & popover filters
     const filteredSupplies = supplies.filter(s => {
         const matchSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                            (s.supplier && s.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
         const matchCategory = filterCategory === 'all' || s.category === filterCategory;
-        return matchSearch && matchCategory;
+        const matchStock = stockStatus === 'all' ||
+                           (stockStatus === 'low_stock' && s.quantity <= s.min_stock) ||
+                           (stockStatus === 'in_stock' && s.quantity > s.min_stock);
+        const matchUnit = unitType === 'all' || s.unit === unitType;
+        return matchSearch && matchCategory && matchStock && matchUnit;
     });
+
+    const activeFiltersCount = [
+        filterCategory && filterCategory !== 'all',
+        stockStatus && stockStatus !== 'all',
+        unitType && unitType !== 'all'
+    ].filter(Boolean).length;
+
+    const draftActiveCount = [
+        draftCategory && draftCategory !== 'all',
+        draftStockStatus && draftStockStatus !== 'all',
+        draftUnitType && draftUnitType !== 'all'
+    ].filter(Boolean).length;
+
+    const filterFieldsGrid = (
+        <div className="space-y-4">
+            {/* 1. Category Filter */}
+            <div>
+                <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                    Category
+                </label>
+                <div className="relative">
+                    <select
+                        value={draftCategory}
+                        onChange={(e) => setDraftCategory(e.target.value)}
+                        className="pr-8 text-xs py-2 w-full min-h-[40px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer appearance-none px-3"
+                    >
+                        <option value="all">All Categories ({categoriesList.length})</option>
+                        {categoriesList.map((cat) => (
+                            <option key={cat} value={cat}>
+                                {cat}
+                            </option>
+                        ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />
+                </div>
+            </div>
+
+            {/* 2. Stock Warning Status */}
+            <div>
+                <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                    Stock Alert Status
+                </label>
+                <div className="relative">
+                    <select
+                        value={draftStockStatus}
+                        onChange={(e) => setDraftStockStatus(e.target.value)}
+                        className="pr-8 text-xs py-2 w-full min-h-[40px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer appearance-none px-3"
+                    >
+                        <option value="all">All Stock Levels</option>
+                        <option value="low_stock">⚠️ Low Stock Alert (Qty &le; Min)</option>
+                        <option value="in_stock">✅ In Stock (Sufficient Quantity)</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />
+                </div>
+            </div>
+
+            {/* 3. Measurement Unit */}
+            {availableUnits.length > 0 && (
+                <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                        Unit of Measure
+                    </label>
+                    <div className="relative">
+                        <select
+                            value={draftUnitType}
+                            onChange={(e) => setDraftUnitType(e.target.value)}
+                            className="pr-8 text-xs py-2 w-full min-h-[40px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer appearance-none px-3"
+                        >
+                            <option value="all">All Units ({availableUnits.length})</option>
+                            {availableUnits.map((u) => (
+                                <option key={u} value={u}>
+                                    {u}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
             {/* Table Header / Toolbar */}
-            <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50/30">
-                <div className="flex items-center gap-3">
-                    <h3 className="font-bold text-gray-900 text-xs">Supply Inventory</h3>
-                    <select 
-                        value={filterCategory}
-                        onChange={e => setFilterCategory(e.target.value)}
-                        className="text-[11px] font-bold border border-gray-200 bg-white rounded-xl focus:ring-clay-500 focus:border-clay-500 px-3 py-1.5 text-gray-600 transition-colors cursor-pointer min-h-[36px]"
-                    >
-                        <option value="all">All Categories</option>
-                        {categoriesList.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                    </select>
+            <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-3 bg-gray-50/30">
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                    <h3 className="font-bold text-gray-900 text-xs shrink-0">Supply Inventory</h3>
+                    
+                    {/* Unified Popover Filter Button */}
+                    <div className="relative inline-block text-left" ref={popoverRef}>
+                        <button
+                            type="button"
+                            onClick={handleOpenFilters}
+                            className={`inline-flex h-[38px] items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-bold transition-all shadow-sm active:scale-95 ${
+                                activeFiltersCount > 0
+                                    ? 'bg-clay-700 text-white border-clay-800 shadow-clay-200 hover:bg-clay-800'
+                                    : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300 hover:bg-stone-50'
+                            }`}
+                        >
+                            <SlidersHorizontal size={14} strokeWidth={2.2} />
+                            <span>Filters</span>
+                            {activeFiltersCount > 0 && (
+                                <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-black text-white">
+                                    {activeFiltersCount}
+                                </span>
+                            )}
+                            <ChevronDown size={14} strokeWidth={2.5} className={`transition-transform duration-200 ${isPopoverOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {/* Desktop Popover Card */}
+                        {isPopoverOpen && (
+                            <div className="hidden lg:block absolute left-0 z-30 mt-2 w-[380px] rounded-2xl border border-stone-200 bg-white p-5 shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+                                <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Filter size={15} className="text-clay-700" />
+                                        <h3 className="text-sm font-bold text-stone-900">Filter Supplies</h3>
+                                    </div>
+                                    {draftActiveCount > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setDraftCategory('all');
+                                                setDraftStockStatus('all');
+                                                setDraftUnitType('all');
+                                            }}
+                                            className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-500 hover:text-clay-700 transition"
+                                        >
+                                            <RotateCcw size={12} />
+                                            <span>Reset Selection</span>
+                                        </button>
+                                    )}
+                                </div>
+
+                                {filterFieldsGrid}
+
+                                <div className="mt-5 pt-3 border-t border-stone-100 flex items-center justify-between">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsPopoverOpen(false)}
+                                        className="rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={applyDraftFilters}
+                                        className="rounded-xl bg-clay-700 px-5 py-2 text-xs font-bold text-white shadow-md shadow-clay-200 hover:bg-clay-800 transition active:scale-95"
+                                    >
+                                        Apply & Close
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
+
                 <div className="relative w-full sm:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                     <input 
@@ -67,6 +282,98 @@ export default function SuppliesTable({
                     )}
                 </div>
             </div>
+
+            {/* Active Filter Tag Pills */}
+            {activeFiltersCount > 0 && (
+                <div className="flex flex-wrap items-center gap-2 py-2 px-4 bg-gray-50/50 border-b border-gray-100">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mr-1">
+                        Active Filters:
+                    </span>
+                    {filterCategory && filterCategory !== 'all' && (
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-sm">
+                            <span>Category: {filterCategory}</span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setFilterCategory('all');
+                                    setDraftCategory('all');
+                                }}
+                                className="rounded-full p-0.5 hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
+                            >
+                                <X size={12} strokeWidth={2.5} />
+                            </button>
+                        </span>
+                    )}
+                    {stockStatus && stockStatus !== 'all' && (
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-sm">
+                            <span>Status: {stockStatus === 'low_stock' ? 'Low Stock Alert' : 'In Stock'}</span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setStockStatus('all');
+                                    setDraftStockStatus('all');
+                                }}
+                                className="rounded-full p-0.5 hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
+                            >
+                                <X size={12} strokeWidth={2.5} />
+                            </button>
+                        </span>
+                    )}
+                    {unitType && unitType !== 'all' && (
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-sm">
+                            <span>Unit: {unitType}</span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setUnitType('all');
+                                    setDraftUnitType('all');
+                                }}
+                                className="rounded-full p-0.5 hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
+                            >
+                                <X size={12} strokeWidth={2.5} />
+                            </button>
+                        </span>
+                    )}
+                    <button
+                        type="button"
+                        onClick={resetFilters}
+                        className="text-[11px] font-bold text-clay-700 hover:underline ml-1"
+                    >
+                        Clear All
+                    </button>
+                </div>
+            )}
+
+            {/* Mobile Bottom-Sheet Filter Drawer */}
+            <SlideOverDrawer
+                show={isDrawerOpen}
+                onClose={() => setIsDrawerOpen(false)}
+                title="Filter Supplies"
+                position="bottom"
+                widthClass="max-w-md"
+                footer={
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={resetFilters}
+                            className="flex-1 rounded-xl border border-stone-200 bg-white py-2.5 text-xs font-bold text-stone-700 min-h-[44px]"
+                        >
+                            Reset All
+                        </button>
+                        <button
+                            type="button"
+                            onClick={applyDraftFilters}
+                            className="flex-1 rounded-xl bg-clay-700 py-2.5 text-xs font-bold text-white shadow-lg shadow-clay-200 min-h-[44px]"
+                        >
+                            Apply Filters
+                        </button>
+                    </div>
+                }
+            >
+                <div className="py-2">
+                    {filterFieldsGrid}
+                </div>
+            </SlideOverDrawer>
 
             {/* Mobile View Layout (Cards) */}
             <div className="space-y-3 p-4 sm:hidden">
