@@ -35,6 +35,60 @@ export default function AuditLogFilters({
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const popoverRef = useRef(null);
 
+    // Draft local filter states (staged until 'Apply & Close' is clicked)
+    const [draftStartDate, setDraftStartDate] = useState(startDate);
+    const [draftEndDate, setDraftEndDate] = useState(endDate);
+    const [draftCategory, setDraftCategory] = useState(selectedCategory);
+    const [draftModule, setDraftModule] = useState(selectedModule);
+    const [draftStatus, setDraftStatus] = useState(selectedStatus);
+    const [draftSeverity, setDraftSeverity] = useState(selectedSeverity);
+    const [draftActor, setDraftActor] = useState(selectedActor);
+
+    // Sync draft states whenever active parent filters change or panel opens
+    const syncDraftsFromProps = () => {
+        setDraftStartDate(startDate);
+        setDraftEndDate(endDate);
+        setDraftCategory(selectedCategory);
+        setDraftModule(selectedModule);
+        setDraftStatus(selectedStatus);
+        setDraftSeverity(selectedSeverity);
+        setDraftActor(selectedActor);
+    };
+
+    // Apply staged draft filters to active parent state
+    const applyDrafts = () => {
+        setStartDate(draftStartDate);
+        setEndDate(draftEndDate);
+        setSelectedCategory(draftCategory);
+        setSelectedModule(draftModule);
+        setSelectedStatus(draftStatus);
+        setSelectedSeverity(draftSeverity);
+        setSelectedActor(draftActor);
+        setIsPopoverOpen(false);
+        setIsDrawerOpen(false);
+    };
+
+    // Reset staged draft filters
+    const resetDrafts = () => {
+        setDraftStartDate('');
+        setDraftEndDate('');
+        setDraftCategory('all');
+        setDraftModule('all');
+        setDraftStatus('all');
+        setDraftSeverity('all');
+        setDraftActor('all');
+    };
+
+    // Open popover or drawer with synchronized drafts
+    const handleOpenFilters = () => {
+        syncDraftsFromProps();
+        if (window.innerWidth < 1024) {
+            setIsDrawerOpen(true);
+        } else {
+            setIsPopoverOpen((prev) => !prev);
+        }
+    };
+
     // Calculate count of active filters (excluding defaults)
     const activeFiltersCount = [
         selectedCategory !== 'all',
@@ -46,7 +100,18 @@ export default function AuditLogFilters({
         !!endDate,
     ].filter(Boolean).length;
 
-    // Handle outside clicks to close desktop popover
+    // Calculate draft active filters count
+    const draftActiveCount = [
+        draftCategory !== 'all',
+        draftModule !== 'all',
+        draftStatus !== 'all',
+        draftSeverity !== 'all',
+        draftActor !== 'all',
+        !!draftStartDate,
+        !!draftEndDate,
+    ].filter(Boolean).length;
+
+    // Handle outside clicks to close desktop popover without applying unsubmitted changes
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (popoverRef.current && !popoverRef.current.contains(event.target)) {
@@ -122,9 +187,9 @@ export default function AuditLogFilters({
                     Date Range
                 </label>
                 <div className="flex items-center bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-clay-100 focus-within:border-clay-500 transition-all h-[42px]">
-                    <DateInput label="From" value={startDate} onChange={setStartDate} />
+                    <DateInput label="From" value={draftStartDate} onChange={setDraftStartDate} />
                     <div className="h-full w-px bg-stone-200 shrink-0"></div>
-                    <DateInput label="To" value={endDate} onChange={setEndDate} />
+                    <DateInput label="To" value={draftEndDate} onChange={setDraftEndDate} />
                 </div>
             </div>
 
@@ -135,8 +200,8 @@ export default function AuditLogFilters({
                         Category
                     </label>
                     <FilterSelect
-                        value={selectedCategory}
-                        onChange={setSelectedCategory}
+                        value={draftCategory}
+                        onChange={setDraftCategory}
                         options={categoryOptions.map((option) => [option.key, option.label])}
                     />
                 </div>
@@ -145,8 +210,8 @@ export default function AuditLogFilters({
                         Module
                     </label>
                     <FilterSelect
-                        value={selectedModule}
-                        onChange={setSelectedModule}
+                        value={draftModule}
+                        onChange={setDraftModule}
                         options={moduleOptions.map((option) => [
                             option,
                             option === 'all' ? 'All modules' : (moduleLabel[option] || formatStatusLabel(option))
@@ -162,8 +227,8 @@ export default function AuditLogFilters({
                         Status
                     </label>
                     <FilterSelect
-                        value={selectedStatus}
-                        onChange={setSelectedStatus}
+                        value={draftStatus}
+                        onChange={setDraftStatus}
                         options={statusOptions.map((option) => [
                             option,
                             option === 'all' ? 'All statuses' : formatStatusLabel(option)
@@ -175,8 +240,8 @@ export default function AuditLogFilters({
                         Severity
                     </label>
                     <FilterSelect
-                        value={selectedSeverity}
-                        onChange={setSelectedSeverity}
+                        value={draftSeverity}
+                        onChange={setDraftSeverity}
                         options={severityOptions.map((option) => [
                             option,
                             option === 'all' ? 'All severities' : formatStatusLabel(option)
@@ -188,8 +253,8 @@ export default function AuditLogFilters({
                         Actor Type
                     </label>
                     <FilterSelect
-                        value={selectedActor}
-                        onChange={setSelectedActor}
+                        value={draftActor}
+                        onChange={setDraftActor}
                         options={actorOptions.map((option) => [
                             option,
                             option === 'all' ? 'All actors' : (actorTypeLabel[option] || formatStatusLabel(option))
@@ -221,13 +286,7 @@ export default function AuditLogFilters({
                     <div className="relative inline-block text-left" ref={popoverRef}>
                         <button
                             type="button"
-                            onClick={() => {
-                                if (window.innerWidth < 1024) {
-                                    setIsDrawerOpen(true);
-                                } else {
-                                    setIsPopoverOpen((prev) => !prev);
-                                }
-                            }}
+                            onClick={handleOpenFilters}
                             className={`inline-flex h-[44px] items-center justify-center gap-2 rounded-xl border px-4 text-xs font-bold transition-all shadow-sm active:scale-95 ${
                                 activeFiltersCount > 0
                                     ? 'bg-clay-700 text-white border-clay-800 shadow-clay-200 hover:bg-clay-800'
@@ -252,14 +311,14 @@ export default function AuditLogFilters({
                                         <Filter size={15} className="text-clay-700" />
                                         <h3 className="text-sm font-bold text-stone-900">Filter Activity Logs</h3>
                                     </div>
-                                    {activeFiltersCount > 0 && (
+                                    {draftActiveCount > 0 && (
                                         <button
                                             type="button"
-                                            onClick={resetFilters}
+                                            onClick={resetDrafts}
                                             className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-500 hover:text-clay-700 transition"
                                         >
                                             <RotateCcw size={12} />
-                                            <span>Reset All</span>
+                                            <span>Reset Selection</span>
                                         </button>
                                     )}
                                 </div>
@@ -267,13 +326,17 @@ export default function AuditLogFilters({
                                 {filterFieldsGrid}
 
                                 <div className="mt-5 pt-3 border-t border-stone-100 flex items-center justify-between">
-                                    <span className="text-xs font-bold text-stone-500">
-                                        {filteredCount} matching events
-                                    </span>
                                     <button
                                         type="button"
                                         onClick={() => setIsPopoverOpen(false)}
-                                        className="rounded-xl bg-clay-700 px-4 py-2 text-xs font-bold text-white shadow-md shadow-clay-200 hover:bg-clay-800 transition active:scale-95"
+                                        className="rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={applyDrafts}
+                                        className="rounded-xl bg-clay-700 px-5 py-2 text-xs font-bold text-white shadow-md shadow-clay-200 hover:bg-clay-800 transition active:scale-95"
                                     >
                                         Apply & Close
                                     </button>
@@ -282,7 +345,7 @@ export default function AuditLogFilters({
                         )}
                     </div>
 
-                    {/* Reset Button (visible when filters active) */}
+                    {/* Reset Button (visible when active filters applied) */}
                     {activeFiltersCount > 0 && (
                         <button
                             type="button"
@@ -337,7 +400,7 @@ export default function AuditLogFilters({
             <StickyActionBar className="lg:hidden">
                 <button
                     type="button"
-                    onClick={() => setIsDrawerOpen(true)}
+                    onClick={handleOpenFilters}
                     className="flex-1 flex h-11 items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 text-xs font-bold text-stone-700 shadow-sm active:scale-95 transition"
                 >
                     <Filter size={16} />
@@ -373,6 +436,7 @@ export default function AuditLogFilters({
                         <button
                             type="button"
                             onClick={() => {
+                                resetDrafts();
                                 resetFilters();
                                 setIsDrawerOpen(false);
                             }}
@@ -382,10 +446,10 @@ export default function AuditLogFilters({
                         </button>
                         <button
                             type="button"
-                            onClick={() => setIsDrawerOpen(false)}
+                            onClick={applyDrafts}
                             className="flex-1 rounded-xl bg-clay-700 py-2.5 text-xs font-bold text-white shadow-lg shadow-clay-200 min-h-[44px]"
                         >
-                            Apply Filters ({filteredCount} matches)
+                            Apply Filters
                         </button>
                     </div>
                 }
