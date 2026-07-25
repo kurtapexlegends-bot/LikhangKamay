@@ -318,8 +318,8 @@ export default function AuditLogFilters({
 
                         {/* Desktop Popover Card */}
                         {isPopoverOpen && (
-                            <div className="hidden lg:block absolute right-0 z-[100] mt-2 w-[520px] rounded-2xl border border-stone-200 bg-white p-5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
-                                <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
+                            <div className="hidden lg:flex flex-col absolute right-0 z-[100] mt-2 w-[480px] max-h-[calc(100vh-180px)] rounded-2xl border border-stone-200 bg-white p-4 sm:p-5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+                                <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-3 shrink-0">
                                     <div className="flex items-center gap-2">
                                         <Filter size={15} className="text-clay-700" />
                                         <h3 className="text-sm font-bold text-stone-900">Filter Activity Logs</h3>
@@ -336,9 +336,11 @@ export default function AuditLogFilters({
                                     )}
                                 </div>
 
-                                {filterFieldsGrid}
+                                <div className="flex-1 overflow-y-auto pr-1 space-y-4 max-h-[50vh] no-scrollbar">
+                                    {filterFieldsGrid}
+                                </div>
 
-                                <div className="mt-5 pt-3 border-t border-stone-100 flex items-center justify-between">
+                                <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between shrink-0 bg-white">
                                     <button
                                         type="button"
                                         onClick={() => setIsPopoverOpen(false)}
