@@ -35,12 +35,13 @@ class SellerOrderController extends Controller
         $result = $listSellerOrders->execute(
             $sellerId,
             $seller,
-            $request->only(['search', 'start_date', 'end_date', 'status', 'quick_filter'])
+            $request->only(['search', 'start_date', 'end_date', 'status', 'quick_filter', 'payment_method', 'fulfillment_type', 'flagged'])
         );
 
         return Inertia::render('Seller/Orders/OrderManager', [
             'orders' => $result['orders'],
-            'tabCounts' => $result['tabCounts']
+            'tabCounts' => $result['tabCounts'],
+            'filters' => $request->only(['search', 'start_date', 'end_date', 'status', 'quick_filter', 'payment_method', 'fulfillment_type', 'flagged'])
         ]);
     }
 

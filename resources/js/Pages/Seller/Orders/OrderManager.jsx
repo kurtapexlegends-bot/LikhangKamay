@@ -51,7 +51,10 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
     const [activeTab, setActiveTab] = useState(storedView?.activeTab || "All");
     const [searchQuery, setSearchQuery] = useState(filters.search || storedView?.searchQuery || "");
     const [quickFilter, setQuickFilter] = useState(storedView?.quickFilter || "all");
-    const [dateRange, setDateRange] = useState(storedView?.dateRange || { start: "", end: "" });
+    const [dateRange, setDateRange] = useState(storedView?.dateRange || { start: filters.start_date || "", end: filters.end_date || "" });
+    const [paymentMethod, setPaymentMethod] = useState(filters.payment_method || "all");
+    const [fulfillmentType, setFulfillmentType] = useState(filters.fulfillment_type || "all");
+    const [flaggedOnly, setFlaggedOnly] = useState(filters.flagged || "all");
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedOrderIds, setSelectedOrderIds] = useState([]);
     const [isPrintingSlips, setIsPrintingSlips] = useState(false);
@@ -156,6 +159,9 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
             status: activeTab,
             start_date: dateRange.start,
             end_date: dateRange.end,
+            payment_method: paymentMethod,
+            fulfillment_type: fulfillmentType,
+            flagged: flaggedOnly,
             quick_filter: quickFilter,
             page: 1,
             ...newFilters
@@ -384,9 +390,33 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
                 />
 
                 {/* Filter Panel Wrapper */}
-                <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm mb-6">
+                <div className="rounded-2xl border border-gray-100 bg-white shadow-sm mb-6 relative">
                     <OrderFilterPanel
-                        activeTab={activeTab} handleTabChange={handleTabChange} getCount={getCount} searchQuery={searchQuery} handleSearch={handleSearch} dateRange={dateRange} setDateRange={setDateRange} resetSavedView={resetSavedView} applyQuickFilter={applyQuickFilter} quickFilter={quickFilter} pendingQueueCount={pendingQueueCount} paymentHoldCount={paymentHoldCount} returnQueueCount={returnQueueCount} toggleSelectAll={toggleSelectAll} selectedOrderIds={selectedOrderIds} paginatedOrders={paginatedOrders} urgentCount={urgentCount} hasActiveCourierTracking={hasActiveCourierTracking}
+                        activeTab={activeTab}
+                        handleTabChange={handleTabChange}
+                        getCount={getCount}
+                        searchQuery={searchQuery}
+                        handleSearch={handleSearch}
+                        dateRange={dateRange}
+                        setDateRange={setDateRange}
+                        paymentMethod={paymentMethod}
+                        setPaymentMethod={setPaymentMethod}
+                        fulfillmentType={fulfillmentType}
+                        setFulfillmentType={setFulfillmentType}
+                        flaggedOnly={flaggedOnly}
+                        setFlaggedOnly={setFlaggedOnly}
+                        updateFilters={updateFilters}
+                        resetSavedView={resetSavedView}
+                        applyQuickFilter={applyQuickFilter}
+                        quickFilter={quickFilter}
+                        pendingQueueCount={pendingQueueCount}
+                        paymentHoldCount={paymentHoldCount}
+                        returnQueueCount={returnQueueCount}
+                        toggleSelectAll={toggleSelectAll}
+                        selectedOrderIds={selectedOrderIds}
+                        paginatedOrders={paginatedOrders}
+                        urgentCount={urgentCount}
+                        hasActiveCourierTracking={hasActiveCourierTracking}
                     />
                 </div>
 

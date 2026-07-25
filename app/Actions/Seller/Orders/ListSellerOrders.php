@@ -112,7 +112,58 @@ class ListSellerOrders
             }
         }
 
-        // 3. Quick Filter
+        // 3. Payment Method Filter
+        if (!empty($filters['payment_method']) && $filters['payment_method'] !== 'all') {
+            $pm = strtolower($filters['payment_method']);
+            if ($pm === 'paymongo') {
+                $query->where(function ($q) {
+                    $q->where('payment_method', 'like', '%paymongo%')
+                      ->orWhere('payment_method', 'like', '%e-wallet%')
+                      ->orWhere('payment_method', 'like', '%gcash%')
+                      ->orWhere('payment_method', 'like', '%maya%');
+                });
+            } elseif ($pm === 'card') {
+                $query->where(function ($q) {
+                    $q->where('payment_method', 'like', '%card%')
+                      ->orWhere('payment_method', 'like', '%credit%')
+                      ->orWhere('payment_method', 'like', '%debit%');
+                });
+            } elseif ($pm === 'manual') {
+                $query->where(function ($q) {
+                    $q->where('payment_method', 'like', '%manual%')
+                      ->orWhere('payment_method', 'like', '%cod%')
+                      ->orWhere('payment_method', 'like', '%bank%');
+                });
+            }
+        }
+
+        // 4. Fulfillment Type Filter
+        if (!empty($filters['fulfillment_type']) && $filters['fulfillment_type'] !== 'all') {
+            $ft = strtolower($filters['fulfillment_type']);
+            if ($ft === 'lalamove') {
+                $query->whereHas('delivery', function ($q) {
+                    $q->whereNotNull('external_order_id');
+                });
+            } elseif ($ft === 'express') {
+                $query->where('shipping_method', 'Delivery');
+            } elseif ($ft === 'pickup') {
+                $query->where(function ($q) {
+                    $q->where('shipping_method', 'Pick Up')
+                      ->orWhere('shipping_method', 'Pickup')
+                      ->orWhere('status', 'Ready for Pickup');
+                });
+            }
+        }
+
+        // 5. Flagged / Disputed Filter
+        if (!empty($filters['flagged']) && $filters['flagged'] === 'flagged') {
+            $query->where(function ($q) {
+                $q->where('status', 'Refund/Return')
+                  ->orWhereHas('dispute');
+            });
+        }
+
+        // 6. Quick Filter
         if (!empty($filters['quick_filter'])) {
             $qf = $filters['quick_filter'];
             if ($qf === 'urgent') {
