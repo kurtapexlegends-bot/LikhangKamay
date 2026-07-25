@@ -15,8 +15,9 @@ import BaseFundsModal from '@/Components/Seller/Accounting/BaseFundsModal';
 import PendingApprovalsList from '@/Components/Seller/Accounting/PendingApprovalsList';
 import TransactionLedgerTable from '@/Components/Seller/Accounting/TransactionLedgerTable';
 import ReleaseRequestDetails from '@/Components/Seller/Accounting/ReleaseRequestDetails';
+import AccountingFilterPanel from '@/Components/Seller/Accounting/AccountingFilterPanel';
 
-export default function FundRelease({ auth, pendingRequests, history, finances }) {
+export default function FundRelease({ auth, pendingRequests, history, finances, filters = {} }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const { url } = usePage();
     const { flash } = usePage().props;
@@ -41,6 +42,9 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
     const [reviewProcessing, setReviewProcessing] = useState(null);
     const [searchTerm, setSearchTerm] = useState(() => getInitialQueryParam('search', ''));
     const [entryTypeFilter, setEntryTypeFilter] = useState(() => getInitialQueryParam('type', 'all'));
+    const [ledgerStatusFilter, setLedgerStatusFilter] = useState(() => getInitialQueryParam('ledger_status', 'all'));
+    const [startDateFilter, setStartDateFilter] = useState(() => getInitialQueryParam('start_date', ''));
+    const [endDateFilter, setEndDateFilter] = useState(() => getInitialQueryParam('end_date', ''));
     
     // Debounce the search input to avoid spamming server requests on every keystroke
     const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
@@ -61,12 +65,17 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
         const urlTab = urlParams.get('tab') || 'pending';
         const urlSearch = urlParams.get('search') || '';
         const urlType = urlParams.get('type') || 'all';
+        const urlLedgerStatus = urlParams.get('ledger_status') || 'all';
+        const urlStartDate = urlParams.get('start_date') || '';
+        const urlEndDate = urlParams.get('end_date') || '';
 
         if (urlTab !== activeTab) setActiveTab(urlTab);
         if (urlType !== entryTypeFilter) setEntryTypeFilter(urlType);
+        if (urlLedgerStatus !== ledgerStatusFilter) setLedgerStatusFilter(urlLedgerStatus);
+        if (urlStartDate !== startDateFilter) setStartDateFilter(urlStartDate);
+        if (urlEndDate !== endDateFilter) setEndDateFilter(urlEndDate);
 
         // Only sync search term from URL if the search input is not currently focused.
-        // This avoids resetting the user's typing due to in-flight request race conditions.
         if (document.activeElement?.id !== 'accounting-search' && urlSearch !== searchTerm) {
             setSearchTerm(urlSearch);
         }
@@ -78,6 +87,9 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
             tab: urlParams.get('tab') || 'pending',
             search: urlParams.get('search') || '',
             type: urlParams.get('type') || 'all',
+            ledger_status: urlParams.get('ledger_status') || 'all',
+            start_date: urlParams.get('start_date') || '',
+            end_date: urlParams.get('end_date') || '',
             page_pending: urlParams.get('page_pending') || '1',
             page_history: urlParams.get('page_history') || '1',
             ...newParams
@@ -86,6 +98,10 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
         // Clean up empty params
         if (!params.search.trim()) delete params.search;
         if (params.type === 'all') delete params.type;
+        if (params.ledger_status === 'all') delete params.ledger_status;
+        if (!params.start_date) delete params.start_date;
+        if (!params.end_date) delete params.end_date;
+
         if (params.tab === 'pending') {
             delete params.page_history;
         } else {
@@ -108,6 +124,35 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
                 setIsSearchLoading(false);
                 setIsTableShimmering(false);
             }
+        });
+    };
+
+    const applyFilters = (filterObj) => {
+        if ('type' in filterObj) setEntryTypeFilter(filterObj.type);
+        if ('ledger_status' in filterObj) setLedgerStatusFilter(filterObj.ledger_status);
+        if ('start_date' in filterObj) setStartDateFilter(filterObj.start_date);
+        if ('end_date' in filterObj) setEndDateFilter(filterObj.end_date);
+        closeReviewModal();
+        reload({
+            ...filterObj,
+            page_pending: 1,
+            page_history: 1,
+        });
+    };
+
+    const resetFilters = () => {
+        setEntryTypeFilter('all');
+        setLedgerStatusFilter('all');
+        setStartDateFilter('');
+        setEndDateFilter('');
+        closeReviewModal();
+        reload({
+            type: 'all',
+            ledger_status: 'all',
+            start_date: '',
+            end_date: '',
+            page_pending: 1,
+            page_history: 1,
         });
     };
 
@@ -294,61 +339,22 @@ export default function FundRelease({ auth, pendingRequests, history, finances }
                         </div>
 
                         {/* Search & Filter Controls */}
-                        <div className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="relative w-full sm:max-w-sm">
-                                {isSearchLoading ? (
-                                    <LoaderCircle size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-clay-600 animate-spin" />
-                                ) : (
-                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                )}
-                                <input
-                                    id="accounting-search"
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(event) => setSearchTerm(event.target.value)}
-                                    placeholder={
-                                        activeTab === 'pending'
-                                            ? 'Search requester, supply, payroll month...'
-                                            : 'Search ledger entries, requester...'
-                                    }
-                                    className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow"
-                                />
-                                {searchTerm && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSearchTerm('')}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition min-h-[30px] min-w-[30px] flex items-center justify-center"
-                                        title="Clear search"
-                                    >
-                                        <X size={12} />
-                                    </button>
-                                )}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                                {[
-                                    ['all', 'All entries'],
-                                    ['sale', 'Sales Settlements'],
-                                    ['payroll', 'People & Payroll'],
-                                    ['stock_request', 'Inventory'],
-                                ].map(([value, label]) => (
-                                    <button
-                                        key={value}
-                                        type="button"
-                                        onClick={() => handleTypeChange(value)}
-                                        className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition-colors min-h-[36px] sm:min-h-0 ${
-                                            entryTypeFilter === value
-                                                ? 'border-clay-200 bg-clay-50 text-clay-700'
-                                                : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-                                            }`}
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
-                                <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[11px] font-semibold text-stone-600 min-h-[36px] sm:min-h-0">
-                                    {(activeTab === 'pending' ? (pendingRequests?.total || 0) : (history?.total || 0))} visible
-                                </span>
-                            </div>
-                        </div>
+                        <AccountingFilterPanel
+                            searchTerm={searchTerm}
+                            setSearchTerm={setSearchTerm}
+                            isSearchLoading={isSearchLoading}
+                            entryTypeFilter={entryTypeFilter}
+                            setEntryTypeFilter={setEntryTypeFilter}
+                            ledgerStatusFilter={ledgerStatusFilter}
+                            setLedgerStatusFilter={setLedgerStatusFilter}
+                            startDateFilter={startDateFilter}
+                            setStartDateFilter={setStartDateFilter}
+                            endDateFilter={endDateFilter}
+                            setEndDateFilter={setEndDateFilter}
+                            applyFilters={applyFilters}
+                            resetFilters={resetFilters}
+                            visibleCount={activeTab === 'pending' ? (pendingRequests?.total || 0) : (history?.total || 0)}
+                        />
 
                         {/* List */}
                         <div className="space-y-6">

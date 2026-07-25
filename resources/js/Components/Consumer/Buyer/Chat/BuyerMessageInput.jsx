@@ -113,8 +113,7 @@ export default function BuyerMessageInput({ currentChatUser, form, userOrders = 
             onError: () => {
                 setData('message', messageText);
                 if (onSendFinished) onSendFinished(tempId, false);
-            },
-            preserveScroll: true
+            }
         });
     };
 

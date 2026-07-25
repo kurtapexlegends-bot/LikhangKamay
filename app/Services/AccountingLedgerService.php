@@ -11,12 +11,19 @@ use Illuminate\Support\Facades\DB;
 
 class AccountingLedgerService
 {
-    public function getLedgerData(User $seller, string $tab, string $type, string $search): array
-    {
+    public function getLedgerData(
+        User $seller,
+        string $tab,
+        string $type,
+        string $search,
+        string $ledgerStatus = 'all',
+        string $startDate = '',
+        string $endDate = ''
+    ): array {
         $financials = $this->buildFinancialSnapshot($seller);
 
         if ($tab === 'pending') {
-            $pendingQuery = $this->buildLedgerQuery($seller, 'pending', $type, $search);
+            $pendingQuery = $this->buildLedgerQuery($seller, 'pending', $type, $search, $ledgerStatus, $startDate, $endDate);
             $pendingPaginator = $pendingQuery->paginate(10, ['*'], 'page_pending');
             $serializedPending = $this->enrichAndSerializeLedger($pendingPaginator->getCollection(), $seller, $financials['balance']);
             $pendingPaginator->setCollection(collect($serializedPending));
@@ -27,7 +34,7 @@ class AccountingLedgerService
                 'query' => request()->query()
             ]);
         } else {
-            $historyQuery = $this->buildLedgerQuery($seller, 'history', $type, $search);
+            $historyQuery = $this->buildLedgerQuery($seller, 'history', $type, $search, $ledgerStatus, $startDate, $endDate);
             $historyPaginator = $historyQuery->paginate(10, ['*'], 'page_history');
             $serializedHistory = $this->enrichAndSerializeLedger($historyPaginator->getCollection(), $seller, $financials['balance']);
             $historyPaginator->setCollection(collect($serializedHistory));
@@ -91,8 +98,15 @@ class AccountingLedgerService
         ];
     }
 
-    private function buildLedgerQuery(User $seller, string $statusGroup, string $typeFilter, string $searchQuery)
-    {
+    private function buildLedgerQuery(
+        User $seller,
+        string $statusGroup,
+        string $typeFilter,
+        string $searchQuery,
+        string $ledgerStatus = 'all',
+        string $startDate = '',
+        string $endDate = ''
+    ) {
         $hasSearch = !empty($searchQuery);
 
         $stockQuery = DB::table('stock_requests')
@@ -230,6 +244,24 @@ class AccountingLedgerService
                   ->orWhere('detail_category', 'like', $term)
                   ->orWhere('order_number', 'like', $term);
             });
+        }
+
+        if (!empty($ledgerStatus) && $ledgerStatus !== 'all') {
+            if ($ledgerStatus === 'completed') {
+                $outerQuery->whereIn('status', ['Completed', 'Paid', 'Accounting Approved', 'Ordered', 'Partially Received', 'Received']);
+            } elseif ($ledgerStatus === 'pending') {
+                $outerQuery->where('status', 'Pending');
+            } elseif ($ledgerStatus === 'failed') {
+                $outerQuery->whereIn('status', ['Rejected', 'Failed', 'Cancelled']);
+            }
+        }
+
+        if (!empty($startDate)) {
+            $outerQuery->whereDate('created_at', '>=', $startDate);
+        }
+
+        if (!empty($endDate)) {
+            $outerQuery->whereDate('created_at', '<=', $endDate);
         }
 
         if ($statusGroup === 'pending') {

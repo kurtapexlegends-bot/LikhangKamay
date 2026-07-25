@@ -32,9 +32,20 @@ class AccountingController extends Controller
         $seller = $this->sellerOwner();
         $search = $request->query('search', '');
         $type = $request->query('type', 'all');
+        $ledgerStatus = $request->query('ledger_status', 'all');
+        $startDate = $request->query('start_date', '');
+        $endDate = $request->query('end_date', '');
         $tab = $request->query('tab', 'pending');
 
-        $ledgerData = $this->ledgerService->getLedgerData($seller, $tab, $type, $search);
+        $ledgerData = $this->ledgerService->getLedgerData(
+            $seller,
+            $tab,
+            $type,
+            $search,
+            $ledgerStatus,
+            $startDate,
+            $endDate
+        );
 
         return Inertia::render('Seller/Accounting/FundRelease', [
             'pendingRequests' => $ledgerData['pendingRequests'],
@@ -43,6 +54,14 @@ class AccountingController extends Controller
             'payrollHistory' => [], // Combined in history data list
             'salesHistory' => [], // Combined in history data list
             'finances' => $ledgerData['finances'],
+            'filters' => [
+                'search' => $search,
+                'type' => $type,
+                'ledger_status' => $ledgerStatus,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'tab' => $tab,
+            ],
         ]);
     }
 
