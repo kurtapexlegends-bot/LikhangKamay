@@ -10,7 +10,8 @@ export default function PlatformOperations({
     auth, 
     activities, 
     filters = {}, 
-    availableActions = []
+    availableActions = [],
+    admins = []
 }) {
     return (
         <>
@@ -20,7 +21,8 @@ export default function PlatformOperations({
                 <DiagnosticsLogsTable 
                     activities={activities} 
                     filters={filters} 
-                    availableActions={availableActions} 
+                    availableActions={availableActions}
+                    admins={admins}
                 />
             </div>
 
@@ -30,6 +32,9 @@ export default function PlatformOperations({
                         href={route('admin.activity.export', {
                             search: filters.search || '',
                             action_type: filters.action_type || '',
+                            admin_id: filters.admin_id || '',
+                            start_date: filters.start_date || '',
+                            end_date: filters.end_date || '',
                         })}
                         icon={Download}
                         variant="primary"

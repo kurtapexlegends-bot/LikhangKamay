@@ -25,10 +25,16 @@ class PlatformDiagnosticsController extends Controller
     {
         Gate::authorize('admin-action');
 
+        $admins = User::whereIn('role', ['admin', 'super_admin'])
+            ->select(['id', 'name'])
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Admin/Layout/PlatformOperations', [
             'activities' => $this->getActivityLogs($request),
-            'filters' => $request->only(['search', 'action_type']),
+            'filters' => $request->only(['search', 'action_type', 'admin_id', 'start_date', 'end_date']),
             'availableActions' => $this->getAvailableActions(),
+            'admins' => $admins,
         ]);
     }
 
@@ -41,6 +47,9 @@ class PlatformDiagnosticsController extends Controller
 
         $search = $request->input('search');
         $actionType = $request->input('action_type');
+        $adminId = $request->input('admin_id');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
         $activities = PlatformActivity::query()
             ->with('user:id,name,role')
@@ -55,6 +64,15 @@ class PlatformDiagnosticsController extends Controller
             })
             ->when($actionType, function ($query, $actionType) {
                 $query->where('action', $actionType);
+            })
+            ->when($adminId, function ($query, $adminId) {
+                $query->where('user_id', $adminId);
+            })
+            ->when($startDate, function ($query, $startDate) {
+                $query->where('created_at', '>=', $startDate . ' 00:00:00');
+            })
+            ->when($endDate, function ($query, $endDate) {
+                $query->where('created_at', '<=', $endDate . ' 23:59:59');
             })
             ->latest()
             ->get();
@@ -95,6 +113,9 @@ class PlatformDiagnosticsController extends Controller
     {
         $search = $request->input('search');
         $actionType = $request->input('action_type');
+        $adminId = $request->input('admin_id');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
         return PlatformActivity::query()
             ->with('user:id,name,role,avatar')
@@ -109,6 +130,15 @@ class PlatformDiagnosticsController extends Controller
             })
             ->when($actionType, function ($query, $actionType) {
                 $query->where('action', $actionType);
+            })
+            ->when($adminId, function ($query, $adminId) {
+                $query->where('user_id', $adminId);
+            })
+            ->when($startDate, function ($query, $startDate) {
+                $query->where('created_at', '>=', $startDate . ' 00:00:00');
+            })
+            ->when($endDate, function ($query, $endDate) {
+                $query->where('created_at', '<=', $endDate . ' 23:59:59');
             })
             ->latest()
             ->paginate(50)
