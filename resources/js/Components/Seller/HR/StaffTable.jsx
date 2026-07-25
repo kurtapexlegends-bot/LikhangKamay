@@ -1,7 +1,8 @@
-import React from 'react';
-import { Search, X, Pencil, Trash2, CalendarDays, Users } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, X, Pencil, Trash2, CalendarDays, Users, SlidersHorizontal, Filter, RotateCcw, ChevronDown, Calendar } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import {
     formatPeso,
     formatWorkedHoursSummary,
@@ -116,35 +117,120 @@ export default function StaffTable({
     monthLabel,
     onAddClick
 }) {
-    const [statusFilter, setStatusFilter] = React.useState('all');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [entitlementFilter, setEntitlementFilter] = useState('all');
+    const [startDateFilter, setStartDateFilter] = useState('');
+    const [endDateFilter, setEndDateFilter] = useState('');
+
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const popoverRef = useRef(null);
+
+    // Staged draft state
+    const [draftStatus, setDraftStatus] = useState(statusFilter);
+    const [draftEntitlement, setDraftEntitlement] = useState(entitlementFilter);
+    const [draftStartDate, setDraftStartDate] = useState(startDateFilter);
+    const [draftEndDate, setDraftEndDate] = useState(endDateFilter);
+
+    const syncDraftState = () => {
+        setDraftStatus(statusFilter);
+        setDraftEntitlement(entitlementFilter);
+        setDraftStartDate(startDateFilter);
+        setDraftEndDate(endDateFilter);
+    };
+
+    const handleOpenFilters = () => {
+        syncDraftState();
+        if (window.innerWidth < 1024) {
+            setIsDrawerOpen(true);
+        } else {
+            setIsPopoverOpen(!isPopoverOpen);
+        }
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+                setIsPopoverOpen(false);
+            }
+        };
+
+        if (isPopoverOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isPopoverOpen]);
+
+    const activeFiltersCount =
+        (statusFilter !== 'all' ? 1 : 0) +
+        (entitlementFilter !== 'all' ? 1 : 0) +
+        (startDateFilter ? 1 : 0) +
+        (endDateFilter ? 1 : 0);
+
+    const draftActiveCount =
+        (draftStatus !== 'all' ? 1 : 0) +
+        (draftEntitlement !== 'all' ? 1 : 0) +
+        (draftStartDate ? 1 : 0) +
+        (draftEndDate ? 1 : 0);
+
+    const applyDraftFilters = () => {
+        setIsPopoverOpen(false);
+        setIsDrawerOpen(false);
+        setStatusFilter(draftStatus);
+        setEntitlementFilter(draftEntitlement);
+        setStartDateFilter(draftStartDate);
+        setEndDateFilter(draftEndDate);
+    };
+
+    const handleResetDraft = () => {
+        setDraftStatus('all');
+        setDraftEntitlement('all');
+        setDraftStartDate('');
+        setDraftEndDate('');
+    };
+
+    const handleClearFilters = () => {
+        setSearchTerm('');
+        setStatusFilter('all');
+        setEntitlementFilter('all');
+        setStartDateFilter('');
+        setEndDateFilter('');
+    };
 
     const filteredStaff = staff.filter(emp => {
         const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               emp.role.toLowerCase().includes(searchTerm.toLowerCase());
         if (!matchesSearch) return false;
-        
-        if (statusFilter === 'all') return true;
-        if (statusFilter === 'active') {
-            return emp.status?.toLowerCase() === 'active' || !emp.status;
+
+        if (statusFilter !== 'all') {
+            if (statusFilter === 'active' && !(emp.status?.toLowerCase() === 'active' || !emp.status)) return false;
+            if (statusFilter === 'clocked_in' && !(emp.attendance?.current_state === 'clocked_in' || emp.attendance?.open_session)) return false;
+            if (statusFilter === 'suspended' && !(emp.login_account?.workspace_access_enabled === false || emp.status?.toLowerCase() === 'suspended')) return false;
+            if (statusFilter === 'no_login' && emp.has_login_account) return false;
         }
-        if (statusFilter === 'clocked_in') {
-            return emp.attendance?.current_state === 'clocked_in' || emp.attendance?.open_session;
+
+        if (entitlementFilter !== 'all') {
+            const perms = emp.login_account?.module_permissions || {};
+            if (entitlementFilter === 'accounting' && !perms.accounting) return false;
+            if (entitlementFilter === 'orders' && !perms.orders) return false;
+            if (entitlementFilter === 'procurement' && !perms.procurement) return false;
         }
-        if (statusFilter === 'suspended') {
-            return emp.login_account?.workspace_access_enabled === false || emp.status?.toLowerCase() === 'suspended';
+
+        if (startDateFilter && emp.created_at) {
+            const empDate = emp.created_at.substring(0, 10);
+            if (empDate < startDateFilter) return false;
         }
-        if (statusFilter === 'no_login') {
-            return !emp.has_login_account;
+        if (endDateFilter && emp.created_at) {
+            const empDate = emp.created_at.substring(0, 10);
+            if (empDate > endDateFilter) return false;
         }
+
         return true;
     });
 
-    const handleClearFilters = () => {
-        setSearchTerm('');
-        setStatusFilter('all');
-    };
-
-    const isSearching = searchTerm.trim().length > 0 || statusFilter !== 'all';
+    const isSearching = searchTerm.trim().length > 0 || activeFiltersCount > 0;
 
     const emptyStateProps = isSearching
         ? {
@@ -162,57 +248,274 @@ export default function StaffTable({
               onAction: canEditHrRecords ? onAddClick : undefined,
           };
 
+    const filterFieldsGrid = (
+        <div className="space-y-4 text-left">
+            {/* 1. Date Hired / Joined Range */}
+            <div>
+                <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5 flex items-center gap-1.5">
+                    <Calendar size={13} className="text-clay-600" />
+                    <span>Date Hired / Joined Range</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="relative flex items-center rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 focus-within:border-clay-500 focus-within:ring-1 focus-within:ring-clay-500/20">
+                        <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 mr-2 shrink-0">From</span>
+                        <input
+                            type="date"
+                            value={draftStartDate}
+                            onChange={(e) => setDraftStartDate(e.target.value)}
+                            className="w-full bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0"
+                        />
+                    </div>
+                    <div className="relative flex items-center rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 focus-within:border-clay-500 focus-within:ring-1 focus-within:ring-clay-500/20">
+                        <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 mr-2 shrink-0">To</span>
+                        <input
+                            type="date"
+                            value={draftEndDate}
+                            onChange={(e) => setDraftEndDate(e.target.value)}
+                            className="w-full bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* 2. Employment & Access Status */}
+            <div>
+                <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                    Employment & Access Status
+                </label>
+                <div className="relative">
+                    <select
+                        value={draftStatus}
+                        onChange={(e) => setDraftStatus(e.target.value)}
+                        className="pr-8 text-xs py-2 w-full min-h-[40px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer appearance-none px-3"
+                    >
+                        <option value="all">All Staff (Active & Suspended)</option>
+                        <option value="active">Active Employees</option>
+                        <option value="clocked_in">Currently Clocked In</option>
+                        <option value="suspended">Suspended Workspace Access</option>
+                        <option value="no_login">No Portal Login Account</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />
+                </div>
+            </div>
+
+            {/* 3. Entitlement Permissions */}
+            <div>
+                <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                    Entitlement / Access Capabilities
+                </label>
+                <div className="relative">
+                    <select
+                        value={draftEntitlement}
+                        onChange={(e) => setDraftEntitlement(e.target.value)}
+                        className="pr-8 text-xs py-2 w-full min-h-[40px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer appearance-none px-3"
+                    >
+                        <option value="all">All Granted Entitlements</option>
+                        <option value="accounting">Finance & Accounting Access</option>
+                        <option value="orders">Orders & Fulfillment Access</option>
+                        <option value="procurement">Procurement & Inventory Access</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm flex flex-col min-h-[400px]">
             {/* Table Header / Toolbar */}
-            <div className="px-6 py-4 border-b border-stone-100 flex flex-col gap-4 bg-[#FDFBF9]">
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 w-full">
-                    <h3 className="text-sm font-bold tracking-tight text-stone-900">Employee Directory</h3>
-                    <div className="relative w-full sm:w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                        <input 
-                            type="text" 
-                            placeholder="Search name or role..." 
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow shadow-sm min-h-[44px]"
-                        />
-                        {searchTerm && (
-                            <button 
-                                onClick={() => { setSearchTerm(''); }} 
-                                aria-label="Clear employee search" 
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition min-w-[44px] min-h-[44px] flex items-center justify-center"
-                                title="Clear search"
+            <div className="px-5 py-4 border-b border-stone-100 bg-[#FCFAF7]/40">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                        <Users size={16} className="text-clay-700" />
+                        <h3 className="text-sm font-bold tracking-tight text-stone-900">Employee Directory</h3>
+                        <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-bold text-stone-600 border border-stone-200">
+                            {filteredStaff.length} visible
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 flex-1 sm:flex-initial">
+                        {/* Search Input */}
+                        <div className="relative flex-1 sm:w-64">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
+                            <input 
+                                type="text" 
+                                placeholder="Search name or role..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-9 pr-8 py-2 bg-white border border-stone-200 rounded-xl text-xs hover:border-stone-300 focus:ring-4 focus:ring-clay-500/10 focus:border-clay-500 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-[38px]"
+                            />
+                            {searchTerm && (
+                                <button 
+                                    onClick={() => setSearchTerm('')} 
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition active:scale-90"
+                                    title="Clear search"
+                                >
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Standardized Filter Button on the Right */}
+                        <div className="relative inline-block text-left" ref={popoverRef}>
+                            <button
+                                type="button"
+                                onClick={handleOpenFilters}
+                                className={`inline-flex h-[38px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-bold transition-all shadow-sm active:scale-95 ${
+                                    activeFiltersCount > 0
+                                        ? 'bg-clay-700 text-white border-clay-800 shadow-clay-200 hover:bg-clay-800'
+                                        : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300 hover:bg-stone-50'
+                                }`}
                             >
-                                <X size={12} />
+                                <SlidersHorizontal size={14} strokeWidth={2.2} />
+                                <span>Filters</span>
+                                {activeFiltersCount > 0 && (
+                                    <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-black text-white">
+                                        {activeFiltersCount}
+                                    </span>
+                                )}
+                                <ChevronDown size={14} strokeWidth={2.5} className={`transition-transform duration-200 ${isPopoverOpen ? 'rotate-180' : ''}`} />
                             </button>
-                        )}
+
+                            {/* Desktop Popover Card */}
+                            {isPopoverOpen && (
+                                <div className="hidden lg:block absolute right-0 z-[100] mt-2 w-[420px] rounded-2xl border border-stone-200 bg-white p-5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+                                    <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
+                                        <div className="flex items-center gap-2">
+                                            <Filter size={15} className="text-clay-700" />
+                                            <h3 className="text-sm font-bold text-stone-900">Filter Employees</h3>
+                                        </div>
+                                        {draftActiveCount > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={handleResetDraft}
+                                                className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-500 hover:text-clay-700 transition"
+                                            >
+                                                <RotateCcw size={12} />
+                                                <span>Reset Selection</span>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {filterFieldsGrid}
+
+                                    <div className="mt-5 pt-3 border-t border-stone-100 flex items-center justify-between">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsPopoverOpen(false)}
+                                            className="rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 transition"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={applyDraftFilters}
+                                            className="rounded-xl bg-clay-700 px-5 py-2 text-xs font-bold text-white shadow-md shadow-clay-200 hover:bg-clay-800 transition active:scale-95"
+                                        >
+                                            Apply & Close
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-                {/* Status Quick Filters */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar -mx-2 px-2">
-                    {[
-                        { key: 'all', label: 'All Staff' },
-                        { key: 'active', label: 'Active' },
-                        { key: 'clocked_in', label: 'Clocked In' },
-                        { key: 'suspended', label: 'Suspended' },
-                        { key: 'no_login', label: 'No Login' }
-                    ].map(tab => (
+
+                {/* Active Filter Tag Pills */}
+                {activeFiltersCount > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-stone-100">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mr-1">
+                            Active Filters:
+                        </span>
+                        {statusFilter !== 'all' && (
+                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-sm">
+                                <span>Status: {statusFilter === 'active' ? 'Active' : statusFilter === 'clocked_in' ? 'Clocked In' : statusFilter === 'suspended' ? 'Suspended' : 'No Login'}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setStatusFilter('all')}
+                                    className="rounded-full p-0.5 hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
+                                >
+                                    <X size={12} strokeWidth={2.5} />
+                                </button>
+                            </span>
+                        )}
+                        {entitlementFilter !== 'all' && (
+                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-sm">
+                                <span>Entitlement: {entitlementFilter === 'accounting' ? 'Accounting' : entitlementFilter === 'orders' ? 'Orders' : 'Procurement'}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setEntitlementFilter('all')}
+                                    className="rounded-full p-0.5 hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
+                                >
+                                    <X size={12} strokeWidth={2.5} />
+                                </button>
+                            </span>
+                        )}
+                        {startDateFilter && (
+                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-sm">
+                                <span>From: {startDateFilter}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setStartDateFilter('')}
+                                    className="rounded-full p-0.5 hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
+                                >
+                                    <X size={12} strokeWidth={2.5} />
+                                </button>
+                            </span>
+                        )}
+                        {endDateFilter && (
+                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-sm">
+                                <span>To: {endDateFilter}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setEndDateFilter('')}
+                                    className="rounded-full p-0.5 hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
+                                >
+                                    <X size={12} strokeWidth={2.5} />
+                                </button>
+                            </span>
+                        )}
                         <button
-                            key={tab.key}
                             type="button"
-                            onClick={() => setStatusFilter(tab.key)}
-                            className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition min-h-[32px] whitespace-nowrap ${
-                                statusFilter === tab.key
-                                    ? 'bg-clay-700 border-clay-700 text-white shadow-sm'
-                                    : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50'
-                            }`}
+                            onClick={handleClearFilters}
+                            className="text-[11px] font-bold text-clay-700 hover:underline ml-1"
                         >
-                            {tab.label}
+                            Clear All
                         </button>
-                    ))}
-                </div>
+                    </div>
+                )}
             </div>
+
+            {/* Mobile Bottom-Sheet Filter Drawer */}
+            <SlideOverDrawer
+                show={isDrawerOpen}
+                onClose={() => setIsDrawerOpen(false)}
+                title="Filter Staff"
+                position="bottom"
+                widthClass="max-w-md"
+                footer={
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={handleResetDraft}
+                            className="flex-1 rounded-xl border border-stone-200 bg-white py-2.5 text-xs font-bold text-stone-700 min-h-[44px]"
+                        >
+                            Reset All
+                        </button>
+                        <button
+                            type="button"
+                            onClick={applyDraftFilters}
+                            className="flex-1 rounded-xl bg-clay-700 py-2.5 text-xs font-bold text-white shadow-lg shadow-clay-200 min-h-[44px]"
+                        >
+                            Apply Filters
+                        </button>
+                    </div>
+                }
+            >
+                <div className="py-2">
+                    {filterFieldsGrid}
+                </div>
+            </SlideOverDrawer>
 
             {/* Mobile View: Card List */}
             <div className="flex-1 md:hidden">
