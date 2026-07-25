@@ -44,6 +44,19 @@ export default function AuditLogFilters({
     const [draftSeverity, setDraftSeverity] = useState(selectedSeverity);
     const [draftActor, setDraftActor] = useState(selectedActor);
 
+    // Always sync draft states whenever popover or drawer is opened
+    useEffect(() => {
+        if (isPopoverOpen || isDrawerOpen) {
+            setDraftStartDate(startDate);
+            setDraftEndDate(endDate);
+            setDraftCategory(selectedCategory);
+            setDraftModule(selectedModule);
+            setDraftStatus(selectedStatus);
+            setDraftSeverity(selectedSeverity);
+            setDraftActor(selectedActor);
+        }
+    }, [isPopoverOpen, isDrawerOpen]);
+
     // Sync draft states whenever active parent filters change or panel opens
     const syncDraftsFromProps = () => {
         setDraftStartDate(startDate);
