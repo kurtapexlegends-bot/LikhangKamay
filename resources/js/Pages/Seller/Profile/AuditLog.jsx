@@ -47,6 +47,35 @@ export default function AuditLog({ auth, auditLog }) {
     const latestEventAt = auditLog?.summary?.latest_event_at;
     const coverage = auditLog?.summary?.coverage || [];
 
+    // Pre-compute indexed entries once when entries change (pre-computes timestamps and search strings O(N))
+    const indexedEntries = useMemo(() => {
+        return entries.map((entry) => {
+            const timestamp = entry.occurred_at ? new Date(entry.occurred_at).getTime() : 0;
+            const searchIndex = [
+                entry.title,
+                entry.summary,
+                entry.subject,
+                entry.reference,
+                entry.actor_name,
+                entry.actor_type,
+                entry.module,
+                entry.event_type,
+                ...(entry.detail_lines || []),
+                ...Object.entries(entry.before || {}).map(([k, v]) => `${k} ${v}`),
+                ...Object.entries(entry.after || {}).map(([k, v]) => `${k} ${v}`),
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+
+            return {
+                ...entry,
+                _timestamp: timestamp,
+                _searchIndex: searchIndex,
+            };
+        });
+    }, [entries]);
+
     const moduleOptions = useMemo(() => {
         const options = Array.from(new Set(entries.map((entry) => entry.module).filter(Boolean)));
         return ['all', ...options];
@@ -72,42 +101,21 @@ export default function AuditLog({ auth, auditLog }) {
         const startTimestamp = startDate ? new Date(`${startDate}T00:00:00`).getTime() : null;
         const endTimestamp = endDate ? new Date(`${endDate}T23:59:59`).getTime() : null;
 
-        return entries.filter((entry) => {
+        return indexedEntries.filter((entry) => {
             if (selectedCategory !== 'all' && entry.category !== selectedCategory) return false;
             if (selectedModule !== 'all' && entry.module !== selectedModule) return false;
             if (selectedStatus !== 'all' && entry.status !== selectedStatus) return false;
             if (selectedSeverity !== 'all' && entry.severity !== selectedSeverity) return false;
             if (selectedActor !== 'all' && entry.actor_type !== selectedActor) return false;
 
-            if (startTimestamp || endTimestamp) {
-                const occurredAt = entry.occurred_at ? new Date(entry.occurred_at).getTime() : null;
-                if (!occurredAt) return false;
-                if (startTimestamp && occurredAt < startTimestamp) return false;
-                if (endTimestamp && occurredAt > endTimestamp) return false;
-            }
+            if (startTimestamp && (!entry._timestamp || entry._timestamp < startTimestamp)) return false;
+            if (endTimestamp && (!entry._timestamp || entry._timestamp > endTimestamp)) return false;
 
-            if (!normalizedSearch) return true;
+            if (normalizedSearch && !entry._searchIndex.includes(normalizedSearch)) return false;
 
-            const searchHaystack = [
-                entry.title,
-                entry.summary,
-                entry.subject,
-                entry.reference,
-                entry.actor_name,
-                entry.actor_type,
-                entry.module,
-                entry.event_type,
-                ...(entry.detail_lines || []),
-                ...Object.entries(entry.before || {}).map(([key, value]) => `${key} ${value}`),
-                ...Object.entries(entry.after || {}).map(([key, value]) => `${key} ${value}`),
-            ]
-                .filter(Boolean)
-                .join(' ')
-                .toLowerCase();
-
-            return searchHaystack.includes(normalizedSearch);
+            return true;
         });
-    }, [deferredSearch, endDate, entries, selectedActor, selectedCategory, selectedModule, selectedSeverity, selectedStatus, startDate]);
+    }, [indexedEntries, deferredSearch, startDate, endDate, selectedCategory, selectedModule, selectedStatus, selectedSeverity, selectedActor]);
 
     const groupedEntries = useMemo(() => {
         const groups = new Map();

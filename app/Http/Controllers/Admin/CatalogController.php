@@ -39,15 +39,24 @@ class CatalogController extends Controller
             })
             ->latest();
 
-        $countQuery = Product::when($shopFilter, fn ($q) => $q->where('user_id', $shopFilter))
-            ->when($search, fn ($q) => $q->search($search, ['name', 'sku']));
+        $rawCounts = Product::query()
+            ->when($shopFilter, fn ($q) => $q->where('user_id', $shopFilter))
+            ->when($search, fn ($q) => $q->search($search, ['name', 'sku']))
+            ->selectRaw("
+                COUNT(CASE WHEN status = 'pending_review' THEN 1 END) as pending_review_count,
+                COUNT(CASE WHEN status = 'Active' THEN 1 END) as active_count,
+                COUNT(CASE WHEN status = 'flagged' THEN 1 END) as flagged_count,
+                COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count,
+                COUNT(*) as total_count
+            ")
+            ->first();
 
         $statusCounts = [
-            'pending_review' => (clone $countQuery)->where('status', 'pending_review')->count(),
-            'Active' => (clone $countQuery)->where('status', 'Active')->count(),
-            'flagged' => (clone $countQuery)->where('status', 'flagged')->count(),
-            'rejected' => (clone $countQuery)->where('status', 'rejected')->count(),
-            'all' => (clone $countQuery)->count(),
+            'pending_review' => (int) ($rawCounts->pending_review_count ?? 0),
+            'Active' => (int) ($rawCounts->active_count ?? 0),
+            'flagged' => (int) ($rawCounts->flagged_count ?? 0),
+            'rejected' => (int) ($rawCounts->rejected_count ?? 0),
+            'all' => (int) ($rawCounts->total_count ?? 0),
         ];
 
         $shops = User::where('role', 'artisan')
