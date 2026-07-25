@@ -59,29 +59,65 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
     }, [filters.search, users.data]);
 
     const handleSearch = (event) => {
-        event.preventDefault();
-        router.get(route('admin.users.manager'), { search: search.trim(), role: filters.role, tab: 'directory' }, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
+        if (event) event.preventDefault();
+        router.get(
+            route('admin.users.manager'),
+            {
+                search: search.trim(),
+                role: filters.role || 'all',
+                status: filters.status || 'all',
+                verification: filters.verification || 'all',
+                start_date: filters.start_date || '',
+                end_date: filters.end_date || '',
+                tab: 'directory',
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            }
+        );
     };
 
     const handleRoleFilter = (role) => {
-        router.get(route('admin.users.manager'), { search: search.trim(), role, tab: 'directory' }, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
+        router.get(
+            route('admin.users.manager'),
+            {
+                search: search.trim(),
+                role,
+                status: filters.status || 'all',
+                verification: filters.verification || 'all',
+                start_date: filters.start_date || '',
+                end_date: filters.end_date || '',
+                tab: 'directory',
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            }
+        );
     };
 
     const clearSearch = () => {
         setSearch('');
-        router.get(route('admin.users.manager'), { search: '', role: filters.role, tab: 'directory' }, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
+        router.get(
+            route('admin.users.manager'),
+            {
+                search: '',
+                role: filters.role || 'all',
+                status: filters.status || 'all',
+                verification: filters.verification || 'all',
+                start_date: filters.start_date || '',
+                end_date: filters.end_date || '',
+                tab: 'directory',
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            }
+        );
     };
 
     const handleImpersonate = (userId) => {

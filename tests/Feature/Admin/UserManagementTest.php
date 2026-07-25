@@ -199,6 +199,49 @@ class UserManagementTest extends TestCase
             );
     }
 
+    public function test_super_admin_can_filter_users_by_status_verification_and_date_range(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        
+        $activeUser = User::factory()->create([
+            'banned_at' => null,
+            'email_verified_at' => now(),
+            'created_at' => now(),
+        ]);
+        
+        $suspendedUser = User::factory()->create([
+            'banned_at' => now(),
+            'email_verified_at' => null,
+            'created_at' => now()->subDays(10),
+        ]);
+
+        // Filter by suspended status
+        $this->actingAs($admin)
+            ->get(route('admin.users.manager', ['status' => 'suspended']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Users/UserManager')
+                ->where('filters.status', 'suspended')
+                ->where('users.data', function ($users) use ($suspendedUser, $activeUser) {
+                    $ids = collect($users)->pluck('id');
+                    return $ids->contains($suspendedUser->id) && !$ids->contains($activeUser->id);
+                })
+            );
+
+        // Filter by verification status (unverified)
+        $this->actingAs($admin)
+            ->get(route('admin.users.manager', ['verification' => 'unverified']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Users/UserManager')
+                ->where('filters.verification', 'unverified')
+                ->where('users.data', function ($users) use ($suspendedUser, $activeUser) {
+                    $ids = collect($users)->pluck('id');
+                    return $ids->contains($suspendedUser->id) && !$ids->contains($activeUser->id);
+                })
+            );
+    }
+
     private function createEmployee(User $owner, string $name): Employee
     {
         return Employee::create([

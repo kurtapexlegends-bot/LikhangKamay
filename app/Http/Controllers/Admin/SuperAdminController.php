@@ -175,8 +175,12 @@ class SuperAdminController extends Controller
             $tab = $request->get('tab', 'directory');
             $search = trim((string) $request->get('search', ''));
             $roleFilter = in_array($request->get('role'), ['all', 'artisan', 'buyer', 'super_admin']) ? $request->get('role') : 'all';
+            $statusFilter = in_array($request->get('status'), ['active', 'suspended', 'pending_artisan']) ? $request->get('status') : 'all';
+            $verificationFilter = in_array($request->get('verification'), ['verified', 'unverified']) ? $request->get('verification') : 'all';
+            $startDate = $request->get('start_date');
+            $endDate = $request->get('end_date');
 
-            $query = $this->buildUserQuery($roleFilter, $search);
+            $query = $this->buildUserQuery($roleFilter, $search, $statusFilter, $verificationFilter, $startDate, $endDate);
             $users = $query->orderBy('created_at', 'desc')->paginate(10)->through(fn($user) => $this->mapAdminPrimaryAccount($user, $search));
 
             $orphanedStaff = $this->getOrphanedStaff();
@@ -188,6 +192,10 @@ class SuperAdminController extends Controller
                     'role' => $roleFilter,
                     'search' => $search,
                     'tab' => $tab,
+                    'status' => $statusFilter,
+                    'verification' => $verificationFilter,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
                 ],
                 'unlinkedStaffGroup' => [
                     'staff_members' => $orphanedStaff,
@@ -557,8 +565,14 @@ class SuperAdminController extends Controller
     /**
      * Build the base query for user management.
      */
-    private function buildUserQuery(string $roleFilter, string $search)
-    {
+    private function buildUserQuery(
+        string $roleFilter = 'all',
+        string $search = '',
+        string $statusFilter = 'all',
+        string $verificationFilter = 'all',
+        ?string $startDate = null,
+        ?string $endDate = null
+    ) {
         $query = User::query()
             ->where(function ($q) {
                 $q->whereIn('role', ['artisan', 'buyer', 'super_admin'])->orWhereNull('role');
@@ -574,6 +588,27 @@ class SuperAdminController extends Controller
             $query->where(fn($q) => $q->where('role', 'buyer')->orWhereNull('role'));
         } elseif ($roleFilter === 'super_admin') {
             $query->where('role', 'super_admin');
+        }
+
+        if ($statusFilter === 'active') {
+            $query->whereNull('banned_at');
+        } elseif ($statusFilter === 'suspended') {
+            $query->whereNotNull('banned_at');
+        } elseif ($statusFilter === 'pending_artisan') {
+            $query->where('role', 'artisan')->where('artisan_status', 'pending');
+        }
+
+        if ($verificationFilter === 'verified') {
+            $query->whereNotNull('email_verified_at');
+        } elseif ($verificationFilter === 'unverified') {
+            $query->whereNull('email_verified_at');
+        }
+
+        if ($startDate) {
+            $query->where('created_at', '>=', $startDate . ' 00:00:00');
+        }
+        if ($endDate) {
+            $query->where('created_at', '<=', $endDate . ' 23:59:59');
         }
 
         if ($search !== '') {
