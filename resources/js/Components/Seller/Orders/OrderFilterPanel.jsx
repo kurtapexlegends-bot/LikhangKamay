@@ -265,6 +265,65 @@ export default function OrderFilterPanel({
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />
                 </div>
             </div>
+
+            {/* 5. Quick Action Presets */}
+            <div>
+                <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                    Quick Action Queue
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => applyQuickFilter("all", activeTab)}
+                        className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
+                            quickFilter === "all"
+                                ? "border-clay-300 bg-clay-50 text-clay-700"
+                                : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                        }`}
+                    >
+                        All Visible
+                    </button>
+                    {pendingQueueCount > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => applyQuickFilter("urgent", "Pending")}
+                            className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
+                                quickFilter === "urgent" && activeTab === "Pending"
+                                    ? "border-amber-300 bg-amber-50 text-amber-800"
+                                    : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                            }`}
+                        >
+                            Pending Queue ({pendingQueueCount})
+                        </button>
+                    )}
+                    {paymentHoldCount > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => applyQuickFilter("payment_hold", "Accepted")}
+                            className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
+                                quickFilter === "payment_hold"
+                                    ? "border-orange-300 bg-orange-50 text-orange-800"
+                                    : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                            }`}
+                        >
+                            Payment Hold ({paymentHoldCount})
+                        </button>
+                    )}
+                    {returnQueueCount > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => applyQuickFilter("returns", "Returns")}
+                            className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
+                                quickFilter === "returns"
+                                    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                                    : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                            }`}
+                        >
+                            Return Queue ({returnQueueCount})
+                        </button>
+                    )}
+                </div>
+            </div>
         </div>
     );
 
@@ -287,7 +346,7 @@ export default function OrderFilterPanel({
                 <div className="pointer-events-none absolute bottom-[1px] right-0 top-0 w-8 bg-gradient-to-l from-white to-transparent" />
             </div>
 
-            {/* Standardized Search & Right-Aligned Filter Button Toolbar */}
+            {/* Standardized Search & Right-Aligned Controls Toolbar */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-stone-100 bg-[#FCFAF7]/40 p-3.5">
                 {/* Search Input */}
                 <div className="relative flex-1">
@@ -310,73 +369,95 @@ export default function OrderFilterPanel({
                     )}
                 </div>
 
-                {/* Standardized Filter Button on the Right */}
-                <div className="relative inline-block text-left" ref={popoverRef}>
-                    <button
-                        type="button"
-                        onClick={handleOpenFilters}
-                        className={`inline-flex h-[38px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-bold transition-all shadow-sm active:scale-95 ${
-                            activeFiltersCount > 0
-                                ? 'bg-clay-700 text-white border-clay-800 shadow-clay-200 hover:bg-clay-800'
-                                : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300 hover:bg-stone-50'
-                        }`}
-                    >
-                        <SlidersHorizontal size={14} strokeWidth={2.2} />
-                        <span>Filters</span>
-                        {activeFiltersCount > 0 && (
-                            <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-black text-white">
-                                {activeFiltersCount}
-                            </span>
-                        )}
-                        <ChevronDown size={14} strokeWidth={2.5} className={`transition-transform duration-200 ${isPopoverOpen ? 'rotate-180' : ''}`} />
-                    </button>
+                {/* Right Controls: Select All Page + Filters Popover */}
+                <div className="flex items-center gap-2.5">
+                    {/* Select All Page Checkbox */}
+                    <label className="inline-flex h-[38px] items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-xs font-bold text-stone-700 hover:border-stone-300 hover:bg-stone-50 transition cursor-pointer select-none shadow-sm shrink-0">
+                        <button
+                            type="button"
+                            onClick={toggleSelectAll}
+                            className={`flex h-4 w-4 items-center justify-center rounded border transition-all ${
+                                selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0
+                                    ? "border-clay-600 bg-clay-600 text-white"
+                                    : "border-stone-300 bg-white"
+                            }`}
+                            aria-label={selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0 ? "Deselect all page" : "Select all page"}
+                        >
+                            {selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0 && (
+                                <Check size={12} strokeWidth={3.5} />
+                            )}
+                        </button>
+                        <span>{selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0 ? "Deselect Page" : "Select Page"}</span>
+                    </label>
 
-                    {/* Desktop Popover Card */}
-                    {isPopoverOpen && (
-                        <div className="hidden lg:block absolute right-0 z-[100] mt-2 w-[420px] rounded-2xl border border-stone-200 bg-white p-5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
-                            <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
-                                <div className="flex items-center gap-2">
-                                    <Filter size={15} className="text-clay-700" />
-                                    <h3 className="text-sm font-bold text-stone-900">Filter Orders</h3>
+                    {/* Standardized Filter Button on the Right */}
+                    <div className="relative inline-block text-left" ref={popoverRef}>
+                        <button
+                            type="button"
+                            onClick={handleOpenFilters}
+                            className={`inline-flex h-[38px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-bold transition-all shadow-sm active:scale-95 ${
+                                activeFiltersCount > 0
+                                    ? 'bg-clay-700 text-white border-clay-800 shadow-clay-200 hover:bg-clay-800'
+                                    : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300 hover:bg-stone-50'
+                            }`}
+                        >
+                            <SlidersHorizontal size={14} strokeWidth={2.2} />
+                            <span>Filters</span>
+                            {activeFiltersCount > 0 && (
+                                <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-black text-white">
+                                    {activeFiltersCount}
+                                </span>
+                            )}
+                            <ChevronDown size={14} strokeWidth={2.5} className={`transition-transform duration-200 ${isPopoverOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {/* Desktop Popover Card */}
+                        {isPopoverOpen && (
+                            <div className="hidden lg:block absolute right-0 z-[100] mt-2 w-[420px] rounded-2xl border border-stone-200 bg-white p-5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+                                <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Filter size={15} className="text-clay-700" />
+                                        <h3 className="text-sm font-bold text-stone-900">Filter Orders</h3>
+                                    </div>
+                                    {draftActiveCount > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setDraftPaymentMethod("all");
+                                                setDraftFulfillmentType("all");
+                                                setDraftStartDate("");
+                                                setDraftEndDate("");
+                                                setDraftFlaggedOnly("all");
+                                            }}
+                                            className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-500 hover:text-clay-700 transition"
+                                        >
+                                            <RotateCcw size={12} />
+                                            <span>Reset Selection</span>
+                                        </button>
+                                    )}
                                 </div>
-                                {draftActiveCount > 0 && (
+
+                                {filterFieldsGrid}
+
+                                <div className="mt-5 pt-3 border-t border-stone-100 flex items-center justify-between">
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            setDraftPaymentMethod("all");
-                                            setDraftFulfillmentType("all");
-                                            setDraftStartDate("");
-                                            setDraftEndDate("");
-                                            setDraftFlaggedOnly("all");
-                                        }}
-                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-500 hover:text-clay-700 transition"
+                                        onClick={() => setIsPopoverOpen(false)}
+                                        className="rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 transition"
                                     >
-                                        <RotateCcw size={12} />
-                                        <span>Reset Selection</span>
+                                        Cancel
                                     </button>
-                                )}
+                                    <button
+                                        type="button"
+                                        onClick={applyDraftFilters}
+                                        className="rounded-xl bg-clay-700 px-5 py-2 text-xs font-bold text-white shadow-md shadow-clay-200 hover:bg-clay-800 transition active:scale-95"
+                                    >
+                                        Apply & Close
+                                    </button>
+                                </div>
                             </div>
-
-                            {filterFieldsGrid}
-
-                            <div className="mt-5 pt-3 border-t border-stone-100 flex items-center justify-between">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsPopoverOpen(false)}
-                                    className="rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 transition"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={applyDraftFilters}
-                                    className="rounded-xl bg-clay-700 px-5 py-2 text-xs font-bold text-white shadow-md shadow-clay-200 hover:bg-clay-800 transition active:scale-95"
-                                >
-                                    Apply & Close
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -470,84 +551,6 @@ export default function OrderFilterPanel({
                     </button>
                 </div>
             )}
-
-            {/* Quick Filter Queue Pills & Bulk Page Select */}
-            <div className="flex flex-wrap items-center gap-2 border-b border-stone-100 px-3 py-3 sm:px-4 bg-white">
-                <button
-                    type="button"
-                    onClick={() => applyQuickFilter("all", activeTab)}
-                    className={`rounded-full border px-3.5 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
-                        quickFilter === "all"
-                            ? "border-clay-300 bg-clay-50/50 text-clay-700"
-                            : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
-                    }`}
-                >
-                    All visible
-                </button>
-                {pendingQueueCount > 0 && (
-                    <button
-                        type="button"
-                        onClick={() => applyQuickFilter("urgent", "Pending")}
-                        className={`rounded-full border px-3.5 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
-                            quickFilter === "urgent" && activeTab === "Pending"
-                                ? "border-amber-300/80 bg-[#FAF3E0] text-[#A66E2E]"
-                                : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
-                        }`}
-                    >
-                        Pending queue
-                    </button>
-                )}
-                {paymentHoldCount > 0 && (
-                    <button
-                        type="button"
-                        onClick={() => applyQuickFilter("payment_hold", "Accepted")}
-                        className={`rounded-full border px-3.5 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
-                            quickFilter === "payment_hold"
-                                ? "border-orange-300 bg-[#FDF2F0] text-[#B83E28]"
-                                : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
-                        }`}
-                    >
-                        Payment hold
-                    </button>
-                )}
-                {returnQueueCount > 0 && (
-                    <button
-                        type="button"
-                        onClick={() => applyQuickFilter("returns", "Returns")}
-                        className={`rounded-full border px-3.5 py-1 text-[11px] font-bold transition-all duration-200 active:scale-95 shadow-sm ${
-                            quickFilter === "returns"
-                                ? "border-emerald-300 bg-[#EEF5F1] text-[#2D6A4F]"
-                                : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:border-stone-300"
-                        }`}
-                    >
-                        Return queue
-                    </button>
-                )}
-
-                <div className="ml-auto flex items-center gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                        <button
-                            type="button"
-                            onClick={toggleSelectAll}
-                            className={`flex h-5 w-5 items-center justify-center rounded-lg border transition-all duration-200 active:scale-90 ${
-                                selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0
-                                    ? "border-clay-600 bg-clay-600 text-white shadow-sm"
-                                    : "border-stone-300 bg-white hover:border-stone-400 hover:bg-stone-50/30"
-                            }`}
-                            aria-label={selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0 ? "Deselect all page" : "Select all page"}
-                            role="checkbox"
-                            aria-checked={selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0}
-                        >
-                            {selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0 && (
-                                <Check size={14} strokeWidth={4} />
-                            )}
-                        </button>
-                        <span className="text-[11px] font-bold text-stone-600 uppercase tracking-tight">
-                            {selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0 ? "Deselect All" : "Select All Page"}
-                        </span>
-                    </label>
-                </div>
-            </div>
 
             {/* Mobile Bottom-Sheet Filter Drawer */}
             <SlideOverDrawer
