@@ -239,7 +239,7 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
 
                         {/* Desktop Popover Card */}
                         {isPopoverOpen && (
-                            <div className="hidden lg:block absolute right-0 z-30 mt-2 w-[440px] rounded-2xl border border-stone-200 bg-white p-5 shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+                            <div className="hidden lg:block absolute right-0 z-[100] mt-2 w-[440px] rounded-2xl border border-stone-200 bg-white p-5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
                                 <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
                                     <div className="flex items-center gap-2">
                                         <Filter size={15} className="text-clay-700" />

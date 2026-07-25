@@ -186,9 +186,9 @@ export default function SuppliesTable({
     );
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col min-h-[400px] relative">
             {/* Table Header / Toolbar */}
-            <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-3 bg-gray-50/30">
+            <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-3 bg-gray-50/30 rounded-t-2xl">
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
                     <h3 className="font-bold text-gray-900 text-xs shrink-0">Supply Inventory</h3>
                     
@@ -215,7 +215,7 @@ export default function SuppliesTable({
 
                         {/* Desktop Popover Card */}
                         {isPopoverOpen && (
-                            <div className="hidden lg:block absolute left-0 z-30 mt-2 w-[380px] rounded-2xl border border-stone-200 bg-white p-5 shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+                            <div className="hidden lg:block absolute left-0 z-[100] mt-2 w-[380px] rounded-2xl border border-stone-200 bg-white p-5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
                                 <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
                                     <div className="flex items-center gap-2">
                                         <Filter size={15} className="text-clay-700" />
