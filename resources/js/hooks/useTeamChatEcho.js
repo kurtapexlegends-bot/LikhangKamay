@@ -146,7 +146,8 @@ export default function useTeamChatEcho({
         });
 
         chatChannel.listen('.team.message.seen', (e) => {
-            if (currentChatUser && Number(e.senderId) === Number(currentChatUser.id)) {
+            const sender = e.senderId ?? e.sender_id;
+            if (currentChatUser && Number(sender) === Number(currentChatUser.id)) {
                 router.reload({ 
                     only: ['activeMessages'],
                     preserveScroll: true,
@@ -157,7 +158,8 @@ export default function useTeamChatEcho({
         });
 
         chatChannel.listen('.team.user.typing', (e) => {
-            if (currentChatUser && Number(e.senderId) === Number(currentChatUser.id)) {
+            const sender = e.senderId ?? e.sender_id;
+            if (currentChatUser && Number(sender) === Number(currentChatUser.id)) {
                 setIsCounterpartTyping(true);
                 if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
                 typingTimeoutRef.current = setTimeout(() => {

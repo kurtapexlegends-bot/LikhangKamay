@@ -110,8 +110,7 @@ export default function TeamMessages({
     useEffect(() => {
         if (isEchoConnected || (!currentChatUser && !currentChannel) || form.processing) return undefined;
 
-        const interval = setInterval(() => {
-            if (document.hidden) return;
+        const pollTeamData = () => {
             router.reload({
                 only: ['activeMessages', 'conversations', 'currentChatUser', 'currentChannel'],
                 preserveScroll: true,
@@ -119,9 +118,24 @@ export default function TeamMessages({
                 showProgress: false,
                 onSuccess: () => setSyncNotice(null)
             });
-        }, 4000);
+        };
 
-        return () => clearInterval(interval);
+        const interval = setInterval(pollTeamData, 2500);
+
+        const handleVisibility = () => {
+            if (!document.hidden) {
+                pollTeamData();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibility);
+        window.addEventListener('focus', handleVisibility);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibility);
+            window.removeEventListener('focus', handleVisibility);
+        };
     }, [isEchoConnected, currentChatUser?.id, currentChannel?.id, form.processing]);
 
     // Real-time WebSockets via custom hook
