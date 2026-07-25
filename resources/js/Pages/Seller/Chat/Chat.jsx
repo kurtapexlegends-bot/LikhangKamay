@@ -118,16 +118,31 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     useEffect(() => {
         if (isEchoConnected || !currentChatUser) return undefined;
 
-        const interval = setInterval(() => {
-            if (document.hidden) return;
+        const pollData = () => {
             router.reload({
                 only: ['activeMessages', 'conversations', 'currentOrderContext'],
                 preserveScroll: true,
                 preserveState: true,
+                showProgress: false,
             });
-        }, 2000);
+        };
 
-        return () => clearInterval(interval);
+        const interval = setInterval(pollData, 2500);
+
+        const handleVisibility = () => {
+            if (!document.hidden) {
+                pollData();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibility);
+        window.addEventListener('focus', handleVisibility);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibility);
+            window.removeEventListener('focus', handleVisibility);
+        };
     }, [isEchoConnected, currentChatUser?.id]);
 
     // Real-time WebSockets via Echo
