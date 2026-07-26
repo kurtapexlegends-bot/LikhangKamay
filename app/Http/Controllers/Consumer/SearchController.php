@@ -34,8 +34,8 @@ class SearchController extends Controller
                 'name' => $p->name,
                 'slug' => $p->slug,
                 'price' => number_format($p->price, 2),
-                'image' => $p->img,
-                'seller' => $p->user->shop_name ?? $p->user->name,
+                'image' => $p->img ?? $p->image ?? '/images/no-image.png',
+                'seller' => $p->user?->shop_name ?? $p->user?->name ?? 'Artisan',
             ]);
 
         $artisansList = \Illuminate\Support\Facades\Cache::remember('approved_artisans_list', 86400, function () {

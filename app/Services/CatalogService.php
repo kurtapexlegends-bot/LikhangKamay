@@ -181,9 +181,11 @@ class CatalogService
 
         if (!empty($filters['search'])) {
             $search = trim((string) $filters['search']);
-            $query->search($search, ['name', 'description', 'category']);
-            $query->orWhereHas('user', function ($q) use ($search) {
-                $q->where('role', 'artisan')->search($search, ['shop_name', 'name']);
+            $query->where(function ($sub) use ($search) {
+                $sub->search($search, ['name', 'description', 'category'])
+                    ->orWhereHas('user', function ($q) use ($search) {
+                        $q->where('role', 'artisan')->search($search, ['shop_name', 'name']);
+                    });
             });
         }
 

@@ -28,8 +28,29 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
         : null;
     const workspaceLabel = sellerSidebar?.actorType === 'staff' ? 'Staff Hub' : 'Seller Dashboard';
 
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const [term, setTerm] = useState(params.get('search') || '');
+
+    useEffect(() => {
+        const currentSearch = new URLSearchParams(window.location.search).get('search') || '';
+        setTerm(currentSearch);
+    }, [usePage().url]);
+
+    const handleSearch = (e) => {
+        if (e) e.preventDefault();
+        setShowSuggestions(false);
+        const isOnShopPage = window.location.pathname.startsWith('/shop');
+        const options = isOnShopPage ? { preserveState: true, preserveScroll: true } : {};
+        router.get(route('shop.index'), { search: term }, options);
+    };
+
+    const handleClearSearch = () => {
+        setTerm('');
+        setShowSuggestions(false);
+        const isOnShopPage = window.location.pathname.startsWith('/shop');
+        const options = isOnShopPage ? { preserveState: true, preserveScroll: true } : {};
+        router.get(route('shop.index'), { search: '' }, options);
+    };
     const [isScrolled, setIsScrolled] = useState(false);
     const [localCartCount, setLocalCartCount] = useState(() => {
         const cached = localStorage.getItem('lk_cart_count');
@@ -128,11 +149,6 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
         };
     }, []);
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        router.get(route('shop.index'), { search: term }, { preserveState: true });
-    };
-
     return (
         <>
         <nav className={`bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-md py-1' : 'shadow-sm/50 py-3'}`}>
@@ -166,10 +182,7 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
                             {term && (
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setTerm('');
-                                        router.get(route('shop.index'), { search: '' }, { preserveState: true });
-                                    }}
+                                    onClick={handleClearSearch}
                                     className={`absolute text-gray-400 hover:text-gray-600 p-1 flex items-center justify-center rounded-full hover:bg-gray-200/50 transition-colors ${isScrolled ? 'right-16 md:right-20 top-1/2 -translate-y-1/2 w-6 h-6' : 'right-20 md:right-24 top-1/2 -translate-y-1/2 w-7 h-7'}`}
                                     title="Clear search"
                                 >

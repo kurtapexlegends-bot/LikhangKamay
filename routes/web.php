@@ -27,6 +27,10 @@ Route::post('/validate-constraint', [\App\Http\Controllers\Compliance\Validation
     ->middleware('throttle:60,1')
     ->name('api.validate-constraint');
 
+Route::get('/api/search/suggestions', [\App\Http\Controllers\Consumer\SearchController::class, 'suggestions'])
+    ->middleware('throttle:60,1')
+    ->name('api.search.suggestions');
+
 // --- AUTHENTICATION ---
 Route::get('/artisan/register', function () {
     return Inertia::render('Auth/ArtisanRegister');
@@ -317,8 +321,6 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
     // GLOBAL SEARCH (Accessible to pending artisans for browsing)
     Route::get('/api/global-search', [\App\Http\Controllers\Consumer\GlobalSearchController::class, 'search'])->name('api.global-search');
-    Route::get('/api/search/suggestions', [\App\Http\Controllers\Consumer\SearchController::class, 'suggestions'])->name('api.search.suggestions');
-    
 });
 
 Route::get('/payment/success', [\App\Http\Controllers\Consumer\PaymentController::class, 'success'])->name('payment.success');

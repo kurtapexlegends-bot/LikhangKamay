@@ -31,7 +31,17 @@ export default function Catalog(props) {
     useEffect(() => {
         setProducts(initialProducts);
         setNextPageUrl(props.products?.next_page_url);
-    }, [props.products]);
+
+        // Sync local filter state with incoming props.filters
+        setSearchTerm(safeFilters.search || '');
+        setActiveCategory(safeFilters.category || 'All');
+        setMinPrice(safeFilters.price_min || '');
+        setMaxPrice(safeFilters.price_max || '');
+        setSelectedLocations(safeFilters.locations ? String(safeFilters.locations).split(',') : []);
+        setSelectedMaterials(safeFilters.materials ? String(safeFilters.materials).split(',') : []);
+        setMinRating(safeFilters.min_rating || '');
+        setSortBy(safeFilters.sort || 'newest');
+    }, [props.products, props.filters]);
 
     const sponsoredProducts = Array.isArray(props.sponsoredProducts)
         ? props.sponsoredProducts.map((product) => ({
