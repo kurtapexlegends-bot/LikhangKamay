@@ -119,8 +119,8 @@ class ListSellerOrders
                 ->exists(),
         ];
 
-        // 2. Status Filter (Tab based)
-        if (!empty($filters['status']) && $filters['status'] !== 'All') {
+        // 2. Status Filter (Tab based) - Skip status restriction when performing an active search query
+        if (empty($filters['search']) && !empty($filters['status']) && $filters['status'] !== 'All') {
             if ($filters['status'] === 'Cancelled') {
                 $query->whereIn('status', ['Cancelled', 'Rejected']);
             } elseif ($filters['status'] === 'To Pickup') {

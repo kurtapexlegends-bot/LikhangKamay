@@ -153,8 +153,10 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
         });
     }, [dateRange.start, dateRange.end]);
 
+    const searchTimeoutRef = React.useRef(null);
+
     const updateFilters = (newFilters) => {
-        router.get(route("orders.index"), {
+        const mergedFilters = {
             search: searchQuery,
             status: activeTab,
             start_date: dateRange.start,
@@ -165,7 +167,14 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
             quick_filter: quickFilter,
             page: 1,
             ...newFilters
-        }, { preserveState: true, preserveScroll: true, only: ["orders", "tabCounts"] });
+        };
+
+        router.get(route("orders.index"), mergedFilters, {
+            preserveState: true,
+            preserveScroll: true,
+            showProgress: false,
+            only: ["orders", "tabCounts", "filters"],
+        });
     };
 
     const handleTabChange = (tab) => {
@@ -173,7 +182,22 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
         setActiveTab(tab);
         updateFilters({ status: tab, quick_filter: "all" });
     };
-    const handleSearch = (query) => { setSearchQuery(query); updateFilters({ search: query }); };
+
+    const handleSearch = (query) => {
+        setSearchQuery(query);
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+
+        if (!query || query.trim() === "") {
+            updateFilters({ search: "" });
+        } else {
+            searchTimeoutRef.current = setTimeout(() => {
+                updateFilters({ search: query });
+            }, 300);
+        }
+    };
+
     const handlePageChange = (page) => {
         setCurrentPage(page);
         router.get(route("orders.index"), {
@@ -183,7 +207,12 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
             end_date: dateRange.end,
             quick_filter: quickFilter,
             page
-        }, { preserveState: true, preserveScroll: true, only: ["orders", "tabCounts"] });
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            showProgress: false,
+            only: ["orders", "tabCounts", "filters"],
+        });
     };
     const applyQuickFilter = (qf, tab = "All") => { setQuickFilter(qf); setActiveTab(tab); updateFilters({ status: tab, quick_filter: qf }); };
 
