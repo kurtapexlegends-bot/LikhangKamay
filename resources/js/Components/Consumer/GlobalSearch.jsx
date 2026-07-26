@@ -93,6 +93,7 @@ export default function GlobalSearch() {
         { label: 'Go to Product Moderation', cmd: '> products', url: getSafeRoute('admin.catalog.index', { tab: 'moderation' }), icon: ShoppingBag, color: 'text-indigo-500 bg-indigo-50' },
         { label: 'Go to Sponsorship Manager', cmd: '> sponsorships', url: getSafeRoute('admin.catalog.index', { tab: 'sponsorships' }), icon: Star, color: 'text-amber-500 bg-amber-50' },
         { label: 'Go to Review Disputes', cmd: '> review-disputes', url: getSafeRoute('admin.compliance', { tab: 'disputes' }), icon: MessageSquare, color: 'text-orange-500 bg-orange-50' },
+        { label: 'Go to Payouts & Fund Releases', cmd: '> payouts', url: getSafeRoute('admin.payouts.index'), icon: TrendingUp, color: 'text-emerald-500 bg-emerald-50' },
         { label: 'Go to System Config', cmd: '> settings', url: getSafeRoute('admin.settings.index'), icon: Settings, color: 'text-stone-500 bg-stone-50' },
     ] : [
         { label: 'Go to Inventory', cmd: '> inventory', url: getSafeRoute('procurement.index'), icon: Box, color: 'text-blue-500 bg-blue-50', module: 'procurement' },
