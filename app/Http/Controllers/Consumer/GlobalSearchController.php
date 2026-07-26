@@ -394,20 +394,22 @@ class GlobalSearchController extends Controller
 
     private function searchSellerLogs(int $sellerId, string $query, string $like): array
     {
-        return SellerActivityLog::where('user_id', $sellerId)
+        return SellerActivityLog::where('seller_owner_id', $sellerId)
             ->where(function ($q) use ($query, $like) {
-                $q->where('description', $like, "%{$query}%")
-                  ->orWhere('action', $like, "%{$query}%");
+                $q->where('title', $like, "%{$query}%")
+                  ->orWhere('summary', $like, "%{$query}%")
+                  ->orWhere('category', $like, "%{$query}%")
+                  ->orWhere('event_type', $like, "%{$query}%");
             })
             ->latest()
             ->limit(3)
             ->get()
             ->map(fn ($l) => [
                 'id' => "seller-log-{$l->id}",
-                'title' => "Log: {$l->description}",
-                'subtitle' => $l->created_at->diffForHumans(),
+                'title' => "Log: " . ($l->title ?? $l->summary ?? 'Activity'),
+                'subtitle' => $l->created_at ? $l->created_at->diffForHumans() : 'Recent',
                 'type' => 'Activity Log',
-                'url' => route('audit-log.index', ['search' => $l->description]),
+                'url' => route('audit-log.index', ['search' => $l->title ?? $l->summary ?? '']),
                 'icon' => 'activity',
             ])->toArray();
     }
