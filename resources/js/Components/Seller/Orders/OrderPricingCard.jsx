@@ -9,37 +9,37 @@ export default function OrderPricingCard({
     const isExpanded = expandedPricingDetails.has(order.id);
 
     return (
-        <div className="mb-4 rounded-xl border border-stone-200 bg-white p-2 shadow-sm">
+        <div className="mb-2 rounded-xl border border-stone-200/80 bg-stone-50/40 p-1 shadow-2xs">
             <button
                 type="button"
                 onClick={() => togglePricingDetailsExpansion(order.id)}
-                className={`flex items-center justify-between w-full cursor-pointer select-none p-2 rounded-xl hover:bg-stone-50 transition-colors text-left focus:outline-none min-h-[44px] ${
-                    isExpanded ? "border-b border-stone-100 pb-2 mb-2" : ""
+                className={`flex items-center justify-between w-full cursor-pointer select-none px-2 py-1 rounded-lg hover:bg-stone-100/60 transition-colors text-left focus:outline-none ${
+                    isExpanded ? "border-b border-stone-200/60 pb-1.5 mb-1.5" : ""
                 }`}
             >
                 <div>
-                    <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">
+                    <p className="text-[8px] font-extrabold text-stone-400 uppercase tracking-wider">
                         Buyer Total
                     </p>
-                    <p className="text-sm font-bold text-stone-800">
+                    <p className="text-xs font-bold text-stone-800">
                         PHP {order.total}
                     </p>
                 </div>
                 <div className="flex items-center gap-1.5 text-right">
                     <div>
-                        <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">
+                        <p className="text-[8px] font-extrabold text-emerald-600 uppercase tracking-wider">
                             Your Net
                         </p>
-                        <p className="text-sm font-bold text-emerald-600">
+                        <p className="text-xs font-bold text-emerald-600">
                             PHP {Number(order.seller_net_amount).toLocaleString(undefined, {
                                 minimumFractionDigits: 2
                             })}
                         </p>
                     </div>
                     {isExpanded ? (
-                        <ChevronDown size={12} className="text-stone-400 self-end mb-1" />
+                        <ChevronDown size={12} className="text-stone-400 self-center" />
                     ) : (
-                        <ChevronRight size={12} className="text-stone-400 self-end mb-1" />
+                        <ChevronRight size={12} className="text-stone-400 self-center" />
                     )}
                 </div>
             </button>

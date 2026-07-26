@@ -5,25 +5,25 @@ import PaymentStatusBadge from "@/Components/Orders/PaymentStatusBadge";
 
 export default function OrderHeader({ order }) {
     return (
-        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
+        <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 border-b border-stone-100/80 pb-2.5">
+            <div className="flex min-w-0 items-center gap-2.5">
                 <div>
-                    <span className="text-[10px] text-gray-400 uppercase tracking-wide">
+                    <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">
                         Order
                     </span>
-                    <h3 className="font-bold text-gray-900 text-sm">
+                    <h3 className="font-bold text-stone-900 text-xs sm:text-sm leading-none mt-0.5">
                         {order.id}
                     </h3>
                 </div>
-                <div className="hidden sm:block h-6 w-px bg-stone-200" />
-                <div className="flex items-center gap-1.5 text-gray-400">
-                    <Clock size={12} />
-                    <span className="text-xs font-medium">
+                <div className="hidden sm:block h-4 w-px bg-stone-200" />
+                <div className="flex items-center gap-1 text-stone-400">
+                    <Clock size={11} />
+                    <span className="text-[11px] font-medium text-stone-500">
                         {order.date}
                     </span>
                 </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 shrink-0">
                 <PaymentStatusBadge
                     status={order.payment_status}
                     method={order.payment_method}

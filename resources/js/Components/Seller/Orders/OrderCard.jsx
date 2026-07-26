@@ -41,30 +41,30 @@ export default function OrderCard({
 
     return (
         <div
-            className={`group relative mb-4 rounded-2xl border p-4 pl-12 pr-4 shadow-sm transition-all hover:shadow-md sm:pl-16 sm:pr-6 sm:py-6 ${
+            className={`group relative mb-3 rounded-2xl border p-3.5 pl-10 pr-3.5 sm:pl-12 sm:pr-4 sm:py-3.5 shadow-2xs transition-all hover:shadow-xs ${
                 isSelected
                     ? "border-clay-300 ring-1 ring-clay-100 bg-clay-50/20"
-                    : "border-stone-100 bg-white hover:border-stone-200"
+                    : "border-stone-200/70 bg-white hover:border-stone-300"
             }`}
         >
             {/* Bulk Selection Checkbox */}
             <button
                 type="button"
                 onClick={() => toggleOrderSelection(order.id)}
-                className="absolute left-1 top-3.5 z-10 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full transition-all sm:left-4 sm:top-6 sm:h-9 sm:w-9 focus-visible:outline-none"
+                className="absolute left-1 top-2.5 z-10 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-all sm:left-3.5 sm:top-3.5 sm:h-7 sm:w-7 focus-visible:outline-none"
                 aria-label={`Select order ${order.id}`}
                 role="checkbox"
                 aria-checked={isSelected}
             >
                 <div
-                    className={`flex h-6 w-6 items-center justify-center rounded-lg border transition-all ${
+                    className={`flex h-5 w-5 items-center justify-center rounded-md border transition-all ${
                         isSelected
-                            ? "border-clay-600 bg-clay-600 text-white shadow-sm"
+                            ? "border-clay-600 bg-clay-600 text-white shadow-2xs"
                             : "border-stone-200 bg-white text-stone-300 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
                     }`}
                 >
                     {isSelected && (
-                        <Check size={14} strokeWidth={4} />
+                        <Check size={12} strokeWidth={4} />
                     )}
                 </div>
             </button>
@@ -73,7 +73,7 @@ export default function OrderCard({
             <OrderHeader order={order} />
 
             {/* Customer & Logistics Summary Block */}
-            <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3.5 border-y border-stone-100/80 py-3 bg-stone-50/30 rounded-xl px-3 -mx-1">
+            <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2.5 py-1.5 px-2.5 bg-stone-50/60 rounded-xl border border-stone-100/80">
                 <CustomerDetailCard
                     order={order}
                     canAccessMessages={canAccessMessages}
@@ -87,12 +87,12 @@ export default function OrderCard({
             </div>
 
             {/* Order Items + Actions */}
-            <div className="flex flex-col gap-4 lg:flex-row">
+            <div className="flex flex-col gap-3 lg:flex-row">
                 {/* Items */}
                 <OrderItemsList order={order} />
 
                 {/* Action Panel */}
-                <div className="border-t border-gray-100 pt-3 lg:w-64 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+                <div className="border-t border-stone-100 pt-2.5 lg:w-60 lg:border-l lg:border-t-0 lg:pl-3 lg:pt-0 shrink-0">
                     <OrderPricingCard
                         order={order}
                         expandedPricingDetails={expandedPricingDetails}
@@ -100,7 +100,7 @@ export default function OrderCard({
                     />
 
                     {/* Status-specific Actions */}
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                         <OrderCourierTracking
                             order={order}
                             expandedCourierTrackings={expandedCourierTrackings}

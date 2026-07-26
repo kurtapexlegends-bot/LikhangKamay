@@ -9,9 +9,9 @@ export default function OrderItemsList({ order }) {
                 {order.items.map((item, idx) => (
                     <div
                         key={`${order.id}-${item.name}-${idx}`}
-                        className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-2.5 min-w-[280px] md:min-w-0 flex-shrink-0 md:flex-shrink"
+                        className="flex items-center gap-2.5 rounded-xl border border-stone-200/60 bg-stone-50/50 p-2 min-w-[260px] md:min-w-0 flex-shrink-0 md:flex-shrink"
                     >
-                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-stone-200 bg-white">
                             <img
                                 src={
                                     item.img.startsWith("http") || item.img.startsWith("/storage") || item.img.startsWith("/images")
@@ -26,14 +26,14 @@ export default function OrderItemsList({ order }) {
                             />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="truncate text-[13px] font-semibold text-gray-900">
+                            <p className="truncate text-xs font-bold text-stone-850">
                                 {item.name}
                             </p>
-                            <p className="text-[11px] text-gray-500">
+                            <p className="text-[10px] font-medium text-stone-500">
                                 Variant: {item.variant} / Qty {item.qty}
                             </p>
                         </div>
-                        <div className="text-[13px] font-semibold text-gray-700 shrink-0">
+                        <div className="text-xs font-bold text-stone-800 shrink-0">
                             PHP {Number(item.price).toLocaleString()}
                         </div>
                     </div>

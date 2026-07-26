@@ -110,25 +110,25 @@ export default function FulfillmentActionGroup({
                         </div>
                     )}
 
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1.5">
                         <button
                             disabled={!canEditOrders || bomWarnings.length > 0}
                             onClick={() => initiateStatusUpdate(order.id, "Processing")}
-                            className={`flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] ${
-                                bomWarnings.length > 0 ? "bg-stone-400 shadow-stone-200" : "bg-indigo-600 shadow-indigo-200 hover:bg-indigo-700"
+                            className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[38px] ${
+                                bomWarnings.length > 0 ? "bg-stone-400 shadow-stone-200" : "bg-indigo-600 shadow-indigo-200/50 hover:bg-indigo-700"
                             }`}
                             type="button"
                         >
-                            <Play size={18} /> Start Production
+                            <Play size={14} /> Start Production
                         </button>
 
                         <button
                             disabled={!canEditOrders}
                             onClick={() => initiateStatusUpdate(order.id, "Rejected")}
-                            className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50/50 px-4 py-2 text-xs font-bold text-red-600 transition-all hover:bg-red-100/50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[40px]"
+                            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-200/80 bg-red-50/60 px-3 py-1.5 text-xs font-bold text-red-600 transition-all hover:bg-red-100/60 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[34px]"
                             type="button"
                         >
-                            <XCircle size={14} /> Reject Order
+                            <XCircle size={13} /> Reject Order
                         </button>
                     </div>
                 </div>
