@@ -129,7 +129,7 @@ export default function FilterSidebar({
                                 </div>
                             )}
 
-                            <ul className="space-y-1 max-h-48 overflow-y-auto pr-0.5">
+                            <ul className={`space-y-1 pr-0.5 transition-all duration-300 ${showAllCategories || categorySearch ? 'max-h-96 overflow-y-auto' : 'max-h-none'}`}>
                                 {visibleCategories.map((cat) => (
                                     <li key={cat}>
                                         <button 
@@ -149,10 +149,11 @@ export default function FilterSidebar({
 
                             {categories.length > 6 && !categorySearch && (
                                 <button
-                                    onClick={() => setShowAllCategories(!showAllCategories)}
-                                    className="text-[10px] font-bold text-clay-600 hover:text-clay-700 hover:underline mt-2.5 transition-colors"
+                                    type="button"
+                                    onClick={() => setShowAllCategories(prev => !prev)}
+                                    className="text-[11px] font-bold text-clay-600 hover:text-clay-700 hover:underline mt-2.5 transition-colors cursor-pointer block"
                                 >
-                                    {showAllCategories ? 'Show Less' : `+ Show More (${categories.length - 6})`}
+                                    {showAllCategories ? '- Show Less' : `+ Show More (${categories.length - 6})`}
                                 </button>
                             )}
                         </div>
