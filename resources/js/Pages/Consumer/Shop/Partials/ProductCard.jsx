@@ -33,10 +33,16 @@ export default function ProductCard({ product, sponsoredPlacement }) {
             <div className="aspect-square relative overflow-hidden bg-stone-100">
                 <img
                     loading="lazy"
-                    src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'}
+                    src={
+                        !product.image
+                            ? '/images/no-image.png'
+                            : (product.image.startsWith('http') || product.image.startsWith('/') || product.image.startsWith('data:') || product.image.startsWith('blob:'))
+                                ? product.image
+                                : `/storage/${product.image}`
+                    }
                     alt={product.name}
                     className="absolute inset-0 block h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                    onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                    onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
                 />
                 {product.is_sponsored ? (
                     <span className="absolute top-1.5 left-1.5 bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1 border border-amber-200 animate-in fade-in zoom-in-50 duration-300">

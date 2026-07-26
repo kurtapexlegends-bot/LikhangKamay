@@ -10,7 +10,7 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
     const isPremium = isSellerOwner && plan === 'premium';
     const isElite = isSellerOwner && plan === 'super_premium';
     const avatarBaseSrc = user.avatar_url || (user.avatar
-        ? (user.avatar.startsWith('http') || user.avatar.startsWith('/storage') ? user.avatar : `/storage/${user.avatar}`)
+        ? (user.avatar.startsWith('http') || user.avatar.startsWith('/') || user.avatar.startsWith('data:') ? user.avatar : `/storage/${user.avatar}`)
         : null);
     const avatarVersion = user.updated_at || user.avatar_updated_at || null;
     const avatarSrc = avatarBaseSrc && avatarVersion

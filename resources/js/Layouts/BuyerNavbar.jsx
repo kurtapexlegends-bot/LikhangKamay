@@ -208,9 +208,26 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
                                             <div>
                                                 <p className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Products</p>
                                                 {suggestions.products.map(p => (
-                                                    <Link key={p.id} href={route('product.show', p.slug)} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-xl transition-colors group">
+                                                    <Link 
+                                                        key={p.id} 
+                                                        href={route('product.show', p.slug)} 
+                                                        onMouseDown={(e) => {
+                                                            e.preventDefault();
+                                                            setShowSuggestions(false);
+                                                            router.visit(route('product.show', p.slug));
+                                                        }}
+                                                        className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-xl transition-colors group cursor-pointer"
+                                                    >
                                                         <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
-                                                            <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                                                            <img 
+                                                                src={p.image || '/images/no-image.png'} 
+                                                                alt={p.name} 
+                                                                className="w-full h-full object-cover" 
+                                                                onError={(e) => {
+                                                                    e.target.onerror = null;
+                                                                    e.target.src = '/images/no-image.png';
+                                                                }}
+                                                            />
                                                         </div>
                                                         <div className="min-w-0 flex-1">
                                                             <p className="text-sm font-bold text-gray-900 truncate group-hover:text-clay-600 transition-colors">{p.name}</p>
@@ -224,9 +241,30 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
                                             <div>
                                                 <p className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Artisans</p>
                                                 {suggestions.artisans.map(a => (
-                                                    <Link key={a.id} href={route('shop.seller', a.slug)} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-xl transition-colors group">
-                                                        <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-100">
-                                                            <img src={a.avatar} alt={a.name} className="w-full h-full object-cover" />
+                                                    <Link 
+                                                        key={a.id} 
+                                                        href={route('shop.seller', a.slug)} 
+                                                        onMouseDown={(e) => {
+                                                            e.preventDefault();
+                                                            setShowSuggestions(false);
+                                                            router.visit(route('shop.seller', a.slug));
+                                                        }}
+                                                        className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-xl transition-colors group cursor-pointer"
+                                                    >
+                                                        <div className="w-10 h-10 rounded-full bg-stone-100 overflow-hidden flex-shrink-0 border border-stone-200/60 flex items-center justify-center text-stone-700 font-bold uppercase text-xs">
+                                                            {a.avatar ? (
+                                                                <img 
+                                                                    src={a.avatar} 
+                                                                    alt={a.name} 
+                                                                    className="w-full h-full object-cover" 
+                                                                    onError={(e) => {
+                                                                        e.target.onerror = null;
+                                                                        e.target.style.display = 'none';
+                                                                    }}
+                                                                />
+                                                            ) : (
+                                                                (a.name || 'A').charAt(0)
+                                                            )}
                                                         </div>
                                                         <div className="min-w-0 flex-1">
                                                             <p className="text-sm font-bold text-gray-900 truncate group-hover:text-clay-600 transition-colors">{a.name}</p>

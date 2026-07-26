@@ -34,7 +34,7 @@ class SearchController extends Controller
                 'name' => $p->name,
                 'slug' => $p->slug,
                 'price' => number_format($p->price, 2),
-                'image' => $p->img ?? $p->image ?? '/images/no-image.png',
+                'image' => $p->img ?: \App\Services\StorageUrl::url($p->cover_photo_path, '/images/no-image.png'),
                 'seller' => $p->user?->shop_name ?? $p->user?->name ?? 'Artisan',
             ]);
 
@@ -47,7 +47,7 @@ class SearchController extends Controller
                     'name' => $u->name,
                     'shop_name' => $u->shop_name,
                     'shop_slug' => $u->shop_slug,
-                    'avatar' => $u->avatar,
+                    'avatar' => \App\Services\StorageUrl::url($u->avatar),
                     'city' => $u->city,
                     'bio' => $u->bio,
                 ])
