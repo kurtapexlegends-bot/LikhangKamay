@@ -6,7 +6,7 @@ import NotificationDropdown from '@/Components/NotificationDropdown';
 import { useRealtime } from '@/hooks/useRealtime';
 import { 
     MessageCircle, ChevronDown, ShoppingBag, 
-    Search, ShoppingCart, User, LogOut, Heart, Clock, X, Shield
+    Search, ShoppingCart, User, LogOut, Heart, Clock, X, Shield, Crown, Sparkles
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import MobileDock from '@/Layouts/MobileDock';
@@ -264,13 +264,25 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
                                                         }}
                                                         className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-xl transition-colors group cursor-pointer"
                                                     >
-                                                        <div className="relative w-10 h-10 rounded-full bg-clay-100 text-clay-700 font-bold uppercase text-xs flex items-center justify-center flex-shrink-0 border border-clay-200/60 overflow-hidden shadow-sm">
+                                                        <div className={`relative w-10 h-10 rounded-full bg-clay-100 text-clay-700 font-bold uppercase text-xs flex items-center justify-center flex-shrink-0 border border-clay-200/60 shadow-sm ${
+                                                            a.plan === 'super_premium' ? 'ring-2 ring-violet-500 ring-offset-1' : a.plan === 'premium' ? 'ring-2 ring-amber-500 ring-offset-1' : ''
+                                                        }`}>
+                                                            {a.plan === 'premium' && (
+                                                                <div className="absolute -top-1 -right-1 z-10 text-amber-500 bg-white rounded-full p-0.5 shadow-xs" title="Premium Artisan">
+                                                                    <Crown size={12} strokeWidth={2.5} className="fill-amber-400" />
+                                                                </div>
+                                                            )}
+                                                            {a.plan === 'super_premium' && (
+                                                                <div className="absolute -top-1 -right-1 z-10 text-violet-500 bg-white rounded-full p-0.5 shadow-xs" title="Elite Artisan">
+                                                                    <Sparkles size={11} strokeWidth={2.5} className="fill-violet-400" />
+                                                                </div>
+                                                            )}
                                                             <span>{(a.name || 'A').charAt(0)}</span>
                                                             {a.avatar && (
                                                                 <img 
                                                                     src={a.avatar} 
                                                                     alt={a.name} 
-                                                                    className="absolute inset-0 w-full h-full object-cover" 
+                                                                    className="absolute inset-0 w-full h-full object-cover rounded-full" 
                                                                     onError={(e) => {
                                                                         e.target.style.display = 'none';
                                                                     }}

@@ -423,6 +423,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         static::saved(function ($user) {
             if ($user->role === 'artisan' || $user->getOriginal('role') === 'artisan') {
                 \Illuminate\Support\Facades\Cache::forget('approved_artisans_list');
+                \Illuminate\Support\Facades\Cache::forget('approved_artisans_search_list');
                 \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
             }
         });
@@ -430,6 +431,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         static::deleted(function ($user) {
             if ($user->role === 'artisan' || $user->getOriginal('role') === 'artisan') {
                 \Illuminate\Support\Facades\Cache::forget('approved_artisans_list');
+                \Illuminate\Support\Facades\Cache::forget('approved_artisans_search_list');
                 \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
             }
         });

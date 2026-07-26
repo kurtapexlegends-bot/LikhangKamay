@@ -48,7 +48,7 @@ class SearchController extends Controller
             return User::where('role', 'artisan')
                 ->where('artisan_status', 'approved')
                 ->whereNull('banned_at')
-                ->select(['id', 'name', 'shop_name', 'shop_slug', 'avatar', 'city', 'bio'])
+                ->select(['id', 'name', 'shop_name', 'shop_slug', 'avatar', 'city', 'bio', 'premium_tier'])
                 ->get()
                 ->map(fn($u) => [
                     'id' => $u->id,
@@ -56,6 +56,7 @@ class SearchController extends Controller
                     'slug' => $u->shop_slug ?: $u->id,
                     'avatar' => $u->avatar ? StorageUrl::url($u->avatar) : null,
                     'location' => $u->city ?: 'Philippines',
+                    'plan' => $u->premium_tier ?? 'free',
                     'searchable' => strtolower(($u->shop_name ?? '') . ' ' . ($u->name ?? '') . ' ' . ($u->bio ?? '')),
                 ])
                 ->all();
@@ -70,6 +71,7 @@ class SearchController extends Controller
                 'slug' => $u['slug'],
                 'avatar' => $u['avatar'],
                 'location' => $u['location'],
+                'plan' => $u['plan'],
             ])
             ->values();
 
