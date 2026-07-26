@@ -26,16 +26,19 @@ trait Searchable
         $driver = $connection->getDriverName();
 
         if ($driver === 'pgsql') {
-            // High-performance PostgreSQL Full-Text Search
+            // High-performance PostgreSQL Full-Text Search with prefix matching & ILIKE fallback
             $columnsString = implode(", ' ', ", array_map(fn($col) => "COALESCE($col, '')", $columns));
-            
-            return $query->whereRaw(
-                "to_tsvector('english', CONCAT($columnsString)) @@ websearch_to_tsquery('english', ?)",
-                [$search]
-            )->orderByRaw(
-                "ts_rank(to_tsvector('english', CONCAT($columnsString)), websearch_to_tsquery('english', ?)) DESC",
-                [$search]
-            );
+            $terms = array_filter(explode(' ', $search));
+            $prefixQuery = implode(' & ', array_map(fn($t) => preg_replace('/[^a-zA-Z0-9]/', '', $t) . ':*', $terms));
+
+            return $query->where(function ($q) use ($columns, $search, $columnsString, $prefixQuery) {
+                if (!empty($prefixQuery)) {
+                    $q->whereRaw("to_tsvector('english', CONCAT($columnsString)) @@ to_tsquery('english', ?)", [$prefixQuery]);
+                }
+                foreach ($columns as $column) {
+                    $q->orWhere($column, 'ILIKE', "%{$search}%");
+                }
+            });
         }
 
         if ($driver === 'mysql') {

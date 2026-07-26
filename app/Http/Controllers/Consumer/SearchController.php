@@ -63,7 +63,10 @@ class SearchController extends Controller
         });
 
         $artisans = collect($artisansList)
-            ->filter(fn($u) => str_contains($u['searchable'], $searchLower))
+            ->filter(function ($u) use ($searchLower) {
+                $searchable = strtolower(($u['searchable'] ?? '') . ' ' . ($u['name'] ?? '') . ' ' . ($u['location'] ?? ''));
+                return str_contains($searchable, $searchLower);
+            })
             ->take(3)
             ->map(fn($u) => [
                 'id' => $u['id'],
@@ -71,7 +74,7 @@ class SearchController extends Controller
                 'slug' => $u['slug'],
                 'avatar' => $u['avatar'],
                 'location' => $u['location'],
-                'plan' => $u['plan'],
+                'plan' => $u['plan'] ?? 'free',
             ])
             ->values();
 
