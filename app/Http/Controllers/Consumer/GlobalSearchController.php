@@ -193,7 +193,7 @@ class GlobalSearchController extends Controller
         $results = [];
 
         if ($user->canAccessSellerModule('products')) {
-            $results = array_merge($results, $this->searchSellerProducts($sellerId, $query));
+            $results = array_merge($results, $this->searchSellerProducts($sellerId, $query, $like));
         }
         if ($user->canAccessSellerModule('orders')) {
             $results = array_merge($results, $this->searchSellerOrders($sellerId, $query, $like));
@@ -224,10 +224,14 @@ class GlobalSearchController extends Controller
         return $results;
     }
 
-    private function searchSellerProducts(int $sellerId, string $query): array
+    private function searchSellerProducts(int $sellerId, string $query, string $like): array
     {
         return Product::where('user_id', $sellerId)
-            ->search($query, ['name', 'sku'])
+            ->where(function ($q) use ($query, $like) {
+                $q->where('name', $like, "%{$query}%")
+                    ->orWhere('sku', $like, "%{$query}%")
+                    ->orWhere('category', $like, "%{$query}%");
+            })
             ->limit(5)
             ->get()
             ->map(fn ($p) => [
@@ -235,18 +239,33 @@ class GlobalSearchController extends Controller
                 'title' => $p->name,
                 'subtitle' => "SKU: {$p->sku} • Stock: {$p->stock}",
                 'type' => 'Product',
-                'url' => route('products.index', ['search' => $p->sku]),
+                'url' => route('products.index', ['search' => $p->name]),
                 'icon' => 'package',
             ])->toArray();
     }
 
     private function searchSellerOrders(int $sellerId, string $query, string $like): array
     {
+        $cleanSearch = preg_replace('/^ORD-/i', '', $query);
+
         return Order::where('artisan_id', $sellerId)
-            ->where(function ($q) use ($query, $like) {
+            ->where(function ($q) use ($query, $cleanSearch, $like) {
                 $q->where('order_number', $like, "%{$query}%")
+                    ->orWhere('order_number', $like, "%{$cleanSearch}%")
                     ->orWhere('customer_name', $like, "%{$query}%")
-                    ->orWhere('tracking_number', $like, "%{$query}%");
+                    ->orWhere('shipping_recipient_name', $like, "%{$query}%")
+                    ->orWhere('shipping_contact_phone', $like, "%{$query}%")
+                    ->orWhere('shipping_address', $like, "%{$query}%")
+                    ->orWhere('tracking_number', $like, "%{$query}%")
+                    ->orWhereHas('items', function ($itemQuery) use ($query, $like) {
+                        $itemQuery->where('product_name', $like, "%{$query}%")
+                                  ->orWhere('variant', $like, "%{$query}%");
+                    })
+                    ->orWhereHas('user', function ($userQuery) use ($query, $like) {
+                        $userQuery->where('name', $like, "%{$query}%")
+                                  ->orWhere('email', $like, "%{$query}%")
+                                  ->orWhere('phone_number', $like, "%{$query}%");
+                    });
             })
             ->limit(5)
             ->get()
