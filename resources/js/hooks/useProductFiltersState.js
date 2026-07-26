@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { router } from "@inertiajs/react";
 import { PRODUCT_MANAGER_VIEW_KEY } from "@/utils/catalog";
 
