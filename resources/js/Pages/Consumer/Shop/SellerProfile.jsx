@@ -22,7 +22,11 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('featured');
     const [categoryFilter, setCategoryFilter] = useState('all');
-    const [isFollowed, setIsFollowed] = useState(() => isShopFollowed(seller.id));
+    const [isFollowed, setIsFollowed] = useState(() => (auth?.user ? isShopFollowed(seller.id, auth.user.id) : false));
+
+    useEffect(() => {
+        setIsFollowed(auth?.user ? isShopFollowed(seller.id, auth.user.id) : false);
+    }, [seller, auth?.user]);
 
     const categoryOptions = useMemo(
         () => ['all', ...Array.from(new Set(products.map((product) => product.category).filter(Boolean)))],
@@ -60,7 +64,13 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
     }, [categoryFilter, products, searchTerm, sortBy]);
 
     const toggleFollow = () => {
-        const nextFollowed = toggleFollowedShop(seller);
+        if (!auth?.user) {
+            addToast('Please log in to follow artisan shops.', 'info');
+            router.get(route('login'));
+            return;
+        }
+
+        const nextFollowed = toggleFollowedShop(seller, auth.user.id);
         setIsFollowed(nextFollowed);
         addToast(
             nextFollowed

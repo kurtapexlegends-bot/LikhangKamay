@@ -97,12 +97,12 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     }, [reviewData.photos]);
 
     useEffect(() => {
-        setIsWishlisted(isProductWishlisted(product.id));
+        setIsWishlisted(auth?.user ? isProductWishlisted(product.id, auth.user.id) : false);
         rememberViewedProduct(product);
         setRecentlyViewed(
             getRecentlyViewedProducts().filter((entry) => Number(entry.id) !== Number(product.id)).slice(0, 4)
         );
-    }, [product]);
+    }, [product, auth?.user]);
 
     const wishlistLabel = useMemo(() => (isWishlisted ? 'Saved' : 'Save'), [isWishlisted]);
 
@@ -256,7 +256,13 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     };
 
     const handleWishlistToggle = () => {
-        const nextWishlisted = toggleWishlistedProduct(product);
+        if (!auth?.user) {
+            addToast('Please log in to save items to your wishlist.', 'info');
+            router.get(route('login'));
+            return;
+        }
+
+        const nextWishlisted = toggleWishlistedProduct(product, auth.user.id);
         setIsWishlisted(nextWishlisted);
         addToast(
             nextWishlisted ? 'Saved to your wishlist. Open Saved to view it.' : 'Removed from your wishlist.',

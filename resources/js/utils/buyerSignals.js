@@ -8,7 +8,7 @@ const MAX_FOLLOWED_SHOPS = 30;
 const canUseStorage = () => typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 
 const readJson = (key, fallback) => {
-    if (!canUseStorage()) return fallback;
+    if (!canUseStorage() || !key) return fallback;
 
     try {
         const raw = window.localStorage.getItem(key);
@@ -20,13 +20,39 @@ const readJson = (key, fallback) => {
 };
 
 const writeJson = (key, value) => {
-    if (!canUseStorage()) return;
+    if (!canUseStorage() || !key) return;
 
     try {
         window.localStorage.setItem(key, JSON.stringify(value));
     } catch (_error) {
         // Ignore storage write failures and keep the UI functional.
     }
+};
+
+const getEffectiveWishlistKey = (userId) => {
+    if (!userId) return null;
+    const userKey = `${WISHLIST_KEY}_${userId}`;
+    if (canUseStorage() && !window.localStorage.getItem(userKey)) {
+        const legacy = window.localStorage.getItem(WISHLIST_KEY);
+        if (legacy) {
+            window.localStorage.setItem(userKey, legacy);
+            window.localStorage.removeItem(WISHLIST_KEY);
+        }
+    }
+    return userKey;
+};
+
+const getEffectiveFollowedShopsKey = (userId) => {
+    if (!userId) return null;
+    const userKey = `${FOLLOWED_SHOPS_KEY}_${userId}`;
+    if (canUseStorage() && !window.localStorage.getItem(userKey)) {
+        const legacy = window.localStorage.getItem(FOLLOWED_SHOPS_KEY);
+        if (legacy) {
+            window.localStorage.setItem(userKey, legacy);
+            window.localStorage.removeItem(FOLLOWED_SHOPS_KEY);
+        }
+    }
+    return userKey;
 };
 
 const normalizeStoredId = (value) => {
@@ -139,54 +165,74 @@ const normalizeFollowedShops = (rawEntries) => {
         .slice(0, MAX_FOLLOWED_SHOPS);
 };
 
-export const getWishlistedProducts = () =>
-    normalizeWishlistedProducts(readJson(WISHLIST_KEY, [])).filter((entry) => entry.slug);
+export const getWishlistedProducts = (userId) => {
+    const key = getEffectiveWishlistKey(userId);
+    return normalizeWishlistedProducts(readJson(key, [])).filter((entry) => entry.slug);
+};
 
-export const getWishlistedProductIds = () =>
-    normalizeWishlistedProducts(readJson(WISHLIST_KEY, [])).map((entry) => entry.id);
+export const getWishlistedProductIds = (userId) => {
+    const key = getEffectiveWishlistKey(userId);
+    return normalizeWishlistedProducts(readJson(key, [])).map((entry) => entry.id);
+};
 
-export const isProductWishlisted = (productId) => getWishlistedProductIds().includes(Number(productId));
+export const isProductWishlisted = (productId, userId) => {
+    if (!userId) return false;
+    return getWishlistedProductIds(userId).includes(Number(productId));
+};
 
-export const toggleWishlistedProduct = (product) => {
+export const toggleWishlistedProduct = (product, userId) => {
     const productId = normalizeStoredId(product?.id);
-
-    if (!productId) {
+    if (!productId || !userId) {
         return false;
     }
 
-    const current = normalizeWishlistedProducts(readJson(WISHLIST_KEY, []));
+    const key = getEffectiveWishlistKey(userId);
+    if (!key) return false;
+
+    const current = normalizeWishlistedProducts(readJson(key, []));
     const exists = current.some((entry) => entry.id === productId);
     const next = exists
         ? current.filter((entry) => entry.id !== productId)
         : [sanitizeWishlistProduct(product), ...current].filter(Boolean).slice(0, MAX_WISHLIST_ITEMS);
 
-    writeJson(WISHLIST_KEY, next);
+    writeJson(key, next);
+    window.dispatchEvent(new Event('storage'));
 
     return !exists;
 };
 
-export const getFollowedShops = () =>
-    normalizeFollowedShops(readJson(FOLLOWED_SHOPS_KEY, [])).filter((entry) => entry.slug);
+export const getFollowedShops = (userId) => {
+    const key = getEffectiveFollowedShopsKey(userId);
+    return normalizeFollowedShops(readJson(key, [])).filter((entry) => entry.slug);
+};
 
-export const getFollowedShopIds = () =>
-    normalizeFollowedShops(readJson(FOLLOWED_SHOPS_KEY, [])).map((entry) => entry.id);
+export const getFollowedShopIds = (userId) => {
+    const key = getEffectiveFollowedShopsKey(userId);
+    return normalizeFollowedShops(readJson(key, [])).map((entry) => entry.id);
+};
 
-export const isShopFollowed = (shopId) => getFollowedShopIds().includes(Number(shopId));
+export const isShopFollowed = (shopId, userId) => {
+    if (!userId) return false;
+    return getFollowedShopIds(userId).includes(Number(shopId));
+};
 
-export const toggleFollowedShop = (shop) => {
+export const toggleFollowedShop = (shop, userId) => {
     const shopId = normalizeStoredId(shop?.id);
-
-    if (!shopId) {
+    if (!shopId || !userId) {
         return false;
     }
 
-    const current = normalizeFollowedShops(readJson(FOLLOWED_SHOPS_KEY, []));
+    const key = getEffectiveFollowedShopsKey(userId);
+    if (!key) return false;
+
+    const current = normalizeFollowedShops(readJson(key, []));
     const exists = current.some((entry) => entry.id === shopId);
     const next = exists
         ? current.filter((entry) => entry.id !== shopId)
         : [sanitizeFollowedShop(shop), ...current].filter(Boolean).slice(0, MAX_FOLLOWED_SHOPS);
 
-    writeJson(FOLLOWED_SHOPS_KEY, next);
+    writeJson(key, next);
+    window.dispatchEvent(new Event('storage'));
 
     return !exists;
 };
@@ -198,13 +244,15 @@ export const clearRecentlyViewedProducts = () => {
     window.dispatchEvent(new Event('storage'));
 };
 
-export const clearWishlistedProducts = () => {
-    writeJson(WISHLIST_KEY, []);
+export const clearWishlistedProducts = (userId) => {
+    const key = getEffectiveWishlistKey(userId);
+    if (key) writeJson(key, []);
     window.dispatchEvent(new Event('storage'));
 };
 
-export const clearFollowedShops = () => {
-    writeJson(FOLLOWED_SHOPS_KEY, []);
+export const clearFollowedShops = (userId) => {
+    const key = getEffectiveFollowedShopsKey(userId);
+    if (key) writeJson(key, []);
     window.dispatchEvent(new Event('storage'));
 };
 
@@ -223,16 +271,17 @@ export const rememberViewedProduct = (product) => {
     writeJson(RECENTLY_VIEWED_KEY, next);
 };
 
-export const pruneInactiveProducts = (activeIds) => {
-    if (!canUseStorage() || !Array.isArray(activeIds)) return;
+export const pruneInactiveProducts = (activeIds, userId) => {
+    if (!canUseStorage() || !Array.isArray(activeIds) || !userId) return;
 
     const numericActiveIds = activeIds.map(Number);
+    const key = getEffectiveWishlistKey(userId);
 
     // Prune Wishlist
-    const wishlist = getWishlistedProducts();
+    const wishlist = getWishlistedProducts(userId);
     const cleanWishlist = wishlist.filter((entry) => numericActiveIds.includes(Number(entry?.id)));
-    if (cleanWishlist.length !== wishlist.length) {
-        writeJson(WISHLIST_KEY, cleanWishlist);
+    if (cleanWishlist.length !== wishlist.length && key) {
+        writeJson(key, cleanWishlist);
     }
 
     // Prune Recently Viewed

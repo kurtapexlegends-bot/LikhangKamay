@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import ShopLayout from '@/Layouts/ShopLayout';
 import { useToast } from '@/Components/ToastContext';
@@ -28,6 +28,8 @@ const ITEMS_PER_PAGE = 8;
 
 export default function Saved() {
     const { addToast } = useToast();
+    const { auth } = usePage().props;
+    const userId = auth?.user?.id;
     const [activeTab, setActiveTab] = useState('wishlist');
     const [wishlistedProducts, setWishlistedProducts] = useState([]);
     const [followedShops, setFollowedShops] = useState([]);
@@ -43,15 +45,15 @@ export default function Saved() {
 
     useEffect(() => {
         const syncSignals = () => {
-            setWishlistedProducts(getWishlistedProducts());
-            setFollowedShops(getFollowedShops());
+            setWishlistedProducts(getWishlistedProducts(userId));
+            setFollowedShops(getFollowedShops(userId));
             setRecentlyViewed(getRecentlyViewedProducts());
         };
 
         syncSignals();
 
         // Gather cached product IDs for verification
-        const wishlistIds = getWishlistedProducts().map((p) => Number(p?.id));
+        const wishlistIds = getWishlistedProducts(userId).map((p) => Number(p?.id));
         const recentlyViewedIds = getRecentlyViewedProducts().map((p) => Number(p?.id));
         const idsToVerify = Array.from(new Set([...wishlistIds, ...recentlyViewedIds])).filter(Boolean);
 
@@ -59,7 +61,7 @@ export default function Saved() {
             axios.post(route('products.validate-active'), { ids: idsToVerify })
                 .then((res) => {
                     if (Array.isArray(res.data)) {
-                        pruneInactiveProducts(res.data);
+                        pruneInactiveProducts(res.data, userId);
                     }
                 })
                 .catch((err) => {
@@ -74,15 +76,15 @@ export default function Saved() {
             window.removeEventListener('storage', syncSignals);
             window.removeEventListener('focus', syncSignals);
         };
-    }, []);
+    }, [userId]);
 
     const handleRemoveWishlist = (e, product) => {
         if (e) {
             e.preventDefault();
             e.stopPropagation();
         }
-        toggleWishlistedProduct(product);
-        setWishlistedProducts(getWishlistedProducts());
+        toggleWishlistedProduct(product, userId);
+        setWishlistedProducts(getWishlistedProducts(userId));
         
         // Remove from current selection if it was selected
         setSelectedIds(prev => prev.filter(id => id !== product.id));
@@ -95,8 +97,8 @@ export default function Saved() {
             e.preventDefault();
             e.stopPropagation();
         }
-        toggleFollowedShop(shop);
-        setFollowedShops(getFollowedShops());
+        toggleFollowedShop(shop, userId);
+        setFollowedShops(getFollowedShops(userId));
         addToast(`Unfollowed ${shop.name}`, 'success');
     };
 
@@ -138,8 +140,8 @@ export default function Saved() {
 
     const handleBulkRemove = () => {
         if (!selectedIds.length) return;
-        selectedIds.forEach(id => toggleWishlistedProduct({ id }));
-        setWishlistedProducts(getWishlistedProducts());
+        selectedIds.forEach(id => toggleWishlistedProduct({ id }, userId));
+        setWishlistedProducts(getWishlistedProducts(userId));
         setSelectedIds([]);
         setIsBulkEdit(false);
         addToast(`Removed ${selectedIds.length} items from wishlist`, 'success');
@@ -221,13 +223,13 @@ export default function Saved() {
         setClearAction(null);
         
         if (type === 'wishlist') {
-            clearWishlistedProducts();
+            clearWishlistedProducts(userId);
             setWishlistedProducts([]);
             setSelectedIds([]);
             setIsBulkEdit(false);
             addToast('Wishlist cleared', 'success');
         } else if (type === 'following') {
-            clearFollowedShops();
+            clearFollowedShops(userId);
             setFollowedShops([]);
             addToast('All studios unfollowed', 'success');
         } else if (type === 'recent') {
