@@ -421,7 +421,7 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
                 </div>
 
                 {/* ORDER CARDS */}
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-3.5">
                     {paginatedOrders.length > 0 ? (
                         paginatedOrders.map((order, idx) => (
                             <OrderCard
