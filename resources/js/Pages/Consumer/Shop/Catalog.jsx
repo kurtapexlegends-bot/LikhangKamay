@@ -51,6 +51,9 @@ export default function Catalog(props) {
     ];
     const availableLocations = Array.isArray(props.availableLocations) ? props.availableLocations : [];
     const availableMaterials = Array.isArray(props.availableMaterials) ? props.availableMaterials : [];
+    const categoryCounts = (props.categoryCounts && typeof props.categoryCounts === 'object') ? props.categoryCounts : {};
+    const materialCounts = (props.materialCounts && typeof props.materialCounts === 'object') ? props.materialCounts : {};
+    const locationCounts = (props.locationCounts && typeof props.locationCounts === 'object') ? props.locationCounts : {};
     const safeFilters = (props.filters && typeof props.filters === 'object' && !Array.isArray(props.filters)) ? props.filters : {};
     const sponsoredResultsPlacement = 'catalog_sponsored_results';
     const sponsoredGridPlacement = 'catalog_sponsored_grid';
@@ -222,6 +225,9 @@ export default function Catalog(props) {
                         categories={categories}
                         availableLocations={availableLocations}
                         availableMaterials={availableMaterials}
+                        categoryCounts={categoryCounts}
+                        materialCounts={materialCounts}
+                        locationCounts={locationCounts}
                         activeCategory={activeCategory}
                         minPrice={minPrice} setMinPrice={setMinPrice}
                         maxPrice={maxPrice} setMaxPrice={setMaxPrice}
@@ -259,6 +265,9 @@ export default function Catalog(props) {
                                 categories={categories}
                                 availableLocations={availableLocations}
                                 availableMaterials={availableMaterials}
+                                categoryCounts={categoryCounts}
+                                materialCounts={materialCounts}
+                                locationCounts={locationCounts}
                                 activeCategory={activeCategory}
                                 minPrice={minPrice} setMinPrice={setMinPrice}
                                 maxPrice={maxPrice} setMaxPrice={setMaxPrice}
@@ -322,6 +331,81 @@ export default function Catalog(props) {
                                 </div>
                             </div>
                         </div>
+
+                        {/* --- ACTIVE FILTER CHIPS BAR --- */}
+                        {(activeFilterCount > 0 || searchTerm) && (
+                            <div className="flex flex-wrap items-center gap-2 mb-5 p-3 bg-stone-50 border border-stone-200/70 rounded-xl text-xs">
+                                <span className="font-bold text-stone-500 text-[10px] uppercase tracking-wider mr-1">Active Filters:</span>
+
+                                {/* Search Term Chip */}
+                                {searchTerm && (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-stone-200 text-stone-800 font-bold rounded-lg shadow-2xs">
+                                        Search: "{searchTerm}"
+                                        <button onClick={clearSearch} className="hover:text-red-600 transition" title="Remove search">
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                )}
+
+                                {/* Category Chip */}
+                                {activeCategory !== 'All' && (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-clay-50 border border-clay-200 text-clay-800 font-bold rounded-lg shadow-2xs">
+                                        Category: {activeCategory}
+                                        <button onClick={() => handleCategoryClick('All')} className="hover:text-clay-900 transition" title="Clear category">
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                )}
+
+                                {/* Price Chip */}
+                                {(minPrice || maxPrice) && (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-stone-200 text-stone-800 font-bold rounded-lg shadow-2xs">
+                                        Price: ₱{minPrice || '0'} – {maxPrice ? `₱${maxPrice}` : 'Any'}
+                                        <button onClick={() => { setMinPrice(''); setMaxPrice(''); applyFilters({ price_min: '', price_max: '' }); }} className="hover:text-red-600 transition" title="Clear price filter">
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                )}
+
+                                {/* Rating Chip */}
+                                {minRating && (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-900 font-bold rounded-lg shadow-2xs">
+                                        Rating: {minRating}★ & Up
+                                        <button onClick={() => handleRatingChange('')} className="hover:text-amber-950 transition" title="Clear rating filter">
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                )}
+
+                                {/* Selected Materials Chips */}
+                                {selectedMaterials.map((mat) => (
+                                    <span key={mat} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-stone-200 text-stone-800 font-bold capitalize rounded-lg shadow-2xs">
+                                        Material: {mat}
+                                        <button onClick={() => handleMaterialChange(mat)} className="hover:text-red-600 transition" title={`Remove ${mat}`}>
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                ))}
+
+                                {/* Selected Locations Chips */}
+                                {selectedLocations.map((loc) => (
+                                    <span key={loc} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-stone-200 text-stone-800 font-bold rounded-lg shadow-2xs">
+                                        Location: {loc}
+                                        <button onClick={() => handleLocationChange(loc)} className="hover:text-red-600 transition" title={`Remove ${loc}`}>
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                ))}
+
+                                {/* Clear All Action */}
+                                <button 
+                                    onClick={clearAllFilters}
+                                    className="ml-auto text-xs font-bold text-clay-600 hover:text-clay-800 hover:underline transition px-1"
+                                >
+                                    Clear All
+                                </button>
+                            </div>
+                        )}
 
                         {/* Mobile Sticky Category & Filter Header */}
                         <div className="flex lg:hidden sticky top-14 z-30 bg-[#FDFBF9] py-3 -mx-4 px-4 border-b border-stone-100/80 items-center gap-3 mb-4">

@@ -308,10 +308,66 @@ class CatalogService
             return ['All', ...Category::orderBy('name')->pluck('name')->toArray()];
         });
 
+        $categoryCounts = Cache::remember('catalog_category_counts', 3600, function () {
+            $counts = Product::approved()
+                ->whereHas('user', function ($q) {
+                    $q->where('role', 'artisan')
+                      ->where('artisan_status', 'approved')
+                      ->whereHas('complianceAgreements', function ($cq) {
+                          $cq->where('document_type', 'seller_terms');
+                      });
+                })
+                ->selectRaw('category, COUNT(*) as aggregate')
+                ->groupBy('category')
+                ->pluck('aggregate', 'category')
+                ->toArray();
+
+            $total = array_sum($counts);
+            return array_merge(['All' => $total], $counts);
+        });
+
+        $materialCounts = Cache::remember('catalog_material_counts', 3600, function () {
+            return Product::approved()
+                ->whereHas('user', function ($q) {
+                    $q->where('role', 'artisan')
+                      ->where('artisan_status', 'approved')
+                      ->whereHas('complianceAgreements', function ($cq) {
+                          $cq->where('document_type', 'seller_terms');
+                      });
+                })
+                ->whereNotNull('clay_type')
+                ->where('clay_type', '!=', '')
+                ->selectRaw('clay_type, COUNT(*) as aggregate')
+                ->groupBy('clay_type')
+                ->pluck('aggregate', 'clay_type')
+                ->toArray();
+        });
+
+        $locationCounts = Cache::remember('catalog_location_counts', 3600, function () {
+            return Product::approved()
+                ->whereHas('user', function ($q) {
+                    $q->where('role', 'artisan')
+                      ->where('artisan_status', 'approved')
+                      ->whereHas('complianceAgreements', function ($cq) {
+                          $cq->where('document_type', 'seller_terms');
+                      });
+                })
+                ->join('users', 'products.user_id', '=', 'users.id')
+                ->whereNotNull('users.city')
+                ->where('users.city', '!=', '')
+                ->selectRaw('users.city, COUNT(*) as aggregate')
+                ->groupBy('users.city')
+                ->pluck('aggregate', 'users.city')
+                ->toArray();
+        });
+
         return [
             'locations' => $locations,
             'materials' => $materials,
             'categories' => $categories,
+            'categoryCounts' => $categoryCounts,
+            'materialCounts' => $materialCounts,
+            'locationCounts' => $locationCounts,
         ];
     }
 

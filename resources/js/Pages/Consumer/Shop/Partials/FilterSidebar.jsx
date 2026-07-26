@@ -5,6 +5,9 @@ export default function FilterSidebar({
     categories,
     availableLocations,
     availableMaterials,
+    categoryCounts = {},
+    materialCounts = {},
+    locationCounts = {},
     activeCategory,
     minPrice, setMinPrice,
     maxPrice, setMaxPrice,
@@ -23,6 +26,7 @@ export default function FilterSidebar({
     // Accordion toggle states
     const [isLocationExpanded, setIsLocationExpanded] = useState(true);
     const [isMaterialExpanded, setIsMaterialExpanded] = useState(true);
+    const [priceError, setPriceError] = useState('');
 
     // Rating options
     const ratingOptions = [
@@ -31,6 +35,15 @@ export default function FilterSidebar({
         { value: '3', label: '3★ & Up' },
         { value: '2', label: '2★ & Up' },
     ];
+
+    const handlePriceSubmit = () => {
+        if (minPrice && maxPrice && Number(minPrice) > Number(maxPrice)) {
+            setPriceError('Min cannot exceed Max');
+            return;
+        }
+        setPriceError('');
+        onApplyPrice();
+    };
 
     return (
         <aside className={`space-y-4 ${className}`}>
@@ -73,8 +86,8 @@ export default function FilterSidebar({
                                         : 'text-stone-600 hover:bg-stone-50 hover:text-clay-600 border-transparent'
                                     }`}
                                 >
-                                    {cat}
-                                    {activeCategory === cat && <Check size={12} className="text-clay-600" />}
+                                    <span className="truncate">{cat}</span>
+                                    {activeCategory === cat && <Check size={12} className="text-clay-600 flex-shrink-0" />}
                                 </button>
                             </li>
                         ))}
@@ -84,13 +97,16 @@ export default function FilterSidebar({
                 {/* Price Range */}
                 <div className="p-4">
                     <h3 className="font-bold text-stone-850 text-[10px] uppercase tracking-wider mb-3">Price Range</h3>
-                    <div className="flex gap-2 mb-3">
+                    <div className="flex gap-2 mb-2">
                         <div className="relative flex-1">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs font-bold">₱</span>
                             <input 
                                 type="number" min="0" step="any" placeholder="Min" value={minPrice}
-                                onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                                onChange={(e) => setMinPrice(e.target.value.replace(/-/g, ""))}
+                                onKeyDown={(e) => {
+                                    if (e.key === '-') e.preventDefault();
+                                    if (e.key === 'Enter') { e.preventDefault(); handlePriceSubmit(); }
+                                }}
+                                onChange={(e) => { setPriceError(''); setMinPrice(e.target.value.replace(/-/g, "")); }}
                                 className="w-full bg-stone-50 border border-stone-200 rounded-xl text-xs py-2 pl-6 pr-2 focus:ring-1 focus:ring-clay-200 focus:border-clay-400 focus:bg-white transition duration-200"
                             />
                         </div>
@@ -98,18 +114,25 @@ export default function FilterSidebar({
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs font-bold">₱</span>
                             <input 
                                 type="number" min="0" step="any" placeholder="Max" value={maxPrice}
-                                onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                                onChange={(e) => setMaxPrice(e.target.value.replace(/-/g, ""))}
+                                onKeyDown={(e) => {
+                                    if (e.key === '-') e.preventDefault();
+                                    if (e.key === 'Enter') { e.preventDefault(); handlePriceSubmit(); }
+                                }}
+                                onChange={(e) => { setPriceError(''); setMaxPrice(e.target.value.replace(/-/g, "")); }}
                                 className="w-full bg-stone-50 border border-stone-200 rounded-xl text-xs py-2 pl-6 pr-2 focus:ring-1 focus:ring-clay-200 focus:border-clay-400 focus:bg-white transition duration-200"
                             />
                         </div>
                     </div>
+                    {priceError && (
+                        <p className="text-[10px] font-semibold text-red-500 mb-2">{priceError}</p>
+                    )}
                     <button 
-                        onClick={onApplyPrice}
+                        onClick={handlePriceSubmit}
                         className="w-full bg-clay-600 hover:bg-clay-700 text-white text-xs font-bold py-2.5 rounded-xl transition duration-200 active:scale-95 shadow-sm min-h-[40px] flex items-center justify-center border border-clay-600 hover:border-clay-700"
                     >
                         Apply Price
                     </button>
+                    <p className="text-[9px] text-stone-400 text-center mt-1.5 font-medium">Press Enter to apply price filter</p>
                 </div>
 
                 {/* Rating Filter */}
@@ -156,17 +179,23 @@ export default function FilterSidebar({
                         </button>
                         {isMaterialExpanded && (
                             <div className="space-y-2.5 max-h-40 overflow-y-auto mt-3 pt-1">
-                                {availableMaterials.map(material => (
-                                    <label key={material} className="flex items-center gap-2.5 text-xs font-bold text-stone-650 cursor-pointer hover:text-stone-900 group select-none">
-                                        <input 
-                                            type="checkbox" 
-                                            checked={selectedMaterials.includes(material)}
-                                            onChange={() => onMaterialChange(material)}
-                                            className="w-4 h-4 rounded border-stone-300 text-clay-600 focus:ring-clay-500 cursor-pointer transition duration-200" 
-                                        />
-                                        <span className="capitalize">{material}</span>
-                                    </label>
-                                ))}
+                                {availableMaterials.map(material => {
+                                    const count = materialCounts?.[material];
+                                    return (
+                                        <label key={material} className="flex items-center gap-2.5 text-xs font-bold text-stone-650 cursor-pointer hover:text-stone-900 group select-none">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={selectedMaterials.includes(material)}
+                                                onChange={() => onMaterialChange(material)}
+                                                className="w-4 h-4 rounded border-stone-300 text-clay-600 focus:ring-clay-500 cursor-pointer transition duration-200" 
+                                            />
+                                            <span className="capitalize flex-1 truncate">{material}</span>
+                                            {count !== undefined && count > 0 && (
+                                                <span className="text-[10px] font-medium text-stone-400">({count})</span>
+                                            )}
+                                        </label>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -186,17 +215,23 @@ export default function FilterSidebar({
                         </button>
                         {isLocationExpanded && (
                             <div className="space-y-2.5 max-h-40 overflow-y-auto mt-3 pt-1">
-                                {availableLocations.map(loc => (
-                                    <label key={loc} className="flex items-center gap-2.5 text-xs font-bold text-stone-650 cursor-pointer hover:text-stone-900 group select-none">
-                                        <input 
-                                            type="checkbox" 
-                                            checked={selectedLocations.includes(loc)}
-                                            onChange={() => onLocationChange(loc)}
-                                            className="w-4 h-4 rounded border-stone-300 text-clay-600 focus:ring-clay-500 cursor-pointer transition duration-200" 
-                                        />
-                                        {loc}
-                                    </label>
-                                ))}
+                                {availableLocations.map(loc => {
+                                    const count = locationCounts?.[loc];
+                                    return (
+                                        <label key={loc} className="flex items-center gap-2.5 text-xs font-bold text-stone-650 cursor-pointer hover:text-stone-900 group select-none">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={selectedLocations.includes(loc)}
+                                                onChange={() => onLocationChange(loc)}
+                                                className="w-4 h-4 rounded border-stone-300 text-clay-600 focus:ring-clay-500 cursor-pointer transition duration-200" 
+                                            />
+                                            <span className="flex-1 truncate">{loc}</span>
+                                            {count !== undefined && count > 0 && (
+                                                <span className="text-[10px] font-medium text-stone-400">({count})</span>
+                                            )}
+                                        </label>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

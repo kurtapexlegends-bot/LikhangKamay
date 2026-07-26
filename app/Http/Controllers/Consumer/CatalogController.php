@@ -111,6 +111,9 @@ class CatalogController extends Controller
                 'categories' => ['All'],
                 'locations' => [],
                 'materials' => [],
+                'categoryCounts' => [],
+                'materialCounts' => [],
+                'locationCounts' => [],
             ];
             
             if (config('app.debug')) {
@@ -124,6 +127,9 @@ class CatalogController extends Controller
             'categories' => $metadata['categories'],
             'availableLocations' => $metadata['locations'],
             'availableMaterials' => $metadata['materials'],
+            'categoryCounts' => $metadata['categoryCounts'] ?? [],
+            'materialCounts' => $metadata['materialCounts'] ?? [],
+            'locationCounts' => $metadata['locationCounts'] ?? [],
             'filters' => $request->only([
                 'search', 'category', 'price_min', 'price_max', 'sort', 'locations', 'materials', 'min_rating'
             ])
