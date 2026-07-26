@@ -63,10 +63,27 @@ class DashboardController extends Controller
                 ->orderBy('created_at', 'desc');
 
             if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('order_number', 'like', "%{$search}%")
-                        ->orWhere('customer_name', 'like', "%{$search}%");
+                $search = trim((string) $request->search);
+                $cleanSearch = preg_replace('/^ORD-/i', '', $search);
+                $like = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
+
+                $query->where(function ($q) use ($search, $cleanSearch, $like) {
+                    $q->where('order_number', $like, "%{$search}%")
+                        ->orWhere('order_number', $like, "%{$cleanSearch}%")
+                        ->orWhere('customer_name', $like, "%{$search}%")
+                        ->orWhere('shipping_recipient_name', $like, "%{$search}%")
+                        ->orWhere('shipping_contact_phone', $like, "%{$search}%")
+                        ->orWhere('shipping_address', $like, "%{$search}%")
+                        ->orWhere('tracking_number', $like, "%{$search}%")
+                        ->orWhereHas('items', function ($itemQuery) use ($search, $like) {
+                            $itemQuery->where('product_name', $like, "%{$search}%")
+                                      ->orWhere('variant', $like, "%{$search}%");
+                        })
+                        ->orWhereHas('user', function ($userQuery) use ($search, $like) {
+                            $userQuery->where('name', $like, "%{$search}%")
+                                      ->orWhere('email', $like, "%{$search}%")
+                                      ->orWhere('phone_number', $like, "%{$search}%");
+                        });
                 });
             }
 

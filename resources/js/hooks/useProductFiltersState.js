@@ -46,9 +46,11 @@ export default function useProductFiltersState({
         }
     }, [currentPage, totalPages]);
 
+    const searchTimeoutRef = useRef(null);
+
     const updateFilters = (newFilters) => {
         const queryParams = {
-            search: searchQuery,
+            search: newFilters.hasOwnProperty('search') ? newFilters.search : searchQuery,
             status: activeTab,
             sort_key: sortConfig.key,
             sort_dir: sortConfig.direction,
@@ -58,7 +60,8 @@ export default function useProductFiltersState({
         router.get(route("products.index"), queryParams, {
             preserveState: true,
             preserveScroll: true,
-            only: ["products"],
+            showProgress: false,
+            only: ["products", "filters"],
         });
     };
 
@@ -69,7 +72,17 @@ export default function useProductFiltersState({
 
     const handleSearch = (query) => {
         setSearchQuery(query);
-        updateFilters({ search: query });
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+
+        if (!query || query.trim() === "") {
+            updateFilters({ search: "" });
+        } else {
+            searchTimeoutRef.current = setTimeout(() => {
+                updateFilters({ search: query });
+            }, 300);
+        }
     };
 
     const requestSort = (key) => {
@@ -93,7 +106,8 @@ export default function useProductFiltersState({
         }, {
             preserveState: true,
             preserveScroll: true,
-            only: ["products"],
+            showProgress: false,
+            only: ["products", "filters"],
         });
     };
 

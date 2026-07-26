@@ -38,9 +38,7 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
     );
     const deferredSearch = useDeferredValue(search);
 
-    useEffect(() => {
-        setSearch(filters.search || '');
-    }, [filters.search]);
+    const searchTimeoutRef = useRef(null);
 
     useEffect(() => {
         const visibleRowIds = new Set((users.data || []).map((account) => String(account.id)));
@@ -58,12 +56,11 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
         });
     }, [filters.search, users.data]);
 
-    const handleSearch = (event) => {
-        if (event) event.preventDefault();
+    const executeSearch = (searchTerm) => {
         router.get(
             route('admin.users.manager'),
             {
-                search: search.trim(),
+                search: (searchTerm !== undefined ? searchTerm : search).trim(),
                 role: filters.role || 'all',
                 status: filters.status || 'all',
                 verification: filters.verification || 'all',
@@ -74,9 +71,30 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
             {
                 preserveState: true,
                 preserveScroll: true,
+                showProgress: false,
                 replace: true,
             }
         );
+    };
+
+    const handleSearchChange = (value) => {
+        setSearch(value);
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+
+        if (!value || value.trim() === '') {
+            executeSearch('');
+        } else {
+            searchTimeoutRef.current = setTimeout(() => {
+                executeSearch(value);
+            }, 300);
+        }
+    };
+
+    const handleSearch = (event) => {
+        if (event) event.preventDefault();
+        executeSearch(search);
     };
 
     const handleRoleFilter = (role) => {
@@ -204,7 +222,7 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                                 <UserManagerFilters
                                     filters={filters}
                                     search={search}
-                                    setSearch={setSearch}
+                                    setSearch={handleSearchChange}
                                     handleSearch={handleSearch}
                                     handleRoleFilter={handleRoleFilter}
                                     clearSearch={clearSearch}

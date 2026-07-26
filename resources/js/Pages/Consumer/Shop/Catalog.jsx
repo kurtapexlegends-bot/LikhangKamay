@@ -125,6 +125,7 @@ export default function Catalog(props) {
         router.get(route('shop.index'), params, { 
             preserveState: true, 
             preserveScroll: true,
+            showProgress: false,
             onFinish: () => setIsLoading(false)
         });
     };
