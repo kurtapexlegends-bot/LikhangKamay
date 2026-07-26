@@ -429,7 +429,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/operations', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'operations'])->name('admin.operations');
     Route::get('/operations/export', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'export'])->name('admin.activity.export');
     Route::get('/activity-log', fn() => redirect()->route('admin.operations', request()->query()))->name('admin.activity.index');
-    Route::post('/diagnostics/cache/purge', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'purgeCache'])->middleware('throttle:admin.heavy')->name('admin.diagnostics.cache.purge');
+
 
     // Restoration Center (Trash)
     Route::get('/trash', fn() => redirect()->route('admin.compliance', ['tab' => 'trash']))->name('admin.trash');

@@ -1,129 +1,109 @@
-import React, { useState } from 'react';
-import { router } from '@inertiajs/react';
+import React from 'react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
-import { Banknote, Percent, Hash, ArrowRight, ShieldAlert, CreditCard, RotateCcw } from 'lucide-react';
+import { Banknote, Percent, Hash, ArrowRight, ShieldAlert, CreditCard } from 'lucide-react';
 
 export default function PlatformOpsForm({ data, setData }) {
-    const [isPurging, setIsPurging] = useState(false);
-
-    const handlePurgeCache = () => {
-        setIsPurging(true);
-        router.post(route('admin.diagnostics.cache.purge'), {}, {
-            preserveScroll: true,
-            onFinish: () => setIsPurging(false)
-        });
-    };
     return (
         <div className="bg-white rounded-2xl border border-clay-100 p-6 space-y-6 shadow-sm">
             {/* Financial Parameters */}
             <div className="space-y-4">
                 <div className="flex items-center gap-2">
                     <Banknote className="text-clay-600" size={16} />
-                    <h3 className="text-[10px] font-bold text-stone-900 uppercase tracking-wider">Financial Thresholds</h3>
+                    <h3 className="text-[10px] font-bold text-stone-900 uppercase tracking-wider">Financial Parameters</h3>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <InputLabel value="Commission Rate (%)" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1.5" />
-                        <div className="relative">
-                            <Percent className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={12} />
-                            <TextInput 
+                        <InputLabel value="Platform Commission Rate (%)" className="text-xs text-stone-600 font-semibold" />
+                        <div className="relative mt-1">
+                            <TextInput
                                 type="number"
+                                step="0.1"
                                 min="0"
                                 max="100"
-                                step="0.1"
-                                className="block w-full pl-8 bg-stone-50/30 text-xs py-2 min-h-[44px]" 
-                                value={data.commission_rate}
-                                onChange={(e) => setData('commission_rate', e.target.value)}
+                                value={data.platform_commission_rate}
+                                onChange={(e) => setData('platform_commission_rate', e.target.value)}
+                                className="w-full pl-9 text-xs"
+                                placeholder="5.0"
                             />
+                            <Percent size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                         </div>
+                        <p className="text-[10px] text-stone-400 mt-1">Cut taken from completed order totals.</p>
                     </div>
+
                     <div>
-                        <InputLabel value="Convenience Fee (%)" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1.5" />
-                        <div className="relative">
-                            <Percent className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={12} />
-                            <TextInput 
+                        <InputLabel value="Base Shipping Fee (₱)" className="text-xs text-stone-600 font-semibold" />
+                        <div className="relative mt-1">
+                            <TextInput
                                 type="number"
+                                step="1"
                                 min="0"
-                                max="100"
-                                step="0.1"
-                                className="block w-full pl-8 bg-stone-50/30 text-xs py-2 min-h-[44px]" 
-                                value={data.convenience_fee}
-                                onChange={(e) => setData('convenience_fee', e.target.value)}
+                                value={data.base_shipping_fee}
+                                onChange={(e) => setData('base_shipping_fee', e.target.value)}
+                                className="w-full pl-9 text-xs"
+                                placeholder="100"
                             />
+                            <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                         </div>
+                        <p className="text-[10px] text-stone-400 mt-1">Default flat shipping fallback.</p>
                     </div>
                 </div>
             </div>
 
-            {/* Feature Toggles */}
+            {/* Storage & Limits */}
             <div className="pt-6 border-t border-stone-100 space-y-4">
                 <div className="flex items-center gap-2">
                     <ShieldAlert className="text-clay-600" size={16} />
-                    <h3 className="text-[10px] font-bold text-stone-900 uppercase tracking-wider">Gateways & Safety</h3>
+                    <h3 className="text-[10px] font-bold text-stone-900 uppercase tracking-wider">Storage & Product Limits</h3>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div 
-                        onClick={() => setData('maintenance_mode', !data.maintenance_mode)}
-                        className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between group min-h-[56px] select-none ${data.maintenance_mode ? 'bg-amber-50/50 border-amber-200' : 'bg-white border-stone-100 hover:border-stone-200'}`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg transition-colors ${data.maintenance_mode ? 'bg-amber-100 text-amber-700' : 'bg-stone-50 text-stone-400 group-hover:bg-stone-100'}`}>
-                                <ShieldAlert size={15} />
-                            </div>
-                            <div>
-                                <h4 className="text-xs font-bold text-stone-900 leading-tight">Maintenance Mode</h4>
-                                <p className="text-[9px] text-stone-500 font-medium">Prevent login and access for buyers & artisans.</p>
-                            </div>
-                        </div>
-                        <div className={`w-10 h-5.5 rounded-full relative transition-colors shrink-0 ${data.maintenance_mode ? 'bg-amber-500' : 'bg-stone-200'}`} style={{ minWidth: '40px', minHeight: '22px' }}>
-                            <div className={`absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white transition-all ${data.maintenance_mode ? 'left-5' : 'left-0.5'}`} />
-                        </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <InputLabel value="Max 3D File Size (MB)" className="text-xs text-stone-600 font-semibold" />
+                        <TextInput
+                            type="number"
+                            min="1"
+                            max="50"
+                            value={data.max_3d_file_mb}
+                            onChange={(e) => setData('max_3d_file_mb', e.target.value)}
+                            className="w-full text-xs mt-1"
+                        />
                     </div>
 
-                    <div 
-                        onClick={() => setData('paymongo_enabled', !data.paymongo_enabled)}
-                        className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between group min-h-[56px] select-none ${data.paymongo_enabled ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white border-stone-100 hover:border-stone-200'}`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg transition-colors ${data.paymongo_enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-50 text-stone-400 group-hover:bg-stone-100'}`}>
-                                <CreditCard size={15} />
-                            </div>
-                            <div>
-                                <h4 className="text-xs font-bold text-stone-900 leading-tight">PayMongo Gateway</h4>
-                                <p className="text-[9px] text-stone-500 font-medium">Enable real-time transaction processing.</p>
-                            </div>
-                        </div>
-                        <div className={`w-10 h-5.5 rounded-full relative transition-colors shrink-0 ${data.paymongo_enabled ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ minWidth: '40px', minHeight: '22px' }}>
-                            <div className={`absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white transition-all ${data.paymongo_enabled ? 'left-5' : 'left-0.5'}`} />
-                        </div>
+                    <div>
+                        <InputLabel value="Free Tier Product Limit" className="text-xs text-stone-600 font-semibold" />
+                        <TextInput
+                            type="number"
+                            min="1"
+                            value={data.free_tier_product_limit}
+                            onChange={(e) => setData('free_tier_product_limit', e.target.value)}
+                            className="w-full text-xs mt-1"
+                        />
                     </div>
                 </div>
             </div>
 
-            {/* Cache Management */}
+            {/* Payment Gateways */}
             <div className="pt-6 border-t border-stone-100 space-y-4">
                 <div className="flex items-center gap-2">
-                    <RotateCcw className="text-clay-600" size={16} />
-                    <h3 className="text-[10px] font-bold text-stone-900 uppercase tracking-wider">System Cache</h3>
+                    <CreditCard className="text-clay-600" size={16} />
+                    <h3 className="text-[10px] font-bold text-stone-900 uppercase tracking-wider">Payment Integration</h3>
                 </div>
 
-                <div className="bg-stone-50 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h4 className="text-xs font-bold text-stone-900 leading-tight">Purge Application Cache</h4>
-                        <p className="text-[9px] text-stone-500 font-medium mt-1">Forcefully clear all cached data, including home and catalog category lists, to read fresh database entries.</p>
+                <div className="bg-stone-50 rounded-xl p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h4 className="text-xs font-bold text-stone-900 leading-tight">PayMongo E-Wallet Gateway</h4>
+                            <p className="text-[9px] text-stone-500 font-medium mt-0.5">Enable direct GCash / Maya payments at checkout.</p>
+                        </div>
+                        <div
+                            onClick={() => setData('paymongo_enabled', !data.paymongo_enabled)}
+                            className={`w-10 h-5.5 rounded-full transition-colors relative cursor-pointer ${data.paymongo_enabled ? 'bg-clay-600' : 'bg-stone-300'}`}
+                        >
+                            <div className={`absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white transition-all ${data.paymongo_enabled ? 'left-5' : 'left-0.5'}`} />
+                        </div>
                     </div>
-                    <button
-                        type="button"
-                        onClick={handlePurgeCache}
-                        disabled={isPurging}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-white bg-clay-600 hover:bg-clay-700 rounded-lg shadow-sm transition disabled:opacity-50 min-h-[40px] shrink-0"
-                    >
-                        <RotateCcw size={14} className={isPurging ? "animate-spin" : ""} />
-                        {isPurging ? "Purging..." : "Purge Cache"}
-                    </button>
                 </div>
             </div>
         </div>
