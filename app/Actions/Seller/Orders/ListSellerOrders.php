@@ -33,15 +33,42 @@ class ListSellerOrders
         $query = Order::where('artisan_id', $sellerId)
             ->with(['items.product.recipes.supply', 'user', 'delivery.events', 'dispute']);
 
-        // 1. Search Filter
-        if (!empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('order_number', 'like', "%{$search}%")
-                    ->orWhere('customer_name', 'like', "%{$search}%")
-                    ->orWhere('tracking_number', 'like', "%{$search}%");
+        $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
+
+        $applySearchFilter = function ($q) use ($filters, $like) {
+            if (empty($filters['search'])) {
+                return;
+            }
+
+            $search = trim((string) $filters['search']);
+            if ($search === '') {
+                return;
+            }
+
+            $cleanSearch = preg_replace('/^ORD-/i', '', $search);
+
+            $q->where(function ($sub) use ($search, $cleanSearch, $like) {
+                $sub->where('order_number', $like, "%{$search}%")
+                    ->orWhere('order_number', $like, "%{$cleanSearch}%")
+                    ->orWhere('customer_name', $like, "%{$search}%")
+                    ->orWhere('shipping_recipient_name', $like, "%{$search}%")
+                    ->orWhere('shipping_contact_phone', $like, "%{$search}%")
+                    ->orWhere('shipping_address', $like, "%{$search}%")
+                    ->orWhere('tracking_number', $like, "%{$search}%")
+                    ->orWhereHas('items', function ($itemQuery) use ($search, $like) {
+                        $itemQuery->where('product_name', $like, "%{$search}%")
+                                  ->orWhere('variant', $like, "%{$search}%");
+                    })
+                    ->orWhereHas('user', function ($userQuery) use ($search, $like) {
+                        $userQuery->where('name', $like, "%{$search}%")
+                                  ->orWhere('email', $like, "%{$search}%")
+                                  ->orWhere('username', $like, "%{$search}%");
+                    });
             });
-        }
+        };
+
+        // 1. Search Filter
+        $applySearchFilter($query);
 
         // Date range filters
         if (!empty($filters['start_date'])) {
@@ -54,14 +81,7 @@ class ListSellerOrders
         // Fetch tab counts for this artisan (with search and date filters applied, but status omitted)
         $countsQuery = Order::where('artisan_id', $sellerId);
 
-        if (!empty($filters['search'])) {
-            $search = $filters['search'];
-            $countsQuery->where(function ($q) use ($search) {
-                $q->where('order_number', 'like', "%{$search}%")
-                    ->orWhere('customer_name', 'like', "%{$search}%")
-                    ->orWhere('tracking_number', 'like', "%{$search}%");
-            });
-        }
+        $applySearchFilter($countsQuery);
 
         if (!empty($filters['start_date'])) {
             $countsQuery->whereDate('created_at', '>=', $filters['start_date']);

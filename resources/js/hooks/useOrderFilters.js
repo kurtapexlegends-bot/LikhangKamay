@@ -77,6 +77,18 @@ export default function useOrderFilters(filters = {}) {
         );
     }, [activeTab, searchQuery, quickFilter, dateRange]);
 
+    // Debounced search trigger (300ms) to prevent network request spamming
+    useEffect(() => {
+        const queryToSync = (filters.search || "").trim();
+        if (searchQuery.trim() === queryToSync) return;
+
+        const timer = setTimeout(() => {
+            updateFilters({ search: searchQuery });
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     const updateFilters = (newFilters) => {
         const queryParams = {
             search: searchQuery,
@@ -88,7 +100,7 @@ export default function useOrderFilters(filters = {}) {
         router.get(route("orders.index"), queryParams, {
             preserveState: true,
             preserveScroll: true,
-            only: ["orders"],
+            only: ["orders", "tabCounts", "filters"],
         });
     };
 
@@ -99,7 +111,9 @@ export default function useOrderFilters(filters = {}) {
 
     const handleSearch = (query) => {
         setSearchQuery(query);
-        updateFilters({ search: query });
+        if (!query || query.trim() === "") {
+            updateFilters({ search: "" });
+        }
     };
 
     const applyQuickFilter = (qf, tab = "All") => {
@@ -117,7 +131,7 @@ export default function useOrderFilters(filters = {}) {
         }, {
             preserveState: true,
             preserveScroll: true,
-            only: ["orders"],
+            only: ["orders", "tabCounts", "filters"],
         });
     };
 
