@@ -52,14 +52,48 @@ class GlobalSearchController extends Controller
     private function adminSearch(string $query, string $like): array
     {
         return array_merge(
+            $this->searchAdminOrders($query, $like),
             $this->searchAdminActivities($query, $like),
-            $this->searchAdminUsers($query),
-            $this->searchAdminSponsorships($query),
+            $this->searchAdminUsers($query, $like),
+            $this->searchAdminSponsorships($query, $like),
             $this->searchAdminCategories($query, $like),
             $this->searchAdminModeration($query, $like),
-            $this->searchAdminProducts($query),
+            $this->searchAdminProducts($query, $like),
             $this->searchAdminDisputes($query, $like)
         );
+    }
+
+    private function searchAdminOrders(string $query, string $like): array
+    {
+        $cleanSearch = preg_replace('/^ORD-/i', '', $query);
+
+        return Order::where(function ($q) use ($query, $cleanSearch, $like) {
+                $q->where('order_number', $like, "%{$query}%")
+                    ->orWhere('order_number', $like, "%{$cleanSearch}%")
+                    ->orWhere('customer_name', $like, "%{$query}%")
+                    ->orWhere('shipping_recipient_name', $like, "%{$query}%")
+                    ->orWhere('shipping_contact_phone', $like, "%{$query}%")
+                    ->orWhere('shipping_address', $like, "%{$query}%")
+                    ->orWhere('tracking_number', $like, "%{$query}%")
+                    ->orWhereHas('items', function ($itemQuery) use ($query, $like) {
+                        $itemQuery->where('product_name', $like, "%{$query}%")
+                                  ->orWhere('variant', $like, "%{$query}%");
+                    })
+                    ->orWhereHas('artisan', function ($artisanQuery) use ($query, $like) {
+                        $artisanQuery->where('shop_name', $like, "%{$query}%")
+                                     ->orWhere('name', $like, "%{$query}%");
+                    });
+            })
+            ->limit(5)
+            ->get()
+            ->map(fn ($o) => [
+                'id' => "admin-order-{$o->id}",
+                'title' => "Order: {$o->order_number}",
+                'subtitle' => "Customer: {$o->customer_name} • Status: {$o->status}",
+                'type' => 'Order',
+                'url' => route('admin.disputes.index', ['search' => $o->order_number]),
+                'icon' => 'shopping-cart',
+            ])->toArray();
     }
 
     private function searchAdminActivities(string $query, string $like): array
@@ -80,9 +114,16 @@ class GlobalSearchController extends Controller
             ])->toArray();
     }
 
-    private function searchAdminUsers(string $query): array
+    private function searchAdminUsers(string $query, string $like): array
     {
-        return User::search($query, ['name', 'email', 'shop_name'])
+        return User::where(function ($q) use ($query, $like) {
+                $q->where('name', $like, "%{$query}%")
+                    ->orWhere('first_name', $like, "%{$query}%")
+                    ->orWhere('last_name', $like, "%{$query}%")
+                    ->orWhere('email', $like, "%{$query}%")
+                    ->orWhere('shop_name', $like, "%{$query}%")
+                    ->orWhere('phone_number', $like, "%{$query}%");
+            })
             ->limit(5)
             ->get()
             ->map(fn ($u) => [
@@ -95,20 +136,24 @@ class GlobalSearchController extends Controller
             ])->toArray();
     }
 
-    private function searchAdminSponsorships(string $query): array
+    private function searchAdminSponsorships(string $query, string $like): array
     {
-        return SponsorshipRequest::whereHas('product', function($q) use ($query) {
-                $q->search($query, ['name']);
+        return SponsorshipRequest::whereHas('product', function($q) use ($query, $like) {
+                $q->where('name', $like, "%{$query}%");
+            })
+            ->orWhereHas('user', function($uq) use ($query, $like) {
+                $uq->where('name', $like, "%{$query}%")
+                   ->orWhere('shop_name', $like, "%{$query}%");
             })
             ->with('product', 'user')
             ->limit(5)
             ->get()
             ->map(fn ($s) => [
                 'id' => "spons-{$s->id}",
-                'title' => "Sponsorship: {$s->product->name}",
-                'subtitle' => "Artisan: {$s->user->name} • Status: {$s->status}",
+                'title' => "Sponsorship: " . ($s->product->name ?? 'Product'),
+                'subtitle' => "Artisan: " . ($s->user->name ?? 'Artisan') . " • Status: {$s->status}",
                 'type' => 'Sponsorship',
-                'url' => route('admin.catalog.index', ['tab' => 'sponsorships', 'search' => $s->product->name]),
+                'url' => route('admin.catalog.index', ['tab' => 'sponsorships', 'search' => $s->product->name ?? '']),
                 'icon' => 'star',
             ])->toArray();
     }
@@ -144,9 +189,14 @@ class GlobalSearchController extends Controller
             ])->toArray();
     }
 
-    private function searchAdminProducts(string $query): array
+    private function searchAdminProducts(string $query, string $like): array
     {
-        return Product::search($query, ['name', 'sku'])
+        return Product::where(function ($q) use ($query, $like) {
+                $q->where('name', $like, "%{$query}%")
+                    ->orWhere('sku', $like, "%{$query}%")
+                    ->orWhere('category', $like, "%{$query}%")
+                    ->orWhere('description', $like, "%{$query}%");
+            })
             ->limit(5)
             ->get()
             ->map(fn ($p) => [
