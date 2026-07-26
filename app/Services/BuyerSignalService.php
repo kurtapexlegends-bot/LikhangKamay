@@ -142,10 +142,10 @@ class BuyerSignalService
                     'id' => $p->id,
                     'slug' => $p->slug,
                     'name' => $p->name,
-                    'image' => $p->img || $p->image || '/images/no-image.png',
+                    'image' => $p->img ?? $p->image ?? '/images/no-image.png',
                     'price' => (float) $p->price,
-                    'sellerName' => $p->user->shop_name ?? $p->user->name ?? 'Artisan',
-                    'sellerSlug' => $p->user->shop_slug ?? null,
+                    'sellerName' => $p->user?->shop_name ?? $p->user?->name ?? 'Artisan',
+                    'sellerSlug' => $p->user?->shop_slug ?? null,
                     'category' => $p->category,
                 ];
             })
