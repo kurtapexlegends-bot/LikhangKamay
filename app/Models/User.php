@@ -254,6 +254,26 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         return $this->hasMany(\App\Models\Product::class);
     }
 
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function wishlistProducts()
+    {
+        return $this->belongsToMany(Product::class, 'wishlists', 'user_id', 'product_id')->withTimestamps();
+    }
+
+    public function followedShops()
+    {
+        return $this->hasMany(FollowedShop::class, 'user_id');
+    }
+
+    public function followingShops()
+    {
+        return $this->belongsToMany(User::class, 'followed_shops', 'user_id', 'shop_id')->withTimestamps();
+    }
+
     public function addresses()
     {
         return $this->hasMany(UserAddress::class);

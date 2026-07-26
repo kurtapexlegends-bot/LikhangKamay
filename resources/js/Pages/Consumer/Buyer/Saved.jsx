@@ -12,7 +12,8 @@ import {
     clearWishlistedProducts,
     clearFollowedShops,
     clearRecentlyViewedProducts,
-    pruneInactiveProducts
+    pruneInactiveProducts,
+    syncSignalsWithServer
 } from '@/utils/buyerSignals';
 
 // Subcomponents
@@ -44,6 +45,10 @@ export default function Saved() {
     const [clearAction, setClearAction] = useState(null); // { type, title, message }
 
     useEffect(() => {
+        if (userId) {
+            syncSignalsWithServer(userId);
+        }
+
         const syncSignals = () => {
             setWishlistedProducts(getWishlistedProducts(userId));
             setFollowedShops(getFollowedShops(userId));

@@ -268,6 +268,14 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
             return Inertia::render('Consumer/Buyer/Saved');
         })->name('saved.index');
 
+        // BUYER SIGNALS (WISHLIST & FOLLOWED SHOPS)
+        Route::get('/buyer/signals', [\App\Http\Controllers\Consumer\BuyerSignalController::class, 'index'])->name('buyer.signals.index');
+        Route::post('/buyer/wishlist/toggle', [\App\Http\Controllers\Consumer\BuyerSignalController::class, 'toggleWishlist'])->name('buyer.wishlist.toggle');
+        Route::post('/buyer/shops/toggle-follow', [\App\Http\Controllers\Consumer\BuyerSignalController::class, 'toggleFollowShop'])->name('buyer.shops.toggle-follow');
+        Route::post('/buyer/signals/sync', [\App\Http\Controllers\Consumer\BuyerSignalController::class, 'sync'])->name('buyer.signals.sync');
+        Route::delete('/buyer/wishlist/clear', [\App\Http\Controllers\Consumer\BuyerSignalController::class, 'clearWishlist'])->name('buyer.wishlist.clear');
+        Route::delete('/buyer/shops/clear-followed', [\App\Http\Controllers\Consumer\BuyerSignalController::class, 'clearFollowedShops'])->name('buyer.shops.clear-followed');
+
         // PAYMENT ROUTES
         Route::get('/payment/{orderId}/pay', [\App\Http\Controllers\Consumer\PaymentController::class, 'pay'])->name('payment.pay');
         

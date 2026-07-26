@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 const WISHLIST_KEY = 'lk_buyer_wishlist_products';
 const FOLLOWED_SHOPS_KEY = 'lk_buyer_followed_shops';
 const RECENTLY_VIEWED_KEY = 'lk_buyer_recently_viewed_products';
@@ -165,6 +167,50 @@ const normalizeFollowedShops = (rawEntries) => {
         .slice(0, MAX_FOLLOWED_SHOPS);
 };
 
+export const syncSignalsWithServer = async (userId) => {
+    if (!userId || !canUseStorage()) return;
+
+    const legacyWishlist = readJson(WISHLIST_KEY, []);
+    const legacyFollowed = readJson(FOLLOWED_SHOPS_KEY, []);
+
+    const productIds = legacyWishlist.map((item) => Number(item?.id || item)).filter(Boolean);
+    const shopIds = legacyFollowed.map((item) => Number(item?.id || item)).filter(Boolean);
+
+    try {
+        if (productIds.length > 0 || shopIds.length > 0) {
+            const response = await axios.post(route('buyer.signals.sync'), {
+                product_ids: productIds,
+                shop_ids: shopIds,
+            });
+
+            if (response.data?.success) {
+                writeJson(WISHLIST_KEY, []);
+                writeJson(FOLLOWED_SHOPS_KEY, []);
+                if (response.data.wishlist) {
+                    writeJson(`${WISHLIST_KEY}_${userId}`, response.data.wishlist);
+                }
+                if (response.data.followedShops) {
+                    writeJson(`${FOLLOWED_SHOPS_KEY}_${userId}`, response.data.followedShops);
+                }
+                window.dispatchEvent(new Event('storage'));
+            }
+        } else {
+            const response = await axios.get(route('buyer.signals.index'));
+            if (response.data) {
+                if (response.data.wishlist) {
+                    writeJson(`${WISHLIST_KEY}_${userId}`, response.data.wishlist);
+                }
+                if (response.data.followedShops) {
+                    writeJson(`${FOLLOWED_SHOPS_KEY}_${userId}`, response.data.followedShops);
+                }
+                window.dispatchEvent(new Event('storage'));
+            }
+        }
+    } catch (_error) {
+        // Fallback to local storage if offline
+    }
+};
+
 export const getWishlistedProducts = (userId) => {
     const key = getEffectiveWishlistKey(userId);
     return normalizeWishlistedProducts(readJson(key, [])).filter((entry) => entry.slug);
@@ -197,6 +243,8 @@ export const toggleWishlistedProduct = (product, userId) => {
 
     writeJson(key, next);
     window.dispatchEvent(new Event('storage'));
+
+    axios.post(route('buyer.wishlist.toggle'), { product_id: productId }).catch(() => {});
 
     return !exists;
 };
@@ -234,6 +282,8 @@ export const toggleFollowedShop = (shop, userId) => {
     writeJson(key, next);
     window.dispatchEvent(new Event('storage'));
 
+    axios.post(route('buyer.shops.toggle-follow'), { shop_id: shopId }).catch(() => {});
+
     return !exists;
 };
 
@@ -248,12 +298,20 @@ export const clearWishlistedProducts = (userId) => {
     const key = getEffectiveWishlistKey(userId);
     if (key) writeJson(key, []);
     window.dispatchEvent(new Event('storage'));
+
+    if (userId) {
+        axios.delete(route('buyer.wishlist.clear')).catch(() => {});
+    }
 };
 
 export const clearFollowedShops = (userId) => {
     const key = getEffectiveFollowedShopsKey(userId);
     if (key) writeJson(key, []);
     window.dispatchEvent(new Event('storage'));
+
+    if (userId) {
+        axios.delete(route('buyer.shops.clear-followed')).catch(() => {});
+    }
 };
 
 export const rememberViewedProduct = (product) => {
