@@ -117,7 +117,6 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
     const returnQueueCount = getCount("Returns");
     const pendingQueueCount = getCount("Pending");
 
-    useEffect(() => { if (filters.search && filters.search !== searchQuery) setSearchQuery(filters.search); }, [filters.search]);
     useFlashToast(flash, addToast);
 
     useEffect(() => {
@@ -158,7 +157,7 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
 
     const updateFilters = (newFilters) => {
         const mergedFilters = {
-            search: searchQuery,
+            search: newFilters.hasOwnProperty('search') ? newFilters.search : searchQuery,
             status: activeTab,
             start_date: dateRange.start,
             end_date: dateRange.end,

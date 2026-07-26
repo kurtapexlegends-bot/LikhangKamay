@@ -59,12 +59,7 @@ export default function useOrderFilters(filters = {}) {
     );
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Sync search from URL (for Global Search support)
-    useEffect(() => {
-        if (filters.search && filters.search !== searchQuery) {
-            setSearchQuery(filters.search);
-        }
-    }, [filters.search]);
+
 
     useEffect(() => {
         if (typeof window === "undefined") {
