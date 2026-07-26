@@ -11,7 +11,8 @@ import {
     RotateCcw,
     SlidersHorizontal,
     ChevronDown,
-    Filter
+    Filter,
+    LoaderCircle
 } from "lucide-react";
 import SlideOverDrawer from "@/Components/SlideOverDrawer";
 
@@ -45,6 +46,7 @@ export default function OrderFilterPanel({
     getCount,
     searchQuery,
     handleSearch,
+    isSearching = false,
     dateRange,
     setDateRange,
     paymentMethod = "all",
@@ -69,6 +71,26 @@ export default function OrderFilterPanel({
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const popoverRef = useRef(null);
+    const searchInputRef = useRef(null);
+
+    // Global keyboard shortcut '/' to focus search input
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (
+                e.key === "/" &&
+                document.activeElement?.tagName !== "INPUT" &&
+                document.activeElement?.tagName !== "TEXTAREA"
+            ) {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            } else if (e.key === "Escape" && document.activeElement === searchInputRef.current) {
+                handleSearch("");
+                searchInputRef.current?.blur();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [handleSearch]);
 
     // Staged draft state
     const [draftPaymentMethod, setDraftPaymentMethod] = useState(paymentMethod);
@@ -352,20 +374,30 @@ export default function OrderFilterPanel({
                 <div className="relative flex-1">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
                     <input
+                        ref={searchInputRef}
                         type="text"
-                        placeholder="Search order, buyer, or item..."
+                        placeholder="Search order ID, buyer, address, or item (Press '/' to focus)..."
                         value={searchQuery}
                         onChange={(e) => handleSearch(e.target.value)}
                         className="w-full pl-9 pr-8 py-2 bg-white border border-stone-200 rounded-xl text-xs hover:border-stone-300 focus:ring-4 focus:ring-clay-500/10 focus:border-clay-500 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-[38px]"
                     />
-                    {searchQuery && (
+                    {isSearching ? (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-clay-600">
+                            <LoaderCircle size={13} className="animate-spin" />
+                        </div>
+                    ) : searchQuery ? (
                         <button
                             onClick={() => handleSearch("")}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition active:scale-90"
                             title="Clear search"
+                            type="button"
                         >
                             <X size={12} />
                         </button>
+                    ) : (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none hidden sm:flex items-center gap-0.5 text-[9px] font-extrabold text-stone-300 bg-stone-100/80 border border-stone-200/60 px-1.5 py-0.5 rounded-md">
+                            /
+                        </div>
                     )}
                 </div>
 

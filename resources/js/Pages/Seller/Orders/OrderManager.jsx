@@ -153,6 +153,7 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
         });
     }, [dateRange.start, dateRange.end]);
 
+    const [isSearching, setIsSearching] = useState(false);
     const searchTimeoutRef = React.useRef(null);
 
     const updateFilters = (newFilters) => {
@@ -169,11 +170,13 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
             ...newFilters
         };
 
+        setIsSearching(true);
         router.get(route("orders.index"), mergedFilters, {
             preserveState: true,
             preserveScroll: true,
             showProgress: false,
             only: ["orders", "tabCounts", "filters"],
+            onFinish: () => setIsSearching(false),
         });
     };
 
@@ -190,6 +193,7 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
         }
 
         if (!query || query.trim() === "") {
+            setIsSearching(false);
             updateFilters({ search: "" });
         } else {
             searchTimeoutRef.current = setTimeout(() => {
@@ -197,6 +201,47 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
             }, 300);
         }
     };
+
+    // Instant client-side pre-filtering (0ms response) while deep server search syncs
+    const displayedOrders = useMemo(() => {
+        if (!searchQuery || searchQuery.trim() === "") {
+            return paginatedOrders;
+        }
+
+        const q = searchQuery.toLowerCase().trim();
+        const cleanQ = q.replace(/^ord-/i, "");
+
+        const filtered = paginatedOrders.filter((order) => {
+            const orderNum = String(order.id || order.order_number || "").toLowerCase();
+            const customer = String(order.customer || order.customer_name || "").toLowerCase();
+            const recipient = String(order.shipping_recipient_name || "").toLowerCase();
+            const phone = String(order.shipping_contact_phone || "").toLowerCase();
+            const tracking = String(order.tracking_number || "").toLowerCase();
+            const address = String(order.shipping_address || "").toLowerCase();
+            const userName = String(order.user?.name || "").toLowerCase();
+            const userEmail = String(order.user?.email || "").toLowerCase();
+
+            const itemsMatch = (order.items || []).some((item) =>
+                String(item.name || item.product_name || "").toLowerCase().includes(q) ||
+                String(item.variant || "").toLowerCase().includes(q)
+            );
+
+            return (
+                orderNum.includes(q) ||
+                orderNum.includes(cleanQ) ||
+                customer.includes(q) ||
+                recipient.includes(q) ||
+                phone.includes(q) ||
+                tracking.includes(q) ||
+                address.includes(q) ||
+                userName.includes(q) ||
+                userEmail.includes(q) ||
+                itemsMatch
+            );
+        });
+
+        return filtered;
+    }, [paginatedOrders, searchQuery]);
 
     const handlePageChange = (page) => {
         setCurrentPage(page);
@@ -426,6 +471,7 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
                         getCount={getCount}
                         searchQuery={searchQuery}
                         handleSearch={handleSearch}
+                        isSearching={isSearching}
                         dateRange={dateRange}
                         setDateRange={setDateRange}
                         paymentMethod={paymentMethod}
@@ -451,8 +497,8 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
 
                 {/* ORDER CARDS */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-3.5">
-                    {paginatedOrders.length > 0 ? (
-                        paginatedOrders.map((order, idx) => (
+                    {displayedOrders.length > 0 ? (
+                        displayedOrders.map((order, idx) => (
                             <OrderCard
                                 key={order.id} order={order} idx={idx} canAccessMessages={canAccessMessages} canEditOrders={canEditOrders} openChat={openChat} toggleOrderSelection={toggleOrderSelection} selectedOrderIds={selectedOrderIds} initiateStatusUpdate={initiateStatusUpdate} openShippingModal={openShippingModal} createLalamoveDelivery={createLalamoveDelivery} bookingOrderId={bookingOrderId} submitRefundApproval={submitRefundApproval} openReplacementModal={openReplacementModal} returnActionKey={returnActionKey} openDisputeModal={openDisputeModal} expandedTimelines={expandedTimelines} toggleTimelineExpansion={toggleTimelineExpansion} expandedCourierTrackings={expandedCourierTrackings} toggleCourierTrackingExpansion={toggleCourierTrackingExpansion} expandedPricingDetails={expandedPricingDetails} togglePricingDetailsExpansion={togglePricingDetailsExpansion} markAsPaidAction={markAsPaidAction} replacementModal={replacementModal}
                             />
