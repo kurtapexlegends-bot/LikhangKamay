@@ -67,23 +67,36 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
     const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
 
-    // Debounced search for suggestions
+    // Lightweight debounced search for suggestions with request cancellation
     useEffect(() => {
-        const timer = setTimeout(async () => {
-            if (term.length >= 2) {
-                setIsLoadingSuggestions(true);
-                try {
-                    const response = await axios.get(route('api.search.suggestions'), { params: { q: term } });
-                    setSuggestions(response.data);
-                } catch (error) {
-                    console.error('Suggestions error:', error);
-                } finally {
-                    setIsLoadingSuggestions(false);
-                }
-            }
-        }, 300);
+        if (term.length < 2) {
+            setSuggestions({ products: [], artisans: [] });
+            setIsLoadingSuggestions(false);
+            return;
+        }
 
-        return () => clearTimeout(timer);
+        const controller = new AbortController();
+        const timer = setTimeout(async () => {
+            setIsLoadingSuggestions(true);
+            try {
+                const response = await axios.get(route('api.search.suggestions'), { 
+                    params: { q: term },
+                    signal: controller.signal
+                });
+                setSuggestions(response.data);
+            } catch (error) {
+                if (!axios.isCancel(error)) {
+                    console.error('Suggestions error:', error);
+                }
+            } finally {
+                setIsLoadingSuggestions(false);
+            }
+        }, 200);
+
+        return () => {
+            clearTimeout(timer);
+            controller.abort();
+        };
     }, [term]);
 
     useEffect(() => {
@@ -251,19 +264,17 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
                                                         }}
                                                         className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-xl transition-colors group cursor-pointer"
                                                     >
-                                                        <div className="w-10 h-10 rounded-full bg-stone-100 overflow-hidden flex-shrink-0 border border-stone-200/60 flex items-center justify-center text-stone-700 font-bold uppercase text-xs">
-                                                            {a.avatar ? (
+                                                        <div className="relative w-10 h-10 rounded-full bg-clay-100 text-clay-700 font-bold uppercase text-xs flex items-center justify-center flex-shrink-0 border border-clay-200/60 overflow-hidden shadow-sm">
+                                                            <span>{(a.name || 'A').charAt(0)}</span>
+                                                            {a.avatar && (
                                                                 <img 
                                                                     src={a.avatar} 
                                                                     alt={a.name} 
-                                                                    className="w-full h-full object-cover" 
+                                                                    className="absolute inset-0 w-full h-full object-cover" 
                                                                     onError={(e) => {
-                                                                        e.target.onerror = null;
                                                                         e.target.style.display = 'none';
                                                                     }}
                                                                 />
-                                                            ) : (
-                                                                (a.name || 'A').charAt(0)
                                                             )}
                                                         </div>
                                                         <div className="min-w-0 flex-1">

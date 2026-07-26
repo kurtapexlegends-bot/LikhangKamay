@@ -3,77 +3,79 @@
 namespace App\Http\Controllers\Consumer;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\Product;
 use App\Models\User;
+use App\Services\StorageUrl;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class SearchController extends Controller
 {
     /**
-     * Provide instant search results for products and artisans.
+     * Provide instant, lightweight search suggestions for products and artisans.
      */
     public function suggestions(Request $request)
     {
-        $search = $request->query('q');
+        $search = trim((string) $request->query('q'));
 
-        if (empty($search) || strlen($search) < 2) {
+        if (strlen($search) < 2) {
             return response()->json([
                 'products' => [],
-                'artisans' => []
-            ]);
+                'artisans' => [],
+            ])->header('Cache-Control', 'public, max-age=30');
         }
 
+        $searchLower = strtolower($search);
+
+        // Fetch top 4 lightweight product matches
         $products = Product::approved()
             ->search($search, ['name', 'category'])
-            ->with('user:id,shop_name,name,shop_slug,avatar')
-            ->limit(5)
+            ->with(['user:id,shop_name,name,shop_slug'])
+            ->select(['id', 'name', 'slug', 'price', 'cover_photo_path', 'user_id'])
+            ->limit(4)
             ->get()
             ->map(fn($p) => [
                 'id' => $p->id,
                 'name' => $p->name,
                 'slug' => $p->slug,
-                'price' => number_format($p->price, 2),
-                'image' => $p->img ?: \App\Services\StorageUrl::url($p->cover_photo_path, '/images/no-image.png'),
+                'price' => number_format((float) $p->price, 2),
+                'image' => StorageUrl::url($p->cover_photo_path, '/images/no-image.png'),
                 'seller' => $p->user?->shop_name ?? $p->user?->name ?? 'Artisan',
             ]);
 
-        $artisansList = \Illuminate\Support\Facades\Cache::remember('approved_artisans_list', 86400, function () {
+        // Cache lightweight approved artisans search list
+        $artisansList = Cache::remember('approved_artisans_search_list', 3600, function () {
             return User::where('role', 'artisan')
                 ->where('artisan_status', 'approved')
+                ->whereNull('banned_at')
+                ->select(['id', 'name', 'shop_name', 'shop_slug', 'avatar', 'city', 'bio'])
                 ->get()
                 ->map(fn($u) => [
                     'id' => $u->id,
-                    'name' => $u->name,
-                    'shop_name' => $u->shop_name,
-                    'shop_slug' => $u->shop_slug,
-                    'avatar' => \App\Services\StorageUrl::url($u->avatar),
-                    'city' => $u->city,
-                    'bio' => $u->bio,
+                    'name' => $u->shop_name ?: $u->name,
+                    'slug' => $u->shop_slug ?: $u->id,
+                    'avatar' => $u->avatar ? StorageUrl::url($u->avatar) : null,
+                    'location' => $u->city ?: 'Philippines',
+                    'searchable' => strtolower(($u->shop_name ?? '') . ' ' . ($u->name ?? '') . ' ' . ($u->bio ?? '')),
                 ])
-                ->toArray();
+                ->all();
         });
 
-        $searchLower = strtolower($search);
         $artisans = collect($artisansList)
-            ->filter(function($u) use ($searchLower) {
-                return str_contains(strtolower($u['name'] ?? ''), $searchLower) ||
-                       str_contains(strtolower($u['shop_name'] ?? ''), $searchLower) ||
-                       str_contains(strtolower($u['bio'] ?? ''), $searchLower);
-            })
+            ->filter(fn($u) => str_contains($u['searchable'], $searchLower))
             ->take(3)
             ->map(fn($u) => [
                 'id' => $u['id'],
-                'name' => $u['shop_name'] ?? $u['name'],
-                'slug' => $u['shop_slug'],
+                'name' => $u['name'],
+                'slug' => $u['slug'],
                 'avatar' => $u['avatar'],
-                'location' => $u['city'],
+                'location' => $u['location'],
             ])
             ->values();
 
         return response()->json([
             'products' => $products,
-            'artisans' => $artisans
-        ]);
+            'artisans' => $artisans,
+        ])->header('Cache-Control', 'public, max-age=15');
     }
 }
