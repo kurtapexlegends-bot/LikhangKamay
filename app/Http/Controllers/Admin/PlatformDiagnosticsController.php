@@ -169,23 +169,7 @@ class PlatformDiagnosticsController extends Controller
         });
     }
 
-    /**
-     * Purge all system caches
-     */
-    public function purgeCache()
-    {
-        Gate::authorize('admin-action');
-        Artisan::call('cache:clear');
-        Artisan::call('view:clear');
-        
-        PlatformActivity::create([
-            'user_id' => Auth::id(),
-            'action' => 'system_cache_purged',
-            'description' => 'Super Admin forcefully purged the application cache.',
-        ]);
 
-        return back()->with('success', 'System cache successfully purged. Memory is clear.');
-    }
 
     /**
      * Restore a soft-deleted item from the trash.
