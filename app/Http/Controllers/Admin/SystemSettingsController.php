@@ -77,11 +77,8 @@ class SystemSettingsController extends Controller
                     'convenience_fee' => 3.0,
                     'maintenance_mode' => false,
                     'paymongo_enabled' => true,
-                    'mail_host' => 'smtp.mailtrap.io',
-                    'mail_port' => '2525',
-                    'mail_encryption' => 'tls',
-                    'mail_username' => '',
-                    'mail_password' => '',
+                    'mail_driver' => 'resend',
+                    'resend_api_key' => '',
                     'mail_from_address' => 'noreply@likhangkamay.app',
                     'mail_from_name' => 'LikhangKamay',
                 ],
@@ -204,12 +201,9 @@ class SystemSettingsController extends Controller
             'tier_super_premium_price' => $this->settings->get('tier_super_premium_price', 399.00),
             'tier_super_premium_limit' => $this->settings->get('tier_super_premium_limit', 50),
 
-            // SMTP Settings
-            'mail_host' => $this->settings->get('mail_host', 'smtp.mailtrap.io'),
-            'mail_port' => $this->settings->get('mail_port', '2525'),
-            'mail_encryption' => $this->settings->get('mail_encryption', 'tls'),
-            'mail_username' => $this->settings->get('mail_username', ''),
-            'mail_password' => $this->settings->get('mail_password', ''),
+            // Mail Engine & Dispatcher Settings
+            'mail_driver' => $this->settings->get('mail_driver', 'resend'),
+            'resend_api_key' => $this->settings->get('resend_api_key', ''),
             'mail_from_address' => $this->settings->get('mail_from_address', 'noreply@likhangkamay.app'),
             'mail_from_name' => $this->settings->get('mail_from_name', 'LikhangKamay'),
         ];
@@ -386,12 +380,9 @@ class SystemSettingsController extends Controller
             'tier_super_premium_price' => 'sometimes|required|numeric|min:0',
             'tier_super_premium_limit' => 'sometimes|required|integer|min:1',
 
-            // SMTP Validation
-            'mail_host' => 'nullable|string|max:255',
-            'mail_port' => 'nullable|string|max:10',
-            'mail_encryption' => 'nullable|string|max:20',
-            'mail_username' => 'nullable|string|max:255',
-            'mail_password' => 'nullable|string|max:255',
+            // Mail Engine Validation
+            'mail_driver' => 'nullable|string|in:resend,smtp,log',
+            'resend_api_key' => 'nullable|string|max:255',
             'mail_from_address' => 'nullable|email|max:255',
             'mail_from_name' => 'nullable|string|max:255',
         ]);
@@ -520,14 +511,11 @@ class SystemSettingsController extends Controller
             $this->settings->set('tier_super_premium_limit', $validated['tier_super_premium_limit'], 'integer');
         }
 
-        // Save SMTP Config
-        $this->settings->set('mail_host', $validated['mail_host'] ?? '');
-        $this->settings->set('mail_port', $validated['mail_port'] ?? '');
-        $this->settings->set('mail_encryption', $validated['mail_encryption'] ?? '');
-        $this->settings->set('mail_username', $validated['mail_username'] ?? '');
-        $this->settings->set('mail_password', $validated['mail_password'] ?? '');
-        $this->settings->set('mail_from_address', $validated['mail_from_address'] ?? '');
-        $this->settings->set('mail_from_name', $validated['mail_from_name'] ?? '');
+        // Save Mail Dispatcher Config
+        $this->settings->set('mail_driver', $validated['mail_driver'] ?? 'resend');
+        $this->settings->set('resend_api_key', $validated['resend_api_key'] ?? '');
+        $this->settings->set('mail_from_address', $validated['mail_from_address'] ?? 'noreply@likhangkamay.app');
+        $this->settings->set('mail_from_name', $validated['mail_from_name'] ?? 'LikhangKamay');
 
         if ($request->hasFile('platform_logo')) {
             $path = $request->file('platform_logo')->store('platform', 'public');

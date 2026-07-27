@@ -45,11 +45,8 @@ class SystemSettingsTest extends TestCase
             'convenience_fee' => 20.0,
             'maintenance_mode' => false,
             'paymongo_enabled' => true,
-            'mail_host' => 'smtp.mailtrap.io',
-            'mail_port' => '2525',
-            'mail_encryption' => 'tls',
-            'mail_username' => 'test-user',
-            'mail_password' => 'test-password',
+            'mail_driver' => 'resend',
+            'resend_api_key' => 're_test_key_123',
             'mail_from_address' => 'noreply-test@likhangkamay.app',
             'mail_from_name' => 'LikhangKamay Mailer',
             'tier_free_limit' => 5,
@@ -89,11 +86,8 @@ class SystemSettingsTest extends TestCase
         $this->assertFalse($this->settings->get('maintenance_mode'));
         $this->assertTrue($this->settings->get('paymongo_enabled'));
         
-        $this->assertEquals('smtp.mailtrap.io', $this->settings->get('mail_host'));
-        $this->assertEquals('2525', $this->settings->get('mail_port'));
-        $this->assertEquals('tls', $this->settings->get('mail_encryption'));
-        $this->assertEquals('test-user', $this->settings->get('mail_username'));
-        $this->assertEquals('test-password', $this->settings->get('mail_password'));
+        $this->assertEquals('resend', $this->settings->get('mail_driver'));
+        $this->assertEquals('re_test_key_123', $this->settings->get('resend_api_key'));
         $this->assertEquals('noreply-test@likhangkamay.app', $this->settings->get('mail_from_address'));
         $this->assertEquals('LikhangKamay Mailer', $this->settings->get('mail_from_name'));
 

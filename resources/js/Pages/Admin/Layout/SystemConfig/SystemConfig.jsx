@@ -26,7 +26,7 @@ import ContactSocialsForm from '@/Components/Admin/Layout/SystemConfig/ContactSo
 import PlatformOpsForm from '@/Components/Admin/Layout/SystemConfig/PlatformOpsForm';
 import MonetizationDashboard from '@/Components/Admin/Layout/SystemConfig/MonetizationDashboard';
 import SubscriptionTiers from '@/Components/Admin/Layout/SystemConfig/SubscriptionTiers';
-import SMTPForm from '@/Components/Admin/Layout/SystemConfig/SMTPForm';
+import MailDispatchForm from '@/Components/Admin/Layout/SystemConfig/MailDispatchForm';
 import CategoryManager from '@/Components/Admin/Catalog/CategoryManager';
 import TrashRestorationTable from '@/Components/Admin/Compliance/TrashRestorationTable';
 import ConfirmationModal from '@/Components/ConfirmationModal';
@@ -80,12 +80,9 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         tier_super_premium_price: settings?.tier_super_premium_price ?? 399,
         tier_super_premium_limit: settings?.tier_super_premium_limit ?? 50,
 
-        // SMTP Settings
-        mail_host: settings?.mail_host || 'smtp.mailtrap.io',
-        mail_port: settings?.mail_port || '2525',
-        mail_encryption: settings?.mail_encryption || 'tls',
-        mail_username: settings?.mail_username || '',
-        mail_password: settings?.mail_password || '',
+        // Mail Engine & Dispatcher Settings
+        mail_driver: settings?.mail_driver || 'resend',
+        resend_api_key: settings?.resend_api_key || '',
         mail_from_address: settings?.mail_from_address || 'noreply@likhangkamay.app',
         mail_from_name: settings?.mail_from_name || 'LikhangKamay',
     });
@@ -132,11 +129,8 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                 tier_premium_limit: settings.tier_premium_limit ?? 10,
                 tier_super_premium_price: settings.tier_super_premium_price ?? 399,
                 tier_super_premium_limit: settings.tier_super_premium_limit ?? 50,
-                mail_host: settings.mail_host || 'smtp.mailtrap.io',
-                mail_port: settings.mail_port || '2525',
-                mail_encryption: settings.mail_encryption || 'tls',
-                mail_username: settings.mail_username || '',
-                mail_password: settings.mail_password || '',
+                mail_driver: settings.mail_driver || 'resend',
+                resend_api_key: settings.resend_api_key || '',
                 mail_from_address: settings.mail_from_address || 'noreply@likhangkamay.app',
                 mail_from_name: settings.mail_from_name || 'LikhangKamay',
             });
@@ -160,7 +154,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     const subTabs = [
         { id: 'branding_contact', name: 'Contact & Socials', icon: Mail },
         { id: 'branding_ops', name: 'Platform Ops', icon: Settings },
-        { id: 'branding_smtp', name: 'SMTP Settings', icon: Server },
+        { id: 'branding_smtp', name: 'Mail & Templates', icon: Server },
     ];
 
     if (activeTab === 'monetization') {
@@ -267,7 +261,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                     )}
 
                                     {activeSubTab === 'branding_smtp' && (
-                                        <SMTPForm
+                                        <MailDispatchForm
                                             data={data}
                                             setData={setData}
                                             errors={errors}

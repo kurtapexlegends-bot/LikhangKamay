@@ -378,6 +378,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     // System Settings
     Route::get('/settings', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'index'])->name('admin.settings.index');
     Route::post('/settings', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'update'])->name('admin.settings.update');
+    Route::post('/settings/mail/test', [\App\Http\Controllers\Admin\TestMailDispatchController::class, 'dispatchTestEmail'])->middleware('throttle:admin.heavy')->name('admin.settings.mail.test');
         Route::get('/monetization', fn() => redirect()->route('admin.settings.index', ['tab' => 'monetization']))->name('admin.monetization');
     Route::get('/insights', [\App\Http\Controllers\Admin\SuperAdminController::class, 'insights'])->name('admin.insights');
     Route::get('/insights/export', [\App\Http\Controllers\Admin\SuperAdminController::class, 'exportInsights'])->name('admin.insights.export');
