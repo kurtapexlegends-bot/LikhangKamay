@@ -1,23 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { usePage, router } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
-import DangerButton from '@/Components/DangerButton';
 import Modal from '@/Components/Modal';
 import { 
     Mail, 
     Send, 
-    ShieldCheck, 
     Key, 
     User, 
     CheckCircle2, 
     AlertCircle, 
-    Zap, 
     Server, 
     FileText, 
-    Clock,
     Eye,
     EyeOff,
     Plus,
@@ -26,9 +22,9 @@ import {
     Sparkles,
     Users,
     Search,
-    ChevronRight,
     Monitor,
-    Smartphone
+    Smartphone,
+    RotateCcw
 } from 'lucide-react';
 import FormSkeleton from './Partials/FormSkeleton';
 
@@ -50,6 +46,8 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
         button_url: '',
         category: 'custom'
     });
+    const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+    const [templateSaveFeedback, setTemplateSaveFeedback] = useState(null); // { success: boolean, message: string }
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [previewDevice, setPreviewDevice] = useState('desktop'); // 'desktop' | 'mobile'
 
@@ -57,10 +55,11 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
     const [targetType, setTargetType] = useState('user'); // 'user' | 'role' | 'email'
     const [searchQuery, setSearchQuery] = useState('');
     const [userSearchResults, setUserSearchResults] = useState([]);
-    const [isSearchingUsers, setIsSearchingUsers] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [targetRole, setTargetRole] = useState('all_artisans');
     const [targetEmail, setTargetEmail] = useState(auth?.user?.email || '');
+
+    const [loadedBroadcastTemplateId, setLoadedBroadcastTemplateId] = useState('');
     const [broadcastSubject, setBroadcastSubject] = useState('');
     const [broadcastHeadline, setBroadcastHeadline] = useState('');
     const [broadcastBody, setBroadcastBody] = useState('');
@@ -77,13 +76,21 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
         fetchTemplates();
     }, []);
 
-    const fetchTemplates = async () => {
+    const fetchTemplates = async (keepSelectedId = null) => {
         setIsLoadingTemplates(true);
         try {
             const res = await window.axios.get(route('admin.email-templates.index'));
-            setTemplates(res.data.templates || []);
-            if (res.data.templates && res.data.templates.length > 0) {
-                loadTemplateIntoForm(res.data.templates[0]);
+            const fetched = res.data.templates || [];
+            setTemplates(fetched);
+
+            if (fetched.length > 0) {
+                const targetId = keepSelectedId ?? selectedTemplateId;
+                const found = fetched.find(t => t.id === targetId);
+                if (found) {
+                    loadTemplateIntoForm(found);
+                } else {
+                    loadTemplateIntoForm(fetched[0]);
+                }
             }
         } catch (err) {
             console.error('Failed to load templates', err);
@@ -110,9 +117,9 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
         setSelectedTemplateId(null);
         setTemplateForm({
             id: null,
-            name: 'New Custom Template',
-            subject: 'Important Update from LikhangKamay',
-            headline: 'Platform Announcement',
+            name: 'New Custom Broadcast Template',
+            subject: 'Important Announcement from LikhangKamay',
+            headline: 'Platform Notice',
             body: "Hello {user_name},\n\nWe have an update to share with our artisan and buyer community.\n\nThank you for supporting Filipino handcrafted goods!",
             button_label: 'Learn More',
             button_url: '{action_url}',
@@ -120,20 +127,44 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
         });
     };
 
-    const handleSaveTemplate = (e) => {
+    const handleSaveTemplate = async (e) => {
         e.preventDefault();
-        router.post(route('admin.email-templates.store'), templateForm, {
-            preserveScroll: true,
-            onSuccess: () => fetchTemplates()
-        });
+        setIsSavingTemplate(true);
+        setTemplateSaveFeedback(null);
+
+        try {
+            const res = await window.axios.post(route('admin.email-templates.store'), templateForm);
+            if (res.data && res.data.success) {
+                const savedTemplate = res.data.template;
+                setTemplateSaveFeedback({
+                    success: true,
+                    message: res.data.message || `Template "${savedTemplate.name}" saved successfully!`
+                });
+                await fetchTemplates(savedTemplate.id);
+            }
+        } catch (err) {
+            console.error('Failed to save template', err);
+            setTemplateSaveFeedback({
+                success: false,
+                message: err.response?.data?.message || 'Failed to save template. Please check all fields.'
+            });
+        } finally {
+            setIsSavingTemplate(false);
+            setTimeout(() => setTemplateSaveFeedback(null), 4000);
+        }
     };
 
-    const handleDeleteTemplate = (id) => {
+    const handleDeleteTemplate = async (id) => {
         if (!confirm('Are you sure you want to delete this custom template?')) return;
-        router.delete(route('admin.email-templates.destroy', id), {
-            preserveScroll: true,
-            onSuccess: () => fetchTemplates()
-        });
+        try {
+            const res = await window.axios.delete(route('admin.email-templates.destroy', id));
+            if (res.data && res.data.success) {
+                fetchTemplates();
+            }
+        } catch (err) {
+            console.error('Failed to delete template', err);
+            alert(err.response?.data?.message || 'Delete operation failed.');
+        }
     };
 
     const insertPlaceholder = (tag) => {
@@ -147,7 +178,6 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
     useEffect(() => {
         if (targetType === 'user' && searchQuery.trim().length > 1) {
             const timer = setTimeout(async () => {
-                setIsSearchingUsers(true);
                 try {
                     const res = await window.axios.get(route('admin.email-templates.index'), {
                         params: { query: searchQuery }
@@ -155,8 +185,6 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                     setUserSearchResults(res.data.users || []);
                 } catch (err) {
                     console.error('User search failed', err);
-                } finally {
-                    setIsSearchingUsers(false);
                 }
             }, 300);
             return () => clearTimeout(timer);
@@ -165,15 +193,28 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
         }
     }, [searchQuery, targetType]);
 
-    const loadTemplateIntoBroadcast = (tplId) => {
+    const handleSelectBroadcastTemplate = (tplId) => {
+        setLoadedBroadcastTemplateId(tplId);
+        if (!tplId) {
+            return;
+        }
         const found = templates.find(t => t.id === Number(tplId));
         if (found) {
             setBroadcastSubject(found.subject);
             setBroadcastHeadline(found.headline || '');
-            setBroadcastBody(found.body);
+            setBroadcastBody(found.body || '');
             setBroadcastButtonLabel(found.button_label || '');
             setBroadcastButtonUrl(found.button_url || '');
         }
+    };
+
+    const handleClearBroadcastForm = () => {
+        setLoadedBroadcastTemplateId('');
+        setBroadcastSubject('');
+        setBroadcastHeadline('');
+        setBroadcastBody('');
+        setBroadcastButtonLabel('');
+        setBroadcastButtonUrl('');
     };
 
     const handleDispatchBroadcast = async () => {
@@ -214,6 +255,10 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
     if (processing || isLoadingTemplates) {
         return <FormSkeleton />;
     }
+
+    const systemTemplates = templates.filter(t => t.category === 'system');
+    const customTemplates = templates.filter(t => t.category === 'custom');
+    const loadedTemplateObj = templates.find(t => t.id === Number(loadedBroadcastTemplateId));
 
     return (
         <div className="bg-white rounded-2xl border border-clay-100 p-6 space-y-6 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200">
@@ -267,7 +312,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                     {/* Left: Template List */}
                     <div className="space-y-3 lg:border-r border-stone-100 lg:pr-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-[10px] font-bold text-stone-900 uppercase tracking-wider">Templates Library</h4>
+                            <h4 className="text-[10px] font-bold text-stone-900 uppercase tracking-wider">Templates Library ({templates.length})</h4>
                             <button
                                 type="button"
                                 onClick={handleCreateNewTemplate}
@@ -278,7 +323,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                             </button>
                         </div>
 
-                        <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+                        <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
                             {templates.map((tpl) => {
                                 const isSelected = selectedTemplateId === tpl.id;
                                 return (
@@ -287,7 +332,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                                         onClick={() => loadTemplateIntoForm(tpl)}
                                         className={`p-3 rounded-xl border transition-all cursor-pointer ${
                                             isSelected 
-                                                ? 'bg-clay-50/80 border-clay-300 shadow-sm' 
+                                                ? 'bg-clay-50/80 border-clay-300 shadow-sm ring-1 ring-clay-400/30' 
                                                 : 'bg-stone-50/50 border-stone-100 hover:border-stone-200'
                                         }`}
                                     >
@@ -310,6 +355,18 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
 
                     {/* Right: Template Form & Live Preview Button */}
                     <div className="lg:col-span-2 space-y-4">
+                        {templateSaveFeedback && (
+                            <div className={`p-3 rounded-xl text-xs font-bold flex items-center justify-between gap-2 transition ${
+                                templateSaveFeedback.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+                            }`}>
+                                <div className="flex items-center gap-2">
+                                    {templateSaveFeedback.success ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                                    <span>{templateSaveFeedback.message}</span>
+                                </div>
+                                <button type="button" onClick={() => setTemplateSaveFeedback(null)} className="text-xs opacity-60 hover:opacity-100">✕</button>
+                            </div>
+                        )}
+
                         <div className="flex items-center justify-between">
                             <h4 className="text-xs font-bold text-stone-900">
                                 {templateForm.id ? `Editing Template: ${templateForm.name}` : 'Creating New Custom Template'}
@@ -419,9 +476,9 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                             </div>
 
                             <div className="flex justify-end pt-2">
-                                <PrimaryButton type="submit" className="px-5 py-2 text-xs font-bold gap-2">
-                                    <Edit3 size={13} />
-                                    Save Template Changes
+                                <PrimaryButton type="submit" disabled={isSavingTemplate} className="px-5 py-2 text-xs font-bold gap-2">
+                                    <Edit3 size={13} className={isSavingTemplate ? "animate-spin" : ""} />
+                                    {isSavingTemplate ? "Saving Template..." : "Save Template Changes"}
                                 </PrimaryButton>
                             </div>
                         </form>
@@ -547,21 +604,52 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
 
                     {/* Compose Email Content */}
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-2">
                             <h4 className="text-xs font-bold text-stone-900">Compose Broadcast Content</h4>
+                            
+                            {/* OPTIMIZED Categorized Template Selector Dropdown */}
                             <div className="flex items-center gap-2">
-                                <span className="text-[9px] text-stone-500 font-medium">Load Template:</span>
+                                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider shrink-0">Load Saved Template:</span>
                                 <select
-                                    onChange={(e) => loadTemplateIntoBroadcast(e.target.value)}
-                                    className="text-xs rounded-lg border-stone-200 bg-stone-50 text-stone-800 font-semibold py-1 px-2"
+                                    value={loadedBroadcastTemplateId}
+                                    onChange={(e) => handleSelectBroadcastTemplate(e.target.value)}
+                                    className="text-xs rounded-xl border-stone-200 bg-stone-50 text-stone-800 font-semibold py-1.5 px-3 focus:ring-clay-500/20 focus:border-clay-500 max-w-[280px]"
                                 >
-                                    <option value="">-- Choose Template --</option>
-                                    {templates.map(t => (
-                                        <option key={t.id} value={t.id}>{t.name}</option>
-                                    ))}
+                                    <option value="">-- Choose Template to Load --</option>
+                                    {customTemplates.length > 0 && (
+                                        <optgroup label="✨ Custom Broadcast Templates">
+                                            {customTemplates.map(t => (
+                                                <option key={t.id} value={t.id}>{t.name}</option>
+                                            ))}
+                                        </optgroup>
+                                    )}
+                                    {systemTemplates.length > 0 && (
+                                        <optgroup label="⚡ System Default Templates">
+                                            {systemTemplates.map(t => (
+                                                <option key={t.id} value={t.id}>{t.name}</option>
+                                            ))}
+                                        </optgroup>
+                                    )}
                                 </select>
                             </div>
                         </div>
+
+                        {loadedTemplateObj && (
+                            <div className="bg-clay-50/70 border border-clay-200 rounded-xl p-3 flex items-center justify-between text-xs">
+                                <div>
+                                    <span className="font-bold text-clay-900">Loaded Template: {loadedTemplateObj.name}</span>
+                                    <span className="block text-[10px] text-clay-700 truncate mt-0.5">Subject: {loadedTemplateObj.subject}</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleClearBroadcastForm}
+                                    className="inline-flex items-center gap-1 text-[10px] font-bold text-stone-600 hover:text-stone-900 bg-white px-2 py-1 rounded-lg border border-stone-200 shadow-2xs transition shrink-0"
+                                >
+                                    <RotateCcw size={11} />
+                                    Clear Form
+                                </button>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>

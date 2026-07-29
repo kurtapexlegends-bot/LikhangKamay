@@ -87,17 +87,31 @@ class EmailStudioController extends Controller
             "Saved email template: {$template->name} ({$template->slug})"
         );
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Email template \"{$template->name}\" saved successfully.",
+                'template' => $template,
+            ]);
+        }
+
         return back()->with('success', "Email template \"{$template->name}\" saved successfully.");
     }
 
     /**
      * Delete a custom email template.
      */
-    public function destroy(EmailTemplate $template)
+    public function destroy(Request $request, EmailTemplate $template)
     {
         Gate::authorize('admin-action');
 
         if ($template->category === 'system') {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Default system templates cannot be deleted.',
+                ], 422);
+            }
             return back()->with('error', 'Default system templates cannot be deleted.');
         }
 
@@ -108,6 +122,13 @@ class EmailStudioController extends Controller
             'EMAIL_TEMPLATE_DELETED',
             "Deleted custom email template: {$name}"
         );
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Template \"{$name}\" deleted successfully.",
+            ]);
+        }
 
         return back()->with('success', "Template \"{$name}\" deleted successfully.");
     }
