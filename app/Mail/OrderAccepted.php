@@ -21,11 +21,15 @@ class OrderAccepted extends Mailable
 
     public function build()
     {
+        $artisan = $this->order->artisan ?? $this->order->seller;
+        $shopName = $artisan->shop_name ?? 'LikhangKamay Shop';
+
         return EmailTemplateService::apply(
             mailable: $this,
             slug: 'order_accepted',
             replacements: [
                 '{user_name}' => $this->order->customer_name ?? 'Customer',
+                '{shop_name}' => $shopName,
                 '{order_number}' => $this->order->order_number,
                 '{action_url}' => url('/orders/' . $this->order->order_number),
             ],

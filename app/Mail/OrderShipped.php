@@ -21,11 +21,15 @@ class OrderShipped extends Mailable
 
     public function build()
     {
+        $artisan = $this->order->artisan ?? $this->order->seller;
+        $shopName = $artisan->shop_name ?? 'LikhangKamay Shop';
+
         return EmailTemplateService::apply(
             mailable: $this,
             slug: 'order_shipped',
             replacements: [
                 '{user_name}' => $this->order->customer_name ?? 'Customer',
+                '{shop_name}' => $shopName,
                 '{order_number}' => $this->order->order_number,
                 '{tracking_number}' => $this->order->tracking_number ?? 'N/A',
                 '{action_url}' => url('/orders/' . $this->order->order_number),

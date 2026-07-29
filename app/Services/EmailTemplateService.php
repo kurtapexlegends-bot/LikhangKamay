@@ -27,6 +27,14 @@ class EmailTemplateService
                 $defaults = [
                     '{site_name}' => 'LikhangKamay',
                     '{action_url}' => url('/'),
+                    '{user_name}' => 'Valued Member',
+                    '{shop_name}' => 'LikhangKamay Shop',
+                    '{order_number}' => 'ORD-N/A',
+                    '{tracking_number}' => 'N/A',
+                    '{verification_code}' => 'N/A',
+                    '{product_name}' => 'Handcrafted Item',
+                    '{rejection_reason}' => 'N/A',
+                    '{refund_amount}' => 'N/A',
                 ];
                 $mergedReplacements = array_merge($defaults, $replacements);
 

@@ -29,7 +29,7 @@
                 <h1 style="font-family: Georgia, Times, serif; font-size: 22px; font-weight: normal; color: #2E2520; margin-top: 0; margin-bottom: 20px; text-align: center;">{{ $headline }}</h1>
             @endif
 
-            <div style="font-size: 15px; color: #5C524A; line-height: 1.7; white-space: pre-line;">
+            <div style="font-size: 15px; color: #5C524A; line-height: 1.7;">
                 {!! nl2br(e($body)) !!}
             </div>
 

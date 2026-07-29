@@ -119,4 +119,36 @@ class EmailTemplateCustomizationTest extends TestCase
         $mailable = $notification->toMail($user);
         $this->assertEquals('CUSTOM VERIFY: Enter 777999', $mailable->subject);
     }
+
+    public function test_customized_order_placed_template_hydrates_buyer_name_and_order_number(): void
+    {
+        $template = EmailTemplate::where('slug', 'order_placed')->first();
+        $template->update([
+            'subject' => 'RECEIPT: Order #{order_number} Confirmed',
+            'body' => 'Thank you {user_name}, your order #{order_number} at {shop_name} was received!',
+        ]);
+
+        /** @var User $buyer */
+        $buyer = User::factory()->create(['name' => 'Apolinario Mabini']);
+        /** @var User $seller */
+        $seller = User::factory()->create(['role' => 'artisan', 'shop_name' => 'Bataan Loom Weavers']);
+
+        $order = Order::create([
+            'user_id' => $buyer->id,
+            'artisan_id' => $seller->id,
+            'seller_id' => $seller->id,
+            'customer_name' => 'Apolinario Mabini',
+            'order_number' => 'ORD-100200',
+            'shipping_address' => 'Batangas, Philippines',
+            'status' => 'pending',
+            'total_amount' => 3500.00,
+        ]);
+
+        $mailable = new OrderPlaced($order);
+        $mailable->build();
+
+        $this->assertEquals('RECEIPT: Order #ORD-100200 Confirmed', $mailable->subject);
+        $rendered = $mailable->render();
+        $this->assertStringContainsString('Thank you Apolinario Mabini, your order #ORD-100200 at Bataan Loom Weavers was received!', $rendered);
+    }
 }
