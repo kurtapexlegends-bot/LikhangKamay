@@ -287,11 +287,11 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl shrink-0">
+                <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl shrink-0 overflow-x-auto scrollbar-none no-scrollbar flex-nowrap py-1 scroll-smooth snap-x touch-pan-x min-w-0 max-w-full">
                     <button
                         type="button"
                         onClick={() => setSubSection('templates')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold transition-all shrink-0 snap-start active:scale-95 min-h-[38px] ${
                             subSection === 'templates' ? 'bg-white text-clay-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
                         }`}
                     >
@@ -301,7 +301,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                     <button
                         type="button"
                         onClick={() => setSubSection('broadcast')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold transition-all shrink-0 snap-start active:scale-95 min-h-[38px] ${
                             subSection === 'broadcast' ? 'bg-white text-clay-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
                         }`}
                     >
@@ -311,7 +311,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                     <button
                         type="button"
                         onClick={() => setSubSection('credentials')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold transition-all shrink-0 snap-start active:scale-95 min-h-[38px] ${
                             subSection === 'credentials' ? 'bg-white text-clay-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
                         }`}
                     >
@@ -323,29 +323,29 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
 
             {/* --- SECTION 1: TEMPLATE STUDIO --- */}
             {subSection === 'templates' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Left: Template List */}
-                    <div className="space-y-3 lg:border-r border-stone-100 lg:pr-4">
+                    <div className="space-y-3 md:border-r border-stone-100 md:pr-4">
                         <div className="flex items-center justify-between">
                             <h4 className="text-[10px] font-bold text-stone-900 uppercase tracking-wider">Templates Library ({templates.length})</h4>
                             <button
                                 type="button"
                                 onClick={handleCreateNewTemplate}
-                                className="inline-flex items-center gap-1 text-[10px] font-bold text-clay-600 hover:text-clay-700 bg-clay-50 px-2 py-1 rounded-md transition"
+                                className="inline-flex items-center gap-1 text-[10px] font-bold text-clay-600 hover:text-clay-700 bg-clay-50 px-2.5 py-1.5 rounded-lg transition active:scale-95 min-h-[34px]"
                             >
                                 <Plus size={12} />
                                 New Template
                             </button>
                         </div>
 
-                        <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+                        <div className="space-y-2 max-h-[280px] md:max-h-[520px] overflow-y-auto pr-1">
                             {templates.map((tpl) => {
                                 const isSelected = selectedTemplateId === tpl.id;
                                 return (
                                     <div
                                         key={tpl.id}
                                         onClick={() => loadTemplateIntoForm(tpl)}
-                                        className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                                        className={`p-3 rounded-xl border transition-all cursor-pointer active:scale-[0.99] ${
                                             isSelected 
                                                 ? 'bg-clay-50/80 border-clay-300 shadow-sm ring-1 ring-clay-400/30' 
                                                 : 'bg-stone-50/50 border-stone-100 hover:border-stone-200'
@@ -369,7 +369,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                     </div>
 
                     {/* Right: Template Form & Live Preview Button */}
-                    <div className="lg:col-span-2 space-y-4">
+                    <div className="md:col-span-2 space-y-4">
                         {templateSaveFeedback && (
                             <div className={`p-3 rounded-xl text-xs font-bold flex items-center justify-between gap-2 transition ${
                                 templateSaveFeedback.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
@@ -383,14 +383,14 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                         )}
 
                         <div className="flex items-center justify-between">
-                            <h4 className="text-xs font-bold text-stone-900">
+                            <h4 className="text-xs font-bold text-stone-900 truncate max-w-[200px] sm:max-w-none">
                                 {templateForm.id ? `Editing Template: ${templateForm.name}` : 'Creating New Custom Template'}
                             </h4>
                             <div className="flex items-center gap-2">
                                 <button
                                     type="button"
                                     onClick={() => setIsPreviewOpen(true)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-lg transition"
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 active:scale-95 rounded-lg transition min-h-[36px]"
                                 >
                                     <Eye size={13} />
                                     Live Preview
@@ -399,7 +399,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                                     <button
                                         type="button"
                                         onClick={() => handleDeleteTemplate(templateForm.id)}
-                                        className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 transition"
+                                        className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 p-2 rounded-lg hover:bg-rose-50 active:scale-95 transition min-h-[36px]"
                                         title="Delete Custom Template"
                                     >
                                         <Trash2 size={14} />
@@ -413,7 +413,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                                 <div>
                                     <InputLabel value="Template Display Name" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1" />
                                     <TextInput
-                                        className="w-full text-xs"
+                                        className="w-full text-xs min-h-[44px]"
                                         value={templateForm.name}
                                         onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
                                         required
@@ -422,7 +422,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                                 <div>
                                     <InputLabel value="Email Subject Line" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1" />
                                     <TextInput
-                                        className="w-full text-xs"
+                                        className="w-full text-xs min-h-[44px]"
                                         value={templateForm.subject}
                                         onChange={(e) => setTemplateForm({ ...templateForm, subject: e.target.value })}
                                         required
@@ -433,7 +433,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                             <div>
                                 <InputLabel value="Banner Headline (Optional)" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1" />
                                 <TextInput
-                                    className="w-full text-xs"
+                                    className="w-full text-xs min-h-[44px]"
                                     placeholder="e.g. Welcome to LikhangKamay!"
                                     value={templateForm.headline}
                                     onChange={(e) => setTemplateForm({ ...templateForm, headline: e.target.value })}
@@ -443,17 +443,17 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                             <div>
                                 <div className="flex items-center justify-between mb-1">
                                     <InputLabel value="Email Body Content" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider" />
-                                    <span className="text-[9px] text-stone-400">Click pill to insert placeholder</span>
+                                    <span className="text-[9px] text-stone-400">Click pill to insert tag</span>
                                 </div>
                                 
                                 {/* Placeholder Pills */}
-                                <div className="flex flex-wrap gap-1.5 mb-2">
+                                <div className="flex overflow-x-auto scrollbar-none no-scrollbar whitespace-nowrap gap-1.5 mb-2 py-1 scroll-smooth snap-x touch-pan-x min-w-0 max-w-full">
                                     {['{user_name}', '{shop_name}', '{order_number}', '{verification_code}', '{site_name}', '{action_url}'].map((tag) => (
                                         <button
                                             key={tag}
                                             type="button"
                                             onClick={() => insertPlaceholder(tag)}
-                                            className="text-[9px] font-mono font-bold bg-stone-100 hover:bg-stone-200 text-stone-700 px-2 py-0.5 rounded transition"
+                                            className="text-[9px] font-mono font-bold bg-stone-100 hover:bg-stone-200 active:scale-95 text-stone-700 px-2.5 py-1 rounded-md transition shrink-0 snap-start inline-flex items-center min-h-[32px]"
                                         >
                                             + {tag}
                                         </button>
