@@ -241,117 +241,91 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                 ))}
                             </div>
 
-                            <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                                {/* Left Column: Inputs */}
-                                <div className="lg:col-span-2 space-y-6">
-
-
-                                    {activeSubTab === 'branding_contact' && (
-                                        <ContactSocialsForm 
-                                            data={data} 
-                                            updateNested={updateNested} 
-                                        />
-                                    )}
-
-                                    {activeSubTab === 'branding_ops' && (
-                                        <PlatformOpsForm 
-                                            data={data} 
-                                            setData={setData} 
-                                        />
-                                    )}
-
-                                    {activeSubTab === 'branding_smtp' && (
-                                        <EmailStudioForm
-                                            data={data}
-                                            setData={setData}
-                                            errors={errors}
-                                            processing={processing}
-                                        />
-                                    )}
+                            {activeSubTab === 'branding_smtp' ? (
+                                <div className="mt-6">
+                                    <EmailStudioForm
+                                        data={data}
+                                        setData={setData}
+                                        errors={errors}
+                                        processing={processing}
+                                    />
                                 </div>
+                            ) : (
+                                <>
+                                    <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                                        {/* Left Column: Inputs */}
+                                        <div className="lg:col-span-2 space-y-6">
+                                            {activeSubTab === 'branding_contact' && (
+                                                <ContactSocialsForm 
+                                                    data={data} 
+                                                    updateNested={updateNested} 
+                                                />
+                                            )}
 
-                                {/* Right Column: Sticky actions (Desktop only) */}
-                                <div className="space-y-6">
-                                    <div className="hidden lg:block bg-stone-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
-                                        <div className="relative z-10 space-y-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
-                                                    <Save size={14} className="text-clay-400" />
-                                                </div>
-                                                <h3 className="text-sm font-bold">Apply Changes</h3>
-                                            </div>
-                                            <p className="text-[11px] text-stone-400 leading-relaxed font-medium">
-                                                System parameters and SMTP rules sync across live processes.
-                                            </p>
-                                            
-                                            <PrimaryButton 
-                                                disabled={processing}
-                                                className="w-full py-3 bg-clay-600 hover:bg-clay-500 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md group border-none text-[10px]"
-                                            >
-                                                <Save size={14} className="transition-transform duration-200 group-hover:scale-110" />
-                                                {processing ? 'Processing...' : 'Apply Config Update'}
-                                            </PrimaryButton>
-
-                                            {recentlySuccessful && (
-                                                <div className="flex items-center gap-1.5 text-emerald-400 text-[10px] font-bold animate-in fade-in slide-in-from-top-1">
-                                                    <CheckCircle2 size={13} />
-                                                    <span>Settings updated successfully!</span>
-                                                </div>
+                                            {activeSubTab === 'branding_ops' && (
+                                                <PlatformOpsForm 
+                                                    data={data} 
+                                                    setData={setData} 
+                                                />
                                             )}
                                         </div>
-                                        <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-clay-600/10 rounded-full blur-3xl group-hover:bg-clay-600/20 transition-colors" />
-                                    </div>
 
-                                    <div className="bg-white rounded-2xl border border-clay-100 p-5 lg:p-6 space-y-4 shadow-sm select-none">
-                                        <div 
-                                            onClick={() => {
-                                                if (window.innerWidth < 1024) {
-                                                    setShowMobileNotes(!showMobileNotes);
-                                                }
-                                            }}
-                                            className="flex items-center justify-between cursor-pointer lg:cursor-default"
-                                        >
-                                            <h4 className="text-[9px] font-black text-stone-400 uppercase tracking-wider">Operational Notes</h4>
-                                            <div className="lg:hidden text-stone-400 hover:text-stone-600 p-1">
-                                                <motion.span
-                                                    animate={{ rotate: showMobileNotes ? 180 : 0 }}
-                                                    transition={{ duration: 0.2 }}
-                                                    className="inline-block"
-                                                >
-                                                    <ChevronDown size={14} />
-                                                </motion.span>
-                                            </div>
-                                        </div>
-
-                                        {/* Desktop Notes: always visible */}
-                                        <div className="hidden lg:block">
-                                            <ul className="space-y-3">
-                                                {[
-                                                    { title: 'Commission Rates', desc: 'Sellers on Premium & Elite have custom low-overhead commission rates.', icon: Percent },
-                                                    { title: 'PayMongo Gateway', desc: 'Disable this toggle to set checkout offline during technical maintenance.', icon: CreditCard },
-                                                ].map((tip, idx) => (
-                                                    <li key={idx} className="flex gap-2.5">
-                                                        <tip.icon size={14} className="text-clay-600 shrink-0 mt-0.5" />
-                                                        <div>
-                                                            <p className="text-[10px] font-bold text-stone-900">{tip.title}</p>
-                                                            <p className="text-[9px] text-stone-500 font-medium leading-relaxed">{tip.desc}</p>
+                                        {/* Right Column: Sticky actions (Desktop only) */}
+                                        <div className="space-y-6">
+                                            <div className="hidden lg:block bg-stone-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
+                                                <div className="relative z-10 space-y-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
+                                                            <Save size={14} className="text-clay-400" />
                                                         </div>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
+                                                        <h3 className="text-sm font-bold">Apply Changes</h3>
+                                                    </div>
+                                                    <p className="text-[11px] text-stone-400 leading-relaxed font-medium">
+                                                        System parameters and SMTP rules sync across live processes.
+                                                    </p>
+                                                    
+                                                    <PrimaryButton 
+                                                        disabled={processing}
+                                                        className="w-full py-3 bg-clay-600 hover:bg-clay-500 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md group border-none text-[10px]"
+                                                    >
+                                                        <Save size={14} className="transition-transform duration-200 group-hover:scale-110" />
+                                                        {processing ? 'Processing...' : 'Apply Config Update'}
+                                                    </PrimaryButton>
 
-                                        {/* Mobile Notes: collapsible */}
-                                        <AnimatePresence initial={false}>
-                                            {showMobileNotes && (
-                                                <motion.div
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: 'auto', opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    transition={{ duration: 0.2 }}
-                                                    className="lg:hidden overflow-hidden"
+                                                    {recentlySuccessful && (
+                                                        <div className="flex items-center gap-1.5 text-emerald-400 text-[10px] font-bold animate-in fade-in slide-in-from-top-1">
+                                                            <CheckCircle2 size={13} />
+                                                            <span>Settings updated successfully!</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-clay-600/10 rounded-full blur-3xl group-hover:bg-clay-600/20 transition-colors" />
+                                            </div>
+
+                                            <div className="bg-white rounded-2xl border border-clay-100 p-5 lg:p-6 space-y-4 shadow-sm select-none">
+                                                <div 
+                                                    onClick={() => {
+                                                        if (window.innerWidth < 1024) {
+                                                            setShowMobileNotes(!showMobileNotes);
+                                                        }
+                                                    }}
+                                                    className="flex items-center justify-between cursor-pointer lg:cursor-default"
                                                 >
-                                                    <ul className="space-y-3 pt-2">
+                                                    <h4 className="text-[9px] font-black text-stone-400 uppercase tracking-wider">Operational Notes</h4>
+                                                    <div className="lg:hidden text-stone-400 hover:text-stone-600 p-1">
+                                                        <motion.span
+                                                            animate={{ rotate: showMobileNotes ? 180 : 0 }}
+                                                            transition={{ duration: 0.2 }}
+                                                            className="inline-block"
+                                                        >
+                                                            <ChevronDown size={14} />
+                                                        </motion.span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Desktop Notes */}
+                                                <div className="hidden lg:block">
+                                                    <ul className="space-y-3">
                                                         {[
                                                             { title: 'Commission Rates', desc: 'Sellers on Premium & Elite have custom low-overhead commission rates.', icon: Percent },
                                                             { title: 'PayMongo Gateway', desc: 'Disable this toggle to set checkout offline during technical maintenance.', icon: CreditCard },
@@ -365,12 +339,63 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                                             </li>
                                                         ))}
                                                     </ul>
-                                                </motion.div>
+                                                </div>
+
+                                                {/* Mobile Notes */}
+                                                <AnimatePresence initial={false}>
+                                                    {showMobileNotes && (
+                                                        <motion.div
+                                                            initial={{ height: 0, opacity: 0 }}
+                                                            animate={{ height: 'auto', opacity: 1 }}
+                                                            exit={{ height: 0, opacity: 0 }}
+                                                            transition={{ duration: 0.2 }}
+                                                            className="lg:hidden overflow-hidden"
+                                                        >
+                                                            <ul className="space-y-3 pt-2">
+                                                                {[
+                                                                    { title: 'Commission Rates', desc: 'Sellers on Premium & Elite have custom low-overhead commission rates.', icon: Percent },
+                                                                    { title: 'PayMongo Gateway', desc: 'Disable this toggle to set checkout offline during technical maintenance.', icon: CreditCard },
+                                                                ].map((tip, idx) => (
+                                                                    <li key={idx} className="flex gap-2.5">
+                                                                        <tip.icon size={14} className="text-clay-600 shrink-0 mt-0.5" />
+                                                                        <div>
+                                                                            <p className="text-[10px] font-bold text-stone-900">{tip.title}</p>
+                                                                            <p className="text-[9px] text-stone-500 font-medium leading-relaxed">{tip.desc}</p>
+                                                                        </div>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+                                        </div>
+                                    </form>
+
+                                    {/* Sticky actions bar for Mobile (below lg) */}
+                                    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))] z-40 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+                                        <div className="flex-1 min-w-0 pr-4">
+                                            {recentlySuccessful && (
+                                                <div className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-bold animate-in fade-in">
+                                                    <CheckCircle2 size={12} />
+                                                    <span>Saved successfully!</span>
+                                                </div>
                                             )}
-                                        </AnimatePresence>
+                                            {!recentlySuccessful && (
+                                                <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wider">Unsaved Changes</span>
+                                            )}
+                                        </div>
+                                        <PrimaryButton 
+                                            disabled={processing}
+                                            onClick={submit}
+                                            className="py-2.5 px-4 bg-clay-600 hover:bg-clay-700 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md border-none text-[10px] font-bold min-h-[44px]"
+                                        >
+                                            <Save size={12} />
+                                            {processing ? 'Saving...' : 'Apply Config'}
+                                        </PrimaryButton>
                                     </div>
-                                </div>
-                            </form>
+                                </>
+                            )}
 
                             {/* Sticky actions bar for Mobile (below lg) */}
                             <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))] z-40 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">

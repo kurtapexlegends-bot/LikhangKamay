@@ -24,7 +24,8 @@ import {
     Search,
     Monitor,
     Smartphone,
-    RotateCcw
+    RotateCcw,
+    ChevronDown
 } from 'lucide-react';
 import FormSkeleton from './Partials/FormSkeleton';
 
@@ -60,6 +61,8 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
     const [targetEmail, setTargetEmail] = useState(auth?.user?.email || '');
 
     const [loadedBroadcastTemplateId, setLoadedBroadcastTemplateId] = useState('');
+    const [isTemplateDropdownOpen, setIsTemplateDropdownOpen] = useState(false);
+    const [templateSearchQuery, setTemplateSearchQuery] = useState('');
     const [broadcastSubject, setBroadcastSubject] = useState('');
     const [broadcastHeadline, setBroadcastHeadline] = useState('');
     const [broadcastBody, setBroadcastBody] = useState('');
@@ -259,6 +262,18 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
     const systemTemplates = templates.filter(t => t.category === 'system');
     const customTemplates = templates.filter(t => t.category === 'custom');
     const loadedTemplateObj = templates.find(t => t.id === Number(loadedBroadcastTemplateId));
+
+    const filteredSystem = systemTemplates.filter(t => 
+        !templateSearchQuery || 
+        t.name.toLowerCase().includes(templateSearchQuery.toLowerCase()) || 
+        t.subject.toLowerCase().includes(templateSearchQuery.toLowerCase())
+    );
+
+    const filteredCustom = customTemplates.filter(t => 
+        !templateSearchQuery || 
+        t.name.toLowerCase().includes(templateSearchQuery.toLowerCase()) || 
+        t.subject.toLowerCase().includes(templateSearchQuery.toLowerCase())
+    );
 
     return (
         <div className="bg-white rounded-2xl border border-clay-100 p-6 space-y-6 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200">
@@ -607,30 +622,92 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-2">
                             <h4 className="text-xs font-bold text-stone-900">Compose Broadcast Content</h4>
                             
-                            {/* OPTIMIZED Categorized Template Selector Dropdown */}
-                            <div className="flex items-center gap-2">
+                            {/* Compact Searchable Template Combobox Popover */}
+                            <div className="flex items-center gap-2 relative">
                                 <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider shrink-0">Load Saved Template:</span>
-                                <select
-                                    value={loadedBroadcastTemplateId}
-                                    onChange={(e) => handleSelectBroadcastTemplate(e.target.value)}
-                                    className="text-xs rounded-xl border-stone-200 bg-stone-50 text-stone-800 font-semibold py-1.5 px-3 focus:ring-clay-500/20 focus:border-clay-500 max-w-[280px]"
-                                >
-                                    <option value="">-- Choose Template to Load --</option>
-                                    {customTemplates.length > 0 && (
-                                        <optgroup label="✨ Custom Broadcast Templates">
-                                            {customTemplates.map(t => (
-                                                <option key={t.id} value={t.id}>{t.name}</option>
-                                            ))}
-                                        </optgroup>
+                                
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsTemplateDropdownOpen(!isTemplateDropdownOpen)}
+                                        className="flex items-center justify-between gap-2 text-xs rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-800 font-semibold py-1.5 px-3 transition min-w-[220px] max-w-[280px]"
+                                    >
+                                        <span className="truncate">
+                                            {loadedTemplateObj ? loadedTemplateObj.name : '-- Choose Template to Load --'}
+                                        </span>
+                                        <ChevronDown size={14} className={`text-stone-400 shrink-0 transition-transform ${isTemplateDropdownOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    {isTemplateDropdownOpen && (
+                                        <div className="absolute right-0 top-full mt-1 w-80 bg-white border border-stone-200 rounded-xl shadow-xl z-30 p-2 space-y-2 animate-in fade-in zoom-in-95 duration-150">
+                                            <div className="relative">
+                                                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search template or subject..."
+                                                    value={templateSearchQuery}
+                                                    onChange={(e) => setTemplateSearchQuery(e.target.value)}
+                                                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border-stone-200 bg-stone-50 text-stone-800 focus:ring-clay-500/20 focus:border-clay-500"
+                                                    autoFocus
+                                                />
+                                            </div>
+
+                                            <div className="max-h-52 overflow-y-auto space-y-2 pr-0.5 scrollbar-thin">
+                                                {filteredCustom.length > 0 && (
+                                                    <div>
+                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-clay-700 px-2 py-1 bg-clay-50 rounded mb-1">
+                                                            ✨ Custom Broadcast Templates
+                                                        </span>
+                                                        {filteredCustom.map(t => (
+                                                            <div
+                                                                key={t.id}
+                                                                onClick={() => {
+                                                                    handleSelectBroadcastTemplate(t.id);
+                                                                    setIsTemplateDropdownOpen(false);
+                                                                }}
+                                                                className={`p-2 hover:bg-clay-50 rounded-lg cursor-pointer transition text-xs border-b border-stone-100/60 last:border-none ${
+                                                                    loadedBroadcastTemplateId === String(t.id) ? 'bg-clay-50/80 font-bold text-clay-900' : ''
+                                                                }`}
+                                                            >
+                                                                <span className="font-bold text-stone-900 block truncate">{t.name}</span>
+                                                                <span className="text-[9px] text-stone-500 truncate block mt-0.5">{t.subject}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {filteredSystem.length > 0 && (
+                                                    <div>
+                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-stone-500 px-2 py-1 bg-stone-100 rounded mb-1">
+                                                            ⚡ System Default Templates
+                                                        </span>
+                                                        {filteredSystem.map(t => (
+                                                            <div
+                                                                key={t.id}
+                                                                onClick={() => {
+                                                                    handleSelectBroadcastTemplate(t.id);
+                                                                    setIsTemplateDropdownOpen(false);
+                                                                }}
+                                                                className={`p-2 hover:bg-stone-50 rounded-lg cursor-pointer transition text-xs border-b border-stone-100/60 last:border-none ${
+                                                                    loadedBroadcastTemplateId === String(t.id) ? 'bg-stone-100 font-bold text-stone-900' : ''
+                                                                }`}
+                                                            >
+                                                                <span className="font-bold text-stone-900 block truncate">{t.name}</span>
+                                                                <span className="text-[9px] text-stone-500 truncate block mt-0.5">{t.subject}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {filteredCustom.length === 0 && filteredSystem.length === 0 && (
+                                                    <div className="p-3 text-center text-xs text-stone-400 font-medium">
+                                                        No templates matching "{templateSearchQuery}"
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
                                     )}
-                                    {systemTemplates.length > 0 && (
-                                        <optgroup label="⚡ System Default Templates">
-                                            {systemTemplates.map(t => (
-                                                <option key={t.id} value={t.id}>{t.name}</option>
-                                            ))}
-                                        </optgroup>
-                                    )}
-                                </select>
+                                </div>
                             </div>
                         </div>
 
