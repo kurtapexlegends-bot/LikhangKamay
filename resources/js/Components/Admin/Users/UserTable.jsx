@@ -168,15 +168,14 @@ export default function UserTable({
                                             <button
                                                 type="button"
                                                 onClick={() => handleToggleStatus(user)}
-                                                className={`inline-flex h-9 px-3 items-center gap-1.5 rounded-xl border text-[10px] font-extrabold uppercase tracking-wider shadow-2xs active:scale-95 transition-all shrink-0 ${
+                                                className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border shadow-2xs active:scale-95 transition-all shrink-0 ${
                                                     user.banned_at
                                                         ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
                                                         : 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100'
                                                 }`}
                                                 title={user.banned_at ? `Reactivate ${user.name}` : `Suspend ${user.name}`}
                                             >
-                                                {user.banned_at ? <UserCheck size={13} /> : <UserX size={13} />}
-                                                <span>{user.banned_at ? 'Reactivate' : 'Suspend'}</span>
+                                                {user.banned_at ? <UserCheck size={15} /> : <UserX size={15} />}
                                             </button>
                                         </>
                                     )}
