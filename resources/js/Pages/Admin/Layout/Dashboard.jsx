@@ -122,48 +122,64 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
 
     return (
         <>
-            <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
+            <div className="mb-4 flex overflow-x-auto gap-4 sm:gap-6 pb-2.5 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
                 {isLoadingStats ? (
                     <>
-                        <StatSkeleton />
-                        <StatSkeleton />
-                        <StatSkeleton />
-                        <StatSkeleton />
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                            <StatSkeleton />
+                        </div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                            <StatSkeleton />
+                        </div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                            <StatSkeleton />
+                        </div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                            <StatSkeleton />
+                        </div>
                     </>
                 ) : (
                     <>
-                        <StatCard
-                            title="Artisans"
-                            metric={stats.totalArtisans}
-                            icon={Store}
-                            bg="bg-[#FCF7F2]"
-                            text="text-clay-600"
-                            subtitle="Registered"
-                        />
-                        <StatCard
-                            title="Buyers"
-                            metric={stats.totalBuyers}
-                            icon={Users}
-                            bg="bg-stone-50"
-                            text="text-stone-600"
-                            subtitle="Customers"
-                        />
-                        <StatCard
-                            title="Pending"
-                            metric={stats.pendingArtisans}
-                            icon={Clock}
-                            bg="bg-amber-50/70"
-                            text="text-amber-800"
-                            subtitle="Reviews"
-                        />
-                        <StatCard
-                            title="Active"
-                            metric={stats.approvedArtisans}
-                            icon={CheckCircle}
-                            bg="bg-emerald-50"
-                            text="text-emerald-700"
-                            subtitle="Verified"
-                        />
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                            <StatCard
+                                title="Artisans"
+                                metric={stats.totalArtisans}
+                                icon={Store}
+                                bg="bg-[#FCF7F2]"
+                                text="text-clay-600"
+                                subtitle="Registered"
+                            />
+                        </div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                            <StatCard
+                                title="Buyers"
+                                metric={stats.totalBuyers}
+                                icon={Users}
+                                bg="bg-stone-50"
+                                text="text-stone-600"
+                                subtitle="Customers"
+                            />
+                        </div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                            <StatCard
+                                title="Pending"
+                                metric={stats.pendingArtisans}
+                                icon={Clock}
+                                bg="bg-amber-50/70"
+                                text="text-amber-800"
+                                subtitle="Reviews"
+                            />
+                        </div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                            <StatCard
+                                title="Active"
+                                metric={stats.approvedArtisans}
+                                icon={CheckCircle}
+                                bg="bg-emerald-50"
+                                text="text-emerald-700"
+                                subtitle="Verified"
+                            />
+                        </div>
                     </>
                 )}
             </div>

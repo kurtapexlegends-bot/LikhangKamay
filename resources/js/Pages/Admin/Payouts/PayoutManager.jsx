@@ -34,8 +34,8 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
 
             <div className="space-y-6">
                 {/* KPI Summary Cards */}
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-                    <div className="bg-white overflow-hidden rounded-2xl border border-stone-200 p-5 shadow-sm flex items-start justify-between">
+                <div className="flex overflow-x-auto gap-4 sm:gap-5 pb-2.5 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-3 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto bg-white overflow-hidden rounded-2xl border border-stone-200 p-5 shadow-sm flex items-start justify-between">
                         <div>
                             <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Total Outstanding Owed</p>
                             <h3 className="text-2xl font-black text-stone-900 mt-1">{formatCurrency(metrics.total_owed || 0)}</h3>
@@ -45,7 +45,7 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
                         </div>
                     </div>
 
-                    <div className="bg-white overflow-hidden rounded-2xl border border-stone-200 p-5 shadow-sm flex items-start justify-between">
+                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto bg-white overflow-hidden rounded-2xl border border-stone-200 p-5 shadow-sm flex items-start justify-between">
                         <div>
                             <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Total Payouts Disbursed</p>
                             <h3 className="text-2xl font-black text-stone-900 mt-1">{formatCurrency(metrics.total_paid || 0)}</h3>
@@ -55,7 +55,7 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
                         </div>
                     </div>
 
-                    <div className="bg-white overflow-hidden rounded-2xl border border-stone-200 p-5 shadow-sm flex items-start justify-between">
+                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto bg-white overflow-hidden rounded-2xl border border-stone-200 p-5 shadow-sm flex items-start justify-between">
                         <div>
                             <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Artisans Owed</p>
                             <h3 className="text-2xl font-black text-stone-900 mt-1">{metrics.artisans_owed_count || 0} Shop(s)</h3>

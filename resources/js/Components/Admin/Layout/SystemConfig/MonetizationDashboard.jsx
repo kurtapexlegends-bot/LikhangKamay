@@ -141,65 +141,75 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                 }
             />
             {/* SECTION 1: STATS CARDS */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="flex overflow-x-auto gap-4 pb-2.5 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-5 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
                 {isLoadingMetrics ? (
                     <>
-                        <StatSkeleton />
-                        <StatSkeleton />
-                        <StatSkeleton />
-                        <StatSkeleton />
-                        <StatSkeleton />
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto"><StatSkeleton /></div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto"><StatSkeleton /></div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto"><StatSkeleton /></div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto"><StatSkeleton /></div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto"><StatSkeleton /></div>
                     </>
                 ) : (
                     <>
-                        <KPICard
-                            title="Plan MRR"
-                            value={metrics.mrr?.value || 0}
-                            growth={metrics.mrr?.growth}
-                            growthSuffix=" vs last 30 days"
-                            icon={CircleDollarSign}
-                            bg="bg-emerald-50"
-                            color="text-emerald-600"
-                            formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
-                            subtitle={metrics.mrr?.basis || "Based on current active artisan plan tiers."}
-                        />
-                        <KPICard
-                            title="Transaction Fees"
-                            value={metrics.platform_fees?.value || 0}
-                            growth={metrics.platform_fees?.growth}
-                            growthSuffix=" vs last 30 days"
-                            icon={CircleDollarSign}
-                            bg="bg-clay-50"
-                            color="text-clay-600"
-                            formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
-                            subtitle="Commission + Convenience fees"
-                        />
-                        <KPICard
-                            title="Paid Subs"
-                            value={metrics.subscribers?.total_paid || 0}
-                            icon={Users}
-                            bg="bg-stone-50"
-                            color="text-stone-600"
-                            subtitle={`${(metrics.subscribers?.premium || 0) + (metrics.subscribers?.elite || 0)} active tiers`}
-                        />
-                        <KPICard
-                            title="Elite Only"
-                            value={metrics.subscribers?.elite || 0}
-                            icon={Star}
-                            bg="bg-stone-50"
-                            color="text-stone-600"
-                            subtitle="Super Premium artisans"
-                        />
-                        <KPICard
-                            title="Sponsored"
-                            value={metrics.sponsorships?.value || 0}
-                            growth={metrics.sponsorships?.growth}
-                            growthSuffix=" vs last 30 days"
-                            icon={Award}
-                            bg="bg-amber-50"
-                            color="text-amber-600"
-                            subtitle="Featured products"
-                        />
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                            <KPICard
+                                title="Plan MRR"
+                                value={metrics.mrr?.value || 0}
+                                growth={metrics.mrr?.growth}
+                                growthSuffix=" vs last 30 days"
+                                icon={CircleDollarSign}
+                                bg="bg-emerald-50"
+                                color="text-emerald-600"
+                                formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
+                                subtitle={metrics.mrr?.basis || "Based on current active artisan plan tiers."}
+                            />
+                        </div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                            <KPICard
+                                title="Transaction Fees"
+                                value={metrics.platform_fees?.value || 0}
+                                growth={metrics.platform_fees?.growth}
+                                growthSuffix=" vs last 30 days"
+                                icon={CircleDollarSign}
+                                bg="bg-clay-50"
+                                color="text-clay-600"
+                                formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
+                                subtitle="Commission + Convenience fees"
+                            />
+                        </div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                            <KPICard
+                                title="Paid Subs"
+                                value={metrics.subscribers?.total_paid || 0}
+                                icon={Users}
+                                bg="bg-stone-50"
+                                color="text-stone-600"
+                                subtitle={`${(metrics.subscribers?.premium || 0) + (metrics.subscribers?.elite || 0)} active tiers`}
+                            />
+                        </div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                            <KPICard
+                                title="Elite Only"
+                                value={metrics.subscribers?.elite || 0}
+                                icon={Star}
+                                bg="bg-stone-50"
+                                color="text-stone-600"
+                                subtitle="Super Premium artisans"
+                            />
+                        </div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                            <KPICard
+                                title="Sponsored"
+                                value={metrics.sponsorships?.value || 0}
+                                growth={metrics.sponsorships?.growth}
+                                growthSuffix=" vs last 30 days"
+                                icon={Award}
+                                bg="bg-amber-50"
+                                color="text-amber-600"
+                                subtitle="Featured products"
+                            />
+                        </div>
                     </>
                 )}
             </div>
