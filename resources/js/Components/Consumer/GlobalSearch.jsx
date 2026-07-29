@@ -190,7 +190,7 @@ export default function GlobalSearch() {
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="min-w-[40px] min-h-[40px] flex items-center justify-center p-2 text-stone-600 hover:text-clay-600 hover:bg-stone-100 rounded-xl transition-all active:scale-95 border border-stone-200/80 bg-white shadow-2xs"
+                    className="p-2 text-stone-500 hover:text-clay-600 hover:bg-stone-100/80 rounded-xl transition-all active:scale-95"
                     title="Search platform..."
                 >
                     <Search size={18} />
