@@ -189,7 +189,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                 
                 {/* --- TABS NAVIGATION --- */}
                 <div className="border-b border-stone-200 bg-white rounded-t-2xl shadow-sm px-4 pt-4 sm:px-6">
-                    <div className="flex space-x-6 overflow-x-auto scrollbar-hide no-scrollbar flex-nowrap">
+                    <div className="flex space-x-4 sm:space-x-6 overflow-x-auto scrollbar-none no-scrollbar flex-nowrap py-1 scroll-smooth snap-x touch-pan-x min-w-0 w-full">
                         {mainTabs.map((tab) => {
                             const Icon = tab.icon;
                             return (
@@ -197,7 +197,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                     key={tab.id}
                                     type="button"
                                     onClick={() => handleTabChange(tab.id)}
-                                    className={`flex items-center gap-2 border-b-2 pb-4 px-1 text-xs sm:text-sm font-bold transition-all whitespace-nowrap outline-none min-h-[44px] ${
+                                    className={`flex items-center gap-2 border-b-2 pb-4 px-1 text-xs sm:text-sm font-bold transition-all whitespace-nowrap outline-none min-h-[44px] shrink-0 snap-start active:scale-95 ${
                                         activeTab === tab.id
                                             ? 'border-clay-600 text-clay-700 font-bold'
                                             : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200'
@@ -222,16 +222,16 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                             transition={{ duration: 0.2 }}
                         >
                             {/* Inner Sub Tabs bar */}
-                            <div className="flex items-center gap-1.5 border-b border-stone-100 pb-3 overflow-x-auto no-scrollbar flex-nowrap">
+                            <div className="flex items-center gap-1.5 border-b border-stone-100 pb-3 overflow-x-auto scrollbar-none no-scrollbar flex-nowrap py-1 scroll-smooth snap-x touch-pan-x min-w-0 w-full">
                                 {subTabs.map((subTab) => (
                                     <button
                                         key={subTab.id}
                                         type="button"
                                         onClick={() => setActiveSubTab(subTab.id)}
                                         className={`
-                                            flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap min-h-[36px]
+                                            flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap min-h-[36px] shrink-0 snap-start active:scale-95
                                             ${activeSubTab === subTab.id 
-                                                ? 'bg-clay-50 text-clay-700 font-bold border border-clay-200/50' 
+                                                ? 'bg-clay-50 text-clay-700 font-bold border border-clay-200/50 shadow-2xs' 
                                                 : 'text-stone-500 hover:text-stone-700 hover:bg-stone-50'}
                                         `}
                                     >
@@ -373,12 +373,12 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                     </form>
 
                                     {/* Sticky actions bar for Mobile (below lg) */}
-                                    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))] z-40 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+                                    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-stone-200 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
                                         <div className="flex-1 min-w-0 pr-4">
                                             {recentlySuccessful && (
                                                 <div className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-bold animate-in fade-in">
                                                     <CheckCircle2 size={12} />
-                                                    <span>Saved successfully!</span>
+                                                    <span>Settings updated!</span>
                                                 </div>
                                             )}
                                             {!recentlySuccessful && (
@@ -388,37 +388,14 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                         <PrimaryButton 
                                             disabled={processing}
                                             onClick={submit}
-                                            className="py-2.5 px-4 bg-clay-600 hover:bg-clay-700 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md border-none text-[10px] font-bold min-h-[44px]"
+                                            className="py-2.5 px-5 bg-clay-600 hover:bg-clay-700 active:scale-95 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-md border-none text-[11px] font-bold min-h-[44px]"
                                         >
-                                            <Save size={12} />
+                                            <Save size={13} />
                                             {processing ? 'Saving...' : 'Apply Config'}
                                         </PrimaryButton>
                                     </div>
                                 </>
                             )}
-
-                            {/* Sticky actions bar for Mobile (below lg) */}
-                            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))] z-40 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
-                                <div className="flex-1 min-w-0 pr-4">
-                                    {recentlySuccessful && (
-                                        <div className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-bold animate-in fade-in">
-                                            <CheckCircle2 size={12} />
-                                            <span>Saved successfully!</span>
-                                        </div>
-                                    )}
-                                    {!recentlySuccessful && (
-                                        <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wider">Unsaved Changes</span>
-                                    )}
-                                </div>
-                                <PrimaryButton 
-                                    disabled={processing}
-                                    onClick={submit}
-                                    className="py-2.5 px-4 bg-clay-600 hover:bg-clay-700 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md border-none text-[10px] font-bold min-h-[44px]"
-                                >
-                                    <Save size={12} />
-                                    {processing ? 'Saving...' : 'Apply Config'}
-                                </PrimaryButton>
-                            </div>
                         </motion.div>
                     )}
 
