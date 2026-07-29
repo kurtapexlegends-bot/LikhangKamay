@@ -3,10 +3,9 @@
 namespace App\Mail;
 
 use App\Models\Order;
+use App\Services\EmailTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class OrderShipped extends Mailable
@@ -20,17 +19,20 @@ class OrderShipped extends Mailable
         $this->order = $order;
     }
 
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: 'Your Order Has Been Shipped - ' . $this->order->order_number,
-        );
-    }
-
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.orders.shipped',
+        return EmailTemplateService::apply(
+            mailable: $this,
+            slug: 'order_shipped',
+            replacements: [
+                '{user_name}' => $this->order->customer_name ?? 'Customer',
+                '{order_number}' => $this->order->order_number,
+                '{tracking_number}' => $this->order->tracking_number ?? 'N/A',
+                '{action_url}' => url('/orders/' . $this->order->order_number),
+            ],
+            fallbackSubject: 'Your Order Has Been Shipped - ' . $this->order->order_number,
+            fallbackView: 'emails.orders.shipped',
+            fallbackData: ['order' => $this->order]
         );
     }
 }

@@ -3,10 +3,9 @@
 namespace App\Mail;
 
 use App\Models\Order;
+use App\Services\EmailTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class DisputeArbitratedSellerWins extends Mailable
@@ -22,17 +21,22 @@ class DisputeArbitratedSellerWins extends Mailable
         $this->notes = $notes;
     }
 
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: 'Dispute Resolved: Claim Rejected',
-        );
-    }
-
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.orders.dispute-arbitrated-seller-wins',
+        return EmailTemplateService::apply(
+            mailable: $this,
+            slug: 'dispute_arbitrated',
+            replacements: [
+                '{order_number}' => $this->orderNumber,
+                '{rejection_reason}' => $this->notes ?? 'Claim rejected upon admin review.',
+                '{action_url}' => url('/orders/' . $this->orderNumber),
+            ],
+            fallbackSubject: 'Dispute Resolved: Claim Rejected for Order #' . $this->orderNumber,
+            fallbackView: 'emails.orders.dispute-arbitrated-seller-wins',
+            fallbackData: [
+                'orderNumber' => $this->orderNumber,
+                'notes' => $this->notes,
+            ]
         );
     }
 }

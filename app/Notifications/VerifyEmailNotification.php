@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\EmailTemplate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -20,25 +21,25 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
         $this->afterCommit();
     }
 
-    /**
-     * Get the notification's delivery channels.
-     */
     public function via($notifiable): array
     {
         return ['mail'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
     public function toMail($notifiable): MailMessage
     {
+        $template = EmailTemplate::where('slug', 'verify_email')->where('is_active', true)->first();
+        
+        $subject = $template 
+            ? strtr($template->subject, ['{verification_code}' => $this->code, '{site_name}' => 'LikhangKamay']) 
+            : 'Verify Your Email - LikhangKamay';
+
         return (new MailMessage)
-            ->subject('Verify Your Email - LikhangKamay')
+            ->subject($subject)
             ->view('emails.verify-email', [
                 'code' => $this->code,
                 'expiresAt' => $this->expiresAt,
-                'expiresInMinutes' => now()->diffInMinutes($this->expiresAt, false),
+                'expiresInMinutes' => max(1, now()->diffInMinutes($this->expiresAt, false)),
             ]);
     }
 }

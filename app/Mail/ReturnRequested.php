@@ -3,10 +3,9 @@
 namespace App\Mail;
 
 use App\Models\Order;
+use App\Services\EmailTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class ReturnRequested extends Mailable
@@ -20,17 +19,19 @@ class ReturnRequested extends Mailable
         $this->order = $order;
     }
 
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: 'Return Requested - ' . $this->order->order_number,
-        );
-    }
-
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.orders.return-requested',
+        return EmailTemplateService::apply(
+            mailable: $this,
+            slug: 'return_requested',
+            replacements: [
+                '{user_name}' => 'Artisan',
+                '{order_number}' => $this->order->order_number,
+                '{action_url}' => route('seller.dashboard'),
+            ],
+            fallbackSubject: 'Return Requested for Order #' . $this->order->order_number,
+            fallbackView: 'emails.orders.return-requested',
+            fallbackData: ['order' => $this->order]
         );
     }
 }

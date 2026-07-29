@@ -3,9 +3,8 @@
 namespace App\Mail;
 
 use App\Models\User;
+use App\Services\EmailTemplateService;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class ArtisanApproved extends Mailable
@@ -19,17 +18,19 @@ class ArtisanApproved extends Mailable
         $this->artisan = $artisan;
     }
 
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: 'Your LikhangKamay Seller Account is Approved!',
-        );
-    }
-
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.artisan.approved',
+        return EmailTemplateService::apply(
+            mailable: $this,
+            slug: 'artisan_approved',
+            replacements: [
+                '{user_name}' => $this->artisan->name,
+                '{shop_name}' => $this->artisan->shop_name ?? 'LikhangKamay Shop',
+                '{action_url}' => url('/dashboard'),
+            ],
+            fallbackSubject: 'Your LikhangKamay Seller Account is Approved!',
+            fallbackView: 'emails.artisan.approved',
+            fallbackData: ['artisan' => $this->artisan]
         );
     }
 }

@@ -3,9 +3,8 @@
 namespace App\Mail;
 
 use App\Models\User;
+use App\Services\EmailTemplateService;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class NewArtisanApplication extends Mailable
@@ -19,17 +18,19 @@ class NewArtisanApplication extends Mailable
         $this->artisan = $artisan;
     }
 
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: 'New Artisan Application - '.$this->artisan->shop_name,
-        );
-    }
-
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.artisan.new-application',
+        return EmailTemplateService::apply(
+            mailable: $this,
+            slug: 'artisan_new_application',
+            replacements: [
+                '{user_name}' => $this->artisan->name,
+                '{shop_name}' => $this->artisan->shop_name ?? 'LikhangKamay Shop',
+                '{action_url}' => route('admin.users.manager'),
+            ],
+            fallbackSubject: 'New Artisan Application Submitted',
+            fallbackView: 'emails.artisan.new-application',
+            fallbackData: ['artisan' => $this->artisan]
         );
     }
 }

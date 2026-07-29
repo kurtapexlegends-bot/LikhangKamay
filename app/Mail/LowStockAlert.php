@@ -3,10 +3,9 @@
 namespace App\Mail;
 
 use App\Models\Product;
+use App\Services\EmailTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class LowStockAlert extends Mailable
@@ -22,17 +21,21 @@ class LowStockAlert extends Mailable
         $this->stock = $product->stock;
     }
 
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: "Low Stock Alert - {$this->productName}",
-        );
-    }
-
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.artisan.low-stock',
+        return EmailTemplateService::apply(
+            mailable: $this,
+            slug: 'low_stock',
+            replacements: [
+                '{product_name}' => $this->productName,
+                '{action_url}' => route('products.index'),
+            ],
+            fallbackSubject: 'Low Stock Alert: Action Required',
+            fallbackView: 'emails.artisan.low-stock',
+            fallbackData: [
+                'productName' => $this->productName,
+                'stock' => $this->stock,
+            ]
         );
     }
 }

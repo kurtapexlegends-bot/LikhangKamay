@@ -3,10 +3,9 @@
 namespace App\Mail;
 
 use App\Models\Product;
+use App\Services\EmailTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class ProductModerationResult extends Mailable
@@ -24,7 +23,7 @@ class ProductModerationResult extends Mailable
         $this->reason = $feedback;
     }
 
-    public function envelope(): Envelope
+    public function build()
     {
         $statusLabel = match($this->status) {
             'approve', 'approved' => 'Approved',
@@ -33,15 +32,21 @@ class ProductModerationResult extends Mailable
             default => ucfirst($this->status),
         };
 
-        return new Envelope(
-            subject: "Listing {$statusLabel} - {$this->productName}",
-        );
-    }
-
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.artisan.product-moderation',
+        return EmailTemplateService::apply(
+            mailable: $this,
+            slug: 'product_moderation',
+            replacements: [
+                '{product_name}' => $this->productName,
+                '{rejection_reason}' => $this->reason ?? 'Status: ' . $statusLabel,
+                '{action_url}' => route('seller.dashboard'),
+            ],
+            fallbackSubject: "Listing {$statusLabel} - {$this->productName}",
+            fallbackView: 'emails.artisan.product-moderation',
+            fallbackData: [
+                'status' => $this->status,
+                'productName' => $this->productName,
+                'reason' => $this->reason,
+            ]
         );
     }
 }

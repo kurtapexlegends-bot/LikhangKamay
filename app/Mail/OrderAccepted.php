@@ -3,10 +3,9 @@
 namespace App\Mail;
 
 use App\Models\Order;
+use App\Services\EmailTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class OrderAccepted extends Mailable
@@ -20,17 +19,19 @@ class OrderAccepted extends Mailable
         $this->order = $order;
     }
 
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: 'Your Order Has Been Accepted - ' . $this->order->order_number,
-        );
-    }
-
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.orders.accepted',
+        return EmailTemplateService::apply(
+            mailable: $this,
+            slug: 'order_accepted',
+            replacements: [
+                '{user_name}' => $this->order->customer_name ?? 'Customer',
+                '{order_number}' => $this->order->order_number,
+                '{action_url}' => url('/orders/' . $this->order->order_number),
+            ],
+            fallbackSubject: 'Your Order Has Been Accepted - ' . $this->order->order_number,
+            fallbackView: 'emails.orders.accepted',
+            fallbackData: ['order' => $this->order]
         );
     }
 }

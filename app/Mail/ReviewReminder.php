@@ -2,59 +2,36 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 use App\Models\Order;
+use App\Services\EmailTemplateService;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
 
 class ReviewReminder extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $order;
+    public Order $order;
 
-    /**
-     * Create a new message instance.
-     */
     public function __construct(Order $order)
     {
         $this->order = $order;
     }
 
-    /**
-     * Get the message envelope.
-     */
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: 'How was your order from LikhangKamay?',
-        );
-    }
-
-    /**
-     * Get the message content definition.
-     */
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.reviews.reminder',
-            with: [
-                'order' => $this->order,
-                'url' => route('my-orders.index'),
+        return EmailTemplateService::apply(
+            mailable: $this,
+            slug: 'review_reminder',
+            replacements: [
+                '{user_name}' => $this->order->customer_name ?? 'Customer',
+                '{order_number}' => $this->order->order_number,
+                '{action_url}' => url('/orders/' . $this->order->order_number),
             ],
+            fallbackSubject: 'How was your order from LikhangKamay?',
+            fallbackView: 'emails.reviews.reminder',
+            fallbackData: ['order' => $this->order]
         );
-    }
-
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
-    public function attachments(): array
-    {
-        return [];
     }
 }

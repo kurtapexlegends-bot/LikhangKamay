@@ -3,10 +3,9 @@
 namespace App\Mail;
 
 use App\Models\Order;
+use App\Services\EmailTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class DisputeEscalated extends Mailable
@@ -22,17 +21,22 @@ class DisputeEscalated extends Mailable
         $this->reason = $reason;
     }
 
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: 'New Escalated Dispute',
-        );
-    }
-
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.admin.dispute-escalated',
+        return EmailTemplateService::apply(
+            mailable: $this,
+            slug: 'dispute_escalated',
+            replacements: [
+                '{order_number}' => $this->orderNumber,
+                '{rejection_reason}' => $this->reason,
+                '{action_url}' => route('admin.dashboard'),
+            ],
+            fallbackSubject: 'New Escalated Dispute - Order #' . $this->orderNumber,
+            fallbackView: 'emails.admin.dispute-escalated',
+            fallbackData: [
+                'orderNumber' => $this->orderNumber,
+                'reason' => $this->reason,
+            ]
         );
     }
 }

@@ -3,48 +3,41 @@
 namespace App\Mail;
 
 use App\Models\Order;
+use App\Services\EmailTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class OrderCancelled extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public string $orderNumber;
+    public Order $order;
     public ?string $reason;
 
     public function __construct(Order $order, ?string $reason = null)
     {
-        $this->orderNumber = $order->order_number;
-        
-        $rawReason = $reason ?: $order->cancellation_reason;
-        if ($rawReason === 'buyer_cancelled') {
-            $this->reason = 'Cancelled by customer.';
-        } elseif ($rawReason === 'seller_cancelled') {
-            $this->reason = 'Cancelled by seller.';
-        } elseif ($rawReason === 'seller_rejected') {
-            $this->reason = 'Order declined by seller.';
-        } elseif ($rawReason === 'return_to_sender_failed_delivery') {
-            $this->reason = 'Failed delivery hold period expired.';
-        } else {
-            $this->reason = $rawReason;
-        }
+        $this->order = $order;
+        $this->reason = $reason;
     }
 
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: "Order Cancelled - {$this->orderNumber}",
-        );
-    }
-
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.orders.cancelled',
+        return EmailTemplateService::apply(
+            mailable: $this,
+            slug: 'order_cancelled',
+            replacements: [
+                '{user_name}' => $this->order->customer_name ?? 'Customer',
+                '{order_number}' => $this->order->order_number,
+                '{rejection_reason}' => $this->reason ?? 'Cancelled by request.',
+                '{action_url}' => url('/orders/' . $this->order->order_number),
+            ],
+            fallbackSubject: 'Order Cancelled - ' . $this->order->order_number,
+            fallbackView: 'emails.orders.cancelled',
+            fallbackData: [
+                'order' => $this->order,
+                'reason' => $this->reason,
+            ]
         );
     }
 }
