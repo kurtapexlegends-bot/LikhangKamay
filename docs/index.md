@@ -11,6 +11,7 @@ Welcome to the LikhangKamay Second Brain vault. This documentation map is design
 *   **[[erp-procurement|ERP: Procurement & Inventory]]**: Stock restocks, raw supplies, recipes, and maker-checker rules.
 *   **[[erp-hr-attendance|ERP: HR & Attendance]]**: Shifts, clock-in states, idle timeouts, and payroll calculations.
 *   **[[crm-messaging|CRM: Messaging & Templates]]**: Customer chat templates, team channels, typing indicators, and threaded replies.
+*   **[[email-studio|Mail Studio & Audience Broadcast]]**: Dynamic system email customization, audience targeting, variable hydration tags, and Resend driver integration.
 *   **[[subscriptions-sponsorships|Subscriptions & Sponsorships]]**: Elite/Standard tier limits, PayMongo upgrades, and product retention rules.
 *   **[[moderation-disputes|Moderation & Disputes]]**: Flags, dispute states, and buyer review disputes.
 *   **[[logistics-fulfillment|Logistics & Fulfillment]]**: Delivery metadata, Lalamove tracking, address formats, and delivery event timeline rollups.
