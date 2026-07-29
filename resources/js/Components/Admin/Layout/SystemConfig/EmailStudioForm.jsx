@@ -338,8 +338,22 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                             </button>
                         </div>
 
-                        <div className="space-y-2 max-h-[280px] md:max-h-[520px] overflow-y-auto pr-1">
-                            {templates.map((tpl) => {
+                        {/* Search Filter for Templates */}
+                        <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" size={13} />
+                            <input
+                                type="text"
+                                placeholder="Filter templates..."
+                                value={templateSearchQuery}
+                                onChange={(e) => setTemplateSearchQuery(e.target.value)}
+                                className="w-full pl-8 pr-3 py-1.5 bg-stone-50 border border-stone-200 rounded-lg text-xs font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-clay-500"
+                            />
+                        </div>
+
+                        <div className="space-y-2 max-h-[280px] md:max-h-[480px] overflow-y-auto pr-1">
+                            {templates
+                                .filter(t => !templateSearchQuery || t.name.toLowerCase().includes(templateSearchQuery.toLowerCase()) || t.subject.toLowerCase().includes(templateSearchQuery.toLowerCase()))
+                                .map((tpl) => {
                                 const isSelected = selectedTemplateId === tpl.id;
                                 return (
                                     <div
@@ -372,7 +386,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                     <div className="md:col-span-2 space-y-4">
                         {templateSaveFeedback && (
                             <div className={`p-3 rounded-xl text-xs font-bold flex items-center justify-between gap-2 transition ${
-                                templateSaveFeedback.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+                                templateSaveFeedback.success ? 'bg-emerald-50 text-emerald-808 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
                             }`}>
                                 <div className="flex items-center gap-2">
                                     {templateSaveFeedback.success ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
@@ -473,7 +487,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                                 <div>
                                     <InputLabel value="Button Label (Optional)" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1" />
                                     <TextInput
-                                        className="w-full text-xs"
+                                        className="w-full text-xs min-h-[44px]"
                                         placeholder="e.g. View Order Details"
                                         value={templateForm.button_label}
                                         onChange={(e) => setTemplateForm({ ...templateForm, button_label: e.target.value })}
@@ -482,7 +496,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                                 <div>
                                     <InputLabel value="Button Target URL (Optional)" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1" />
                                     <TextInput
-                                        className="w-full text-xs"
+                                        className="w-full text-xs min-h-[44px]"
                                         placeholder="e.g. {action_url} or https://likhangkamay.app/..."
                                         value={templateForm.button_url}
                                         onChange={(e) => setTemplateForm({ ...templateForm, button_url: e.target.value })}
@@ -491,7 +505,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                             </div>
 
                             <div className="flex justify-end pt-2">
-                                <PrimaryButton type="submit" disabled={isSavingTemplate} className="px-5 py-2 text-xs font-bold gap-2">
+                                <PrimaryButton type="submit" disabled={isSavingTemplate} className="px-5 py-2.5 text-xs font-bold gap-2 active:scale-95 min-h-[44px]">
                                     <Edit3 size={13} className={isSavingTemplate ? "animate-spin" : ""} />
                                     {isSavingTemplate ? "Saving Template..." : "Save Template Changes"}
                                 </PrimaryButton>
@@ -515,34 +529,49 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                             <button
                                 type="button"
                                 onClick={() => setTargetType('user')}
-                                className={`p-3 rounded-xl border text-left transition-all ${
-                                    targetType === 'user' ? 'bg-white border-clay-500 shadow-sm ring-2 ring-clay-500/20' : 'bg-white border-stone-200'
+                                className={`p-3.5 rounded-xl border text-left transition-all active:scale-95 flex items-start gap-3 ${
+                                    targetType === 'user' ? 'bg-white border-clay-500 shadow-sm ring-2 ring-clay-500/20' : 'bg-white border-stone-200 hover:border-stone-300'
                                 }`}
                             >
-                                <span className="block text-xs font-bold text-stone-900">Specific User</span>
-                                <span className="block text-[9px] text-stone-500 mt-0.5">Search and select a single registered account.</span>
+                                <div className={`p-2 rounded-lg shrink-0 ${targetType === 'user' ? 'bg-clay-100 text-clay-700' : 'bg-stone-100 text-stone-500'}`}>
+                                    <User size={16} />
+                                </div>
+                                <div>
+                                    <span className="block text-xs font-bold text-stone-900">Specific User</span>
+                                    <span className="block text-[9px] text-stone-500 mt-0.5 leading-snug">Search and select a single registered account.</span>
+                                </div>
                             </button>
 
                             <button
                                 type="button"
                                 onClick={() => setTargetType('role')}
-                                className={`p-3 rounded-xl border text-left transition-all ${
-                                    targetType === 'role' ? 'bg-white border-clay-500 shadow-sm ring-2 ring-clay-500/20' : 'bg-white border-stone-200'
+                                className={`p-3.5 rounded-xl border text-left transition-all active:scale-95 flex items-start gap-3 ${
+                                    targetType === 'role' ? 'bg-white border-clay-500 shadow-sm ring-2 ring-clay-500/20' : 'bg-white border-stone-200 hover:border-stone-300'
                                 }`}
                             >
-                                <span className="block text-xs font-bold text-stone-900">User Role Group</span>
-                                <span className="block text-[9px] text-stone-500 mt-0.5">Broadcast to all Artisans, Buyers, or Tier users.</span>
+                                <div className={`p-2 rounded-lg shrink-0 ${targetType === 'role' ? 'bg-clay-100 text-clay-700' : 'bg-stone-100 text-stone-500'}`}>
+                                    <Users size={16} />
+                                </div>
+                                <div>
+                                    <span className="block text-xs font-bold text-stone-900">User Role Group</span>
+                                    <span className="block text-[9px] text-stone-500 mt-0.5 leading-snug">Broadcast to all Artisans, Buyers, or Tier users.</span>
+                                </div>
                             </button>
 
                             <button
                                 type="button"
                                 onClick={() => setTargetType('email')}
-                                className={`p-3 rounded-xl border text-left transition-all ${
-                                    targetType === 'email' ? 'bg-white border-clay-500 shadow-sm ring-2 ring-clay-500/20' : 'bg-white border-stone-200'
+                                className={`p-3.5 rounded-xl border text-left transition-all active:scale-95 flex items-start gap-3 ${
+                                    targetType === 'email' ? 'bg-white border-clay-500 shadow-sm ring-2 ring-clay-500/20' : 'bg-white border-stone-200 hover:border-stone-300'
                                 }`}
                             >
-                                <span className="block text-xs font-bold text-stone-900">Custom Email Address</span>
-                                <span className="block text-[9px] text-stone-500 mt-0.5">Type any single external email address for testing.</span>
+                                <div className={`p-2 rounded-lg shrink-0 ${targetType === 'email' ? 'bg-clay-100 text-clay-700' : 'bg-stone-100 text-stone-500'}`}>
+                                    <Mail size={16} />
+                                </div>
+                                <div>
+                                    <span className="block text-xs font-bold text-stone-900">Custom Email</span>
+                                    <span className="block text-[9px] text-stone-500 mt-0.5 leading-snug">Type any single external email address for testing.</span>
+                                </div>
                             </button>
                         </div>
 
