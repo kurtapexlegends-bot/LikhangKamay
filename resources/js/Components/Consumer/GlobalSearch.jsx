@@ -22,6 +22,7 @@ export default function GlobalSearch() {
     const [isLoading, setIsLoading] = useState(false);
     const [activeIndex, setActiveIndex] = useState(-1);
     const inputRef = useRef(null);
+    const mobileInputRef = useRef(null);
     const modalRef = useRef(null);
     const dropdownRef = useRef(null);
 
@@ -53,8 +54,15 @@ export default function GlobalSearch() {
 
     // Focus input when modal opens
     useEffect(() => {
-        if (isOpen && inputRef.current) {
-            inputRef.current.focus();
+        if (isOpen) {
+            const timer = setTimeout(() => {
+                if (window.innerWidth < 640 && mobileInputRef.current) {
+                    mobileInputRef.current.focus();
+                } else if (inputRef.current) {
+                    inputRef.current.focus();
+                }
+            }, 60);
+            return () => clearTimeout(timer);
         }
     }, [isOpen]);
 
@@ -98,53 +106,37 @@ export default function GlobalSearch() {
     ] : [
         { label: 'Go to Inventory', cmd: '> inventory', url: getSafeRoute('procurement.index'), icon: Box, color: 'text-blue-500 bg-blue-50', module: 'procurement' },
         { label: 'Go to Order Manager', cmd: '> orders', url: getSafeRoute('orders.index'), icon: ShoppingBag, color: 'text-emerald-500 bg-emerald-50', module: 'orders' },
-        { label: 'Go to Stock Requests', cmd: '> stock', url: getSafeRoute('stock-requests.index'), icon: ClipboardList, color: 'text-clay-500 bg-clay-50', module: 'stock_requests' },
-        { label: 'Go to HR & Payroll', cmd: '> hr', url: getSafeRoute('hr.index'), icon: Users, color: 'text-purple-500 bg-purple-50', module: 'hr' },
-        { label: 'Go to Sponsorships', cmd: '> sponsorship', url: getSafeRoute('seller.sponsorships'), icon: Award, color: 'text-amber-500 bg-amber-50', module: 'sponsorships' },
-        { label: 'Go to Product Manager', cmd: '> products', url: getSafeRoute('products.index'), icon: Package, color: 'text-indigo-500 bg-indigo-50', module: 'products' },
-        { label: 'Go to Team Messages', cmd: '> team', url: getSafeRoute('team-messages.index'), icon: Users, color: 'text-emerald-500 bg-emerald-50', module: 'team_messages' },
-        { label: 'Go to Overview', cmd: '> overview', url: getSafeRoute('dashboard'), icon: LayoutDashboard, color: 'text-stone-500 bg-stone-50', module: 'overview' },
-        { label: 'Go to Analytics', cmd: '> analytics', url: getSafeRoute('analytics.index'), icon: BarChart2, color: 'text-purple-500 bg-purple-50', module: 'analytics' },
-        { label: 'Go to 3D Manager', cmd: '> 3d', url: getSafeRoute('3d.index'), icon: Box, color: 'text-blue-500 bg-blue-50', module: '3d' },
-        { label: 'Go to Messages', cmd: '> messages', url: getSafeRoute('chat.index'), icon: MessageSquare, color: 'text-indigo-500 bg-indigo-50', module: 'messages' },
+        { label: 'Go to Product Manager', cmd: '> products', url: getSafeRoute('products.index'), icon: Package, color: 'text-rose-500 bg-rose-50', module: 'products' },
         { label: 'Go to Reviews', cmd: '> reviews', url: getSafeRoute('reviews.index'), icon: Star, color: 'text-amber-500 bg-amber-50', module: 'reviews' },
-        { label: 'Go to Shop Settings', cmd: '> settings', url: getSafeRoute('shop.settings'), icon: Settings, color: 'text-stone-500 bg-stone-50', module: 'shop_settings' },
-        { label: 'Go to Finance', cmd: '> finance', url: getSafeRoute('accounting.index'), icon: TrendingUp, color: 'text-emerald-500 bg-emerald-50', module: 'accounting' },
-        { label: 'Go to Audit Log', cmd: '> audit', url: getSafeRoute('audit-log.index'), icon: ClipboardList, color: 'text-clay-500 bg-clay-50', artisanOnly: true },
-        { label: 'Go to Staff Hub', cmd: '> staff', url: getSafeRoute('staff.dashboard'), icon: LayoutDashboard, color: 'text-stone-500 bg-stone-50', staffOnly: true },
-    ].filter(cmd => {
-        if (cmd.staffOnly && auth?.user?.role !== 'staff') return false;
-        if (cmd.artisanOnly && auth?.user?.role !== 'artisan') return false;
-        return !cmd.module || visibleModules.includes(cmd.module);
-    });
+        { label: 'Go to Sponsorships', cmd: '> sponsorships', url: getSafeRoute('seller.sponsorships'), icon: Award, color: 'text-indigo-500 bg-indigo-50', module: 'sponsorships' },
+        { label: 'Go to Stock Requests', cmd: '> stock-requests', url: getSafeRoute('stock-requests.index'), icon: ClipboardList, color: 'text-clay-500 bg-clay-50', module: 'stock-requests' },
+        { label: 'Go to HR Hub', cmd: '> hr', url: getSafeRoute('hr.index'), icon: Users, color: 'text-purple-500 bg-purple-50', module: 'hr' },
+        { label: 'Go to Accounting & Financial Ledger', cmd: '> accounting', url: getSafeRoute('accounting.index'), icon: TrendingUp, color: 'text-emerald-500 bg-emerald-50', module: 'accounting' },
+        { label: 'Go to Performance Analytics', cmd: '> analytics', url: getSafeRoute('analytics.index'), icon: BarChart2, color: 'text-stone-500 bg-stone-50', module: 'analytics' },
+    ].filter(cmd => !cmd.module || visibleModules.includes(cmd.module));
 
     const isCommandMode = query.startsWith('>');
-    const cleanQuery = query.replace(/\s+/g, '').toLowerCase();
-    const filteredCommands = isCommandMode 
-        ? commands.filter(c => c.cmd.replace(/\s+/g, '').includes(cleanQuery) || cleanQuery === '>')
-        : [];
+    const cleanQuery = query.replace('>', '').trim().toLowerCase();
+
+    const filteredCommands = isCommandMode ? commands.filter(c => 
+        c.label.toLowerCase().includes(cleanQuery) || c.cmd.toLowerCase().includes(cleanQuery)
+    ) : [];
 
     const displayResults = isCommandMode ? filteredCommands : results;
 
     const handleNavigate = (url) => {
         setIsOpen(false);
         setQuery('');
-        router.get(url, {}, { preserveScroll: true });
+        router.visit(url);
     };
 
     const onKeyDown = (e) => {
-        // Prevent default browser behavior for arrows even if no results
-        if (['ArrowDown', 'ArrowUp'].includes(e.key)) {
-            e.preventDefault();
-        }
-
         if (e.key === 'ArrowDown') {
-            setActiveIndex(prev => {
-                const nextIndex = prev < displayResults.length - 1 ? prev + 1 : prev;
-                return nextIndex;
-            });
+            e.preventDefault();
+            setActiveIndex(prev => (prev < displayResults.length - 1 ? prev + 1 : prev));
         } else if (e.key === 'ArrowUp') {
-            setActiveIndex(prev => (prev > 0 ? prev - 1 : prev));
+            e.preventDefault();
+            setActiveIndex(prev => (prev > 0 ? prev - 1 : 0));
         } else if (e.key === 'Enter') {
             e.preventDefault();
             if (activeIndex >= 0 && activeIndex < displayResults.length) {
@@ -176,7 +168,7 @@ export default function GlobalSearch() {
     }, [activeIndex]);
 
     const getIcon = (type) => {
-        switch (type.toLowerCase()) {
+        switch (type?.toLowerCase()) {
             case 'user': return <User size={16} />;
             case 'product': return <Package size={16} />;
             case 'order': return <ShoppingCart size={16} />;
@@ -192,194 +184,309 @@ export default function GlobalSearch() {
     };
 
     return (
-        <div ref={modalRef} className="relative w-full sm:w-72 lg:w-96 group">
-            {/* Search Input (Always Visible) */}
-            <div className="relative flex items-center">
-                <Search 
-                    className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-200 ${isOpen ? 'text-clay-600' : 'text-stone-400 group-hover:text-clay-500'}`} 
-                    size={16} 
-                />
-                <input
-                    ref={inputRef}
-                    type="text"
-                    placeholder={isCommandMode ? "Type a command..." : "Search or type '>' for commands..."}
-                    className={`w-full rounded-xl border pl-10 pr-10 py-2 text-sm font-medium text-stone-900 transition-all placeholder:text-stone-400 focus:outline-none ${
-                        isOpen 
-                            ? 'border-clay-300 bg-white ring-4 ring-clay-500/10' 
-                            : 'border-stone-200 bg-stone-50/50 hover:border-clay-300 hover:bg-white'
-                    } ${isCommandMode ? 'pl-[130px]' : ''}`}
-                    value={query}
-                    onChange={(e) => {
-                        const val = e.target.value;
-                        setQuery(val);
-                        setActiveIndex(-1);
-                        if (val.length >= 2) {
-                            setIsLoading(true);
-                        } else {
-                            setIsLoading(false);
-                        }
-                    }}
-                    onFocus={() => setIsOpen(true)}
-                    onKeyDown={onKeyDown}
-                />
-
-                {isCommandMode && (
-                    <div className="absolute left-10 flex items-center gap-1.5 px-2 py-0.5 bg-indigo-600 text-white rounded-md text-[10px] font-black uppercase tracking-tighter shadow-sm animate-in zoom-in-95 duration-200">
-                        <Command size={10} />
-                        <span>Command</span>
-                    </div>
-                )}
-                
-                {isLoading ? (
-                    <div className="absolute right-10 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                         <Loader2 className="animate-spin text-clay-400" size={14} />
-                    </div>
-                ) : query ? (
-                    <button 
-                        onClick={() => { setQuery(''); inputRef.current?.focus(); }}
-                        className="absolute right-10 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-stone-100 text-stone-400 transition-colors"
-                    >
-                        <X size={14} />
-                    </button>
-                ) : (
-                    <kbd className="absolute right-10 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 rounded bg-white px-1.5 py-0.5 font-sans text-[10px] font-bold text-stone-400 border border-stone-200 shadow-sm pointer-events-none">
-                        <Command size={10} /> K
-                    </kbd>
-                )}
-
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-                    <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${isOpen ? 'bg-clay-500 animate-pulse' : 'bg-stone-300'}`} />
-                </div>
+        <div ref={modalRef} className="relative">
+            {/* MOBILE: Clickable Search Icon Button (< sm screens) */}
+            <div className="sm:hidden flex items-center">
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="min-w-[40px] min-h-[40px] flex items-center justify-center p-2 text-stone-600 hover:text-clay-600 hover:bg-stone-100 rounded-xl transition-all active:scale-95 border border-stone-200/80 bg-white shadow-2xs"
+                    title="Search platform..."
+                >
+                    <Search size={18} />
+                </button>
             </div>
 
-            {/* Dropdown Menu */}
-            {isOpen && (
-                <div className="absolute top-full left-0 right-0 mt-2 z-[60] overflow-hidden rounded-2xl bg-white shadow-[0_16px_48px_-12px_rgba(0,0,0,0.15)] ring-1 ring-black/[0.05] animate-in slide-in-from-top-2 fade-in duration-200">
-                    <div ref={dropdownRef} className="max-h-[60vh] overflow-y-auto p-2">
-                        {isLoading ? (
-                            <div className="p-2 space-y-2">
-                                <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-stone-400">Searching platform...</p>
-                                {[1, 2, 3].map(i => (
-                                    <div key={i} className="flex items-center gap-3 px-3 py-2 animate-pulse">
-                                        <div className="h-8 w-8 rounded-lg bg-stone-100" />
-                                        <div className="flex-1 space-y-2">
-                                            <div className="h-3 w-1/3 bg-stone-100 rounded" />
-                                            <div className="h-2 w-1/2 bg-stone-100 rounded" />
+            {/* DESKTOP: Expanded Inline Search Bar (>= sm screens) */}
+            <div className="hidden sm:block relative w-72 lg:w-96 group">
+                <div className="relative flex items-center">
+                    <Search 
+                        className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-200 ${isOpen ? 'text-clay-600' : 'text-stone-400 group-hover:text-clay-500'}`} 
+                        size={16} 
+                    />
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        placeholder={isCommandMode ? "Type a command..." : "Search or type '>' for commands..."}
+                        className={`w-full rounded-xl border pl-10 pr-10 py-2 text-sm font-medium text-stone-900 transition-all placeholder:text-stone-400 focus:outline-none ${
+                            isOpen 
+                                ? 'border-clay-300 bg-white ring-4 ring-clay-500/10' 
+                                : 'border-stone-200 bg-stone-50/50 hover:border-clay-300 hover:bg-white'
+                        } ${isCommandMode ? 'pl-[130px]' : ''}`}
+                        value={query}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setQuery(val);
+                            setActiveIndex(-1);
+                            if (val.length >= 2) {
+                                setIsLoading(true);
+                            } else {
+                                setIsLoading(false);
+                            }
+                        }}
+                        onFocus={() => setIsOpen(true)}
+                        onKeyDown={onKeyDown}
+                    />
+
+                    {isCommandMode && (
+                        <div className="absolute left-10 flex items-center gap-1.5 px-2 py-0.5 bg-indigo-600 text-white rounded-md text-[10px] font-black uppercase tracking-tighter shadow-sm animate-in zoom-in-95 duration-200">
+                            <Command size={10} />
+                            <span>Command</span>
+                        </div>
+                    )}
+                    
+                    {isLoading ? (
+                        <div className="absolute right-10 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                             <Loader2 className="animate-spin text-clay-400" size={14} />
+                        </div>
+                    ) : query ? (
+                        <button 
+                            onClick={() => { setQuery(''); inputRef.current?.focus(); }}
+                            className="absolute right-10 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-stone-100 text-stone-400 transition-colors"
+                        >
+                            <X size={14} />
+                        </button>
+                    ) : (
+                        <kbd className="absolute right-10 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 rounded bg-white px-1.5 py-0.5 font-sans text-[10px] font-bold text-stone-400 border border-stone-200 shadow-sm pointer-events-none">
+                            <Command size={10} /> K
+                        </kbd>
+                    )}
+
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+                        <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${isOpen ? 'bg-clay-500 animate-pulse' : 'bg-stone-300'}`} />
+                    </div>
+                </div>
+
+                {/* DESKTOP Dropdown Menu */}
+                {isOpen && (
+                    <div className="absolute top-full left-0 right-0 mt-2 z-[60] overflow-hidden rounded-2xl bg-white shadow-[0_16px_48px_-12px_rgba(0,0,0,0.15)] ring-1 ring-black/[0.05] animate-in slide-in-from-top-2 fade-in duration-200">
+                        <div ref={dropdownRef} className="max-h-[60vh] overflow-y-auto p-2">
+                            {isLoading ? (
+                                <div className="p-2 space-y-2">
+                                    <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-stone-400">Searching platform...</p>
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="flex items-center gap-3 px-3 py-2 animate-pulse">
+                                            <div className="h-8 w-8 rounded-lg bg-stone-100" />
+                                            <div className="flex-1 space-y-2">
+                                                <div className="h-3 w-1/3 bg-stone-100 rounded" />
+                                                <div className="h-2 w-1/2 bg-stone-100 rounded" />
+                                            </div>
                                         </div>
+                                    ))}
+                                </div>
+                            ) : displayResults.length > 0 ? (
+                                <div className="space-y-1">
+                                    <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                                        {isCommandMode ? 'Command Center' : 'Search Results'}
+                                    </p>
+                                    {displayResults.map((result, index) => (
+                                        <button
+                                            id={`search-result-${index}`}
+                                            key={isCommandMode ? result.cmd : `${result.type}-${result.id}`}
+                                            onClick={() => handleNavigate(result.url)}
+                                            onMouseEnter={() => setActiveIndex(index)}
+                                            className={`group/item flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-all ${activeIndex === index ? (isCommandMode ? 'bg-indigo-50/50' : 'bg-clay-50') : 'hover:bg-stone-50'}`}
+                                        >
+                                            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all ${
+                                                activeIndex === index 
+                                                    ? (isCommandMode ? `${result.color} border-indigo-200` : 'bg-white border-clay-200 text-clay-600') 
+                                                    : (isCommandMode ? `${result.color} border-transparent opacity-70` : 'bg-stone-50 border-stone-100 text-stone-400')
+                                            }`}>
+                                                {isCommandMode ? <result.icon size={16} /> : getIcon(result.type)}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`truncate text-sm font-bold ${activeIndex === index ? 'text-stone-900' : 'text-stone-600'}`}>
+                                                        {isCommandMode ? result.label : result.title}
+                                                    </span>
+                                                    {!isCommandMode && (
+                                                        <span className="shrink-0 rounded-md bg-stone-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-stone-500">
+                                                            {result.type?.replace('_', ' ')}
+                                                        </span>
+                                                    )}
+                                                    {isCommandMode && (
+                                                        <span className="shrink-0 rounded-md bg-white border border-indigo-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-500">
+                                                            Command
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="truncate text-xs font-medium text-stone-400">
+                                                    {isCommandMode ? result.cmd : result.subtitle}
+                                                </p>
+                                            </div>
+                                            {activeIndex === index && (
+                                                <div className="shrink-0 animate-in fade-in slide-in-from-right-2 duration-200">
+                                                    <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm flex items-center gap-1.5 ${isCommandMode ? 'bg-indigo-600 text-white' : 'bg-clay-600 text-white'}`}>
+                                                        {isCommandMode ? 'Execute' : 'View'}
+                                                        <Command size={10} />
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : query.length >= (isCommandMode ? 1 : 2) ? (
+                                <div className="px-4 py-8 text-center">
+                                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-stone-50 text-stone-300 mb-2">
+                                        {isCommandMode ? <Command size={20} /> : <Search size={20} />}
                                     </div>
-                                ))}
+                                    <p className="text-sm font-bold text-stone-900">No {isCommandMode ? 'commands' : 'results'} found</p>
+                                    <p className="text-xs font-medium text-stone-500 mt-0.5">Try adjusting your {isCommandMode ? 'command' : 'terms'}.</p>
+                                </div>
+                            ) : (
+                                <div className="p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-2">Quick Navigation</h3>
+                                    <div className="grid grid-cols-1 gap-1">
+                                        {(isAdmin ? [
+                                            { label: 'User Manager', sub: 'Manage platform users, staff profiles, and onboarding.', icon: Users, color: 'text-indigo-500 bg-indigo-50/50', url: getSafeRoute('admin.users.manager') },
+                                            { label: 'Catalog Manager', sub: 'Manage product categories, tags, and taxonomy.', icon: FolderTree, color: 'text-rose-500 bg-rose-50/50', url: getSafeRoute('admin.catalog.index') },
+                                            { label: 'Safety & Moderation', sub: 'Manage flagged listings, reviews, and user content.', icon: ShieldAlert, color: 'text-red-500 bg-red-50/50', url: getSafeRoute('admin.compliance') },
+                                        ] : [
+                                            { label: 'Products & Inventory', sub: 'Manage product listings, supplies, and orders.', icon: Box, color: 'text-blue-500 bg-blue-50/50', modules: ['products', 'procurement'], url: getSafeRoute('products.index') },
+                                            { label: 'Orders & Reviews', sub: 'Manage order fulfillment, tracking, and feedback.', icon: ShoppingBag, color: 'text-emerald-500 bg-emerald-50/50', modules: ['orders', 'reviews'], url: getSafeRoute('orders.index') },
+                                            { label: 'Sponsorships', sub: 'Promote your products and manage active campaigns.', icon: Award, color: 'text-amber-500 bg-amber-50/50', modules: ['sponsorships'], url: getSafeRoute('seller.sponsorships') },
+                                            { label: 'HR & Payroll', sub: 'Manage staff profiles, payroll runs, and access.', icon: Users, color: 'text-purple-500 bg-purple-50/50', modules: ['hr', 'accounting'], url: getSafeRoute('hr.index') }
+                                        ].filter(tip => !tip.modules || tip.modules.some(m => visibleModules.includes(m)))).map((tip, i) => (
+                                            <button 
+                                                key={i} 
+                                                onClick={() => handleNavigate(tip.url)}
+                                                className="group flex w-full items-center gap-3 p-2 rounded-xl hover:bg-stone-50 text-left transition-colors cursor-pointer"
+                                            >
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${tip.color}`}>
+                                                    <tip.icon size={16} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-stone-900 leading-none mb-1">{tip.label}</p>
+                                                    <p className="text-[10px] text-stone-500 leading-none">{tip.sub}</p>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        {/* Footer */}
+                        <div className="border-t border-stone-100 bg-stone-50/80 px-4 py-2 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-1.5">
+                                    <kbd className="px-1.5 py-0.5 bg-white border border-stone-200 rounded text-[9px] font-bold text-stone-500 shadow-sm leading-none">ENTER</kbd>
+                                    <span className="text-[10px] font-bold text-stone-400">Select</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <kbd className="px-1 py-0.5 bg-white border border-stone-200 rounded text-[9px] font-bold text-stone-500 shadow-sm flex items-center justify-center leading-none">
+                                        <span className="translate-y-[1px]">↑</span>
+                                    </kbd>
+                                    <kbd className="px-1 py-0.5 bg-white border border-stone-200 rounded text-[9px] font-bold text-stone-500 shadow-sm flex items-center justify-center leading-none">
+                                        <span className="translate-y-[1px]">↓</span>
+                                    </kbd>
+                                    <span className="text-[10px] font-bold text-stone-400">Navigate</span>
+                                </div>
                             </div>
-                        ) : displayResults.length > 0 ? (
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-bold text-stone-400 italic">Type <span className="text-indigo-500 font-black px-1.5 py-0.5 bg-indigo-50 rounded">{">"}</span> for commands</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* MOBILE Full Slide-down Overlay (< sm screens when isOpen is true) */}
+            {isOpen && (
+                <div className="sm:hidden fixed inset-x-0 top-0 z-[100] bg-white/95 backdrop-blur-xl border-b border-stone-200 p-3 shadow-xl animate-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="relative flex-1 flex items-center">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-clay-600" size={18} />
+                            <input
+                                ref={mobileInputRef}
+                                type="text"
+                                placeholder={isCommandMode ? "Type a command..." : "Search platform or type '>'..."}
+                                className="w-full rounded-xl border border-stone-200 bg-stone-50 pl-10 pr-10 py-2.5 text-sm font-medium text-stone-900 focus:outline-none focus:bg-white focus:ring-2 focus:ring-clay-500/20 focus:border-clay-300"
+                                value={query}
+                                onChange={(e) => {
+                                    setQuery(e.target.value);
+                                    setActiveIndex(-1);
+                                    if (e.target.value.length >= 2) {
+                                        setIsLoading(true);
+                                    } else {
+                                        setIsLoading(false);
+                                    }
+                                }}
+                                onKeyDown={onKeyDown}
+                            />
+                            {isLoading ? (
+                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-clay-500" size={16} />
+                            ) : query ? (
+                                <button 
+                                    onClick={() => setQuery('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-stone-400 hover:text-stone-600"
+                                >
+                                    <X size={16} />
+                                </button>
+                            ) : null}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setIsOpen(false)}
+                            className="px-3 py-2 text-xs font-bold text-stone-600 hover:text-stone-900 rounded-xl bg-stone-100 active:scale-95 shrink-0"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+
+                    {/* Mobile Results Container */}
+                    <div className="max-h-[70vh] overflow-y-auto pt-1 pb-2">
+                        {displayResults.length > 0 ? (
                             <div className="space-y-1">
-                                <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                                    {isCommandMode ? 'Command Center' : 'Search Results'}
-                                </p>
                                 {displayResults.map((result, index) => (
                                     <button
-                                        id={`search-result-${index}`}
                                         key={isCommandMode ? result.cmd : `${result.type}-${result.id}`}
                                         onClick={() => handleNavigate(result.url)}
-                                        onMouseEnter={() => setActiveIndex(index)}
-                                        className={`group/item flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-all ${activeIndex === index ? (isCommandMode ? 'bg-indigo-50/50' : 'bg-clay-50') : 'hover:bg-stone-50'}`}
+                                        className="group/item flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all active:bg-clay-50 hover:bg-stone-50"
                                     >
-                                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all ${
-                                            activeIndex === index 
-                                                ? (isCommandMode ? `${result.color} border-indigo-200` : 'bg-white border-clay-200 text-clay-600') 
-                                                : (isCommandMode ? `${result.color} border-transparent opacity-70` : 'bg-stone-50 border-stone-100 text-stone-400')
-                                        }`}>
-                                            {isCommandMode ? <result.icon size={16} /> : getIcon(result.type)}
+                                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${isCommandMode ? `${result.color} border-indigo-200` : 'bg-stone-50 border-stone-100 text-stone-600'}`}>
+                                            {isCommandMode ? <result.icon size={18} /> : getIcon(result.type)}
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`truncate text-sm font-bold ${activeIndex === index ? 'text-stone-900' : 'text-stone-600'}`}>
-                                                    {isCommandMode ? result.label : result.title}
-                                                </span>
-                                                {!isCommandMode && (
-                                                    <span className="shrink-0 rounded-md bg-stone-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-stone-500">
-                                                        {result.type.replace('_', ' ')}
-                                                    </span>
-                                                )}
-                                                {isCommandMode && (
-                                                    <span className="shrink-0 rounded-md bg-white border border-indigo-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-500">
-                                                        Command
-                                                    </span>
-                                                )}
-                                            </div>
+                                            <p className="truncate text-sm font-bold text-stone-900">
+                                                {isCommandMode ? result.label : result.title}
+                                            </p>
                                             <p className="truncate text-xs font-medium text-stone-400">
                                                 {isCommandMode ? result.cmd : result.subtitle}
                                             </p>
                                         </div>
-                                        {activeIndex === index && (
-                                            <div className="shrink-0 animate-in fade-in slide-in-from-right-2 duration-200">
-                                                <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm flex items-center gap-1.5 ${isCommandMode ? 'bg-indigo-600 text-white' : 'bg-clay-600 text-white'}`}>
-                                                    {isCommandMode ? 'Execute' : 'View'}
-                                                    <Command size={10} />
-                                                </span>
-                                            </div>
-                                        )}
                                     </button>
                                 ))}
                             </div>
-                        ) : query.length >= (isCommandMode ? 1 : 2) ? (
-                            <div className="px-4 py-8 text-center">
-                                <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-stone-50 text-stone-300 mb-2">
-                                    {isCommandMode ? <Command size={20} /> : <Search size={20} />}
-                                </div>
-                                <p className="text-sm font-bold text-stone-900">No {isCommandMode ? 'commands' : 'results'} found</p>
-                                <p className="text-xs font-medium text-stone-500 mt-0.5">Try adjusting your {isCommandMode ? 'command' : 'terms'}.</p>
+                        ) : query.length >= 2 ? (
+                            <div className="p-6 text-center">
+                                <p className="text-sm font-bold text-stone-900">No results found</p>
+                                <p className="text-xs text-stone-500 mt-1">Try a different search term.</p>
                             </div>
                         ) : (
-                            <div className="p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-2">Quick Navigation</h3>
+                            <div className="p-2 space-y-2">
+                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-2">Quick Commands</p>
                                 <div className="grid grid-cols-1 gap-1">
                                     {(isAdmin ? [
-                                        { label: 'User Manager', sub: 'Manage platform users, staff profiles, and onboarding.', icon: Users, color: 'text-indigo-500 bg-indigo-50/50', url: getSafeRoute('admin.users.manager') },
-                                        { label: 'Catalog Manager', sub: 'Manage product categories, tags, and taxonomy.', icon: FolderTree, color: 'text-rose-500 bg-rose-50/50', url: getSafeRoute('admin.catalog.index') },
-                                        { label: 'Safety & Moderation', sub: 'Manage flagged listings, reviews, and user content.', icon: ShieldAlert, color: 'text-red-500 bg-red-50/50', url: getSafeRoute('admin.compliance') },
+                                        { label: 'User Manager', url: getSafeRoute('admin.users.manager'), icon: Users },
+                                        { label: 'Catalog Manager', url: getSafeRoute('admin.catalog.index'), icon: FolderTree },
+                                        { label: 'Safety & Moderation', url: getSafeRoute('admin.compliance'), icon: ShieldAlert },
                                     ] : [
-                                        { label: 'Products & Inventory', sub: 'Manage product listings, supplies, and orders.', icon: Box, color: 'text-blue-500 bg-blue-50/50', modules: ['products', 'procurement'], url: getSafeRoute('products.index') },
-                                        { label: 'Orders & Reviews', sub: 'Manage order fulfillment, tracking, and feedback.', icon: ShoppingBag, color: 'text-emerald-500 bg-emerald-50/50', modules: ['orders', 'reviews'], url: getSafeRoute('orders.index') },
-                                        { label: 'Sponsorships', sub: 'Promote your products and manage active campaigns.', icon: Award, color: 'text-amber-500 bg-amber-50/50', modules: ['sponsorships'], url: getSafeRoute('seller.sponsorships') },
-                                        { label: 'HR & Payroll', sub: 'Manage staff profiles, payroll runs, and access.', icon: Users, color: 'text-purple-500 bg-purple-50/50', modules: ['hr', 'accounting'], url: getSafeRoute('hr.index') }
-                                    ].filter(tip => !tip.modules || tip.modules.some(m => visibleModules.includes(m)))).map((tip, i) => (
-                                        <button 
-                                            key={i} 
-                                            onClick={() => handleNavigate(tip.url)}
-                                            className="group flex w-full items-center gap-3 p-2 rounded-xl hover:bg-stone-50 text-left transition-colors cursor-pointer"
+                                        { label: 'Products & Inventory', url: getSafeRoute('products.index'), icon: Box },
+                                        { label: 'Orders & Fulfillment', url: getSafeRoute('orders.index'), icon: ShoppingBag },
+                                        { label: 'Sponsorships', url: getSafeRoute('seller.sponsorships'), icon: Award },
+                                    ]).map((item, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => handleNavigate(item.url)}
+                                            className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-stone-50 text-left active:scale-98"
                                         >
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${tip.color}`}>
-                                                <tip.icon size={16} />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold text-stone-900 leading-none mb-1">{tip.label}</p>
-                                                <p className="text-[10px] text-stone-500 leading-none">{tip.sub}</p>
-                                            </div>
+                                            <item.icon size={16} className="text-clay-600" />
+                                            <span className="text-xs font-bold text-stone-800">{item.label}</span>
                                         </button>
                                     ))}
                                 </div>
                             </div>
                         )}
-                    </div>
-                    {/* Footer */}
-                    <div className="border-t border-stone-100 bg-stone-50/80 px-4 py-2 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1.5">
-                                <kbd className="px-1.5 py-0.5 bg-white border border-stone-200 rounded text-[9px] font-bold text-stone-500 shadow-sm leading-none">ENTER</kbd>
-                                <span className="text-[10px] font-bold text-stone-400">Select</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <kbd className="px-1 py-0.5 bg-white border border-stone-200 rounded text-[9px] font-bold text-stone-500 shadow-sm flex items-center justify-center leading-none">
-                                    <span className="translate-y-[1px]">↑</span>
-                                </kbd>
-                                <kbd className="px-1 py-0.5 bg-white border border-stone-200 rounded text-[9px] font-bold text-stone-500 shadow-sm flex items-center justify-center leading-none">
-                                    <span className="translate-y-[1px]">↓</span>
-                                </kbd>
-                                <span className="text-[10px] font-bold text-stone-400">Navigate</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold text-stone-400 italic">Type <span className="text-indigo-500 font-black px-1.5 py-0.5 bg-indigo-50 rounded">{">"}</span> for commands</span>
-                        </div>
                     </div>
                 </div>
             )}
