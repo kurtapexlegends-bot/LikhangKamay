@@ -26,7 +26,7 @@ import ContactSocialsForm from '@/Components/Admin/Layout/SystemConfig/ContactSo
 import PlatformOpsForm from '@/Components/Admin/Layout/SystemConfig/PlatformOpsForm';
 import MonetizationDashboard from '@/Components/Admin/Layout/SystemConfig/MonetizationDashboard';
 import SubscriptionTiers from '@/Components/Admin/Layout/SystemConfig/SubscriptionTiers';
-import MailDispatchForm from '@/Components/Admin/Layout/SystemConfig/MailDispatchForm';
+import EmailStudioForm from '@/Components/Admin/Layout/SystemConfig/EmailStudioForm';
 import CategoryManager from '@/Components/Admin/Catalog/CategoryManager';
 import TrashRestorationTable from '@/Components/Admin/Compliance/TrashRestorationTable';
 import ConfirmationModal from '@/Components/ConfirmationModal';
@@ -154,7 +154,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     const subTabs = [
         { id: 'branding_contact', name: 'Contact & Socials', icon: Mail },
         { id: 'branding_ops', name: 'Platform Ops', icon: Settings },
-        { id: 'branding_smtp', name: 'Mail & Templates', icon: Server },
+        { id: 'branding_smtp', name: 'Mail Studio & Broadcast', icon: Server },
     ];
 
     if (activeTab === 'monetization') {
@@ -261,7 +261,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                     )}
 
                                     {activeSubTab === 'branding_smtp' && (
-                                        <MailDispatchForm
+                                        <EmailStudioForm
                                             data={data}
                                             setData={setData}
                                             errors={errors}

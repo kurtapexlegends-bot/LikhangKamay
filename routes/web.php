@@ -379,6 +379,12 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/settings', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'index'])->name('admin.settings.index');
     Route::post('/settings', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'update'])->name('admin.settings.update');
     Route::post('/settings/mail/test', [\App\Http\Controllers\Admin\TestMailDispatchController::class, 'dispatchTestEmail'])->middleware('throttle:admin.heavy')->name('admin.settings.mail.test');
+    
+    // Email Studio & Audience Broadcast
+    Route::get('/settings/email-templates', [\App\Http\Controllers\Admin\EmailStudioController::class, 'index'])->name('admin.email-templates.index');
+    Route::post('/settings/email-templates', [\App\Http\Controllers\Admin\EmailStudioController::class, 'store'])->name('admin.email-templates.store');
+    Route::delete('/settings/email-templates/{template}', [\App\Http\Controllers\Admin\EmailStudioController::class, 'destroy'])->name('admin.email-templates.destroy');
+    Route::post('/settings/email-templates/dispatch', [\App\Http\Controllers\Admin\EmailStudioController::class, 'dispatch'])->middleware('throttle:admin.heavy')->name('admin.email-templates.dispatch');
         Route::get('/monetization', fn() => redirect()->route('admin.settings.index', ['tab' => 'monetization']))->name('admin.monetization');
     Route::get('/insights', [\App\Http\Controllers\Admin\SuperAdminController::class, 'insights'])->name('admin.insights');
     Route::get('/insights/export', [\App\Http\Controllers\Admin\SuperAdminController::class, 'exportInsights'])->name('admin.insights.export');
