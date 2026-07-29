@@ -94,43 +94,46 @@ export default function UserTable({
 }) {
     return (
         <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-            {/* Mobile Cards View */}
-            <div className="space-y-3 p-3 md:hidden">
+            {/* Mobile & Tablet Cards View */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:hidden gap-3.5 p-3.5">
                 {filteredAccounts.length === 0 && (
-                    <WorkspaceEmptyState
-                        compact
-                        icon={Search}
-                        title="No matching accounts"
-                        description="Try another quick view or broaden the search query."
-                    />
+                    <div className="md:col-span-2">
+                        <WorkspaceEmptyState
+                            compact
+                            icon={Search}
+                            title="No matching accounts"
+                            description="Try another quick view or broaden the search query."
+                        />
+                    </div>
                 )}
 
                 {filteredAccounts.map((user) => {
                     const isExpandable = isExpandableAccount(user);
                     return (
-                        <div key={user.id} className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-                            <div className="flex items-start gap-4">
-                                <UserAvatar user={user} className="h-10 w-10 shrink-0 border border-stone-100" />
+                        <div key={user.id} className="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-xs hover:border-stone-300 transition-all flex flex-col justify-between">
+                            <div className="flex items-start gap-3.5">
+                                <UserAvatar user={user} className="h-11 w-11 shrink-0 border border-stone-100/80 shadow-2xs" />
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="min-w-0">
-                                            <p className="truncate text-[13px] font-bold text-stone-900">{user.name}</p>
-                                            <p className="truncate text-[11px] font-medium text-stone-400">{user.email}</p>
+                                            <p className="truncate text-sm font-bold text-stone-900 leading-snug">{user.name}</p>
+                                            <p className="truncate text-xs font-medium text-stone-400 mt-0.5">{user.email}</p>
                                         </div>
-                                        <div className="flex shrink-0 gap-2 items-center">
+                                        <div className="flex shrink-0 gap-1.5 items-center">
                                             {isExpandable && (
                                                 <button
+                                                    type="button"
                                                     onClick={() => setDrawerArtisan(user)}
-                                                    className="inline-flex h-11 px-3 items-center gap-1 rounded-lg border border-[#E8D9CB] bg-[#F2EAE1] text-[10px] font-bold uppercase tracking-wider text-[#7A5037] active:scale-95 transition-all"
+                                                    className="inline-flex h-10 px-3 items-center gap-1.5 rounded-xl border border-[#E8D9CB] bg-[#F2EAE1] text-[10px] font-extrabold uppercase tracking-wider text-[#7A5037] active:scale-95 transition-all shadow-2xs min-h-[40px]"
                                                 >
-                                                    <Briefcase size={12} /> {user.staff_count}
+                                                    <Briefcase size={13} /> {user.staff_count}
                                                 </button>
                                             )}
                                             {user.role !== 'super_admin' && (
                                                 <button
                                                     type="button"
                                                     onClick={() => handleImpersonate(user.id)}
-                                                    className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-stone-900 text-white shadow-sm active:scale-95 transition-all"
+                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-stone-900 text-white shadow-sm active:scale-95 transition-all min-h-[40px] min-w-[40px] hover:bg-stone-800"
                                                     title={`Impersonate ${user.name}`}
                                                 >
                                                     <VenetianMask size={16} />
@@ -139,27 +142,27 @@ export default function UserTable({
                                         </div>
                                     </div>
 
-                                    <div className="mt-2.5 flex flex-wrap gap-1.5">
-                                        <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer}`}>
-                                            {user.role === 'artisan' && <Store size={10} />}
-                                            {user.role === 'super_admin' && <Shield size={10} />}
-                                            {user.role === 'buyer' && <Users size={10} />}
+                                    <div className="mt-3 flex flex-wrap gap-1.5">
+                                        <span className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer}`}>
+                                            {user.role === 'artisan' && <Store size={11} />}
+                                            {user.role === 'super_admin' && <Shield size={11} />}
+                                            {user.role === 'buyer' && <Users size={11} />}
                                             {user.role_label}
                                         </span>
-                                        <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
+                                        <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
                                             {user.account_state}
                                         </span>
                                         {user.role === 'artisan' && user.shop_name && (
-                                            <span className="inline-flex items-center rounded-md border border-stone-200 bg-stone-50 px-2 py-0.5 text-[9px] font-bold text-stone-500 uppercase tracking-wider">
+                                            <span className="inline-flex items-center rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-[9.5px] font-bold text-stone-600 uppercase tracking-wider">
                                                 {user.shop_name}
                                             </span>
                                         )}
                                     </div>
-
-                                    <div className="mt-3 flex items-center justify-between border-t border-stone-50 pt-2.5 text-[10px] font-medium text-stone-400">
-                                        <span>Joined {user.created_at}</span>
-                                    </div>
                                 </div>
+                            </div>
+
+                            <div className="mt-3.5 flex items-center justify-between border-t border-stone-100 pt-3 text-[10.5px] font-medium text-stone-400">
+                                <span>Joined {user.created_at}</span>
                             </div>
                         </div>
                     );
@@ -167,7 +170,7 @@ export default function UserTable({
             </div>
 
             {/* Desktop Table View */}
-            <div className="hidden overflow-x-auto md:block">
+            <div className="hidden overflow-x-auto lg:block">
                 <table className="w-full min-w-[960px]">
                     <thead className="bg-stone-50 border-b border-stone-200">
                         <tr>
