@@ -9,6 +9,7 @@ use App\Models\PlatformActivity;
 use App\Mail\CustomDynamicMail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -77,7 +78,7 @@ class EmailStudioController extends Controller
                 'button_label' => $validated['button_label'] ?? null,
                 'button_url' => $validated['button_url'] ?? null,
                 'category' => $validated['category'],
-                'created_by_user_id' => auth()->id(),
+                'created_by_user_id' => Auth::id(),
             ]
         );
 

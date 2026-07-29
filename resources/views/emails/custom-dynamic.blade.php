@@ -35,7 +35,7 @@
 
             @if(!empty($buttonLabel) && !empty($buttonUrl))
                 <div style="text-align: center; margin: 32px 0 24px;">
-                    <a href="{{ $buttonUrl }}" style="display: inline-block; background-color: #8B4513; color: #ffffff; padding: 14px 28px; border-radius: 10px; font-size: 14px; font-weight: 700; text-decoration: none; shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <a href="{{ $buttonUrl }}" style="display: inline-block; background-color: #8B4513; color: #ffffff; padding: 14px 28px; border-radius: 10px; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         {{ $buttonLabel }}
                     </a>
                 </div>

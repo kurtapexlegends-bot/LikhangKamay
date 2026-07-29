@@ -19,6 +19,7 @@ class EmailStudioTest extends TestCase
 
     public function test_non_admin_cannot_access_email_studio_routes(): void
     {
+        /** @var User $buyer */
         $buyer = User::factory()->create(['role' => 'buyer']);
 
         $response = $this->actingAs($buyer)->getJson(route('admin.email-templates.index'));
@@ -27,6 +28,7 @@ class EmailStudioTest extends TestCase
 
     public function test_super_admin_can_list_email_templates(): void
     {
+        /** @var User $admin */
         $admin = User::factory()->create(['role' => 'super_admin']);
 
         $response = $this->actingAs($admin)->getJson(route('admin.email-templates.index'));
@@ -37,6 +39,7 @@ class EmailStudioTest extends TestCase
 
     public function test_super_admin_can_create_custom_email_template(): void
     {
+        /** @var User $admin */
         $admin = User::factory()->create(['role' => 'super_admin']);
 
         $response = $this->actingAs($admin)->post(route('admin.email-templates.store'), [
@@ -59,7 +62,9 @@ class EmailStudioTest extends TestCase
 
     public function test_super_admin_can_dispatch_email_to_specific_user(): void
     {
+        /** @var User $admin */
         $admin = User::factory()->create(['role' => 'super_admin']);
+        /** @var User $recipient */
         $recipient = User::factory()->create(['name' => 'Maria Santos', 'email' => 'maria@example.com']);
 
         $response = $this->actingAs($admin)->postJson(route('admin.email-templates.dispatch'), [
@@ -81,6 +86,7 @@ class EmailStudioTest extends TestCase
 
     public function test_super_admin_can_dispatch_email_to_role_group(): void
     {
+        /** @var User $admin */
         $admin = User::factory()->create(['role' => 'super_admin']);
         User::factory()->count(3)->create(['role' => 'artisan', 'artisan_status' => 'approved']);
 
