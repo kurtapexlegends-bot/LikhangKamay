@@ -205,31 +205,39 @@ export default function ProductModerationTable({ products, filters, statusCounts
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             
             {/* KPI Telemetry Cards Panel */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <ModerationMetricCard 
-                    title="Pending Review" 
-                    value={statusCounts?.pending_review || 0} 
-                    icon={Clock} 
-                    tone="amber" 
-                />
-                <ModerationMetricCard 
-                    title="Active Listings" 
-                    value={statusCounts?.Active || 0} 
-                    icon={CheckCircle2} 
-                    tone="emerald" 
-                />
-                <ModerationMetricCard 
-                    title="Flagged Listings" 
-                    value={statusCounts?.flagged || 0} 
-                    icon={ShieldAlert} 
-                    tone="rose" 
-                />
-                <ModerationMetricCard 
-                    title="Rejected Listings" 
-                    value={statusCounts?.rejected || 0} 
-                    icon={XCircle} 
-                    tone="stone" 
-                />
+            <div className="flex overflow-x-auto gap-4 pb-2.5 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-4 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
+                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                    <ModerationMetricCard 
+                        title="Pending Review" 
+                        value={statusCounts?.pending_review || 0} 
+                        icon={Clock} 
+                        tone="amber" 
+                    />
+                </div>
+                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                    <ModerationMetricCard 
+                        title="Active Listings" 
+                        value={statusCounts?.Active || 0} 
+                        icon={CheckCircle2} 
+                        tone="emerald" 
+                    />
+                </div>
+                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                    <ModerationMetricCard 
+                        title="Flagged Listings" 
+                        value={statusCounts?.flagged || 0} 
+                        icon={ShieldAlert} 
+                        tone="rose" 
+                    />
+                </div>
+                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                    <ModerationMetricCard 
+                        title="Rejected Listings" 
+                        value={statusCounts?.rejected || 0} 
+                        icon={XCircle} 
+                        tone="stone" 
+                    />
+                </div>
             </div>
 
             {/* Search & Filter Dashboard Card Container */}
