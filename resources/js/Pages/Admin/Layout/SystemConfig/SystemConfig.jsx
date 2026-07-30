@@ -56,7 +56,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         }
     };
 
-    const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
+    const { data, setData, post, processing, errors, recentlySuccessful, isDirty } = useForm({
         contact_info: {
             email: settings?.contact_info?.email || 'support@likhangkamay.app',
             phone: settings?.contact_info?.phone || '',
@@ -188,22 +188,23 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
             <div className="max-w-6xl mx-auto space-y-6 pb-24 lg:pb-6">
                 
                 {/* --- TABS NAVIGATION --- */}
-                <div className="border-b border-stone-200 bg-white rounded-t-2xl shadow-sm px-4 pt-4 sm:px-6">
-                    <div className="flex space-x-4 sm:space-x-6 overflow-x-auto scrollbar-none no-scrollbar flex-nowrap py-1 scroll-smooth snap-x touch-pan-x min-w-0 w-full">
+                <div className="bg-stone-100/80 p-1.5 rounded-2xl border border-stone-200/70 shadow-2xs">
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth snap-x touch-pan-x min-w-0 w-full">
                         {mainTabs.map((tab) => {
                             const Icon = tab.icon;
+                            const isActive = activeTab === tab.id;
                             return (
                                 <button
                                     key={tab.id}
                                     type="button"
                                     onClick={() => handleTabChange(tab.id)}
-                                    className={`flex items-center gap-2 border-b-2 pb-4 px-1 text-xs sm:text-sm font-bold transition-all whitespace-nowrap outline-none min-h-[44px] shrink-0 snap-start active:scale-95 ${
-                                        activeTab === tab.id
-                                            ? 'border-clay-600 text-clay-700 font-bold'
-                                            : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200'
+                                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap outline-none min-h-[42px] shrink-0 snap-start active:scale-95 ${
+                                        isActive
+                                            ? 'bg-white text-stone-900 shadow-sm ring-1 ring-stone-900/5'
+                                            : 'text-stone-500 hover:text-stone-700 hover:bg-stone-200/50'
                                     }`}
                                 >
-                                    <Icon size={16} />
+                                    <Icon size={16} className={isActive ? 'text-clay-700' : 'text-stone-400'} />
                                     <span>{tab.name}</span>
                                 </button>
                             );
@@ -222,21 +223,21 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                             transition={{ duration: 0.2 }}
                         >
                             {/* Inner Sub Tabs bar */}
-                            <div className="flex items-center gap-1.5 border-b border-stone-100 pb-3 overflow-x-auto scrollbar-none no-scrollbar flex-nowrap py-1 scroll-smooth snap-x touch-pan-x min-w-0 w-full">
+                            <div className="bg-stone-100/60 p-1 rounded-xl border border-stone-200/60 flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth snap-x touch-pan-x min-w-0 w-full">
                                 {subTabs.map((subTab) => (
                                     <button
                                         key={subTab.id}
                                         type="button"
                                         onClick={() => setActiveSubTab(subTab.id)}
                                         className={`
-                                            flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap min-h-[36px] shrink-0 snap-start active:scale-95
+                                            flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap outline-none min-h-[38px] shrink-0 snap-start active:scale-95
                                             ${activeSubTab === subTab.id 
-                                                ? 'bg-clay-50 text-clay-700 font-bold border border-clay-200/50 shadow-2xs' 
-                                                : 'text-stone-500 hover:text-stone-700 hover:bg-stone-50'}
+                                                ? 'bg-white text-stone-900 shadow-2xs font-bold ring-1 ring-stone-900/5' 
+                                                : 'text-stone-500 hover:text-stone-700 hover:bg-stone-200/50'}
                                         `}
                                     >
-                                        <subTab.icon size={12} />
-                                        {subTab.name}
+                                        <subTab.icon size={13} className={activeSubTab === subTab.id ? 'text-clay-700' : 'text-stone-400'} />
+                                        <span>{subTab.name}</span>
                                     </button>
                                 ))}
                             </div>
@@ -272,29 +273,37 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
 
                                         {/* Right Column: Sticky actions (Desktop only) */}
                                         <div className="space-y-6">
-                                            <div className="hidden lg:block bg-stone-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
+                                            <div className="hidden lg:block bg-stone-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden group border border-stone-850">
                                                 <div className="relative z-10 space-y-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
-                                                            <Save size={14} className="text-clay-400" />
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2.5">
+                                                            <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
+                                                                <Save size={15} className="text-clay-400" />
+                                                            </div>
+                                                            <h3 className="text-sm font-bold">Apply Changes</h3>
                                                         </div>
-                                                        <h3 className="text-sm font-bold">Apply Changes</h3>
+                                                        {isDirty && (
+                                                            <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full animate-pulse">
+                                                                Unsaved
+                                                            </span>
+                                                        )}
                                                     </div>
+
                                                     <p className="text-[11px] text-stone-400 leading-relaxed font-medium">
                                                         System parameters and SMTP rules sync across live processes.
                                                     </p>
                                                     
                                                     <PrimaryButton 
                                                         disabled={processing}
-                                                        className="w-full py-3 bg-clay-600 hover:bg-clay-500 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md group border-none text-[10px]"
+                                                        className="w-full py-3 bg-clay-600 hover:bg-clay-500 text-white rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md group border-none text-xs font-bold min-h-[44px]"
                                                     >
-                                                        <Save size={14} className="transition-transform duration-200 group-hover:scale-110" />
-                                                        {processing ? 'Processing...' : 'Apply Config Update'}
+                                                        <Save size={15} className="transition-transform duration-200 group-hover:scale-110" />
+                                                        {processing ? 'Saving...' : 'Apply Config Update'}
                                                     </PrimaryButton>
 
                                                     {recentlySuccessful && (
-                                                        <div className="flex items-center gap-1.5 text-emerald-400 text-[10px] font-bold animate-in fade-in slide-in-from-top-1">
-                                                            <CheckCircle2 size={13} />
+                                                        <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-bold animate-in fade-in slide-in-from-top-1 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl">
+                                                            <CheckCircle2 size={15} />
                                                             <span>Settings updated successfully!</span>
                                                         </div>
                                                     )}
