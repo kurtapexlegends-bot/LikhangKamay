@@ -41,7 +41,6 @@ class SystemSettingsTest extends TestCase
                 'instagram' => 'https://instagram.com/likhangkamaytest',
                 'twitter' => 'https://twitter.com/likhangkamaytest',
             ],
-            'commission_rate' => 6.5,
             'convenience_fee' => 20.0,
             'maintenance_mode' => false,
             'paymongo_enabled' => true,
@@ -81,7 +80,6 @@ class SystemSettingsTest extends TestCase
         $this->assertIsArray($social);
         $this->assertEquals('https://facebook.com/likhangkamaytest', $social['facebook']);
 
-        $this->assertEquals(6.5, $this->settings->get('commission_rate'));
         $this->assertEquals(20.0, $this->settings->get('convenience_fee'));
         $this->assertFalse($this->settings->get('maintenance_mode'));
         $this->assertTrue($this->settings->get('paymongo_enabled'));

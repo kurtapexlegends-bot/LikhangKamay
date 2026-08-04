@@ -189,7 +189,6 @@ class SystemSettingsController extends Controller
                 'twitter' => '',
             ]),
             // Operational Settings
-            'commission_rate' => $this->settings->get('commission_rate', 5.0),
             'convenience_fee' => $this->settings->get('convenience_fee', 3.0),
             'maintenance_mode' => $this->settings->get('maintenance_mode', false),
             'paymongo_enabled' => $this->settings->get('paymongo_enabled', true),
@@ -368,7 +367,6 @@ class SystemSettingsController extends Controller
             'social_links.instagram' => 'nullable|url|max:255',
             'social_links.twitter' => 'nullable|url|max:255',
             // Operational Validation
-            'commission_rate' => 'required|numeric|min:0|max:100',
             'convenience_fee' => 'required|numeric|min:0|max:100',
             'maintenance_mode' => 'required|boolean',
             'paymongo_enabled' => 'required|boolean',
@@ -392,13 +390,6 @@ class SystemSettingsController extends Controller
             \App\Models\PlatformActivity::log(
                 'BRANDING_UPDATE',
                 "Updated primary brand color from " . $this->settings->get('primary_color') . " to " . $validated['primary_color']
-            );
-        }
-
-        if ((float)$this->settings->get('commission_rate') !== (float)$validated['commission_rate']) {
-            \App\Models\PlatformActivity::log(
-                'COMMISSION_UPDATE',
-                "Changed site-wide commission from " . $this->settings->get('commission_rate') . "% to " . $validated['commission_rate'] . "%"
             );
         }
 
@@ -489,7 +480,6 @@ class SystemSettingsController extends Controller
         $this->settings->set('social_links', $validated['social_links'], 'json');
         
         // Save Operational Settings
-        $this->settings->set('commission_rate', $validated['commission_rate'], 'float');
         $this->settings->set('convenience_fee', $validated['convenience_fee'], 'float');
         $this->settings->set('maintenance_mode', $validated['maintenance_mode'] ? 'true' : 'false', 'boolean');
         $this->settings->set('paymongo_enabled', $validated['paymongo_enabled'] ? 'true' : 'false', 'boolean');

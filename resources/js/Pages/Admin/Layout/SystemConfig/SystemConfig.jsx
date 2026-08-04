@@ -68,7 +68,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
             twitter: settings?.social_links?.twitter || '',
         },
         // Operational Settings
-        commission_rate: settings?.commission_rate || 5.0,
         convenience_fee: settings?.convenience_fee || 3.0,
         maintenance_mode: settings?.maintenance_mode || false,
         paymongo_enabled: settings?.paymongo_enabled || true,
@@ -120,7 +119,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                     instagram: settings.social_links?.instagram || '',
                     twitter: settings.social_links?.twitter || '',
                 },
-                commission_rate: settings.commission_rate || 5.0,
                 convenience_fee: settings.convenience_fee || 3.0,
                 maintenance_mode: settings.maintenance_mode || false,
                 paymongo_enabled: settings.paymongo_enabled || true,
@@ -336,7 +334,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                                 <div className="hidden lg:block">
                                                     <ul className="space-y-3">
                                                         {[
-                                                            { title: 'Commission Rates', desc: 'Sellers on Premium & Elite have custom low-overhead commission rates.', icon: Percent },
+                                                            { title: 'Zero Commission Policy', desc: 'Sellers keep 100% of sales revenue without percentage commission deductions.', icon: Percent },
                                                             { title: 'PayMongo Gateway', desc: 'Disable this toggle to set checkout offline during technical maintenance.', icon: CreditCard },
                                                         ].map((tip, idx) => (
                                                             <li key={idx} className="flex gap-2.5">
@@ -362,7 +360,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                                         >
                                                             <ul className="space-y-3 pt-2">
                                                                 {[
-                                                                    { title: 'Commission Rates', desc: 'Sellers on Premium & Elite have custom low-overhead commission rates.', icon: Percent },
+                                                                    { title: 'Zero Commission Policy', desc: 'Sellers keep 100% of sales revenue without percentage commission deductions.', icon: Percent },
                                                                     { title: 'PayMongo Gateway', desc: 'Disable this toggle to set checkout offline during technical maintenance.', icon: CreditCard },
                                                                 ].map((tip, idx) => (
                                                                     <li key={idx} className="flex gap-2.5">

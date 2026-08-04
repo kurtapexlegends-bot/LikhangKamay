@@ -59,7 +59,7 @@ This document details the core Laravel Eloquent models, their database relations
 *   `status` (Pending, Accepted, Shipped, Delivered, Completed, Cancelled)
 *   `payment_method` (COD, PayMongo Checkout, etc.)
 *   `payment_status` (Pending, Paid, Failed)
-*   `merchandise_subtotal`, `shipping_fee_amount`, `platform_commission_amount`, `seller_net_amount` (decimal values)
+*   `merchandise_subtotal`, `shipping_fee_amount`, `platform_commission_amount` (0.00), `seller_net_amount` (decimal values equal to merchandise subtotal)
 
 ### Core Rules & Hooks
 1.  **Stock Restoration on Cancellation**:

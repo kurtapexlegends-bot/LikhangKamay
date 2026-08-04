@@ -54,10 +54,8 @@ export default function OrderPricingCard({
                         </span>
                     </div>
                     <div className="flex justify-between text-stone-500">
-                        <span>Platform Commission (5%):</span>
-                        <span className="font-semibold text-red-500">
-                            - PHP {Number(order.platform_commission_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </span>
+                        <span>Platform Commission:</span>
+                        <span className="font-semibold text-emerald-600">0% (₱0.00)</span>
                     </div>
                     <div className="flex justify-between font-bold pt-1.5 border-t border-stone-100/60 mb-2.5">
                         <span className="text-stone-900">Your Net Payout:</span>

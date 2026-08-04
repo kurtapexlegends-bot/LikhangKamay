@@ -14,31 +14,11 @@ export default function PlatformOpsForm({ data, setData }) {
                     </div>
                     <div>
                         <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Financial Thresholds</h3>
-                        <p className="text-[10px] text-stone-400 font-medium">Configure system commission rates and checkout fee percentages.</p>
+                        <p className="text-[10px] text-stone-400 font-medium">Configure system checkout fee percentages and payment thresholds.</p>
                     </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-stone-50/50 p-4 rounded-xl border border-stone-200/70 focus-within:ring-2 focus-within:ring-clay-500/20 focus-within:border-clay-500 transition-all">
-                        <div className="flex items-center justify-between mb-2">
-                            <InputLabel value="Commission Rate (%)" className="text-[10px] font-bold text-stone-600 uppercase tracking-wider" />
-                            <span className="text-[9.5px] font-bold text-stone-400">Default Seller Fee</span>
-                        </div>
-                        <div className="relative">
-                            <Percent className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
-                            <TextInput 
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.1"
-                                className="block w-full pl-9 bg-white text-xs font-bold text-stone-900 py-2.5 min-h-[42px] border-stone-200 rounded-xl" 
-                                value={data.commission_rate}
-                                onChange={(e) => setData('commission_rate', e.target.value)}
-                                placeholder="0.0"
-                            />
-                        </div>
-                    </div>
-
+                <div className="grid grid-cols-1 gap-4">
                     <div className="bg-stone-50/50 p-4 rounded-xl border border-stone-200/70 focus-within:ring-2 focus-within:ring-clay-500/20 focus-within:border-clay-500 transition-all">
                         <div className="flex items-center justify-between mb-2">
                             <InputLabel value="Convenience Fee (%)" className="text-[10px] font-bold text-stone-600 uppercase tracking-wider" />

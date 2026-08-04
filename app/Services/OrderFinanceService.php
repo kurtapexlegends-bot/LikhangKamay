@@ -8,7 +8,7 @@ class OrderFinanceService
 {
     public static function getPlatformCommissionRate(): float
     {
-        return (float) \App\Facades\Settings::get('commission_rate', 5.0) / 100;
+        return 0.00;
     }
 
     public static function getConvenienceFeeRate(): float
@@ -23,7 +23,7 @@ class OrderFinanceService
     public static function getPricingData(): array
     {
         return [
-            'commission_rate' => self::getPlatformCommissionRate(),
+            'commission_rate' => 0.00,
             'convenience_fee_rate' => self::getConvenienceFeeRate(),
         ];
     }
@@ -40,8 +40,8 @@ class OrderFinanceService
         $normalizedShippingFee = $shippingMethod === 'Delivery'
             ? $this->money($shippingFee)
             : 0.00;
-        $platformCommission = $this->money($normalizedSubtotal * self::getPlatformCommissionRate());
-        $sellerNet = $this->money($normalizedSubtotal - $platformCommission);
+        $platformCommission = 0.00;
+        $sellerNet = $normalizedSubtotal;
         $grandTotal = $this->money($normalizedSubtotal + $convenienceFee + $normalizedShippingFee);
 
         return [

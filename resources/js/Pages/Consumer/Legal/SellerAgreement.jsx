@@ -22,7 +22,7 @@ export default function SellerAgreement() {
         {
             title: "Pricing and Fees",
             icon: Percent,
-            content: "You are solely responsible for setting product prices. LikhangKamay charges a commission fee of 5% on each successful sale. This covers platform maintenance, payment processing, customer support, and marketing. Fees are automatically deducted before payout."
+            content: "You are solely responsible for setting product prices. LikhangKamay charges 0% platform commission on each successful sale, allowing artisans to keep 100% of their merchandise earnings. Platform operations are funded through seller subscription tiers."
         },
         {
             title: "Membership Tiers & Subscriptions",
@@ -52,7 +52,7 @@ export default function SellerAgreement() {
         {
             title: "Payments and Payouts",
             icon: Banknote,
-            content: "Earnings are calculated after deducting platform commission. Payouts are processed weekly for balances exceeding ₱500. Provide valid bank account details. LikhangKamay is not responsible for delays from incorrect banking information."
+            content: "Seller net payouts reflect 100% of merchandise sales subtotal without percentage commission deductions. Payouts are processed weekly for balances exceeding ₱500. Provide valid bank account details. LikhangKamay is not responsible for delays from incorrect banking information."
         },
         {
             title: "Prohibited Activities",

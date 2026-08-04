@@ -30,7 +30,7 @@ This document details the compliance agreement logs, staff access tracking, capi
 *   **Sponsorship Event**: [SponsorshipEvent.php](file:///c:/laragon/www/LikhangKamay/app/Models/SponsorshipEvent.php)
     *   Tracks listing views and customer click events for promoted products.
 *   **Platform Variable**: [PlatformVariable.php](file:///c:/laragon/www/LikhangKamay/app/Models/PlatformVariable.php)
-    *   Global dynamic configuration settings (e.g. commission fee percentage, base shipping rate factors).
+    *   Global dynamic configuration settings (e.g. checkout convenience fee percentage, base shipping rate factors). Platform commission fee is hardcoded to 0% (0.00) allowing sellers to keep 100% of sales subtotal.
 
 ---
 
