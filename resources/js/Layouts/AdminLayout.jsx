@@ -5,6 +5,8 @@ import Dropdown from '@/Components/Dropdown';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import NotificationDropdown from '@/Components/NotificationDropdown';
+import GlobalSearch from '@/Components/Consumer/GlobalSearch';
+import ActivityHistoryDrawer from '@/Components/ActivityHistoryDrawer';
 import { useRealtime } from '@/hooks/useRealtime';
 import {
     LayoutDashboard,
@@ -26,7 +28,7 @@ import {
     Activity,
     CreditCard,
     FolderTree,
-    Clock3,
+    Clock,
     RotateCcw,
     Lock,
     Loader2,
@@ -36,8 +38,6 @@ import {
     Trash2
 } from 'lucide-react';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
-
-import GlobalSearch from '@/Components/Consumer/GlobalSearch';
 
 const MotionLink = motion(Link);
 
@@ -109,6 +109,7 @@ export default function AdminLayout({ title, children }) {
 
     const { pendingArtisanCount, auth } = usePage().props;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState(() => getInitialExpandedGroups());
     const [isImpersonating, setIsImpersonating] = useState(false);
 
@@ -177,7 +178,6 @@ export default function AdminLayout({ title, children }) {
                 { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: isTabActive('admin.insights') },
                 { name: 'Monetization', href: route('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, current: isTabActive('admin.settings.index', 'monetization') },
                 { name: 'Payouts', href: route('admin.payouts.index'), icon: CreditCard, current: route().current('admin.payouts.*') },
-                { name: 'Audit Logs', href: route('admin.operations'), icon: Shield, current: isTabActive('admin.operations') },
             ]
         },
         {
@@ -375,6 +375,9 @@ export default function AdminLayout({ title, children }) {
                                 <Dropdown.Content>
                                     <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2">
                                         <User size={16} /> Profile
+                                    </Dropdown.Link>
+                                    <Dropdown.Link href={route('admin.operations')} className="flex items-center gap-2">
+                                        <Clock size={16} /> Activity History
                                     </Dropdown.Link>
                                     <Dropdown.Link href={route('logout')} method="post" as="button" className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50">
                                         <LogOut size={16} /> Log Out

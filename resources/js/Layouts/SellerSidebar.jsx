@@ -204,10 +204,8 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
     const hasCrm = (!isStaffActor || hasActiveAttendanceSession) && ['orders', 'messages', 'team_messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName));
     const hasAppearance = (!isStaffActor || hasActiveAttendanceSession) && visibleModulesSet.has('shop_settings');
     const hasMarketing = (!isStaffActor || hasActiveAttendanceSession) && visibleModulesSet.has('sponsorships');
-    const canViewAuditLog = !isStaffActor && user?.role === 'artisan';
     const hasAdvanced = (!isStaffActor || hasActiveAttendanceSession) && (
         ['hr', 'accounting', 'procurement', 'stock_requests'].some(moduleName => visibleModulesSet.has(moduleName))
-        || canViewAuditLog
     );
     const activeModuleCount = [modules.hr, modules.accounting, modules.procurement].filter(Boolean).length;
 
@@ -386,9 +384,6 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 )}
                                 {visibleModulesSet.has('accounting') && (
                                     <NavItem href={route('accounting.index')} icon={Banknote} active={active === 'accounting'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Finance')} onMouseLeave={handleTooltipLeave}>Finance</NavItem>
-                                )}
-                                {canViewAuditLog && (
-                                    <NavItem href={route('audit-log.index')} icon={ClipboardList} active={active === 'audit-log'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Audit Log')} onMouseLeave={handleTooltipLeave}>Audit Log</NavItem>
                                 )}
                                 {(visibleModulesSet.has('procurement') || visibleModulesSet.has('stock_requests')) && (
                                     <div className="space-y-0.5">

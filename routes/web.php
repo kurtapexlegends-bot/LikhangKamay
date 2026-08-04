@@ -165,6 +165,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::delete('/3d-manager/{product:id}', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'destroy'])->middleware('seller.module:3d')->name('3d.destroy');
 
         Route::get('/audit-log', [\App\Http\Controllers\Seller\AuditLogController::class, 'index'])->middleware('artisan')->name('audit-log.index');
+        Route::get('/audit-log/data', [\App\Http\Controllers\Seller\AuditLogController::class, 'apiData'])->name('audit-log.data');
         Route::get('/audit-log/export', [\App\Http\Controllers\Seller\AuditLogController::class, 'export'])->middleware('artisan')->name('audit-log.export');
 
         // SHOP SETTINGS

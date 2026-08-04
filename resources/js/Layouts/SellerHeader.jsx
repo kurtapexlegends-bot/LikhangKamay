@@ -4,7 +4,7 @@ import NotificationDropdown from '@/Components/NotificationDropdown';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
-import { Menu, ChevronDown, User, LogOut, Building2 } from 'lucide-react';
+import { Menu, ChevronDown, User, LogOut, Building2, Clock } from 'lucide-react';
 
 import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import GlobalSearch from '@/Components/Consumer/GlobalSearch';
@@ -85,6 +85,12 @@ export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuCl
                                     className="flex items-center gap-2"
                                 >
                                     <User size={16} /> Profile
+                                </Dropdown.Link>
+                                <Dropdown.Link
+                                    href={route("audit-log.index")}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Clock size={16} /> Activity History
                                 </Dropdown.Link>
                                 <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700">
                                     <LogOut size={16} /> Log Out
