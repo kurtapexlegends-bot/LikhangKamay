@@ -12,7 +12,7 @@ export function ToastProvider({ children }) {
     const [toasts, setToasts] = useState([]);
     const nextToastId = useRef(0);
 
-    const addToast = useCallback((message, type = 'success', duration = 3000, onAction = null, actionLabel = 'Undo') => {
+    const addToast = useCallback((message, type = 'success', duration = 3500, onAction = null, actionLabel = 'Undo') => {
         nextToastId.current += 1;
         const id = `toast-${nextToastId.current}`;
         setToasts(prev => [...prev, { id, message, type, duration, onAction, actionLabel }]);
@@ -25,7 +25,8 @@ export function ToastProvider({ children }) {
     return (
         <ToastContext.Provider value={{ addToast }}>
             {children}
-            <div className="pointer-events-none fixed bottom-6 right-6 z-[200] flex max-w-[calc(100vw-3rem)] flex-col gap-3">
+            {/* Top-Right Container */}
+            <div className="pointer-events-none fixed top-5 right-5 sm:top-6 sm:right-6 z-[300] flex max-w-[calc(100vw-2.5rem)] sm:max-w-md flex-col gap-3">
                 <AnimatePresence>
                     {toasts.map(toast => (
                         <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
@@ -58,24 +59,32 @@ function ToastItem({ toast, onRemove }) {
 
     const statusConfig = {
         success: {
-            iconBg: 'bg-emerald-50 text-emerald-600 border border-emerald-100/50',
-            icon: <Check size={12} strokeWidth={3} />,
+            iconBg: 'bg-emerald-50 text-emerald-600 border border-emerald-200/80 shadow-xs',
+            icon: <Check size={20} strokeWidth={3} />,
             progressBg: 'bg-emerald-500',
+            badgeText: 'Success',
+            badgeClass: 'bg-emerald-100/60 text-emerald-800 border-emerald-200',
         },
         error: {
-            iconBg: 'bg-rose-50 text-rose-600 border border-rose-100/50',
-            icon: <X size={12} strokeWidth={3} />,
+            iconBg: 'bg-rose-50 text-rose-600 border border-rose-200/80 shadow-xs',
+            icon: <X size={20} strokeWidth={3} />,
             progressBg: 'bg-rose-500',
+            badgeText: 'Notice',
+            badgeClass: 'bg-rose-100/60 text-rose-800 border-rose-200',
         },
         info: {
-            iconBg: 'bg-blue-50 text-blue-600 border border-blue-100/50',
-            icon: <Info size={12} strokeWidth={3} />,
+            iconBg: 'bg-blue-50 text-blue-600 border border-blue-200/80 shadow-xs',
+            icon: <Info size={20} strokeWidth={3} />,
             progressBg: 'bg-blue-500',
+            badgeText: 'Info',
+            badgeClass: 'bg-blue-100/60 text-blue-800 border-blue-200',
         },
         warning: {
-            iconBg: 'bg-amber-50 text-amber-600 border border-amber-100/50',
-            icon: <AlertTriangle size={12} strokeWidth={3} />,
+            iconBg: 'bg-amber-50 text-amber-600 border border-amber-200/80 shadow-xs',
+            icon: <AlertTriangle size={20} strokeWidth={3} />,
             progressBg: 'bg-amber-500',
+            badgeText: 'Warning',
+            badgeClass: 'bg-amber-100/60 text-amber-800 border-amber-200',
         },
     };
 
@@ -84,40 +93,48 @@ function ToastItem({ toast, onRemove }) {
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, y: 15, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95, transition: { duration: 0.15 } }}
-            transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-            className="pointer-events-auto relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 bg-white/95 border border-stone-200/80 text-stone-850 shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur-md overflow-hidden"
+            initial={{ opacity: 0, y: -20, x: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -15, scale: 0.92, transition: { duration: 0.18 } }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="pointer-events-auto relative flex items-start gap-3.5 rounded-2xl p-4 sm:px-5 sm:py-4 bg-white/98 border border-stone-200/90 text-stone-900 shadow-2xl shadow-stone-900/10 backdrop-blur-xl ring-1 ring-black/5 overflow-hidden w-full sm:min-w-[340px]"
         >
-            <div className={`shrink-0 p-1 rounded-lg flex items-center justify-center ${config.iconBg}`}>
+            <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${config.iconBg}`}>
                 {config.icon}
             </div>
-            
-            <div className="flex-1 min-w-0 pr-2">
-                <p className="text-xs font-semibold tracking-tight text-stone-800 leading-tight">{toast.message}</p>
+
+            <div className="flex-1 min-w-0 pr-1">
+                <div className="flex items-center gap-2 mb-0.5">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${config.badgeClass}`}>
+                        {config.badgeText}
+                    </span>
+                </div>
+                <p className="text-sm font-bold tracking-tight text-stone-900 leading-snug break-words">
+                    {toast.message}
+                </p>
             </div>
 
             {toast.onAction && (
-                <button 
-                    onClick={handleAction} 
-                    className="shrink-0 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold hover:bg-emerald-100 active:scale-95 transition-all shadow-sm mr-1"
+                <button
+                    onClick={handleAction}
+                    className="shrink-0 px-3 py-1.5 bg-clay-700 text-white rounded-xl text-xs font-bold hover:bg-clay-800 active:scale-95 transition-all shadow-md shadow-clay-200"
                 >
                     {toast.actionLabel}
                 </button>
             )}
 
-            <button 
-                onClick={() => onRemove(toast.id)} 
-                className="shrink-0 text-stone-400 hover:text-stone-600 transition-colors p-0.5 rounded"
+            <button
+                onClick={() => onRemove(toast.id)}
+                className="shrink-0 text-stone-400 hover:text-stone-700 transition-colors p-1 rounded-lg hover:bg-stone-100"
+                aria-label="Close notification"
             >
-                <X size={14} />
+                <X size={16} strokeWidth={2.5} />
             </button>
-            
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-stone-50">
-                <div 
-                    className={`h-full ${config.progressBg} animate-toast-shrink origin-left`} 
-                    style={{ animationDuration: `${toast.duration}ms` }} 
+
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-stone-100">
+                <div
+                    className={`h-full ${config.progressBg} animate-toast-shrink origin-left`}
+                    style={{ animationDuration: `${toast.duration}ms` }}
                 />
             </div>
         </motion.div>
