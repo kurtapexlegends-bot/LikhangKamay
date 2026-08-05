@@ -203,44 +203,45 @@ export default function ReleaseRequestDetails({
         </div>
     );
 
-    // Footer actions
+    // Sticky Footer actions for pending reviews
     const footerActions = isPendingReview ? (
-        <div className="flex flex-col gap-4 border-t border-stone-200 pt-4 mt-6">
-            <div className="w-full">
-                <input
-                    type="text"
-                    disabled={!canEditAccounting || !!reviewProcessing}
-                    className="w-full rounded-xl border-stone-200 py-2.5 px-4 text-[12px] font-medium transition focus:border-clay-500 focus:ring-clay-500 disabled:cursor-not-allowed disabled:bg-stone-50 disabled:text-stone-400 shadow-sm min-h-[44px]"
-                    placeholder="Add note to enable rejection..."
-                    value={rejectReason}
-                    onChange={(event) => setRejectReason(event.target.value)}
-                    title="A note is required to reject this release."
-                />
-            </div>
-            <div className="flex items-center justify-end gap-2 shrink-0 w-full">
-
-                <button
-                    type="button"
-                    onClick={onReject}
-                    disabled={!canEditAccounting || !rejectReason.trim() || !!reviewProcessing}
-                    className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest transition shadow-sm min-h-[44px] ${
-                        canEditAccounting && rejectReason.trim() && !reviewProcessing
-                            ? 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 hover:border-rose-300'
-                            : 'cursor-not-allowed border border-stone-200 bg-stone-50 text-stone-400'
-                    }`}
-                >
-                    {reviewProcessing === 'reject' && <LoaderCircle size={14} className="animate-spin" />}
-                    Reject
-                </button>
-                <button
-                    type="button"
-                    onClick={onApprove}
-                    disabled={!canEditAccounting || !!reviewProcessing}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-stone-900 px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm transition hover:bg-clay-700 min-h-[44px] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                    {reviewProcessing === 'approve' && <LoaderCircle size={14} className="animate-spin" />}
-                    {reviewProcessing === 'approve' ? 'Wait...' : 'Approve'}
-                </button>
+        <div className="fixed bottom-0 right-0 left-0 sm:left-64 z-30 bg-white/95 border-t border-stone-200 p-3.5 shadow-lg">
+            <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                    <span className="text-[11px] text-stone-500 font-bold uppercase tracking-wider">Release Total:</span>
+                    <span className="text-base font-bold text-stone-900">{formatMoney(item.amount)}</span>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">
+                    <input
+                        type="text"
+                        disabled={!canEditAccounting || !!reviewProcessing}
+                        className="w-full sm:w-72 rounded-xl border border-stone-200 py-2 px-3 text-xs font-medium focus:border-stone-400 focus:ring-0 disabled:bg-stone-50 disabled:text-stone-400 shadow-2xs"
+                        placeholder="Reason required to reject..."
+                        value={rejectReason}
+                        onChange={(event) => setRejectReason(event.target.value)}
+                        title="A note is required to reject this release."
+                    />
+                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                        <button
+                            type="button"
+                            onClick={onReject}
+                            disabled={!canEditAccounting || !rejectReason.trim() || !!reviewProcessing}
+                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        >
+                            {reviewProcessing === 'reject' && <LoaderCircle size={14} className="animate-spin" />}
+                            Reject
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onApprove}
+                            disabled={!canEditAccounting || !!reviewProcessing}
+                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-stone-900 px-5 py-2 text-xs font-bold text-white hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
+                        >
+                            {reviewProcessing === 'approve' && <LoaderCircle size={14} className="animate-spin" />}
+                            {reviewProcessing === 'approve' ? 'Processing...' : 'Approve & Release Funds'}
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     ) : (
@@ -254,20 +255,11 @@ export default function ReleaseRequestDetails({
                     <Download size={14} strokeWidth={2.5} /> Download PDF
                 </button>
             )}
-
         </div>
     );
 
     const bodyContent = (
-        <div className="space-y-3 mt-3">
-            {/* Mobile Requested Amount Callout */}
-            {isPayroll && (
-                <div className="rounded-xl border border-[#E7D8C9] bg-[#FCF7F2] p-3 text-center sm:hidden">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-clay-500">Requested Amount</p>
-                    <p className="mt-0.5 text-xl font-bold tracking-tight text-clay-900 whitespace-nowrap">{formatMoney(item.amount)}</p>
-                </div>
-            )}
-
+        <div className="space-y-3">
             {/* 1. Inventory stock request review layout */}
             {!isPayroll && !isSale && (
                 <div className="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-white shadow-sm">
@@ -328,18 +320,22 @@ export default function ReleaseRequestDetails({
 
             {/* Stored Rejection Reason */}
             {item.rejection_reason && (
-                <div className="rounded-[1.25rem] border border-red-200/60 bg-red-50 px-5 py-4">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-red-500">Stored Rejection Reason</p>
-                    <p className="mt-1 text-[13px] font-bold text-red-800">{item.rejection_reason}</p>
+                <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-red-500">Stored Rejection Reason</p>
+                    <p className="mt-1 text-xs font-bold text-red-800">{item.rejection_reason}</p>
                 </div>
             )}
         </div>
     );
 
+    const containerClasses = inline
+        ? (isPayroll ? "h-full flex flex-col justify-between" : "rounded-2xl border border-stone-200 bg-white p-5 shadow-sm h-full flex flex-col justify-between")
+        : "flex flex-col h-full justify-between p-1";
+
     return (
-        <div className={inline ? "rounded-2xl border border-stone-200 bg-white p-5 shadow-sm h-full flex flex-col justify-between" : "flex flex-col h-full justify-between p-1"}>
+        <div className={containerClasses}>
             <div>
-                {headerContent}
+                {!isPayroll && headerContent}
                 {bodyContent}
             </div>
             {footerActions}

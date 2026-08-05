@@ -248,29 +248,29 @@ export default function PayrollRunShow({ payroll }) {
                                                 <td className="px-5 py-4 text-right font-bold text-stone-900">{money(item.net_pay)}</td>
                                             </tr>
                                             {expandedRows[item.id] && (
-                                                <tr key={`breakdown-row-${item.id}`} className="bg-stone-50/50">
-                                                    <td colSpan={7} className="px-5 py-4 border-l border-r border-b border-stone-100">
-                                                        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm text-xs space-y-3 max-w-3xl mx-auto">
+                                                <tr key={`breakdown-row-${item.id}`} className="bg-stone-50/40">
+                                                    <td colSpan={7} className="px-5 py-4 border-l border-r border-b border-stone-200">
+                                                        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-xs text-xs space-y-3 max-w-3xl mx-auto">
                                                             <div className="flex items-center justify-between border-b border-stone-100 pb-2">
-                                                                <h4 className="font-bold text-stone-900">Payroll Calculation Transparency Details</h4>
-                                                                <span className="text-[10px] font-bold text-clay-600 bg-clay-50 px-2 py-0.5 rounded-md">Audited Formula Breakdown</span>
+                                                                <h4 className="font-bold text-stone-900">Calculation & Formula Audit</h4>
+                                                                <span className="text-[10px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">Audited Formula Breakdown</span>
                                                             </div>
                                                             
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                <div className="space-y-2">
-                                                                    <h5 className="font-bold text-stone-700 text-[10px] uppercase tracking-wider">Rate Calculations</h5>
-                                                                    <div className="space-y-1 bg-stone-50 p-2.5 rounded-xl border border-stone-100">
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                                <div className="space-y-1.5">
+                                                                    <h5 className="font-bold text-stone-700 text-[10px] uppercase tracking-wider">Base Rate Calculation</h5>
+                                                                    <div className="space-y-1 bg-stone-50/80 p-2.5 rounded-lg border border-stone-200 text-[11px]">
                                                                         <div className="flex justify-between">
-                                                                            <span className="text-stone-500">Daily Rate Formula:</span>
-                                                                            <span className="font-semibold text-stone-800">{breakdown.formulaText}</span>
+                                                                            <span className="text-stone-500">Daily Formula:</span>
+                                                                            <span className="font-mono font-semibold text-stone-800">{breakdown.formulaText}</span>
                                                                         </div>
-                                                                        <div className="flex justify-between border-b border-stone-200/50 pb-1.5 mb-1.5">
+                                                                        <div className="flex justify-between border-b border-stone-200/60 pb-1 mb-1">
                                                                             <span className="text-stone-500">Daily Rate:</span>
                                                                             <span className="font-bold text-stone-900">{money(breakdown.dailyRate)}</span>
                                                                         </div>
                                                                         <div className="flex justify-between">
-                                                                            <span className="text-stone-500">Hourly Rate Formula:</span>
-                                                                            <span className="font-semibold text-stone-800">Daily Rate / 8 Hours</span>
+                                                                            <span className="text-stone-500">Hourly Formula:</span>
+                                                                            <span className="font-mono text-stone-700">Daily Rate / 8 hrs</span>
                                                                         </div>
                                                                         <div className="flex justify-between">
                                                                             <span className="text-stone-500">Hourly Rate:</span>
@@ -279,56 +279,45 @@ export default function PayrollRunShow({ payroll }) {
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="space-y-2">
-                                                                    <h5 className="font-bold text-stone-700 text-[10px] uppercase tracking-wider">Overtime Premiums</h5>
-                                                                    <div className="space-y-1 bg-[#FCF7F2] p-2.5 rounded-xl border border-[#E7D8C9]/60">
+                                                                <div className="space-y-1.5">
+                                                                    <h5 className="font-bold text-stone-700 text-[10px] uppercase tracking-wider">Overtime Multipliers</h5>
+                                                                    <div className="space-y-1 bg-stone-50/80 p-2.5 rounded-lg border border-stone-200 text-[11px]">
                                                                         <div className="flex justify-between">
-                                                                            <span className="text-stone-500">Regular OT Rate:</span>
+                                                                            <span className="text-stone-500">Regular OT (1.25x):</span>
                                                                             <span className="font-semibold text-stone-800">{money(breakdown.regularOtRate)}/hr</span>
                                                                         </div>
                                                                         <div className="flex justify-between">
-                                                                            <span className="text-stone-500">Rest Day OT Rate:</span>
+                                                                            <span className="text-stone-500">Rest Day OT (1.69x):</span>
                                                                             <span className="font-semibold text-stone-800">{money(breakdown.restDayOtRate)}/hr</span>
                                                                         </div>
                                                                         <div className="flex justify-between">
-                                                                            <span className="text-stone-500">Holiday OT Rate:</span>
+                                                                            <span className="text-stone-500">Holiday OT (2.60x):</span>
                                                                             <span className="font-semibold text-stone-800">{money(breakdown.holidayOtRate)}/hr</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="border-t border-stone-100 pt-3 flex flex-col gap-2">
-                                                                <h5 className="font-bold text-stone-700 text-[10px] uppercase tracking-wider">Earnings & Deductions Summary</h5>
-                                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                                                    <div className="bg-stone-50 p-2 rounded-xl border border-stone-100">
-                                                                        <span className="text-[10px] text-stone-400 block font-semibold uppercase">Regular Salary</span>
-                                                                        <span className="font-bold text-stone-700">{money(item.base_salary)}</span>
+                                                            <div className="border-t border-stone-100 pt-2.5 space-y-2">
+                                                                <h5 className="font-bold text-stone-700 text-[10px] uppercase tracking-wider">Payroll Line Totals</h5>
+                                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                                                                    <div className="bg-stone-50 p-2 rounded-lg border border-stone-200">
+                                                                        <span className="text-[10px] text-stone-500 block font-semibold uppercase">Base Salary</span>
+                                                                        <span className="font-bold text-stone-900">{money(item.base_salary)}</span>
                                                                     </div>
-                                                                    <div className="bg-emerald-50/50 p-2 rounded-xl border border-emerald-100">
-                                                                        <span className="text-[10px] text-emerald-600 block font-semibold uppercase">Total Overtime Pay</span>
-                                                                        <span className="font-bold text-emerald-700">+{money(breakdown.totalOtPay)}</span>
-                                                                        <div className="text-[9px] text-stone-400 mt-0.5 space-y-0.5">
-                                                                            {item.overtime_hours > 0 && <div>Reg: {item.overtime_hours}h x {money(breakdown.regularOtRate)}</div>}
-                                                                            {item.rest_day_ot_hours > 0 && <div>Rest: {item.rest_day_ot_hours}h x {money(breakdown.restDayOtRate)}</div>}
-                                                                            {item.holiday_ot_hours > 0 && <div>Hol: {item.holiday_ot_hours}h x {money(breakdown.holidayOtRate)}</div>}
-                                                                        </div>
+                                                                    <div className="bg-emerald-50/40 p-2 rounded-lg border border-emerald-200/80">
+                                                                        <span className="text-[10px] text-emerald-700 block font-semibold uppercase">Total Overtime Pay</span>
+                                                                        <span className="font-bold text-emerald-800">+{money(breakdown.totalOtPay)}</span>
                                                                     </div>
-                                                                    <div className="bg-red-50/50 p-2 rounded-xl border border-red-100">
-                                                                        <span className="text-[10px] text-red-600 block font-semibold uppercase">Total Deductions</span>
-                                                                        <span className="font-bold text-red-700">-{money(breakdown.absenceDeduction + breakdown.undertimeDeduction)}</span>
-                                                                        <div className="text-[9px] text-stone-400 mt-0.5 space-y-0.5">
-                                                                            {item.absences_days > 0 && <div>Absences: {item.absences_days}d x {money(breakdown.dailyRate)}</div>}
-                                                                            {item.undertime_hours > 0 && <div>Undertime: {item.undertime_hours}h x {money(breakdown.hourlyRate)}</div>}
-                                                                        </div>
+                                                                    <div className="bg-rose-50/40 p-2 rounded-lg border border-rose-200/80">
+                                                                        <span className="text-[10px] text-rose-700 block font-semibold uppercase">Total Deductions</span>
+                                                                        <span className="font-bold text-rose-800">-{money(breakdown.absenceDeduction + breakdown.undertimeDeduction)}</span>
                                                                     </div>
                                                                 </div>
-                                                                <div className="flex justify-between items-center bg-stone-900 text-white p-3 rounded-xl mt-1">
-                                                                    <span className="font-bold text-xs tracking-wide uppercase">Formula: Salary + OT Pay - Deductions</span>
-                                                                    <div className="text-right">
-                                                                        <span className="text-[9px] block text-stone-400 font-semibold">NET WAGE PAID</span>
-                                                                        <span className="font-bold text-base text-clay-400">{money(breakdown.net)}</span>
-                                                                    </div>
+
+                                                                <div className="flex justify-between items-center bg-stone-100 border border-stone-200 p-3 rounded-lg mt-1 text-stone-900">
+                                                                    <span className="font-bold text-xs tracking-wider uppercase text-stone-700">Net Calculated Wage</span>
+                                                                    <span className="font-bold text-base text-stone-900">{money(breakdown.net)}</span>
                                                                 </div>
                                                             </div>
                                                         </div>
