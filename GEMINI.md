@@ -26,6 +26,8 @@
 - **Components:** Modular, reusable. Ensure clear focus, hover, and error states.
 - **Mobile-First:** Prioritize responsive layouts. All UI must be optimized for mobile touch-points first, then scaled for desktop.
 - **Balanced Proportions:** Avoid oversized typography or elements that feel overwhelming ("slapping the user"). Maintain a sophisticated balance between whitespace and content.
+- **Minimalist Copy Standard:** Keep modals, cards, and views clean. Omit obvious filler text, redundant subheadings, and verbose explanatory paragraphs. Let input placeholders and concise field labels convey purpose.
+- **Single-Source Information:** Avoid repeating identical amounts, status badges, or headers multiple times within the same card container or view hierarchy.
 
 ## 4. Code Quality & Best Practices
 - **Clean Code:** DRY and SOLID. Single responsibility functions. Restrict any single controller method or React handler function to under 50 lines; extract complex logic block chunks to helper services or utility modules.
