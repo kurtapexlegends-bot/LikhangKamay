@@ -124,11 +124,11 @@ export default function PayrollReviewDetails({ item, inline = false }) {
                                             {line.employee_name}
                                         </td>
                                         <td className="px-4 py-3 text-right text-stone-600">{formatMoney(line.base_salary)}</td>
-                                        <td className="px-4 py-3 text-right text-rose-700 font-medium">
-                                            {Number(line.deductions) > 0 ? `-${formatMoney(line.deductions)}` : '₱0.00'}
+                                        <td className="px-4 py-3 text-right text-stone-700 font-medium">
+                                            {Number(line.deductions) > 0 ? `-${formatMoney(line.deductions)}` : formatMoney(0)}
                                         </td>
-                                        <td className="px-4 py-3 text-right text-emerald-700 font-medium">
-                                            {Number(line.overtime_pay) > 0 ? `+${formatMoney(line.overtime_pay)}` : '₱0.00'}
+                                        <td className="px-4 py-3 text-right text-stone-700 font-medium">
+                                            {Number(line.overtime_pay) > 0 ? `+${formatMoney(line.overtime_pay)}` : formatMoney(0)}
                                         </td>
                                         <td className="px-4 py-3 text-right font-bold text-stone-900 bg-stone-50/30">
                                             {formatMoney(line.net_pay)}

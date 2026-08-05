@@ -269,16 +269,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                         : null
                 }
                 actions={
-                    reviewModal.item ? (
-                        <button
-                            type="button"
-                            onClick={closeReviewModal}
-                            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-600 transition hover:border-stone-300 hover:bg-stone-50"
-                        >
-                            <ArrowLeft size={14} />
-                            All Requests
-                        </button>
-                    ) : (
+                    reviewModal.item ? null : (
                         <ExportButton href={route('accounting.export')} variant="primary">
                             EXPORT
                         </ExportButton>
