@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CompactPagination from '@/Components/CompactPagination';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
-import { Banknote } from 'lucide-react';
+import TextInput from '@/Components/TextInput';
+import { Banknote, Search, Filter } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import {
     formatPeso,
@@ -13,19 +14,64 @@ export default function PayrollHistoryTable({
     canEditHrRecords,
     deletePayroll
 }) {
-    const paginatedPayrolls = Array.isArray(payrolls) ? payrolls : (payrolls?.data || []);
+    const rawPayrolls = Array.isArray(payrolls) ? payrolls : (payrolls?.data || []);
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+
+    const filteredPayrolls = rawPayrolls.filter((payroll) => {
+        const matchesStatus = statusFilter === 'all' || (payroll.status && payroll.status.toLowerCase() === statusFilter.toLowerCase());
+        const q = search.toLowerCase();
+        const matchesSearch = !search || 
+            (payroll.month && payroll.month.toLowerCase().includes(q)) ||
+            (payroll.requester?.name && payroll.requester.name.toLowerCase().includes(q)) ||
+            (payroll.status && payroll.status.toLowerCase().includes(q));
+
+        return matchesStatus && matchesSearch;
+    });
 
     return (
         <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm flex flex-col">
-            <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between bg-[#FDFBF9]">
-                <h3 className="text-sm font-bold tracking-tight text-stone-900">Payroll Requests History</h3>
+            <div className="px-6 py-4 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#FDFBF9]">
+                <div>
+                    <h3 className="text-sm font-bold tracking-tight text-stone-900">Payroll Requests History</h3>
+                    <p className="text-[11px] text-stone-400 font-medium">Review and track historical payroll runs.</p>
+                </div>
+                
+                {/* Search & Filter Controls */}
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                        <TextInput
+                            type="text"
+                            placeholder="Search month, status, requester..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-9 pr-3 py-1.5 text-xs bg-white border-stone-200 rounded-xl w-full sm:w-56"
+                        />
+                    </div>
+                    <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl">
+                        {['all', 'Pending', 'Paid', 'Rejected'].map((st) => (
+                            <button
+                                key={st}
+                                onClick={() => setStatusFilter(st)}
+                                className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all ${
+                                    statusFilter === st
+                                        ? 'bg-white text-stone-900 shadow-xs'
+                                        : 'text-stone-500 hover:text-stone-800'
+                                }`}
+                            >
+                                {st === 'all' ? 'All' : st}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
             
             {/* Mobile View: Card List */}
             <div className="flex-1 md:hidden">
-                {paginatedPayrolls.length > 0 ? (
+                {filteredPayrolls.length > 0 ? (
                     <div className="divide-y divide-gray-100">
-                        {paginatedPayrolls.map((payroll) => (
+                        {filteredPayrolls.map((payroll) => (
                             <div key={payroll.id} className="p-4 space-y-3">
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
@@ -114,8 +160,8 @@ export default function PayrollHistoryTable({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
-                        {paginatedPayrolls.length > 0 ? (
-                            paginatedPayrolls.map((payroll) => (
+                        {filteredPayrolls.length > 0 ? (
+                            filteredPayrolls.map((payroll) => (
                                 <tr key={payroll.id} className="hover:bg-gray-50/50 transition duration-150 relative">
                                     <td className="px-5 py-4">
                                         <div className="font-bold text-gray-900 text-sm">{formatShortDateSafe(payroll.created_at)}</div>
