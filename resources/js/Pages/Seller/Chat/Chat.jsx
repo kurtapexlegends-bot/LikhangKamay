@@ -16,10 +16,11 @@ import MessageWindow from '@/Components/Seller/Chat/MessageWindow';
 import MessageInput from '@/Components/Seller/Chat/MessageInput';
 import OrderContextSidebar from '@/Components/Seller/Chat/OrderContextSidebar';
 import QuickTemplateSelector from '@/Components/Seller/Chat/QuickTemplateSelector';
+import ChatAutomationModal from '@/Components/Seller/Chat/ChatAutomationModal';
 
 const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 
-export default function Chat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null, userOrders = [], chatTemplates = [] }) {
+export default function Chat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null, userOrders = [], chatTemplates = [], autoReplySettings = null }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const isEchoConnected = useEchoConnection();
     const [searchTerm, setSearchTerm] = useState('');
@@ -27,6 +28,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     const [showInfoPanel, setShowInfoPanel] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showTemplateManager, setShowTemplateManager] = useState(false);
+    const [showAutomationModal, setShowAutomationModal] = useState(false);
     const [showTemplateSelector, setShowTemplateSelector] = useState(false);
     const [activeMedia, setActiveMedia] = useState(null);
     const [attachment, setAttachment] = useState(null);
@@ -383,6 +385,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                         timeNow={timeNow}
                         showMobileList={showMobileList}
                         setShowMobileList={setShowMobileList}
+                        onOpenAutomationModal={() => setShowAutomationModal(true)}
                     />
 
                     {/* CONVERSATION AREA */}
@@ -494,6 +497,14 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                     deletingTemplateId={deletingTemplateId}
                     setDeletingTemplateId={setDeletingTemplateId}
                     confirmDeleteTemplate={confirmDeleteTemplate}
+                />
+
+                <ChatAutomationModal
+                    isOpen={showAutomationModal}
+                    onClose={() => setShowAutomationModal(false)}
+                    autoReplySettings={autoReplySettings}
+                    chatTemplates={chatTemplates}
+                    canEdit={canEditMessages}
                 />
         </>
     );

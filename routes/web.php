@@ -194,10 +194,11 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/chat/seen', [\App\Http\Controllers\Chat\ChatController::class, 'markAsSeen'])->name('chat.seen');
         Route::post('/chat/signal-typing', [\App\Http\Controllers\Chat\ChatController::class, 'signalTyping'])->name('chat.signal-typing');
             
-        // Message Templates
+        // Message Templates & Auto-Reply Settings
         Route::post('/chat/templates', [\App\Http\Controllers\Chat\ChatController::class, 'storeTemplate'])->name('chat.templates.store');
         Route::put('/chat/templates/{id}', [\App\Http\Controllers\Chat\ChatController::class, 'updateTemplate'])->name('chat.templates.update');
         Route::delete('/chat/templates/{id}', [\App\Http\Controllers\Chat\ChatController::class, 'deleteTemplate'])->name('chat.templates.destroy');
+        Route::post('/chat/auto-reply-settings', [\App\Http\Controllers\Chat\ChatController::class, 'updateAutoReplySettings'])->name('chat.auto-reply.update');
 
         Route::get('/buyer/chat', [\App\Http\Controllers\Chat\ChatController::class, 'buyerIndex'])->name('buyer.chat');
     });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
-import { Search, MessageCircle } from 'lucide-react';
+import { Search, MessageCircle, Bot } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { formatChatRelative } from '@/lib/chatTime';
@@ -12,7 +12,8 @@ export default function ChatSidebar({
     setSearchTerm,
     timeNow,
     showMobileList,
-    setShowMobileList
+    setShowMobileList,
+    onOpenAutomationModal
 }) {
     const filteredContacts = conversations.filter(c => 
         c.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -20,18 +21,27 @@ export default function ChatSidebar({
 
     return (
         <div className={`w-full sm:w-80 bg-white border-r border-gray-100 flex flex-col shrink-0 ${showMobileList ? 'block' : 'hidden sm:flex'}`}>
-            {/* Search Input */}
-            <div className="p-4 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
-                <div className="relative">
+            {/* Search & Automations Header */}
+            <div className="p-4 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50 flex items-center gap-2">
+                <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                     <input 
                         type="text" 
                         placeholder="Search customers..." 
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-clay-100 focus:border-clay-500 transition-all min-h-[44px]"
+                        className="w-full pl-10 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-clay-100 focus:border-clay-500 transition-all min-h-[44px]"
                     />
                 </div>
+                {onOpenAutomationModal && (
+                    <button
+                        onClick={onOpenAutomationModal}
+                        title="Chat Automations & Templates"
+                        className="shrink-0 p-2.5 bg-clay-50 hover:bg-clay-100 text-clay-700 border border-clay-200 rounded-xl transition shadow-2xs flex items-center justify-center min-h-[44px] min-w-[44px]"
+                    >
+                        <Bot size={18} />
+                    </button>
+                )}
             </div>
 
             {/* Contacts list */}
