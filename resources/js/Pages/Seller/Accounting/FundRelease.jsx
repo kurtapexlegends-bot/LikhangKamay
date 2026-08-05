@@ -277,7 +277,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                 }
             />
 
-            <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-6 pb-28 sm:pb-20">
+            <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-6 pb-8">
                 {reviewModal.item ? (
                     <div className="max-w-5xl mx-auto">
                         <ReleaseRequestDetails

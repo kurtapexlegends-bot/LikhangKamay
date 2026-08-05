@@ -203,10 +203,10 @@ export default function ReleaseRequestDetails({
         </div>
     );
 
-    // Sticky Footer actions for pending reviews
+    // Inline Document Card Footer actions
     const footerActions = isPendingReview ? (
-        <div className="fixed bottom-0 right-0 left-0 sm:left-64 z-30 bg-white/95 border-t border-stone-200 p-3.5 shadow-lg">
-            <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="rounded-xl border border-stone-200 bg-white shadow-xs overflow-hidden mt-4">
+            <div className="p-4 sm:p-4.5 bg-stone-50/80 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 w-full sm:w-auto">
                     <span className="text-[11px] text-stone-500 font-bold uppercase tracking-wider">Release Total:</span>
                     <span className="text-base font-bold text-stone-900">{formatMoney(item.amount)}</span>
@@ -215,7 +215,7 @@ export default function ReleaseRequestDetails({
                     <input
                         type="text"
                         disabled={!canEditAccounting || !!reviewProcessing}
-                        className="w-full sm:w-72 rounded-xl border border-stone-200 py-2 px-3 text-xs font-medium focus:border-stone-400 focus:ring-0 disabled:bg-stone-50 disabled:text-stone-400 shadow-2xs"
+                        className="w-full sm:w-72 rounded-xl border border-stone-200 bg-white py-2 px-3 text-xs font-medium text-stone-800 placeholder-stone-400 focus:border-stone-400 focus:ring-0 disabled:bg-stone-50 disabled:text-stone-400 shadow-2xs"
                         placeholder="Reason required to reject..."
                         value={rejectReason}
                         onChange={(event) => setRejectReason(event.target.value)}
