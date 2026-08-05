@@ -28,7 +28,7 @@ export default function MessageWindow({
     return (
         <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden bg-[#FDFBF9]">
             {/* Chat Header */}
-            <div className="border-b border-gray-100 flex items-center justify-between gap-3 px-3 py-3 sm:px-6 bg-white/90 backdrop-blur-md shrink-0 sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+            <div className="border-b border-stone-200/70 flex items-center justify-between gap-3 px-3 py-3 sm:px-6 bg-white shrink-0 sticky top-0 z-20 shadow-xs">
                 <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                     <button 
                         onClick={() => setShowMobileList(true)}

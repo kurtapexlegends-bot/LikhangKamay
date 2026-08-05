@@ -52,7 +52,7 @@ export default function ChatSidebar({
                             key={contact.id} 
                             href={route('chat.index', { user_id: contact.id })}
                             onClick={() => setShowMobileList(false)}
-                            className={`w-full p-3 flex gap-3 transition-all text-left border-l-4 group min-h-[44px] ${
+                            className={`w-full p-3 flex gap-3 transition-colors duration-150 text-left border-l-4 group min-h-[44px] ${
                                 currentChatUser?.id === contact.id 
                                 ? 'bg-clay-50 border-clay-600 shadow-sm' 
                                 : 'hover:bg-gray-50 border-transparent hover:border-gray-300'

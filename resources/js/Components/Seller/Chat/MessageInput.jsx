@@ -330,7 +330,7 @@ export default function MessageInput({
     };
 
     return (
-        <div className="relative z-10 w-full shrink-0 border-t border-gray-100 bg-white/90 p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] backdrop-blur-md sm:p-4">
+        <div className="relative z-10 w-full shrink-0 border-t border-stone-200/80 bg-white p-3 shadow-xs sm:p-4">
             <div className="relative mx-auto flex w-full max-w-4xl flex-col">
                 <MentionsList
                     ref={mentionsDropdownRef}
