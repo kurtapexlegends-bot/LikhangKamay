@@ -203,10 +203,10 @@ export default function ReleaseRequestDetails({
         </div>
     );
 
-    // Inline Document Card Footer actions
+    // Container-Sticky Document Card Footer actions
     const footerActions = isPendingReview ? (
-        <div className="rounded-xl border border-stone-200 bg-white shadow-xs overflow-hidden mt-4">
-            <div className="p-4 sm:p-4.5 bg-stone-50/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="sticky bottom-4 z-20 rounded-xl border border-stone-200 bg-white/95 backdrop-blur-md shadow-lg overflow-hidden mt-4">
+            <div className="p-4 sm:p-4.5 bg-stone-50/90 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 w-full sm:w-auto">
                     <span className="text-[11px] text-stone-500 font-bold uppercase tracking-wider">Release Total:</span>
                     <span className="text-base font-bold text-stone-900">{formatMoney(item.amount)}</span>
