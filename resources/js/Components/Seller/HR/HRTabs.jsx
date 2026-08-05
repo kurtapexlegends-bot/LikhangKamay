@@ -5,7 +5,7 @@ export default function HRTabs({ activeTab, setActiveTab }) {
     const tabs = [
         { key: 'directory', label: 'Directory', icon: Users },
         { key: 'payroll', label: 'Payroll History', icon: Banknote },
-        { key: 'access', label: 'Access Audit', icon: Shield },
+        { key: 'access', label: 'Access History', icon: Shield },
     ];
 
     return (

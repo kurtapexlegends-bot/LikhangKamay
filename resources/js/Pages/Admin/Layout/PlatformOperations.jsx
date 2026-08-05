@@ -15,7 +15,7 @@ export default function PlatformOperations({
 }) {
     return (
         <>
-            <Head title="Audit Logs" />
+            <Head title="Activity History"/>
 
             <div className="space-y-6">
                 <DiagnosticsLogsTable 
@@ -47,5 +47,5 @@ export default function PlatformOperations({
     );
 }
 
-PlatformOperations.layout = page => <AdminLayout title="Audit Logs">{page}</AdminLayout>;
+PlatformOperations.layout = page => <AdminLayout title="Activity History">{page}</AdminLayout>;
 

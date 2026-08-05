@@ -319,7 +319,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                                     setNotes(e.target.value);
                                                     setError('');
                                                 }}
-                                                placeholder="Document the final decision reasoning, findings, and evidence references. This will be permanently recorded in the platform's audit logs..."
+                                                placeholder="Document the final decision reasoning, findings, and evidence references. This will be permanently recorded in the platform's activity history..."
                                                 className="w-full border-stone-200 rounded-xl focus:border-clay-500 focus:ring-0 shadow-sm text-xs font-medium resize-none"
                                             />
                                             {error && (

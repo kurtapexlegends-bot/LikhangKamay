@@ -20,7 +20,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class PlatformDiagnosticsController extends Controller
 {
     /**
-     * Platform Operations Control Center Dashboard (Audit Logs)
+     * Platform Operations Control Center Dashboard (Activity History)
      */
     public function operations(Request $request)
     {
@@ -40,7 +40,7 @@ class PlatformDiagnosticsController extends Controller
     }
 
     /**
-     * Export platform activity/audit logs to CSV streamed response.
+     * Export platform activity/activity history to CSV streamed response.
      */
     public function export(Request $request): StreamedResponse
     {

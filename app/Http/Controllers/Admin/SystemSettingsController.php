@@ -389,14 +389,16 @@ class SystemSettingsController extends Controller
         if (isset($validated['primary_color']) && $this->settings->get('primary_color') !== $validated['primary_color']) {
             \App\Models\PlatformActivity::log(
                 'BRANDING_UPDATE',
-                "Updated primary brand color from " . $this->settings->get('primary_color') . " to " . $validated['primary_color']
+                "Updated primary brand color from " . $this->settings->get('primary_color') . " to " . $validated['primary_color'],
+                ['previous' => $this->settings->get('primary_color'), 'updated' => $validated['primary_color']]
             );
         }
 
         if ((float)$this->settings->get('convenience_fee') !== (float)$validated['convenience_fee']) {
             \App\Models\PlatformActivity::log(
                 'CONVENIENCE_FEE_UPDATE',
-                "Changed site-wide convenience fee rate from " . $this->settings->get('convenience_fee') . "% to " . $validated['convenience_fee'] . "%"
+                "Changed site-wide convenience fee rate from " . $this->settings->get('convenience_fee') . "% to " . $validated['convenience_fee'] . "%",
+                ['previous' => $this->settings->get('convenience_fee') . '%', 'updated' => $validated['convenience_fee'] . '%']
             );
         }
 
@@ -404,7 +406,8 @@ class SystemSettingsController extends Controller
             $status = $validated['maintenance_mode'] ? 'ENABLED' : 'DISABLED';
             \App\Models\PlatformActivity::log(
                 'MAINTENANCE_TOGGLE',
-                "Maintenance mode was {$status} by the administrator."
+                "Maintenance mode was {$status} by the administrator.",
+                ['status' => $status]
             );
         }
 
@@ -412,7 +415,8 @@ class SystemSettingsController extends Controller
             $status = $validated['paymongo_enabled'] ? 'ONLINE' : 'OFFLINE';
             \App\Models\PlatformActivity::log(
                 'GATEWAY_STATUS_CHANGE',
-                "PayMongo gateway status changed to {$status}."
+                "PayMongo gateway status changed to {$status}.",
+                ['gateway_status' => $status]
             );
         }
 
@@ -420,31 +424,36 @@ class SystemSettingsController extends Controller
         if (isset($validated['tier_free_limit']) && (int)$this->settings->get('tier_free_limit') !== (int)$validated['tier_free_limit']) {
             \App\Models\PlatformActivity::log(
                 'TIER_LIMIT_UPDATE',
-                "Changed Free plan product limit from " . $this->settings->get('tier_free_limit') . " to " . $validated['tier_free_limit']
+                "Changed Free plan product limit from " . $this->settings->get('tier_free_limit') . " to " . $validated['tier_free_limit'],
+                ['plan' => 'Free', 'previous_limit' => $this->settings->get('tier_free_limit'), 'new_limit' => $validated['tier_free_limit']]
             );
         }
         if (isset($validated['tier_premium_price']) && (float)$this->settings->get('tier_premium_price') !== (float)$validated['tier_premium_price']) {
             \App\Models\PlatformActivity::log(
                 'TIER_PRICE_UPDATE',
-                "Changed Premium plan monthly price from ₱" . $this->settings->get('tier_premium_price') . " to ₱" . $validated['tier_premium_price']
+                "Changed Premium plan monthly price from ₱" . $this->settings->get('tier_premium_price') . " to ₱" . $validated['tier_premium_price'],
+                ['plan' => 'Premium', 'previous_price' => '₱' . $this->settings->get('tier_premium_price'), 'new_price' => '₱' . $validated['tier_premium_price']]
             );
         }
         if (isset($validated['tier_premium_limit']) && (int)$this->settings->get('tier_premium_limit') !== (int)$validated['tier_premium_limit']) {
             \App\Models\PlatformActivity::log(
                 'TIER_LIMIT_UPDATE',
-                "Changed Premium plan product limit from " . $this->settings->get('tier_premium_limit') . " to " . $validated['tier_premium_limit']
+                "Changed Premium plan product limit from " . $this->settings->get('tier_premium_limit') . " to " . $validated['tier_premium_limit'],
+                ['plan' => 'Premium', 'previous_limit' => $this->settings->get('tier_premium_limit'), 'new_limit' => $validated['tier_premium_limit']]
             );
         }
         if (isset($validated['tier_super_premium_price']) && (float)$this->settings->get('tier_super_premium_price') !== (float)$validated['tier_super_premium_price']) {
             \App\Models\PlatformActivity::log(
                 'TIER_PRICE_UPDATE',
-                "Changed Elite plan monthly price from ₱" . $this->settings->get('tier_super_premium_price') . " to ₱" . $validated['tier_super_premium_price']
+                "Changed Elite plan monthly price from ₱" . $this->settings->get('tier_super_premium_price') . " to ₱" . $validated['tier_super_premium_price'],
+                ['plan' => 'Elite', 'previous_price' => '₱' . $this->settings->get('tier_super_premium_price'), 'new_price' => '₱' . $validated['tier_super_premium_price']]
             );
         }
         if (isset($validated['tier_super_premium_limit']) && (int)$this->settings->get('tier_super_premium_limit') !== (int)$validated['tier_super_premium_limit']) {
             \App\Models\PlatformActivity::log(
                 'TIER_LIMIT_UPDATE',
-                "Changed Elite plan product limit from " . $this->settings->get('tier_super_premium_limit') . " to " . $validated['tier_super_premium_limit']
+                "Changed Elite plan product limit from " . $this->settings->get('tier_super_premium_limit') . " to " . $validated['tier_super_premium_limit'],
+                ['plan' => 'Elite', 'previous_limit' => $this->settings->get('tier_super_premium_limit'), 'new_limit' => $validated['tier_super_premium_limit']]
             );
         }
 

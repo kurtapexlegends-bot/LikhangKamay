@@ -333,7 +333,7 @@ export default function AdminLayout({ title, children }) {
                                     'Overview': "Monitor platform metrics and performance.",
                                     'Insights': "View revenue forecasts and platform analytics.",
                                     'Monetization': "View platform subscriptions, sponsorships, and financial performance.",
-                                    'Audit Logs': "Track background jobs, logs, and system SLAs.",
+                                    'Activity History': "Track background jobs, logs, and system SLAs.",
                                     'User Directory': "Manage platform users, staff profiles, and onboarding applications.",
                                     'Artisan Applications': "Approve or reject artisan registration applications.",
                                     'Product Moderation': "Review, approve, and moderate artisan product listings.",

@@ -126,7 +126,7 @@ class AuditLogController extends Controller
     }
 
     /**
-     * Export the filtered audit logs to a CSV streamed response.
+     * Export the filtered activity history to a CSV streamed response.
      *
      * @param Request $request
      * @param AuditLogAggregationService $auditService

@@ -94,7 +94,7 @@ export default function GlobalSearch() {
         { label: 'Go to Category Manager', cmd: '> category', url: getSafeRoute('admin.settings.index', { tab: 'taxonomy' }), icon: FolderTree, color: 'text-rose-500 bg-rose-50' },
         { label: 'Go to Platform Revenue', cmd: '> revenue', url: getSafeRoute('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, color: 'text-emerald-500 bg-emerald-50' },
         { label: 'Go to Insights', cmd: '> insights', url: getSafeRoute('admin.insights'), icon: BarChart2, color: 'text-purple-500 bg-purple-50' },
-        { label: 'Go to Audit Logs', cmd: '> audit', url: getSafeRoute('admin.operations'), icon: Shield, color: 'text-clay-500 bg-clay-50' },
+        { label: 'Go to Activity History', cmd: '> activity', url: getSafeRoute('admin.operations'), icon: Shield, color: 'text-clay-500 bg-clay-50' },
         { label: 'Go to Safety & Moderation', cmd: '> moderation', url: getSafeRoute('admin.compliance', { tab: 'flags' }), icon: ShieldAlert, color: 'text-red-500 bg-red-50' },
         { label: 'Go to Escalated Disputes', cmd: '> disputes', url: getSafeRoute('admin.disputes.index'), icon: RotateCcw, color: 'text-rose-500 bg-rose-50' },
         { label: 'Go to Dashboard', cmd: '> dashboard', url: getSafeRoute('admin.dashboard'), icon: LayoutDashboard, color: 'text-stone-500 bg-stone-50' },

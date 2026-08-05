@@ -95,7 +95,7 @@ export default function ActivityHistoryDrawer({ isOpen, onClose }) {
                     </div>
                     <div>
                         <h2 className="text-sm font-bold text-stone-900 uppercase tracking-wider">Activity History</h2>
-                        <p className="text-[11px] text-stone-400 font-medium">Personal & system operational audit logs</p>
+                        <p className="text-[11px] text-stone-400 font-medium">Personal & system operational activity history</p>
                     </div>
                 </div>
             }
