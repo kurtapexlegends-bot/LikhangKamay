@@ -100,12 +100,9 @@ export default function ChatAutomationModal({
                 <div className="flex items-center justify-between border-b border-stone-100 px-6 py-4 bg-stone-50/70">
                     <div className="flex items-center gap-2.5">
                         <div className="p-2 bg-clay-100 text-clay-700 rounded-xl">
-                            <Bot size={20} />
+                            <Bot size={18} />
                         </div>
-                        <div>
-                            <h2 className="text-base font-bold text-stone-900 leading-tight">Chat Automation & Templates</h2>
-                            <p className="text-xs text-stone-500">Configure automated customer replies and instant templates</p>
-                        </div>
+                        <h2 className="text-sm font-bold text-stone-900 leading-tight">Chat Automation & Templates</h2>
                     </div>
                     <button
                         onClick={onClose}
@@ -119,40 +116,37 @@ export default function ChatAutomationModal({
                 <div className="flex border-b border-stone-100 bg-white px-6">
                     <button
                         onClick={() => setActiveTab('auto-reply')}
-                        className={`flex items-center gap-2 py-3.5 px-2 text-xs font-bold border-b-2 transition ${
+                        className={`flex items-center gap-2 py-3 px-1 text-xs font-bold border-b-2 transition ${
                             activeTab === 'auto-reply'
                                 ? 'border-clay-600 text-clay-700'
                                 : 'border-transparent text-stone-400 hover:text-stone-600'
                         }`}
                     >
-                        <Sparkles size={15} />
+                        <Sparkles size={14} />
                         Order Completion Auto-Reply
                     </button>
                     <button
                         onClick={() => setActiveTab('templates')}
-                        className={`flex items-center gap-2 py-3.5 px-2 text-xs font-bold border-b-2 transition ${
+                        className={`flex items-center gap-2 py-3 px-1 text-xs font-bold border-b-2 transition ${
                             activeTab === 'templates'
                                 ? 'border-clay-600 text-clay-700'
                                 : 'border-transparent text-stone-400 hover:text-stone-600'
                         }`}
                     >
-                        <MessageSquare size={15} />
+                        <MessageSquare size={14} />
                         Quick Reply Templates ({chatTemplates.length})
                     </button>
                 </div>
 
                 {/* Modal Body */}
-                <div className="flex-1 overflow-y-auto p-6">
+                <div className="flex-1 overflow-y-auto p-5">
                     {activeTab === 'auto-reply' && (
-                        <form onSubmit={handleSaveAutoReply} className="space-y-5">
-                            <div className="flex items-start justify-between gap-4 rounded-2xl border border-stone-200/80 bg-stone-50/50 p-4">
-                                <div className="space-y-1">
-                                    <h4 className="text-sm font-bold text-stone-900">Enable Order Completion Auto-Reply</h4>
-                                    <p className="text-xs text-stone-500 leading-relaxed">
-                                        Automatically dispatches your thank-you message to the buyer when an order is completed.
-                                    </p>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+                        <form onSubmit={handleSaveAutoReply} className="space-y-4">
+                            <div className="flex items-center justify-between gap-4 rounded-2xl border border-stone-200/80 bg-stone-50/50 px-4 py-3.5">
+                                <span className="text-xs font-bold text-stone-900">
+                                    Send thank-you message when order is completed
+                                </span>
+                                <label className="relative inline-flex items-center cursor-pointer shrink-0">
                                     <input
                                         type="checkbox"
                                         checked={Boolean(autoReplyForm.data.auto_reply_on_completion)}
@@ -160,68 +154,64 @@ export default function ChatAutomationModal({
                                         onChange={(e) => autoReplyForm.setData('auto_reply_on_completion', e.target.checked)}
                                         className="sr-only peer"
                                     />
-                                    <div className="w-11 h-6 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-clay-600"></div>
+                                    <div className="w-10 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-clay-600"></div>
                                 </label>
                             </div>
 
                             {autoReplyForm.data.auto_reply_on_completion && (
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
-                                            Automated Thank You Message
+                                <div className="space-y-2.5">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <label className="text-[11px] font-bold uppercase tracking-wider text-stone-600">
+                                            Message Template
                                         </label>
-                                        <span className="text-[11px] text-stone-400">
-                                            {autoReplyForm.data.auto_reply_completion_message.length}/1000
-                                        </span>
+                                        <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                                            <span className="text-stone-400">Insert tag:</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => insertToken('{order_number}')}
+                                                className="px-1.5 py-0.5 bg-stone-100 hover:bg-clay-50 border border-stone-200/80 rounded font-mono font-bold text-clay-700 transition"
+                                            >
+                                                {"{order_number}"}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => insertToken('{buyer_name}')}
+                                                className="px-1.5 py-0.5 bg-stone-100 hover:bg-clay-50 border border-stone-200/80 rounded font-mono font-bold text-clay-700 transition"
+                                            >
+                                                {"{buyer_name}"}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => insertToken('{shop_name}')}
+                                                className="px-1.5 py-0.5 bg-stone-100 hover:bg-clay-50 border border-stone-200/80 rounded font-mono font-bold text-clay-700 transition"
+                                            >
+                                                {"{shop_name}"}
+                                            </button>
+                                        </div>
                                     </div>
                                     <textarea
                                         value={autoReplyForm.data.auto_reply_completion_message}
                                         disabled={!canEdit}
                                         onChange={(e) => autoReplyForm.setData('auto_reply_completion_message', e.target.value)}
-                                        placeholder="Thank you for your purchase! Your order #{order_number} is now complete. We hope you enjoy your handcrafted items! Feel free to leave a review or reach out if you need anything else."
-                                        rows={4}
+                                        placeholder="Thank you for your purchase! Your order #{order_number} is now complete. We hope you enjoy your handcrafted items!"
+                                        rows={3}
                                         maxLength={1000}
-                                        className="w-full rounded-2xl border border-stone-200 bg-white p-3.5 text-xs font-medium text-stone-800 placeholder-stone-400 focus:border-clay-500 focus:ring-0 transition-all resize-y shadow-xs"
+                                        className="w-full rounded-2xl border border-stone-200 bg-white p-3 text-xs font-medium text-stone-800 placeholder-stone-400 focus:border-clay-500 focus:ring-0 transition-all resize-y shadow-xs"
                                     />
-
-                                    {/* Dynamic Token Buttons */}
-                                    <div className="rounded-xl border border-stone-200/60 bg-stone-50 p-3">
-                                        <p className="text-[11px] font-bold text-stone-600 mb-2">Click to insert dynamic tags:</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => insertToken('{order_number}')}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-stone-200 rounded-lg text-xs font-mono text-clay-700 hover:bg-clay-50 transition shadow-2xs"
-                                            >
-                                                + {"{order_number}"}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => insertToken('{buyer_name}')}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-stone-200 rounded-lg text-xs font-mono text-clay-700 hover:bg-clay-50 transition shadow-2xs"
-                                            >
-                                                + {"{buyer_name}"}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => insertToken('{shop_name}')}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-stone-200 rounded-lg text-xs font-mono text-clay-700 hover:bg-clay-50 transition shadow-2xs"
-                                            >
-                                                + {"{shop_name}"}
-                                            </button>
-                                        </div>
+                                    <div className="text-right text-[10px] text-stone-400">
+                                        {autoReplyForm.data.auto_reply_completion_message.length}/1000
                                     </div>
                                 </div>
                             )}
 
-                            <div className="pt-3 border-t border-stone-100 flex justify-end">
+                            <div className="pt-2 border-t border-stone-100 flex justify-end">
                                 <button
                                     type="submit"
                                     disabled={autoReplyForm.processing || !canEdit}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-clay-700 disabled:opacity-50 transition"
+                                    className="inline-flex items-center gap-1.5 rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-clay-700 disabled:opacity-50 transition"
                                 >
-                                    <CheckCircle2 size={15} />
-                                    Save Auto-Reply Settings
+                                    <CheckCircle2 size={14} />
+                                    Save Settings
                                 </button>
                             </div>
                         </form>
