@@ -3,6 +3,7 @@ import { Search, X, Pencil, Trash2, CalendarDays, Users, SlidersHorizontal, Filt
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
+import CompactPagination from '@/Components/CompactPagination';
 import {
     formatPeso,
     formatWorkedHoursSummary,
@@ -229,6 +230,16 @@ export default function StaffTable({
 
         return true;
     });
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 8;
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter, entitlementFilter, startDateFilter, endDateFilter]);
+
+    const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
+    const paginatedStaff = filteredStaff.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const isSearching = searchTerm.trim().length > 0 || activeFiltersCount > 0;
 
@@ -523,7 +534,7 @@ export default function StaffTable({
             <div className="flex-1 md:hidden">
                 {filteredStaff.length > 0 ? (
                     <div className="divide-y divide-gray-100">
-                        {filteredStaff.map((emp) => {
+                        {paginatedStaff.map((emp) => {
                             const loginAccessStatus = getLoginAccessStatus(emp.login_account);
                             const attendanceStatus = getAttendanceStatus(emp.attendance);
                             const directoryStatus = getEmployeeDirectoryStatus(emp, attendanceStatus);
@@ -659,7 +670,7 @@ export default function StaffTable({
                     </thead>
                     <tbody className="divide-y divide-stone-100 bg-white">
                         {filteredStaff.length > 0 ? (
-                            filteredStaff.map((emp) => {
+                            paginatedStaff.map((emp) => {
                                 const loginAccessStatus = getLoginAccessStatus(emp.login_account);
                                 const attendanceStatus = getAttendanceStatus(emp.attendance);
                                 const directoryStatus = getEmployeeDirectoryStatus(emp, attendanceStatus);
@@ -789,6 +800,16 @@ export default function StaffTable({
                     </tbody>
                 </table>
             </div>
+
+            {/* Pagination Component */}
+            <CompactPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredStaff.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemLabel="employees"
+            />
         </div>
     );
 }

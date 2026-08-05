@@ -9,6 +9,7 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import RatingModal from '@/Components/Consumer/RatingModal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import UserAvatar from '@/Components/UserAvatar';
+import CompactPagination from '@/Components/CompactPagination';
 
 // Extracted Subcomponents
 import OrderListItemCard from '@/Components/Consumer/Buyer/MyOrders/OrderListItemCard/OrderListItemCard';
@@ -105,6 +106,16 @@ export default function MyOrders({ auth, orders }) {
 
         return tabMatch && searchMatch;
     });
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 6;
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeTab, searchQuery]);
+
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+    const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const modalConfigs = {
         receive: {
@@ -316,7 +327,7 @@ export default function MyOrders({ auth, orders }) {
                         {/* --- ORDER LIST --- */}
                         <div className="space-y-8">
                             {filteredOrders.length > 0 ? (
-                                filteredOrders.map((order) => (
+                                paginatedOrders.map((order) => (
                                     <OrderListItemCard
                                         key={order.id}
                                         order={order}
@@ -350,6 +361,17 @@ export default function MyOrders({ auth, orders }) {
                                 />
                             )}
                         </div>
+
+                        {/* Pagination Component */}
+                        <CompactPagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={filteredOrders.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={setCurrentPage}
+                            itemLabel="orders"
+                            className="mt-6 rounded-2xl border border-stone-200 bg-white"
+                        />
                     </div>
                 </div>
 

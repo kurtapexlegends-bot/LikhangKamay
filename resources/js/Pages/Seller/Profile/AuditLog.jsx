@@ -23,6 +23,7 @@ import {
 import AuditLogFilters from '@/Components/Seller/Profile/AuditLogFilters';
 import AuditLogsList from '@/Components/Seller/Profile/AuditLogsList';
 import LogDetailsModal from '@/Components/Seller/Profile/LogDetailsModal';
+import CompactPagination from '@/Components/CompactPagination';
 
 export default function AuditLog({ auth, auditLog }) {
     const { flash = {} } = usePage().props;
@@ -117,10 +118,22 @@ export default function AuditLog({ auth, auditLog }) {
         });
     }, [indexedEntries, deferredSearch, startDate, endDate, selectedCategory, selectedModule, selectedStatus, selectedSeverity, selectedActor]);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 15;
+
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedCategory, selectedModule, selectedStatus, selectedSeverity, selectedActor, startDate, endDate, deferredSearch]);
+
+    const totalPages = Math.ceil(filteredEntries.length / itemsPerPage);
+    const paginatedEntries = useMemo(() => {
+        return filteredEntries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    }, [filteredEntries, currentPage, itemsPerPage]);
+
     const groupedEntries = useMemo(() => {
         const groups = new Map();
 
-        filteredEntries.forEach((entry) => {
+        paginatedEntries.forEach((entry) => {
             const key = toDateInputValue(entry.occurred_at) || 'unknown';
             if (!groups.has(key)) {
                 groups.set(key, {
@@ -133,7 +146,7 @@ export default function AuditLog({ auth, auditLog }) {
         });
 
         return Array.from(groups.values());
-    }, [filteredEntries]);
+    }, [paginatedEntries]);
 
     const exportCsv = () => {
         const headers = [
@@ -438,6 +451,16 @@ export default function AuditLog({ auth, auditLog }) {
                             description="Try a broader date range or clear the filters to review more workspace history."
                         />
                     )}
+
+                    {/* Pagination Component */}
+                    <CompactPagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={filteredEntries.length}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={setCurrentPage}
+                        itemLabel="activity entries"
+                    />
 
                     {/* Coverage footer */}
                     <div className="border-t border-stone-100 px-5 py-4 sm:px-8 bg-stone-50/50">

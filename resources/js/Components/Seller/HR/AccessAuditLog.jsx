@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import TextInput from '@/Components/TextInput';
+import CompactPagination from '@/Components/CompactPagination';
 import { Shield, Search, SlidersHorizontal, ChevronDown, RotateCcw } from 'lucide-react';
 import {
     STAFF_ACCESS_EVENT_LABELS,
@@ -37,6 +38,16 @@ export default function AccessAuditLog({ auditEntries = [] }) {
 
         return matchesEvent && matchesSearch;
     });
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 8;
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search, eventFilter]);
+
+    const totalPages = Math.ceil(filteredEntries.length / itemsPerPage);
+    const paginatedEntries = filteredEntries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
         <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm flex flex-col min-h-[300px]">
@@ -131,7 +142,7 @@ export default function AccessAuditLog({ auditEntries = [] }) {
             </div>
             <div className="divide-y divide-stone-100">
                 {filteredEntries.length > 0 ? (
-                    filteredEntries.map((audit) => (
+                    paginatedEntries.map((audit) => (
                         <div key={audit.id} className="flex flex-col gap-2 px-5 py-4 md:flex-row md:items-start md:justify-between">
                             <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
@@ -169,6 +180,16 @@ export default function AccessAuditLog({ auditEntries = [] }) {
                     </div>
                 )}
             </div>
+
+            {/* Pagination Component */}
+            <CompactPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredEntries.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemLabel="access logs"
+            />
         </div>
     );
 }
