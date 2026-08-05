@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Mail;
 
 class UpdateOrderStatus
 {
-    private $orderFinanceService;
+    private OrderFinanceService $orderFinanceService;
 
     public function __construct(OrderFinanceService $orderFinanceService)
     {
@@ -222,6 +222,17 @@ class UpdateOrderStatus
                 }
             }
         });
+
+        if ($status === 'Completed') {
+            try {
+                $freshOrder = Order::find($order->id);
+                if ($freshOrder) {
+                    app(\App\Actions\Seller\Chat\SendOrderCompletionAutoReply::class)->execute($freshOrder);
+                }
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
     }
 
     private function isAllowedSellerStatusTransition(Order $order, string $nextStatus): bool

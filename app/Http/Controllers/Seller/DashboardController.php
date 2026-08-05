@@ -65,7 +65,7 @@ class DashboardController extends Controller
             if ($request->filled('search')) {
                 $search = trim((string) $request->search);
                 $cleanSearch = preg_replace('/^ORD-/i', '', $search);
-                $like = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
+                $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
 
                 $query->where(function ($q) use ($search, $cleanSearch, $like) {
                     $q->where('order_number', $like, "%{$search}%")

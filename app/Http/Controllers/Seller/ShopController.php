@@ -150,9 +150,17 @@ class ShopController extends Controller
             'bio' => 'nullable|string|max:500',
             'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
+            'auto_reply_on_completion' => 'nullable|boolean',
+            'auto_reply_completion_message' => 'nullable|string|max:1000',
         ]);
 
         $user->bio = $validated['bio'] ?? null;
+        if (array_key_exists('auto_reply_on_completion', $validated)) {
+            $user->auto_reply_on_completion = (bool) $validated['auto_reply_on_completion'];
+        }
+        if (array_key_exists('auto_reply_completion_message', $validated)) {
+            $user->auto_reply_completion_message = $validated['auto_reply_completion_message'];
+        }
 
         if ($request->hasFile('banner_image')) {
             if ($user->banner_image) {

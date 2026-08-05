@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 
 class ReceiveOrder
 {
-    private $orderFinanceService;
+    private OrderFinanceService $orderFinanceService;
 
     public function __construct(OrderFinanceService $orderFinanceService)
     {
@@ -75,6 +75,15 @@ class ReceiveOrder
                 ? 'Replacement received and order marked as completed.'
                 : 'Order marked as received! You have 1 day to request a return if needed.';
         });
+
+        try {
+            $freshOrder = Order::find($id);
+            if ($freshOrder && $freshOrder->status === 'Completed') {
+                app(\App\Actions\Seller\Chat\SendOrderCompletionAutoReply::class)->execute($freshOrder);
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return $successMessage;
     }

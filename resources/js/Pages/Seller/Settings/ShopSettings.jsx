@@ -5,7 +5,7 @@ import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabil
 import { useToast } from '@/Components/ToastContext';
 import {
     Camera, Save, Star, Package, MapPin, Calendar,
-    Filter, CheckCircle, Pencil, AlertCircle, Heart, Crown, Sparkles, Search, ArrowUpDown, Flame
+    Filter, CheckCircle, Pencil, AlertCircle, Heart, Crown, Sparkles, Search, ArrowUpDown, Flame, MessageSquare
 } from 'lucide-react';
 import { hasRating, formatRating } from '@/utils/rating';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
@@ -33,6 +33,8 @@ export default function ShopSettings({ auth, user, stats }) {
         bio: user?.bio || '',
         banner_image: null,
         avatar: null,
+        auto_reply_on_completion: user?.auto_reply_on_completion ?? true,
+        auto_reply_completion_message: user?.auto_reply_completion_message || '',
     });
 
     const revokePreview = (url) => {
@@ -269,6 +271,60 @@ export default function ShopSettings({ auth, user, stats }) {
 
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Order Completion Auto-Reply Settings Section */}
+                        <div className="mt-8 rounded-2xl border border-stone-200/80 bg-white p-5 shadow-sm sm:p-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100">
+                                <div>
+                                    <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
+                                        <MessageSquare size={18} className="text-clay-600" />
+                                        Order Completion Auto-Reply
+                                    </h3>
+                                    <p className="text-xs text-stone-500 mt-1">
+                                        Automatically send a thank-you message to the buyer when an order is marked as completed.
+                                    </p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(data.auto_reply_on_completion)}
+                                        disabled={!canEditShopSettings}
+                                        onChange={(e) => setData('auto_reply_on_completion', e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-clay-600"></div>
+                                    <span className="ml-2.5 text-xs font-bold text-stone-700">
+                                        {data.auto_reply_on_completion ? 'Enabled' : 'Disabled'}
+                                    </span>
+                                </label>
+                            </div>
+
+                            {data.auto_reply_on_completion && (
+                                <div className="mt-4 space-y-3">
+                                    <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
+                                        Custom Thank You Message
+                                    </label>
+                                    <textarea
+                                        value={data.auto_reply_completion_message}
+                                        disabled={!canEditShopSettings}
+                                        onChange={(e) => setData('auto_reply_completion_message', e.target.value)}
+                                        placeholder="Thank you for your purchase! Your order #{order_number} is now complete. We hope you enjoy your handcrafted items! Feel free to leave a review or reach out if you need anything else."
+                                        rows={3}
+                                        maxLength={1000}
+                                        className="w-full rounded-xl border border-stone-200 bg-stone-50/50 p-3 text-xs font-medium text-stone-800 placeholder-stone-400 focus:border-clay-500 focus:bg-white focus:ring-0 transition-all resize-y"
+                                    />
+                                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-stone-400">
+                                        <div className="flex items-center gap-1.5 font-medium">
+                                            <span>Available Tokens:</span>
+                                            <code className="bg-stone-100 text-clay-700 px-1.5 py-0.5 rounded font-mono text-[10px]">{"{order_number}"}</code>
+                                            <code className="bg-stone-100 text-clay-700 px-1.5 py-0.5 rounded font-mono text-[10px]">{"{buyer_name}"}</code>
+                                            <code className="bg-stone-100 text-clay-700 px-1.5 py-0.5 rounded font-mono text-[10px]">{"{shop_name}"}</code>
+                                        </div>
+                                        <span>{data.auto_reply_completion_message.length}/1000</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Products Section — real preview */}

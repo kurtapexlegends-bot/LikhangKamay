@@ -167,6 +167,8 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'base_funds',
         'premium_tier',
         'document_flags',
+        'auto_reply_on_completion',
+        'auto_reply_completion_message',
     ];
 
     /**
@@ -200,6 +202,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'last_seen_at' => 'datetime',
             'document_flags' => 'array',
             'banned_at' => 'datetime',
+            'auto_reply_on_completion' => \App\Casts\PostgresCompatibleBoolean::class,
         ];
     }
 
