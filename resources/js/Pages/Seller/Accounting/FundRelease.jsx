@@ -255,20 +255,28 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
         <>
             <Head title={reviewModal.item ? `Review: ${reviewModal.item.order_number || ('Request #' + reviewModal.item.id)}` : "Finance & Approvals"} />
             <SellerHeader
-                title={reviewModal.item ? (reviewModal.item.type === 'payroll' ? 'Payroll Review' : reviewModal.item.type === 'sale' ? 'Settlement Details' : 'Stock Request Details') : "Finance"}
-                subtitle={reviewModal.item ? `Detailed breakdown for ${reviewModal.item.order_number || ('Request #' + reviewModal.item.id)}` : "Track shop payouts, release requests, and billing."}
+                title={reviewModal.item ? `Review Request #${reviewModal.item.id}` : "Finance & Fund Approvals"}
+                subtitle={reviewModal.item ? `Audit details for request #${reviewModal.item.id}` : "Track enterprise balances, capital adjustments, and approve release requests."}
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
+                breadcrumbs={
+                    reviewModal.item
+                        ? [
+                              { label: 'Finance & Approvals', href: route('accounting.index') },
+                              { label: `Request #${reviewModal.item.id}` }
+                          ]
+                        : null
+                }
                 actions={
                     reviewModal.item ? (
                         <button
                             type="button"
                             onClick={closeReviewModal}
-                            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-bold text-stone-600 transition hover:border-stone-300 hover:bg-stone-50 active:scale-95 transition-all"
+                            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-600 transition hover:border-stone-300 hover:bg-stone-50"
                         >
-                            <ArrowLeft size={16} />
-                            Back to Finance
+                            <ArrowLeft size={14} />
+                            All Requests
                         </button>
                     ) : (
                         <ExportButton href={route('accounting.export')} variant="primary">

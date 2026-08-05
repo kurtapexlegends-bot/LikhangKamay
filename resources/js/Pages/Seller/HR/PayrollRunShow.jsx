@@ -118,20 +118,15 @@ export default function PayrollRunShow({ payroll }) {
             <Head title={`Payroll ${payroll?.month || ''}`} />
 
             <SellerHeader
-                title="Payroll Run"
-                subtitle="Review staff payroll items and release payouts."
+                title={`Payroll ${payroll?.month || ''}`}
+                subtitle="Review staff payroll items and calculation breakdowns."
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
-                actions={(
-                    <Link
-                        href={route('hr.index')}
-                        className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-bold text-stone-600 transition hover:border-stone-300 hover:bg-stone-50"
-                    >
-                        <ArrowLeft size={16} />
-                        Back to People & Payroll
-                    </Link>
-                )}
+                breadcrumbs={[
+                    { label: 'People & Payroll', href: route('hr.index') },
+                    { label: `Payroll ${payroll?.month || ''}` }
+                ]}
             />
 
             <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">

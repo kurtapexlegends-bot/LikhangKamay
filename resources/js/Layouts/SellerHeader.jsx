@@ -4,6 +4,7 @@ import NotificationDropdown from '@/Components/NotificationDropdown';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
+import Breadcrumbs from '@/Components/Breadcrumbs';
 import { Menu, ChevronDown, User, LogOut, Building2, Clock } from 'lucide-react';
 
 import FloatingModuleActions from '@/Components/FloatingModuleActions';
@@ -18,8 +19,9 @@ import { useRealtime } from '@/hooks/useRealtime';
  * @param {string} props.subtitle
  * @param {Object} props.auth
  * @param {Function} props.onMenuClick
+ * @param {Array} props.breadcrumbs
  */
-export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuClick, badge, actions = null }) {
+export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuClick, badge, actions = null, breadcrumbs = null }) {
     useRealtime();
     const { auth: pageAuth } = usePage().props;
     const auth = propAuth || pageAuth;
@@ -37,6 +39,9 @@ export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuCl
                         <Menu size={24} />
                     </button>
                     <div className="min-w-0">
+                        {breadcrumbs && (
+                            <Breadcrumbs items={breadcrumbs} className="mb-0.5" />
+                        )}
                         <div className="flex flex-wrap items-center gap-2">
                             <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">{title}</h1>
                             {badge && (

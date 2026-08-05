@@ -3,6 +3,7 @@ import { Head, Link, useForm, router } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import Modal from '@/Components/Modal';
 import StickyActionBar from '@/Components/StickyActionBar';
+import Breadcrumbs from '@/Components/Breadcrumbs';
 import { ChevronRight, ChevronLeft, ShoppingCart, Loader2, MessageCircle } from 'lucide-react';
 
 import { normalizeRating } from '@/utils/rating';
@@ -305,18 +306,15 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                     </div>
                 )}
 
-                {/* Breadcrumb - Compact - Hidden on Mobile */}
-                <nav className="hidden sm:flex flex-wrap items-center gap-1.5 text-xs text-gray-400 mb-4">
-                    <Link href="/" className="hover:text-clay-600">Home</Link>
-                    <ChevronRight size={12} />
-                    <Link href={route('shop.index')} className="hover:text-clay-600">Shop</Link>
-                    <ChevronRight size={12} />
-                    <Link href={route('shop.index', { category: product.category })} className="hover:text-clay-600">
-                        {product.category}
-                    </Link>
-                    <ChevronRight size={12} />
-                    <span className="text-gray-600 truncate max-w-[150px]">{product.name}</span>
-                </nav>
+                <Breadcrumbs
+                    showHome
+                    className="mb-4 hidden sm:flex"
+                    items={[
+                        { label: 'Shop', href: route('shop.index') },
+                        { label: product.category, href: route('shop.index', { category: product.category }) },
+                        { label: product.name }
+                    ]}
+                />
 
                 {/* Main Content Card */}
                 <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm sm:rounded-2xl">
