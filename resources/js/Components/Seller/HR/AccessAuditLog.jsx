@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import TextInput from '@/Components/TextInput';
-import { Shield, Search } from 'lucide-react';
+import { Shield, Search, SlidersHorizontal, ChevronDown, RotateCcw } from 'lucide-react';
 import {
     STAFF_ACCESS_EVENT_LABELS,
     formatRelativeAuditTime
@@ -10,6 +10,21 @@ import {
 export default function AccessAuditLog({ auditEntries = [] }) {
     const [search, setSearch] = useState('');
     const [eventFilter, setEventFilter] = useState('all');
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const filterRef = useRef(null);
+
+    // Close popover when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (filterRef.current && !filterRef.current.contains(e.target)) {
+                setIsFilterOpen(false);
+            }
+        };
+        if (isFilterOpen) document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isFilterOpen]);
+
+    const activeFilterCount = eventFilter !== 'all' ? 1 : 0;
 
     const filteredEntries = auditEntries.filter((audit) => {
         const matchesEvent = eventFilter === 'all' || audit.event === eventFilter;
@@ -45,26 +60,71 @@ export default function AccessAuditLog({ auditEntries = [] }) {
                                 className="pl-9 pr-3 py-1.5 text-xs bg-white border-stone-200 rounded-xl w-full sm:w-56"
                             />
                         </div>
-                        <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl">
-                            {[
-                                { key: 'all', label: 'All' },
-                                { key: 'login_created', label: 'Created' },
-                                { key: 'roles_updated', label: 'Roles' },
-                                { key: 'suspended', label: 'Suspended' },
-                                { key: 'restored', label: 'Restored' },
-                            ].map((tab) => (
-                                <button
-                                    key={tab.key}
-                                    onClick={() => setEventFilter(tab.key)}
-                                    className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all ${
-                                        eventFilter === tab.key
-                                            ? 'bg-white text-stone-900 shadow-xs'
-                                            : 'text-stone-500 hover:text-stone-800'
-                                    }`}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
+
+                        <div className="relative" ref={filterRef}>
+                            <button
+                                type="button"
+                                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-xs ${
+                                    activeFilterCount > 0
+                                        ? 'bg-clay-600 text-white border-clay-700 hover:bg-clay-700'
+                                        : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50 hover:border-stone-300'
+                                }`}
+                            >
+                                <SlidersHorizontal size={14} />
+                                <span>Filter</span>
+                                {activeFilterCount > 0 && (
+                                    <span className="inline-flex items-center justify-center bg-white/25 text-white rounded-full text-[10px] w-4 h-4 font-black">
+                                        {activeFilterCount}
+                                    </span>
+                                )}
+                                <ChevronDown size={14} className={`transition-transform duration-200 ${isFilterOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {isFilterOpen && (
+                                <div className="absolute right-0 z-50 mt-2 w-64 rounded-2xl border border-stone-200 bg-white p-4 shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in-95">
+                                    <div className="flex items-center justify-between border-b border-stone-100 pb-2.5 mb-3">
+                                        <span className="text-xs font-bold text-stone-900">Filter Event Type</span>
+                                        {activeFilterCount > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setEventFilter('all')}
+                                                className="inline-flex items-center gap-1 text-[10px] font-bold text-stone-500 hover:text-clay-700 transition"
+                                            >
+                                                <RotateCcw size={11} /> Reset
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="space-y-1">
+                                        {[
+                                            { key: 'all', label: 'All Event Types' },
+                                            { key: 'login_created', label: 'Login Created' },
+                                            { key: 'roles_updated', label: 'Roles & Permissions' },
+                                            { key: 'suspended', label: 'Staff Suspended' },
+                                            { key: 'restored', label: 'Access Restored' },
+                                        ].map((tab) => (
+                                            <button
+                                                key={tab.key}
+                                                type="button"
+                                                onClick={() => {
+                                                    setEventFilter(tab.key);
+                                                    setIsFilterOpen(false);
+                                                }}
+                                                className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-medium transition ${
+                                                    eventFilter === tab.key
+                                                        ? 'bg-clay-50 text-clay-700 font-bold'
+                                                        : 'text-stone-700 hover:bg-stone-50'
+                                                }`}
+                                            >
+                                                <span>{tab.label}</span>
+                                                {eventFilter === tab.key && (
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-clay-600" />
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
