@@ -18,9 +18,17 @@ export default function useProductModalsState({
     const [limitModalOpen, setLimitModalOpen] = useState(false);
     const [deductModalOpen, setDeductModalOpen] = useState(false);
     const [resubmitModalOpen, setResubmitModalOpen] = useState(false);
+    const [discountModalOpen, setDiscountModalOpen] = useState(false);
+    const [discountTargetProducts, setDiscountTargetProducts] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [selectedResubmitProduct, setSelectedResubmitProduct] = useState(null);
     const [restockAmount, setRestockAmount] = useState("");
+
+    const openDiscountModal = (productsToDiscount = []) => {
+        if (!canEditProducts) return;
+        setDiscountTargetProducts(Array.isArray(productsToDiscount) ? productsToDiscount : [productsToDiscount]);
+        setDiscountModalOpen(true);
+    };
 
     const openRestockModal = (p) => {
         if (!canEditProducts) return;
@@ -111,6 +119,10 @@ export default function useProductModalsState({
         setDeductModalOpen,
         resubmitModalOpen,
         setResubmitModalOpen,
+        discountModalOpen,
+        setDiscountModalOpen,
+        discountTargetProducts,
+        openDiscountModal,
         selectedProduct,
         setSelectedProduct,
         selectedResubmitProduct,

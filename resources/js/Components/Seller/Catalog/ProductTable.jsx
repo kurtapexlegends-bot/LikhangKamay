@@ -25,6 +25,7 @@ export default function ProductTable({
     handleQuickRestock,
     openRestockModal,
     openDeductModal,
+    openDiscountModal,
     openEditModal,
     openArchiveModal,
     sortConfig,
@@ -115,13 +116,25 @@ export default function ProductTable({
                                 </div>
                             </td>
                             <td className="px-5 py-3 font-bold text-gray-700 text-sm text-center">
-                                ₱{Number(product.price).toLocaleString()}
+                                {product.has_discount ? (
+                                    <div>
+                                        <span className="text-clay-700 font-bold">₱{Number(product.effective_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        <div className="flex items-center justify-center gap-1 mt-0.5">
+                                            <span className="text-[10px] text-gray-400 line-through">₱{Number(product.price).toLocaleString()}</span>
+                                            <span className="text-[9px] bg-clay-100 text-clay-700 px-1 py-0.2 rounded font-bold">
+                                                -{product.discount_info?.percentage_off}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    `₱${Number(product.price).toLocaleString()}`
+                                )}
                             </td>
                             <td className="px-5 py-3 font-semibold text-gray-500 text-sm text-center">
-                                {product.cost_price ? `₱${Number(product.cost_price).toLocaleString()}` : "—"}
+                                ₱{Number(product.cost_price || 0).toLocaleString()}
                             </td>
                             <td className="px-5 py-3">
-                                <div className="flex items-center justify-center gap-2">
+                                <div className="flex items-center justify-center">
                                     <QuickRestock
                                         item={product}
                                         canEdit={canEditProducts}
@@ -129,43 +142,28 @@ export default function ProductTable({
                                         unit="units"
                                         type="product"
                                     />
-                                    {product.stock < 10 && (
-                                        <AlertCircle size={12} className="text-rose-500" />
-                                    )}
                                 </div>
                             </td>
-                            <td className="px-5 py-3 text-sm font-medium text-gray-600 text-center">
-                                {product.sold}
+                            <td className="px-5 py-3 font-medium text-gray-600 text-sm text-center">
+                                {product.sold || 0}
                             </td>
                             <td className="px-5 py-3">
                                 <div className="flex flex-col items-center gap-1">
                                     <span
-                                        onClick={() => {
-                                            if (product.status === "rejected" || product.status === "flagged") {
-                                                onResubmitClick?.(product);
-                                            }
-                                        }}
-                                        title={
-                                            product.status === "rejected" || product.status === "flagged"
-                                                ? "Click to view reason and resubmit"
-                                                : undefined
-                                        }
-                                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${
-                                            product.status === "rejected" || product.status === "flagged"
-                                                ? "cursor-pointer hover:opacity-85 transition-opacity"
-                                                : ""
-                                        } ${
+                                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold ${
                                             product.status === "Active"
-                                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                                                : product.status === "Draft"
+                                                ? "bg-gray-100 text-gray-600 border border-gray-200"
                                                 : product.status === "Archived"
-                                                ? "bg-gray-100 text-gray-600 border-gray-200"
+                                                ? "bg-amber-50 text-amber-700 border border-amber-200/60"
                                                 : product.status === "pending_review"
-                                                ? "bg-amber-50 text-amber-700 border-amber-100"
+                                                ? "bg-amber-50 text-amber-700 border border-amber-200/60"
                                                 : product.status === "rejected"
-                                                ? "bg-rose-50 text-rose-700 border-rose-100"
+                                                ? "bg-rose-50 text-rose-700 border border-rose-200/60"
                                                 : product.status === "flagged"
-                                                ? "bg-orange-50 text-orange-700 border-orange-100"
-                                                : "bg-stone-50 text-stone-700 border-stone-200"
+                                                ? "bg-purple-50 text-purple-700 border border-purple-200/60"
+                                                : "bg-gray-50 text-gray-600 border border-gray-200"
                                         }`}
                                     >
                                         {product.status === "pending_review"
@@ -179,12 +177,12 @@ export default function ProductTable({
                                 </div>
                             </td>
                             <td className="px-5 py-3 text-center">
-                                <div className="flex justify-center gap-1.5">
+                                <div className="flex items-center justify-center gap-1.5">
                                     <button
                                         type="button"
                                         disabled={!canEditProducts}
                                         onClick={() => openRestockModal(product)}
-                                        className="p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="w-8 h-8 rounded-xl bg-emerald-50/80 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/70 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-40"
                                         title={canEditProducts ? "Restock" : "Read only"}
                                     >
                                         <RefreshCw size={14} />
@@ -193,7 +191,7 @@ export default function ProductTable({
                                         type="button"
                                         disabled={!canEditProducts}
                                         onClick={() => openDeductModal(product)}
-                                        className="p-2 rounded-xl text-orange-600 hover:bg-orange-50 border border-transparent hover:border-orange-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="w-8 h-8 rounded-xl bg-rose-50/80 text-rose-700 hover:bg-rose-100 border border-rose-200/70 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-rose-500/20 disabled:opacity-40"
                                         title={canEditProducts ? "Manual Deduct" : "Read only"}
                                     >
                                         <TrendingUp size={14} className="rotate-180" />
@@ -202,7 +200,7 @@ export default function ProductTable({
                                         type="button"
                                         disabled={!canEditProducts}
                                         onClick={() => openEditModal(product)}
-                                        className="p-2 rounded-xl text-sky-600 hover:bg-sky-50 border border-transparent hover:border-sky-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="w-8 h-8 rounded-xl bg-sky-50/80 text-sky-700 hover:bg-sky-100 border border-sky-200/70 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-sky-500/20 disabled:opacity-40"
                                         title={canEditProducts ? "Edit" : "Read only"}
                                     >
                                         <Edit3 size={14} />
@@ -212,7 +210,7 @@ export default function ProductTable({
                                             type="button"
                                             disabled={!canEditProducts}
                                             onClick={() => openArchiveModal(product)}
-                                            className="p-2 rounded-xl text-amber-600 hover:bg-amber-50 border border-transparent hover:border-amber-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                            className="w-8 h-8 rounded-xl bg-stone-100 text-stone-700 hover:bg-stone-200 border border-stone-200 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-stone-500/20 disabled:opacity-40"
                                             title={canEditProducts ? "Unarchive" : "Read only"}
                                         >
                                             <RotateCcw size={14} />
@@ -222,7 +220,7 @@ export default function ProductTable({
                                             type="button"
                                             disabled={!canEditProducts}
                                             onClick={() => openArchiveModal(product)}
-                                            className="p-2 rounded-xl text-clay-600 hover:bg-clay-50 border border-transparent hover:border-clay-100/30 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                            className="w-8 h-8 rounded-xl bg-stone-100 text-stone-700 hover:bg-stone-200 border border-stone-200 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-stone-500/20 disabled:opacity-40"
                                             title={canEditProducts ? "Archive" : "Read only"}
                                         >
                                             <Archive size={14} />

@@ -1,0 +1,358 @@
+import React, { useState } from "react";
+import { Head, Link, router } from "@inertiajs/react";
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from "@/Layouts/SellerWorkspaceLayout";
+import SellerHeader from "@/Layouts/SellerHeader";
+import DiscountModal from "@/Components/Seller/Catalog/DiscountModal";
+import KPICard from "@/Components/KPICard";
+import WorkspaceEmptyState from "@/Components/WorkspaceEmptyState";
+import ConfirmationModal from "@/Components/ConfirmationModal";
+import { Tag, Plus, PowerOff, CheckCircle2, Clock, TrendingUp, Edit3 } from "lucide-react";
+
+export default function DiscountManager({ discounts, stats, filters, products, auth }) {
+    const { openSidebar } = useSellerWorkspaceShell();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingDiscount, setEditingDiscount] = useState(null);
+    const [deactivatingId, setDeactivatingId] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        discountId: null,
+        discountName: "",
+    });
+
+    const activeStatus = filters?.status || "ongoing";
+
+    const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+        const d = new Date(dateString);
+        return d.toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+        });
+    };
+
+    const handleOpenCreate = () => {
+        setEditingDiscount(null);
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEdit = (discount) => {
+        setEditingDiscount(discount);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingDiscount(null);
+    };
+
+    const openConfirmDeactivate = (discount) => {
+        setConfirmModal({
+            isOpen: true,
+            discountId: discount.id,
+            discountName: discount.name || `Discount Campaign #${discount.id}`,
+        });
+    };
+
+    const handleConfirmDeactivate = () => {
+        if (!confirmModal.discountId) return;
+
+        setDeactivatingId(confirmModal.discountId);
+
+        router.delete(route("discounts.destroy", confirmModal.discountId), {
+            preserveScroll: true,
+            onFinish: () => {
+                setDeactivatingId(null);
+                setConfirmModal({ isOpen: false, discountId: null, discountName: "" });
+            },
+        });
+    };
+
+    return (
+        <SellerWorkspaceLayout user={auth.user} title="Discounts" active="discounts">
+            <Head title="Discount Campaigns Manager" />
+
+            <SellerHeader
+                title="Discounts"
+                subtitle="Manage promotional pricing campaigns, scheduled discounts, and seller flash sales."
+                auth={auth}
+                onMenuClick={openSidebar}
+                actions={
+                    <button
+                        type="button"
+                        onClick={handleOpenCreate}
+                        className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3.5 py-2 text-xs font-bold text-white shadow-lg shadow-clay-500/20 transition hover:bg-clay-700 min-h-[44px] sm:min-h-[40px] shrink-0"
+                    >
+                        <Plus size={16} />
+                        <span className="hidden sm:inline">CREATE CAMPAIGN</span>
+                        <span className="sm:hidden">Create</span>
+                    </button>
+                }
+            />
+
+            <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6 pb-28 sm:pb-20">
+                {/* Standardized KPI Metrics Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <KPICard
+                        title="Ongoing Campaigns"
+                        value={stats?.ongoing_count || 0}
+                        icon={CheckCircle2}
+                        color="text-emerald-600"
+                        bg="bg-emerald-50"
+                    />
+                    <KPICard
+                        title="Upcoming Scheduled"
+                        value={stats?.upcoming_count || 0}
+                        icon={Clock}
+                        color="text-amber-600"
+                        bg="bg-amber-50"
+                    />
+                    <KPICard
+                        title="Expired / Ended"
+                        value={stats?.expired_count || 0}
+                        icon={PowerOff}
+                        color="text-stone-600"
+                        bg="bg-stone-100"
+                    />
+                    <KPICard
+                        title="Total Promo Sold"
+                        value={stats?.total_promo_sold || 0}
+                        icon={TrendingUp}
+                        color="text-clay-600"
+                        bg="bg-clay-50"
+                    />
+                </div>
+
+                {/* Status Tabs & Table Container */}
+                <div className="bg-white rounded-3xl border border-stone-200/80 overflow-hidden shadow-sm">
+                    <div className="border-b border-stone-200/70 px-4 pt-3 flex items-center gap-2">
+                        <Link
+                            href={route("discounts.index", { status: "ongoing" })}
+                            preserveScroll
+                            className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+                                activeStatus === "ongoing"
+                                    ? "border-clay-600 text-clay-700"
+                                    : "border-transparent text-stone-500 hover:text-stone-800"
+                            }`}
+                        >
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                            Ongoing Active ({stats?.ongoing_count || 0})
+                        </Link>
+
+                        <Link
+                            href={route("discounts.index", { status: "upcoming" })}
+                            preserveScroll
+                            className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+                                activeStatus === "upcoming"
+                                    ? "border-clay-600 text-clay-700"
+                                    : "border-transparent text-stone-500 hover:text-stone-800"
+                            }`}
+                        >
+                            <span className="w-2 h-2 rounded-full bg-amber-500" />
+                            Upcoming ({stats?.upcoming_count || 0})
+                        </Link>
+
+                        <Link
+                            href={route("discounts.index", { status: "expired" })}
+                            preserveScroll
+                            className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+                                activeStatus === "expired"
+                                    ? "border-clay-600 text-clay-700"
+                                    : "border-transparent text-stone-500 hover:text-stone-800"
+                            }`}
+                        >
+                            <span className="w-2 h-2 rounded-full bg-stone-300" />
+                            Expired / Past ({stats?.expired_count || 0})
+                        </Link>
+                    </div>
+
+                    {/* Table View */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                            <thead className="bg-stone-50 border-b border-stone-200/70 text-[10px] uppercase tracking-wider font-extrabold text-stone-400">
+                                <tr>
+                                    <th className="py-3 px-5">Campaign / Discount</th>
+                                    <th className="py-3 px-4 text-center">Type & Rate</th>
+                                    <th className="py-3 px-4">Effective Schedule</th>
+                                    <th className="py-3 px-4 text-center">Linked Products</th>
+                                    <th className="py-3 px-4 text-center">Order Limit</th>
+                                    <th className="py-3 px-4 text-center">Promo Sales</th>
+                                    <th className="py-3 px-4 text-center">Status</th>
+                                    <th className="py-3 px-5 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-stone-100">
+                                {discounts?.data?.length > 0 ? (
+                                    discounts.data.map((discount) => {
+                                        const now = new Date();
+                                        const start = new Date(discount.start_at);
+                                        const end = new Date(discount.end_at);
+                                        const isActive = discount.is_active && start <= now && end >= now;
+                                        const isUpcoming = discount.is_active && start > now;
+
+                                        return (
+                                            <tr key={discount.id} className="hover:bg-stone-50/50 transition">
+                                                {/* Campaign Name */}
+                                                <td className="py-3.5 px-5 font-bold text-stone-900">
+                                                    <div>
+                                                        <span className="block">{discount.name || `Discount Campaign #${discount.id}`}</span>
+                                                        <span className="text-[10px] text-stone-400 font-mono">Created {new Date(discount.created_at).toLocaleDateString()}</span>
+                                                    </div>
+                                                </td>
+
+                                                {/* Rate */}
+                                                <td className="py-3.5 px-4 text-center font-extrabold text-clay-700 whitespace-nowrap">
+                                                    <span className="bg-amber-50 text-amber-800 border border-amber-200/80 px-2.5 py-1 rounded-xl text-xs font-extrabold whitespace-nowrap inline-block shadow-sm">
+                                                        {discount.type === "percentage" ? `-${discount.value}% OFF` : `₱${Number(discount.value).toLocaleString(undefined, { minimumFractionDigits: 2 })} Fixed`}
+                                                    </span>
+                                                </td>
+
+                                                {/* Dates */}
+                                                <td className="py-3.5 px-4 text-stone-600 text-[11px] whitespace-nowrap">
+                                                    <div className="space-y-0.5">
+                                                        <p><span className="text-stone-400 uppercase text-[9px] font-extrabold mr-1">Start:</span><span className="font-semibold text-stone-800">{formatDate(discount.start_at)}</span></p>
+                                                        <p><span className="text-stone-400 uppercase text-[9px] font-extrabold mr-1.5">End:</span><span className="font-semibold text-stone-800">{formatDate(discount.end_at)}</span></p>
+                                                    </div>
+                                                </td>
+
+                                                {/* Linked Products */}
+                                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                                    {discount.products && discount.products.length > 0 ? (
+                                                        <div className="flex items-center justify-center gap-2" title={discount.products.map(p => p.name).join(", ")}>
+                                                            <div className="flex -space-x-2 items-center">
+                                                                {discount.products.slice(0, 3).map((p) => {
+                                                                    const imgUrl = p.cover_photo_path ? (p.cover_photo_path.startsWith('http') ? p.cover_photo_path : `/storage/${p.cover_photo_path}`) : '/images/no-image.png';
+                                                                    return (
+                                                                        <img
+                                                                            key={p.id}
+                                                                            src={imgUrl}
+                                                                            alt={p.name}
+                                                                            title={p.name}
+                                                                            className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover bg-stone-100 border border-stone-200"
+                                                                        />
+                                                                    );
+                                                                })}
+                                                                {discount.products.length > 3 && (
+                                                                    <span className="inline-flex items-center justify-center h-6 w-6 rounded-full ring-2 ring-white bg-stone-200 text-stone-700 font-extrabold text-[9px] border border-stone-300">
+                                                                        +{discount.products.length - 3}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <span className="font-bold text-stone-800 text-xs">
+                                                                {discount.products.length} {discount.products.length === 1 ? "product" : "products"}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-stone-400 text-xs font-medium">No products</span>
+                                                    )}
+                                                </td>
+
+                                                {/* Purchase Limit */}
+                                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                                    {discount.max_purchase_limit ? (
+                                                        <span className="bg-stone-100 text-stone-700 font-bold px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap border border-stone-200/60">
+                                                            Max {discount.max_purchase_limit} / order
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-stone-300 text-[11px]">No Limit</span>
+                                                    )}
+                                                </td>
+
+                                                {/* Promo Sold */}
+                                                <td className="py-3.5 px-4 text-center font-bold text-stone-700 whitespace-nowrap">
+                                                    {discount.promo_sold || 0} units
+                                                </td>
+
+                                                {/* Status Badge */}
+                                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${
+                                                        isActive
+                                                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                                                            : isUpcoming
+                                                            ? "bg-amber-50 text-amber-800 border border-amber-200/60"
+                                                            : "bg-stone-100 text-stone-600 border border-stone-200"
+                                                    }`}>
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-500" : isUpcoming ? "bg-amber-500" : "bg-stone-400"}`} />
+                                                        {isActive ? "Ongoing Active" : isUpcoming ? "Upcoming Scheduled" : "Expired / Ended"}
+                                                    </span>
+                                                </td>
+
+                                                {/* Actions */}
+                                                <td className="py-3.5 px-5 text-right whitespace-nowrap">
+                                                    <div className="flex items-center justify-end gap-1.5">
+                                                        {discount.is_active && end >= now && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleOpenEdit(discount)}
+                                                                className="w-8 h-8 rounded-xl bg-sky-50/80 text-sky-700 hover:bg-sky-100 border border-sky-200/70 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-sky-500/20 shadow-sm"
+                                                                title="Edit Campaign"
+                                                            >
+                                                                <Edit3 size={14} />
+                                                            </button>
+                                                        )}
+                                                        {discount.is_active && end >= now ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openConfirmDeactivate(discount)}
+                                                                disabled={deactivatingId === discount.id}
+                                                                className="w-8 h-8 rounded-xl bg-rose-50/80 text-rose-700 hover:bg-rose-100 border border-rose-200/70 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-rose-500/20 disabled:opacity-40 shadow-sm"
+                                                                title="End Early"
+                                                            >
+                                                                <PowerOff size={14} />
+                                                            </button>
+                                                        ) : (
+                                                            <span className="text-[11px] text-stone-400 font-medium">—</span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                ) : (
+                                    <tr>
+                                        <td colSpan="8" className="py-12 text-center text-xs text-stone-400">
+                                            <WorkspaceEmptyState
+                                                compact
+                                                align="top"
+                                                icon={Tag}
+                                                title="No promotional campaigns found"
+                                                description="Create your first promotional discount campaign to boost seller sales."
+                                            />
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+
+            {/* Confirmation Modal for End Early */}
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, discountId: null, discountName: "" })}
+                onConfirm={handleConfirmDeactivate}
+                title="End Promotional Campaign Early?"
+                message={`Are you sure you want to end "${confirmModal.discountName}" early? Affected products will immediately revert to their standard prices.`}
+                icon={PowerOff}
+                iconBg="bg-rose-100 text-rose-700"
+                confirmText="End Campaign Early"
+                confirmColor="bg-rose-600 hover:bg-rose-700"
+                processing={deactivatingId !== null}
+            />
+
+            {/* Discount Creation / Editing Modal */}
+            <DiscountModal
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                allProducts={products}
+                selectedProducts={[]}
+                canEdit={true}
+                discountToEdit={editingDiscount}
+            />
+        </SellerWorkspaceLayout>
+    );
+}

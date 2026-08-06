@@ -6,7 +6,7 @@ import SellerWorkspaceLayout, {
     useSellerWorkspaceShell,
 } from "@/Layouts/SellerWorkspaceLayout";
 import SellerHeader from "@/Layouts/SellerHeader";
-import { Plus, CheckCircle2, RotateCcw, Archive, AlertTriangle, AlertOctagon } from "lucide-react";
+import { Plus, CheckCircle2, RotateCcw, Archive, AlertTriangle, AlertOctagon, Tag } from "lucide-react";
 import SlideOverDrawer from "@/Components/SlideOverDrawer";
 import Modal from "@/Components/Modal";
 
@@ -21,6 +21,7 @@ import RestockModal from "@/Components/Seller/Catalog/RestockModal";
 import ArchiveModal from "@/Components/Seller/Catalog/ArchiveModal";
 import LimitModal from "@/Components/Seller/Catalog/LimitModal";
 import ProductFormModal from "@/Components/Seller/Catalog/ProductFormModal/ProductFormModal";
+import DiscountModal from "@/Components/Seller/Catalog/DiscountModal";
 
 // Custom Hook
 import useProductManager from "@/hooks/useProductManager";
@@ -51,17 +52,15 @@ export default function ProductManager({
                 auth={auth}
                 onMenuClick={openSidebar}
                 actions={
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={state.openAddModal}
-                            disabled={!state.canEditProducts}
-                            className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-clay-500/20 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-[40px]"
-                        >
-                            <Plus size={16} />
-                            <span className="hidden sm:inline">ADD PRODUCT</span>
-                            <span className="sm:hidden">Add</span>
-                        </button>
-                    </div>
+                    <button
+                        onClick={state.openAddModal}
+                        disabled={!state.canEditProducts}
+                        className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-clay-500/20 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-[40px]"
+                    >
+                        <Plus size={16} />
+                        <span className="hidden sm:inline">ADD PRODUCT</span>
+                        <span className="sm:hidden">Add</span>
+                    </button>
                 }
             />
 
@@ -104,6 +103,7 @@ export default function ProductManager({
                         toggleVisibleSelection={state.toggleVisibleSelection}
                         canEditProducts={state.canEditProducts}
                         runBulkStatusUpdate={state.runBulkStatusUpdate}
+                        openDiscountModal={state.openDiscountModal}
                     />
 
                     <div className="overflow-x-auto hidden md:block">
@@ -117,6 +117,7 @@ export default function ProductManager({
                             handleQuickRestock={state.handleQuickRestock}
                             openRestockModal={state.openRestockModal}
                             openDeductModal={state.openDeductModal}
+                            openDiscountModal={state.openDiscountModal}
                             openEditModal={state.openEditModal}
                             openArchiveModal={state.openArchiveModal}
                             sortConfig={state.sortConfig}
@@ -375,6 +376,7 @@ export default function ProductManager({
                     );
                 })()
             )}
+
         </>
     );
 }

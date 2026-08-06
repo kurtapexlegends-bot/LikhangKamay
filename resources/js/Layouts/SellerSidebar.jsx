@@ -5,7 +5,7 @@ import StaffAttendanceMonitor from '@/Components/StaffAttendanceMonitor';
 import { 
     LayoutDashboard, Package, ShoppingBag, BarChart3, Box, 
     Users, MessageCircle, Settings, X, ChevronLeft,
-    ClipboardList, Warehouse, FileQuestion, Sliders, Banknote, Star, Award
+    ClipboardList, Warehouse, FileQuestion, Sliders, Banknote, Star, Award, Tag
 } from 'lucide-react';
 import SidebarSettingsPopover from '@/Components/Seller/Sidebar/SidebarSettingsPopover';
 import SidebarPlanPromo from '@/Components/Seller/Sidebar/SidebarPlanPromo';
@@ -22,7 +22,7 @@ const resolveActiveGroup = (active) => {
     if (['overview', 'products', 'analytics', '3d'].includes(active)) return 'core';
     if (['orders', 'chat', 'team-messages', 'reviews'].includes(active)) return 'crm';
     if (['settings'].includes(active)) return 'appearance';
-    if (['sponsorships'].includes(active)) return 'marketing';
+    if (['sponsorships', 'discounts'].includes(active)) return 'marketing';
     if (['hr', 'accounting', 'procurement', 'stock-requests', 'audit-log'].includes(active)) return 'advanced';
 
     return null;
@@ -366,6 +366,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 onToggle={() => toggleGroup('marketing')}
                                 isCollapsed={isCollapsed}
                             >
+                                <NavItem href={route('discounts.index')} icon={Tag} active={active === 'discounts'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Discounts')} onMouseLeave={handleTooltipLeave}>Discounts</NavItem>
                                 <NavItem href={route('seller.sponsorships')} icon={Award} active={active === 'sponsorships'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Sponsorships')} onMouseLeave={handleTooltipLeave}>Sponsorships</NavItem>
                             </CategoryGroup>
                         </div>

@@ -1,7 +1,7 @@
 import React from "react";
 import Checkbox from "@/Components/Checkbox";
 import WorkspaceEmptyState from "@/Components/WorkspaceEmptyState";
-import { AlertTriangle, Edit3, Package } from "lucide-react";
+import { AlertTriangle, Edit3, Package, Tag } from "lucide-react";
 
 export default function ProductMobileCard({
     products,
@@ -9,6 +9,7 @@ export default function ProductMobileCard({
     toggleProductSelection,
     canEditProducts,
     openEditModal,
+    openDiscountModal,
     openAddModal,
     onResubmitClick,
 }) {
@@ -88,9 +89,14 @@ export default function ProductMobileCard({
                                         <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">
                                             Price
                                         </p>
-                                        <p className="mt-1 font-bold text-stone-900">
-                                            ₱{Number(product.price).toLocaleString()}
+                                        <p className="mt-1 font-bold text-clay-700">
+                                            ₱{Number(product.effective_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </p>
+                                        {product.has_discount && (
+                                            <p className="text-[9px] text-gray-400 line-through">
+                                                ₱{Number(product.price).toLocaleString()}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="rounded-xl border border-stone-100 bg-stone-50 px-3 py-2">
                                         <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">
@@ -120,14 +126,22 @@ export default function ProductMobileCard({
                                 </div>
                             </div>
                         </div>
-                        <div className="mt-3 flex flex-col gap-2">
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                disabled={!canEditProducts}
+                                onClick={() => openDiscountModal && openDiscountModal(product)}
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-clay-200 bg-clay-50 px-3.5 py-2.5 text-xs font-bold text-clay-700 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] select-none active:scale-98 transition-all"
+                            >
+                                <Tag size={14} /> Discount
+                            </button>
                             <button
                                 type="button"
                                 disabled={!canEditProducts}
                                 onClick={() => openEditModal(product)}
                                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-sky-100 bg-sky-50 px-3.5 py-2.5 text-xs font-bold text-sky-700 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] select-none active:scale-98 active:bg-sky-100 transition-all"
                             >
-                                <Edit3 size={14} /> Edit Product
+                                <Edit3 size={14} /> Edit
                             </button>
                         </div>
                     </div>

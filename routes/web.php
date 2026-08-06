@@ -157,6 +157,12 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/products/{id}/activate', [\App\Http\Controllers\Seller\ProductController::class, 'activate'])->middleware('seller.module:products')->name('products.activate'); // New
         Route::post('/products/{id}/restock', [\App\Http\Controllers\Seller\ProductController::class, 'restock'])->middleware('seller.module:products')->name('products.restock');
         Route::post('/products/{id}/deduct', [\App\Http\Controllers\Seller\ProductController::class, 'manualDeduct'])->middleware('seller.module:products')->name('products.deduct'); // Phase 1: Manual Deduction
+
+        // DISCOUNTS
+        Route::get('/discounts', [\App\Http\Controllers\Seller\DiscountController::class, 'index'])->middleware('seller.module:products')->name('discounts.index');
+        Route::post('/discounts', [\App\Http\Controllers\Seller\DiscountController::class, 'store'])->middleware('seller.module:products')->name('discounts.store');
+        Route::put('/discounts/{discount}', [\App\Http\Controllers\Seller\DiscountController::class, 'update'])->middleware('seller.module:products')->name('discounts.update');
+        Route::delete('/discounts/{discount}', [\App\Http\Controllers\Seller\DiscountController::class, 'destroy'])->middleware('seller.module:products')->name('discounts.destroy');
         
         Route::get('/3d-manager', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'index'])->middleware('seller.module:3d')->name('3d.index');
         Route::post('/3d-manager/upload', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'upload'])->middleware('seller.module:3d')->name('3d.upload');
