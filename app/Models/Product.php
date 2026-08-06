@@ -68,7 +68,7 @@ class Product extends Model
     ];
 
     // Helper to check if it has a 3D model (for Frontend)
-    protected $appends = ['img', 'has3D', 'model_3d_url', 'gallery_urls'];
+    protected $appends = ['img', 'has3D', 'model_3d_url', 'gallery_urls', 'effective_price', 'has_discount', 'discount_info'];
 
     public function getImgAttribute()
     {
@@ -97,6 +97,88 @@ class Product extends Model
         return collect($this->gallery_paths ?? [])->map(function ($path) {
             return \App\Services\StorageUrl::url($path);
         })->all();
+    }
+
+    public function discounts()
+    {
+        return $this->belongsToMany(Discount::class, 'discount_product');
+    }
+
+    public function activeDiscounts()
+    {
+        return $this->belongsToMany(Discount::class, 'discount_product')->active();
+    }
+
+    public function getDiscountInfoAttribute()
+    {
+        $activeDiscounts = $this->relationLoaded('discounts') 
+            ? $this->discounts->filter(fn($d) => $d->is_currently_active)
+            : $this->activeDiscounts()->get();
+
+        if ($activeDiscounts->isEmpty()) {
+            return null;
+        }
+
+        $originalPrice = (float) $this->price;
+
+        // Lowest Price Wins Strategy: Sort active discounts by calculated discounted price ascending
+        $bestDiscount = $activeDiscounts->sortBy(fn($d) => $d->calculateDiscountedPrice($originalPrice))->first();
+
+        if (!$bestDiscount) {
+            return null;
+        }
+
+        $activeDiscount = $bestDiscount;
+        $discountedPrice = $activeDiscount->calculateDiscountedPrice($originalPrice);
+        $savedAmount = max(0, round($originalPrice - $discountedPrice, 2));
+        $percentageOff = $originalPrice > 0 
+            ? round(($savedAmount / $originalPrice) * 100) 
+            : 0;
+
+        return [
+            'id' => $activeDiscount->id,
+            'name' => $activeDiscount->name,
+            'type' => $activeDiscount->type,
+            'value' => (float) $activeDiscount->value,
+            'original_price' => $originalPrice,
+            'discounted_price' => $discountedPrice,
+            'saved_amount' => $savedAmount,
+            'percentage_off' => $percentageOff,
+            'start_at' => $activeDiscount->start_at ? $activeDiscount->start_at->toIso8601String() : null,
+            'end_at' => $activeDiscount->end_at ? $activeDiscount->end_at->toIso8601String() : null,
+            'end_at_formatted' => $activeDiscount->end_at ? $activeDiscount->end_at->format('M d, Y') : null,
+            'max_purchase_limit' => $activeDiscount->max_purchase_limit,
+        ];
+    }
+
+    public function calculateTotalPriceForQuantity(int $qty): float
+    {
+        $info = $this->discount_info;
+        if (!$info) {
+            return (float) $this->price * $qty;
+        }
+
+        $discountedPrice = (float) $info['discounted_price'];
+        $maxLimit = isset($info['max_purchase_limit']) ? (int) $info['max_purchase_limit'] : null;
+
+        if ($maxLimit !== null && $maxLimit > 0 && $qty > $maxLimit) {
+            $promoQty = $maxLimit;
+            $regularQty = $qty - $maxLimit;
+            return ($promoQty * $discountedPrice) + ($regularQty * (float) $this->price);
+        }
+
+        return $discountedPrice * $qty;
+    }
+
+    public function getEffectivePriceAttribute(): float
+    {
+        $info = $this->discount_info;
+        return $info ? (float) $info['discounted_price'] : (float) $this->price;
+    }
+
+    public function getHasDiscountAttribute(): bool
+    {
+        return $this->discount_info !== null;
     }
 
     public function user()
@@ -242,7 +324,7 @@ class Product extends Model
             ->firstOrFail();
     }
 
-    public function getSlugAttribute($value)
+    public function getSlugAttribute(?string $value = null)
     {
         return $this->id ? \App\Support\RouteObfuscator::encode($this->id) : $value;
     }
