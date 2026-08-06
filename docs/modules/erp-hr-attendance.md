@@ -58,6 +58,13 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
 ### Core Business Actions
 *   [ProvisionStaffAccount.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/HR/ProvisionStaffAccount.php): Handles provisioning employee logins, binding them to the seller owner, and storing role permission mappings.
 
+### Payroll Review & Audit UI Architecture
+*   **Executive Metrics Header**: Displays 3 high-level metrics (`Total Payout`, `Staff Included`, `Net Treasury Impact`) and a treasury status pill in [PayrollReviewDetails.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Accounting/PayrollReviewDetails.jsx).
+*   **Employee Line Ledger**: Scannable tabular breakdown of Base Salary, Deductions, Overtime, and Net Payout.
+*   **Calculation Audit Popover**: [PayrollCalculationModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/PayrollCalculationModal.jsx) opens via an "Audit Formula" button per employee row to inspect daily/hourly formulas, overtime multipliers, and sub-totals.
+*   **Container-Sticky Action Footer**: Rendered inline in [ReleaseRequestDetails.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Accounting/ReleaseRequestDetails.jsx), dynamically docking to the bottom of the card container (`sticky bottom-4 z-20`) when auditing long employee lists.
+
+
 ### HR Support Helpers
 *   [HRWorkflowHelper.php](file:///c:/laragon/www/LikhangKamay/app/Support/HRWorkflowHelper.php): Helper utility automating employee shifts validation and overtime calculations.
 *   [HRRolePresets.php](file:///c:/laragon/www/LikhangKamay/app/Support/HR/HRRolePresets.php): Defines system-wide role matrices and modular workspace privileges.
