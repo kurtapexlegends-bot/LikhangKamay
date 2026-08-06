@@ -123,6 +123,14 @@ class CartController extends Controller
                     $item['location'] = $location;
                     $updatedCart = true;
                 }
+
+                $photo = $liveProduct->cover_photo_path ?: $liveProduct->img;
+                if (($item['image'] ?? null) !== $photo || ($item['cover_photo_path'] ?? null) !== $photo) {
+                    $item['image'] = $photo;
+                    $item['img'] = $photo;
+                    $item['cover_photo_path'] = $photo;
+                    $updatedCart = true;
+                }
             }
             
             if ($updatedCart) {

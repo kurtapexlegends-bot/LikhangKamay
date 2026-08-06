@@ -130,10 +130,17 @@ export default function PayrollRunShow({ payroll }) {
             />
 
             <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                <div className="grid gap-4 md:grid-cols-3">
-                    <SummaryCard label="Payroll Month" value={payroll?.month || '-'} icon={CalendarDays} />
-                    <SummaryCard label="Employees" value={String(payroll?.employee_count || 0)} icon={Users} />
-                    <SummaryCard label="Total Amount" value={money(payroll?.total_amount)} icon={Banknote} />
+                {/* Horizontal Swiping Summary Cards on Mobile */}
+                <div className="flex overflow-x-auto pb-2 gap-3 flex-nowrap snap-x snap-mandatory md:grid md:grid-cols-3 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+                    <div className="w-[82vw] max-w-[280px] shrink-0 snap-center md:w-auto">
+                        <SummaryCard label="Payroll Month" value={payroll?.month || '-'} icon={CalendarDays} />
+                    </div>
+                    <div className="w-[82vw] max-w-[280px] shrink-0 snap-center md:w-auto">
+                        <SummaryCard label="Employees" value={String(payroll?.employee_count || 0)} icon={Users} />
+                    </div>
+                    <div className="w-[82vw] max-w-[280px] shrink-0 snap-center md:w-auto">
+                        <SummaryCard label="Total Amount" value={money(payroll?.total_amount)} icon={Banknote} />
+                    </div>
                 </div>
 
                 <div className="mt-6 rounded-2xl border border-stone-200 bg-white shadow-sm">
@@ -161,7 +168,7 @@ export default function PayrollRunShow({ payroll }) {
                         </div>
                     </div>
 
-                    <div className="grid gap-4 border-b border-stone-100 px-5 py-4 md:grid-cols-4">
+                    <div className="grid gap-3 border-b border-stone-100 px-5 py-4 grid-cols-2 md:grid-cols-4">
                         <div className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Base Pay</p>
                             <p className="mt-1 text-base font-bold text-stone-900">{money(payroll?.summary?.base_pay)}</p>
@@ -180,7 +187,112 @@ export default function PayrollRunShow({ payroll }) {
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    {/* MOBILE CARD LIST VIEW (< lg) */}
+                    <div className="block lg:hidden p-4 space-y-4 bg-stone-50/40 divide-y divide-stone-100">
+                        {(payroll?.line_items || []).map((item) => {
+                            const breakdown = getBreakdown(item);
+                            const isExpanded = !!expandedRows[item.id];
+
+                            return (
+                                <div key={item.id} className="bg-white rounded-2xl border border-stone-200/80 p-4 shadow-xs space-y-3 pt-4 first:pt-4">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div>
+                                            <h4 className="font-bold text-stone-900 text-sm leading-tight">{item.employee_name}</h4>
+                                            {item.employee_role && (
+                                                <p className="text-xs text-stone-500 font-medium">{item.employee_role}</p>
+                                            )}
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-xs text-stone-400 uppercase font-extrabold block">Net Wage</span>
+                                            <span className="text-base font-extrabold text-stone-900">{money(item.net_pay)}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-stone-100">
+                                        <div className="bg-stone-50 p-2 rounded-xl border border-stone-200/60">
+                                            <span className="text-[10px] text-stone-400 font-bold uppercase block">Base Salary</span>
+                                            <span className="font-bold text-stone-800">{money(item.base_salary)}</span>
+                                        </div>
+                                        <div className="bg-stone-50 p-2 rounded-xl border border-stone-200/60">
+                                            <span className="text-[10px] text-stone-400 font-bold uppercase block">Absences / Leave</span>
+                                            <span className="font-bold text-stone-800">{item.absences_days}d Unpaid</span>
+                                            {Number(item.paid_leave_days || 0) > 0 && (
+                                                <span className="text-[11px] text-emerald-600 font-semibold block">{item.paid_leave_days}d Paid</span>
+                                            )}
+                                        </div>
+                                        <div className="bg-stone-50 p-2 rounded-xl border border-stone-200/60">
+                                            <span className="text-[10px] text-stone-400 font-bold uppercase block">Absence Deduction</span>
+                                            <span className="font-bold text-rose-700">-{money(item.absence_deduction)}</span>
+                                        </div>
+                                        <div className="bg-stone-50 p-2 rounded-xl border border-stone-200/60">
+                                            <span className="text-[10px] text-stone-400 font-bold uppercase block">Overtime Pay</span>
+                                            <span className="font-bold text-emerald-700">+{money(item.overtime_pay)}</span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleExpandedRow(item.id)}
+                                        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-stone-100 hover:bg-stone-200/70 text-xs font-bold text-stone-700 transition"
+                                    >
+                                        {isExpanded ? (
+                                            <>
+                                                <ChevronUp size={14} />
+                                                Hide Calculation Breakdown
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ChevronDown size={14} />
+                                                View Calculation Formula
+                                            </>
+                                        )}
+                                    </button>
+
+                                    {isExpanded && (
+                                        <div className="rounded-xl border border-stone-200 bg-stone-50/80 p-3.5 text-xs space-y-3 animate-in fade-in">
+                                            <div className="flex items-center justify-between border-b border-stone-200/60 pb-2">
+                                                <h5 className="font-bold text-stone-900 text-xs">Formula Audit</h5>
+                                                <span className="text-[9px] font-bold text-stone-600 bg-white px-2 py-0.5 rounded border border-stone-200">Audited</span>
+                                            </div>
+
+                                            <div className="space-y-1 text-[11px]">
+                                                <div className="flex justify-between">
+                                                    <span className="text-stone-500">Daily Formula:</span>
+                                                    <span className="font-mono font-semibold text-stone-800">{breakdown.formulaText}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-stone-500">Daily Rate:</span>
+                                                    <span className="font-bold text-stone-900">{money(breakdown.dailyRate)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-stone-500">Hourly Rate:</span>
+                                                    <span className="font-bold text-stone-900">{money(breakdown.hourlyRate)}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="border-t border-stone-200/60 pt-2 space-y-1 text-[11px]">
+                                                <div className="flex justify-between">
+                                                    <span className="text-stone-500">Reg OT (1.25x):</span>
+                                                    <span className="font-semibold text-stone-800">{money(breakdown.regularOtRate)}/hr</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-stone-500">Rest Day OT (1.69x):</span>
+                                                    <span className="font-semibold text-stone-800">{money(breakdown.restDayOtRate)}/hr</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-stone-500">Holiday OT (2.60x):</span>
+                                                    <span className="font-semibold text-stone-800">{money(breakdown.holidayOtRate)}/hr</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* DESKTOP TABLE VIEW (>= lg) */}
+                    <div className="hidden lg:block overflow-x-auto">
                         <table className="w-full min-w-[900px]">
                             <thead className="bg-[#FAF9F7]">
                                 <tr className="text-left text-[10px] font-bold uppercase tracking-widest text-stone-400">

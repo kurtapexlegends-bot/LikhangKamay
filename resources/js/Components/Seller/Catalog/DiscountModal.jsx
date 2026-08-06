@@ -59,204 +59,173 @@ export default function DiscountModal({
             setGlobalType(discountToEdit.type || "percentage");
             setGlobalValue(discountToEdit.value ? String(discountToEdit.value) : "");
             setMaxPurchaseLimit(discountToEdit.max_purchase_limit ? String(discountToEdit.max_purchase_limit) : "");
-            setMode("global");
 
-            const attachedIds = discountToEdit.products ? discountToEdit.products.map((p) => p.id) : [];
-            setTargetProductIds(attachedIds);
+            const existingPids = discountToEdit.products ? discountToEdit.products.map((p) => p.id) : [];
+            setTargetProductIds(existingPids);
 
-            const initMap = {};
-            allProducts.forEach((p) => {
-                const isAttached = attachedIds.includes(p.id);
-                initMap[p.id] = {
-                    type: isAttached ? discountToEdit.type : "percentage",
-                    value: isAttached ? String(discountToEdit.value) : "",
+            // Populate individual map for existing linked products
+            const initialIndiv = {};
+            existingPids.forEach((pid) => {
+                initialIndiv[pid] = {
+                    type: discountToEdit.type || "percentage",
+                    value: discountToEdit.value ? String(discountToEdit.value) : "",
                 };
             });
-            setIndividualMap(initMap);
+            setIndividualMap(initialIndiv);
         } else {
-            const now = new Date();
-            const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-            setStartAt(formatForInput(now));
-            setEndAt(formatForInput(future));
             setName("");
+            const now = new Date();
+            const defaultEnd = new Date(Date.now() + 7 * 86400000);
+            setStartAt(formatForInput(now));
+            setEndAt(formatForInput(defaultEnd));
+            setMode("global");
             setGlobalType("percentage");
             setGlobalValue("");
             setMaxPurchaseLimit("");
-            setMode("global");
 
-            const initialIds = selectedProducts.length > 0 ? selectedProducts.map((p) => p.id) : [];
-            setTargetProductIds(initialIds);
+            const preselectedPids = selectedProducts.length > 0
+                ? selectedProducts.map((p) => p.id)
+                : allProducts.map((p) => p.id);
+            setTargetProductIds(preselectedPids);
 
-            const initMap = {};
-            allProducts.forEach((p) => {
-                initMap[p.id] = { type: "percentage", value: "" };
+            const initialIndiv = {};
+            preselectedPids.forEach((pid) => {
+                initialIndiv[pid] = { type: "percentage", value: "10" };
             });
-            setIndividualMap(initMap);
+            setIndividualMap(initialIndiv);
         }
-    }, [isOpen, discountToEdit]);
+    }, [isOpen, discountToEdit, selectedProducts, allProducts]);
 
-    const handleToggleProduct = (productId) => {
+    // Handle product selection toggles
+    const handleToggleProduct = (id) => {
         setTargetProductIds((prev) =>
-            prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
+            prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
         );
-    };
-
-    const handleToggleSelectAll = () => {
-        if (targetProductIds.length === filteredProducts.length && filteredProducts.length > 0) {
-            setTargetProductIds([]);
-        } else {
-            setTargetProductIds(filteredProducts.map((p) => p.id));
+        if (!individualMap[id]) {
+            setIndividualMap((prev) => ({
+                ...prev,
+                [id]: { type: "percentage", value: "10" },
+            }));
         }
     };
 
-    const updateIndividualSetting = (productId, key, val) => {
+    const handleToggleSelectAll = (filteredList) => {
+        const filteredIds = filteredList.map((p) => p.id);
+        const allSelected = filteredIds.every((id) => targetProductIds.includes(id));
+
+        if (allSelected) {
+            setTargetProductIds((prev) => prev.filter((id) => !filteredIds.includes(id)));
+        } else {
+            setTargetProductIds((prev) => Array.from(new Set([...prev, ...filteredIds])));
+            setIndividualMap((prev) => {
+                const updated = { ...prev };
+                filteredIds.forEach((id) => {
+                    if (!updated[id]) updated[id] = { type: "percentage", value: "10" };
+                });
+                return updated;
+            });
+        }
+    };
+
+    const updateIndividualSetting = (id, field, val) => {
         setIndividualMap((prev) => ({
             ...prev,
-            [productId]: {
-                ...prev[productId],
-                [key]: val,
+            [id]: {
+                ...(prev[id] || { type: "percentage", value: "" }),
+                [field]: val,
             },
         }));
     };
 
+    // Calculate preview price
+    const getCalculatedPrice = (productPrice, type, valStr) => {
+        const price = Number(productPrice) || 0;
+        const val = Number(valStr) || 0;
+        if (val <= 0) return price;
+
+        if (type === "percentage") {
+            const discount = price * (val / 100);
+            return Math.max(0, price - discount);
+        } else {
+            if (val < price) return Math.max(0, val);
+            return Math.max(0, price - val);
+        }
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (targetProductIds.length === 0) return;
+
+        setIsSubmitting(true);
         setErrorMsg(null);
 
-        if (!targetProductIds.length) {
-            setErrorMsg("Please select at least one product to apply the discount.");
-            return;
-        }
-
-        if (new Date(endAt) <= new Date(startAt)) {
-            setErrorMsg("Expiration end date must be after the start date.");
-            return;
-        }
+        const payloadStartAt = startAt ? new Date(startAt).toISOString() : new Date().toISOString();
+        const payloadEndAt = endAt ? new Date(endAt).toISOString() : new Date(Date.now() + 7 * 86400000).toISOString();
 
         let payload = {
-            name: name || null,
-            start_at: startAt ? new Date(startAt).toISOString() : null,
-            end_at: endAt ? new Date(endAt).toISOString() : null,
-            max_purchase_limit: maxPurchaseLimit ? parseInt(maxPurchaseLimit) : null,
+            name: name || undefined,
+            start_at: payloadStartAt,
+            end_at: payloadEndAt,
+            max_purchase_limit: maxPurchaseLimit ? Number(maxPurchaseLimit) : null,
         };
 
         if (mode === "global") {
-            const numVal = parseFloat(globalValue);
-            if (isNaN(numVal) || numVal <= 0) {
-                setErrorMsg("Please enter a valid positive discount value.");
-                return;
-            }
-            if (globalType === "percentage" && numVal > 99) {
-                setErrorMsg("Percentage discount cannot exceed 99%.");
-                return;
-            }
             payload.type = globalType;
-            payload.value = numVal;
+            payload.value = Number(globalValue);
             payload.product_ids = targetProductIds;
         } else {
-            const items = [];
-            for (const pid of targetProductIds) {
-                const setting = individualMap[pid] || { type: "percentage", value: "" };
-                const numVal = parseFloat(setting.value);
-                if (isNaN(numVal) || numVal <= 0) {
-                    const prodName = allProducts.find((p) => p.id === pid)?.name || "selected product";
-                    setErrorMsg(`Enter a valid discount for "${prodName}".`);
-                    return;
-                }
-                if (setting.type === "percentage" && numVal > 99) {
-                    const prodName = allProducts.find((p) => p.id === pid)?.name || "selected product";
-                    setErrorMsg(`Percentage discount for "${prodName}" cannot exceed 99%.`);
-                    return;
-                }
-
-                // Guard Clause: Check if fixed discount or target price >= product original price
-                const targetProd = allProducts.find((p) => p.id === pid);
-                if (targetProd && setting.type === "fixed" && numVal >= Number(targetProd.price)) {
-                    setErrorMsg(`Fixed promo price for "${targetProd.name}" (₱${numVal}) cannot equal or exceed its original price (₱${Number(targetProd.price).toLocaleString()}).`);
-                    return;
-                }
-
-                items.push({
+            payload.items = targetProductIds.map((pid) => {
+                const setting = individualMap[pid] || { type: "percentage", value: "10" };
+                return {
                     product_id: pid,
                     type: setting.type,
-                    value: numVal,
-                });
-            }
-            payload.items = items;
+                    value: Number(setting.value),
+                };
+            });
         }
 
-        setIsSubmitting(true);
+        const handleSuccess = () => {
+            setIsSubmitting(false);
+            onClose();
+        };
 
-        const options = {
-            onSuccess: () => {
-                setIsSubmitting(false);
-                onClose();
-            },
-            onError: (errors) => {
-                setIsSubmitting(false);
-                const firstErr = Object.values(errors)[0];
-                setErrorMsg(typeof firstErr === "string" ? firstErr : "Failed to apply discount.");
-            },
-            onFinish: () => setIsSubmitting(false),
+        const handleError = (errors) => {
+            setIsSubmitting(false);
+            const firstError = Object.values(errors)[0];
+            setErrorMsg(firstError || "Failed to save discount campaign. Please check inputs.");
         };
 
         if (discountToEdit) {
-            router.put(route("discounts.update", discountToEdit.id), payload, options);
+            router.put(route("discounts.update", discountToEdit.id), payload, {
+                preserveScroll: true,
+                onSuccess: handleSuccess,
+                onError: handleError,
+            });
         } else {
-            router.post(route("discounts.store"), payload, options);
+            router.post(route("discounts.store"), payload, {
+                preserveScroll: true,
+                onSuccess: handleSuccess,
+                onError: handleError,
+            });
         }
     };
 
-    const filteredProducts = allProducts.filter(
-        (p) =>
-            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (p.sku && p.sku.toLowerCase().includes(searchQuery.toLowerCase()))
+    const filteredProducts = allProducts.filter((p) =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.sku && p.sku.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
-    const getCalculatedPrice = (product) => {
-        const orig = Number(product.price);
-        if (mode === "global") {
-            const val = parseFloat(globalValue);
-            if (isNaN(val) || val <= 0) return { final: orig, saved: 0, badge: null };
-            if (globalType === "percentage") {
-                const final = Math.max(0, orig * (1 - val / 100));
-                return { final, saved: orig - final, badge: `-${val}%` };
-            } else if (globalType === "fixed_amount") {
-                const final = Math.max(0, orig - val);
-                return { final, saved: orig - final, badge: `-₱${val}` };
-            } else {
-                const final = val < orig ? val : Math.max(0, orig - val);
-                return { final, saved: orig - final, badge: `PROMO` };
-            }
-        } else {
-            const setting = individualMap[product.id] || { type: "percentage", value: "" };
-            const val = parseFloat(setting.value);
-            if (isNaN(val) || val <= 0) return { final: orig, saved: 0, badge: null };
-            if (setting.type === "percentage") {
-                const final = Math.max(0, orig * (1 - val / 100));
-                return { final, saved: orig - final, badge: `-${val}%` };
-            } else if (setting.type === "fixed_amount") {
-                const final = Math.max(0, orig - val);
-                return { final, saved: orig - final, badge: `-₱${val}` };
-            } else {
-                const final = val < orig ? val : Math.max(0, orig - val);
-                return { final, saved: orig - final, badge: `PROMO` };
-            }
-        }
-    };
-
-    const isInvalidStartTime = Boolean(startAt && new Date(startAt) < new Date(Date.now() - 60 * 1000));
-    const isInvalidSchedule = Boolean(startAt && endAt && new Date(endAt) <= new Date(startAt));
-    const isInvalidGlobalValue = mode === "global" && globalValue !== "" && (
-        (globalType === "percentage" && (parseFloat(globalValue) <= 0 || parseFloat(globalValue) >= 100)) ||
-        (globalType === "fixed" && parseFloat(globalValue) <= 0)
-    );
-    const hasInvalidItemValue = mode === "individual" && targetProductIds.some((pid) => {
-        const setting = individualMap[pid] || { type: "percentage", value: "" };
-        const numVal = parseFloat(setting.value);
-        const prod = allProducts.find((p) => p.id === pid);
-        if (!setting.value || isNaN(numVal) || numVal <= 0) return true;
+    const nowBuffer = new Date(Date.now() - 60000);
+    const isInvalidStartTime = startAt && new Date(startAt) < nowBuffer;
+    const isInvalidSchedule = startAt && endAt && new Date(endAt) <= new Date(startAt);
+    const numGlobalVal = Number(globalValue) || 0;
+    const isInvalidGlobalValue = mode === "global" && (numGlobalVal <= 0 || (globalType === "percentage" && numGlobalVal >= 100));
+    const hasInvalidItemValue = mode === "individual" && targetProductIds.some((id) => {
+        const setting = individualMap[id];
+        if (!setting) return true;
+        const numVal = Number(setting.value) || 0;
+        const prod = allProducts.find((p) => p.id === id);
+        if (numVal <= 0) return true;
         if (setting.type === "percentage" && numVal >= 100) return true;
         if (prod && setting.type === "fixed" && numVal >= Number(prod.price)) return true;
         return false;
@@ -266,16 +235,21 @@ export default function DiscountModal({
 
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="5xl">
-            <div className="bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh]">
+                {/* Mobile Drag Indicator */}
+                <div className="w-12 h-1 bg-stone-300 rounded-full mx-auto my-2 shrink-0 sm:hidden" />
+
                 {/* Modal Header */}
-                <div className="px-6 py-4 bg-stone-50 border-b border-stone-200/70 flex items-center justify-between shrink-0">
+                <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-stone-50 border-b border-stone-200/70 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 border border-amber-200/60 flex items-center justify-center shrink-0">
-                            <Tag size={20} />
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-50 text-amber-700 border border-amber-200/60 flex items-center justify-center shrink-0">
+                            <Tag size={18} />
                         </div>
                         <div>
-                            <h2 className="text-base font-bold text-stone-900">Create Discount Campaign</h2>
-                            <p className="text-xs text-stone-500">Apply percentage rates or fixed promo prices to your products.</p>
+                            <h2 className="text-sm sm:text-base font-bold text-stone-900 leading-tight">
+                                {discountToEdit ? "Edit Discount Campaign" : "Create Discount Campaign"}
+                            </h2>
+                            <p className="text-[11px] sm:text-xs text-stone-500">Apply percentage rates or fixed promo prices to your products.</p>
                         </div>
                     </div>
                     <button
@@ -290,16 +264,16 @@ export default function DiscountModal({
                 <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
                     {/* Error Banner */}
                     {errorMsg && (
-                        <div className="mx-6 mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 font-medium shrink-0 animate-in fade-in">
+                        <div className="mx-5 sm:mx-6 mt-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 font-medium shrink-0 animate-in fade-in">
                             <AlertCircle size={14} className="shrink-0" />
                             <span>{errorMsg}</span>
                         </div>
                     )}
 
                     {/* Modal Main Body */}
-                    <div className="grid grid-cols-12 flex-1 overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-stone-200/70">
+                    <div className="grid grid-cols-12 flex-1 overflow-y-auto lg:overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-stone-200/70">
                         {/* LEFT SIDEBAR: SCHEDULE & STRATEGY */}
-                        <div className="col-span-12 lg:col-span-4 p-6 overflow-y-auto space-y-6 bg-stone-50/40">
+                        <div className="col-span-12 lg:col-span-4 p-4 sm:p-6 overflow-y-auto space-y-5 sm:space-y-6 bg-stone-50/40">
                             <DiscountScheduleCard
                                 name={name}
                                 setName={setName}
@@ -339,7 +313,7 @@ export default function DiscountModal({
                     </div>
 
                     {/* MODAL FOOTER */}
-                    <div className="px-6 py-4 bg-stone-50 border-t border-stone-200/70 flex items-center justify-between shrink-0">
+                    <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-stone-50 border-t border-stone-200/70 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-2 text-xs text-stone-600 font-medium">
                             <span className="w-2 h-2 rounded-full bg-clay-600" />
                             <span>
@@ -352,19 +326,19 @@ export default function DiscountModal({
                                 type="button"
                                 onClick={onClose}
                                 disabled={isSubmitting}
-                                className="px-4 py-2.5 text-xs font-bold text-stone-600 hover:bg-stone-200/60 rounded-xl transition"
+                                className="px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs font-bold text-stone-600 hover:bg-stone-200/60 rounded-xl transition"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={isSubmitDisabled}
-                                className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-clay-600 hover:bg-clay-700 rounded-xl shadow-md transition active:scale-95 disabled:opacity-50 min-h-[42px]"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 sm:px-6 text-xs font-bold text-white bg-clay-600 hover:bg-clay-700 rounded-xl shadow-md transition active:scale-95 disabled:opacity-50 min-h-[42px]"
                             >
                                 {isSubmitting ? (
                                     <>
                                         <Loader2 size={15} className="animate-spin" />
-                                        Publishing Campaign...
+                                        Publishing...
                                     </>
                                 ) : (
                                     <>

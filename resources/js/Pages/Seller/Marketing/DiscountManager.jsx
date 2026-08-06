@@ -94,41 +94,50 @@ export default function DiscountManager({ discounts, stats, filters, products, a
             />
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6 pb-28 sm:pb-20">
-                {/* Standardized KPI Metrics Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <KPICard
-                        title="Ongoing Campaigns"
-                        value={stats?.ongoing_count || 0}
-                        icon={CheckCircle2}
-                        color="text-emerald-600"
-                        bg="bg-emerald-50"
-                    />
-                    <KPICard
-                        title="Upcoming Scheduled"
-                        value={stats?.upcoming_count || 0}
-                        icon={Clock}
-                        color="text-amber-600"
-                        bg="bg-amber-50"
-                    />
-                    <KPICard
-                        title="Expired / Ended"
-                        value={stats?.expired_count || 0}
-                        icon={PowerOff}
-                        color="text-stone-600"
-                        bg="bg-stone-100"
-                    />
-                    <KPICard
-                        title="Total Promo Sold"
-                        value={stats?.total_promo_sold || 0}
-                        icon={TrendingUp}
-                        color="text-clay-600"
-                        bg="bg-clay-50"
-                    />
+                {/* Standardized Horizontal Swiping KPI Cards on Mobile, 2x2 Grid on iPad/Tablet, 4-Col Row on Desktop */}
+                <div className="flex overflow-x-auto pb-2 gap-3 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
+                        <KPICard
+                            title="Ongoing Campaigns"
+                            value={stats?.ongoing_count || 0}
+                            icon={CheckCircle2}
+                            color="text-emerald-600"
+                            bg="bg-emerald-50"
+                        />
+                    </div>
+                    <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
+                        <KPICard
+                            title="Upcoming Scheduled"
+                            value={stats?.upcoming_count || 0}
+                            icon={Clock}
+                            color="text-amber-600"
+                            bg="bg-amber-50"
+                        />
+                    </div>
+                    <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
+                        <KPICard
+                            title="Expired / Ended"
+                            value={stats?.expired_count || 0}
+                            icon={PowerOff}
+                            color="text-stone-600"
+                            bg="bg-stone-100"
+                        />
+                    </div>
+                    <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
+                        <KPICard
+                            title="Total Promo Sold"
+                            value={stats?.total_promo_sold || 0}
+                            icon={TrendingUp}
+                            color="text-clay-600"
+                            bg="bg-clay-50"
+                        />
+                    </div>
                 </div>
 
-                {/* Status Tabs & Table Container */}
+                {/* Status Tabs & Content Container */}
                 <div className="bg-white rounded-3xl border border-stone-200/80 overflow-hidden shadow-sm">
-                    <div className="border-b border-stone-200/70 px-4 pt-3 flex items-center gap-2">
+                    {/* Desktop & Tablet Navigation Tabs */}
+                    <div className="hidden lg:flex border-b border-stone-200/70 px-4 pt-3 items-center gap-2">
                         <Link
                             href={route("discounts.index", { status: "ongoing" })}
                             preserveScroll
@@ -169,8 +178,170 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                         </Link>
                     </div>
 
-                    {/* Table View */}
-                    <div className="overflow-x-auto">
+                    {/* Mobile & Tablet Swipeable Tag Row */}
+                    <div className="flex lg:hidden overflow-x-auto whitespace-nowrap gap-2 py-2.5 px-3 border-b border-stone-200/70 scrollbar-none">
+                        <Link
+                            href={route("discounts.index", { status: "ongoing" })}
+                            preserveScroll
+                            className={`py-1.5 px-3.5 rounded-full text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all ${
+                                activeStatus === "ongoing"
+                                    ? "bg-clay-600 text-white shadow-xs"
+                                    : "bg-stone-100 text-stone-600"
+                            }`}
+                        >
+                            <span className={`w-1.5 h-1.5 rounded-full ${activeStatus === "ongoing" ? "bg-white" : "bg-emerald-500"}`} />
+                            Ongoing ({stats?.ongoing_count || 0})
+                        </Link>
+
+                        <Link
+                            href={route("discounts.index", { status: "upcoming" })}
+                            preserveScroll
+                            className={`py-1.5 px-3.5 rounded-full text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all ${
+                                activeStatus === "upcoming"
+                                    ? "bg-clay-600 text-white shadow-xs"
+                                    : "bg-stone-100 text-stone-600"
+                            }`}
+                        >
+                            <span className={`w-1.5 h-1.5 rounded-full ${activeStatus === "upcoming" ? "bg-white" : "bg-amber-500"}`} />
+                            Upcoming ({stats?.upcoming_count || 0})
+                        </Link>
+
+                        <Link
+                            href={route("discounts.index", { status: "expired" })}
+                            preserveScroll
+                            className={`py-1.5 px-3.5 rounded-full text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all ${
+                                activeStatus === "expired"
+                                    ? "bg-clay-600 text-white shadow-xs"
+                                    : "bg-stone-100 text-stone-600"
+                            }`}
+                        >
+                            <span className={`w-1.5 h-1.5 rounded-full ${activeStatus === "expired" ? "bg-white" : "bg-stone-400"}`} />
+                            Expired ({stats?.expired_count || 0})
+                        </Link>
+                    </div>
+
+                    {/* MOBILE & TABLET CARD LIST VIEW (< lg) */}
+                    <div className="block lg:hidden p-3.5 sm:p-4 space-y-3.5 sm:space-y-4 bg-stone-50/40">
+                        {discounts?.data?.length > 0 ? (
+                            discounts.data.map((discount) => {
+                                const now = new Date();
+                                const start = new Date(discount.start_at);
+                                const end = new Date(discount.end_at);
+                                const isActive = discount.is_active && start <= now && end >= now;
+                                const isUpcoming = discount.is_active && start > now;
+
+                                return (
+                                    <div
+                                        key={discount.id}
+                                        className="bg-white rounded-2xl border border-stone-200/80 p-4 shadow-xs space-y-3 hover:border-clay-200 transition-colors"
+                                    >
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <h4 className="font-bold text-stone-900 text-sm sm:text-base leading-tight">
+                                                    {discount.name || `Discount Campaign #${discount.id}`}
+                                                </h4>
+                                                <span className="text-[10px] sm:text-xs text-stone-400 font-mono block mt-0.5">
+                                                    Created {new Date(discount.created_at).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                            <span className="bg-amber-50 text-amber-800 border border-amber-200/80 px-2.5 py-1 rounded-xl text-xs font-extrabold whitespace-nowrap shrink-0 shadow-2xs">
+                                                {discount.type === "percentage" ? `-${discount.value}% OFF` : `₱${Number(discount.value).toLocaleString(undefined, { minimumFractionDigits: 2 })} Fixed`}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-stone-100 text-[11px] sm:text-xs">
+                                            <div>
+                                                <span className="text-stone-400 uppercase text-[9px] sm:text-[10px] font-extrabold block">Start Date</span>
+                                                <span className="font-semibold text-stone-800 leading-tight block">{formatDate(discount.start_at)}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-stone-400 uppercase text-[9px] sm:text-[10px] font-extrabold block">End Date</span>
+                                                <span className="font-semibold text-stone-800 leading-tight block">{formatDate(discount.end_at)}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between pt-2 border-t border-stone-100 text-xs">
+                                            <div className="flex items-center gap-2">
+                                                {discount.products && discount.products.length > 0 ? (
+                                                    <div className="flex -space-x-1.5 items-center">
+                                                        {discount.products.slice(0, 3).map((p) => {
+                                                            const imgUrl = p.cover_photo_path ? (p.cover_photo_path.startsWith('http') ? p.cover_photo_path : `/storage/${p.cover_photo_path}`) : '/images/no-image.png';
+                                                            return (
+                                                                <img
+                                                                    key={p.id}
+                                                                    src={imgUrl}
+                                                                    alt={p.name}
+                                                                    className="h-5 w-5 rounded-full ring-1 ring-white object-cover bg-stone-100 border border-stone-200"
+                                                                />
+                                                            );
+                                                        })}
+                                                        <span className="text-[11px] font-bold text-stone-700 ml-1">
+                                                            {discount.products.length} {discount.products.length === 1 ? "product" : "products"}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-stone-400 text-[11px]">No products</span>
+                                                )}
+                                            </div>
+
+                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                                isActive
+                                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                                                    : isUpcoming
+                                                    ? "bg-amber-50 text-amber-800 border border-amber-200/60"
+                                                    : "bg-stone-100 text-stone-600 border border-stone-200"
+                                            }`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-500" : isUpcoming ? "bg-amber-500" : "bg-stone-400"}`} />
+                                                {isActive ? "Active" : isUpcoming ? "Scheduled" : "Expired"}
+                                            </span>
+                                        </div>
+
+                                        {/* Mobile/Tablet Card Footer Actions */}
+                                        <div className="flex items-center justify-between pt-2.5 border-t border-stone-100">
+                                            <span className="text-[11px] sm:text-xs font-bold text-stone-500">
+                                                Sales: <strong className="text-stone-800">{discount.promo_sold || 0} units</strong>
+                                            </span>
+
+                                            <div className="flex items-center gap-2">
+                                                {discount.is_active && end >= now && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleOpenEdit(discount)}
+                                                        className="w-8 h-8 rounded-xl bg-sky-50 text-sky-700 border border-sky-200/70 flex items-center justify-center active:scale-95 shadow-2xs"
+                                                        title="Edit Campaign"
+                                                    >
+                                                        <Edit3 size={14} />
+                                                    </button>
+                                                )}
+                                                {discount.is_active && end >= now && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openConfirmDeactivate(discount)}
+                                                        disabled={deactivatingId === discount.id}
+                                                        className="w-8 h-8 rounded-xl bg-rose-50 text-rose-700 border border-rose-200/70 flex items-center justify-center active:scale-95 disabled:opacity-40 shadow-2xs"
+                                                        title="End Early"
+                                                    >
+                                                        <PowerOff size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <WorkspaceEmptyState
+                                compact
+                                align="top"
+                                icon={Tag}
+                                title="No promotional campaigns found"
+                                description="Create your first promotional discount campaign to boost seller sales."
+                            />
+                        )}
+                    </div>
+
+                    {/* DESKTOP TABLE VIEW (>= lg) */}
+                    <div className="hidden lg:block overflow-x-auto">
                         <table className="w-full text-left text-xs border-collapse">
                             <thead className="bg-stone-50 border-b border-stone-200/70 text-[10px] uppercase tracking-wider font-extrabold text-stone-400">
                                 <tr>
@@ -329,6 +500,16 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                     </div>
                 </div>
             </main>
+
+            {/* Mobile Floating Action Button (FAB) */}
+            <button
+                type="button"
+                onClick={handleOpenCreate}
+                className="fixed bottom-6 right-4 z-40 bg-clay-600 text-white rounded-full p-4 shadow-xl active:scale-90 transition-transform sm:hidden flex items-center justify-center min-h-[52px] min-w-[52px]"
+                title="Create Discount Campaign"
+            >
+                <Plus size={22} />
+            </button>
 
             {/* Confirmation Modal for End Early */}
             <ConfirmationModal

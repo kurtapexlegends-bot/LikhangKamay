@@ -87,216 +87,222 @@ export default function Cart({ cart }) {
         setSelectedItems(newSelected);
     };
 
-    const updateQty = (id, currentQty, change) => {
-        const newQty = currentQty + change;
+    const updateQuantity = (item, newQty) => {
+        const stockLimit = item.stock !== undefined && item.stock !== null ? Number(item.stock) : 99;
+
         if (newQty < 1) return;
-        setUpdatingId(id);
-        router.patch(route('cart.update'), { id, qty: newQty }, { 
+        if (newQty > stockLimit) {
+            addToast(`Only ${stockLimit} units available in stock.`, 'warning');
+            return;
+        }
+        setUpdatingId(getCartKey(item));
+        router.patch(route('cart.update', getCartKey(item)), { qty: newQty }, {
             preserveScroll: true,
             onFinish: () => setUpdatingId(null),
         });
     };
 
-    const removeItem = (id) => {
-        setRemovingId(id);
-        router.delete(route('cart.destroy'), { 
-            data: { id }, 
+    const removeItem = (item) => {
+        setRemovingId(getCartKey(item));
+        router.delete(route('cart.remove', getCartKey(item)), {
             preserveScroll: true,
-            onSuccess: () => {
-                // Remove from selected items too
+            onFinish: () => {
+                setRemovingId(null);
                 const newSelected = new Set(selectedItems);
-                newSelected.delete(id);
+                newSelected.delete(getCartKey(item));
                 setSelectedItems(newSelected);
             },
-            onFinish: () => setRemovingId(null),
         });
     };
 
     const proceedToCheckout = () => {
-        // Pass selected item IDs to checkout
-        router.get(route('checkout.create'), { 
-            items: Array.from(selectedItems) 
-        });
+        if (selectedItems.size === 0) return;
+        const selectedKeys = Array.from(selectedItems).join(',');
+        router.get(route('checkout.create'), { items: selectedKeys });
     };
 
     return (
         <ShopLayout>
             <Head title="Shopping Cart" />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-                
-                {/* Breadcrumb */}
-                <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-4">
-                    <Link href="/" className="hover:text-clay-600">Home</Link>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28 lg:pb-12">
+
+                {/* BREADCRUMB */}
+                <nav className="flex items-center gap-2 text-xs text-gray-600 mb-6">
+                    <Link href={route('home')} className="hover:text-[#7A5037]">Home</Link>
                     <ChevronRight size={12} />
-                    <span className="text-gray-600">Shopping Cart</span>
+                    <Link href={route('shop.index')} className="hover:text-[#7A5037]">Shop</Link>
+                    <ChevronRight size={12} />
+                    <span className="text-[#7A5037] font-bold">Shopping Cart</span>
                 </nav>
 
+                <h1 className="text-2xl font-bold text-gray-900 mb-6">
+                    Shopping Cart ({cartItems.length})
+                </h1>
+
                 {cartItems.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                         
-                        {/* ========== LEFT: CART ITEMS ========== */}
-                        <div className="lg:col-span-8 space-y-4">
-                            
-                            {/* Cart Header */}
-                            <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
-                                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                                    <h1 className="text-lg font-semibold text-gray-900">
-                                        Shopping Cart
-                                        <span className="ml-2 text-sm font-normal text-gray-400">({cartItems.length} items)</span>
-                                    </h1>
-                                </div>
+                        {/* ========== LEFT: CART ITEMS BY SELLER ========== */}
+                        <div className="lg:col-span-8 space-y-6">
 
-                                {/* Table Header with Select All */}
-                                <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase items-center">
-                                    <div className="col-span-6 flex items-center gap-3">
-                                        <button
-                                            onClick={toggleAll}
-                                            className={`w-4 h-4 rounded border flex items-center justify-center transition ${
-                                                allSelected 
-                                                    ? 'bg-clay-600 border-clay-600 text-white' 
-                                                    : 'border-gray-300 hover:border-clay-400'
-                                            }`}
-                                        >
-                                            {allSelected && <Check size={12} />}
-                                        </button>
-                                        <span>Select All ({cartItems.length})</span>
-                                    </div>
-                                    <div className="col-span-2 text-center">Unit Price</div>
-                                    <div className="col-span-2 text-center">Quantity</div>
-                                    <div className="col-span-2 text-right">Total</div>
-                                </div>
+                            {/* Select All Bar */}
+                            <div className="bg-white rounded-lg border border-gray-100 p-4 flex items-center justify-between shadow-sm">
+                                <label className="flex items-center gap-3 cursor-pointer select-none">
+                                    <input 
+                                        type="checkbox"
+                                        checked={allSelected}
+                                        onChange={toggleAll}
+                                        className="w-4 h-4 rounded border-stone-300 text-clay-600 focus:ring-clay-500 cursor-pointer"
+                                    />
+                                    <span className="text-sm font-semibold text-gray-800">
+                                        Select All ({cartItems.length} items)
+                                    </span>
+                                </label>
+                                {selectedItems.size > 0 && (
+                                    <span className="text-xs text-[#7A5037] font-semibold">
+                                        {selectedItems.size} selected
+                                    </span>
+                                )}
+                            </div>
 
-                                {/* Items grouped by seller */}
-                                {Object.entries(groupedBySeller).map(([seller, items]) => {
-                                    const sellerIds = items.map((item) => getCartKey(item));
+                            {/* Grouped by Seller */}
+                            <div className="space-y-4">
+                                {Object.entries(groupedBySeller).map(([sellerName, sellerItems]) => {
+                                    const sellerIds = sellerItems.map(i => getCartKey(i));
                                     const allSellerSelected = sellerIds.every(id => selectedItems.has(id));
                                     const someSellerSelected = sellerIds.some(id => selectedItems.has(id));
 
                                     return (
-                                        <div key={seller}>
+                                        <div key={sellerName} className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
                                             {/* Seller Header */}
-                                                <div className="px-4 py-2 bg-gray-50/50 border-t border-b border-gray-100 flex flex-wrap items-center gap-3">
-                                                <button
-                                                    onClick={() => toggleSeller(items)}
-                                                    className={`w-4 h-4 rounded border flex items-center justify-center transition ${
-                                                        allSellerSelected 
-                                                            ? 'bg-clay-600 border-clay-600 text-white' 
-                                                            : someSellerSelected
-                                                                ? 'bg-clay-200 border-clay-400'
-                                                                : 'border-gray-300 hover:border-clay-400'
-                                                    }`}
-                                                >
-                                                    {allSellerSelected && <Check size={12} />}
-                                                </button>
-                                                <Store size={14} className="text-gray-400" />
-                                                <span className="text-sm font-medium text-gray-700">{seller}</span>
+                                            <div className="bg-stone-50/70 px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                                                <label className="flex items-center gap-3 cursor-pointer select-none">
+                                                    <input 
+                                                        type="checkbox"
+                                                        checked={allSellerSelected}
+                                                        ref={(el) => {
+                                                            if (el) el.indeterminate = !allSellerSelected && someSellerSelected;
+                                                        }}
+                                                        onChange={() => toggleSeller(sellerItems)}
+                                                        className="w-4 h-4 rounded border-stone-300 text-clay-600 focus:ring-clay-500 cursor-pointer"
+                                                    />
+                                                    <div className="flex items-center gap-2">
+                                                        <Store size={15} className="text-clay-600" />
+                                                        <span className="text-sm font-bold text-gray-900">{sellerName}</span>
+                                                    </div>
+                                                </label>
+                                                <span className="text-xs text-gray-500">
+                                                    {sellerItems.length} {sellerItems.length === 1 ? 'item' : 'items'}
+                                                </span>
                                             </div>
 
-                                            {/* Seller's Items */}
-                                            {items.map((item) => (
+                                            {/* Seller Items */}
+                                            {sellerItems.map((item, idx) => (
                                                 <div 
-                                                    key={getCartKey(item)} 
-                                                    className={`grid grid-cols-1 gap-3 px-4 py-4 border-b border-gray-50 items-center transition sm:grid-cols-12 sm:gap-4 ${
-                                                        removingId === getCartKey(item) ? 'opacity-50' : ''
-                                                    } ${!selectedItems.has(getCartKey(item)) ? 'bg-gray-50/30' : ''}`}
+                                                    key={getCartKey(item)}
+                                                    className={`p-4 flex items-center gap-4 transition-colors ${
+                                                        idx < sellerItems.length - 1 ? 'border-b border-gray-100' : ''
+                                                    } ${selectedItems.has(getCartKey(item)) ? 'bg-white' : 'bg-stone-50/30'}`}
                                                 >
-                                                    {/* Product Info with Checkbox */}
-                                                    <div className="sm:col-span-6 flex gap-3 items-start">
-                                                        <button
-                                                            onClick={() => toggleItem(getCartKey(item))}
-                                                            className={`w-4 h-4 rounded border flex items-center justify-center transition flex-shrink-0 mt-1 ${
-                                                                selectedItems.has(getCartKey(item)) 
-                                                                    ? 'bg-clay-600 border-clay-600 text-white' 
-                                                                    : 'border-gray-300 hover:border-clay-400'
-                                                            }`}
-                                                        >
-                                                            {selectedItems.has(getCartKey(item)) && <Check size={12} />}
-                                                        </button>
-                                                        <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                                            <img 
-                                                                src={item.img ? (item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`) : '/images/no-image.png'} 
-                                                                alt={item.name} 
-                                                                className="w-full h-full object-cover"
-                                                                onError={(e) => { e.target.src = '/images/no-image.png'; }}
-                                                            />
+                                                    {/* Selection Checkbox */}
+                                                    <input 
+                                                        type="checkbox"
+                                                        checked={selectedItems.has(getCartKey(item))}
+                                                        onChange={() => toggleItem(getCartKey(item))}
+                                                        className="w-4 h-4 rounded border-stone-300 text-clay-600 focus:ring-clay-500 cursor-pointer shrink-0"
+                                                    />
+
+                                                    {/* Product Thumbnail */}
+                                                    {(() => {
+                                                        const rawImg = item.image || item.img || item.cover_photo_path;
+                                                        const imgUrl = rawImg ? (rawImg.startsWith('http') ? rawImg : (rawImg.startsWith('/storage') ? rawImg : `/storage/${rawImg}`)) : null;
+
+                                                        return (
+                                                            <Link 
+                                                                href={item.product_id ? route('product.show', item.product_id) : (item.id ? route('product.show', item.id) : '#')} 
+                                                                className="w-20 h-20 bg-stone-100 rounded-lg overflow-hidden shrink-0 border border-stone-200"
+                                                            >
+                                                                {imgUrl ? (
+                                                                    <img 
+                                                                        src={imgUrl} 
+                                                                        alt={item.name} 
+                                                                        className="w-full h-full object-cover"
+                                                                        onError={(e) => {
+                                                                            e.currentTarget.onerror = null;
+                                                                            e.currentTarget.src = '/images/no-image.png';
+                                                                        }}
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center text-stone-300">
+                                                                        <Package size={24} />
+                                                                    </div>
+                                                                )}
+                                                            </Link>
+                                                        );
+                                                    })()}
+
+                                                    {/* Item Info & Actions */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex justify-between items-start gap-2">
+                                                            <Link 
+                                                                href={item.product_id ? route('product.show', item.product_id) : (item.id ? route('product.show', item.id) : '#')} 
+                                                                className="text-sm font-semibold text-gray-900 hover:text-clay-600 transition truncate"
+                                                            >
+                                                                {item.name}
+                                                            </Link>
                                                         </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            {item.slug ? (
-                                                                <Link
-                                                                    href={route('product.show', item.slug)}
-                                                                    className="text-sm font-medium text-gray-900 hover:text-clay-600 transition line-clamp-2"
-                                                                >
-                                                                    {item.name}
-                                                                </Link>
-                                                            ) : (
-                                                                <span className="text-sm font-medium text-gray-500 line-clamp-2">
-                                                                    {item.name}
+
+                                                        {/* Unit Price */}
+                                                        <div className="mt-1 flex items-baseline gap-2">
+                                                            <span className="text-sm font-bold text-[#7A5037]">
+                                                                {currency.format(item.price)}
+                                                            </span>
+                                                            {item.original_price && Number(item.original_price) > Number(item.price) && (
+                                                                <span className="text-xs text-gray-400 line-through">
+                                                                    {currency.format(item.original_price)}
                                                                 </span>
                                                             )}
-                                                            <p className="text-xs text-gray-400 mt-1">SKU: {item.sku || 'Unavailable'}</p>
-                                                            <p className="text-xs text-gray-400 mt-0.5">Variant: {item.variant || 'Standard'}</p>
-                                                            <button 
-                                                                onClick={() => removeItem(getCartKey(item))}
-                                                                disabled={removingId === getCartKey(item)}
-                                                                className="text-xs text-red-400 hover:text-red-600 mt-1 flex items-center gap-1 sm:hidden"
-                                                            >
-                                                                {removingId === getCartKey(item) ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                                                                Remove
-                                                            </button>
                                                         </div>
-                                                    </div>
 
-                                                    {/* Unit Price */}
-                                                    <div className="sm:col-span-2 flex items-center justify-between sm:block sm:text-center">
-                                                        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:hidden">Unit Price</span>
-                                                        <div>
-                                                            <span className="text-sm font-bold text-clay-700">{currency.format(Number(item.price) || 0)}</span>
-                                                            {(item.has_discount || item.discount_info || (item.original_price && item.original_price > item.price)) && (
-                                                                <div className="text-[10px] text-gray-400 line-through">
-                                                                    {currency.format(Number(item.original_price || item.discount_info?.original_price) || 0)}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
+                                                        {/* Quantity & Delete Controls */}
+                                                        <div className="mt-3 flex items-center justify-between">
+                                                            {/* Quantity Controls */}
+                                                            <div className="flex items-center border border-gray-200 rounded-lg bg-stone-50">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => updateQuantity(item, item.qty - 1)}
+                                                                    disabled={updatingId === getCartKey(item) || item.qty <= 1}
+                                                                    className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-stone-100 rounded-l-lg disabled:opacity-30 transition"
+                                                                    title="Decrease"
+                                                                >
+                                                                    <Minus size={13} />
+                                                                </button>
+                                                                <span className="w-9 text-center text-xs font-bold text-gray-900">
+                                                                    {updatingId === getCartKey(item) ? (
+                                                                        <Loader2 size={12} className="animate-spin inline text-clay-600" />
+                                                                    ) : (
+                                                                        item.qty
+                                                                    )}
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => updateQuantity(item, item.qty + 1)}
+                                                                    disabled={updatingId === getCartKey(item) || (item.stock !== undefined && item.qty >= Number(item.stock))}
+                                                                    className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-stone-100 rounded-r-lg disabled:opacity-30 transition"
+                                                                    title="Increase"
+                                                                >
+                                                                    <Plus size={13} />
+                                                                </button>
+                                                            </div>
 
-                                                    {/* Quantity */}
-                                                    <div className="sm:col-span-2 flex items-center justify-between sm:block">
-                                                        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:hidden">Quantity</span>
-                                                        <div className="flex justify-end sm:justify-center">
-                                                        <div className="flex items-center border border-gray-200 rounded">
+                                                            {/* Delete Button */}
                                                             <button
-                                                                onClick={() => updateQty(getCartKey(item), item.qty, -1)}
-                                                                disabled={item.qty <= 1 || updatingId === getCartKey(item)}
-                                                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 disabled:opacity-30"
-                                                            >
-                                                                <Minus size={12} />
-                                                            </button>
-                                                            <span className="w-8 text-center text-sm font-medium text-gray-900">
-                                                                {updatingId === getCartKey(item) ? <Loader2 size={12} className="animate-spin mx-auto" /> : item.qty}
-                                                            </span>
-                                                            <button
-                                                                onClick={() => updateQty(getCartKey(item), item.qty, 1)}
-                                                                disabled={updatingId === getCartKey(item)}
-                                                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                                                            >
-                                                                <Plus size={12} />
-                                                            </button>
-                                                        </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Total & Delete */}
-                                                    <div className="sm:col-span-2 flex items-center justify-between sm:justify-end gap-3">
-                                                        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:hidden">Total</span>
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="text-sm font-semibold text-clay-600">
-                                                                {currency.format((Number(item.price) || 0) * (Number(item.qty) || 0))}
-                                                            </span>
-                                                            <button 
-                                                                onClick={() => removeItem(getCartKey(item))}
+                                                                type="button"
+                                                                onClick={() => removeItem(item)}
                                                                 disabled={removingId === getCartKey(item)}
-                                                                className="hidden sm:flex w-7 h-7 items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition"
+                                                                className="text-stone-400 hover:text-red-600 transition p-1.5 rounded-lg hover:bg-stone-100 disabled:opacity-50"
+                                                                title="Remove Item"
                                                             >
                                                                 {removingId === getCartKey(item) ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                                                             </button>
@@ -363,7 +369,7 @@ export default function Cart({ cart }) {
                                             <button
                                                 onClick={proceedToCheckout}
                                                 disabled={selectedItems.size === 0}
-                                                className="w-full h-11 bg-clay-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-clay-700 transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
+                                                className="hidden lg:flex w-full h-11 bg-clay-600 text-white rounded-xl font-bold items-center justify-center gap-2 hover:bg-clay-700 transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
                                             >
                                                 Checkout ({selectedItems.size})
                                                 <ArrowRight size={16} />
@@ -415,7 +421,27 @@ export default function Cart({ cart }) {
                 )}
 
             </div>
+
+            {/* Mobile Sticky Bottom Checkout Bar */}
+            {cartItems.length > 0 && !isPendingArtisan && !isAdmin && (
+                <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 p-3.5 flex items-center justify-between shadow-2xl lg:hidden">
+                    <div>
+                        <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">Total Amount</span>
+                        <span className="text-lg font-extrabold text-clay-600 leading-tight">
+                            {currency.format(totalAmount)}
+                        </span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={proceedToCheckout}
+                        disabled={selectedItems.size === 0}
+                        className="inline-flex items-center justify-center gap-2 bg-clay-600 text-white text-xs font-extrabold px-6 py-3 rounded-xl shadow-lg hover:bg-clay-700 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                    >
+                        Checkout ({selectedItems.size})
+                        <ArrowRight size={15} />
+                    </button>
+                </div>
+            )}
         </ShopLayout>
     );
 }
-
