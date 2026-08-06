@@ -156,7 +156,7 @@ class CartController extends Controller
             'variant' => 'nullable|string|max:120',
         ]);
 
-        $product = Product::select('id', 'user_id', 'sku', 'name', 'slug', 'price', 'stock', 'cover_photo_path')
+        $product = Product::select(['id', 'user_id', 'sku', 'name', 'slug', 'price', 'stock', 'cover_photo_path'])
             ->with('user:id,name,shop_name,city')
             ->findOrFail($validated['product_id']);
         $requestedQty = (int) ($validated['quantity'] ?? 1);
@@ -237,7 +237,7 @@ class CartController extends Controller
         return redirect()->back()->with('success', 'Item removed.');
     }
 
-    public function buyAgain($orderId)
+    public function buyAgain(int|string $orderId)
     {
         if (Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
             return redirect()->back()->with('error', 'Administrators are not permitted to make purchases.');
@@ -248,7 +248,7 @@ class CartController extends Controller
         $addedCount = 0;
         $outOfStockCount = 0;
 
-        $productIds = $order->items->pluck('product_id')->filter()->unique()->values();
+        $productIds = $order->items()->pluck('product_id')->filter()->unique()->values()->all();
         $products = Product::with('user')->whereIn('id', $productIds)->get()->keyBy('id');
 
         foreach ($order->items as $item) {
