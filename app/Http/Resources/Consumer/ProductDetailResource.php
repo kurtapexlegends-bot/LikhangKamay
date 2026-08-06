@@ -71,6 +71,9 @@ class ProductDetailResource extends JsonResource
             })->toArray(),
             'viewer_can_review' => $viewerCanReview,
             'viewer_can_chat_seller' => $viewerCanChatSeller,
+            'discount_info' => $this->discount_info,
+            'effective_price' => $this->effective_price,
+            'has_discount' => $this->has_discount,
             'seller' => $seller ? [
                 'id' => $seller->id,
                 'name' => $seller->name ?? 'Artisan',

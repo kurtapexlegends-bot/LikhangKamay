@@ -250,7 +250,14 @@ export default function Cart({ cart }) {
                                                     {/* Unit Price */}
                                                     <div className="sm:col-span-2 flex items-center justify-between sm:block sm:text-center">
                                                         <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:hidden">Unit Price</span>
-                                                        <span className="text-sm text-gray-500">{currency.format(Number(item.price) || 0)}</span>
+                                                        <div>
+                                                            <span className="text-sm font-bold text-clay-700">{currency.format(Number(item.price) || 0)}</span>
+                                                            {(item.has_discount || item.discount_info || (item.original_price && item.original_price > item.price)) && (
+                                                                <div className="text-[10px] text-gray-400 line-through">
+                                                                    {currency.format(Number(item.original_price || item.discount_info?.original_price) || 0)}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
 
                                                     {/* Quantity */}

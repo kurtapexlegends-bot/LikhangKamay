@@ -106,9 +106,9 @@ class PlaceOrder
             $merchandiseSubtotal = 0;
 
             foreach ($items as $item) {
-                $product = Product::find($item['id']);
+                $product = Product::with('discounts')->find($item['id']);
                 if ($product) {
-                    $merchandiseSubtotal += $product->price * $item['qty'];
+                    $merchandiseSubtotal += $product->calculateTotalPriceForQuantity($item['qty']);
                 }
             }
 
@@ -201,6 +201,18 @@ class PlaceOrder
                         $product->supply->update(['quantity' => $product->stock]);
                     }
 
+                    $itemTotalPrice = $product->calculateTotalPriceForQuantity($item['qty']);
+                    $itemUnitPrice = $item['qty'] > 0 ? round($itemTotalPrice / $item['qty'], 2) : $product->effective_price;
+
+                    if ($product->has_discount && $product->discount_info) {
+                        $activeDiscountId = $product->discount_info['id'] ?? null;
+                        $maxLimit = $product->discount_info['max_purchase_limit'] ?? null;
+                        $promoCount = ($maxLimit !== null && $maxLimit > 0) ? min($item['qty'], $maxLimit) : $item['qty'];
+                        if ($activeDiscountId && $promoCount > 0) {
+                            Discount::where('id', $activeDiscountId)->increment('promo_sold', $promoCount);
+                        }
+                    }
+
                     if ($product->stock <= 5) {
                         $seller = User::find($product->user_id);
                         if ($seller) {
@@ -212,7 +224,7 @@ class PlaceOrder
                         'product_id' => $product->id,
                         'product_name' => $product->name,
                         'variant' => $item['variant'] ?? null,
-                        'price' => $product->price,
+                        'price' => $itemUnitPrice,
                         'cost' => $product->cost_price ?? 0,
                         'quantity' => $item['qty'],
                         'product_img' => $product->cover_photo_path,

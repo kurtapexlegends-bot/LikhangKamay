@@ -257,10 +257,15 @@ class CatalogService
      */
     public function formatProductForHome(Product $product, bool $shortMode = false, bool $isSponsored = false): array
     {
+        $discountInfo = $product->discount_info;
+
         $data = [
             'id' => $product->id,
             'name' => $product->name,
-            'price' => $product->price,
+            'price' => $product->effective_price,
+            'original_price' => $product->price,
+            'discount_info' => $discountInfo,
+            'has_discount' => $product->has_discount,
             'sold' => $product->sold ?? 0,
             'rating' => (float) ($product->rating ?? 0),
             'img' => $product->img,
@@ -378,12 +383,17 @@ class CatalogService
      */
     public function serializeCatalogProduct(Product $product): array
     {
+        $discountInfo = $product->discount_info;
+
         return [
             'id' => $product->id,
             'slug' => $product->slug,
             'name' => $product->name,
-            'price' => number_format($product->price, 2),
-            'raw_price' => $product->price,
+            'price' => number_format($product->effective_price, 2),
+            'raw_price' => $product->effective_price,
+            'original_price' => $product->price,
+            'discount_info' => $discountInfo,
+            'has_discount' => $product->has_discount,
             'category' => $product->category,
             'rating' => (float) ($product->rating ?? 0),
             'reviews_count' => $product->reviews_count ?? 0,

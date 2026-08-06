@@ -62,6 +62,9 @@ class SellerProductResource extends JsonResource
             ])->toArray(),
             'img' => StorageUrl::url($this->cover_photo_path, '/images/placeholder.svg'),
             'has3D' => filled($this->model_3d_path),
+            'discount_info' => $this->discount_info,
+            'effective_price' => $this->effective_price,
+            'has_discount' => $this->has_discount,
         ];
     }
 }

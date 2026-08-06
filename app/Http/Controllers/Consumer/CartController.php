@@ -73,9 +73,9 @@ class CartController extends Controller
                 ->values()
                 ->all();
 
-            $liveProducts = Product::with('user:id,name,shop_name,city')
+            $liveProducts = Product::with(['user:id,name,shop_name,city', 'discounts'])
                 ->whereIn('id', $productIds)
-                ->get(['id', 'user_id', 'price', 'sku', 'slug'])
+                ->get()
                 ->keyBy('id');
             
             $updatedCart = false;
@@ -86,10 +86,15 @@ class CartController extends Controller
                     continue;
                 }
 
-                if ($item['price'] != $liveProduct->price) {
-                    $item['price'] = $liveProduct->price;
+                $effectivePrice = $liveProduct->effective_price;
+                if ($item['price'] != $effectivePrice) {
+                    $item['price'] = $effectivePrice;
                     $updatedCart = true;
                 }
+
+                $item['original_price'] = (float) $liveProduct->price;
+                $item['discount_info'] = $liveProduct->discount_info;
+                $item['has_discount'] = $liveProduct->has_discount;
 
                 if (($item['sku'] ?? null) !== $liveProduct->sku) {
                     $item['sku'] = $liveProduct->sku;

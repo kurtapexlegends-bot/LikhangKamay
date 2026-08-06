@@ -21,7 +21,7 @@ class PrepareCheckout
 
         // CASE 1: Buy Now (Single Product)
         if ($request->has('product_id')) {
-            $product = Product::with('user')->find($request->product_id);
+            $product = Product::with(['user', 'discounts'])->find($request->product_id);
             $variant = trim((string) $request->input('variant', 'Standard')) ?: 'Standard';
 
             if ($product) {
@@ -32,7 +32,9 @@ class PrepareCheckout
                     'shop_name' => $product->user->shop_name ?? 'Shop',
                     'name' => $product->name,
                     'variant' => $variant,
-                    'price' => $product->price,
+                    'price' => $product->effective_price,
+                    'original_price' => (float) $product->price,
+                    'discount_info' => $product->discount_info,
                     'qty' => $request->input('quantity', 1),
                     'img' => $product->img
                 ];
@@ -57,6 +59,21 @@ class PrepareCheckout
                 );
             } else {
                 $items = $cart;
+            }
+
+            // Sync with live database effective prices
+            $productIds = collect($items)->pluck('id')->filter()->unique()->all();
+            $liveProducts = Product::with(['user', 'discounts'])->whereIn('id', $productIds)->get()->keyBy('id');
+
+            foreach ($items as &$item) {
+                $live = $liveProducts->get($item['id']);
+                if ($live) {
+                    $item['price'] = $live->effective_price;
+                    $item['original_price'] = (float) $live->price;
+                    $item['discount_info'] = $live->discount_info;
+                    $item['artisan_id'] = $live->artisan_id ?? $live->user_id;
+                    $item['shop_name'] = $live->user->shop_name ?? 'Shop';
+                }
             }
 
             $items = array_values(array_map(function ($item, $cartKey) {
