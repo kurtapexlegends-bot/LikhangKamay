@@ -3,11 +3,11 @@ import { Head, Link } from '@inertiajs/react';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import Footer from '@/Layouts/Footer';
-import { Award, ArrowRight, Star, MapPin, Package } from 'lucide-react';
-import { hasRating, formatRating } from '@/utils/rating';
+import { Award, ArrowRight, Package } from 'lucide-react';
 import { useSponsoredImpressionTracking } from '@/utils/sponsorshipTracking';
 import { formatSold } from '@/utils/catalog';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import ProductCard from '@/Pages/Consumer/Shop/Partials/ProductCard';
 
 // Subcomponents imported from domain directory
 import HeroSection from '@/Components/Consumer/Welcome/HeroSection';
@@ -75,46 +75,15 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                     {featuredProducts.length > 0 ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                             {featuredProducts.map((product) => (
-                                <Link 
-                                    href={route('product.show', product.slug)} 
-                                    key={product.id} 
-                                    className="bg-white rounded-2xl hover:shadow-2xl hover:shadow-stone-900/10 hover:-translate-y-1.5 transition-all duration-500 border border-stone-100 overflow-hidden flex flex-col group active:scale-[0.98] min-h-[44px]"
-                                >
-                                    <div className="aspect-square relative bg-gray-100 overflow-hidden">
-                                        <img 
-                                            loading="lazy"
-                                            src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') || product.img.startsWith('/img') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'} 
-                                            alt={product.name} 
-                                            className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
-                                            onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
-                                        />
-                                        {hasRating(product.rating) && (
-                                            <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                                {formatRating(product.rating)} <Star size={10} className="fill-amber-400 text-amber-400" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="p-3 flex flex-col flex-1">
-                                        <h3 className="text-xs font-medium text-gray-800 line-clamp-2 mb-2 group-hover:text-clay-600 transition leading-tight">
-                                            {product.name}
-                                        </h3>
-                                        <div className="mt-auto">
-                                            <p className="text-[10px] text-gray-400 mb-1 flex items-center gap-0.5">
-                                                <MapPin size={9} /> {product.location}
-                                            </p>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-clay-600 text-sm font-bold">
-                                                    &#8369;{Number(product.price).toLocaleString()}
-                                                </span>
-                                                {product.sold > 0 && (
-                                                    <span className="text-[10px] text-gray-400">
-                                                        {formatSold(product.sold)} sold
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Link>
+                                <ProductCard
+                                    key={product.id}
+                                    product={{
+                                        ...product,
+                                        image: product.img || product.image,
+                                        seller: product.seller || product.seller_name,
+                                        location: product.location || 'Philippines',
+                                    }}
+                                />
                             ))}
                         </div>
                     ) : (

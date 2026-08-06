@@ -112,6 +112,7 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                                         {store.products.slice(0, 3).map((p, pIdx) => {
                                             const ratingVal = p.rating ?? p.reviews_avg_rating ?? p.rating_avg;
                                             const soldCount = p.sold ?? p.sold_count ?? p.total_sold ?? 0;
+                                            const hasDiscount = p.has_discount || Boolean(p.discount_info);
 
                                             return (
                                                 <Link 
@@ -132,17 +133,30 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                                                             #{pIdx + 1}
                                                         </span>
 
-                                                        {/* Top-Right: Rating Badge */}
-                                                        <span className="absolute top-1 right-1 bg-stone-900/80 backdrop-blur-xs text-white text-[8px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-                                                            <Star size={8} className="fill-amber-400 text-amber-400 shrink-0" />
-                                                            {hasRating(ratingVal) ? formatRating(ratingVal) : 'New'}
-                                                        </span>
+                                                        {/* Top-Right: Discount % Badge or Rating Badge */}
+                                                        {hasDiscount ? (
+                                                            <span className="absolute top-1 right-1 bg-rose-600 text-white text-[8px] font-extrabold px-1.5 py-0.5 rounded-md shadow-xs animate-in fade-in duration-300">
+                                                                {p.discount_info?.percentage_off ? `-${p.discount_info.percentage_off}%` : 'SALE'}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="absolute top-1 right-1 bg-stone-900/80 backdrop-blur-xs text-white text-[8px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                                                <Star size={8} className="fill-amber-400 text-amber-400 shrink-0" />
+                                                                {hasRating(ratingVal) ? formatRating(ratingVal) : 'New'}
+                                                            </span>
+                                                        )}
 
                                                         {/* Bottom: Price + Sold Count */}
                                                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-900/85 via-stone-900/40 to-transparent p-1 pt-3 text-center">
-                                                            <span className="text-[9px] font-extrabold text-white block leading-tight">
-                                                                ₱{Number(p.price || 0).toLocaleString()}
-                                                            </span>
+                                                            <div className="flex items-center justify-center gap-1 flex-wrap">
+                                                                <span className="text-[9px] font-extrabold text-white block leading-tight">
+                                                                    ₱{Number(p.price || 0).toLocaleString()}
+                                                                </span>
+                                                                {hasDiscount && (p.original_price || p.discount_info?.original_price) && (
+                                                                    <span className="text-[7.5px] font-medium text-stone-300 line-through">
+                                                                        ₱{Number(p.original_price || p.discount_info?.original_price).toLocaleString()}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                             <span className="text-[7.5px] font-medium text-stone-300 block">
                                                                 {safeFormatSold(soldCount)} sold
                                                             </span>
@@ -177,7 +191,7 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                             className={`group/card rounded-2xl border p-5 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-stone-900/5 hover:-translate-y-1.5 flex flex-col justify-between ${theme.card}`}
                         >
                             <div>
-                                {/* Store Header: Left-aligned avatar + Store Title + Subscription Plan + Sold stats */}
+                                {/* Store Header */}
                                 <Link 
                                     href={route('shop.seller', store.store_slug)} 
                                     className="flex items-center gap-3.5 group/header"
@@ -218,12 +232,13 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                                     </div>
                                 </Link>
 
-                                {/* Products Strip: #1, #2, #3 Product thumbnails with subtle rank badges, rating stars, price & sold count */}
+                                {/* Products Strip */}
                                 {store.products && store.products.length > 0 && (
                                     <div className="grid grid-cols-3 gap-3 mt-4">
                                         {store.products.slice(0, 3).map((p, pIdx) => {
                                             const ratingVal = p.rating ?? p.reviews_avg_rating ?? p.rating_avg;
                                             const soldCount = p.sold ?? p.sold_count ?? p.total_sold ?? 0;
+                                            const hasDiscount = p.has_discount || Boolean(p.discount_info);
 
                                             return (
                                                 <Link 
@@ -244,17 +259,30 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                                                             #{pIdx + 1}
                                                         </span>
 
-                                                        {/* Top-Right: Rating Badge */}
-                                                        <span className="absolute top-1.5 right-1.5 bg-stone-900/80 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-                                                            <Star size={9} className="fill-amber-400 text-amber-400 shrink-0" />
-                                                            {hasRating(ratingVal) ? formatRating(ratingVal) : 'New'}
-                                                        </span>
+                                                        {/* Top-Right: Discount % Badge or Rating Badge */}
+                                                        {hasDiscount ? (
+                                                            <span className="absolute top-1.5 right-1.5 bg-rose-600 text-white text-[8px] font-extrabold px-1.5 py-0.5 rounded-md shadow-xs animate-in fade-in duration-300">
+                                                                {p.discount_info?.percentage_off ? `-${p.discount_info.percentage_off}%` : 'SALE'}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="absolute top-1.5 right-1.5 bg-stone-900/80 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                                                                <Star size={9} className="fill-amber-400 text-amber-400 shrink-0" />
+                                                                {hasRating(ratingVal) ? formatRating(ratingVal) : 'New'}
+                                                            </span>
+                                                        )}
 
                                                         {/* Bottom Overlay: Price + Sold Count */}
                                                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-900/85 via-stone-900/40 to-transparent p-1.5 pt-4 text-center">
-                                                            <span className="text-[10px] font-extrabold text-white block leading-tight">
-                                                                ₱{Number(p.price || 0).toLocaleString()}
-                                                            </span>
+                                                            <div className="flex items-center justify-center gap-1 flex-wrap">
+                                                                <span className="text-[10px] font-extrabold text-white block leading-tight">
+                                                                    ₱{Number(p.price || 0).toLocaleString()}
+                                                                </span>
+                                                                {hasDiscount && (p.original_price || p.discount_info?.original_price) && (
+                                                                    <span className="text-[8px] font-medium text-stone-300 line-through">
+                                                                        ₱{Number(p.original_price || p.discount_info?.original_price).toLocaleString()}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                             <span className="text-[8.5px] font-medium text-stone-300 block mt-0.5">
                                                                 {safeFormatSold(soldCount)} sold
                                                             </span>

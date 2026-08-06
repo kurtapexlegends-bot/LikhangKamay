@@ -1,5 +1,6 @@
 import React from 'react';
 import { Star, Check, Package, Clock, Award, X } from 'lucide-react';
+import DiscountCountdownBadge from '@/Components/Consumer/DiscountCountdownBadge';
 
 export default function ProductDetailsCard({ product, productRating }) {
     return (
@@ -30,10 +31,36 @@ export default function ProductDetailsCard({ product, productRating }) {
             </div>
 
             {/* Price Box */}
-            <div className="bg-clay-50/50 px-4 py-3 rounded-xl mb-4 border border-clay-100">
-                <span className="text-xl sm:text-2xl font-bold text-clay-700">
-                    PHP {Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                </span>
+            <div className="bg-clay-50/50 px-4 py-3.5 rounded-xl mb-4 border border-clay-100">
+                {product.has_discount || product.discount_info ? (
+                    <div>
+                        <div className="flex items-baseline gap-2.5 flex-wrap">
+                            <span className="text-xl sm:text-2xl font-bold text-clay-700">
+                                PHP {Number(product.effective_price || product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            </span>
+                            <span className="text-sm font-semibold text-gray-400 line-through">
+                                PHP {Number(product.discount_info?.original_price || product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            </span>
+                            <span className="bg-rose-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                {product.discount_info?.percentage_off ? `-${product.discount_info.percentage_off}% OFF` : 'PROMO'}
+                            </span>
+                        </div>
+                        {product.discount_info?.saved_amount > 0 && (
+                            <p className="text-xs text-emerald-700 font-semibold mt-1">
+                                You save PHP {Number(product.discount_info.saved_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}!
+                            </p>
+                        )}
+                        {product.discount_info?.end_at && (
+                            <div className="mt-2">
+                                <DiscountCountdownBadge endAt={product.discount_info.end_at} />
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <span className="text-xl sm:text-2xl font-bold text-clay-700">
+                        PHP {Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                    </span>
+                )}
             </div>
 
             {/* Specifications - Premium Clay Card Tray */}
