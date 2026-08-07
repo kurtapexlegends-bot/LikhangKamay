@@ -5,7 +5,7 @@ export const FALLBACK_ROLE_PRESETS = [
     { key: 'accounting', label: 'Finance Review', description: 'Business funds, payroll approval, and finance visibility.', modules: ['accounting'] },
     { key: 'procurement', label: 'Inventory & Restocking', description: 'Supply tracking, stock requests, and purchasing coordination.', modules: ['procurement', 'stock_requests'] },
     { key: 'customer_support', label: 'Customer Care', description: 'Orders, buyer messages, and customer review handling.', modules: ['orders', 'messages', 'reviews'] },
-    { key: 'custom', label: 'Custom Capability Mix', description: 'Start blank and choose the exact capabilities manually.', modules: [] },
+    { key: 'custom', label: 'Custom Access', description: 'Configure individual module permissions manually.', modules: [] },
 ];
 
 export const MODULE_PERMISSION_LEVELS = [

@@ -17,7 +17,7 @@ class HRRolePresets
             'hr' => ['label' => 'People & Payroll', 'description' => 'Employee records, payroll prep, and workspace access coordination.'],
             'accounting' => ['label' => 'Finance Review', 'description' => 'Legacy finance visibility role.'],
             'procurement' => ['label' => 'Procurement', 'description' => 'Legacy inventory tracking role.'],
-            'custom' => ['label' => 'Custom Capability Mix', 'description' => 'Start blank and choose the exact capabilities manually.'],
+            'custom' => ['label' => 'Custom Access', 'description' => 'Configure individual module permissions manually.'],
         ];
 
         return collect($entitlementService->getRolePresetDefaults())
