@@ -83,7 +83,6 @@ export default function BasicEmployeeInfoSection({
                             value={getPresetRoleLabel(data.staff_role_preset_key)}
                             disabled
                         />
-                        <p className="mt-1 text-[10px] text-stone-400 font-medium">Synchronized with the active security preset role below.</p>
                     </div>
                 ) : (
                     <div>

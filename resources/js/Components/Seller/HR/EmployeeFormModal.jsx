@@ -267,21 +267,16 @@ export default function EmployeeFormModal({
                 <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-[#FDFBF9]">
                     {/* Access Provision Toggle wrapped in a card */}
                     {((mode === 'add' && canProvisionStaffAccounts) || (mode === 'edit' && canUpdateStaffAccounts)) && (
-                        <div className="rounded-2xl border border-stone-200 bg-stone-50/50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition shadow-sm">
-                            <div className="min-w-0">
-                                <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-stone-500">
+                        <div className="rounded-xl border border-stone-200/80 bg-white p-4 flex items-center justify-between shadow-sm">
+                            <div className="min-w-0 pr-4">
+                                <label className="text-xs font-bold text-stone-900 block cursor-pointer">
                                     Enable Seller Portal Login
-                                    <span className={`inline-flex items-center justify-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest transition-colors duration-200 ${
-                                        data.create_login_account ? 'bg-clay-600 text-white border-clay-700 shadow-sm' : 'bg-stone-200 text-stone-600 border-stone-300'
-                                    }`}>
-                                        {data.create_login_account ? 'Active' : 'Disabled'}
-                                    </span>
                                 </label>
-                                <p className="mt-1 text-xs leading-snug text-stone-500">
-                                    {hasLinkedLogin
-                                        ? 'Suspend or restore workspace access here without deleting the linked staff account.'
-                                        : 'Enable this only when the employee needs seller workspace access.'}
-                                </p>
+                                {hasLinkedLogin && (
+                                    <p className="mt-0.5 text-[11px] text-stone-500 font-normal">
+                                        Toggle workspace access without removing employee HR history.
+                                    </p>
+                                )}
                             </div>
                             <label className="inline-flex shrink-0 items-center cursor-pointer min-h-[44px]">
                                 <div className="relative h-6 w-11 shrink-0">
@@ -292,7 +287,7 @@ export default function EmployeeFormModal({
                                         checked={data.create_login_account}
                                         onChange={(e) => handleProvisionToggle(e.target.checked)}
                                     />
-                                    <div className="h-full w-full rounded-full bg-stone-200 border border-stone-300 transition-colors peer-checked:bg-clay-700 peer-checked:border-clay-700 peer-focus:ring-2 peer-focus:ring-clay-500 peer-focus:ring-offset-2" />
+                                    <div className="h-full w-full rounded-full bg-stone-200 border border-stone-300 transition-colors peer-checked:bg-clay-600 peer-checked:border-clay-600 peer-focus:ring-2 peer-focus:ring-clay-500/20" />
                                     <div className="pointer-events-none absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5" />
                                 </div>
                             </label>
