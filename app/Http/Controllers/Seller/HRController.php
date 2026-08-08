@@ -220,6 +220,10 @@ class HRController extends Controller
             abort(403, 'Only the Shop Owner can manage owner accounts.');
         }
 
+        $shouldManageLoginSettings = $linkedLogin
+            ? $canManageLoginSettings
+            : ($wantsLoginAccount && $canCreateLoginSettings);
+
         HRWorkflowHelper::sanitizeAndPrepareProvisionRequest($request);
 
         $rules = HRWorkflowHelper::getProvisionValidationRules($seller, $entitlementService, $employee, $linkedLogin, $shouldManageLoginSettings);
