@@ -22,22 +22,22 @@ function ActionButton({ icon: Icon, label, description, tone, busy, onClick }) {
             type="button"
             onClick={onClick}
             disabled={busy}
-            className={`w-full rounded-2xl border px-4 py-3.5 text-left transition ${tone} ${busy ? 'cursor-wait opacity-80' : ''}`}
+            className={`w-full rounded-2xl border px-4 py-3 text-left transition ${tone} ${busy ? 'cursor-wait opacity-80' : ''}`}
         >
-            <div className="flex items-start gap-3">
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm">
+            <div className="flex items-center gap-3">
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-xs shrink-0">
                     <Icon size={18} />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold">{label}</p>
-                    <p className="mt-1 text-xs leading-5 opacity-90">{description}</p>
+                    {description && <p className="mt-0.5 text-xs leading-tight opacity-90">{description}</p>}
                 </div>
             </div>
         </button>
     );
 }
 
-export function StaffResumePromptCard({ prompt = null, compact = false }) {
+export function StaffResumePromptCard({ prompt = null, compact = false, onResumeSuccess = null }) {
     const [processingAction, setProcessingAction] = useState(null);
 
     const timeoutLabel = useMemo(() => {
@@ -56,6 +56,11 @@ export function StaffResumePromptCard({ prompt = null, compact = false }) {
         setProcessingAction('resume');
 
         router.post(route('staff.attendance.resume'), {}, {
+            onSuccess: () => {
+                if (onResumeSuccess) {
+                    onResumeSuccess();
+                }
+            },
             onFinish: () => setProcessingAction(null),
         });
     };
@@ -78,46 +83,40 @@ export function StaffResumePromptCard({ prompt = null, compact = false }) {
                 <Clock3 size={20} />
             </div>
 
-            <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.24em] text-stone-400">
-                Staff Attendance
-            </p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-stone-900">
+            <h2 className="mt-4 text-2xl font-bold tracking-tight text-stone-900">
                 Session paused for inactivity
             </h2>
-            <p className="mt-2 text-sm leading-6 text-stone-500">
-                No workspace heartbeat reached the server for {timeoutLabel}. Resume work to reopen your attendance session, or log out.
+            <p className="mt-1.5 text-xs text-stone-500 font-medium">
+                No workspace heartbeat was received for {timeoutLabel}. Resume work to reopen your attendance session.
             </p>
 
-            <div className="mt-5 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-400">
-                    Latest Session
-                </p>
-                <p className="mt-1 text-sm font-semibold text-stone-800">
+            <div className="mt-4 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
+                <p className="text-xs font-semibold text-stone-800">
                     {prompt?.worked_hours_label
-                        ? `${prompt.worked_hours_label} logged before the timeout`
-                        : 'Attendance was paused automatically.'}
+                        ? `${prompt.worked_hours_label} logged before timeout`
+                        : 'Attendance paused automatically.'}
                 </p>
                 {timedOutAt && (
-                    <p className="mt-1 text-xs text-stone-500">
+                    <p className="mt-0.5 text-[11px] text-stone-500 font-medium">
                         Timed out at {timedOutAt}
                     </p>
                 )}
             </div>
 
-            <div className="mt-5 grid gap-3">
+            <div className="mt-5 grid gap-2.5">
                 <ActionButton
                     icon={PlayCircle}
                     label={processingAction === 'resume' ? 'Resuming...' : 'Resume Work'}
-                    description="Start a fresh attendance session and go back into the workspace."
-                    tone="border-emerald-200 bg-emerald-50 text-emerald-900 hover:border-emerald-300 hover:bg-emerald-100"
+                    description=""
+                    tone="border-emerald-200 bg-emerald-50 text-emerald-900 hover:border-emerald-300 hover:bg-emerald-100 min-h-[52px]"
                     busy={!!processingAction}
                     onClick={resume}
                 />
                 <ActionButton
                     icon={LogOut}
                     label={processingAction === 'logout' ? 'Logging Out...' : 'Log Out'}
-                    description="Leave the workspace without reopening attendance."
-                    tone="border-stone-200 bg-stone-50 text-stone-900 hover:border-stone-300 hover:bg-stone-100"
+                    description=""
+                    tone="border-stone-200 bg-stone-50 text-stone-900 hover:border-stone-300 hover:bg-stone-100 min-h-[52px]"
                     busy={!!processingAction}
                     onClick={logout}
                 />
@@ -125,10 +124,11 @@ export function StaffResumePromptCard({ prompt = null, compact = false }) {
         </div>
     );
 }
-export function StaffResumePromptOverlay({ prompt = null, open = false }) {
+
+export function StaffResumePromptOverlay({ prompt = null, open = false, onResumeSuccess = null }) {
     return (
         <Modal show={open} onClose={() => {}} maxWidth="md" closeable={false}>
-            <StaffResumePromptCard prompt={prompt} compact />
+            <StaffResumePromptCard prompt={prompt} compact onResumeSuccess={onResumeSuccess} />
         </Modal>
     );
 }

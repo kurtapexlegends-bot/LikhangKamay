@@ -98,5 +98,11 @@ export default function StaffAttendanceMonitor() {
         };
     }, [auth?.isStaff, heartbeatUrl, resumePrompt]);
 
-    return <StaffResumePromptOverlay open={!!resumePrompt} prompt={resumePrompt} />;
+    return (
+        <StaffResumePromptOverlay
+            open={!!resumePrompt}
+            prompt={resumePrompt}
+            onResumeSuccess={() => setResumePrompt(null)}
+        />
+    );
 }
