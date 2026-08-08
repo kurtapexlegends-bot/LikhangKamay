@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { Clock3, LogOut, PlayCircle } from 'lucide-react';
+import { Clock, LogOut, Play, Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import Modal from '@/Components/Modal';
 
@@ -16,33 +16,11 @@ function formatDateTime(value) {
     }).format(new Date(value));
 }
 
-function ActionButton({ icon: Icon, label, description, tone, busy, onClick }) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            disabled={busy}
-            className={`w-full rounded-2xl border px-4 py-3 text-left transition ${tone} ${busy ? 'cursor-wait opacity-80' : ''}`}
-        >
-            <div className="flex items-center gap-3">
-                <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-xs shrink-0">
-                    <Icon size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold">{label}</p>
-                    {description && <p className="mt-0.5 text-xs leading-tight opacity-90">{description}</p>}
-                </div>
-            </div>
-        </button>
-    );
-}
-
 export function StaffResumePromptCard({ prompt = null, compact = false, onResumeSuccess = null }) {
     const [processingAction, setProcessingAction] = useState(null);
 
     const timeoutLabel = useMemo(() => {
         const minutes = prompt?.timeout_minutes ?? 10;
-
         return `${minutes} minute${minutes === 1 ? '' : 's'}`;
     }, [prompt?.timeout_minutes]);
 
@@ -78,48 +56,85 @@ export function StaffResumePromptCard({ prompt = null, compact = false, onResume
     };
 
     return (
-        <div className={`w-full rounded-[1.75rem] border border-stone-200 bg-white shadow-[0_24px_80px_-42px_rgba(120,79,46,0.35)] ${compact ? 'max-w-md p-5' : 'max-w-lg p-6 sm:p-7'}`}>
-            <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-clay-100 text-clay-700">
-                <Clock3 size={20} />
+        <div className={`w-full rounded-[28px] border border-stone-200/80 bg-white p-6 sm:p-7 shadow-2xl ${compact ? 'max-w-md' : 'max-w-lg'}`}>
+            {/* Top Status Pill */}
+            <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200/60 flex items-center justify-center shrink-0">
+                        <Clock size={20} />
+                    </div>
+                    <div>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/70 text-[10px] font-bold uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            Session Paused
+                        </span>
+                    </div>
+                </div>
             </div>
 
-            <h2 className="mt-4 text-2xl font-bold tracking-tight text-stone-900">
-                Session paused for inactivity
+            {/* Heading & Subtitle */}
+            <h2 className="text-xl font-bold tracking-tight text-stone-900">
+                Inactivity Timeout
             </h2>
-            <p className="mt-1.5 text-xs text-stone-500 font-medium">
-                No workspace heartbeat was received for {timeoutLabel}. Resume work to reopen your attendance session.
+            <p className="mt-1 text-xs text-stone-500 font-medium leading-relaxed">
+                No workspace activity was detected for {timeoutLabel}. Resume work to reopen your attendance session.
             </p>
 
-            <div className="mt-4 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
-                <p className="text-xs font-semibold text-stone-800">
-                    {prompt?.worked_hours_label
-                        ? `${prompt.worked_hours_label} logged before timeout`
-                        : 'Attendance paused automatically.'}
-                </p>
+            {/* Session Stats Drawer */}
+            <div className="mt-5 rounded-2xl border border-stone-200/70 bg-stone-50/70 p-4 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                    <span className="text-stone-500 font-medium">Logged Time</span>
+                    <span className="font-bold text-stone-900">
+                        {prompt?.worked_hours_label ? `${prompt.worked_hours_label} before pause` : 'Session paused'}
+                    </span>
+                </div>
                 {timedOutAt && (
-                    <p className="mt-0.5 text-[11px] text-stone-500 font-medium">
-                        Timed out at {timedOutAt}
-                    </p>
+                    <div className="flex items-center justify-between text-xs border-t border-stone-200/50 pt-2">
+                        <span className="text-stone-500 font-medium">Paused At</span>
+                        <span className="font-semibold text-stone-700">{timedOutAt}</span>
+                    </div>
                 )}
             </div>
 
-            <div className="mt-5 grid gap-2.5">
-                <ActionButton
-                    icon={PlayCircle}
-                    label={processingAction === 'resume' ? 'Resuming...' : 'Resume Work'}
-                    description=""
-                    tone="border-emerald-200 bg-emerald-50 text-emerald-900 hover:border-emerald-300 hover:bg-emerald-100 min-h-[52px]"
-                    busy={!!processingAction}
+            {/* Action Buttons */}
+            <div className="mt-6 space-y-2.5">
+                <button
+                    type="button"
                     onClick={resume}
-                />
-                <ActionButton
-                    icon={LogOut}
-                    label={processingAction === 'logout' ? 'Logging Out...' : 'Log Out'}
-                    description=""
-                    tone="border-stone-200 bg-stone-50 text-stone-900 hover:border-stone-300 hover:bg-stone-100 min-h-[52px]"
-                    busy={!!processingAction}
+                    disabled={!!processingAction}
+                    className="w-full min-h-[46px] rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                >
+                    {processingAction === 'resume' ? (
+                        <>
+                            <Loader2 size={16} className="animate-spin" />
+                            <span>Resuming Session...</span>
+                        </>
+                    ) : (
+                        <>
+                            <Play size={16} className="fill-white" />
+                            <span>Resume Work</span>
+                        </>
+                    )}
+                </button>
+
+                <button
+                    type="button"
                     onClick={logout}
-                />
+                    disabled={!!processingAction}
+                    className="w-full min-h-[42px] rounded-2xl bg-stone-100 hover:bg-stone-200/70 text-stone-700 font-semibold text-xs transition-colors active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                    {processingAction === 'logout' ? (
+                        <>
+                            <Loader2 size={14} className="animate-spin text-stone-500" />
+                            <span>Logging Out...</span>
+                        </>
+                    ) : (
+                        <>
+                            <LogOut size={14} className="text-stone-500" />
+                            <span>Log Out</span>
+                        </>
+                    )}
+                </button>
             </div>
         </div>
     );
