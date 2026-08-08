@@ -202,12 +202,18 @@ export default function UpdateProfileInformation({
                         ref={emailRef}
                         id="email"
                         type="email"
-                        className="mt-1 block w-full border-stone-200 bg-stone-50/30"
+                        className={`mt-1 block w-full border-stone-200 ${user.role === 'staff' || user.is_staff ? 'bg-stone-100/80 text-stone-500 cursor-not-allowed' : 'bg-stone-50/30'}`}
                         value={data.email}
                         onChange={(e) => setData('email', e.target.value)}
+                        disabled={user.role === 'staff' || user.is_staff}
                         hasError={!!errors.email}
                         required
                     />
+                    {user.role === 'staff' || user.is_staff ? (
+                        <p className="mt-1.5 text-xs text-stone-500 font-medium">
+                            Email addresses for staff accounts are managed by your Shop Owner and cannot be modified directly.
+                        </p>
+                    ) : null}
                     {emailValidation.isValid !== null && (
                         <div className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border animate-in fade-in slide-in-from-top-1 duration-300 ${
                             emailValidation.isValid 

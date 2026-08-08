@@ -74,17 +74,19 @@ export default function Edit({ mustVerifyEmail, status, addresses, profileMode =
                 </div>
             )}
 
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-red-50 bg-red-50/10">
-                    <div className="flex items-center gap-2.5">
-                        <AlertTriangle size={18} className="text-red-500" />
-                        <h3 className="text-base font-bold text-red-600">Delete Account</h3>
+            {auth.user.role !== 'staff' && !auth.user.is_staff && (
+                <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-red-50 bg-red-50/10">
+                        <div className="flex items-center gap-2.5">
+                            <AlertTriangle size={18} className="text-red-500" />
+                            <h3 className="text-base font-bold text-red-600">Delete Account</h3>
+                        </div>
+                    </div>
+                    <div className="p-6">
+                        <DeleteUserForm className="max-w-2xl" />
                     </div>
                 </div>
-                <div className="p-6">
-                    <DeleteUserForm className="max-w-2xl" />
-                </div>
-            </div>
+            )}
         </div>
     );
 

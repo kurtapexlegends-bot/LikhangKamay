@@ -117,6 +117,11 @@ class ProfileController extends Controller
             }
         }
 
+        if ($user->isStaff() && isset($data['email']) && $data['email'] !== $user->email) {
+            unset($data['email']);
+            Session::flash('error', 'Staff email addresses are managed by the Shop Owner and cannot be modified directly.');
+        }
+
         $user->fill($data);
 
         if ($user->isDirty('email')) {
@@ -166,6 +171,11 @@ class ProfileController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         $user = $request->user();
+
+        if ($user->isStaff()) {
+            return back()->with('error', 'Staff accounts cannot be self-deleted. Access suspension is managed by your Shop Owner.');
+        }
+
         if ($user->role === 'artisan' && $user->artisan_status === 'pending') {
             return redirect()->route('artisan.pending');
         }
