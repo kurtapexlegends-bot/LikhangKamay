@@ -99,10 +99,10 @@ class StaffDashboardController extends Controller
                 'focus' => 'Human Resources',
                 'theme' => 'clay',
                 'stats' => array_values(array_filter([
-                    ['label' => 'Employees', 'value' => $employeeCount],
-                    ['label' => 'Active Staff', 'value' => $activeEmployees],
-                    $user->hasStaffCapability(User::CAP_VIEW_PAYROLL) ? ['label' => 'Pending Payrolls', 'value' => $pendingPayrolls] : null,
-                    ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages],
+                    ['label' => 'Employees', 'value' => $employeeCount, 'routeName' => 'seller.hr'],
+                    ['label' => 'Active Staff', 'value' => $activeEmployees, 'routeName' => 'seller.hr'],
+                    $user->hasStaffCapability(User::CAP_VIEW_PAYROLL) ? ['label' => 'Pending Payrolls', 'value' => $pendingPayrolls, 'routeName' => 'seller.hr'] : null,
+                    ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages, 'routeName' => 'team-messages.index'],
                 ])),
                 'highlights' => [
                     'Keep employee records accurate and payroll drafts ready for accounting review.',
@@ -116,10 +116,10 @@ class StaffDashboardController extends Controller
                 'focus' => 'Accounting',
                 'theme' => 'emerald',
                 'stats' => array_values(array_filter([
-                    ['label' => 'Requests Awaiting Release', 'value' => $pendingReleases, 'tone' => 'emerald'],
-                    $user->hasStaffCapability(User::CAP_VIEW_PAYROLL) ? ['label' => 'Pending Payroll Approvals', 'value' => $pendingPayrolls, 'tone' => 'amber'] : null,
-                    ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages, 'tone' => 'sky'],
-                    $user->hasStaffCapability(User::CAP_VIEW_REVENUE) ? ['label' => 'Completed Orders', 'value' => Order::where('artisan_id', $sellerId)->where('status', 'Completed')->count(), 'tone' => 'violet'] : null,
+                    ['label' => 'Requests Awaiting Release', 'value' => $pendingReleases, 'tone' => 'emerald', 'routeName' => 'seller.fund-release.index'],
+                    $user->hasStaffCapability(User::CAP_VIEW_PAYROLL) ? ['label' => 'Pending Payroll Approvals', 'value' => $pendingPayrolls, 'tone' => 'amber', 'routeName' => 'seller.hr'] : null,
+                    ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages, 'tone' => 'sky', 'routeName' => 'team-messages.index'],
+                    $user->hasStaffCapability(User::CAP_VIEW_REVENUE) ? ['label' => 'Completed Orders', 'value' => Order::where('artisan_id', $sellerId)->where('status', 'Completed')->count(), 'tone' => 'violet', 'routeName' => 'orders.index'] : null,
                 ])),
                 'highlights' => [
                     'Prioritize stock-request releases and payroll approvals that unblock operations.',
@@ -133,10 +133,10 @@ class StaffDashboardController extends Controller
                 'focus' => 'Procurement',
                 'theme' => 'amber',
                 'stats' => [
-                    ['label' => 'Tracked Supplies', 'value' => $supplyCount, 'tone' => 'amber'],
-                    ['label' => 'Low Stock Items', 'value' => $lowStockCount, 'tone' => 'red'],
-                    ['label' => 'Inbound Requests', 'value' => $inboundRequests, 'tone' => 'indigo'],
-                    ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages, 'tone' => 'sky'],
+                    ['label' => 'Tracked Supplies', 'value' => $supplyCount, 'tone' => 'amber', 'routeName' => 'seller.procurement.index'],
+                    ['label' => 'Low Stock Items', 'value' => $lowStockCount, 'tone' => 'red', 'routeName' => 'seller.procurement.index'],
+                    ['label' => 'Inbound Requests', 'value' => $inboundRequests, 'tone' => 'indigo', 'routeName' => 'seller.procurement.index'],
+                    ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages, 'tone' => 'sky', 'routeName' => 'team-messages.index'],
                 ],
                 'highlights' => [
                     'Monitor inventory pressure points before stockouts affect production.',
@@ -150,10 +150,10 @@ class StaffDashboardController extends Controller
                 'focus' => $presetKey === 'customer_support' ? 'Customer Support' : 'Custom Access',
                 'theme' => 'sky',
                 'stats' => [
-                    ['label' => 'Orders Needing Attention', 'value' => $ordersNeedingAttention, 'tone' => 'sky'],
-                    ['label' => 'Active Returns', 'value' => $activeReturns, 'tone' => 'amber'],
-                    ['label' => 'Reviews Awaiting Reply', 'value' => $unresolvedReviews, 'tone' => 'violet'],
-                    ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages, 'tone' => 'emerald'],
+                    ['label' => 'Orders Needing Attention', 'value' => $ordersNeedingAttention, 'tone' => 'sky', 'routeName' => 'orders.index'],
+                    ['label' => 'Active Returns', 'value' => $activeReturns, 'tone' => 'amber', 'routeName' => 'orders.index'],
+                    ['label' => 'Reviews Awaiting Reply', 'value' => $unresolvedReviews, 'tone' => 'violet', 'routeName' => 'reviews.index'],
+                    ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages, 'tone' => 'emerald', 'routeName' => 'team-messages.index'],
                 ],
                 'highlights' => [
                     'Stay on top of orders, replacements, and customer feedback without using the owner dashboard.',

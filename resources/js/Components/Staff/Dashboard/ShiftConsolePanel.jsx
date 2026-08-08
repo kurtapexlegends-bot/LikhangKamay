@@ -36,17 +36,22 @@ export default function ShiftConsolePanel({
 
                 <div className="space-y-4">
                     {hasActiveSession ? (
-                        <div className="p-3 bg-emerald-50/30 border border-emerald-100 rounded-2xl flex items-center justify-between gap-3">
+                        <div className="p-3.5 bg-emerald-50/30 border border-emerald-100/80 rounded-2xl flex items-center justify-between gap-3">
                             <div>
-                                <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Session Status</p>
-                                <p className="text-xs font-bold text-[#1e3d2f] mt-0.5">Shift Active & Tracked</p>
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Active Shift Session</p>
+                                <p className="text-xs font-bold text-[#1e3d2f] mt-0.5">
+                                    {attendance?.worked_hours_label ? `${attendance.worked_hours_label} Logged Today` : 'Shift Active & Tracked'}
+                                </p>
                             </div>
-                            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="text-[10px] font-bold text-emerald-700">Live</span>
+                            </div>
                         </div>
                     ) : (
-                        <div className="p-3 bg-amber-50/30 border border-amber-100 rounded-2xl">
+                        <div className="p-3.5 bg-amber-50/30 border border-amber-100/80 rounded-2xl">
                             <p className="text-[9px] font-bold uppercase tracking-wider text-amber-600">Action Required</p>
-                            <p className="text-xs font-bold text-[#4c311c] mt-0.5">Please clock in to start your shift.</p>
+                            <p className="text-xs font-bold text-[#4c311c] mt-0.5">Please clock in to start your shift schedule.</p>
                         </div>
                     )}
 
