@@ -2,7 +2,8 @@ import React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import SellerHeader from '@/Layouts/SellerHeader';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
-import { ArrowLeft, Banknote, CalendarDays, Clock3, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Banknote, CalendarDays, Clock3, Users, ChevronDown, ChevronUp, Printer, FileText } from 'lucide-react';
+import EmployeePayslipModal from '@/Components/Seller/HR/EmployeePayslipModal';
 
 const money = (value) => new Intl.NumberFormat('en-PH', {
     style: 'currency',
@@ -41,6 +42,7 @@ export default function PayrollRunShow({ payroll }) {
     const { auth } = usePage().props;
     const { openSidebar } = useSellerWorkspaceShell();
     const [expandedRows, setExpandedRows] = React.useState({});
+    const [payslipModalItem, setPayslipModalItem] = React.useState(null);
 
     const toggleExpandedRow = (id) => {
         setExpandedRows(prev => ({
@@ -230,23 +232,33 @@ export default function PayrollRunShow({ payroll }) {
                                         </div>
                                     </div>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleExpandedRow(item.id)}
-                                        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-stone-100 hover:bg-stone-200/70 text-xs font-bold text-stone-700 transition"
-                                    >
-                                        {isExpanded ? (
-                                            <>
-                                                <ChevronUp size={14} />
-                                                Hide Calculation Breakdown
-                                            </>
-                                        ) : (
-                                            <>
-                                                <ChevronDown size={14} />
-                                                View Calculation Formula
-                                            </>
-                                        )}
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setPayslipModalItem(item)}
+                                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-clay-50 hover:bg-clay-100 border border-clay-100 text-xs font-bold text-clay-700 transition active:scale-[0.98]"
+                                        >
+                                            <Printer size={14} />
+                                            Official Payslip
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleExpandedRow(item.id)}
+                                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-stone-100 hover:bg-stone-200/70 text-xs font-bold text-stone-700 transition"
+                                        >
+                                            {isExpanded ? (
+                                                <>
+                                                    <ChevronUp size={14} />
+                                                    Hide Calculation
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <ChevronDown size={14} />
+                                                    Formula Audit
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
 
                                     {isExpanded && (
                                         <div className="rounded-xl border border-stone-200 bg-stone-50/80 p-3.5 text-xs space-y-3 animate-in fade-in">
@@ -316,23 +328,33 @@ export default function PayrollRunShow({ payroll }) {
                                                     {item.employee_role && (
                                                         <div className="mt-1 text-xs text-stone-500">{item.employee_role}</div>
                                                     )}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => toggleExpandedRow(item.id)}
-                                                        className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-clay-600 hover:text-clay-700 transition underline"
-                                                    >
-                                                        {expandedRows[item.id] ? (
-                                                            <>
-                                                                <ChevronUp size={12} />
-                                                                Hide Calculation Details
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <ChevronDown size={12} />
-                                                                Show Calculation Details
-                                                            </>
-                                                        )}
-                                                    </button>
+                                                    <div className="mt-2 flex items-center gap-3">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setPayslipModalItem(item)}
+                                                            className="inline-flex items-center gap-1 text-[10px] font-extrabold text-clay-700 hover:text-clay-800 transition bg-clay-50 px-2 py-0.5 rounded border border-clay-100"
+                                                        >
+                                                            <Printer size={10} />
+                                                            View Payslip
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleExpandedRow(item.id)}
+                                                            className="inline-flex items-center gap-1 text-[10px] font-bold text-stone-500 hover:text-stone-700 transition underline"
+                                                        >
+                                                            {expandedRows[item.id] ? (
+                                                                <>
+                                                                    <ChevronUp size={12} />
+                                                                    Hide Breakdown
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <ChevronDown size={12} />
+                                                                    Show Breakdown
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    </div>
                                                 </td>
                                                 <td className="px-5 py-4 font-semibold">{money(item.base_salary)}</td>
                                                 <td className="px-5 py-4">
@@ -445,6 +467,14 @@ export default function PayrollRunShow({ payroll }) {
                     )}
                 </div>
             </main>
+
+            <EmployeePayslipModal
+                item={payslipModalItem}
+                payroll={payroll}
+                sellerName={auth?.user?.store_name || auth?.user?.name}
+                isOpen={!!payslipModalItem}
+                onClose={() => setPayslipModalItem(null)}
+            />
         </div>
     );
 }
