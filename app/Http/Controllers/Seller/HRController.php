@@ -434,18 +434,4 @@ class HRController extends Controller
             ->route('hr.payroll.show', $payroll)
             ->with('success', 'Payroll request sent to Accounting.');
     }
-
-    public function destroyPayroll(int $id)
-    {
-        $payroll = Payroll::findOrFail($id);
-        Gate::authorize('manage', $payroll);
-
-        if (!in_array($payroll->status, ['Draft', 'Pending', 'Rejected'], true)) {
-            return redirect()->back()->with('error', 'Only draft, pending, or rejected payroll runs can be deleted.');
-        }
-
-        $payroll->delete();
-
-        return redirect()->route('hr.index')->with('success', 'Payroll request deleted.');
-    }
 }
