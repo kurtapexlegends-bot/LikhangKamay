@@ -112,7 +112,9 @@ class StaffAttendanceService
             return false;
         }
 
-        return $this->getLatestSession($staff)?->close_reason === self::CLOSE_REASON_INACTIVITY_TIMEOUT;
+        $latestSession = $this->getLatestSession($staff);
+
+        return $latestSession && $latestSession->close_mode === self::MODE_PAUSED;
     }
 
     /**
