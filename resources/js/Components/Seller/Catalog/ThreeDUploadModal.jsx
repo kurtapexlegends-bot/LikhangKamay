@@ -203,7 +203,6 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h3 className="text-lg font-bold text-stone-900">Upload 3D Model</h3>
-                        <p className="text-xs text-stone-500 mt-0.5 font-medium">Attach a .glb or .gltf file to one of your products</p>
                     </div>
                     <button onClick={handleClose} className="p-2 hover:bg-stone-100 rounded-lg text-stone-400 transition-colors">
                         <X size={16} />

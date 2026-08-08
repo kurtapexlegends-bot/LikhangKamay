@@ -11,12 +11,9 @@ export default function FundMetrics({ finances, canEditAccounting, onEditBaseFun
                     <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-2.5 text-emerald-600">
                         <Banknote size={20} />
                     </div>
-                    <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-600 tracking-wider">
-                        Revenue
-                    </span>
                 </div>
                 <h3 className="mb-0.5 text-2xl font-bold text-gray-900">{formatShortMoney(finances.revenue)}</h3>
-                <p className="text-[10px] text-gray-400">Realized from completed orders</p>
+                <p className="text-[10px] text-gray-400 font-medium">Total Realized Revenue</p>
             </div>
 
             {/* Expenses Card */}
@@ -25,12 +22,9 @@ export default function FundMetrics({ finances, canEditAccounting, onEditBaseFun
                     <div className="rounded-xl border border-rose-100 bg-rose-50 p-2.5 text-rose-600">
                         <ClipboardList size={20} />
                     </div>
-                    <span className="rounded-full border border-rose-100 bg-rose-50 px-2.5 py-1 text-[10px] font-bold uppercase text-rose-600 tracking-wider">
-                        Expenses
-                    </span>
                 </div>
                 <h3 className="mb-0.5 text-2xl font-bold text-gray-900">{formatShortMoney(finances.expenses)}</h3>
-                <p className="text-[10px] text-gray-400">Stock purchases and payroll</p>
+                <p className="text-[10px] text-gray-400 font-medium">Stock Purchases &amp; Payroll</p>
             </div>
 
             {/* Balance Card */}
@@ -53,9 +47,6 @@ export default function FundMetrics({ finances, canEditAccounting, onEditBaseFun
                     </button>
                 </div>
                 <h3 className="mb-0.5 text-3xl font-bold tracking-tight text-white relative z-10">{formatShortMoney(finances.balance)}</h3>
-                <p className="mt-1 text-[10px] text-gray-400 relative z-10">
-                    Base: {formatShortMoney(finances.baseFunds || 0)} + Revenue - Expenses
-                </p>
             </div>
         </div>
     );

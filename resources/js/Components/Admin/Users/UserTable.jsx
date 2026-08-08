@@ -62,13 +62,11 @@ function StaffMemberList({ staffMembers, emptyMessage }) {
                                         {staffMember.email_verified ? 'Email verified' : 'Email pending'}
                                     </span>
                                 </div>
-                                <p className="mt-3 text-xs font-medium leading-relaxed text-stone-500">
-                                    {staffMember.requires_password_change
-                                        ? 'Password reset required on next sign-in.'
-                                        : staffMember.workspace_access_enabled
-                                            ? 'Workspace access is active.'
-                                            : 'Workspace access is suspended.'}
-                                </p>
+                                {staffMember.requires_password_change && (
+                                    <p className="mt-3 text-xs font-medium leading-relaxed text-amber-700 bg-amber-50 rounded-lg p-2 border border-amber-100">
+                                        Password reset required on next sign-in.
+                                    </p>
+                                )}
                             </>
                         );
                     })()}

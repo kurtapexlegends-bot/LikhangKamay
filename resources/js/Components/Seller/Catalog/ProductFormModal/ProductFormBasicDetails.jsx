@@ -101,12 +101,7 @@ export default function ProductFormBasicDetails({
                             <p className={`text-[11px] font-bold ${activationReadiness.canActivate ? "text-emerald-700" : "text-amber-700"}`}>
                                 {activationReadiness.canActivate
                                     ? "Ready for Active listing"
-                                    : `Still needed for Active: ${activationReadiness.missingLabels.join(", ")}`}
-                            </p>
-                            <p className={`mt-1 text-[10px] ${activationReadiness.canActivate ? "text-emerald-600" : "text-amber-600"}`}>
-                                {activationReadiness.canActivate
-                                    ? "Activation requirements are complete."
-                                    : "Active stays locked until the required media is uploaded."}
+                                    : `Missing for Active: ${activationReadiness.missingLabels.join(", ")}`}
                             </p>
                         </div>
                     )}
