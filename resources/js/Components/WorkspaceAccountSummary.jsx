@@ -4,9 +4,22 @@ export const getWorkspaceAccountLabel = (user) => {
     if (!user) return 'Workspace Account';
 
     if (user.role === 'super_admin') return 'Super Admin';
-    if (user.role === 'staff') return 'Staff Account';
+    if (user.role === 'staff') {
+        const presetKey = user.staff_role_preset_key || user.role_preset_key;
+        const labels = {
+            shop_manager: 'Shop Manager',
+            accountant: 'Accountant',
+            stock_clerk: 'Stock Clerk',
+            customer_support: 'Customer Care',
+            hr: 'People & Payroll',
+            accounting: 'Finance Review',
+            procurement: 'Procurement',
+            custom: 'Custom Access',
+        };
+        return labels[presetKey] || 'Staff Account';
+    }
 
-    return 'Seller Account';
+    return 'Shop Owner (Seller)';
 };
 
 export const getWorkspaceAccountDisplayName = (user) => {

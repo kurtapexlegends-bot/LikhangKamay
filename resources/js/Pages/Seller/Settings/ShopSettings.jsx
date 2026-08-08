@@ -307,6 +307,21 @@ export default function ShopSettings({ auth, user, stats }) {
                             </div>
                         </div>
 
+                        {/* ── LEGAL & PAYOUT IDENTITY CARD (Shop Owner Restricted) ── */}
+                        <div className="bg-stone-50/80 rounded-2xl border border-stone-200/80 p-5 mb-10">
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="space-y-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-clay-700 bg-clay-50 border border-clay-200 px-2 py-0.5 rounded">
+                                        Shop Owner Restricted
+                                    </span>
+                                    <h3 className="text-sm font-bold text-stone-900 mt-1">Legal Business &amp; Bank Payout Identity</h3>
+                                    <p className="text-xs text-stone-500 font-medium leading-relaxed max-w-2xl">
+                                        DTI/SEC registration documents, TIN, and bank account payout settings are legally tied to the Shop Owner's account ({user?.name || 'Owner'}). Staff managers are granted access to daily branding customization (banner, bio, auto-reply messages).
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         {user?.products?.length > 0 ? (
                             <div className="mb-10 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                                 {user.products.map((product) => (

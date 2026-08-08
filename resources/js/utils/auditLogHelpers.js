@@ -70,9 +70,9 @@ export const statusTone = {
 };
 
 export const actorTypeLabel = {
-    owner: 'Owner',
-    staff: 'Staff',
-    admin: 'Admin',
+    owner: 'Shop Owner',
+    staff: 'Staff Manager',
+    admin: 'Platform Admin',
     buyer: 'Buyer',
     system: 'System',
 };
