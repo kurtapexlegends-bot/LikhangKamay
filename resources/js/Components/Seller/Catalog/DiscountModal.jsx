@@ -216,7 +216,8 @@ export default function DiscountModal({
     );
 
     const nowBuffer = new Date(Date.now() - 60000);
-    const isInvalidStartTime = startAt && new Date(startAt) < nowBuffer;
+    const isEditingExistingActive = Boolean(discountToEdit && discountToEdit.start_at && new Date(discountToEdit.start_at) <= new Date());
+    const isInvalidStartTime = !isEditingExistingActive && startAt && new Date(startAt) < nowBuffer;
     const isInvalidSchedule = startAt && endAt && new Date(endAt) <= new Date(startAt);
     const numGlobalVal = Number(globalValue) || 0;
     const isInvalidGlobalValue = mode === "global" && (numGlobalVal <= 0 || (globalType === "percentage" && numGlobalVal >= 100));
@@ -281,6 +282,7 @@ export default function DiscountModal({
                                 setStartAt={setStartAt}
                                 endAt={endAt}
                                 setEndAt={setEndAt}
+                                isEditingExisting={isEditingExistingActive}
                             />
 
                             <DiscountStrategySelector
