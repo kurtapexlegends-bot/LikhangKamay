@@ -121,7 +121,7 @@ class StaffSecurityController extends Controller
     {
         $user = $this->getStaffUser($request);
 
-        if ($attendanceService->requiresResumePrompt($user)) {
+        if (!$attendanceService->getOpenSession($user) || $attendanceService->requiresResumePrompt($user)) {
             return response()->json([
                 'requires_resume' => true,
                 'resume_prompt' => $attendanceService->buildResumeContext($user),

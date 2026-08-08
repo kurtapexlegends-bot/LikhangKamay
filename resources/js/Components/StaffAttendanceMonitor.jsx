@@ -28,13 +28,16 @@ export default function StaffAttendanceMonitor() {
             }
 
             try {
-                await window.axios.post(heartbeatUrl);
+                const res = await window.axios.post(heartbeatUrl);
+                if (res?.data?.requires_resume) {
+                    setResumePrompt(res.data.resume_prompt || { requires_resume: true });
+                }
             } catch (error) {
                 if (cancelled) {
                     return;
                 }
 
-                if (error?.response?.status === 423 && error.response?.data?.requires_resume) {
+                if (error?.response?.data?.requires_resume) {
                     setResumePrompt(error.response.data.resume_prompt || { requires_resume: true });
                 }
             }
