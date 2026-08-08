@@ -126,6 +126,47 @@ class HRController extends Controller
         return redirect()->back()->with('success', 'Employee added successfully.');
     }
 
+    public function destroyPayroll(Request $request, string $id)
+    {
+        $actor = $this->sellerActor();
+        $seller = $this->sellerOwner();
+
+        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access cannot delete payroll runs.');
+
+        $payroll = Payroll::where('user_id', $seller->id)->findOrFail($id);
+
+        if (in_array($payroll->status, ['Submitted', 'Approved', 'Paid'], true)) {
+            return back()->with('error', 'Submitted or approved payroll runs cannot be deleted.');
+        }
+
+        $payroll->delete();
+
+        return back()->with('success', 'Draft payroll run deleted.');
+    }
+
+    public function attendanceLogs(
+        Request $request,
+        Employee $employee,
+        \App\Services\HR\AttendanceAggregatorService $aggregator
+    ) {
+        $seller = $this->sellerOwner();
+
+        abort_unless($employee->user_id === $seller->id, 403, 'Unauthorized employee access.');
+
+        $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->query('end_date', now()->endOfMonth()->toDateString());
+
+        $summary = $aggregator->aggregateForPeriod($employee, $startDate, $endDate, $seller);
+
+        return response()->json([
+            'employee_id' => $employee->id,
+            'employee_name' => $employee->name,
+            'period_start' => $startDate,
+            'period_end' => $endDate,
+            'summary' => $summary,
+        ]);
+    }
+
     public function destroy(int $id)
     {
         $actor = $this->sellerActor();

@@ -19,6 +19,7 @@ import HRSettingsModal from '@/Components/Seller/HR/HRSettingsModal';
 import HRHeaderActions from '@/Components/Seller/HR/HRHeaderActions';
 import HRTabs from '@/Components/Seller/HR/HRTabs';
 import HRTabContentWrapper from '@/Components/Seller/HR/HRTabContentWrapper';
+import EmployeeAttendanceDrawer from '@/Components/Seller/HR/EmployeeAttendanceDrawer';
 
 export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {}, staffProvisioning = {}, staffAccessAudits = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -244,6 +245,12 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 onClose={() => setAttendanceModalEmployee(null)}
                 sellerSettings={sellerSettings}
                 onMonthChange={handleMonthChange}
+            />
+
+            <EmployeeAttendanceDrawer
+                employee={attendanceModalEmployee}
+                isOpen={!!attendanceModalEmployee}
+                onClose={() => setAttendanceModalEmployee(null)}
             />
         </>
     );

@@ -12,15 +12,37 @@ use Illuminate\Support\Facades\DB;
 class PayrollCalculatorService
 {
     /**
-     * Compute a payroll item for a single employee based on monthly inputs.
+     * Compute a payroll item for a single employee based on monthly inputs and optional attendance logs.
      *
      * @param Employee $employee
      * @param array $inputs  ['absences_days' => float, 'undertime_hours' => float, 'overtime_hours' => float]
      * @param User $seller
+     * @param string|\Carbon\Carbon|null $startDate
+     * @param string|\Carbon\Carbon|null $endDate
      * @return array
      */
-    public function calculateEmployeeRow(Employee $employee, array $inputs, User $seller): array
+    public function calculateEmployeeRow(Employee $employee, array $inputs, User $seller, $startDate = null, $endDate = null): array
     {
+        $attendanceData = null;
+
+        // Auto-aggregate actual attendance time-cards if date window is present
+        if ($startDate && $endDate) {
+            $aggregator = new AttendanceAggregatorService();
+            $attendanceData = $aggregator->aggregateForPeriod($employee, $startDate, $endDate, $seller);
+
+            if ($attendanceData['has_records']) {
+                if (!array_key_exists('overtime_hours', $inputs) || $inputs['overtime_hours'] === null) {
+                    $inputs['overtime_hours'] = $attendanceData['overtime_hours'];
+                }
+                if (!array_key_exists('undertime_hours', $inputs) || $inputs['undertime_hours'] === null) {
+                    $inputs['undertime_hours'] = $attendanceData['undertime_hours'];
+                }
+                if (!array_key_exists('rest_day_ot_hours', $inputs) || $inputs['rest_day_ot_hours'] === null) {
+                    $inputs['rest_day_ot_hours'] = $attendanceData['rest_day_ot_hours'];
+                }
+            }
+        }
+
         $workingDays = max((int) ($seller->payroll_working_days ?? 22), 1);
         $factorMethod = (string) ($seller->payroll_factor_method ?? 'custom');
         $otMultiplier = (float) ($seller->overtime_multiplier ?? 1.25);

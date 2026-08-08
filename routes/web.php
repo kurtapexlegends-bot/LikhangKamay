@@ -237,6 +237,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::get('/hr/payroll/{payroll}', [\App\Http\Controllers\Seller\HRController::class, 'showPayroll'])->middleware('seller.module:hr')->name('hr.payroll.show');
         Route::post('/hr/payroll/{payroll}/submit', [\App\Http\Controllers\Seller\HRController::class, 'submitPayrollRun'])->middleware('seller.module:hr')->name('hr.payroll.submit');
         Route::delete('/hr/payroll/{id}', [\App\Http\Controllers\Seller\HRController::class, 'destroyPayroll'])->middleware('seller.module:hr')->name('hr.payroll.destroy');
+        Route::get('/hr/employees/{employee}/attendance-logs', [\App\Http\Controllers\Seller\HRController::class, 'attendanceLogs'])->middleware('seller.module:hr')->name('hr.attendance-logs');
 
 
 
