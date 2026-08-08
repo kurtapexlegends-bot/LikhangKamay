@@ -14,6 +14,7 @@ import WorkspaceTools from '@/Components/Staff/Dashboard/WorkspaceTools';
 import TaskChecklist from '@/Components/Staff/Dashboard/TaskChecklist';
 import ShiftConsolePanel from '@/Components/Staff/Dashboard/ShiftConsolePanel';
 import MobileShiftSheet from '@/Components/Staff/Dashboard/MobileShiftSheet';
+import { getDefaultChecklistForVariant } from '@/config/staffChecklists';
 
 export default function StaffDashboard({ auth, hub }) {
     const { openSidebar } = useSellerWorkspaceShell();
@@ -34,7 +35,6 @@ export default function StaffDashboard({ auth, hub }) {
     }, [isShiftSheetOpen]);
 
     const theme = themeConfig[hub.theme] || themeConfig.sky;
-    const BannerIcon = theme.icon;
     const hasActiveSession = !!attendance?.has_open_session;
     const isPaused = attendance?.current_state === 'paused';
 
@@ -50,35 +50,8 @@ export default function StaffDashboard({ auth, hub }) {
         router.post(route('staff.attendance.resume'));
     };
 
-    // Checklist logic
-    const defaultChecklist = useMemo(() => {
-        if (hub.variant === 'hr') {
-            return [
-                { id: '1', text: 'Clock in for your shift schedule', completed: true },
-                { id: '2', text: 'Review employee attendance records', completed: false },
-                { id: '3', text: 'Check pending payroll approvals', completed: false }
-            ];
-        }
-        if (hub.variant === 'accounting') {
-            return [
-                { id: '1', text: 'Clock in for your shift schedule', completed: true },
-                { id: '2', text: 'Inspect base fund release requests', completed: false },
-                { id: '3', text: 'Audit recent payroll release log ledger', completed: false }
-            ];
-        }
-        if (hub.variant === 'procurement') {
-            return [
-                { id: '1', text: 'Clock in for your shift schedule', completed: true },
-                { id: '2', text: 'Check low-stock supply alert logs', completed: false },
-                { id: '3', text: 'Review incoming stock request documents', completed: false }
-            ];
-        }
-        return [
-            { id: '1', text: 'Clock in for your shift schedule', completed: true },
-            { id: '2', text: 'Review open active customer orders', completed: false },
-            { id: '3', text: 'Respond to new message tickets', completed: false }
-        ];
-    }, [hub.variant]);
+    // Checklist logic using config preset helper
+    const defaultChecklist = useMemo(() => getDefaultChecklistForVariant(hub.variant), [hub.variant]);
 
     const [tasks, setTasks] = useState(() => {
         if (typeof window === 'undefined') return defaultChecklist;
@@ -133,30 +106,6 @@ export default function StaffDashboard({ auth, hub }) {
                         
                         {/* LEFT COLUMN: Main Workspace Desk */}
                         <div className="flex flex-col gap-4 lg:gap-6">
-                            
-                            {/* Refined Banner Header (Sleeker and premium) */}
-                            <section className={`hidden lg:block relative overflow-hidden rounded-[2rem] ${theme.banner} p-6 sm:p-8 shadow-sm transition-all duration-300`}>
-                                {/* Ambient Background Glows */}
-                                <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-clay-500/10 opacity-35 blur-3xl pointer-events-none" />
-                                <div className="absolute -left-12 -bottom-12 w-64 h-64 rounded-full bg-stone-500/10 opacity-20 blur-3xl pointer-events-none" />
-                                
-                                <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                                    <div>
-                                        <div className={`inline-flex h-11 w-11 items-center justify-center rounded-xl ${theme.bannerIconRing}`}>
-                                            <BannerIcon size={20} strokeWidth={2.5} />
-                                        </div>
-                                        <p className={`mt-3.5 text-[9px] font-bold uppercase tracking-[0.24em] ${theme.bannerEyebrow}`}>
-                                            {hub.eyebrow}
-                                        </p>
-                                        <h1 className={`mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl ${theme.bannerTitle}`}>
-                                            {hub.title}
-                                        </h1>
-                                        <p className={`mt-2.5 max-w-xl text-xs leading-relaxed ${theme.bannerSubtitle} opacity-90`}>
-                                            {hub.subtitle} Unlocked capabilities are displayed on your status console.
-                                        </p>
-                                    </div>
-                                </div>
-                            </section>
 
                             {/* Split Tab Container */}
                             {hasActiveSession ? (
