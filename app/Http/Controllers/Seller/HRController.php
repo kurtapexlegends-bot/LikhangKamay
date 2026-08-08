@@ -148,6 +148,14 @@ class HRController extends Controller
             abort(403, 'Only the shop owner or a user with editable People & Payroll access can remove staff login accounts.');
         }
 
+        if ($actor->isStaff() && $linkedLogin && $linkedLogin->id === $actor->id) {
+            abort(403, 'You cannot delete your own staff account.');
+        }
+
+        if ($actor->isStaff() && $linkedLogin && $linkedLogin->isSellerOwner()) {
+            abort(403, 'Only the Shop Owner can manage owner accounts.');
+        }
+
         DB::transaction(function () use ($employee, $linkedLogin) {
             if ($linkedLogin) {
                 $linkedLogin->delete();
@@ -199,9 +207,18 @@ class HRController extends Controller
         if (!$linkedLogin && $wantsLoginAccount && !$canCreateLoginSettings) {
             abort(403, 'Only the shop owner or a user with editable People & Payroll access can create staff login accounts.');
         }
-        $shouldManageLoginSettings = $linkedLogin
-            ? $canManageLoginSettings
-            : ($wantsLoginAccount && $canCreateLoginSettings);
+
+        // Self-elevation guard: Staff members cannot edit their own permission level or role preset
+        if ($actor->isStaff() && $linkedLogin && $linkedLogin->id === $actor->id) {
+            if ($request->has('staff_role_preset_key') && $request->input('staff_role_preset_key') !== $linkedLogin->staff_role_preset_key) {
+                abort(403, 'You cannot modify your own staff permission level or role preset.');
+            }
+        }
+
+        // Owner protection guard: Staff members cannot edit or delete the Shop Owner account
+        if ($actor->isStaff() && $linkedLogin && $linkedLogin->isSellerOwner()) {
+            abort(403, 'Only the Shop Owner can manage owner accounts.');
+        }
 
         HRWorkflowHelper::sanitizeAndPrepareProvisionRequest($request);
 
