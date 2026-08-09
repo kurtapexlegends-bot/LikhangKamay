@@ -27,14 +27,15 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     const [editingEmployee, setEditingEmployee] = useState(null);
     const { openSidebar } = useSellerWorkspaceShell();
     const [searchTerm, setSearchTerm] = useState('');
-    const [attendanceModalEmployee, setAttendanceModalEmployee] = useState(null);
+    const [attendanceCalendarEmployee, setAttendanceCalendarEmployee] = useState(null);
+    const [auditDrawerEmployee, setAuditDrawerEmployee] = useState(null);
     const [selectedAttendanceDate, setSelectedAttendanceDate] = useState(null);
     
     const activeAttendanceEmployee = useMemo(() => 
-        attendanceModalEmployee 
-            ? (staff.find(emp => emp.id === attendanceModalEmployee.id) || attendanceModalEmployee) 
+        attendanceCalendarEmployee 
+            ? (staff.find(emp => emp.id === attendanceCalendarEmployee.id) || attendanceCalendarEmployee) 
             : null, 
-        [attendanceModalEmployee, staff]
+        [attendanceCalendarEmployee, staff]
     );
 
     const openAddModal = () => {
@@ -170,7 +171,8 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     canDeleteStaffAccounts={canDeleteStaffAccounts}
                     openEditModal={openEditModal}
                     deleteEmployee={deleteEmployee}
-                    openAttendanceModal={setAttendanceModalEmployee}
+                    openAttendanceModal={setAttendanceCalendarEmployee}
+                    openAuditDrawer={setAuditDrawerEmployee}
                     presetLabelByKey={presetLabelByKey}
                     monthLabel={sellerSettings.attendance_month_label || 'Current Month'}
                     openAddModal={openAddModal}
@@ -244,15 +246,15 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 employee={activeAttendanceEmployee}
                 selectedDate={selectedAttendanceDate}
                 onSelectDate={setSelectedAttendanceDate}
-                onClose={() => setAttendanceModalEmployee(null)}
+                onClose={() => setAttendanceCalendarEmployee(null)}
                 sellerSettings={sellerSettings}
                 onMonthChange={handleMonthChange}
             />
 
             <EmployeeAttendanceDrawer
-                employee={attendanceModalEmployee}
-                isOpen={!!attendanceModalEmployee}
-                onClose={() => setAttendanceModalEmployee(null)}
+                employee={auditDrawerEmployee}
+                isOpen={!!auditDrawerEmployee}
+                onClose={() => setAuditDrawerEmployee(null)}
             />
         </>
     );

@@ -13,6 +13,7 @@ export default function HRTabContentWrapper({
     openEditModal,
     deleteEmployee,
     openAttendanceModal,
+    openAuditDrawer,
     presetLabelByKey,
     monthLabel,
     openAddModal,
@@ -31,6 +32,7 @@ export default function HRTabContentWrapper({
                 openEditModal={openEditModal}
                 deleteEmployee={deleteEmployee}
                 openAttendanceModal={openAttendanceModal}
+                openAuditDrawer={openAuditDrawer}
                 presetLabelByKey={presetLabelByKey}
                 monthLabel={monthLabel}
                 onAddClick={openAddModal}
