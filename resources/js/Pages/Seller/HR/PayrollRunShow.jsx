@@ -328,28 +328,28 @@ export default function PayrollRunShow({ payroll }) {
                                                     {item.employee_role && (
                                                         <div className="mt-1 text-xs text-stone-500">{item.employee_role}</div>
                                                     )}
-                                                    <div className="mt-2 flex items-center gap-3">
+                                                    <div className="mt-2.5 flex items-center gap-2">
                                                         <button
                                                             type="button"
                                                             onClick={() => setPayslipModalItem(item)}
-                                                            className="inline-flex items-center gap-1 text-[10px] font-extrabold text-clay-700 hover:text-clay-800 transition bg-clay-50 px-2 py-0.5 rounded border border-clay-100"
+                                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-xs font-bold text-stone-700 shadow-2xs transition active:scale-[0.98]"
                                                         >
-                                                            <Printer size={10} />
+                                                            <FileText size={13} className="text-clay-600" />
                                                             View Payslip
                                                         </button>
                                                         <button
                                                             type="button"
                                                             onClick={() => toggleExpandedRow(item.id)}
-                                                            className="inline-flex items-center gap-1 text-[10px] font-bold text-stone-500 hover:text-stone-700 transition underline"
+                                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100/80 hover:bg-stone-200/80 text-xs font-bold text-stone-600 transition"
                                                         >
                                                             {expandedRows[item.id] ? (
                                                                 <>
-                                                                    <ChevronUp size={12} />
+                                                                    <ChevronUp size={13} />
                                                                     Hide Breakdown
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <ChevronDown size={12} />
+                                                                    <ChevronDown size={13} />
                                                                     Show Breakdown
                                                                 </>
                                                             )}
