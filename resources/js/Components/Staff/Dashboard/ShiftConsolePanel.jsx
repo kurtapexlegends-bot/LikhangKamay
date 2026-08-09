@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
-import { Calendar, ArrowRight } from 'lucide-react';
+import { Calendar, ArrowRight, ShieldCheck } from 'lucide-react';
+import StaffClockInModal from '@/Components/Staff/Dashboard/StaffClockInModal';
 
 export default function ShiftConsolePanel({
     hasActiveSession,
@@ -8,6 +9,7 @@ export default function ShiftConsolePanel({
     sellerSidebar,
     hub
 }) {
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const visibleModules = sellerSidebar?.visibleModules || hub?.visibleModules || [];
     const highlights = hub?.highlights || [];
     const teamMessagesRoute = hub?.teamMessagesRoute || 'team.messages';
@@ -49,9 +51,19 @@ export default function ShiftConsolePanel({
                             </div>
                         </div>
                     ) : (
-                        <div className="p-3.5 bg-amber-50/30 border border-amber-100/80 rounded-2xl">
-                            <p className="text-[9px] font-bold uppercase tracking-wider text-amber-600">Action Required</p>
-                            <p className="text-xs font-bold text-[#4c311c] mt-0.5">Please clock in to start your shift schedule.</p>
+                        <div className="p-3.5 bg-amber-50/30 border border-amber-100/80 rounded-2xl flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-amber-600">Action Required</p>
+                                <p className="text-xs font-bold text-[#4c311c] mt-0.5">Clock in with Selfie & GPS verification.</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsModalOpen(true)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-clay-700 hover:bg-clay-800 text-white text-xs font-bold transition shadow-2xs active:scale-[0.98] shrink-0"
+                            >
+                                <ShieldCheck size={14} />
+                                Clock In
+                            </button>
                         </div>
                     )}
 
@@ -123,6 +135,8 @@ export default function ShiftConsolePanel({
                     </div>
                 </Link>
             </div>
+
+            <StaffClockInModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </div>
     );
 }

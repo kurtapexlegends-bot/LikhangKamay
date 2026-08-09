@@ -37,6 +37,12 @@ class StaffAttendanceSession extends Model
         'close_mode',
         'close_reason',
         'worked_minutes',
+        'clock_in_photo_path',
+        'clock_in_latitude',
+        'clock_in_longitude',
+        'seller_location_id',
+        'distance_meters',
+        'is_within_geofence',
     ];
 
     protected function casts(): array
@@ -48,6 +54,10 @@ class StaffAttendanceSession extends Model
             'last_heartbeat_at' => 'datetime',
             'last_activity_at' => 'datetime',
             'worked_minutes' => 'integer',
+            'clock_in_latitude' => 'float',
+            'clock_in_longitude' => 'float',
+            'distance_meters' => 'integer',
+            'is_within_geofence' => 'boolean',
         ];
     }
 
@@ -64,5 +74,15 @@ class StaffAttendanceSession extends Model
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function sellerLocation()
+    {
+        return $this->belongsTo(SellerLocation::class);
+    }
+
+    public function getPhotoUrlAttribute(): ?string
+    {
+        return $this->clock_in_photo_path ? \Illuminate\Support\Facades\Storage::url($this->clock_in_photo_path) : null;
     }
 }

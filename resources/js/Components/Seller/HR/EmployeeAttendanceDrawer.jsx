@@ -6,6 +6,7 @@ import { Clock, Calendar, X, AlertCircle, CheckCircle2, PauseCircle } from 'luci
 export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose }) {
     const [loading, setLoading] = useState(false);
     const [summary, setSummary] = useState(null);
+    const [selectedPhoto, setSelectedPhoto] = useState(null);
 
     useEffect(() => {
         if (isOpen && employee?.id) {
@@ -116,19 +117,41 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose }) 
                                                                     className="p-3 bg-white rounded-xl border border-stone-200/80 shadow-xs flex items-center justify-between gap-3 text-xs"
                                                                 >
                                                                     <div className="flex items-center gap-3">
-                                                                        <div className="h-8 w-8 rounded-lg bg-stone-100 flex items-center justify-center text-stone-600 shrink-0">
-                                                                            <Clock size={16} />
-                                                                        </div>
+                                                                        {session.photo_url ? (
+                                                                            <img
+                                                                                src={session.photo_url}
+                                                                                alt="Selfie proof"
+                                                                                className="h-10 w-10 rounded-lg object-cover border border-stone-200 shrink-0 cursor-pointer hover:opacity-90 transition"
+                                                                                onClick={() => setSelectedPhoto(session.photo_url)}
+                                                                            />
+                                                                        ) : (
+                                                                            <div className="h-10 w-10 rounded-lg bg-stone-100 flex items-center justify-center text-stone-600 shrink-0">
+                                                                                <Clock size={16} />
+                                                                            </div>
+                                                                        )}
                                                                         <div>
                                                                             <p className="font-bold text-stone-900">{session.date}</p>
                                                                             <p className="text-[10px] text-stone-500 font-medium">
                                                                                 {session.clock_in_at ? new Date(session.clock_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'} - {session.clock_out_at ? new Date(session.clock_out_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Active'}
                                                                             </p>
+                                                                            {session.distance_meters !== null && (
+                                                                                <div className="mt-1">
+                                                                                    {session.is_within_geofence ? (
+                                                                                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                                                                                            Within Geofence ({session.distance_meters}m)
+                                                                                        </span>
+                                                                                    ) : (
+                                                                                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">
+                                                                                            Off-Site Warning ({session.distance_meters}m)
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     </div>
 
                                                                     <div className="text-right">
-                                                                        <span className="font-black text-stone-900">{session.worked_hours_label}</span>
+                                                                        <span className="font-black text-stone-900 block">{session.worked_hours_label}</span>
                                                                         {session.close_mode === 'paused' && (
                                                                             <span className="block text-[9px] font-bold text-amber-600">Auto-Paused</span>
                                                                         )}
@@ -145,6 +168,24 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose }) 
                                             </>
                                         ) : null}
                                     </div>
+
+                                    {/* High-Res Photo Proof Preview Modal */}
+                                    {selectedPhoto && (
+                                        <div
+                                            className="fixed inset-0 z-60 bg-stone-900/80 backdrop-blur-xs flex items-center justify-center p-4"
+                                            onClick={() => setSelectedPhoto(null)}
+                                        >
+                                            <div className="bg-white rounded-2xl p-3 max-w-sm w-full space-y-3" onClick={(e) => e.stopPropagation()}>
+                                                <div className="flex justify-between items-center pb-2 border-b border-stone-100">
+                                                    <span className="text-xs font-bold text-stone-900">Attendance Selfie Proof</span>
+                                                    <button type="button" onClick={() => setSelectedPhoto(null)} className="text-stone-400 hover:text-stone-700">
+                                                        <X size={16} />
+                                                    </button>
+                                                </div>
+                                                <img src={selectedPhoto} alt="Clock-in selfie proof" className="w-full rounded-xl object-cover border border-stone-200 max-h-[360px]" />
+                                            </div>
+                                        </div>
+                                    )}
                                 </Dialog.Panel>
                             </Transition.Child>
                         </div>

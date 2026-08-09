@@ -115,6 +115,11 @@ class AttendanceAggregatorService
                 'worked_hours_label' => round($s->worked_minutes / 60, 1) . ' hrs',
                 'close_mode' => $s->close_mode,
                 'close_reason' => $s->close_reason,
+                'photo_url' => $s->photo_url,
+                'latitude' => $s->clock_in_latitude,
+                'longitude' => $s->clock_in_longitude,
+                'distance_meters' => $s->distance_meters,
+                'is_within_geofence' => (bool) $s->is_within_geofence,
             ])->values()->all(),
         ];
     }

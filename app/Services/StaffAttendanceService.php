@@ -21,7 +21,7 @@ class StaffAttendanceService
     public const INACTIVITY_TIMEOUT_MINUTES = 10;
     private const STANDARD_WORKDAY_MINUTES = 480;
 
-    public function ensureClockedIn(User $staff): ?StaffAttendanceSession
+    public function ensureClockedIn(User $staff, array $payload = []): ?StaffAttendanceSession
     {
         if (!$staff->isStaff()) {
             return null;
@@ -34,6 +34,58 @@ class StaffAttendanceService
         }
 
         $now = $this->now();
+        $photoPath = null;
+
+        // Process Base64 selfie photo if provided
+        if (!empty($payload['photo_data']) && is_string($payload['photo_data'])) {
+            try {
+                $photoData = $payload['photo_data'];
+                if (preg_match('/^data:image\/(\w+);base64,/', $photoData, $type)) {
+                    $photoData = substr($photoData, strpos($photoData, ',') + 1);
+                    $type = strtolower($type[1]); // jpg, png, etc.
+                    $photoData = base64_decode($photoData);
+
+                    if ($photoData !== false) {
+                        $fileName = 'attendance/selfies/' . date('Y/m') . '/selfie_' . $staff->id . '_' . time() . '.' . ($type === 'png' ? 'png' : 'jpg');
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($fileName, $photoData);
+                        $photoPath = $fileName;
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Failed saving clock-in selfie: ' . $e->getMessage());
+            }
+        }
+
+        // GPS Geofencing Check
+        $lat = isset($payload['latitude']) ? (float) $payload['latitude'] : null;
+        $lng = isset($payload['longitude']) ? (float) $payload['longitude'] : null;
+        $sellerLocationId = null;
+        $distanceMeters = null;
+        $isWithinGeofence = true;
+
+        if ($lat !== null && $lng !== null) {
+            $staff->loadMissing('employee.sellerLocation');
+            $sellerLocation = $staff->employee?->sellerLocation;
+
+            if (!$sellerLocation) {
+                // Fallback to seller owner's first active location
+                $sellerLocation = \App\Models\SellerLocation::where('seller_owner_id', $staff->getEffectiveSellerId())
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            if ($sellerLocation && $sellerLocation->latitude && $sellerLocation->longitude) {
+                $sellerLocationId = $sellerLocation->id;
+                $distanceMeters = $this->calculateDistanceMeters(
+                    $lat,
+                    $lng,
+                    (float) $sellerLocation->latitude,
+                    (float) $sellerLocation->longitude
+                );
+                $allowedRadius = (int) ($sellerLocation->radius_meters ?: 200);
+                $isWithinGeofence = ($distanceMeters <= $allowedRadius);
+            }
+        }
 
         return StaffAttendanceSession::create([
             'staff_user_id' => $staff->id,
@@ -44,7 +96,28 @@ class StaffAttendanceService
             'last_heartbeat_at' => $now,
             'last_activity_at' => $now,
             'worked_minutes' => 0,
+            'clock_in_photo_path' => $photoPath,
+            'clock_in_latitude' => $lat,
+            'clock_in_longitude' => $lng,
+            'seller_location_id' => $sellerLocationId,
+            'distance_meters' => $distanceMeters,
+            'is_within_geofence' => $isWithinGeofence,
         ]);
+    }
+
+    public function calculateDistanceMeters(float $lat1, float $lon1, float $lat2, float $lon2): int
+    {
+        $earthRadius = 6371000;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon / 2) * sin($dLon / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return (int) round($earthRadius * $c);
     }
 
     public function closeOpenSession(

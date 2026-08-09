@@ -95,7 +95,13 @@ class StaffSecurityController extends Controller
 
         abort_unless($user->canAccessSellerWorkspace(), 403, 'Staff workspace access only.');
 
-        $attendanceService->ensureClockedIn($user);
+        $request->validate([
+            'photo_data' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+        ]);
+
+        $attendanceService->ensureClockedIn($user, $request->only(['photo_data', 'latitude', 'longitude']));
 
         $intended = $request->session()->pull('staff.attendance.intended');
 
