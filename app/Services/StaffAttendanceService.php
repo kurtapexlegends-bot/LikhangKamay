@@ -209,6 +209,8 @@ class StaffAttendanceService
      */
     public function buildEmployeeMonthlySummaries(Collection $employees, User $seller, ?CarbonInterface $month = null): array
     {
+        $this->autoPauseInactiveSessions();
+
         $period = $this->resolveMonth($month);
         $today = $this->now()->toDateString();
         $workingDays = (int) ($seller->payroll_working_days ?? 22);
@@ -396,7 +398,18 @@ class StaffAttendanceService
             return max(0, (int) $session->worked_minutes);
         }
 
-        return max(0, $session->clock_in_at->diffInMinutes($this->now()));
+        $now = $this->now();
+        $isPastDay = $session->attendance_date ? $session->attendance_date->lt($now->toDateString()) : false;
+
+        // If session was left open on a past day, cap worked duration at last heartbeat/activity or 15 mins after clock_in
+        if ($isPastDay) {
+            $lastActive = $session->last_activity_at ?: ($session->last_heartbeat_at ?: $session->clock_in_at);
+            return max(0, $session->clock_in_at->diffInMinutes($lastActive));
+        }
+
+        // For open sessions today, cap at elapsed minutes up to current time (max 16 hours / 960 mins)
+        $elapsed = $session->clock_in_at ? $session->clock_in_at->diffInMinutes($now) : 0;
+        return min(960, max(0, $elapsed));
     }
 
     protected function resolveMonth(?CarbonInterface $month = null): CarbonInterface

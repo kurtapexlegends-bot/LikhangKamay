@@ -21,6 +21,8 @@ class AttendanceAggregatorService
      */
     public function aggregateForPeriod(Employee $employee, $startDate, $endDate, ?User $seller = null): array
     {
+        (new \App\Services\StaffAttendanceService())->autoPauseInactiveSessions();
+
         $start = Carbon::parse($startDate)->startOfDay();
         $end = Carbon::parse($endDate)->endOfDay();
         $standardHours = (float) ($seller->standard_workday_hours ?? 8.0);
