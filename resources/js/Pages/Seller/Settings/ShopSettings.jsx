@@ -8,6 +8,7 @@ import {
     Filter, CheckCircle, Pencil, AlertCircle, Heart, Crown, Sparkles, Search, ArrowUpDown, Flame, MessageSquare
 } from 'lucide-react';
 import { hasRating, formatRating } from '@/utils/rating';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import { compressImage } from '@/utils/imageCompressor';
 import WorkplaceLocationsManager from '@/Components/Seller/Settings/WorkplaceLocationsManager';
