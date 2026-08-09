@@ -25,7 +25,8 @@ export default function EmployeeFormModal({
     canProvisionStaffAccounts,
     canUpdateStaffAccounts,
     requiresStaffSchemaUpdate,
-    canEditHrRecords
+    canEditHrRecords,
+    sellerLocations = []
 }) {
     const { addToast } = useToast();
     const [showPassword, setShowPassword] = useState(false);
@@ -37,6 +38,8 @@ export default function EmployeeFormModal({
         name: '',
         role: DEFAULT_EMPLOYEE_ROLE,
         salary: '',
+        assigned_location_id: null,
+        allow_remote_clock_in: false,
         create_login_account: false,
         email: '',
         default_password: '',
@@ -58,6 +61,8 @@ export default function EmployeeFormModal({
                     name: '',
                     role: DEFAULT_EMPLOYEE_ROLE,
                     salary: '',
+                    assigned_location_id: null,
+                    allow_remote_clock_in: false,
                     create_login_account: false,
                     email: '',
                     default_password: '',
@@ -80,6 +85,8 @@ export default function EmployeeFormModal({
                     name: employee.name || '',
                     role: activeRole,
                     salary: employee.salary ?? '',
+                    assigned_location_id: employee.assigned_location_id || null,
+                    allow_remote_clock_in: !!employee.allow_remote_clock_in,
                     create_login_account: hasLoginAccount ? workspaceAccessEnabled : false,
                     email: employee.login_account?.email || '',
                     default_password: '',
@@ -368,6 +375,7 @@ export default function EmployeeFormModal({
                         handleManualRoleChange={handleManualRoleChange}
                         employeeIdValidation={employeeIdValidation}
                         isEmployeeIdSaved={isEmployeeIdSaved}
+                        sellerLocations={sellerLocations}
                     />
 
                     {/* Collapsible Portal Configuration Section */}

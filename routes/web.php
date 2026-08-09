@@ -174,10 +174,14 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::get('/audit-log/data', [\App\Http\Controllers\Seller\AuditLogController::class, 'apiData'])->name('audit-log.data');
         Route::get('/audit-log/export', [\App\Http\Controllers\Seller\AuditLogController::class, 'export'])->middleware('artisan')->name('audit-log.export');
 
-        // SHOP SETTINGS
+        // SHOP SETTINGS & WORKPLACE LOCATIONS
         Route::get('/shop-settings', [\App\Http\Controllers\Seller\ShopController::class, 'settings'])->middleware('seller.module:shop_settings')->name('shop.settings');
         Route::post('/shop-settings', [\App\Http\Controllers\Seller\ShopController::class, 'updateSettings'])->middleware('seller.module:shop_settings')->name('shop.settings.update');
         Route::get('/shop/analytics/rollup', [\App\Http\Controllers\Seller\ShopController::class, 'analyticsRollup'])->name('shop.analytics.rollup');
+        Route::get('/shop-locations', [\App\Http\Controllers\Seller\SellerLocationController::class, 'index'])->middleware('seller.module:shop_settings')->name('shop.locations.index');
+        Route::post('/shop-locations', [\App\Http\Controllers\Seller\SellerLocationController::class, 'store'])->middleware('seller.module:shop_settings')->name('shop.locations.store');
+        Route::put('/shop-locations/{location}', [\App\Http\Controllers\Seller\SellerLocationController::class, 'update'])->middleware('seller.module:shop_settings')->name('shop.locations.update');
+        Route::delete('/shop-locations/{location}', [\App\Http\Controllers\Seller\SellerLocationController::class, 'destroy'])->middleware('seller.module:shop_settings')->name('shop.locations.destroy');
 
         // SUBSCRIPTIONS
         Route::get('/subscription', [\App\Http\Controllers\Seller\SubscriptionController::class, 'index'])->middleware('artisan')->name('seller.subscription');

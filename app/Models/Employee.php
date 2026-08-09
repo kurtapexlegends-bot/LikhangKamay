@@ -25,12 +25,18 @@ class Employee extends Model
 
     protected $fillable = [
         'user_id',
+        'assigned_location_id',
+        'allow_remote_clock_in',
         'employee_id',
         'name',
         'role',
         'salary',
         'status',
         'join_date'
+    ];
+
+    protected $casts = [
+        'allow_remote_clock_in' => 'boolean',
     ];
 
     // Optional: Relationship back to the Seller
@@ -42,5 +48,10 @@ class Employee extends Model
     public function loginAccount()
     {
         return $this->hasOne(User::class, 'employee_id');
+    }
+
+    public function assignedLocation()
+    {
+        return $this->belongsTo(SellerLocation::class, 'assigned_location_id');
     }
 }

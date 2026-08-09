@@ -22,6 +22,7 @@ class HREmployeeLoader
     {
         $supportsEmployeeLoginLinks = Cache::remember('schema_users_has_employee_id', 86400, fn() => Schema::hasColumn('users', 'employee_id'));
         $employeeQuery = Employee::query()
+            ->with('assignedLocation')
             ->where('user_id', $seller->id)
             ->orderBy('created_at', 'desc');
 

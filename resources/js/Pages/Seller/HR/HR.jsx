@@ -21,7 +21,7 @@ import HRTabs from '@/Components/Seller/HR/HRTabs';
 import HRTabContentWrapper from '@/Components/Seller/HR/HRTabContentWrapper';
 import EmployeeAttendanceDrawer from '@/Components/Seller/HR/EmployeeAttendanceDrawer';
 
-export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {}, staffProvisioning = {}, staffAccessAudits = [] }) {
+export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {}, staffProvisioning = {}, staffAccessAudits = [], locations = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState(null);
@@ -190,6 +190,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 canUpdateStaffAccounts={canUpdateStaffAccounts}
                 requiresStaffSchemaUpdate={requiresStaffSchemaUpdate}
                 canEditHrRecords={canEditHrRecords}
+                sellerLocations={locations}
             />
 
             {editingEmployee && (
@@ -204,6 +205,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     canUpdateStaffAccounts={canUpdateStaffAccounts}
                     requiresStaffSchemaUpdate={requiresStaffSchemaUpdate}
                     canEditHrRecords={canEditHrRecords}
+                    sellerLocations={locations}
                 />
             )}
 

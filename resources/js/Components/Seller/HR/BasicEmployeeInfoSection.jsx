@@ -116,6 +116,40 @@ export default function BasicEmployeeInfoSection({
                     />
                     {errors.salary && <p className="mt-1 text-xs text-red-500 font-medium">{errors.salary}</p>}
                 </div>
+
+                {/* Assigned Workplace Location */}
+                <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Assigned Workplace Geofence Location</label>
+                    <select
+                        className={`${modalSelectClass} min-h-[44px]`}
+                        value={data.assigned_location_id || ''}
+                        onChange={e => setData('assigned_location_id', e.target.value ? Number(e.target.value) : null)}
+                    >
+                        <option value="">Unassigned (No Geofence)</option>
+                        {(sellerLocations || []).map((loc) => (
+                            <option key={loc.id} value={loc.id}>
+                                {loc.name} ({loc.radius_meters}m radius)
+                            </option>
+                        ))}
+                    </select>
+                    <p className="mt-1 text-[10px] text-stone-400 font-medium">
+                        Staff must clock in within this location radius unless remote bypass is enabled.
+                    </p>
+                </div>
+
+                {/* Remote Worker Bypass Toggle */}
+                <div className="flex items-center gap-3 pt-2 md:col-span-2">
+                    <input
+                        type="checkbox"
+                        id="allow_remote_clock_in"
+                        checked={!!data.allow_remote_clock_in}
+                        onChange={e => setData('allow_remote_clock_in', e.target.checked)}
+                        className="h-4 w-4 rounded border-stone-300 text-clay-600 focus:ring-clay-500"
+                    />
+                    <label htmlFor="allow_remote_clock_in" className="text-xs font-bold text-stone-700 select-none cursor-pointer">
+                        Field / Remote Worker (Bypass Workplace Geofence Radius)
+                    </label>
+                </div>
             </div>
         </div>
     );

@@ -8,11 +8,11 @@ import {
     Filter, CheckCircle, Pencil, AlertCircle, Heart, Crown, Sparkles, Search, ArrowUpDown, Flame, MessageSquare
 } from 'lucide-react';
 import { hasRating, formatRating } from '@/utils/rating';
-import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import { compressImage } from '@/utils/imageCompressor';
+import WorkplaceLocationsManager from '@/Components/Seller/Settings/WorkplaceLocationsManager';
 
-export default function ShopSettings({ auth, user, stats }) {
+export default function ShopSettings({ auth, user, stats, locations = [] }) {
     const bannerInputRef = useRef(null);
     const { openSidebar } = useSellerWorkspaceShell();
     const { addToast } = useToast();
@@ -377,6 +377,9 @@ export default function ShopSettings({ auth, user, stats }) {
                             </div>
                         )}
 
+                        <div className="mt-8">
+                            <WorkplaceLocationsManager locations={locations} canEdit={canEditShopSettings} />
+                        </div>
                 </div>
 
                 {/* ── Floating Save Bar ── */}

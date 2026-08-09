@@ -188,6 +188,8 @@ class HRStaffProvisioner
             'name' => ['required', 'string', 'max:255'],
             'role' => ['required', 'string', 'max:255'],
             'salary' => ['required', 'numeric', 'min:0'],
+            'assigned_location_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('seller_locations', 'id')->where('user_id', $seller->id)],
+            'allow_remote_clock_in' => ['nullable', 'boolean'],
             'create_login_account' => ['nullable', 'boolean'],
         ];
 

@@ -32,6 +32,8 @@ class ProvisionStaffAccount
         DB::transaction(function () use (&$staffAccount, &$employee, $validated, $sellerId, $actor, $supportedModules, $employeeId) {
             $employee = Employee::create([
                 'user_id' => $sellerId,
+                'assigned_location_id' => $validated['assigned_location_id'] ?? null,
+                'allow_remote_clock_in' => (bool) ($validated['allow_remote_clock_in'] ?? false),
                 'employee_id' => $employeeId,
                 'name' => $validated['name'],
                 'role' => $validated['role'],
@@ -136,6 +138,8 @@ class ProvisionStaffAccount
                 'name' => trim($validated['name']),
                 'role' => trim($validated['role']),
                 'salary' => $validated['salary'],
+                'assigned_location_id' => $validated['assigned_location_id'] ?? null,
+                'allow_remote_clock_in' => (bool) ($validated['allow_remote_clock_in'] ?? false),
             ]);
 
             if (!$shouldManageLoginSettings) {
