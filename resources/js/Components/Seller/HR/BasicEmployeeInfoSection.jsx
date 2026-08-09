@@ -15,7 +15,8 @@ export default function BasicEmployeeInfoSection({
     getPresetRoleLabel,
     handleManualRoleChange,
     employeeIdValidation,
-    isEmployeeIdSaved
+    isEmployeeIdSaved,
+    sellerLocations = []
 }) {
     return (
         <div className="space-y-4">
