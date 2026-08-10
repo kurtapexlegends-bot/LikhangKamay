@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { router } from '@inertiajs/react';
-import { Camera, MapPin, RefreshCw, CheckCircle2, AlertTriangle, ShieldCheck, X } from 'lucide-react';
+import { Camera, MapPin, RefreshCw, CheckCircle2, AlertTriangle, ShieldCheck, X, Loader2, Navigation } from 'lucide-react';
 import Modal from '@/Components/Modal';
 
 export default function StaffClockInModal({ isOpen, onClose }) {
@@ -208,35 +208,81 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                 </div>
 
                 {/* GPS Location Status Indicator */}
-                <div className={`rounded-xl border p-3 flex items-center justify-between text-xs transition-colors ${
+                <div className={`relative overflow-hidden rounded-2xl border p-3.5 transition-all duration-300 ${
                     locationStatus === 'success' 
-                        ? 'border-emerald-200 bg-emerald-50/40' 
+                        ? 'border-emerald-200 bg-emerald-50/50 shadow-2xs' 
                         : locationStatus === 'error' 
-                            ? 'border-amber-200 bg-amber-50/60' 
-                            : 'border-stone-200 bg-stone-50'
+                            ? 'border-amber-200 bg-amber-50/70' 
+                            : 'border-stone-200 bg-stone-50/90'
                 }`}>
-                    <div className="flex items-center gap-2">
-                        <MapPin size={16} className={locationStatus === 'success' ? 'text-emerald-600' : 'text-amber-500'} />
+                    {/* Animated progress beam when fetching */}
+                    {locationStatus === 'fetching' && (
+                        <div className="absolute top-0 inset-x-0 h-0.5 bg-stone-200 overflow-hidden">
+                            <div className="h-full bg-clay-600 animate-pulse w-full origin-left" />
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-3">
+                            <div className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-colors ${
+                                locationStatus === 'success'
+                                    ? 'bg-emerald-100/80 text-emerald-700 border-emerald-200'
+                                    : locationStatus === 'error'
+                                        ? 'bg-amber-100/80 text-amber-700 border-amber-200'
+                                        : 'bg-white text-stone-600 border-stone-200 shadow-2xs'
+                            }`}>
+                                {locationStatus === 'fetching' ? (
+                                    <Loader2 size={16} className="animate-spin text-clay-600" />
+                                ) : locationStatus === 'success' ? (
+                                    <MapPin size={16} className="text-emerald-700" />
+                                ) : (
+                                    <AlertTriangle size={16} className="text-amber-700" />
+                                )}
+                            </div>
+
+                            <div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="font-bold text-stone-900 block leading-tight">GPS Geofence Check</span>
+                                    {locationStatus === 'fetching' && (
+                                        <span className="relative flex h-2 w-2">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-clay-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-clay-600"></span>
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-[11px] text-stone-500 font-medium mt-0.5">
+                                    {locationStatus === 'fetching' && 'Acquiring satellite lock & coordinates...'}
+                                    {locationStatus === 'success' && `Verified position within workplace boundary (±${location.accuracy}m)`}
+                                    {locationStatus === 'error' && 'Location permission required to verify physical attendance.'}
+                                </p>
+                            </div>
+                        </div>
+
                         <div>
-                            <span className="font-bold text-stone-800 block leading-none">GPS Location Verification</span>
-                            <span className="text-[10px] text-stone-600 font-medium">
-                                {locationStatus === 'fetching' && 'Detecting device GPS coordinates...'}
-                                {locationStatus === 'success' && `Location Verified (±${location.accuracy}m accuracy)`}
-                                {locationStatus === 'error' && 'Location permission required to verify physical attendance.'}
-                            </span>
+                            {locationStatus === 'fetching' && (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-[10px] font-bold text-stone-600 shadow-2xs">
+                                    <RefreshCw size={11} className="animate-spin text-clay-600" />
+                                    Locating...
+                                </span>
+                            )}
+                            {locationStatus === 'success' && (
+                                <div className="flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 bg-emerald-100/70 border border-emerald-200/80 px-2.5 py-1 rounded-lg">
+                                    <CheckCircle2 size={13} className="text-emerald-600" />
+                                    Verified
+                                </div>
+                            )}
+                            {locationStatus === 'error' && (
+                                <button
+                                    type="button"
+                                    onClick={fetchGeolocation}
+                                    className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold shrink-0 shadow-2xs transition active:scale-95 flex items-center gap-1"
+                                >
+                                    <Navigation size={11} />
+                                    Enable GPS
+                                </button>
+                            )}
                         </div>
                     </div>
-                    {locationStatus === 'success' ? (
-                        <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                    ) : (
-                        <button
-                            type="button"
-                            onClick={fetchGeolocation}
-                            className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 hover:bg-stone-50 text-[10px] font-bold text-stone-700 shrink-0 shadow-2xs transition"
-                        >
-                            {locationStatus === 'error' ? 'Grant GPS Permission' : 'Detecting GPS'}
-                        </button>
-                    )}
                 </div>
 
                 {/* Submit Action */}
