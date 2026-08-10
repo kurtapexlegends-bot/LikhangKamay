@@ -114,6 +114,17 @@ export default function StaffClockInModal({ isOpen, onClose }) {
         });
     };
 
+    const isLocationVerified = locationStatus === 'success' && location.lat !== null && location.lng !== null;
+    const canClockIn = Boolean(capturedPhoto) && isLocationVerified;
+
+    const getButtonText = () => {
+        if (submitting) return 'Clocking In...';
+        if (!capturedPhoto) return 'Take Selfie Photo to Continue';
+        if (locationStatus === 'fetching') return 'Verifying GPS Location...';
+        if (!isLocationVerified) return 'GPS Location Verification Required';
+        return 'Confirm Physical Clock In';
+    };
+
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="md">
             <div className="p-5 sm:p-6 bg-white space-y-4 rounded-2xl">
@@ -125,7 +136,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                         </div>
                         <div>
                             <h3 className="text-base font-bold text-stone-900 leading-tight">Clock In Verification</h3>
-                            <p className="text-xs text-stone-500 font-medium">Selfie Proof & Workplace Geofence</p>
+                            <p className="text-xs text-stone-500 font-medium">Selfie Proof & Workplace Geofence Required</p>
                         </div>
                     </div>
                     <button
@@ -197,15 +208,21 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                 </div>
 
                 {/* GPS Location Status Indicator */}
-                <div className="rounded-xl border border-stone-200/80 bg-stone-50 p-3 flex items-center justify-between text-xs">
+                <div className={`rounded-xl border p-3 flex items-center justify-between text-xs transition-colors ${
+                    locationStatus === 'success' 
+                        ? 'border-emerald-200 bg-emerald-50/40' 
+                        : locationStatus === 'error' 
+                            ? 'border-amber-200 bg-amber-50/60' 
+                            : 'border-stone-200 bg-stone-50'
+                }`}>
                     <div className="flex items-center gap-2">
-                        <MapPin size={16} className={locationStatus === 'success' ? 'text-emerald-600' : 'text-stone-400'} />
+                        <MapPin size={16} className={locationStatus === 'success' ? 'text-emerald-600' : 'text-amber-500'} />
                         <div>
-                            <span className="font-bold text-stone-800 block leading-none">GPS Location Status</span>
-                            <span className="text-[10px] text-stone-500 font-medium">
+                            <span className="font-bold text-stone-800 block leading-none">GPS Location Verification</span>
+                            <span className="text-[10px] text-stone-600 font-medium">
                                 {locationStatus === 'fetching' && 'Detecting device GPS coordinates...'}
-                                {locationStatus === 'success' && `Located (±${location.accuracy}m accuracy)`}
-                                {locationStatus === 'error' && 'Location permission unavailable (using workplace default)'}
+                                {locationStatus === 'success' && `Location Verified (±${location.accuracy}m accuracy)`}
+                                {locationStatus === 'error' && 'Location permission required to verify physical attendance.'}
                             </span>
                         </div>
                     </div>
@@ -215,9 +232,9 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                         <button
                             type="button"
                             onClick={fetchGeolocation}
-                            className="text-[10px] font-bold text-clay-700 hover:underline shrink-0"
+                            className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 hover:bg-stone-50 text-[10px] font-bold text-stone-700 shrink-0 shadow-2xs transition"
                         >
-                            Refresh GPS
+                            {locationStatus === 'error' ? 'Grant GPS Permission' : 'Detecting GPS'}
                         </button>
                     )}
                 </div>
@@ -227,15 +244,15 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                     <button
                         type="button"
                         onClick={handleSubmit}
-                        disabled={submitting || (!capturedPhoto && !cameraError)}
-                        className="w-full py-3 px-4 rounded-xl bg-clay-700 hover:bg-clay-800 disabled:opacity-50 text-white text-xs font-extrabold transition shadow-md shadow-clay-200 active:scale-[0.99] flex items-center justify-center gap-2"
+                        disabled={submitting || !canClockIn}
+                        className="w-full py-3 px-4 rounded-xl bg-clay-700 hover:bg-clay-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold transition shadow-md shadow-clay-200 active:scale-[0.99] flex items-center justify-center gap-2"
                     >
                         {submitting ? (
                             <RefreshCw size={16} className="animate-spin" />
                         ) : (
                             <ShieldCheck size={16} />
                         )}
-                        Confirm Physical Clock In
+                        {getButtonText()}
                     </button>
                 </div>
             </div>

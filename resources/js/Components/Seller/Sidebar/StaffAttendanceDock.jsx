@@ -55,18 +55,18 @@ const formatWorkedDayTimer = (baseSeconds, activeSessionStartedAt, hasOpenSessio
     }
 
     if (!activeSessionStartedAt) {
-        return formatDurationFromSeconds(safeBaseSeconds);
+        return formatDurationFromSeconds(0);
     }
 
     const activeSessionStartedAtMs = new Date(activeSessionStartedAt).getTime();
 
     if (Number.isNaN(activeSessionStartedAtMs)) {
-        return formatDurationFromSeconds(safeBaseSeconds);
+        return formatDurationFromSeconds(0);
     }
 
     const liveSessionSeconds = Math.max(0, Math.floor((currentTimestamp - activeSessionStartedAtMs) / 1000));
 
-    return formatDurationFromSeconds(safeBaseSeconds + liveSessionSeconds);
+    return formatDurationFromSeconds(liveSessionSeconds);
 };
 
 const AttendanceActionButton = ({ icon: Icon, label, onClick, disabled, tone = 'default' }) => (
