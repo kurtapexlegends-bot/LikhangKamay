@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, memo } from 'react';
 import { router } from '@inertiajs/react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { Clock3, PauseCircle, LogOut, ChevronUp, PlayCircle } from 'lucide-react';
+import StaffClockInModal from '@/Components/Staff/Dashboard/StaffClockInModal';
 
 const formatElapsedTimer = (startedAt, currentTimestamp) => {
     if (!startedAt) {
@@ -88,6 +89,7 @@ const AttendanceActionButton = ({ icon: Icon, label, onClick, disabled, tone = '
 
 function StaffAttendanceDock({ attendance, isCollapsed = false, onMouseEnter, onMouseLeave }) {
     const [open, setOpen] = useState(false);
+    const [isClockInModalOpen, setIsClockInModalOpen] = useState(false);
     const [processingAction, setProcessingAction] = useState(null);
     const [showBreakConfirm, setShowBreakConfirm] = useState(false);
     const [timerNow, setTimerNow] = useState(() => Date.now());
@@ -175,16 +177,8 @@ function StaffAttendanceDock({ attendance, isCollapsed = false, onMouseEnter, on
     };
 
     const resumeWork = () => {
-        if (processingAction) return;
-
-        setProcessingAction('clock_in');
-        router.post(route('staff.attendance.resume'), {}, {
-            preserveScroll: true,
-            onFinish: () => {
-                setProcessingAction(null);
-                setOpen(false);
-            },
-        });
+        setIsClockInModalOpen(true);
+        setOpen(false);
     };
 
     const handlePrimaryClick = () => {
@@ -371,6 +365,8 @@ function StaffAttendanceDock({ attendance, isCollapsed = false, onMouseEnter, on
                 confirmColor="bg-amber-600 hover:bg-amber-700"
                 processing={processingAction === 'pause'}
             />
+
+            <StaffClockInModal isOpen={isClockInModalOpen} onClose={() => setIsClockInModalOpen(false)} />
         </div>
     );
 }

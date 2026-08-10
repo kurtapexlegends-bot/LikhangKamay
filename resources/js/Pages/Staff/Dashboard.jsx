@@ -14,12 +14,14 @@ import WorkspaceTools from '@/Components/Staff/Dashboard/WorkspaceTools';
 import TaskChecklist from '@/Components/Staff/Dashboard/TaskChecklist';
 import ShiftConsolePanel from '@/Components/Staff/Dashboard/ShiftConsolePanel';
 import MobileShiftSheet from '@/Components/Staff/Dashboard/MobileShiftSheet';
+import StaffClockInModal from '@/Components/Staff/Dashboard/StaffClockInModal';
 import { getDefaultChecklistForVariant } from '@/config/staffChecklists';
 
 export default function StaffDashboard({ auth, hub }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const [activeTab, setActiveTab] = useState('tools'); // 'tools' or 'checklist'
     const [isShiftSheetOpen, setIsShiftSheetOpen] = useState(false);
+    const [isClockInModalOpen, setIsClockInModalOpen] = useState(false);
     const { sellerSidebar, attendance } = usePage().props;
 
     // Body scroll lock when mobile shift sheet is open
@@ -47,7 +49,7 @@ export default function StaffDashboard({ auth, hub }) {
     }, [hub.variant]);
 
     const resumeWork = () => {
-        router.post(route('staff.attendance.resume'));
+        setIsClockInModalOpen(true);
     };
 
     // Checklist logic using config preset helper
@@ -352,6 +354,8 @@ export default function StaffDashboard({ auth, hub }) {
                     {hasActiveSession ? 'Manage Shift' : 'Clock In Now'}
                 </button>
             </div>
+
+            <StaffClockInModal isOpen={isClockInModalOpen} onClose={() => setIsClockInModalOpen(false)} />
         </>
     );
 }
