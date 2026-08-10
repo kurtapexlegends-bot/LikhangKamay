@@ -97,17 +97,6 @@ function StaffAttendanceDock({ attendance, isCollapsed = false, onMouseEnter, on
     const hasOpenSession = !!attendance?.has_open_session;
     const isPaused = attendance?.current_state === 'paused';
 
-    // Hide floating dock widget on staff.dashboard when offline to keep single focused Clock In hero button
-    if (!hasOpenSession && !isPaused) {
-        try {
-            if (typeof window !== 'undefined' && route().current() === 'staff.dashboard') {
-                return null;
-            }
-        } catch {
-            // Ignore route resolution error if any
-        }
-    }
-
     useEffect(() => {
         if (!open) return undefined;
 
@@ -137,6 +126,19 @@ function StaffAttendanceDock({ attendance, isCollapsed = false, onMouseEnter, on
             window.clearInterval(interval);
         };
     }, [attendance?.active_session_started_at, attendance?.break_started_at, open]);
+
+    // Hide floating dock widget on staff.dashboard when offline to keep single focused Clock In hero button
+    const shouldHideOnDashboard = !hasOpenSession && !isPaused && (() => {
+        try {
+            return typeof window !== 'undefined' && route().current() === 'staff.dashboard';
+        } catch {
+            return false;
+        }
+    })();
+
+    if (shouldHideOnDashboard) {
+        return null;
+    }
 
     const firstClockInLabel = attendance?.today_first_clock_in
         ? new Intl.DateTimeFormat('en-PH', {
