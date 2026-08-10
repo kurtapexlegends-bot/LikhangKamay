@@ -127,18 +127,27 @@ class StaffSecurityController extends Controller
     {
         $user = $this->getStaffUser($request);
 
-        if (!$attendanceService->getOpenSession($user) || $attendanceService->requiresResumePrompt($user)) {
+        if ($attendanceService->requiresResumePrompt($user)) {
             return response()->json([
                 'requires_resume' => true,
                 'resume_prompt' => $attendanceService->buildResumeContext($user),
             ], 423);
         }
 
+        $session = $attendanceService->getOpenSession($user);
+
+        if (!$session) {
+            return response()->json([
+                'ok' => true,
+                'active' => false,
+            ]);
+        }
+
         $session = $attendanceService->touchHeartbeat($user);
 
         return response()->json([
             'ok' => true,
-            'active' => (bool) $session,
+            'active' => true,
             'last_heartbeat_at' => $session?->last_heartbeat_at?->toIso8601String(),
         ]);
     }
