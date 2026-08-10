@@ -69,7 +69,7 @@ class StaffAttendanceService
 
             if (!$sellerLocation) {
                 // Fallback to seller owner's first active location
-                $sellerLocation = \App\Models\SellerLocation::where('seller_owner_id', $staff->getEffectiveSellerId())
+                $sellerLocation = \App\Models\SellerLocation::where('user_id', $staff->getEffectiveSellerId())
                     ->where('is_active', true)
                     ->first();
             }
