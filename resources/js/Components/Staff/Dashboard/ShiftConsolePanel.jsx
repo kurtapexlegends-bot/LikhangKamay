@@ -51,19 +51,9 @@ export default function ShiftConsolePanel({
                             </div>
                         </div>
                     ) : (
-                        <div className="p-3.5 bg-amber-50/30 border border-amber-100/80 rounded-2xl flex items-center justify-between gap-3">
-                            <div>
-                                <p className="text-[9px] font-bold uppercase tracking-wider text-amber-600">Action Required</p>
-                                <p className="text-xs font-bold text-[#4c311c] mt-0.5">Clock in with Selfie & GPS verification.</p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setIsModalOpen(true)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-clay-700 hover:bg-clay-800 text-white text-xs font-bold transition shadow-2xs active:scale-[0.98] shrink-0"
-                            >
-                                <ShieldCheck size={14} />
-                                Clock In
-                            </button>
+                        <div className="p-3.5 bg-stone-50 border border-stone-200/70 rounded-2xl">
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Shift Status</p>
+                            <p className="text-xs font-semibold text-stone-600 mt-0.5">Offline · Awaiting Clock In</p>
                         </div>
                     )}
 
@@ -111,28 +101,25 @@ export default function ShiftConsolePanel({
                 </div>
             </div>
 
-            {/* Refined Team Messaging card */}
-            <div className="group/msg flex flex-col justify-between rounded-[2rem] border border-[#23352b] bg-gradient-to-br from-stone-900 via-stone-950 to-[#0e1a14] p-6 shadow-sm md:col-span-2 xl:col-span-1 overflow-hidden relative">
-                <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-emerald-500/10 opacity-30 blur-2xl pointer-events-none" />
-                <div className="relative z-10">
-                    <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-emerald-400">
+            {/* Clean Team Messaging Card */}
+            <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm flex flex-col justify-between">
+                <div>
+                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
                         Staff Network
                     </p>
-                    <h3 className="mt-1.5 text-base font-bold tracking-tight text-white">
+                    <h3 className="mt-1 text-sm font-bold tracking-tight text-stone-900">
                         Direct Messaging
                     </h3>
-                    <p className="mt-2 text-xs leading-relaxed text-emerald-100/60">
-                        Communicate securely with the shop owner and other active staff members.
+                    <p className="mt-1.5 text-xs leading-relaxed text-stone-500">
+                        Communicate securely with the shop owner and team.
                     </p>
                 </div>
                 <Link
                     href={route(teamMessagesRoute)}
-                    className="relative z-10 mt-6 flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs font-bold text-white transition hover:border-emerald-500/50 hover:bg-emerald-500/20 active:scale-95 duration-300"
+                    className="mt-4 flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-stone-50/80 hover:bg-stone-100 px-3.5 py-2.5 text-xs font-bold text-stone-800 transition active:scale-[0.98]"
                 >
                     Access Team Inbox
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 transition-transform duration-300 group-hover/msg:translate-x-1">
-                        <ArrowRight size={10} className="text-emerald-800" />
-                    </div>
+                    <ArrowRight size={14} className="text-stone-500" />
                 </Link>
             </div>
 
