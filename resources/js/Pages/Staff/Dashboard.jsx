@@ -254,60 +254,56 @@ export default function StaffDashboard({ auth, hub }) {
 
                                 </div>
                             ) : (
-                                <section className="rounded-[2.5rem] border border-stone-200/90 bg-white p-8 sm:p-12 shadow-sm animate-in fade-in duration-300 max-w-2xl mx-auto my-6 text-center">
-                                    <div className="mx-auto h-14 w-14 flex items-center justify-center rounded-2xl bg-clay-50 text-clay-700 border border-clay-200/60 shadow-xs mb-5">
-                                        <ShieldCheck size={28} strokeWidth={2} />
-                                    </div>
-                                    
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100 text-stone-700 text-[10px] font-extrabold uppercase tracking-wider border border-stone-200/80 mb-3">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-stone-400" />
-                                        Workspace Offline
-                                    </span>
-                                    
-                                    <h2 className="text-2xl font-bold text-stone-900 tracking-tight">
-                                        {isPaused ? 'You are currently on break.' : 'Clock in to start your shift.'}
-                                    </h2>
-                                    
-                                    <p className="mt-2 text-xs sm:text-sm leading-relaxed text-stone-500 max-w-md mx-auto">
-                                        {isPaused
-                                            ? 'Your assigned modules remain locked while you are on break. Resume your active shift to access workspace tools.'
-                                            : 'Please clock in with photo and GPS location verification to unlock your workspace tools and team access.'}
-                                    </p>
+                                <section className="rounded-[2rem] border border-stone-200 bg-white p-6 sm:p-7 shadow-sm animate-in fade-in duration-300">
+                                    <div className="flex items-start gap-4">
+                                        <div className="h-10 w-10 flex shrink-0 items-center justify-center rounded-xl bg-clay-50 text-clay-600 border border-clay-100">
+                                            <Compass size={18} strokeWidth={2.5} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                                                Workspace Offline
+                                            </p>
+                                            <h2 className="mt-1 text-lg font-bold text-stone-900">
+                                                {isPaused ? 'You are currently on break.' : 'Clock in to start working.'}
+                                            </h2>
+                                            <p className="mt-1.5 text-xs leading-relaxed text-stone-500 max-w-xl">
+                                                {isPaused
+                                                    ? 'Your assigned modules remain locked while you are on break. Click the button to resume your active workspace shift.'
+                                                    : 'Your session has not started. Please clock in with Selfie & GPS verification to unlock your assigned workspace tools.'}
+                                            </p>
 
-                                    <div className="mt-6 inline-flex flex-wrap items-center justify-center gap-3 text-[11px] font-semibold text-stone-600 bg-stone-50 border border-stone-200/60 rounded-xl px-4 py-2.5">
-                                        <span className="flex items-center gap-1.5">
-                                            <Camera size={13} className="text-clay-600" /> WebCam Selfie Proof
-                                        </span>
-                                        <span className="text-stone-300">•</span>
-                                        <span className="flex items-center gap-1.5">
-                                            <MapPin size={13} className="text-clay-600" /> GPS Geofence Verification
-                                        </span>
-                                    </div>
+                                            <div className="mt-3 flex flex-wrap items-center gap-3 text-[10px] font-medium text-stone-500">
+                                                <span className="flex items-center gap-1.5">
+                                                    <Camera size={12} className="text-clay-600" /> WebCam Selfie Proof
+                                                </span>
+                                                <span className="text-stone-300">•</span>
+                                                <span className="flex items-center gap-1.5">
+                                                    <MapPin size={12} className="text-clay-600" /> GPS Geofence Check
+                                                </span>
+                                            </div>
 
-                                    <div className="mt-8 flex justify-center">
-                                        <button
-                                            type="button"
-                                            onClick={resumeWork}
-                                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-clay-700 hover:bg-clay-800 text-white text-sm font-bold px-8 py-3.5 shadow-md shadow-clay-700/20 active:scale-95 transition-all duration-200 min-h-[48px] w-full sm:w-auto"
-                                        >
-                                            <PlayCircle size={18} />
-                                            {isPaused ? 'Resume Shift' : 'Clock In Now'}
-                                        </button>
+                                            <button
+                                                type="button"
+                                                onClick={resumeWork}
+                                                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-clay-700 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-clay-800 active:scale-95 duration-300 shadow-md shadow-clay-700/10 min-h-[44px]"
+                                            >
+                                                <PlayCircle size={14} />
+                                                {isPaused ? 'Resume Shift' : 'Clock In Now'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </section>
                             )}
 
                         </div>
 
-                        {/* RIGHT COLUMN: Console sidebar (Only when active shift is live) */}
-                        {hasActiveSession && (
-                            <ShiftConsolePanel
-                                hasActiveSession={hasActiveSession}
-                                attendance={attendance}
-                                sellerSidebar={sellerSidebar}
-                                hub={hub}
-                            />
-                        )}
+                        {/* RIGHT COLUMN: Console sidebar */}
+                        <ShiftConsolePanel
+                            hasActiveSession={hasActiveSession}
+                            attendance={attendance}
+                            sellerSidebar={sellerSidebar}
+                            hub={hub}
+                        />
 
                     </div>
                 </main>

@@ -14,11 +14,6 @@ export default function ShiftConsolePanel({
     const highlights = hub?.highlights || [];
     const teamMessagesRoute = hub?.teamMessagesRoute || 'team.messages';
 
-    // If clocked out, return null so the hero gateway card takes full clean focus
-    if (!hasActiveSession) {
-        return null;
-    }
-
     return (
         <div className="hidden xl:grid gap-6 xl:grid-cols-1">
             {/* Shift Console & Attendance */}
@@ -30,33 +25,42 @@ export default function ShiftConsolePanel({
                     </div>
                     <div className="flex items-center gap-1.5">
                         <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            {hasActiveSession && (
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            )}
+                            <span className={`relative inline-flex rounded-full h-2 w-2 ${hasActiveSession ? 'bg-emerald-500' : 'bg-amber-400'}`}></span>
                         </span>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-stone-600">
-                            Clocked In
+                            {hasActiveSession ? 'Clocked In' : 'Clocked Out'}
                         </span>
                     </div>
                 </div>
 
                 <div className="space-y-4">
-                    <div className="p-3.5 bg-emerald-50/30 border border-emerald-100/80 rounded-2xl flex items-center justify-between gap-3">
-                        <div>
-                            <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Active Shift Session</p>
-                            <p className="text-xs font-bold text-[#1e3d2f] mt-0.5">
-                                {attendance?.worked_hours_label ? `${attendance.worked_hours_label} Logged Today` : 'Shift Active & Tracked'}
-                            </p>
+                    {hasActiveSession ? (
+                        <div className="p-3.5 bg-emerald-50/30 border border-emerald-100/80 rounded-2xl flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Active Shift Session</p>
+                                <p className="text-xs font-bold text-[#1e3d2f] mt-0.5">
+                                    {attendance?.worked_hours_label ? `${attendance.worked_hours_label} Logged Today` : 'Shift Active & Tracked'}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="text-[10px] font-bold text-emerald-700">Live</span>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[10px] font-bold text-emerald-700">Live</span>
+                    ) : (
+                        <div className="p-3.5 bg-stone-50 border border-stone-200/70 rounded-2xl">
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Shift Status</p>
+                            <p className="text-xs font-semibold text-stone-600 mt-0.5">Offline · Awaiting Clock In</p>
                         </div>
-                    </div>
+                    )}
 
                     {/* Module Privileges Cloud */}
                     <div className="pt-2">
                         <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-2">Workspace Privileges</p>
-                        {visibleModules.length > 0 ? (
+                        {hasActiveSession && visibleModules.length > 0 ? (
                             <div className="flex overflow-x-auto xl:flex-wrap xl:overflow-x-visible gap-1.5 pb-1.5 scrollbar-none snap-x">
                                 {visibleModules.map((module) => (
                                     <span
@@ -68,13 +72,13 @@ export default function ShiftConsolePanel({
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-[11px] text-stone-400 font-medium">Privileges active for your assigned modules.</p>
+                            <p className="text-[11px] text-stone-400 font-medium">Privileges will list here after clocking in.</p>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Sticky Reminders & Highlights */}
+            {/* Operational Reminders & Focus Guidelines */}
             <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
                 <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
                     Operational Reminders
@@ -97,27 +101,29 @@ export default function ShiftConsolePanel({
                 </div>
             </div>
 
-            {/* Team Messaging Card - ONLY rendered when active shift is live */}
-            <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm flex flex-col justify-between">
-                <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
-                        Staff Network
-                    </p>
-                    <h3 className="mt-1 text-sm font-bold tracking-tight text-stone-900">
-                        Direct Messaging
-                    </h3>
-                    <p className="mt-1.5 text-xs leading-relaxed text-stone-500">
-                        Communicate securely with the shop owner and team.
-                    </p>
+            {/* Direct Messaging Card - ONLY rendered when staff IS CLOCKED IN */}
+            {hasActiveSession && (
+                <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                            Staff Network
+                        </p>
+                        <h3 className="mt-1 text-sm font-bold tracking-tight text-stone-900">
+                            Direct Messaging
+                        </h3>
+                        <p className="mt-1.5 text-xs leading-relaxed text-stone-500">
+                            Communicate securely with the shop owner and team.
+                        </p>
+                    </div>
+                    <Link
+                        href={route(teamMessagesRoute)}
+                        className="mt-4 flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-stone-50/80 hover:bg-stone-100 px-3.5 py-2.5 text-xs font-bold text-stone-800 transition active:scale-[0.98]"
+                    >
+                        Access Team Inbox
+                        <ArrowRight size={14} className="text-stone-500" />
+                    </Link>
                 </div>
-                <Link
-                    href={route(teamMessagesRoute)}
-                    className="mt-4 flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-stone-50/80 hover:bg-stone-100 px-3.5 py-2.5 text-xs font-bold text-stone-800 transition active:scale-[0.98]"
-                >
-                    Access Team Inbox
-                    <ArrowRight size={14} className="text-stone-500" />
-                </Link>
-            </div>
+            )}
 
             <StaffClockInModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </div>
