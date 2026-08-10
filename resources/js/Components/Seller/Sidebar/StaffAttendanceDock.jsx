@@ -97,6 +97,17 @@ function StaffAttendanceDock({ attendance, isCollapsed = false, onMouseEnter, on
     const hasOpenSession = !!attendance?.has_open_session;
     const isPaused = attendance?.current_state === 'paused';
 
+    // Hide floating dock widget on staff.dashboard when offline to keep single focused Clock In hero button
+    if (!hasOpenSession && !isPaused) {
+        try {
+            if (typeof window !== 'undefined' && route().current() === 'staff.dashboard') {
+                return null;
+            }
+        } catch {
+            // Ignore route resolution error if any
+        }
+    }
+
     useEffect(() => {
         if (!open) return undefined;
 

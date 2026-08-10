@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
-import { Calendar, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Calendar, ArrowRight } from 'lucide-react';
 import StaffClockInModal from '@/Components/Staff/Dashboard/StaffClockInModal';
 
 export default function ShiftConsolePanel({
@@ -14,6 +14,11 @@ export default function ShiftConsolePanel({
     const highlights = hub?.highlights || [];
     const teamMessagesRoute = hub?.teamMessagesRoute || 'team.messages';
 
+    // If clocked out, return null so the hero gateway card takes full clean focus
+    if (!hasActiveSession) {
+        return null;
+    }
+
     return (
         <div className="hidden xl:grid gap-6 xl:grid-cols-1">
             {/* Shift Console & Attendance */}
@@ -25,42 +30,33 @@ export default function ShiftConsolePanel({
                     </div>
                     <div className="flex items-center gap-1.5">
                         <span className="relative flex h-2 w-2">
-                            {hasActiveSession && (
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            )}
-                            <span className={`relative inline-flex rounded-full h-2 w-2 ${hasActiveSession ? 'bg-emerald-500' : 'bg-amber-400'}`}></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                         </span>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-stone-600">
-                            {hasActiveSession ? 'Clocked In' : 'Clocked Out'}
+                            Clocked In
                         </span>
                     </div>
                 </div>
 
                 <div className="space-y-4">
-                    {hasActiveSession ? (
-                        <div className="p-3.5 bg-emerald-50/30 border border-emerald-100/80 rounded-2xl flex items-center justify-between gap-3">
-                            <div>
-                                <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Active Shift Session</p>
-                                <p className="text-xs font-bold text-[#1e3d2f] mt-0.5">
-                                    {attendance?.worked_hours_label ? `${attendance.worked_hours_label} Logged Today` : 'Shift Active & Tracked'}
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-[10px] font-bold text-emerald-700">Live</span>
-                            </div>
+                    <div className="p-3.5 bg-emerald-50/30 border border-emerald-100/80 rounded-2xl flex items-center justify-between gap-3">
+                        <div>
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Active Shift Session</p>
+                            <p className="text-xs font-bold text-[#1e3d2f] mt-0.5">
+                                {attendance?.worked_hours_label ? `${attendance.worked_hours_label} Logged Today` : 'Shift Active & Tracked'}
+                            </p>
                         </div>
-                    ) : (
-                        <div className="p-3.5 bg-stone-50 border border-stone-200/70 rounded-2xl">
-                            <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Shift Status</p>
-                            <p className="text-xs font-semibold text-stone-600 mt-0.5">Offline · Awaiting Clock In</p>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[10px] font-bold text-emerald-700">Live</span>
                         </div>
-                    )}
+                    </div>
 
                     {/* Module Privileges Cloud */}
                     <div className="pt-2">
                         <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-2">Workspace Privileges</p>
-                        {hasActiveSession && visibleModules.length > 0 ? (
+                        {visibleModules.length > 0 ? (
                             <div className="flex overflow-x-auto xl:flex-wrap xl:overflow-x-visible gap-1.5 pb-1.5 scrollbar-none snap-x">
                                 {visibleModules.map((module) => (
                                     <span
@@ -72,7 +68,7 @@ export default function ShiftConsolePanel({
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-[11px] text-stone-400 font-medium">Privileges will list here after clocking in.</p>
+                            <p className="text-[11px] text-stone-400 font-medium">Privileges active for your assigned modules.</p>
                         )}
                     </div>
                 </div>
@@ -101,7 +97,7 @@ export default function ShiftConsolePanel({
                 </div>
             </div>
 
-            {/* Clean Team Messaging Card */}
+            {/* Team Messaging Card - ONLY rendered when active shift is live */}
             <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm flex flex-col justify-between">
                 <div>
                     <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
