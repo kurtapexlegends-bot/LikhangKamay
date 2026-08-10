@@ -64,8 +64,8 @@ class StaffAttendanceService
         $isWithinGeofence = true;
 
         if ($lat !== null && $lng !== null) {
-            $staff->loadMissing('employee.sellerLocation');
-            $sellerLocation = $staff->employee?->sellerLocation;
+            $staff->loadMissing('employee.assignedLocation');
+            $sellerLocation = $staff->employee?->assignedLocation;
 
             if (!$sellerLocation) {
                 // Fallback to seller owner's first active location

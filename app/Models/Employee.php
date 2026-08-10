@@ -54,4 +54,9 @@ class Employee extends Model
     {
         return $this->belongsTo(SellerLocation::class, 'assigned_location_id');
     }
+
+    public function sellerLocation()
+    {
+        return $this->assignedLocation();
+    }
 }
