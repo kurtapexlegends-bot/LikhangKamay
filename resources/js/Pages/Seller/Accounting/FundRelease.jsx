@@ -306,39 +306,14 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                             onEditBaseFunds={() => setShowBaseFundsModal(true)}
                         />
 
-                        {/* Tabs */}
-                        <div className="flex items-center gap-4 border-b border-gray-200 overflow-x-auto">
-                            <button
-                                type="button"
-                                onClick={() => handleTabChange('pending')}
-                                className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition min-h-[44px] ${
-                                    activeTab === 'pending'
-                                        ? 'border-gray-900 text-gray-900'
-                                        : 'border-transparent text-gray-400 hover:text-gray-700'
-                                }`}
-                            >
-                                <AlertCircle size={16} /> Pending Approvals
-                                {pendingRequests?.total > 0 && (
-                                    <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-bold text-rose-600">
-                                        {pendingRequests.total}
-                                    </span>
-                                )}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleTabChange('history')}
-                                className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition min-h-[44px] ${
-                                    activeTab === 'history'
-                                        ? 'border-gray-900 text-gray-900'
-                                        : 'border-transparent text-gray-400 hover:text-gray-700'
-                                }`}
-                            >
-                                <History size={16} /> Transaction Ledger
-                            </button>
-                        </div>
-
-                        {/* Search & Filter Controls */}
+                        {/* Standardized Filter Toolbar Header & Filter Panel */}
                         <AccountingFilterPanel
+                            tabs={[
+                                { key: 'pending', label: 'Pending Approvals', count: pendingRequests?.total || 0 },
+                                { key: 'history', label: 'Transaction Ledger' },
+                            ]}
+                            activeTab={activeTab}
+                            onTabChange={handleTabChange}
                             searchTerm={searchTerm}
                             setSearchTerm={setSearchTerm}
                             isSearchLoading={isSearchLoading}

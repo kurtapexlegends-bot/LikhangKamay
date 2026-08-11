@@ -8,7 +8,7 @@ import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabil
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 
-// Subcomponents & Helpers
+import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
 import { STATUS_TABS } from '@/utils/stockRequestHelpers';
 import StockRequestMetrics from '@/Components/Seller/StockRequest/StockRequestMetrics';
 import StockRequestsTable from '@/Components/Seller/StockRequest/StockRequestsTable';
@@ -187,82 +187,32 @@ export default function StockRequestIndex({ auth, requests }) {
                     {/* KPI SUMMARY CARDS */}
                     <StockRequestMetrics requests={requests} />
 
-                    {/* STATUS TABS */}
-                    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm">
-                        <div className="overflow-x-auto border-b border-gray-100">
-                            <div className="flex min-w-max gap-1 p-1.5">
-                                {STATUS_TABS.map(tab => {
-                                    const count = getCount(tab.id);
-                                    const isActive = activeTab === tab.id;
-                                    const TabIcon = tab.icon;
-                                    return (
-                                        <button 
-                                            key={tab.id} 
-                                            onClick={() => setActiveTab(tab.id)} 
-                                            className={`inline-flex items-center gap-1.5 px-3 py-2.5 sm:py-1.5 text-[11px] font-bold rounded-lg transition-all duration-200 min-h-[44px] sm:min-h-0 ${
-                                                isActive 
-                                                    ? 'bg-clay-600 text-white shadow-sm shadow-clay-100' 
-                                                    : 'text-gray-500 hover:bg-[#FCF7F2] hover:text-clay-700'
-                                            }`}
-                                        >
-                                            <TabIcon size={12} />
-                                            {tab.label}
-                                            {count > 0 && (
-                                                <span className={`ml-0.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center ${
-                                                    isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
-                                                }`}>
-                                                    {count}
-                                                </span>
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                    {/* RESTOCK REQUESTS TABLE CONTAINER WITH INTEGRATED TOOLBAR */}
+                    <div className="bg-white rounded-3xl border border-stone-200/80 shadow-xs overflow-hidden">
+                        <FilterToolbarHeader
+                            tabs={STATUS_TABS.map(tab => ({
+                                key: tab.id,
+                                label: tab.label,
+                                count: getCount(tab.id)
+                            }))}
+                            activeTab={activeTab}
+                            onTabChange={setActiveTab}
+                            searchQuery={searchTerm}
+                            onSearchChange={setSearchTerm}
+                            searchPlaceholder="Search item, supplier, requester, or ID..."
+                            onResetFilters={() => {
+                                setActiveTab('all');
+                                setSearchTerm('');
+                            }}
+                            containerClassName="rounded-none border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
+                        />
 
-                        {/* Search and Filters */}
-                        <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                            <label className="relative block w-full sm:max-w-sm">
-                                <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(event) => setSearchTerm(event.target.value)}
-                                    placeholder="Search item, supplier, requester, or request ID"
-                                    className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-10 text-sm font-medium text-stone-900 placeholder:text-stone-400 focus:border-clay-400 focus:ring-clay-400"
-                                />
-                                {searchTerm && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSearchTerm('')}
-                                        className="absolute right-1 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400 transition hover:text-stone-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                                    >
-                                        Clear
-                                    </button>
-                                )}
-                            </label>
-                            <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
-                                <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-stone-600">
-                                    {filteredRequests.length} visible
-                                </span>
-                                {searchTerm && (
-                                    <span className="inline-flex items-center rounded-full border border-clay-200 bg-[#FCF7F2] px-3 py-1 text-clay-700">
-                                        Filtered queue
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* DATA TABLE / LIST VIEW */}
                         <StockRequestsTable 
                             filteredRequests={filteredRequests}
-                            activeTab={activeTab}
+                            activeTab={activeTab} 
                             canEdit={canEditStockRequests}
                             processingId={processingId}
-                            onMarkOrdered={(req) => {
-                                setSelectedRequest(req);
-                                setShowOrderModal(true);
-                            }}
+                            onMarkOrdered={(req) => { setSelectedRequest(req); setShowOrderModal(true); }}
                             onReceiveClick={openReceiveModal}
                             onTransferClick={openTransferModal}
                         />

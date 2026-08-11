@@ -136,88 +136,41 @@ export default function DiscountManager({ discounts, stats, filters, products, a
 
                 {/* Status Tabs & Content Container */}
                 <div className="bg-white rounded-3xl border border-stone-200/80 overflow-hidden shadow-sm">
-                    {/* Desktop & Tablet Navigation Tabs */}
-                    <div className="hidden lg:flex border-b border-stone-200/70 px-4 pt-3 items-center gap-2">
-                        <Link
-                            href={route("discounts.index", { status: "ongoing" })}
-                            preserveScroll
-                            className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-                                activeStatus === "ongoing"
-                                    ? "border-clay-600 text-clay-700"
-                                    : "border-transparent text-stone-500 hover:text-stone-800"
-                            }`}
-                        >
-                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                            Ongoing Active ({stats?.ongoing_count || 0})
-                        </Link>
-
-                        <Link
-                            href={route("discounts.index", { status: "upcoming" })}
-                            preserveScroll
-                            className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-                                activeStatus === "upcoming"
-                                    ? "border-clay-600 text-clay-700"
-                                    : "border-transparent text-stone-500 hover:text-stone-800"
-                            }`}
-                        >
-                            <span className="w-2 h-2 rounded-full bg-amber-500" />
-                            Upcoming ({stats?.upcoming_count || 0})
-                        </Link>
-
-                        <Link
-                            href={route("discounts.index", { status: "expired" })}
-                            preserveScroll
-                            className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-                                activeStatus === "expired"
-                                    ? "border-clay-600 text-clay-700"
-                                    : "border-transparent text-stone-500 hover:text-stone-800"
-                            }`}
-                        >
-                            <span className="w-2 h-2 rounded-full bg-stone-300" />
-                            Expired / Past ({stats?.expired_count || 0})
-                        </Link>
-                    </div>
-
-                    {/* Mobile & Tablet Swipeable Tag Row */}
-                    <div className="flex lg:hidden overflow-x-auto whitespace-nowrap gap-2 py-2.5 px-3 border-b border-stone-200/70 scrollbar-none">
-                        <Link
-                            href={route("discounts.index", { status: "ongoing" })}
-                            preserveScroll
-                            className={`py-1.5 px-3.5 rounded-full text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all ${
-                                activeStatus === "ongoing"
-                                    ? "bg-clay-600 text-white shadow-xs"
-                                    : "bg-stone-100 text-stone-600"
-                            }`}
-                        >
-                            <span className={`w-1.5 h-1.5 rounded-full ${activeStatus === "ongoing" ? "bg-white" : "bg-emerald-500"}`} />
-                            Ongoing ({stats?.ongoing_count || 0})
-                        </Link>
-
-                        <Link
-                            href={route("discounts.index", { status: "upcoming" })}
-                            preserveScroll
-                            className={`py-1.5 px-3.5 rounded-full text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all ${
-                                activeStatus === "upcoming"
-                                    ? "bg-clay-600 text-white shadow-xs"
-                                    : "bg-stone-100 text-stone-600"
-                            }`}
-                        >
-                            <span className={`w-1.5 h-1.5 rounded-full ${activeStatus === "upcoming" ? "bg-white" : "bg-amber-500"}`} />
-                            Upcoming ({stats?.upcoming_count || 0})
-                        </Link>
-
-                        <Link
-                            href={route("discounts.index", { status: "expired" })}
-                            preserveScroll
-                            className={`py-1.5 px-3.5 rounded-full text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all ${
-                                activeStatus === "expired"
-                                    ? "bg-clay-600 text-white shadow-xs"
-                                    : "bg-stone-100 text-stone-600"
-                            }`}
-                        >
-                            <span className={`w-1.5 h-1.5 rounded-full ${activeStatus === "expired" ? "bg-white" : "bg-stone-400"}`} />
-                            Expired ({stats?.expired_count || 0})
-                        </Link>
+                    {/* Standardized Single-Row Pill Track */}
+                    <div className="p-3 border-b border-stone-200/80 bg-stone-50/40">
+                        <div className="p-1 bg-stone-100/70 rounded-2xl flex items-center gap-1 overflow-x-auto scrollbar-none">
+                            {[
+                                { key: "ongoing", label: "Ongoing Active", count: stats?.ongoing_count || 0, dot: "bg-emerald-500" },
+                                { key: "upcoming", label: "Upcoming Scheduled", count: stats?.upcoming_count || 0, dot: "bg-amber-500" },
+                                { key: "expired", label: "Expired / Past", count: stats?.expired_count || 0, dot: "bg-stone-300" },
+                            ].map((tab) => {
+                                const isActive = activeStatus === tab.key;
+                                return (
+                                    <Link
+                                        key={tab.key}
+                                        href={route("discounts.index", { status: tab.key })}
+                                        preserveScroll
+                                        className={`px-3.5 py-2 sm:py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+                                            isActive
+                                                ? "bg-white text-clay-800 shadow-xs font-black"
+                                                : "text-stone-500 hover:text-stone-800 font-semibold"
+                                        }`}
+                                    >
+                                        <span className={`w-2 h-2 rounded-full ${tab.dot}`} />
+                                        <span>{tab.label}</span>
+                                        {tab.count > 0 && (
+                                            <span
+                                                className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${
+                                                    isActive ? "bg-clay-100 text-clay-800" : "bg-stone-200 text-stone-600"
+                                                }`}
+                                            >
+                                                {tab.count}
+                                            </span>
+                                        )}
+                                    </Link>
+                                );
+                            })}
+                        </div>
                     </div>
 
                     {/* MOBILE & TABLET CARD LIST VIEW (< lg) */}

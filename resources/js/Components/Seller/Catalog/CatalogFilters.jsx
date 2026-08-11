@@ -1,6 +1,7 @@
 import React from "react";
 import { Search, X, RefreshCw, Check, CheckCircle, RotateCcw, Archive } from "lucide-react";
 import Checkbox from "@/Components/Checkbox";
+import FilterToolbarHeader from "@/Components/Seller/Shared/FilterToolbarHeader";
 
 export default function CatalogFilters({
     activeTab,
@@ -22,67 +23,38 @@ export default function CatalogFilters({
 }) {
     return (
         <div className="flex flex-col">
-            {/* Top Tabs, Search, and Reset View */}
-            <div className="flex flex-col gap-4 border-b border-gray-100 p-4 sm:flex-row sm:justify-between items-center bg-white">
-                <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg w-full overflow-x-auto sm:w-fit no-scrollbar">
-                    {[
-                        "All",
-                        "Active",
-                        "Pending Review",
-                        "Rejected",
-                        "Flagged",
-                        "Draft",
-                        "Archived",
-                        "Low Stock",
-                    ].map((tab) => (
+            {/* Standardized Single-Row Filter Toolbar */}
+            <FilterToolbarHeader
+                tabs={[
+                    "All",
+                    "Active",
+                    "Pending Review",
+                    "Rejected",
+                    "Flagged",
+                    "Draft",
+                    "Archived",
+                    "Low Stock",
+                ]}
+                activeTab={activeTab}
+                onTabChange={handleTabChange}
+                searchQuery={searchQuery}
+                onSearchChange={handleSearch}
+                searchPlaceholder="Search product, category, or SKU..."
+                onResetFilters={resetSavedView}
+                containerClassName="rounded-none border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
+                extraActions={
+                    visibleProductIds.length > 0 && selectedProductIds.length === 0 ? (
                         <button
-                            key={tab}
                             type="button"
-                            onClick={() => handleTabChange(tab)}
-                            className={`px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-md text-xs font-bold transition whitespace-nowrap min-h-[44px] sm:min-h-0 ${
-                                activeTab === tab
-                                    ? "bg-white text-clay-700 shadow-sm"
-                                    : "text-gray-500 hover:text-gray-700"
-                            }`}
+                            onClick={selectVisibleProducts}
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 transition-colors hover:bg-stone-50 min-h-[44px] sm:min-h-[38px] shrink-0 active:scale-[0.98]"
                         >
-                            {tab}
+                            <Check size={13} />
+                            <span className="hidden sm:inline">Select Page</span>
                         </button>
-                    ))}
-                </div>
-                <div className="flex w-full sm:w-auto items-center gap-2">
-                    <div className="relative flex-1 sm:w-64">
-                        <Search
-                            size={14}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                        />
-                        <input
-                            type="text"
-                            placeholder="Search product, category, or SKU"
-                            value={searchQuery}
-                            onChange={(e) => handleSearch(e.target.value)}
-                            className="w-full pl-9 pr-8 py-2.5 sm:py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-shadow min-h-[44px] sm:min-h-0"
-                        />
-                        {searchQuery && (
-                            <button
-                                type="button"
-                                onClick={() => handleSearch("")}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition p-1"
-                                title="Clear search"
-                            >
-                                <X size={12} />
-                            </button>
-                        )}
-                    </div>
-                    <button
-                        type="button"
-                        onClick={resetSavedView}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 sm:px-3 sm:py-2 text-[11px] font-bold text-stone-600 transition-colors hover:bg-stone-50 min-h-[44px] sm:min-h-0 shrink-0"
-                    >
-                        <RefreshCw size={13} />
-                        <span className="hidden sm:inline">Reset</span>
-                    </button>
-                </div>
-            </div>
+                    ) : null
+                }
+            />
 
             {/* Desktop Bulk Action Bar / Quick Filter Row */}
             <div className="hidden md:block">

@@ -351,21 +351,47 @@ export default function OrderFilterPanel({
 
     return (
         <>
-            {/* Status Tabs */}
-            <div className="relative">
-                <div className="flex overflow-x-auto border-b border-stone-150 px-3 sm:px-4 no-scrollbar">
-                    <Tab label="All" active={activeTab === "All"} onClick={() => handleTabChange("All")} />
-                    <Tab label="Pending" count={getCount("Pending")} active={activeTab === "Pending"} onClick={() => handleTabChange("Pending")} />
-                    <Tab label="Accepted" count={getCount("Accepted")} active={activeTab === "Accepted"} onClick={() => handleTabChange("Accepted")} />
-                    <Tab label="Processing" count={getCount("Processing")} active={activeTab === "Processing"} onClick={() => handleTabChange("Processing")} />
-                    <Tab label="Shipped" count={getCount("Shipped")} active={activeTab === "Shipped"} onClick={() => handleTabChange("Shipped")} />
-                    <Tab label="To Pickup" count={getCount("To Pickup")} active={activeTab === "To Pickup"} onClick={() => handleTabChange("To Pickup")} />
-                    <Tab label="Delivered" count={getCount("Delivered")} active={activeTab === "Delivered"} onClick={() => handleTabChange("Delivered")} />
-                    <Tab label="Returns" count={getCount("Returns")} active={activeTab === "Returns"} onClick={() => handleTabChange("Returns")} />
-                    <Tab label="Completed" count={getCount("Completed")} active={activeTab === "Completed"} onClick={() => handleTabChange("Completed")} />
-                    <Tab label="Cancelled" count={getCount("Cancelled")} active={activeTab === "Cancelled"} onClick={() => handleTabChange("Cancelled")} />
+            {/* Standardized Segmented Status Pill Track */}
+            <div className="p-2.5 sm:p-3 bg-stone-50/40 border-b border-stone-150">
+                <div className="p-1 bg-stone-100/70 rounded-2xl flex items-center gap-1 overflow-x-auto scrollbar-none">
+                    {[
+                        { key: "All", label: "All" },
+                        { key: "Pending", label: "Pending", count: getCount("Pending") },
+                        { key: "Accepted", label: "Accepted", count: getCount("Accepted") },
+                        { key: "Processing", label: "Processing", count: getCount("Processing") },
+                        { key: "Shipped", label: "Shipped", count: getCount("Shipped") },
+                        { key: "To Pickup", label: "To Pickup", count: getCount("To Pickup") },
+                        { key: "Delivered", label: "Delivered", count: getCount("Delivered") },
+                        { key: "Returns", label: "Returns", count: getCount("Returns") },
+                        { key: "Completed", label: "Completed", count: getCount("Completed") },
+                        { key: "Cancelled", label: "Cancelled", count: getCount("Cancelled") },
+                    ].map((tab) => {
+                        const isActive = activeTab === tab.key;
+                        return (
+                            <button
+                                key={tab.key}
+                                type="button"
+                                onClick={() => handleTabChange(tab.key)}
+                                className={`px-3 py-2 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 min-h-[38px] sm:min-h-0 ${
+                                    isActive
+                                        ? "bg-white text-clay-800 shadow-xs font-black"
+                                        : "text-stone-500 hover:text-stone-800 font-semibold"
+                                }`}
+                            >
+                                <span>{tab.label}</span>
+                                {tab.count > 0 && (
+                                    <span
+                                        className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${
+                                            isActive ? "bg-clay-100 text-clay-800" : "bg-stone-200 text-stone-600"
+                                        }`}
+                                    >
+                                        {tab.count}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
-                <div className="pointer-events-none absolute bottom-[1px] right-0 top-0 w-8 bg-gradient-to-l from-white to-transparent" />
             </div>
 
             {/* Standardized Search & Right-Aligned Controls Toolbar */}

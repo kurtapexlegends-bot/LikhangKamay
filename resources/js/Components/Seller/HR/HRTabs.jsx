@@ -9,7 +9,7 @@ export default function HRTabs({ activeTab, setActiveTab }) {
     ];
 
     return (
-        <div className="flex items-center gap-2 border-b border-stone-200 overflow-x-auto whitespace-nowrap pb-1 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="p-1 bg-stone-100/70 rounded-2xl flex items-center gap-1 overflow-x-auto scrollbar-none w-fit">
             {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.key;
@@ -18,13 +18,13 @@ export default function HRTabs({ activeTab, setActiveTab }) {
                         key={tab.key}
                         type="button"
                         onClick={() => setActiveTab(tab.key)}
-                        className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition-colors min-h-[44px] ${
+                        className={`px-3.5 py-2 sm:py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shrink-0 min-h-[38px] sm:min-h-0 ${
                             isActive
-                                ? 'border-clay-600 text-clay-700'
-                                : 'border-transparent text-stone-500 hover:text-stone-700'
+                                ? 'bg-white text-clay-800 shadow-xs font-black'
+                                : 'text-stone-500 hover:text-stone-800 font-semibold'
                         }`}
                     >
-                        <Icon size={16} /> {tab.label}
+                        <Icon size={14} /> {tab.label}
                     </button>
                 );
             })}
