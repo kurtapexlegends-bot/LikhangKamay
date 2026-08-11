@@ -53,24 +53,33 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
 
         setDetectingGps(true);
         let handled = false;
+        let watchId = null;
 
-        const completeSuccess = (lat, lng, label = 'Store location detected!') => {
+        const cleanup = () => {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            setDetectingGps(false);
+        };
+
+        const completeSuccess = (lat, lng) => {
             if (handled) return;
             handled = true;
+            cleanup();
             setData((prev) => ({
                 ...prev,
                 latitude: lat,
                 longitude: lng,
             }));
-            setDetectingGps(false);
-            addToast(label, 'success');
+            addToast('Exact store location pinpointed!', 'success');
         };
 
-        const completeError = (msg, type = 'error') => {
+        const completeError = (msg) => {
             if (handled) return;
             handled = true;
-            setDetectingGps(false);
-            addToast(msg, type);
+            cleanup();
+            addToast(msg, 'error');
         };
 
         // Pre-check permission status if query API is supported
@@ -86,47 +95,44 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
             }
         }
 
-        // 1. High Accuracy Geolocation (Wi-Fi triangulation & GPS)
-        navigator.geolocation.getCurrentPosition(
+        // Safety timeout: Give hardware Wi-Fi scanner up to 15s to warm up and lock precise coordinates
+        const maxWaitTimer = setTimeout(() => {
+            if (!handled) {
+                completeError('High-precision location request timed out. Please click the map pin or search your address.');
+            }
+        }, 15000);
+
+        let bestPosition = null;
+
+        // Use watchPosition to allow browser hardware time to refine Wi-Fi/GPS triangulation
+        watchId = navigator.geolocation.watchPosition(
             (position) => {
+                const acc = position.coords.accuracy;
                 const lat = Number(position.coords.latitude.toFixed(8));
                 const lng = Number(position.coords.longitude.toFixed(8));
-                completeSuccess(lat, lng, 'Exact location pinpointed!');
-            },
-            (highErr) => {
-                if (highErr.code === highErr.PERMISSION_DENIED) {
-                    completeError('Location access was denied. Please allow location access in your browser.');
-                    return;
+
+                // If accuracy is high (within 150 meters), lock in immediately
+                if (acc <= 150) {
+                    clearTimeout(maxWaitTimer);
+                    completeSuccess(lat, lng);
+                } else {
+                    // Otherwise keep track of best position captured while waiting
+                    if (!bestPosition || acc < bestPosition.acc) {
+                        bestPosition = { lat, lng, acc };
+                    }
                 }
-
-                // 2. Standard Accuracy Fallback
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = Number(position.coords.latitude.toFixed(8));
-                        const lng = Number(position.coords.longitude.toFixed(8));
-                        completeSuccess(lat, lng, 'Store location detected!');
-                    },
-                    async () => {
-                        // 3. Silent IP Geolocation Fallback
-                        try {
-                            const ipRes = await fetch('https://ipapi.co/json/');
-                            const ipData = await ipRes.json();
-                            if (ipData && ipData.latitude && ipData.longitude) {
-                                const lat = Number(parseFloat(ipData.latitude).toFixed(8));
-                                const lng = Number(parseFloat(ipData.longitude).toFixed(8));
-                                completeSuccess(lat, lng, 'Store location detected!');
-                                return;
-                            }
-                        } catch (ipErr) {
-                            // IP fallback failed
-                        }
-
-                        completeError('Could not fetch location automatically. Please search your address or drag the map pin.', 'info');
-                    },
-                    { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
-                );
             },
-            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+            (error) => {
+                clearTimeout(maxWaitTimer);
+                if (error.code === error.PERMISSION_DENIED) {
+                    completeError('Location access was denied. Please allow location access in your browser.');
+                } else if (bestPosition) {
+                    completeSuccess(bestPosition.lat, bestPosition.lng);
+                } else {
+                    completeError('Unable to lock precise location. Please search your address or click the map pin.');
+                }
+            },
+            { enableHighAccuracy: true, timeout: 14000, maximumAge: 0 }
         );
     };
 
