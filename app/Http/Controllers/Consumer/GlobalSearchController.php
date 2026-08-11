@@ -279,10 +279,26 @@ class GlobalSearchController extends Controller
         return $results;
     }
 
+    private function safeRoute(string $name, array $params = []): string
+    {
+        try {
+            return route($name, $params);
+        } catch (\Throwable $e) {
+            return url('/seller/dashboard');
+        }
+    }
+
     private function searchSellerNavigationAndSettings(User $user, string $query, string $like): array
     {
         $q = strtolower(trim($query));
         $results = [];
+
+        $shopSettingsUrl = $this->safeRoute('shop.settings');
+        $hrUrl = $this->safeRoute('hr.index');
+        $profileUrl = $this->safeRoute('profile.edit');
+        $auditLogUrl = $this->safeRoute('audit-log.index');
+        $subscriptionUrl = $this->safeRoute('seller.subscription');
+        $productsUrl = $this->safeRoute('products.index');
 
         $navItems = [
             // 1. Shop Settings Sub-sections
@@ -291,7 +307,7 @@ class GlobalSearchController extends Controller
                 'title' => 'Shop Settings & Storefront',
                 'subtitle' => 'Configure storefront branding, banner image, avatar, shop bio, and auto-replies',
                 'type' => 'Setting',
-                'url' => route('shop.settings.index'),
+                'url' => $shopSettingsUrl,
                 'icon' => 'settings',
                 'module' => null,
             ],
@@ -300,7 +316,7 @@ class GlobalSearchController extends Controller
                 'title' => 'Workplace Locations & Geofence',
                 'subtitle' => 'Define physical store/workshop GPS perimeters, Leaflet map coordinates, and clock-in rules',
                 'type' => 'Setting',
-                'url' => route('shop.settings.index'),
+                'url' => $shopSettingsUrl,
                 'icon' => 'map-pin',
                 'module' => null,
             ],
@@ -309,7 +325,7 @@ class GlobalSearchController extends Controller
                 'title' => 'People & Payroll Configuration',
                 'subtitle' => 'Configure basic daily/hourly wage rates, overtime multipliers, and inactivity timeouts',
                 'type' => 'Setting',
-                'url' => route('hr.index', ['tab' => 'payroll']),
+                'url' => $this->safeRoute('hr.index', ['tab' => 'payroll']),
                 'icon' => 'trending-up',
                 'module' => 'hr',
             ],
@@ -318,7 +334,7 @@ class GlobalSearchController extends Controller
                 'title' => 'Finance & Payouts',
                 'subtitle' => 'Manage Paymongo e-wallet connections, bank accounts, and funds withdrawal methods',
                 'type' => 'Setting',
-                'url' => route('shop.settings.index'),
+                'url' => $shopSettingsUrl,
                 'icon' => 'credit-card',
                 'module' => null,
             ],
@@ -327,7 +343,7 @@ class GlobalSearchController extends Controller
                 'title' => 'Shipping & Delivery Logistics',
                 'subtitle' => 'Configure Lalamove courier integration, delivery options, and shipping rates',
                 'type' => 'Setting',
-                'url' => route('shop.settings.index'),
+                'url' => $shopSettingsUrl,
                 'icon' => 'truck',
                 'module' => null,
             ],
@@ -337,7 +353,7 @@ class GlobalSearchController extends Controller
                 'title' => 'User Account Profile',
                 'subtitle' => 'Update user name, contact email address, and personal account details',
                 'type' => 'Setting',
-                'url' => route('profile.edit'),
+                'url' => $profileUrl,
                 'icon' => 'user',
                 'module' => null,
             ],
@@ -346,7 +362,7 @@ class GlobalSearchController extends Controller
                 'title' => 'Account Security & Password',
                 'subtitle' => 'Update seller account login password and security settings',
                 'type' => 'Setting',
-                'url' => route('profile.edit'),
+                'url' => $profileUrl,
                 'icon' => 'shield',
                 'module' => null,
             ],
@@ -355,7 +371,7 @@ class GlobalSearchController extends Controller
                 'title' => 'Activity History & Audit Log',
                 'subtitle' => 'Inspect comprehensive seller activity logs and system security events',
                 'type' => 'Setting',
-                'url' => route('audit-log.index'),
+                'url' => $auditLogUrl,
                 'icon' => 'clock',
                 'module' => null,
             ],
@@ -364,7 +380,7 @@ class GlobalSearchController extends Controller
                 'title' => 'Subscription & Plan Tier',
                 'subtitle' => 'View current subscription tier, active product quotas, and plan upgrades',
                 'type' => 'Setting',
-                'url' => route('seller.subscription'),
+                'url' => $subscriptionUrl,
                 'icon' => 'award',
                 'module' => null,
             ],
@@ -374,7 +390,7 @@ class GlobalSearchController extends Controller
                 'title' => 'HR & Staff Management',
                 'subtitle' => 'Manage employee profiles, login credentials, and shift roles',
                 'type' => 'Module',
-                'url' => route('hr.index'),
+                'url' => $hrUrl,
                 'icon' => 'users',
                 'module' => 'hr',
             ],
@@ -383,7 +399,7 @@ class GlobalSearchController extends Controller
                 'title' => 'Time Card Audit & Attendance',
                 'subtitle' => 'Review staff clock-in records, selfie proofs, and geofence exceptions',
                 'type' => 'Module',
-                'url' => route('hr.index', ['tab' => 'timecard_audit']),
+                'url' => $this->safeRoute('hr.index', ['tab' => 'timecard_audit']),
                 'icon' => 'clock',
                 'module' => 'hr',
             ],
@@ -392,7 +408,7 @@ class GlobalSearchController extends Controller
                 'title' => 'Payroll Runs & Payouts',
                 'subtitle' => 'Compute employee salaries, overtime multipliers, and execute payroll runs',
                 'type' => 'Module',
-                'url' => route('hr.index', ['tab' => 'payroll']),
+                'url' => $this->safeRoute('hr.index', ['tab' => 'payroll']),
                 'icon' => 'trending-up',
                 'module' => 'accounting',
             ],
@@ -401,7 +417,7 @@ class GlobalSearchController extends Controller
                 'title' => '3D Model Manager',
                 'subtitle' => 'Upload and inspect GLB 3D models for your products',
                 'type' => 'Module',
-                'url' => route('products.index', ['tab' => '3d_models']),
+                'url' => $this->safeRoute('products.index', ['tab' => '3d_models']),
                 'icon' => 'box',
                 'module' => 'products',
             ],
@@ -410,7 +426,7 @@ class GlobalSearchController extends Controller
                 'title' => 'Discounts & Promotions',
                 'subtitle' => 'Create custom product discount campaigns and promotional badges',
                 'type' => 'Module',
-                'url' => route('products.index', ['tab' => 'discounts']),
+                'url' => $this->safeRoute('products.index', ['tab' => 'discounts']),
                 'icon' => 'tag',
                 'module' => 'products',
             ],
@@ -452,7 +468,7 @@ class GlobalSearchController extends Controller
                 'title' => "Location: {$loc->name}",
                 'subtitle' => ($loc->address ? "{$loc->address} • " : '') . "{$loc->radius_meters}m Radius • " . ($loc->enforce_strict_geofence ? 'Strict Block' : 'Soft Audit'),
                 'type' => 'Workplace Location',
-                'url' => route('shop.settings.index', ['tab' => 'locations']),
+                'url' => $this->safeRoute('shop.settings'),
                 'icon' => 'map-pin',
             ])->toArray();
     }
