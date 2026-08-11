@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { useToast } from '@/Components/ToastContext';
 import { compressImage } from '@/utils/imageCompressor';
+import ProductCard from '@/Pages/Consumer/Shop/Partials/ProductCard';
 import {
     Camera, Star, Pencil, MapPin, Calendar, Crown, Sparkles, Heart,
     CheckCircle2, AlertCircle, MessageSquare, Package
@@ -295,32 +296,9 @@ export default function ShopStorefrontTab({ sellerOwner, stats, products = [], p
                 </div>
 
                 {products && products.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 pt-2">
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 pt-2">
                         {products.map((product) => (
-                            <div 
-                                key={product.id} 
-                                className="group bg-stone-50/60 rounded-xl border border-stone-200/70 p-2 shadow-2xs hover:border-clay-300 transition-all flex flex-col justify-between"
-                            >
-                                <div className="aspect-square relative rounded-lg bg-white overflow-hidden flex items-center justify-center p-1 mb-2 border border-stone-100">
-                                    <img 
-                                        src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'} 
-                                        alt={product.name} 
-                                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                                        onError={(e) => { e.target.src = '/images/no-image.png'; }}
-                                    />
-                                </div>
-                                <div>
-                                    <h4 className="text-[11px] font-bold text-stone-800 line-clamp-1 group-hover:text-clay-600 transition-colors">
-                                        {product.name}
-                                    </h4>
-                                    <div className="flex items-center justify-between mt-1 text-[11px]">
-                                        <span className="font-extrabold text-stone-900">₱{Number(product.price).toLocaleString('en-PH')}</span>
-                                        {product.sold > 0 && (
-                                            <span className="text-[10px] text-stone-400 font-medium">{product.sold} sold</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
+                            <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
                 ) : (

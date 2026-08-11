@@ -42,10 +42,15 @@ class SettingsController extends Controller
             ->get()
             ->map(fn($p) => [
                 'id' => $p->id,
+                'slug' => $p->slug,
                 'name' => $p->name,
+                'image' => $p->img,
                 'price' => (float) $p->price,
+                'seller' => $sellerOwner->shop_name ?? $sellerOwner->name,
+                'location' => $sellerOwner->city ?? 'Philippines',
+                'rating' => $p->rating ? round($p->rating, 1) : 0,
                 'sold' => $p->sold ?? 0,
-                'img' => $p->img,
+                'is_new' => $p->created_at ? $p->created_at->diffInDays(now()) < 7 : false,
             ]);
 
         return Inertia::render('Seller/Settings/GlobalSettings', [
