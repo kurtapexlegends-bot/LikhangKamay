@@ -242,6 +242,10 @@ class GlobalSearchController extends Controller
         $sellerId = $user->getEffectiveSellerId();
         $results = [];
 
+        // 1. First priority: Navigation & Settings Tab Shortcuts
+        $results = array_merge($results, $this->searchSellerNavigationAndSettings($user, $query, $like));
+
+        // 2. Domain Data Models
         if ($user->canAccessSellerModule('products')) {
             $results = array_merge($results, $this->searchSellerProducts($sellerId, $query, $like));
         }
@@ -270,6 +274,126 @@ class GlobalSearchController extends Controller
             $results = array_merge($results, $this->searchSellerLogs($sellerId, $query, $like));
             $results = array_merge($results, $this->searchSellerStaffAudits($sellerId, $query, $like));
             $results = array_merge($results, $this->searchSellerLocations($sellerId, $query, $like));
+        }
+
+        return $results;
+    }
+
+    private function searchSellerNavigationAndSettings(User $user, string $query, string $like): array
+    {
+        $q = strtolower(trim($query));
+        $results = [];
+
+        $navItems = [
+            [
+                'keywords' => ['setting', 'settings', 'shop settings', 'configuration', 'store settings'],
+                'title' => 'Shop Settings',
+                'subtitle' => 'Configure store identity, branding, and global seller parameters',
+                'type' => 'Setting',
+                'url' => route('shop.settings.index', ['tab' => 'profile']),
+                'icon' => 'settings',
+                'module' => null,
+            ],
+            [
+                'keywords' => ['location', 'locations', 'workplace', 'geofence', 'gps', 'perimeter', 'strict block', 'clock in location'],
+                'title' => 'Workplace Locations & Geofence',
+                'subtitle' => 'Configure physical store/workshop GPS perimeters and clock-in rules',
+                'type' => 'Setting',
+                'url' => route('shop.settings.index', ['tab' => 'locations']),
+                'icon' => 'map-pin',
+                'module' => null,
+            ],
+            [
+                'keywords' => ['shipping', 'delivery', 'lalamove', 'courier', 'logistics', 'pickup'],
+                'title' => 'Shipping & Delivery Logistics',
+                'subtitle' => 'Configure Lalamove courier integration and shipping rates',
+                'type' => 'Setting',
+                'url' => route('shop.settings.index', ['tab' => 'shipping']),
+                'icon' => 'truck',
+                'module' => null,
+            ],
+            [
+                'keywords' => ['payout', 'payouts', 'paymongo', 'bank', 'withdrawal', 'wallet', 'payment settings'],
+                'title' => 'Payouts & Payment Methods',
+                'subtitle' => 'Manage Paymongo e-wallet connections and withdrawal accounts',
+                'type' => 'Setting',
+                'url' => route('shop.settings.index', ['tab' => 'payouts']),
+                'icon' => 'credit-card',
+                'module' => null,
+            ],
+            [
+                'keywords' => ['security', 'password', 'two factor', 'auth', 'account security'],
+                'title' => 'Security & Password',
+                'subtitle' => 'Update seller account password and security credentials',
+                'type' => 'Setting',
+                'url' => route('shop.settings.index', ['tab' => 'security']),
+                'icon' => 'shield',
+                'module' => null,
+            ],
+            [
+                'keywords' => ['hr', 'staff', 'employee', 'employees', 'team', 'roster'],
+                'title' => 'HR & Staff Management',
+                'subtitle' => 'Manage employee profiles, login credentials, and shift roles',
+                'type' => 'Module',
+                'url' => route('hr.index'),
+                'icon' => 'users',
+                'module' => 'hr',
+            ],
+            [
+                'keywords' => ['attendance', 'timecard', 'time card', 'clock in', 'clock out', 'selfie', 'off site'],
+                'title' => 'Time Card Audit & Attendance',
+                'subtitle' => 'Review staff clock-in records, selfie proofs, and geofence exceptions',
+                'type' => 'Module',
+                'url' => route('hr.index', ['tab' => 'timecard_audit']),
+                'icon' => 'clock',
+                'module' => 'hr',
+            ],
+            [
+                'keywords' => ['payroll', 'payday', 'salary', 'wages', 'overtime', 'deductions'],
+                'title' => 'Payroll Runs & Payouts',
+                'subtitle' => 'Compute employee salaries, overtime multipliers, and execute payroll runs',
+                'type' => 'Module',
+                'url' => route('hr.index', ['tab' => 'payroll']),
+                'icon' => 'trending-up',
+                'module' => 'accounting',
+            ],
+            [
+                'keywords' => ['3d', 'three d', 'glb', 'model', 'upload 3d'],
+                'title' => '3D Model Manager',
+                'subtitle' => 'Upload and inspect GLB 3D models for your products',
+                'type' => 'Module',
+                'url' => route('products.index', ['tab' => '3d_models']),
+                'icon' => 'box',
+                'module' => 'products',
+            ],
+            [
+                'keywords' => ['discount', 'discounts', 'voucher', 'promo', 'coupon'],
+                'title' => 'Discounts & Promotions',
+                'subtitle' => 'Create custom product discount campaigns and promotional badges',
+                'type' => 'Module',
+                'url' => route('products.index', ['tab' => 'discounts']),
+                'icon' => 'tag',
+                'module' => 'products',
+            ],
+        ];
+
+        foreach ($navItems as $item) {
+            if ($item['module'] && !$user->canAccessSellerModule($item['module'])) {
+                continue;
+            }
+            foreach ($item['keywords'] as $kw) {
+                if (str_contains($kw, $q) || str_contains($q, $kw)) {
+                    $results[] = [
+                        'id' => "nav-setting-" . md5($item['title']),
+                        'title' => $item['title'],
+                        'subtitle' => $item['subtitle'],
+                        'type' => $item['type'],
+                        'url' => $item['url'],
+                        'icon' => $item['icon'],
+                    ];
+                    break;
+                }
+            }
         }
 
         return $results;

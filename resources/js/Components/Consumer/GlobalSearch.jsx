@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, User, Package, ShoppingCart, Loader2, Command, Box, ClipboardList, Star, Award, ShoppingBag, FolderTree, Users, TrendingUp, BarChart2, ShieldAlert, Bell, RotateCcw, Shield, LayoutDashboard, MessageSquare, Settings } from 'lucide-react';
+import { Search, X, User, Package, ShoppingCart, Loader2, Command, Box, ClipboardList, Star, Award, ShoppingBag, FolderTree, Users, TrendingUp, BarChart2, ShieldAlert, Bell, RotateCcw, Shield, LayoutDashboard, MessageSquare, Settings, MapPin, Truck, CreditCard, Clock, Tag } from 'lucide-react';
 import { router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 
@@ -179,6 +179,9 @@ export default function GlobalSearch() {
             case 'sponsorship': return <Award size={16} />;
             case 'moderation': return <ShieldAlert size={16} />;
             case 'dispute': return <RotateCcw size={16} />;
+            case 'setting': return <Settings size={16} />;
+            case 'workplace location': return <MapPin size={16} />;
+            case 'module': return <LayoutDashboard size={16} />;
             default: return <Search size={16} />;
         }
     };
