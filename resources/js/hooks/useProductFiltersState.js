@@ -3,34 +3,38 @@ import { router } from "@inertiajs/react";
 import { PRODUCT_MANAGER_VIEW_KEY } from "@/utils/catalog";
 
 export default function useProductFiltersState({
-    dbProducts,
-    urlFilters,
-    storedView,
-}) {
-    const [activeTab, setActiveTab] = useState(storedView?.activeTab || "All");
-    const [searchQuery, setSearchQuery] = useState(urlFilters.search || storedView?.searchQuery || "");
-    const [quickFilter, setQuickFilter] = useState(storedView?.quickFilter || "all");
+    dbProducts = {},
+    urlFilters = {},
+    storedView = {},
+} = {}) {
+    const safeUrlFilters = urlFilters || {};
+    const safeDbProducts = dbProducts || {};
+    const safeStoredView = storedView || {};
+
+    const [activeTab, setActiveTab] = useState(safeStoredView.activeTab || "All");
+    const [searchQuery, setSearchQuery] = useState(safeUrlFilters.search || safeStoredView.searchQuery || "");
+    const [quickFilter, setQuickFilter] = useState(safeStoredView.quickFilter || "all");
     const [sortConfig, setSortConfig] = useState(
-        storedView?.sortConfig || { key: "name", direction: "asc" },
+        safeStoredView.sortConfig || { key: "name", direction: "asc" },
     );
     const [currentPage, setCurrentPage] = useState(1);
 
     // Sync search from URL
     useEffect(() => {
-        if (urlFilters.search && urlFilters.search !== searchQuery) {
-            setSearchQuery(urlFilters.search);
+        if (safeUrlFilters.search && safeUrlFilters.search !== searchQuery) {
+            setSearchQuery(safeUrlFilters.search);
         }
-    }, [urlFilters.search]);
+    }, [safeUrlFilters.search]);
 
-    const totalPages = dbProducts.last_page || 1;
-    const totalItems = dbProducts.total || 0;
-    const itemsPerPage = dbProducts.per_page || 20;
+    const totalPages = safeDbProducts.last_page || 1;
+    const totalItems = safeDbProducts.total || 0;
+    const itemsPerPage = safeDbProducts.per_page || 20;
 
     useEffect(() => {
-        if (dbProducts.current_page) {
-            setCurrentPage(dbProducts.current_page);
+        if (safeDbProducts.current_page) {
+            setCurrentPage(safeDbProducts.current_page);
         }
-    }, [dbProducts.current_page]);
+    }, [safeDbProducts.current_page]);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
