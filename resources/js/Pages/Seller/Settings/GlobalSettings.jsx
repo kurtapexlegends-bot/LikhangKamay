@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head } from '@inertiajs/react';
-import SellerWorkspaceLayout from '@/Layouts/SellerWorkspaceLayout';
+import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import SellerHeader from '@/Layouts/SellerHeader';
 import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
 import AccountProfileTab from '@/Components/Seller/Settings/Tabs/AccountProfileTab';
 import ShopStorefrontTab from '@/Components/Seller/Settings/Tabs/ShopStorefrontTab';
@@ -8,7 +9,8 @@ import WorkplaceLocationsTab from '@/Components/Seller/Settings/Tabs/WorkplaceLo
 import PayrollRulesTab from '@/Components/Seller/Settings/Tabs/PayrollRulesTab';
 import FinancePayoutsTab from '@/Components/Seller/Settings/Tabs/FinancePayoutsTab';
 
-export default function GlobalSettings({ sellerOwner, locations = [], permissions = {} }) {
+export default function GlobalSettings({ auth, sellerOwner, locations = [], permissions = {} }) {
+    const { openSidebar } = useSellerWorkspaceShell();
     const [activeTab, setActiveTab] = useState('account');
 
     const tabs = [
@@ -20,18 +22,17 @@ export default function GlobalSettings({ sellerOwner, locations = [], permission
     ].filter((t) => t.show);
 
     return (
-        <SellerWorkspaceLayout title="Global Settings">
+        <SellerWorkspaceLayout title="Settings">
             <Head title="Global Settings | LikhangKamay" />
 
-            <div className="mx-auto max-w-6xl space-y-6">
-                {/* Page Title & Subtitle */}
-                <div>
-                    <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">Workspace & Account Settings</h1>
-                    <p className="text-xs text-stone-500 mt-1">
-                        Manage your profile details, shop storefront branding, GPS locations, payroll configuration, and payout settlement.
-                    </p>
-                </div>
+            <SellerHeader
+                title="Workspace & Account Settings"
+                subtitle="Manage your profile details, shop storefront branding, GPS locations, payroll configuration, and payout settlement."
+                auth={auth}
+                onMenuClick={openSidebar}
+            />
 
+            <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-6">
                 {/* FilterToolbarHeader Segmented Pill Tab Bar */}
                 <FilterToolbarHeader
                     tabs={tabs.map((t) => ({ id: t.id, label: t.label }))}
@@ -40,14 +41,14 @@ export default function GlobalSettings({ sellerOwner, locations = [], permission
                 />
 
                 {/* Tab Content Panel */}
-                <div>
+                <div className="pt-2">
                     {activeTab === 'account' && <AccountProfileTab />}
                     {activeTab === 'storefront' && <ShopStorefrontTab sellerOwner={sellerOwner} />}
                     {activeTab === 'locations' && <WorkplaceLocationsTab locations={locations} permissions={permissions} />}
                     {activeTab === 'payroll' && <PayrollRulesTab sellerOwner={sellerOwner} permissions={permissions} />}
                     {activeTab === 'finance' && <FinancePayoutsTab sellerOwner={sellerOwner} permissions={permissions} />}
                 </div>
-            </div>
+            </main>
         </SellerWorkspaceLayout>
     );
 }
