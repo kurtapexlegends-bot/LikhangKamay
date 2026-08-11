@@ -4,7 +4,7 @@ import { useToast } from '@/Components/ToastContext';
 import { compressImage } from '@/utils/imageCompressor';
 import {
     Camera, Star, Pencil, MapPin, Calendar, Crown, Sparkles, Heart,
-    CheckCircle2, AlertCircle, MessageSquare
+    CheckCircle2, AlertCircle, MessageSquare, Package
 } from 'lucide-react';
 
 const formatImgUrl = (path) => {
@@ -13,7 +13,7 @@ const formatImgUrl = (path) => {
     return `/storage/${path}`;
 };
 
-export default function ShopStorefrontTab({ sellerOwner, stats, permissions }) {
+export default function ShopStorefrontTab({ sellerOwner, stats, products = [], permissions }) {
     const { addToast } = useToast();
     const canEdit = permissions?.can_edit_shop_settings ?? true;
 
@@ -270,6 +270,64 @@ export default function ShopStorefrontTab({ sellerOwner, stats, permissions }) {
                             placeholder="Thank you for supporting our artisan craft! We hope you love your handcrafted item..."
                             className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500"
                         />
+                    </div>
+                )}
+            </div>
+
+            {/* Products Collection Preview */}
+            <div className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
+                            <Package size={16} className="text-clay-600" />
+                            Products Collection Preview
+                        </h3>
+                        <p className="text-xs text-stone-500 font-medium mt-0.5">
+                            How your active product catalog appears to buyers visiting your storefront.
+                        </p>
+                    </div>
+                    <a
+                        href={route('products.index')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition self-start sm:self-auto"
+                    >
+                        Manage Products
+                    </a>
+                </div>
+
+                {products && products.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 pt-2">
+                        {products.map((product) => (
+                            <div 
+                                key={product.id} 
+                                className="group bg-stone-50/60 rounded-xl border border-stone-200/70 p-2 shadow-2xs hover:border-clay-300 transition-all flex flex-col justify-between"
+                            >
+                                <div className="aspect-square relative rounded-lg bg-white overflow-hidden flex items-center justify-center p-1 mb-2 border border-stone-100">
+                                    <img 
+                                        src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'} 
+                                        alt={product.name} 
+                                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                                        onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                    />
+                                </div>
+                                <div>
+                                    <h4 className="text-[11px] font-bold text-stone-800 line-clamp-1 group-hover:text-clay-600 transition-colors">
+                                        {product.name}
+                                    </h4>
+                                    <div className="flex items-center justify-between mt-1 text-[11px]">
+                                        <span className="font-extrabold text-stone-900">₱{Number(product.price).toLocaleString('en-PH')}</span>
+                                        {product.sold > 0 && (
+                                            <span className="text-[10px] text-stone-400 font-medium">{product.sold} sold</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-8 bg-stone-50/50 rounded-xl border border-dashed border-stone-200 text-center space-y-2">
+                        <Package size={24} className="mx-auto text-stone-300" />
+                        <p className="text-xs font-bold text-stone-700">No active products yet</p>
+                        <p className="text-[11px] text-stone-400">List your handcrafted products to showcase them on your storefront.</p>
                     </div>
                 )}
             </div>

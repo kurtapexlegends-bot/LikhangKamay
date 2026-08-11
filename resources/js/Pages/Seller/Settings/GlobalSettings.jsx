@@ -8,7 +8,7 @@ import WorkplaceLocationsTab from '@/Components/Seller/Settings/Tabs/WorkplaceLo
 import PayrollRulesTab from '@/Components/Seller/Settings/Tabs/PayrollRulesTab';
 import FinancePayoutsTab from '@/Components/Seller/Settings/Tabs/FinancePayoutsTab';
 
-export default function GlobalSettings({ auth, sellerOwner, stats, locations = [], permissions = {} }) {
+export default function GlobalSettings({ auth, sellerOwner, stats, locations = [], products = [], permissions = {} }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const [activeTab, setActiveTab] = useState('storefront');
 
@@ -40,7 +40,14 @@ export default function GlobalSettings({ auth, sellerOwner, stats, locations = [
 
                 {/* Tab Content Panel */}
                 <div className="pt-2">
-                    {activeTab === 'storefront' && <ShopStorefrontTab sellerOwner={sellerOwner} stats={stats} permissions={permissions} />}
+                    {activeTab === 'storefront' && (
+                        <ShopStorefrontTab
+                            sellerOwner={sellerOwner}
+                            stats={stats}
+                            products={products}
+                            permissions={permissions}
+                        />
+                    )}
                     {activeTab === 'locations' && <WorkplaceLocationsTab locations={locations} permissions={permissions} />}
                     {activeTab === 'payroll' && <PayrollRulesTab sellerOwner={sellerOwner} permissions={permissions} />}
                     {activeTab === 'finance' && <FinancePayoutsTab sellerOwner={sellerOwner} permissions={permissions} />}

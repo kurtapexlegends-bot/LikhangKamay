@@ -35,6 +35,19 @@ class SettingsController extends Controller
             ->visibleToMarketplace()
             ->avg('rating') ?? 0);
 
+        $products = Product::where('user_id', $sellerOwner->id)
+            ->where('status', 'Active')
+            ->latest()
+            ->take(12)
+            ->get()
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'price' => (float) $p->price,
+                'sold' => $p->sold ?? 0,
+                'img' => $p->img,
+            ]);
+
         return Inertia::render('Seller/Settings/GlobalSettings', [
             'sellerOwner' => [
                 'id' => $sellerOwner->id,
@@ -58,6 +71,7 @@ class SettingsController extends Controller
                 'payroll_working_days' => $sellerOwner->payroll_working_days ?? 26,
                 'standard_workday_hours' => $sellerOwner->standard_workday_hours ?? 8.00,
             ],
+            'products' => $products,
             'stats' => [
                 'products' => $productsCount,
                 'sales' => $totalSales,
