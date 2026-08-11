@@ -6,6 +6,7 @@ import { useToast } from '@/Components/ToastContext';
 import UserAvatar from '@/Components/UserAvatar';
 import Modal from '@/Components/Modal';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
+import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
 import {
     ArrowLeft, Clock, Calendar, MapPin, CheckCircle2, AlertCircle, Ban, ShieldAlert,
     Check, Search, Filter, Eye, X, ChevronRight, SlidersHorizontal, RotateCcw, ChevronDown
@@ -241,269 +242,41 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                     </div>
                 </div>
 
-                {/* ── UNIFIED SINGLE-ROW FILTER TOOLBAR ── */}
-                <div className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200/80 p-3 sm:p-4 shadow-xs space-y-3">
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                        
-                        {/* Segmented Tab Pill Track */}
-                        <div className="p-1 bg-stone-100/70 rounded-2xl flex items-center gap-1 overflow-x-auto scrollbar-none shrink-0 w-full md:w-auto">
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab('all')}
-                                className={`px-3 py-2 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-bold transition shrink-0 min-h-[38px] sm:min-h-0 ${
-                                    activeTab === 'all'
-                                        ? 'bg-white text-clay-800 shadow-xs font-black'
-                                        : 'text-stone-500 hover:text-stone-800 font-semibold'
-                                }`}
-                            >
-                                All
-                            </button>
+                {/* ── UNIFIED SINGLE-SURFACE CARD CONTAINER ── */}
+                <div className="bg-white rounded-3xl border border-stone-200/80 shadow-xs relative">
+                    <FilterToolbarHeader
+                        tabs={[
+                            { key: 'all', label: 'All' },
+                            { key: 'pending', label: 'Pending Review', count: pendingCount },
+                            { key: 'offsite', label: 'Off-Site', count: offSiteCount },
+                            { key: 'approved', label: 'Approved' },
+                            { key: 'rejected', label: 'Rejected' },
+                        ]}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        searchPlaceholder="Search logs..."
+                        activeFiltersCount={activeFiltersCount}
+                        filterPopoverTitle="Filter Audit Logs"
+                        filterPopoverFields={filterFieldsGrid}
+                        onApplyFilters={applyDraftFilters}
+                        onResetFilters={resetFilters}
+                        activeFilterTags={[
+                            activeTab !== 'all' && {
+                                label: `Status: ${activeTab === 'pending' ? 'Pending Review' : activeTab === 'offsite' ? 'Off-Site' : activeTab === 'approved' ? 'Approved' : 'Rejected'}`,
+                                onRemove: () => setActiveTab('all'),
+                            },
+                            searchQuery.trim() && {
+                                label: `Search: "${searchQuery}"`,
+                                onRemove: () => setSearchQuery(''),
+                            },
+                        ].filter(Boolean)}
+                        containerClassName="rounded-t-3xl border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
+                    />
 
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab('pending')}
-                                className={`px-3 py-2 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 min-h-[38px] sm:min-h-0 ${
-                                    activeTab === 'pending'
-                                        ? 'bg-white text-clay-800 shadow-xs font-black'
-                                        : 'text-stone-500 hover:text-stone-800 font-semibold'
-                                }`}
-                            >
-                                <span>Pending Review</span>
-                                {pendingCount > 0 && (
-                                    <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${
-                                        activeTab === 'pending' ? 'bg-clay-100 text-clay-800' : 'bg-stone-200 text-stone-600'
-                                    }`}>
-                                        {pendingCount}
-                                    </span>
-                                )}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab('offsite')}
-                                className={`px-3 py-2 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 min-h-[38px] sm:min-h-0 ${
-                                    activeTab === 'offsite'
-                                        ? 'bg-white text-clay-800 shadow-xs font-black'
-                                        : 'text-stone-500 hover:text-stone-800 font-semibold'
-                                }`}
-                            >
-                                <span>Off-Site</span>
-                                {offSiteCount > 0 && (
-                                    <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${
-                                        activeTab === 'offsite' ? 'bg-clay-100 text-clay-800' : 'bg-stone-200 text-stone-600'
-                                    }`}>
-                                        {offSiteCount}
-                                    </span>
-                                )}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab('approved')}
-                                className={`px-3 py-2 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-bold transition shrink-0 min-h-[38px] sm:min-h-0 ${
-                                    activeTab === 'approved'
-                                        ? 'bg-white text-clay-800 shadow-xs font-black'
-                                        : 'text-stone-500 hover:text-stone-800 font-semibold'
-                                }`}
-                            >
-                                Approved
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab('rejected')}
-                                className={`px-3 py-2 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-bold transition shrink-0 min-h-[38px] sm:min-h-0 ${
-                                    activeTab === 'rejected'
-                                        ? 'bg-white text-clay-800 shadow-xs font-black'
-                                        : 'text-stone-500 hover:text-stone-800 font-semibold'
-                                }`}
-                            >
-                                Rejected
-                            </button>
-                        </div>
-
-                        {/* Search Input & Filter / Reset Actions */}
-                        <div className="flex items-center gap-2">
-                            <div className="relative flex-1 md:w-60">
-                                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search logs..."
-                                    className="w-full pl-9 pr-8 py-2 text-xs font-medium rounded-xl border border-stone-200/80 outline-none focus:border-clay-500 focus:ring-1 focus:ring-clay-500 bg-white min-h-[44px] md:min-h-0"
-                                />
-                                {searchQuery && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSearchQuery('')}
-                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
-                                    >
-                                        <X size={13} />
-                                    </button>
-                                )}
-                            </div>
-
-                            {/* Filter Popover Trigger */}
-                            <div className="relative shrink-0" ref={popoverRef}>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setDraftStatus(activeTab);
-                                        setDraftMonth(month);
-                                        if (window.innerWidth < 640) {
-                                            setIsDrawerOpen(true);
-                                        } else {
-                                            setIsPopoverOpen(!isPopoverOpen);
-                                        }
-                                    }}
-                                    className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all shadow-2xs min-h-[44px] sm:min-h-[38px] active:scale-[0.98] ${
-                                        activeFiltersCount > 0 || isPopoverOpen
-                                            ? 'bg-clay-700 text-white border-clay-700 shadow-clay-200'
-                                            : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
-                                    }`}
-                                >
-                                    <SlidersHorizontal size={14} strokeWidth={2.2} />
-                                    <span>Filter</span>
-                                    {activeFiltersCount > 0 && (
-                                        <span className="inline-flex items-center justify-center rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-black text-white">
-                                            {activeFiltersCount}
-                                        </span>
-                                    )}
-                                    <ChevronDown size={14} strokeWidth={2.5} className={`transition-transform duration-200 ${isPopoverOpen ? 'rotate-180' : ''}`} />
-                                </button>
-
-                                {/* Desktop Dropdown Popover Card */}
-                                {isPopoverOpen && (
-                                    <div className="hidden sm:flex flex-col absolute right-0 z-50 mt-2 w-[340px] rounded-2xl border border-stone-200 bg-white p-4 shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
-                                        <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-3">
-                                            <div className="flex items-center gap-2">
-                                                <Filter size={15} className="text-clay-700" />
-                                                <h3 className="text-xs font-bold text-stone-900">Filter Time-Card Logs</h3>
-                                            </div>
-                                            {activeFiltersCount > 0 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={resetFilters}
-                                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-500 hover:text-clay-700 transition"
-                                                >
-                                                    <RotateCcw size={12} />
-                                                    <span>Reset</span>
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        <div className="space-y-3.5">
-                                            <div>
-                                                <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
-                                                    Audit Status
-                                                </label>
-                                                <select
-                                                    value={draftStatus}
-                                                    onChange={(e) => setDraftStatus(e.target.value)}
-                                                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 outline-none focus:border-clay-500 bg-white"
-                                                >
-                                                    <option value="all">All Sessions ({rawSessions.length})</option>
-                                                    <option value="pending">Pending Review ({pendingCount})</option>
-                                                    <option value="offsite">Off-Site Flagged ({offSiteCount})</option>
-                                                    <option value="approved">Approved</option>
-                                                    <option value="rejected">Rejected</option>
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
-                                                    Month Period
-                                                </label>
-                                                <input
-                                                    type="month"
-                                                    value={draftMonth}
-                                                    onChange={(e) => setDraftMonth(e.target.value)}
-                                                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 outline-none focus:border-clay-500 bg-white"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsPopoverOpen(false)}
-                                                className="rounded-xl border border-stone-200 px-3 py-1.5 text-xs font-bold text-stone-600 hover:bg-stone-50 transition"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={applyDraftFilters}
-                                                className="rounded-xl bg-clay-700 px-4 py-1.5 text-xs font-bold text-white shadow-md shadow-clay-200 hover:bg-clay-800 transition active:scale-95"
-                                            >
-                                                Apply Filters
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {activeFiltersCount > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={resetFilters}
-                                    className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 transition shadow-2xs min-h-[44px] sm:min-h-[38px] shrink-0 active:scale-[0.98]"
-                                    title="Reset filters"
-                                >
-                                    <RotateCcw size={13} />
-                                    <span className="hidden sm:inline">Reset</span>
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Active Filter Tags Bar */}
-                    {(activeTab !== 'all' || searchQuery.trim()) && (
-                        <div className="px-1 pt-2 border-t border-stone-100 flex flex-wrap items-center gap-2">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                                Active Filters:
-                            </span>
-                            {activeTab !== 'all' && (
-                                <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-xs">
-                                    <span>Status: {activeTab}</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => setActiveTab('all')}
-                                        className="rounded-full p-0.5 hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
-                                    >
-                                        <X size={12} />
-                                    </button>
-                                </span>
-                            )}
-                            {searchQuery.trim() && (
-                                <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-xs">
-                                    <span>Search: "{searchQuery}"</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSearchQuery('')}
-                                        className="rounded-full p-0.5 hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
-                                    >
-                                        <X size={12} />
-                                    </button>
-                                </span>
-                            )}
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setActiveTab('all');
-                                    setSearchQuery('');
-                                }}
-                                className="text-[11px] font-bold text-clay-700 hover:underline ml-1"
-                            >
-                                Clear All
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                {/* ── DESKTOP VIEW: FULL-WIDTH DATA TABLE (hidden lg:block) ── */}
-                <div className="hidden lg:block bg-white rounded-3xl border border-stone-200/80 shadow-xs overflow-hidden">
+                    {/* ── DESKTOP VIEW: FULL-WIDTH DATA TABLE (hidden lg:block) ── */}
+                    <div className="hidden lg:block rounded-b-3xl overflow-hidden">
                     {filteredSessions.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-xs text-stone-700 border-collapse">
@@ -760,8 +533,9 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                         </div>
                     )}
                 </div>
-
             </div>
+
+        </div>
 
             {/* ── MOBILE SLIDE-OVER FILTER DRAWER (MOBILE ONLY) ── */}
             <SlideOverDrawer
