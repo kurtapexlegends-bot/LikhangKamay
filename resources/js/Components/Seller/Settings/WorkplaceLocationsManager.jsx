@@ -86,36 +86,47 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
             }
         }
 
-        // Single execution wrapper
+        // 1. High Accuracy Geolocation (Wi-Fi triangulation & GPS)
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const lat = Number(position.coords.latitude.toFixed(8));
                 const lng = Number(position.coords.longitude.toFixed(8));
-                completeSuccess(lat, lng, 'Store location detected!');
+                completeSuccess(lat, lng, 'Exact location pinpointed!');
             },
-            async (error) => {
-                if (error.code === error.PERMISSION_DENIED) {
+            (highErr) => {
+                if (highErr.code === highErr.PERMISSION_DENIED) {
                     completeError('Location access was denied. Please allow location access in your browser.');
                     return;
                 }
 
-                // If browser GPS fails, attempt IP fallback silently
-                try {
-                    const ipRes = await fetch('https://ipapi.co/json/');
-                    const ipData = await ipRes.json();
-                    if (ipData && ipData.latitude && ipData.longitude) {
-                        const lat = Number(parseFloat(ipData.latitude).toFixed(8));
-                        const lng = Number(parseFloat(ipData.longitude).toFixed(8));
-                        completeSuccess(lat, lng, 'Approximate store location detected.');
-                        return;
-                    }
-                } catch (ipErr) {
-                    // IP fallback failed silently
-                }
+                // 2. Standard Accuracy Fallback
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = Number(position.coords.latitude.toFixed(8));
+                        const lng = Number(position.coords.longitude.toFixed(8));
+                        completeSuccess(lat, lng, 'Store location detected!');
+                    },
+                    async () => {
+                        // 3. Silent IP Geolocation Fallback
+                        try {
+                            const ipRes = await fetch('https://ipapi.co/json/');
+                            const ipData = await ipRes.json();
+                            if (ipData && ipData.latitude && ipData.longitude) {
+                                const lat = Number(parseFloat(ipData.latitude).toFixed(8));
+                                const lng = Number(parseFloat(ipData.longitude).toFixed(8));
+                                completeSuccess(lat, lng, 'Store location detected!');
+                                return;
+                            }
+                        } catch (ipErr) {
+                            // IP fallback failed
+                        }
 
-                completeError('Could not fetch location automatically. Please click on the map to set your position.', 'info');
+                        completeError('Could not fetch location automatically. Please search your address or drag the map pin.', 'info');
+                    },
+                    { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+                );
             },
-            { enableHighAccuracy: false, timeout: 6000, maximumAge: 30000 }
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
         );
     };
 
