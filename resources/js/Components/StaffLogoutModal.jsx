@@ -18,21 +18,43 @@ const formatDuration = (startedAt, currentTimestamp) => {
     return `${minutes}m ${pad(seconds)}s`;
 };
 
-function ActionTile({ icon: Icon, title, description, isPrimary, disabled, onClick, badge }) {
-    const baseStyles = isPrimary
-        ? 'border-clay-700 bg-clay-950 text-white hover:bg-clay-900 shadow-md shadow-clay-950/20 active:scale-[0.98]'
-        : 'border-stone-200 bg-white text-stone-900 hover:border-clay-300 hover:bg-stone-50/80 shadow-2xs active:scale-[0.98]';
+function ActionTile({ icon: Icon, title, description, variant = 'default', disabled, onClick, badge }) {
+    const variantStyles = {
+        default: 'border-stone-200 bg-white text-stone-900 hover:border-amber-300 hover:bg-amber-50/30 shadow-2xs',
+        danger: 'border-rose-200/90 bg-rose-50/70 text-rose-950 hover:bg-rose-100/80 hover:border-rose-300 shadow-2xs',
+        emerald: 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20',
+    }[variant];
 
-    const iconStyles = isPrimary
-        ? 'bg-clay-800 text-clay-200 border border-clay-700'
-        : 'bg-stone-100 text-stone-700 border border-stone-200/80 group-hover:border-clay-200 group-hover:text-clay-600';
+    const iconStyles = {
+        default: 'bg-amber-100 text-amber-800 border border-amber-200/80',
+        danger: 'bg-rose-600 text-white shadow-2xs',
+        emerald: 'bg-white/20 text-white border border-white/20',
+    }[variant];
+
+    const titleStyles = {
+        default: 'text-stone-900',
+        danger: 'text-rose-950 font-black',
+        emerald: 'text-white font-black',
+    }[variant];
+
+    const descStyles = {
+        default: 'text-stone-500',
+        danger: 'text-rose-700/90 font-medium',
+        emerald: 'text-emerald-100 font-medium',
+    }[variant];
+
+    const arrowStyles = {
+        default: 'text-stone-400 group-hover:text-stone-700',
+        danger: 'text-rose-600 group-hover:text-rose-800',
+        emerald: 'text-emerald-200 group-hover:text-white',
+    }[variant];
 
     return (
         <button
             type="button"
             onClick={onClick}
             disabled={disabled}
-            className={`w-full group relative flex items-center gap-3.5 overflow-hidden rounded-2xl border p-3.5 text-left transition-all duration-200 ${baseStyles} ${
+            className={`w-full group relative flex items-center gap-3.5 overflow-hidden rounded-2xl border p-3.5 text-left transition-all duration-200 active:scale-[0.98] ${variantStyles} ${
                 disabled ? 'cursor-not-allowed opacity-50 active:scale-100' : ''
             }`}
         >
@@ -42,19 +64,19 @@ function ActionTile({ icon: Icon, title, description, isPrimary, disabled, onCli
             
             <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                    <p className="text-xs font-bold tracking-tight leading-none">{title}</p>
+                    <p className={`text-xs font-extrabold tracking-tight leading-none ${titleStyles}`}>{title}</p>
                     {badge && (
                         <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200/60 uppercase">
                             {badge}
                         </span>
                     )}
                 </div>
-                <p className={`text-[11px] font-medium leading-tight mt-1 truncate ${isPrimary ? 'text-clay-300' : 'text-stone-500'}`}>
+                <p className={`text-[11px] leading-tight mt-1 truncate ${descStyles}`}>
                     {description}
                 </p>
             </div>
 
-            <ArrowRight size={14} className={`shrink-0 transition-transform group-hover:translate-x-0.5 ${isPrimary ? 'text-clay-400' : 'text-stone-400'}`} />
+            <ArrowRight size={14} className={`shrink-0 transition-transform group-hover:translate-x-0.5 ${arrowStyles}`} />
         </button>
     );
 }
@@ -194,7 +216,7 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                             icon={PlayCircle}
                             title={processingAction === 'resume' ? 'Resuming...' : 'Resume Shift Work'}
                             description="End break period and resume active shift timer"
-                            isPrimary={true}
+                            variant="emerald"
                             disabled={!!processingAction}
                             onClick={() => submit('resume')}
                         />
@@ -203,7 +225,7 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                             icon={PauseCircle}
                             title={processingAction === 'pause' ? 'Pausing...' : 'Take Shift Break'}
                             description="Pause active timer & stay signed in to workspace"
-                            isPrimary={false}
+                            variant="default"
                             disabled={!!processingAction || !hasOpenSession}
                             onClick={() => submit('pause')}
                         />
@@ -213,7 +235,7 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                         icon={LogOut}
                         title={processingAction === 'clock_out' ? 'Closing Shift...' : 'Clock Out & Sign Out'}
                         description="Record physical clock-out & end workspace session"
-                        isPrimary={!isPaused}
+                        variant="danger"
                         disabled={!!processingAction}
                         onClick={() => submit('clock_out')}
                     />
