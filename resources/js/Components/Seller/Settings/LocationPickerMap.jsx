@@ -43,6 +43,7 @@ export default function LocationPickerMap({
                 center: [latNum, lngNum],
                 zoom: readOnly ? 15 : 16,
                 zoomControl: !readOnly,
+                attributionControl: false,
                 dragging: !readOnly,
                 scrollWheelZoom: !readOnly,
                 doubleClickZoom: !readOnly,
@@ -51,7 +52,6 @@ export default function LocationPickerMap({
 
             // OpenStreetMap tile layer
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors',
                 maxZoom: 19,
             }).addTo(map);
 

@@ -53,32 +53,23 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
 
         setDetectingGps(true);
         let handled = false;
-        let watchId = null;
-
-        const cleanup = () => {
-            if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-            }
-            setDetectingGps(false);
-        };
 
         const completeSuccess = (lat, lng) => {
             if (handled) return;
             handled = true;
-            cleanup();
             setData((prev) => ({
                 ...prev,
                 latitude: lat,
                 longitude: lng,
             }));
-            addToast('Exact store location pinpointed!', 'success');
+            setDetectingGps(false);
+            addToast('Store location detected!', 'success');
         };
 
         const completeError = (msg) => {
             if (handled) return;
             handled = true;
-            cleanup();
+            setDetectingGps(false);
             addToast(msg, 'error');
         };
 
@@ -95,44 +86,33 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
             }
         }
 
-        // Safety timeout: Give hardware Wi-Fi scanner up to 15s to warm up and lock precise coordinates
-        const maxWaitTimer = setTimeout(() => {
-            if (!handled) {
-                completeError('High-precision location request timed out. Please click the map pin or search your address.');
-            }
-        }, 15000);
-
-        let bestPosition = null;
-
-        // Use watchPosition to allow browser hardware time to refine Wi-Fi/GPS triangulation
-        watchId = navigator.geolocation.watchPosition(
+        // Try High Accuracy first
+        navigator.geolocation.getCurrentPosition(
             (position) => {
-                const acc = position.coords.accuracy;
                 const lat = Number(position.coords.latitude.toFixed(8));
                 const lng = Number(position.coords.longitude.toFixed(8));
-
-                // If accuracy is high (within 150 meters), lock in immediately
-                if (acc <= 150) {
-                    clearTimeout(maxWaitTimer);
-                    completeSuccess(lat, lng);
-                } else {
-                    // Otherwise keep track of best position captured while waiting
-                    if (!bestPosition || acc < bestPosition.acc) {
-                        bestPosition = { lat, lng, acc };
-                    }
-                }
+                completeSuccess(lat, lng);
             },
-            (error) => {
-                clearTimeout(maxWaitTimer);
-                if (error.code === error.PERMISSION_DENIED) {
+            (highErr) => {
+                if (highErr.code === highErr.PERMISSION_DENIED) {
                     completeError('Location access was denied. Please allow location access in your browser.');
-                } else if (bestPosition) {
-                    completeSuccess(bestPosition.lat, bestPosition.lng);
-                } else {
-                    completeError('Unable to lock precise location. Please search your address or click the map pin.');
+                    return;
                 }
+
+                // Fallback attempt to standard accuracy if hardware high-accuracy is unavailable
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = Number(position.coords.latitude.toFixed(8));
+                        const lng = Number(position.coords.longitude.toFixed(8));
+                        completeSuccess(lat, lng);
+                    },
+                    (lowErr) => {
+                        completeError('Could not auto-detect location. Please search your address or click the map pin.');
+                    },
+                    { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+                );
             },
-            { enableHighAccuracy: true, timeout: 14000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
         );
     };
 
