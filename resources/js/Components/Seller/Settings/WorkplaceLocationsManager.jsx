@@ -45,7 +45,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
         reset();
     };
 
-    const detectGpsLocation = () => {
+    const detectGpsLocation = async () => {
         if (!navigator.geolocation) {
             addToast('Geolocation is not supported by your browser.', 'error');
             return;
@@ -53,38 +53,41 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
 
         setDetectingGps(true);
 
-        const handleSuccess = (position) => {
-            const lat = Number(position.coords.latitude.toFixed(8));
-            const lng = Number(position.coords.longitude.toFixed(8));
-            setData((prev) => ({
-                ...prev,
-                latitude: lat,
-                longitude: lng,
-            }));
-            setDetectingGps(false);
-            addToast('Store location detected!', 'success');
-        };
-
-        // Try high accuracy first, fallback seamlessly to standard accuracy if hardware GPS times out
-        navigator.geolocation.getCurrentPosition(
-            handleSuccess,
-            (highErr) => {
-                if (highErr.code === highErr.PERMISSION_DENIED) {
+        // Check permission state to prevent triggering error toast on browser prompt
+        if (navigator.permissions && navigator.permissions.query) {
+            try {
+                const status = await navigator.permissions.query({ name: 'geolocation' });
+                if (status.state === 'denied') {
                     setDetectingGps(false);
-                    addToast('Location access was denied. Please enable location permissions in your browser.', 'error');
+                    addToast('Location access is blocked in your browser settings. Please allow location access in your address bar.', 'error');
                     return;
                 }
-                // Seamless fallback attempt without strict high accuracy
-                navigator.geolocation.getCurrentPosition(
-                    handleSuccess,
-                    (lowErr) => {
-                        setDetectingGps(false);
-                        addToast(`Location detection unavailable: ${lowErr.message}`, 'error');
-                    },
-                    { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
-                );
+            } catch (e) {
+                // Ignore permission API query failure and proceed
+            }
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = Number(position.coords.latitude.toFixed(8));
+                const lng = Number(position.coords.longitude.toFixed(8));
+                setData((prev) => ({
+                    ...prev,
+                    latitude: lat,
+                    longitude: lng,
+                }));
+                setDetectingGps(false);
+                addToast('Store location detected!', 'success');
             },
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+            (error) => {
+                setDetectingGps(false);
+                if (error.code === error.PERMISSION_DENIED) {
+                    addToast('Location access was denied. Please allow location access in your browser.', 'error');
+                } else {
+                    addToast('Could not fetch location automatically. Please click on the map to set your position.', 'info');
+                }
+            },
+            { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
         );
     };
 

@@ -15,7 +15,13 @@ export function ToastProvider({ children }) {
     const addToast = useCallback((message, type = 'success', duration = 3500, onAction = null, actionLabel = 'Undo') => {
         nextToastId.current += 1;
         const id = `toast-${nextToastId.current}`;
-        setToasts(prev => [...prev, { id, message, type, duration, onAction, actionLabel }]);
+        setToasts(prev => {
+            // Filter out any active toast with the exact same message to prevent duplicate stacking
+            const filtered = prev.filter(t => t.message !== message);
+            const next = [...filtered, { id, message, type, duration, onAction, actionLabel }];
+            // Keep at most 3 active toasts
+            return next.slice(-3);
+        });
     }, []);
 
     const removeToast = useCallback((id) => {
