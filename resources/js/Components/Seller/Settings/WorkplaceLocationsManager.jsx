@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm, router } from '@inertiajs/react';
-import { MapPin, Navigation, Crosshair, Plus, Trash2, Edit3, Shield, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { MapPin, Navigation, Crosshair, Plus, Trash2, Edit3, Shield, CheckCircle2, AlertCircle, X, Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import Modal from '@/Components/Modal';
 import LocationPickerMap from './LocationPickerMap';
@@ -11,6 +11,10 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
     const [detectingGps, setDetectingGps] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchingAddress, setSearchingAddress] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [isDebouncing, setIsDebouncing] = useState(false);
+    const searchContainerRef = useRef(null);
     const { addToast } = useToast();
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
@@ -20,6 +24,58 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
         longitude: 120.9842,
         radius_meters: 100,
     });
+
+    // Close suggestions dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Live debounced Nominatim search restricted to Philippines
+    useEffect(() => {
+        if (!searchQuery.trim() || searchQuery.length < 2) {
+            setSearchResults([]);
+            setShowSuggestions(false);
+            return;
+        }
+
+        setIsDebouncing(true);
+        const timer = setTimeout(async () => {
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&countrycodes=ph&addressdetails=1&limit=5&q=${encodeURIComponent(searchQuery)}`
+                );
+                const results = await response.json();
+                setSearchResults(results || []);
+                setShowSuggestions((results || []).length > 0);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setIsDebouncing(false);
+            }
+        }, 350);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const handleSelectSuggestion = (result) => {
+        const lat = Number(parseFloat(result.lat).toFixed(8));
+        const lng = Number(parseFloat(result.lon).toFixed(8));
+        setData((prev) => ({
+            ...prev,
+            address: result.display_name,
+            latitude: lat,
+            longitude: lng,
+        }));
+        setShowSuggestions(false);
+        setSearchQuery(result.display_name.split(',')[0]);
+        addToast('Location pinpointed from search result.', 'success');
+    };
 
     const openAddModal = () => {
         reset();
@@ -279,25 +335,51 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                             />
                         </div>
 
-                        {/* Search via Address & GPS */}
+                        {/* Search via Address Autocomplete & GPS */}
                         <div className="space-y-2">
                             <label className="block text-xs font-bold text-stone-700">Pinpoint Location</label>
                             <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    placeholder="Search address or city..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="flex-1 rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-medium text-stone-900 focus:border-clay-500 focus:ring-clay-500"
-                                />
-                                <button
-                                    type="button"
-                                    disabled={searchingAddress}
-                                    onClick={searchAddressWithNominatim}
-                                    className="px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition shrink-0"
-                                >
-                                    {searchingAddress ? 'Searching...' : 'Search'}
-                                </button>
+                                <div ref={searchContainerRef} className="relative flex-1">
+                                    <input
+                                        type="text"
+                                        placeholder="Search city, barangay, landmark, or street..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onFocus={() => searchResults.length > 0 && setShowSuggestions(true)}
+                                        className="w-full rounded-xl border border-stone-200 pl-8 pr-8 py-2 text-xs font-medium text-stone-900 focus:border-clay-500 focus:ring-clay-500"
+                                    />
+                                    <Search size={14} className="absolute left-2.5 top-2.5 text-stone-400 pointer-events-none" />
+                                    {isDebouncing && (
+                                        <div className="absolute right-2.5 top-2.5">
+                                            <Loader2 className="animate-spin text-clay-600" size={14} />
+                                        </div>
+                                    )}
+
+                                    {/* Live Search Suggestions Dropdown */}
+                                    {showSuggestions && searchResults.length > 0 && (
+                                        <div className="absolute left-0 right-0 top-full mt-1.5 z-[600] bg-white rounded-xl border border-stone-200 shadow-xl overflow-hidden max-h-60 overflow-y-auto animate-in fade-in duration-150">
+                                            {searchResults.map((item, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    type="button"
+                                                    onClick={() => handleSelectSuggestion(item)}
+                                                    className="w-full text-left px-3.5 py-2.5 hover:bg-clay-50 border-b border-stone-100 last:border-0 flex items-start gap-2.5 transition text-xs group"
+                                                >
+                                                    <MapPin size={14} className="text-clay-500 mt-0.5 shrink-0 group-hover:scale-110 transition-transform" />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="font-bold text-stone-800 truncate">
+                                                            {item.display_name.split(',')[0]}
+                                                        </p>
+                                                        <p className="text-[10px] text-stone-500 truncate">
+                                                            {item.display_name}
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
                                 <button
                                     type="button"
                                     disabled={detectingGps}
