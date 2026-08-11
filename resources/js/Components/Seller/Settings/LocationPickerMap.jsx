@@ -144,16 +144,16 @@ export default function LocationPickerMap({
         >
             <div ref={mapContainerRef} className="w-full h-full" />
 
-            {/* Pleasant Locating Overlay */}
+            {/* Smooth Locating Radar Overlay */}
             {isLocating && (
-                <div className="absolute inset-0 z-[500] bg-stone-900/40 backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-white animate-in fade-in duration-200">
+                <div className="absolute inset-0 z-[500] bg-stone-900/50 backdrop-blur-xs flex flex-col items-center justify-center gap-2.5 text-white transition-opacity duration-300">
                     <div className="relative flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-clay-500/30 animate-ping absolute" />
-                        <div className="w-10 h-10 rounded-full bg-clay-600 flex items-center justify-center shadow-lg relative z-10">
+                        <div className="w-14 h-14 rounded-full bg-clay-500/40 animate-ping absolute" />
+                        <div className="w-10 h-10 rounded-full bg-clay-600 flex items-center justify-center shadow-xl relative z-10">
                             <Navigation size={18} className="animate-spin text-white" />
                         </div>
                     </div>
-                    <span className="text-xs font-bold tracking-wide drop-shadow-md">
+                    <span className="text-xs font-black tracking-wide text-white drop-shadow-md">
                         Pinpointing your store location...
                     </span>
                 </div>

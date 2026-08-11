@@ -52,14 +52,25 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
         }
 
         setDetectingGps(true);
+        const startTime = Date.now();
+
+        const finishLoading = (action) => {
+            const elapsed = Date.now() - startTime;
+            const remaining = Math.max(0, 1500 - elapsed);
+            setTimeout(() => {
+                setDetectingGps(false);
+                if (action) action();
+            }, remaining);
+        };
 
         // Pre-check permission status if query API is supported
         if (navigator.permissions && navigator.permissions.query) {
             try {
                 const status = await navigator.permissions.query({ name: 'geolocation' });
                 if (status.state === 'denied') {
-                    setDetectingGps(false);
-                    addToast('Location access is blocked in browser settings. Please allow location access in your address bar.', 'error');
+                    finishLoading(() => {
+                        addToast('Location access is blocked in browser settings. Please allow location access in your address bar.', 'error');
+                    });
                     return;
                 }
             } catch (e) {
@@ -67,22 +78,23 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
             }
         }
 
-        // Strictly query hardware Wi-Fi / GPS triangulation
+        // Query hardware Wi-Fi / GPS triangulation
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const lat = Number(position.coords.latitude.toFixed(8));
                 const lng = Number(position.coords.longitude.toFixed(8));
-                setData((prev) => ({
-                    ...prev,
-                    latitude: lat,
-                    longitude: lng,
-                }));
-                setDetectingGps(false);
-                addToast('Store location detected!', 'success');
+                finishLoading(() => {
+                    setData((prev) => ({
+                        ...prev,
+                        latitude: lat,
+                        longitude: lng,
+                    }));
+                    addToast('Store location detected!', 'success');
+                });
             },
             () => {
                 // Quietly hide loading overlay on error or timeout - NO error toast!
-                setDetectingGps(false);
+                finishLoading();
             },
             { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
         );
