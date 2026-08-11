@@ -437,4 +437,56 @@ class HRController extends Controller
             ->route('hr.payroll.show', $payroll)
             ->with('success', 'Payroll request sent to Accounting.');
     }
+
+    public function attendanceLogs(
+        Request $request,
+        Employee $employee,
+        \App\Services\HR\AttendanceAggregatorService $aggregator
+    ) {
+        $seller = $this->sellerOwner();
+        $month = $request->input('month', now()->format('Y-m'));
+        $start = \Carbon\Carbon::parse($month)->startOfMonth();
+        $end = \Carbon\Carbon::parse($month)->endOfMonth();
+
+        $summary = $aggregator->aggregateForPeriod($employee, $start, $end, $seller);
+
+        return response()->json([
+            'summary' => $summary,
+        ]);
+    }
+
+    public function approveAttendanceSession(
+        \App\Models\StaffAttendanceSession $session,
+        StaffAttendanceService $attendanceService
+    ) {
+        $actor = $this->sellerActor();
+        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Only HR managers can approve attendance sessions.');
+
+        $attendanceService->approveSession($session, $actor);
+
+        return response()->json([
+            'message' => 'Attendance session approved successfully.',
+            'session' => $session->fresh(['approver:id,name']),
+        ]);
+    }
+
+    public function rejectAttendanceSession(
+        Request $request,
+        \App\Models\StaffAttendanceSession $session,
+        StaffAttendanceService $attendanceService
+    ) {
+        $actor = $this->sellerActor();
+        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Only HR managers can reject attendance sessions.');
+
+        $request->validate([
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        $attendanceService->rejectSession($session, $actor, $request->input('reason'));
+
+        return response()->json([
+            'message' => 'Attendance session rejected.',
+            'session' => $session->fresh(['approver:id,name']),
+        ]);
+    }
 }

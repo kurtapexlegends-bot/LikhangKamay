@@ -42,6 +42,10 @@ class AttendanceAggregatorService
                 }
             })
             ->whereBetween('attendance_date', [$start->toDateString(), $end->toDateString()])
+            ->where(function ($q) {
+                $q->where('approval_status', '!=', 'rejected')
+                  ->orWhereNull('approval_status');
+            })
             ->orderBy('attendance_date', 'asc')
             ->orderBy('clock_in_at', 'asc')
             ->get();

@@ -87,6 +87,10 @@ class StaffAttendanceService
             }
         }
 
+        $isFlagged = !$isWithinGeofence;
+        $flagReason = $isFlagged ? "Off-Site Clock In ({$distanceMeters}m from assigned workplace)" : null;
+        $approvalStatus = $isFlagged ? 'pending' : 'approved';
+
         return StaffAttendanceSession::create([
             'staff_user_id' => $staff->id,
             'seller_owner_id' => $staff->getEffectiveSellerId(),
@@ -102,7 +106,34 @@ class StaffAttendanceService
             'seller_location_id' => $sellerLocationId,
             'distance_meters' => $distanceMeters,
             'is_within_geofence' => $isWithinGeofence,
+            'is_flagged' => $isFlagged,
+            'flag_reason' => $flagReason,
+            'approval_status' => $approvalStatus,
         ]);
+    }
+
+    public function approveSession(StaffAttendanceSession $session, User $manager): StaffAttendanceSession
+    {
+        $session->update([
+            'approval_status' => 'approved',
+            'approved_by_user_id' => $manager->id,
+            'approved_at' => now(),
+            'rejection_reason' => null,
+        ]);
+
+        return $session;
+    }
+
+    public function rejectSession(StaffAttendanceSession $session, User $manager, ?string $reason = null): StaffAttendanceSession
+    {
+        $session->update([
+            'approval_status' => 'rejected',
+            'approved_by_user_id' => $manager->id,
+            'approved_at' => now(),
+            'rejection_reason' => $reason ?: 'Rejected by manager',
+        ]);
+
+        return $session;
     }
 
     public function calculateDistanceMeters(float $lat1, float $lon1, float $lat2, float $lon2): int

@@ -43,6 +43,12 @@ class StaffAttendanceSession extends Model
         'seller_location_id',
         'distance_meters',
         'is_within_geofence',
+        'is_flagged',
+        'flag_reason',
+        'approval_status',
+        'approved_by_user_id',
+        'approved_at',
+        'rejection_reason',
     ];
 
     protected function casts(): array
@@ -53,12 +59,19 @@ class StaffAttendanceSession extends Model
             'clock_out_at' => 'datetime',
             'last_heartbeat_at' => 'datetime',
             'last_activity_at' => 'datetime',
+            'approved_at' => 'datetime',
             'worked_minutes' => 'integer',
             'clock_in_latitude' => 'float',
             'clock_in_longitude' => 'float',
             'distance_meters' => 'integer',
             'is_within_geofence' => 'boolean',
+            'is_flagged' => 'boolean',
         ];
+    }
+
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by_user_id');
     }
 
     public function staffUser()

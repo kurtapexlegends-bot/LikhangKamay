@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { Clock, Calendar, X, AlertCircle, CheckCircle2, PauseCircle } from 'lucide-react';
+import { Clock, Calendar, X, AlertCircle, CheckCircle2, PauseCircle, ShieldAlert, Check, Ban } from 'lucide-react';
+import { useToast } from '@/Components/ToastContext';
 
-export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose }) {
+export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, canEdit = true }) {
     const [loading, setLoading] = useState(false);
     const [summary, setSummary] = useState(null);
     const [selectedPhoto, setSelectedPhoto] = useState(null);
+    const [rejectingSessionId, setRejectingSessionId] = useState(null);
+    const [rejectionReason, setRejectionReason] = useState('');
+    const [submittingAction, setSubmittingAction] = useState(false);
+    const { addToast } = useToast();
 
-    useEffect(() => {
-        if (isOpen && employee?.id) {
+    const fetchAttendanceLogs = () => {
+        if (employee?.id) {
             setLoading(true);
             window.axios
                 .get(route('hr.attendance-logs', { employee: employee.id }))
@@ -19,7 +24,46 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose }) 
                 .catch((err) => console.error('Failed to load employee attendance logs:', err))
                 .finally(() => setLoading(false));
         }
+    };
+
+    useEffect(() => {
+        if (isOpen && employee?.id) {
+            fetchAttendanceLogs();
+        }
     }, [isOpen, employee?.id]);
+
+    const handleApproveSession = (sessionId) => {
+        setSubmittingAction(true);
+        window.axios
+            .post(route('hr.attendance-sessions.approve', { session: sessionId }))
+            .then(() => {
+                addToast('Attendance session approved.', 'success');
+                fetchAttendanceLogs();
+            })
+            .catch((err) => {
+                addToast(err.response?.data?.message || 'Failed to approve session.', 'error');
+            })
+            .finally(() => setSubmittingAction(false));
+    };
+
+    const handleRejectSession = () => {
+        if (!rejectingSessionId) return;
+        setSubmittingAction(true);
+        window.axios
+            .post(route('hr.attendance-sessions.reject', { session: rejectingSessionId }), {
+                reason: rejectionReason,
+            })
+            .then(() => {
+                addToast('Attendance session rejected and excluded from payroll.', 'info');
+                setRejectingSessionId(null);
+                setRejectionReason('');
+                fetchAttendanceLogs();
+            })
+            .catch((err) => {
+                addToast(err.response?.data?.message || 'Failed to reject session.', 'error');
+            })
+            .finally(() => setSubmittingAction(false));
+    };
 
     if (!employee) return null;
 
@@ -110,52 +154,104 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose }) 
                                                     </h4>
 
                                                     {summary.sessions.length > 0 ? (
-                                                        <div className="space-y-2.5">
+                                                        <div className="space-y-3">
                                                             {summary.sessions.map((session) => (
                                                                 <div
                                                                     key={session.id}
-                                                                    className="p-3 bg-white rounded-xl border border-stone-200/80 shadow-xs flex items-center justify-between gap-3 text-xs"
+                                                                    className={`p-3.5 bg-white rounded-2xl border shadow-xs flex flex-col gap-3 text-xs ${
+                                                                        session.approval_status === 'rejected'
+                                                                            ? 'border-rose-200 bg-rose-50/30'
+                                                                            : session.is_flagged || session.approval_status === 'pending'
+                                                                            ? 'border-amber-200 bg-amber-50/20'
+                                                                            : 'border-stone-200/80'
+                                                                    }`}
                                                                 >
-                                                                    <div className="flex items-center gap-3">
-                                                                        {session.photo_url ? (
-                                                                            <img
-                                                                                src={session.photo_url}
-                                                                                alt="Selfie proof"
-                                                                                className="h-10 w-10 rounded-lg object-cover border border-stone-200 shrink-0 cursor-pointer hover:opacity-90 transition"
-                                                                                onClick={() => setSelectedPhoto(session.photo_url)}
-                                                                            />
-                                                                        ) : (
-                                                                            <div className="h-10 w-10 rounded-lg bg-stone-100 flex items-center justify-center text-stone-600 shrink-0">
-                                                                                <Clock size={16} />
-                                                                            </div>
-                                                                        )}
-                                                                        <div>
-                                                                            <p className="font-bold text-stone-900">{session.date}</p>
-                                                                            <p className="text-[10px] text-stone-500 font-medium">
-                                                                                {session.clock_in_at ? new Date(session.clock_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'} - {session.clock_out_at ? new Date(session.clock_out_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Active'}
-                                                                            </p>
-                                                                            {session.distance_meters !== null && (
-                                                                                <div className="mt-1">
-                                                                                    {session.is_within_geofence ? (
-                                                                                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-                                                                                            Within Geofence ({session.distance_meters}m)
-                                                                                        </span>
-                                                                                    ) : (
-                                                                                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">
-                                                                                            Off-Site Warning ({session.distance_meters}m)
-                                                                                        </span>
-                                                                                    )}
+                                                                    <div className="flex items-center justify-between gap-3">
+                                                                        <div className="flex items-center gap-3">
+                                                                            {session.photo_url ? (
+                                                                                <img
+                                                                                    src={session.photo_url}
+                                                                                    alt="Selfie proof"
+                                                                                    className="h-11 w-11 rounded-xl object-cover border border-stone-200 shrink-0 cursor-pointer hover:opacity-90 transition shadow-xs"
+                                                                                    onClick={() => setSelectedPhoto(session.photo_url)}
+                                                                                />
+                                                                            ) : (
+                                                                                <div className="h-11 w-11 rounded-xl bg-stone-100 flex items-center justify-center text-stone-600 shrink-0">
+                                                                                    <Clock size={18} />
                                                                                 </div>
+                                                                            )}
+                                                                            <div>
+                                                                                <p className="font-bold text-stone-900">{session.date}</p>
+                                                                                <p className="text-[10px] text-stone-500 font-medium">
+                                                                                    {session.clock_in_at ? new Date(session.clock_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'} - {session.clock_out_at ? new Date(session.clock_out_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Active'}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="text-right">
+                                                                            <span className="font-black text-stone-900 block">{session.worked_hours_label}</span>
+                                                                            {session.close_mode === 'paused' && (
+                                                                                <span className="block text-[9px] font-bold text-amber-600">Auto-Paused</span>
                                                                             )}
                                                                         </div>
                                                                     </div>
 
-                                                                    <div className="text-right">
-                                                                        <span className="font-black text-stone-900 block">{session.worked_hours_label}</span>
-                                                                        {session.close_mode === 'paused' && (
-                                                                            <span className="block text-[9px] font-bold text-amber-600">Auto-Paused</span>
+                                                                    {/* Location & Audit Badges */}
+                                                                    <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-stone-100">
+                                                                        {session.distance_meters !== null && (
+                                                                            session.is_within_geofence ? (
+                                                                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                                                                                    Within Geofence ({session.distance_meters}m)
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
+                                                                                    <ShieldAlert size={10} /> Off-Site ({session.distance_meters}m)
+                                                                                </span>
+                                                                            )
+                                                                        )}
+
+                                                                        {/* Approval Badges */}
+                                                                        {session.approval_status === 'approved' && (
+                                                                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-full border border-emerald-200">
+                                                                                <CheckCircle2 size={10} /> Approved
+                                                                            </span>
+                                                                        )}
+                                                                        {session.approval_status === 'pending' && (
+                                                                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-200">
+                                                                                <AlertCircle size={10} /> Pending Review
+                                                                            </span>
+                                                                        )}
+                                                                        {session.approval_status === 'rejected' && (
+                                                                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded-full border border-rose-200">
+                                                                                <Ban size={10} /> Rejected
+                                                                            </span>
                                                                         )}
                                                                     </div>
+
+                                                                    {/* Manager Actions for Flagged or Pending Sessions */}
+                                                                    {canEdit && (session.is_flagged || session.approval_status === 'pending') && session.approval_status !== 'rejected' && (
+                                                                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+                                                                            <button
+                                                                                type="button"
+                                                                                disabled={submittingAction}
+                                                                                onClick={() => handleApproveSession(session.id)}
+                                                                                className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-xl border border-emerald-200 transition disabled:opacity-50"
+                                                                            >
+                                                                                <Check size={12} /> Approve
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                disabled={submittingAction}
+                                                                                onClick={() => {
+                                                                                    setRejectingSessionId(session.id);
+                                                                                    setRejectionReason('');
+                                                                                }}
+                                                                                className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1 rounded-xl border border-rose-200 transition disabled:opacity-50"
+                                                                            >
+                                                                                <Ban size={12} /> Reject
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -186,6 +282,55 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose }) 
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Manager Rejection Reason Modal */}
+                                    {rejectingSessionId && (
+                                        <div
+                                            className="fixed inset-0 z-60 bg-stone-900/80 backdrop-blur-xs flex items-center justify-center p-4"
+                                            onClick={() => setRejectingSessionId(null)}
+                                        >
+                                            <div className="bg-white rounded-2xl p-5 max-w-sm w-full space-y-4" onClick={(e) => e.stopPropagation()}>
+                                                <div className="flex justify-between items-center pb-2 border-b border-stone-100">
+                                                    <h3 className="text-sm font-bold text-stone-900">Reject Attendance Session</h3>
+                                                    <button type="button" onClick={() => setRejectingSessionId(null)} className="text-stone-400 hover:text-stone-700">
+                                                        <X size={16} />
+                                                    </button>
+                                                </div>
+                                                <p className="text-xs text-stone-500 font-medium">
+                                                    Rejecting this session will exclude its worked hours from payroll calculations.
+                                                </p>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                                                        Rejection Reason (Optional)
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={rejectionReason}
+                                                        onChange={(e) => setRejectionReason(e.target.value)}
+                                                        placeholder="e.g. Unverified off-site clock-in"
+                                                        className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs text-stone-800 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="flex items-center justify-end gap-2 pt-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setRejectingSessionId(null)}
+                                                        className="px-3 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-100 rounded-xl transition"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        disabled={submittingAction}
+                                                        onClick={handleRejectSession}
+                                                        className="px-4 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-xs disabled:opacity-50"
+                                                    >
+                                                        Confirm Rejection
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </Dialog.Panel>
                             </Transition.Child>
                         </div>
@@ -195,3 +340,4 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose }) 
         </Transition>
     );
 }
+
