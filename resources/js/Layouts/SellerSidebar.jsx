@@ -215,12 +215,12 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
 
             {mobileOpen && (
                 <div 
-                    className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-[90] lg:hidden transition-opacity"
+                    className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity"
                     onClick={onClose}
                 />
             )}
 
-            <aside className={`fixed inset-y-0 left-0 z-[100] ${isCollapsed ? 'w-16' : 'w-52'} bg-white/70 backdrop-blur-md border-r border-clay-100/50 flex flex-col transition-[width,transform] duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed inset-y-0 left-0 z-40 lg:z-30 ${isCollapsed ? 'w-16' : 'w-52'} bg-white/80 backdrop-blur-md border-r border-clay-100/50 flex flex-col transition-[width,transform] duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 {/* Desktop Collapse Toggle Button */}
                 <button
                     onClick={() => onToggleCollapse(!isCollapsed)}

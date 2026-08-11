@@ -20,7 +20,7 @@ export default function GlobalSettings({ auth, sellerOwner, stats, locations = [
     ].filter((t) => t.show);
 
     return (
-        <SellerWorkspaceLayout title="Shop Settings">
+        <SellerWorkspaceLayout active="settings">
             <Head title="Shop Settings | LikhangKamay" />
 
             <SellerHeader
