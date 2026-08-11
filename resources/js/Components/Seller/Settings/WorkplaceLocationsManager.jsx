@@ -67,7 +67,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
             }
         }
 
-        // Strictly query hardware Wi-Fi / GPS triangulation with extended 60-second timeout and 0 cache age
+        // Strictly query hardware Wi-Fi / GPS triangulation
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const lat = Number(position.coords.latitude.toFixed(8));
@@ -78,17 +78,13 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                     longitude: lng,
                 }));
                 setDetectingGps(false);
-                addToast('Exact location pinpointed!', 'success');
+                addToast('Store location detected!', 'success');
             },
-            (error) => {
+            () => {
+                // Quietly hide loading overlay on error or timeout - NO error toast!
                 setDetectingGps(false);
-                if (error.code === error.PERMISSION_DENIED) {
-                    addToast('Location access was denied. Please allow location access in your address bar.', 'error');
-                } else {
-                    addToast('Location detection timed out. Please click on the map to set your position.', 'error');
-                }
             },
-            { enableHighAccuracy: true, timeout: 60000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
         );
     };
 
