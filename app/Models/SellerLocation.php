@@ -18,6 +18,7 @@ class SellerLocation extends Model
         'latitude',
         'longitude',
         'radius_meters',
+        'enforce_strict_geofence',
         'is_active',
     ];
 
@@ -25,6 +26,7 @@ class SellerLocation extends Model
         'latitude' => 'float',
         'longitude' => 'float',
         'radius_meters' => 'integer',
+        'enforce_strict_geofence' => 'boolean',
         'is_active' => 'boolean',
     ];
 

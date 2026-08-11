@@ -6,6 +6,7 @@ use App\Models\StaffAttendanceSession;
 use App\Models\User;
 use App\Models\Employee;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -84,6 +85,14 @@ class StaffAttendanceService
                 );
                 $allowedRadius = (int) ($sellerLocation->radius_meters ?: 200);
                 $isWithinGeofence = ($distanceMeters <= $allowedRadius);
+
+                if (!$isWithinGeofence && $sellerLocation->enforce_strict_geofence) {
+                    throw ValidationException::withMessages([
+                        'location' => [
+                            "Clock-in blocked: You are {$distanceMeters}m away from {$sellerLocation->name}. Strict geofence enforcement requires you to be within {$allowedRadius}m."
+                        ],
+                    ]);
+                }
             }
         }
 

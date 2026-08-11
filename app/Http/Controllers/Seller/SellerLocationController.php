@@ -37,6 +37,7 @@ class SellerLocationController extends Controller
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'radius_meters' => 'required|integer|min:20|max:5000',
+            'enforce_strict_geofence' => 'nullable|boolean',
         ]);
 
         $location = SellerLocation::create([
@@ -46,6 +47,7 @@ class SellerLocationController extends Controller
             'latitude' => $validated['latitude'],
             'longitude' => $validated['longitude'],
             'radius_meters' => $validated['radius_meters'],
+            'enforce_strict_geofence' => (bool) ($validated['enforce_strict_geofence'] ?? false),
             'is_active' => true,
         ]);
 
@@ -63,6 +65,7 @@ class SellerLocationController extends Controller
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'radius_meters' => 'required|integer|min:20|max:5000',
+            'enforce_strict_geofence' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
         ]);
 

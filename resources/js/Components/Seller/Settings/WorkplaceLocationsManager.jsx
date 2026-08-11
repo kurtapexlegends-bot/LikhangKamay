@@ -23,6 +23,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
         latitude: 14.5995,
         longitude: 120.9842,
         radius_meters: 100,
+        enforce_strict_geofence: false,
     });
 
     // Close suggestions dropdown when clicking outside
@@ -126,6 +127,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
             latitude: loc.latitude,
             longitude: loc.longitude,
             radius_meters: loc.radius_meters || 100,
+            enforce_strict_geofence: Boolean(loc.enforce_strict_geofence),
         });
         setIsAddModalOpen(true);
     };
@@ -290,11 +292,20 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                         >
                             <div className="flex items-start justify-between gap-3">
                                 <div>
-                                    <h4 className="font-bold text-stone-900 text-sm flex items-center gap-1.5">
+                                    <h4 className="font-bold text-stone-900 text-sm flex items-center gap-1.5 flex-wrap">
                                         {loc.name}
                                         <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wider">
                                             {loc.radius_meters}m Radius
                                         </span>
+                                        {loc.enforce_strict_geofence ? (
+                                            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-100 uppercase tracking-wider">
+                                                Strict Block
+                                            </span>
+                                        ) : (
+                                            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 uppercase tracking-wider">
+                                                Soft Audit
+                                            </span>
+                                        )}
                                     </h4>
                                     {loc.address && <p className="text-xs text-stone-500 font-medium mt-1 line-clamp-2">{loc.address}</p>}
                                 </div>
@@ -469,6 +480,23 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                             <p className="text-[10px] text-stone-400 font-medium mt-1">
                                 Staff must be within {data.radius_meters} meters of this coordinate to clock in without an exception flag.
                             </p>
+                        </div>
+
+                        {/* Strict Geofence Enforcement Toggle */}
+                        <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 flex items-start gap-3">
+                            <input
+                                type="checkbox"
+                                id="enforce_strict_geofence"
+                                checked={data.enforce_strict_geofence}
+                                onChange={(e) => setData('enforce_strict_geofence', e.target.checked)}
+                                className="mt-0.5 rounded border-stone-300 text-clay-600 focus:ring-clay-500 w-4 h-4 cursor-pointer"
+                            />
+                            <label htmlFor="enforce_strict_geofence" className="text-xs cursor-pointer select-none">
+                                <span className="font-extrabold text-stone-900 block">Strict Geofence Enforcement (Hard Block)</span>
+                                <span className="text-[11px] text-stone-500 font-medium leading-relaxed block mt-0.5">
+                                    When checked, clock-ins outside the {data.radius_meters}m radius will be <strong>rejected immediately</strong>. When unchecked (recommended default), off-site clock-ins are flagged for manager approval.
+                                </span>
+                            </label>
                         </div>
 
                         {/* Modal Actions Footer */}
