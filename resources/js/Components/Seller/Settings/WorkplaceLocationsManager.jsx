@@ -36,7 +36,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Live debounced Nominatim search restricted to Philippines
+    // Smart multi-fallback live search for Philippine addresses & lot/block numbers
     useEffect(() => {
         if (!searchQuery.trim() || searchQuery.length < 2) {
             setSearchResults([]);
@@ -47,10 +47,42 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
         setIsDebouncing(true);
         const timer = setTimeout(async () => {
             try {
-                const response = await fetch(
+                // 1. Try exact user query
+                let response = await fetch(
                     `https://nominatim.openstreetmap.org/search?format=json&countrycodes=ph&addressdetails=1&limit=5&q=${encodeURIComponent(searchQuery)}`
                 );
-                const results = await response.json();
+                let results = await response.json();
+
+                // 2. If 0 results, strip block/lot/unit/phase/purok prefixes and numbers (e.g. "blk 35 lot 17")
+                if (!results || results.length === 0) {
+                    const cleaned = searchQuery
+                        .replace(/\b(blk|block|lot|lt|phase|ph|purok|prk|unit|no|#)\s*\w+/gi, '')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+
+                    if (cleaned && cleaned !== searchQuery && cleaned.length >= 2) {
+                        response = await fetch(
+                            `https://nominatim.openstreetmap.org/search?format=json&countrycodes=ph&addressdetails=1&limit=5&q=${encodeURIComponent(cleaned)}`
+                        );
+                        results = await response.json();
+                    }
+                }
+
+                // 3. If STILL 0 results, search key geographic terms (e.g. "san miguel dasmarinas")
+                if (!results || results.length === 0) {
+                    const words = searchQuery
+                        .replace(/[^\w\s]/gi, '')
+                        .split(/\s+/)
+                        .filter((w) => w.length > 2 && !/^\d+$/.test(w));
+                    if (words.length >= 2) {
+                        const fallbackQuery = words.slice(-2).join(' ');
+                        response = await fetch(
+                            `https://nominatim.openstreetmap.org/search?format=json&countrycodes=ph&addressdetails=1&limit=5&q=${encodeURIComponent(fallbackQuery)}`
+                        );
+                        results = await response.json();
+                    }
+                }
+
                 setSearchResults(results || []);
                 setShowSuggestions((results || []).length > 0);
             } catch (err) {
@@ -66,9 +98,12 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
     const handleSelectSuggestion = (result) => {
         const lat = Number(parseFloat(result.lat).toFixed(8));
         const lng = Number(parseFloat(result.lon).toFixed(8));
+        // Preserve user's full typed street/lot info if specified
+        const finalAddress = searchQuery.trim().length > 10 ? `${searchQuery.trim()}, ${result.display_name}` : result.display_name;
+
         setData((prev) => ({
             ...prev,
-            address: result.display_name,
+            address: finalAddress,
             latitude: lat,
             longitude: lng,
         }));
