@@ -12,6 +12,9 @@ This document details the employee payroll formulas, clock-in/clock-out lifecycl
 *   **Staff Attendance Session**: [StaffAttendanceSession.php](file:///c:/laragon/www/LikhangKamay/app/Models/StaffAttendanceSession.php)
     *   Represents a continuous period of active work.
     *   Fields: `clock_in_at`, `clock_out_at`, `worked_minutes`, `close_mode`, `close_reason`, `last_heartbeat_at`, `last_activity_at`.
+*   **Seller Location Model**: [SellerLocation.php](file:///c:/laragon/www/LikhangKamay/app/Models/SellerLocation.php)
+    *   Represents physical shop/workshop workplace locations and geofence perimeters.
+    *   Fields: `name`, `address`, `latitude`, `longitude`, `radius_meters`, `enforce_strict_geofence` (boolean toggle for hard-block vs soft-flagging), `is_active`.
 *   **Payroll & Payroll Item**: [Payroll.php](file:///c:/laragon/www/LikhangKamay/app/Models/Payroll.php) | [PayrollItem.php](file:///c:/laragon/www/LikhangKamay/app/Models/PayrollItem.php)
     *   Represents monthly salary computations and individual payouts.
 
@@ -73,9 +76,10 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
 
 ### HR Domain Services
 *   [PayrollCalculatorService.php](file:///c:/laragon/www/LikhangKamay/app/Services/HR/PayrollCalculatorService.php): Service executing the salary and overtime arithmetic for payroll runs.
-*   [StaffAttendanceService.php](file:///c:/laragon/www/LikhangKamay/app/Services/StaffAttendanceService.php): Handles checking staff in/out, recording heartbeats, and timeout sweeps.
+*   [StaffAttendanceService.php](file:///c:/laragon/www/LikhangKamay/app/Services/StaffAttendanceService.php): Handles checking staff in/out, recording heartbeats, timeout sweeps, and geofence validation (supports both soft-flagging manager approval and strict hard-blocking based on `enforce_strict_geofence`).
 
 ### ERP Controllers
+*   [SellerLocationController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/SellerLocationController.php): Manages workplace locations, GPS coordinates, geofence radius settings, and strict enforcement toggles.
 *   [ProcurementController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/ProcurementController.php), [StockRequestController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/StockRequestController.php): Manages raw material procurement and seller supply resupply requests.
 *   [StaffDashboardController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/StaffDashboardController.php): Provides restricted widget dashboards for non-admin staff users.
 

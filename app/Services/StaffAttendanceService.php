@@ -100,7 +100,7 @@ class StaffAttendanceService
         $flagReason = $isFlagged ? "Off-Site Clock In ({$distanceMeters}m from assigned workplace)" : null;
         $approvalStatus = $isFlagged ? 'pending' : 'approved';
 
-        return StaffAttendanceSession::create([
+        $session = StaffAttendanceSession::create([
             'staff_user_id' => $staff->id,
             'seller_owner_id' => $staff->getEffectiveSellerId(),
             'employee_id' => $staff->employee_id,
@@ -119,6 +119,26 @@ class StaffAttendanceService
             'flag_reason' => $flagReason,
             'approval_status' => $approvalStatus,
         ]);
+
+        if ($isFlagged && $sellerLocation) {
+            try {
+                $sellerOwner = User::find($staff->getEffectiveSellerId());
+                if ($sellerOwner) {
+                    $url = route('hr.employees.time-card', ['employee' => $staff->employee_id ?: $staff->id]);
+                    $sellerOwner->notify(new \App\Notifications\OffSiteClockInNotification(
+                        $session,
+                        $staff->name,
+                        $sellerLocation->name,
+                        (int) $distanceMeters,
+                        $url
+                    ));
+                }
+            } catch (\Throwable $e) {
+                // Prevent notification failure from blocking session creation
+            }
+        }
+
+        return $session;
     }
 
     public function approveSession(StaffAttendanceSession $session, User $manager): StaffAttendanceSession

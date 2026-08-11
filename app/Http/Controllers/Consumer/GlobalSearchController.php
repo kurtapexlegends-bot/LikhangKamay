@@ -269,9 +269,29 @@ class GlobalSearchController extends Controller
         if ($user->isSellerOwner()) {
             $results = array_merge($results, $this->searchSellerLogs($sellerId, $query, $like));
             $results = array_merge($results, $this->searchSellerStaffAudits($sellerId, $query, $like));
+            $results = array_merge($results, $this->searchSellerLocations($sellerId, $query, $like));
         }
 
         return $results;
+    }
+
+    private function searchSellerLocations(int $sellerId, string $query, string $like): array
+    {
+        return \App\Models\SellerLocation::where('user_id', $sellerId)
+            ->where(function ($q) use ($query, $like) {
+                $q->where('name', $like, "%{$query}%")
+                  ->orWhere('address', $like, "%{$query}%");
+            })
+            ->limit(5)
+            ->get()
+            ->map(fn ($loc) => [
+                'id' => "loc-{$loc->id}",
+                'title' => "Location: {$loc->name}",
+                'subtitle' => ($loc->address ? "{$loc->address} • " : '') . "{$loc->radius_meters}m Radius • " . ($loc->enforce_strict_geofence ? 'Strict Block' : 'Soft Audit'),
+                'type' => 'Workplace Location',
+                'url' => route('shop.settings.index', ['tab' => 'locations']),
+                'icon' => 'map-pin',
+            ])->toArray();
     }
 
     private function searchSellerProducts(int $sellerId, string $query, string $like): array
