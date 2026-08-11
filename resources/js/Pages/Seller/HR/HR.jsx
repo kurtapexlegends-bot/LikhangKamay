@@ -146,7 +146,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     <HRHeaderActions
                         canEditHrRecords={canEditHrRecords}
                         activeTab={activeTab}
-                        onSettingsClick={() => setIsSettingsOpen(true)}
+                        onSettingsClick={() => router.visit(route('seller.settings.index'))}
                         onPayrollClick={openPayrollModal}
                         onAddClick={openAddModal}
                     />
