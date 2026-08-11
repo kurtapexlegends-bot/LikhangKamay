@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Models\Review;
 use App\Models\SellerLocation;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -25,6 +27,12 @@ class SettingsController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $productsCount = (int) Product::where('user_id', $sellerOwner->id)->where('status', 'Active')->count();
+        $totalSales = (int) Product::where('user_id', $sellerOwner->id)->where('status', 'Active')->sum('sold');
+        $avgRating = (float) (Review::whereHas('product', fn($q) => $q->where('user_id', $sellerOwner->id))
+            ->visibleToMarketplace()
+            ->avg('rating') ?? 0);
+
         return Inertia::render('Seller/Settings/GlobalSettings', [
             'sellerOwner' => [
                 'id' => $sellerOwner->id,
@@ -32,6 +40,9 @@ class SettingsController extends Controller
                 'email' => $sellerOwner->email,
                 'shop_name' => $sellerOwner->shop_name,
                 'shop_slug' => $sellerOwner->shop_slug,
+                'city' => $sellerOwner->city ?? 'Philippines',
+                'created_at' => $sellerOwner->created_at,
+                'premium_tier' => $sellerOwner->premium_tier,
                 'bio' => $sellerOwner->bio,
                 'avatar' => $sellerOwner->avatar,
                 'banner_image' => $sellerOwner->banner_image,
@@ -44,6 +55,11 @@ class SettingsController extends Controller
                 'holiday_ot_multiplier' => $sellerOwner->holiday_ot_multiplier ?? 2.60,
                 'payroll_working_days' => $sellerOwner->payroll_working_days ?? 26,
                 'standard_workday_hours' => $sellerOwner->standard_workday_hours ?? 8.00,
+            ],
+            'stats' => [
+                'products' => $productsCount,
+                'sales' => $totalSales,
+                'rating' => number_format($avgRating, 1),
             ],
             'locations' => $locations,
             'permissions' => [
