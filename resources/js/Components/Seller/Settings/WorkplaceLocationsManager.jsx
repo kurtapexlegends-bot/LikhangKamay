@@ -52,35 +52,6 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
         }
 
         setDetectingGps(true);
-        let handled = false;
-
-        const completeWithCoordinates = (lat, lng, label = 'Store location detected!') => {
-            if (handled) return;
-            handled = true;
-            setData((prev) => ({
-                ...prev,
-                latitude: lat,
-                longitude: lng,
-            }));
-            setDetectingGps(false);
-            addToast(label, 'success');
-        };
-
-        const silentIpFallback = async () => {
-            try {
-                const res = await fetch('https://ipapi.co/json/');
-                const data = await res.json();
-                if (data && data.latitude && data.longitude) {
-                    const lat = Number(parseFloat(data.latitude).toFixed(8));
-                    const lng = Number(parseFloat(data.longitude).toFixed(8));
-                    completeWithCoordinates(lat, lng, 'Store location detected!');
-                    return;
-                }
-            } catch (e) {
-                // Ignore error
-            }
-            completeWithCoordinates(14.5995, 120.9842, 'Store location set. Drag map pin to adjust.');
-        };
 
         // Pre-check permission status if query API is supported
         if (navigator.permissions && navigator.permissions.query) {
@@ -96,35 +67,28 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
             }
         }
 
-        // Tier 1: Try High Accuracy first (Hardware GPS / Wi-Fi Triangulation)
+        // Strictly query hardware Wi-Fi / GPS triangulation with extended 60-second timeout and 0 cache age
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const lat = Number(position.coords.latitude.toFixed(8));
                 const lng = Number(position.coords.longitude.toFixed(8));
-                completeWithCoordinates(lat, lng, 'Exact location pinpointed!');
+                setData((prev) => ({
+                    ...prev,
+                    latitude: lat,
+                    longitude: lng,
+                }));
+                setDetectingGps(false);
+                addToast('Exact location pinpointed!', 'success');
             },
-            (highErr) => {
-                if (highErr.code === highErr.PERMISSION_DENIED) {
-                    setDetectingGps(false);
-                    addToast('Location access was denied. Please allow location access in your browser.', 'error');
-                    return;
+            (error) => {
+                setDetectingGps(false);
+                if (error.code === error.PERMISSION_DENIED) {
+                    addToast('Location access was denied. Please allow location access in your address bar.', 'error');
+                } else {
+                    addToast('Location detection timed out. Please click on the map to set your position.', 'error');
                 }
-
-                // Tier 2: Try Standard Browser Accuracy (Desktop Wi-Fi / Location)
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = Number(position.coords.latitude.toFixed(8));
-                        const lng = Number(position.coords.longitude.toFixed(8));
-                        completeWithCoordinates(lat, lng, 'Store location detected!');
-                    },
-                    () => {
-                        // Tier 3: Silent IP Geolocation Fallback - zero error toasts while locating!
-                        silentIpFallback();
-                    },
-                    { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
-                );
             },
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
+            { enableHighAccuracy: true, timeout: 60000, maximumAge: 0 }
         );
     };
 
