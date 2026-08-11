@@ -192,9 +192,16 @@ export default function AttendanceCalendarModal({
                             </div>
                         </div>
 
-                        {/* Mobile Selected Day Block */}
-                        <div className="md:hidden mb-4">
-                            {selectedDayBlock}
+                        {/* Mobile Summary Metrics Header */}
+                        <div className="md:hidden grid grid-cols-2 gap-2 mb-4">
+                            <div className="rounded-xl border border-stone-200/80 bg-[#FCF7F2]/60 px-3 py-2 text-center">
+                                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">Total Hours</p>
+                                <p className="mt-0.5 text-xs font-extrabold text-stone-900">{formatWorkedHoursLabel(totalWorkedMinutes)}</p>
+                            </div>
+                            <div className="rounded-xl border border-stone-200/80 bg-[#FCF7F2]/60 px-3 py-2 text-center">
+                                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">Days Logged</p>
+                                <p className="mt-0.5 text-xs font-extrabold text-stone-900">{daysWorked}</p>
+                            </div>
                         </div>
 
                         {/* Legend */}
@@ -220,13 +227,13 @@ export default function AttendanceCalendarModal({
                             {calendarWeeks.map((week, weekIndex) => (
                                 <div key={`week-${weekIndex}`} className="grid grid-cols-7 gap-1.5">
                                     {week.map((day) => day.empty ? (
-                                        <div key={day.key} className="min-h-[50px] rounded-xl border border-dashed border-stone-200/60 bg-transparent"></div>
+                                        <div key={day.key} className="min-h-[48px] rounded-xl border border-dashed border-stone-200/60 bg-transparent"></div>
                                     ) : (
                                         <button
                                             key={day.key}
                                             type="button"
                                             onClick={() => onSelectDate(day.date)}
-                                            className={`min-h-[50px] relative rounded-xl border px-1.5 py-1 text-left transition ${
+                                            className={`min-h-[48px] relative rounded-xl border px-1.5 py-1 text-left transition active:scale-95 ${
                                                 selectedDay?.date === day.date
                                                     ? 'border-clay-300 bg-[#FCF7F2] ring-2 ring-clay-200 ring-offset-1'
                                                     : day.has_hours
@@ -254,42 +261,33 @@ export default function AttendanceCalendarModal({
                                                     )}
                                                 </div>
                                                 {day.has_hours ? (
-                                                    <>
-                                                        {/* Desktop detail */}
-                                                        <div className="hidden sm:flex items-center justify-between gap-1 mt-1">
-                                                            <span className={`text-[10px] font-bold leading-tight ${
-                                                                day.worked_minutes > standardWorkdayMinutes ? 'text-amber-700' : 'text-emerald-700'
-                                                            }`}>
-                                                                {day.worked_hours_label}
+                                                    <div className="flex items-center justify-between gap-1 mt-0.5 sm:mt-1">
+                                                        <span className={`text-[9px] sm:text-[10px] font-bold leading-tight ${
+                                                            day.worked_minutes > standardWorkdayMinutes ? 'text-amber-700' : 'text-emerald-700'
+                                                        }`}>
+                                                            {day.worked_hours_label}
+                                                        </span>
+                                                        {day.worked_minutes > standardWorkdayMinutes && (
+                                                            <span className="inline-flex rounded bg-amber-100 px-1 py-0.2 text-[8px] font-bold uppercase tracking-wider text-amber-800 scale-90 origin-right">
+                                                                OT
                                                             </span>
-                                                            {day.worked_minutes > standardWorkdayMinutes && (
-                                                                <span className="inline-flex rounded bg-amber-100 px-1 py-0.2 text-[8px] font-bold uppercase tracking-wider text-amber-800 scale-90 origin-right">
-                                                                    OT
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        {/* Mobile dot badge */}
-                                                        <div className="sm:hidden flex justify-center mt-1">
-                                                            <span className={`h-1.5 w-1.5 rounded-full ${
-                                                                day.worked_minutes > standardWorkdayMinutes ? 'bg-amber-500' : 'bg-emerald-500'
-                                                            }`} />
-                                                        </div>
-                                                    </>
+                                                        )}
+                                                    </div>
                                                 ) : (
-                                                    <>
-                                                        {/* Desktop default */}
-                                                        <p className="hidden sm:block text-[10px] font-semibold leading-tight mt-1 text-stone-400">
-                                                            -
-                                                        </p>
-                                                        {/* Mobile placeholder to preserve vertical layout spacing */}
-                                                        <div className="sm:hidden h-1.5 mt-1" />
-                                                    </>
+                                                    <p className="text-[9px] sm:text-[10px] font-semibold leading-tight mt-0.5 sm:mt-1 text-stone-400">
+                                                        -
+                                                    </p>
                                                 )}
                                             </div>
                                         </button>
                                     ))}
                                 </div>
                             ))}
+                        </div>
+
+                        {/* Mobile Selected Day Inspection Block (Placed Below Calendar Grid) */}
+                        <div className="md:hidden mt-4">
+                            {selectedDayBlock}
                         </div>
                     </div>
 
