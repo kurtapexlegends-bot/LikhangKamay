@@ -436,19 +436,18 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                                                             ? "bg-amber-50 text-amber-800 border border-amber-200/60"
                                                             : "bg-stone-100 text-stone-600 border border-stone-200"
                                                     }`}>
-                                                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-500" : isUpcoming ? "bg-amber-500" : "bg-stone-400"}`} />
                                                         {isActive ? "Ongoing Active" : isUpcoming ? "Upcoming Scheduled" : "Expired / Ended"}
                                                     </span>
                                                 </td>
 
                                                 {/* Actions */}
                                                 <td className="py-3.5 px-5 text-right whitespace-nowrap">
-                                                    <div className="flex items-center justify-end gap-1.5">
+                                                    <div className="flex items-center justify-end gap-1">
                                                         {discount.is_active && end >= now && (
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleOpenEdit(discount)}
-                                                                className="w-8 h-8 rounded-xl bg-sky-50/80 text-sky-700 hover:bg-sky-100 border border-sky-200/70 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-sky-500/20 shadow-sm"
+                                                                className="p-2 text-clay-700 hover:text-clay-900 hover:bg-clay-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs"
                                                                 title="Edit Campaign"
                                                             >
                                                                 <Edit3 size={14} />
@@ -459,7 +458,7 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                                                                 type="button"
                                                                 onClick={() => openConfirmDeactivate(discount)}
                                                                 disabled={deactivatingId === discount.id}
-                                                                className="w-8 h-8 rounded-xl bg-rose-50/80 text-rose-700 hover:bg-rose-100 border border-rose-200/70 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-rose-500/20 disabled:opacity-40 shadow-sm"
+                                                                className="p-2 text-rose-600 hover:bg-rose-50 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:opacity-40"
                                                                 title="End Early"
                                                             >
                                                                 <PowerOff size={14} />

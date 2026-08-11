@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, AlertTriangle, Search, X, Banknote, Trash2, SlidersHorizontal, ChevronDown, RotateCcw, Filter } from 'lucide-react';
+import { Package, AlertTriangle, Search, X, Banknote, Trash2, Pencil, SlidersHorizontal, ChevronDown, RotateCcw, Filter } from 'lucide-react';
 import QuickRestock from '@/Components/Seller/Shared/QuickRestock';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
@@ -532,11 +532,19 @@ export default function SuppliesTable({
                                             )}
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-end gap-1">
                                                 <button
-                                                    disabled={!canEditStockRequests}
-                                                    onClick={() => onRequestRestock(supply)}
-                                                    className="p-1.5 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50 min-h-[32px] min-w-[32px] flex items-center justify-center"
+                                                    disabled={!canEditProcurement}
+                                                    onClick={() => onEdit(supply)}
+                                                    className="p-2 text-clay-700 hover:text-clay-900 hover:bg-clay-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:cursor-not-allowed disabled:opacity-50"
+                                                    title="Edit Supply"
+                                                >
+                                                    <Pencil size={14} />
+                                                </button>
+                                                <button
+                                                    disabled={!canEditProcurement}
+                                                    onClick={() => onRestockRequest(supply)}
+                                                    className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:cursor-not-allowed disabled:opacity-50"
                                                     title="Request Restock"
                                                 >
                                                     <Banknote size={14} />
@@ -544,7 +552,7 @@ export default function SuppliesTable({
                                                 <button
                                                     disabled={!canEditProcurement}
                                                     onClick={() => onDelete(supply)}
-                                                    className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50 min-h-[32px] min-w-[32px] flex items-center justify-center"
+                                                    className="p-2 text-rose-600 hover:bg-rose-50 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:cursor-not-allowed disabled:opacity-50"
                                                     title="Delete"
                                                 >
                                                     <Trash2 size={14} />
