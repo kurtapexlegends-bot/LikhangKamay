@@ -298,7 +298,7 @@ export default function ShopStorefrontTab({ sellerOwner, stats, products = [], p
                 {products && products.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 pt-2">
                         {products.map((product) => (
-                            <ProductCard key={product.id} product={product} />
+                            <ProductCard key={product.id} product={product} previewOnly={true} />
                         ))}
                     </div>
                 ) : (

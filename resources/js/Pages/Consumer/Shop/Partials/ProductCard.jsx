@@ -6,12 +6,15 @@ import { trackSponsorshipEvent } from '@/utils/sponsorshipTracking';
 import { formatPrice } from '@/utils/money';
 import DiscountCountdownBadge from '@/Components/Consumer/DiscountCountdownBadge';
 
-export default function ProductCard({ product, sponsoredPlacement }) {
+export default function ProductCard({ product, sponsoredPlacement, previewOnly = false }) {
     const hasActiveDiscount = (product.has_discount || Boolean(product.discount_info)) && product.discount_info?.end_at;
+    const targetUrl = previewOnly
+        ? route('products.index', { search: product.name })
+        : route('product.show', product.slug);
 
     return (
         <Link 
-            href={route('product.show', product.slug)} 
+            href={targetUrl} 
             data-sponsored-placement={product.is_sponsored ? sponsoredPlacement : undefined}
             data-sponsored-product-id={product.is_sponsored ? product.id : undefined}
             onClick={() => {
