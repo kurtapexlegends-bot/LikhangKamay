@@ -352,7 +352,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 isCollapsed={isCollapsed}
                             >
                                 {visibleModulesSet.has('shop_settings') && (
-                                    <NavItem href={route('shop.settings')} icon={Sliders} active={active === 'settings'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Shop Settings')} onMouseLeave={handleTooltipLeave}>Shop Settings</NavItem>
+                                    <NavItem href={route('seller.settings.index')} icon={Sliders} active={active === 'settings'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Settings')} onMouseLeave={handleTooltipLeave}>Settings</NavItem>
                                 )}
                             </CategoryGroup>
                         </div>

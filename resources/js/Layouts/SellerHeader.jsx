@@ -5,7 +5,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Breadcrumbs from '@/Components/Breadcrumbs';
-import { Menu, ChevronDown, User, LogOut, Building2, Clock } from 'lucide-react';
+import { Menu, ChevronDown, User, LogOut, Building2, Clock, Sliders } from 'lucide-react';
 
 import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import GlobalSearch from '@/Components/Consumer/GlobalSearch';
@@ -85,6 +85,12 @@ export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuCl
                             </Dropdown.Trigger>
 
                             <Dropdown.Content>
+                                <Dropdown.Link
+                                    href={route("seller.settings.index")}
+                                    className="flex items-center gap-2 font-bold"
+                                >
+                                    <Sliders size={16} /> Global Settings
+                                </Dropdown.Link>
                                 <Dropdown.Link
                                     href={route("profile.edit")}
                                     className="flex items-center gap-2"
