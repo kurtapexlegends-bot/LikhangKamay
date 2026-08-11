@@ -409,105 +409,108 @@ export default function StaffTable({
                             const modulePermissionSummary = summarizeModulePermissions(emp.login_account?.module_permissions || {});
 
                             return (
-                                <div key={emp.id} className="p-4 space-y-3">
-                                    <div className="flex items-start gap-3">
-                                        {emp.has_login_account ? (
-                                            <UserAvatar
-                                                user={{
-                                                    ...emp.login_account,
-                                                    name: emp.name,
-                                                    role: 'staff',
-                                                }}
-                                                className="w-10 h-10 text-xs shadow-sm ring-1 ring-stone-900/5 cursor-pointer"
-                                            />
-                                        ) : (
-                                            <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 font-bold border border-stone-200 text-xs shadow-sm">
-                                                {emp.name.charAt(0)}
-                                            </div>
-                                        )}
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-gray-900">{emp.name}</p>
-                                            <p className="text-xs text-stone-500 font-medium">{emp.role}</p>
-                                            <p className="mt-1 text-xs font-semibold text-gray-800">{formatPeso(emp.salary)}</p>
-                                        </div>
-                                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${directoryStatus.className}`}>
-                                            {directoryStatus.label === 'Clocked In' ? (
-                                                <span className="relative flex h-1.5 w-1.5">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-clay-400 opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-clay-500"></span>
-                                                </span>
-                                            ) : (
-                                                <span className={`w-1.5 h-1.5 rounded-full ${directoryStatus.dotClassName}`}></span>
-                                            )}
-                                            {directoryStatus.label}
-                                        </span>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 gap-2">
-                                        <div className="rounded-xl border border-gray-100 bg-stone-50/70 px-3 py-2">
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">Login Access</p>
-                                            {emp.has_login_account ? (
-                                                <div className="mt-1 space-y-1">
-                                                    <div className="flex flex-wrap items-center gap-1.5">
-                                                        <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase whitespace-nowrap ${loginAccessStatus.className}`}>
-                                                            <span className={`h-1.5 w-1.5 rounded-full ${loginAccessStatus.dotClassName}`}></span>
-                                                            {loginAccessStatus.label}
-                                                        </span>
-                                                        {emp.login_account?.role_preset_key && (
-                                                            <span className="inline-flex items-center rounded-full border border-stone-200 bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-stone-600 whitespace-nowrap">
-                                                                {presetLabelByKey[emp.login_account.role_preset_key] || 'Custom'}
+                                <div key={emp.id} className="p-4 space-y-3 border-b border-stone-100 last:border-0 hover:bg-[#FCF7F2]/30 transition">
+                                        {/* Row 1: Employee Avatar + Info & Status Badge */}
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                {emp.has_login_account ? (
+                                                    <UserAvatar
+                                                        user={{
+                                                            ...emp.login_account,
+                                                            name: emp.name,
+                                                            role: 'staff',
+                                                        }}
+                                                        className="w-10 h-10 text-xs shadow-sm ring-1 ring-stone-900/5 cursor-pointer shrink-0"
+                                                    />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 font-bold border border-stone-200 text-xs shadow-sm shrink-0">
+                                                        {emp.name.charAt(0)}
+                                                    </div>
+                                                )}
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-bold text-gray-900 truncate">{emp.name}</p>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <span className="text-xs text-stone-500 font-medium truncate">{emp.role}</span>
+                                                        {emp.has_login_account && (
+                                                            <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-[8px] font-extrabold tracking-wider text-stone-600 uppercase border border-stone-200/80 whitespace-nowrap">
+                                                                {presetLabelByKey[emp.login_account?.role_preset_key] || 'Staff'}
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-[11px] text-stone-500 break-all">{emp.login_account?.email}</p>
-                                                    {modulePermissionSummary.enabledCount > 0 && (
-                                                        <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider pt-0.5">
-                                                            {modulePermissionSummary.canEditCount} edit / {modulePermissionSummary.readOnlyCount} view
-                                                        </p>
-                                                    )}
                                                 </div>
-                                            ) : (
-                                                <p className="mt-1 text-[11px] text-stone-500">No seller portal login linked.</p>
-                                            )}
+                                            </div>
+                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border shrink-0 ${directoryStatus.className}`}>
+                                                {directoryStatus.label === 'Clocked In' ? (
+                                                    <span className="relative flex h-1.5 w-1.5">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-clay-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-clay-500"></span>
+                                                    </span>
+                                                ) : (
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${directoryStatus.dotClassName}`}></span>
+                                                )}
+                                                {directoryStatus.label}
+                                            </span>
                                         </div>
 
-                                        <div className="rounded-xl border border-gray-100 bg-stone-50/70 px-3 py-2">
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">Attendance</p>
-                                            <div className="mt-1 flex flex-wrap items-center gap-2">
-                                                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${attendanceStatus.className}`}>
-                                                    <span className={`h-1.5 w-1.5 rounded-full ${attendanceStatus.dotClassName}`}></span>
-                                                    {attendanceStatus.label}
-                                                </span>
-                                                {emp.attendance?.summary && (
-                                                    <span className="text-[11px] text-stone-500">{emp.attendance.summary}</span>
+                                        {/* Row 2: Metrics & Compact Action Buttons */}
+                                        <div className="flex items-center justify-between pt-2 border-t border-stone-100/80">
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-extrabold text-stone-900 text-xs sm:text-sm">{formatPeso(emp.salary)}</span>
+                                                {hasAttendanceData ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openAttendanceModal(emp)}
+                                                        className="inline-flex items-center gap-1 rounded-lg border border-stone-200/80 bg-stone-50/70 px-2 py-1 text-[11px] font-bold text-stone-700 hover:border-clay-300 hover:bg-[#FCF7F2] transition shadow-2xs whitespace-nowrap"
+                                                        title="View attendance dates calendar"
+                                                    >
+                                                        <CalendarDays size={12} className="text-clay-600 shrink-0" />
+                                                        <span>{formatWorkedHoursCount(emp.attendance?.worked_minutes)} hrs ({emp.attendance?.days_worked || 0}d)</span>
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-[11px] text-stone-400 font-medium">0 hrs logged</span>
                                                 )}
                                             </div>
+
+                                            {/* Action Icon Group */}
+                                            {canEditHrRecords && (
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <Link
+                                                        href={route('hr.employees.time-card', emp.id)}
+                                                        className="p-2 text-sky-600 hover:text-sky-800 hover:bg-sky-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs active:scale-95"
+                                                        title="Time-Card Audit Logs"
+                                                    >
+                                                        <Clock3 size={14} />
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => openEditModal(emp)}
+                                                        aria-label={`Update ${emp.name}`}
+                                                        className="p-2 text-clay-700 hover:text-clay-900 hover:bg-clay-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs active:scale-95"
+                                                        title="Update Data"
+                                                        type="button"
+                                                    >
+                                                        <Pencil size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deleteEmployee(emp.id)}
+                                                        disabled={emp.has_login_account && !canDeleteStaffAccounts}
+                                                        aria-label={emp.has_login_account && !canDeleteStaffAccounts ? `Cannot remove ${emp.name}` : `Remove ${emp.name}`}
+                                                        className={`p-2 rounded-xl border min-w-[36px] min-h-[36px] flex items-center justify-center transition-all duration-200 bg-white shadow-2xs active:scale-95 ${
+                                                            emp.has_login_account && !canDeleteStaffAccounts
+                                                                ? 'cursor-not-allowed border-stone-200 text-stone-300 shadow-none'
+                                                                : 'text-rose-600 hover:bg-rose-50 border-stone-200/60'
+                                                        }`}
+                                                        title={emp.has_login_account && !canDeleteStaffAccounts
+                                                            ? 'Only shop owner or staff manager can remove accounts with portal login'
+                                                            : 'Remove Employee'}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-
-                                    <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:justify-end">
-                                        <button
-                                            disabled={!canEditHrRecords}
-                                            onClick={() => openEditModal(emp)}
-                                            aria-label={`Edit ${emp.name}`}
-                                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-[11px] font-bold text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto min-h-[44px]"
-                                        >
-                                            <Pencil size={13} />
-                                            Edit
-                                        </button>
-                                        <button
-                                            disabled={!canEditHrRecords}
-                                            onClick={() => deleteEmployee(emp.id)}
-                                            aria-label={`Delete ${emp.name}`}
-                                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 text-[11px] font-bold text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto min-h-[44px]"
-                                        >
-                                            <Trash2 size={13} />
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
                     </div>
                 ) : (
                     <div className="p-4">
@@ -618,7 +621,7 @@ export default function StaffTable({
                                                 <div className="flex items-center justify-end gap-1">
                                                     <Link
                                                         href={route('hr.employees.time-card', emp.id)}
-                                                        className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs"
+                                                        className="p-2 text-sky-600 hover:text-sky-800 hover:bg-sky-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs"
                                                         title="Time-Card Audit Logs"
                                                     >
                                                         <Clock3 size={14} />
