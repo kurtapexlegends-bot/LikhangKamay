@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm, router } from '@inertiajs/react';
 import { MapPin, Navigation, Plus, Trash2, Edit3, Shield, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
+import LocationPickerMap from './LocationPickerMap';
 
 export default function WorkplaceLocationsManager({ locations = [], canEdit = true }) {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -159,7 +160,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                 )}
             </div>
 
-            {/* Location List */}
+            {/* Location List Cards */}
             {locations.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {locations.map((loc) => (
@@ -197,6 +198,15 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                 )}
                             </div>
 
+                            {/* Compact Read-Only Map Preview */}
+                            <LocationPickerMap
+                                latitude={loc.latitude}
+                                longitude={loc.longitude}
+                                radiusMeters={loc.radius_meters}
+                                readOnly
+                                height="150px"
+                            />
+
                             <div className="flex items-center justify-between text-[11px] border-t border-stone-200/60 pt-2.5 text-stone-500 font-mono">
                                 <span>Lat: {loc.latitude}</span>
                                 <span>Lng: {loc.longitude}</span>
@@ -213,10 +223,10 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                 </div>
             )}
 
-            {/* Modal */}
+            {/* Add / Edit Location Modal */}
             {isAddModalOpen && (
                 <div className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-stone-900/50 backdrop-blur-xs flex items-center justify-center">
-                    <div className="w-full max-w-lg bg-white rounded-3xl border border-stone-200/80 p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+                    <div className="w-full max-w-xl bg-white rounded-3xl border border-stone-200/80 p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 my-8">
                         <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                             <h3 className="text-base font-black text-stone-900">
                                 {editingLocation ? 'Edit Workplace Location' : 'Add Workplace Location'}
@@ -239,9 +249,9 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                 />
                             </div>
 
-                            {/* Search via Address */}
-                            <div>
-                                <label className="block text-xs font-bold text-stone-700 mb-1">Address Search (OpenStreetMap)</label>
+                            {/* Search via Address & GPS */}
+                            <div className="space-y-2">
+                                <label className="block text-xs font-bold text-stone-700">Pinpoint Location</label>
                                 <div className="flex gap-2">
                                     <input
                                         type="text"
@@ -256,24 +266,42 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                         onClick={searchAddressWithNominatim}
                                         className="px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition shrink-0"
                                     >
-                                        {searchingAddress ? 'Resolving...' : 'Search Address'}
+                                        {searchingAddress ? 'Searching...' : 'Search'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={detectingGps}
+                                        onClick={detectGpsLocation}
+                                        className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-clay-50 text-clay-700 hover:bg-clay-100 border border-clay-200 text-xs font-bold transition shrink-0"
+                                        title="Detect My GPS"
+                                    >
+                                        <Navigation size={12} />
+                                        {detectingGps ? 'GPS...' : 'My GPS'}
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between py-2 border-y border-stone-100">
-                                <span className="text-xs font-bold text-stone-600">Auto-Detect Device Coordinates</span>
-                                <button
-                                    type="button"
-                                    disabled={detectingGps}
-                                    onClick={detectGpsLocation}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-clay-50 text-clay-700 hover:bg-clay-100 border border-clay-200 text-xs font-bold transition"
-                                >
-                                    <Navigation size={12} />
-                                    {detectingGps ? 'Detecting GPS...' : 'Detect My GPS'}
-                                </button>
+                            {/* Interactive Leaflet Map Visualizer */}
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                                    Interactive Leaflet Map & Geofence Bounds
+                                </label>
+                                <LocationPickerMap
+                                    latitude={data.latitude}
+                                    longitude={data.longitude}
+                                    radiusMeters={data.radius_meters}
+                                    onLocationSelect={({ latitude, longitude }) => {
+                                        setData((prev) => ({
+                                            ...prev,
+                                            latitude,
+                                            longitude,
+                                        }));
+                                    }}
+                                    height="240px"
+                                />
                             </div>
 
+                            {/* Lat/Lng Fields */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-[10px] font-bold uppercase text-stone-400 mb-1">Latitude</label>
@@ -299,6 +327,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                 </div>
                             </div>
 
+                            {/* Radius Slider */}
                             <div>
                                 <div className="flex items-center justify-between mb-1">
                                     <label className="text-xs font-bold text-stone-700">Allowed Geofence Radius</label>
@@ -314,7 +343,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                     className="w-full accent-clay-600"
                                 />
                                 <p className="text-[10px] text-stone-400 font-medium mt-1">
-                                    Staff must be within {data.radius_meters} meters of this coordinate to clock in without a manager exception flag.
+                                    Staff must be within {data.radius_meters} meters of this coordinate to clock in without an exception flag.
                                 </p>
                             </div>
 
