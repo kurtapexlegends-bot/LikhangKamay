@@ -86,7 +86,25 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
             }
         }
 
-        // Try High Accuracy first
+        // Silent IP Geolocation Fallback helper
+        const fallbackToIp = async () => {
+            try {
+                const ipRes = await fetch('https://ipapi.co/json/');
+                const ipData = await ipRes.json();
+                if (ipData && ipData.latitude && ipData.longitude) {
+                    const lat = Number(parseFloat(ipData.latitude).toFixed(8));
+                    const lng = Number(parseFloat(ipData.longitude).toFixed(8));
+                    completeSuccess(lat, lng);
+                    return;
+                }
+            } catch (err) {
+                // Silent catch
+            }
+            // Default center fallback if IP service is unreachable
+            completeSuccess(14.5995, 120.9842);
+        };
+
+        // 1. Try High Accuracy Geolocation (Wi-Fi triangulation / GPS)
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const lat = Number(position.coords.latitude.toFixed(8));
@@ -99,20 +117,21 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                     return;
                 }
 
-                // Fallback attempt to standard accuracy if hardware high-accuracy is unavailable
+                // 2. Try Standard Accuracy
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         const lat = Number(position.coords.latitude.toFixed(8));
                         const lng = Number(position.coords.longitude.toFixed(8));
                         completeSuccess(lat, lng);
                     },
-                    (lowErr) => {
-                        completeError('Could not auto-detect location. Please search your address or click the map pin.');
+                    () => {
+                        // 3. Silent IP fallback - zero negative error toasts!
+                        fallbackToIp();
                     },
-                    { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+                    { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
                 );
             },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
         );
     };
 
