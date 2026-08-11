@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm, router } from '@inertiajs/react';
-import { MapPin, Navigation, Plus, Trash2, Edit3, Shield, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { MapPin, Navigation, Crosshair, Plus, Trash2, Edit3, Shield, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import Modal from '@/Components/Modal';
 import LocationPickerMap from './LocationPickerMap';
@@ -52,23 +52,39 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
         }
 
         setDetectingGps(true);
+
+        const handleSuccess = (position) => {
+            const lat = Number(position.coords.latitude.toFixed(8));
+            const lng = Number(position.coords.longitude.toFixed(8));
+            setData((prev) => ({
+                ...prev,
+                latitude: lat,
+                longitude: lng,
+            }));
+            setDetectingGps(false);
+            addToast('Store location detected!', 'success');
+        };
+
+        // Try high accuracy first, fallback seamlessly to standard accuracy if hardware GPS times out
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = Number(position.coords.latitude.toFixed(8));
-                const lng = Number(position.coords.longitude.toFixed(8));
-                setData((prev) => ({
-                    ...prev,
-                    latitude: lat,
-                    longitude: lng,
-                }));
-                setDetectingGps(false);
-                addToast('Current GPS coordinates captured!', 'success');
+            handleSuccess,
+            (highErr) => {
+                if (highErr.code === highErr.PERMISSION_DENIED) {
+                    setDetectingGps(false);
+                    addToast('Location access was denied. Please enable location permissions in your browser.', 'error');
+                    return;
+                }
+                // Seamless fallback attempt without strict high accuracy
+                navigator.geolocation.getCurrentPosition(
+                    handleSuccess,
+                    (lowErr) => {
+                        setDetectingGps(false);
+                        addToast(`Location detection unavailable: ${lowErr.message}`, 'error');
+                    },
+                    { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+                );
             },
-            (error) => {
-                setDetectingGps(false);
-                addToast(`GPS detection failed: ${error.message}`, 'error');
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
         );
     };
 
@@ -91,7 +107,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                 }));
                 addToast('Address coordinates resolved!', 'success');
             } else {
-                addToast('Address not found. Please enter coordinates manually.', 'error');
+                addToast('Address not found. Please click the map to select coordinates.', 'error');
             }
         } catch (err) {
             console.error(err);
@@ -274,16 +290,16 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                     type="button"
                                     disabled={detectingGps}
                                     onClick={detectGpsLocation}
-                                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-clay-50 text-clay-700 hover:bg-clay-100 border border-clay-200 text-xs font-bold transition shrink-0"
-                                    title="Detect My GPS"
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-clay-50 text-clay-700 hover:bg-clay-100 border border-clay-200 text-xs font-bold transition shrink-0"
+                                    title="Use My Current Location"
                                 >
-                                    <Navigation size={12} />
-                                    {detectingGps ? 'GPS...' : 'My GPS'}
+                                    <Crosshair size={14} className={detectingGps ? "animate-spin text-clay-600" : ""} />
+                                    {detectingGps ? 'Locating...' : 'Use Current Location'}
                                 </button>
                             </div>
                         </div>
 
-                        {/* Interactive Leaflet Map Visualizer */}
+                        {/* Interactive Leaflet Map Visualizer with Locating Overlay */}
                         <div>
                             <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
                                 Interactive Leaflet Map & Geofence Bounds
@@ -292,6 +308,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                 latitude={data.latitude}
                                 longitude={data.longitude}
                                 radiusMeters={data.radius_meters}
+                                isLocating={detectingGps || searchingAddress}
                                 onLocationSelect={({ latitude, longitude }) => {
                                     setData((prev) => ({
                                         ...prev,

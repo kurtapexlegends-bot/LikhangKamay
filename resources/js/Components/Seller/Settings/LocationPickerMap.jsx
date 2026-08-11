@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { Loader2, Navigation } from 'lucide-react';
 
 // Fix Leaflet marker icon URLs in Vite bundle
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -20,6 +21,7 @@ export default function LocationPickerMap({
     radiusMeters = 100,
     onLocationSelect = null,
     readOnly = false,
+    isLocating = false,
     height = '280px',
     className = '',
 }) {
@@ -108,7 +110,7 @@ export default function LocationPickerMap({
         };
     }, []);
 
-    // Update marker, circle, and pan map when coordinates or radius change
+    // Smoothly fly to coordinates when updated
     useEffect(() => {
         if (!mapInstanceRef.current) return;
 
@@ -125,9 +127,12 @@ export default function LocationPickerMap({
             circle.setRadius(radiusNum);
         }
 
-        // Pan to location if moved significantly
+        // Smooth flyTo animation
         if (dist > 0.0001) {
-            map.panTo([latNum, lngNum], { animate: true });
+            map.flyTo([latNum, lngNum], readOnly ? 15 : 16, {
+                duration: 1.2,
+                easeLinearity: 0.25,
+            });
         }
         map.invalidateSize();
     }, [latNum, lngNum, radiusNum]);
@@ -138,7 +143,23 @@ export default function LocationPickerMap({
             style={{ height }}
         >
             <div ref={mapContainerRef} className="w-full h-full" />
-            {!readOnly && (
+
+            {/* Pleasant Locating Overlay */}
+            {isLocating && (
+                <div className="absolute inset-0 z-[500] bg-stone-900/40 backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-white animate-in fade-in duration-200">
+                    <div className="relative flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-clay-500/30 animate-ping absolute" />
+                        <div className="w-10 h-10 rounded-full bg-clay-600 flex items-center justify-center shadow-lg relative z-10">
+                            <Navigation size={18} className="animate-spin text-white" />
+                        </div>
+                    </div>
+                    <span className="text-xs font-bold tracking-wide drop-shadow-md">
+                        Pinpointing your store location...
+                    </span>
+                </div>
+            )}
+
+            {!readOnly && !isLocating && (
                 <div className="absolute bottom-2 left-2 z-[400] bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[10px] font-bold text-stone-700 border border-stone-200/80 shadow-2xs pointer-events-none">
                     Click map or drag pin to adjust coordinates
                 </div>
