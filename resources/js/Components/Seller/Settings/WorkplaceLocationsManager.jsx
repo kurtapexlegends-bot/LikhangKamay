@@ -52,33 +52,14 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
         }
 
         setDetectingGps(true);
-        let handled = false;
-
-        const completeSuccess = (lat, lng) => {
-            if (handled) return;
-            handled = true;
-            setData((prev) => ({
-                ...prev,
-                latitude: lat,
-                longitude: lng,
-            }));
-            setDetectingGps(false);
-            addToast('Store location detected!', 'success');
-        };
-
-        const completeError = (msg) => {
-            if (handled) return;
-            handled = true;
-            setDetectingGps(false);
-            addToast(msg, 'error');
-        };
 
         // Pre-check permission status if query API is supported
         if (navigator.permissions && navigator.permissions.query) {
             try {
                 const status = await navigator.permissions.query({ name: 'geolocation' });
                 if (status.state === 'denied') {
-                    completeError('Location access is blocked in browser settings. Please allow location access in your address bar.');
+                    setDetectingGps(false);
+                    addToast('Location access is blocked in browser settings. Please allow location access in your address bar.', 'error');
                     return;
                 }
             } catch (e) {
@@ -86,52 +67,28 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
             }
         }
 
-        // Silent IP Geolocation Fallback helper
-        const fallbackToIp = async () => {
-            try {
-                const ipRes = await fetch('https://ipapi.co/json/');
-                const ipData = await ipRes.json();
-                if (ipData && ipData.latitude && ipData.longitude) {
-                    const lat = Number(parseFloat(ipData.latitude).toFixed(8));
-                    const lng = Number(parseFloat(ipData.longitude).toFixed(8));
-                    completeSuccess(lat, lng);
-                    return;
-                }
-            } catch (err) {
-                // Silent catch
-            }
-            // Default center fallback if IP service is unreachable
-            completeSuccess(14.5995, 120.9842);
-        };
-
-        // 1. Try High Accuracy Geolocation (Wi-Fi triangulation / GPS)
+        // Strict High Accuracy Hardware Geolocation (Wi-Fi triangulation & hardware GPS)
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const lat = Number(position.coords.latitude.toFixed(8));
                 const lng = Number(position.coords.longitude.toFixed(8));
-                completeSuccess(lat, lng);
+                setData((prev) => ({
+                    ...prev,
+                    latitude: lat,
+                    longitude: lng,
+                }));
+                setDetectingGps(false);
+                addToast('Exact location pinpointed!', 'success');
             },
-            (highErr) => {
-                if (highErr.code === highErr.PERMISSION_DENIED) {
-                    completeError('Location access was denied. Please allow location access in your browser.');
-                    return;
+            (error) => {
+                setDetectingGps(false);
+                if (error.code === error.PERMISSION_DENIED) {
+                    addToast('Location access was denied. Please allow location access in your browser.', 'error');
+                } else {
+                    addToast('Unable to lock exact GPS location. Please search your address or click the map pin.', 'error');
                 }
-
-                // 2. Try Standard Accuracy
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = Number(position.coords.latitude.toFixed(8));
-                        const lng = Number(position.coords.longitude.toFixed(8));
-                        completeSuccess(lat, lng);
-                    },
-                    () => {
-                        // 3. Silent IP fallback - zero negative error toasts!
-                        fallbackToIp();
-                    },
-                    { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
-                );
             },
-            { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
         );
     };
 
