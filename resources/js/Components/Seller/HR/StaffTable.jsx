@@ -9,6 +9,7 @@ import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader'
 import {
     formatPeso,
     formatWorkedHoursSummary,
+    formatWorkedHoursCount,
     formatAttendanceTime,
     getLoginAccessStatus,
     getAttendanceStatus,
@@ -527,12 +528,12 @@ export default function StaffTable({
                 <table className="w-full table-fixed">
                     <thead className="bg-[#FDFBF9] text-[9px] font-bold text-stone-400 uppercase tracking-widest border-b border-stone-100">
                         <tr>
-                            <th className="px-6 py-3.5 w-[20%] text-center">Employee</th>
-                            <th className="px-5 py-3.5 w-[12%] text-center">Monthly Salary</th>
-                            <th className="px-5 py-3.5 w-[12%] text-center">Status</th>
-                            <th className="px-5 py-3.5 w-[20%] text-center">Login Access</th>
-                            <th className="px-5 py-3.5 w-[22%] text-center">Attendance</th>
-                            <th className="px-6 py-3.5 w-[14%] text-center">Actions</th>
+                            <th className="px-6 py-3.5 w-[22%] text-left">Employee</th>
+                            <th className="px-5 py-3.5 w-[14%] text-right">Monthly Salary</th>
+                            <th className="px-5 py-3.5 w-[14%] text-center">Status</th>
+                            <th className="px-5 py-3.5 w-[22%] text-left">Login Access</th>
+                            <th className="px-5 py-3.5 w-[16%] text-center">Attendance</th>
+                            <th className="px-6 py-3.5 w-[12%] text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100 bg-white">
@@ -541,12 +542,12 @@ export default function StaffTable({
                                 const loginAccessStatus = getLoginAccessStatus(emp.login_account);
                                 const attendanceStatus = getAttendanceStatus(emp.attendance);
                                 const directoryStatus = getEmployeeDirectoryStatus(emp, attendanceStatus);
-                                const modulePermissionSummary = summarizeModulePermissions(emp.login_account?.module_permissions || {});
+                                const hasAttendanceData = emp.attendance?.has_attendance_source && (emp.attendance?.calendar_days?.length || 0) > 0;
 
                                 return (
                                     <tr key={emp.id} className="group hover:bg-[#FCF7F2]/50 transition duration-150">
-                                        <td className="px-5 py-3.5 text-center">
-                                            <div className="flex items-center justify-center gap-3 min-w-0">
+                                        <td className="px-6 py-4 text-left">
+                                            <div className="flex items-center gap-3 min-w-0">
                                                 {emp.has_login_account ? (
                                                     <UserAvatar
                                                         user={{
@@ -554,22 +555,24 @@ export default function StaffTable({
                                                             name: emp.name,
                                                             role: 'staff',
                                                         }}
-                                                        className="w-9 h-9 text-xs shadow-sm ring-1 ring-stone-900/5 cursor-pointer"
+                                                        className="w-9 h-9 text-xs shadow-sm ring-1 ring-stone-900/5 cursor-pointer shrink-0"
                                                     />
                                                 ) : (
-                                                    <div className="w-9 h-9 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 font-bold border border-stone-200 text-xs shadow-sm">
+                                                    <div className="w-9 h-9 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 font-bold border border-stone-200 text-xs shadow-sm shrink-0">
                                                         {emp.name.charAt(0)}
                                                     </div>
                                                 )}
                                                 <div className="flex flex-col items-start min-w-0">
-                                                    <span className="font-bold text-gray-900 text-sm truncate">{emp.name}</span>
-                                                    <span className="text-xs text-stone-500 font-medium truncate">{emp.role}</span>
+                                                    <span className="font-bold text-gray-900 text-xs sm:text-sm truncate">{emp.name}</span>
+                                                    <span className="text-[11px] text-stone-500 font-medium truncate">{emp.role}</span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-5 py-3.5 text-center font-bold text-gray-900 text-sm">{formatPeso(emp.salary)}</td>
-                                        <td className="px-5 py-3.5 text-center">
-                                            <span className={`inline-flex items-center justify-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${directoryStatus.className}`}>
+                                        <td className="px-5 py-4 text-right font-extrabold text-stone-900 text-sm">
+                                            {formatPeso(emp.salary)}
+                                        </td>
+                                        <td className="px-5 py-4 text-center">
+                                            <span className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${directoryStatus.className}`}>
                                                 {directoryStatus.label === 'Clocked In' ? (
                                                     <span className="relative flex h-1.5 w-1.5">
                                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-clay-400 opacity-75"></span>
@@ -581,47 +584,41 @@ export default function StaffTable({
                                                 {directoryStatus.label}
                                             </span>
                                         </td>
-                                        <td className="px-5 py-3.5 text-center">
+                                        <td className="px-5 py-4 text-left">
                                             {emp.has_login_account ? (
-                                                <div className="flex flex-col items-center justify-center gap-1 w-full">
-                                                    <div className="flex flex-wrap items-center justify-center gap-1.5">
-                                                        <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase whitespace-nowrap ${loginAccessStatus.className}`}>
-                                                            <span className={`h-1.5 w-1.5 rounded-full ${loginAccessStatus.dotClassName}`}></span>
-                                                            {loginAccessStatus.label}
-                                                        </span>
-                                                        <span className="rounded-full bg-stone-50 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-stone-500 uppercase border border-stone-200 whitespace-nowrap">
-                                                            {presetLabelByKey[emp.login_account?.role_preset_key] || 'Custom'}
-                                                        </span>
-                                                    </div>
-                                                    <span className="text-[11px] text-stone-500 truncate max-w-[180px]" title={emp.login_account?.email}>
+                                                <div className="flex flex-col items-start min-w-0">
+                                                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[9px] font-extrabold tracking-wider text-stone-600 uppercase border border-stone-200/80 whitespace-nowrap">
+                                                        {presetLabelByKey[emp.login_account?.role_preset_key] || 'Staff'}
+                                                    </span>
+                                                    <span className="text-[11px] text-stone-500 truncate max-w-[200px] mt-0.5 font-medium" title={emp.login_account?.email}>
                                                         {emp.login_account?.email}
                                                     </span>
-                                                    {modulePermissionSummary.enabledCount > 0 && (
-                                                        <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider mt-0.5">
-                                                            {modulePermissionSummary.canEditCount} edit / {modulePermissionSummary.readOnlyCount} view
-                                                        </span>
-                                                    )}
                                                 </div>
                                             ) : (
                                                 <span className="text-[11px] font-medium text-stone-400 italic">No linked login</span>
                                             )}
                                         </td>
-                                        <td className="px-5 py-3.5 text-center">
-                                            <div className="flex justify-center">
-                                                <AttendanceSummaryCard
-                                                    attendance={emp.attendance}
-                                                    attendanceStatus={attendanceStatus}
-                                                    monthLabel={monthLabel}
-                                                    onOpenCalendar={() => openAttendanceModal(emp)}
-                                                />
-                                            </div>
+                                        <td className="px-5 py-4 text-center">
+                                            {hasAttendanceData ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openAttendanceModal(emp)}
+                                                    className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200/80 bg-stone-50/70 px-3 py-1.5 text-xs font-bold text-stone-700 hover:border-clay-300 hover:bg-[#FCF7F2] transition shadow-2xs group/att whitespace-nowrap"
+                                                    title="View attendance dates calendar"
+                                                >
+                                                    <CalendarDays size={13} className="text-clay-600 shrink-0 group-hover/att:scale-110 transition-transform" />
+                                                    <span>{formatWorkedHoursCount(emp.attendance?.worked_minutes)} hrs ({emp.attendance?.days_worked || 0}d)</span>
+                                                </button>
+                                            ) : (
+                                                <span className="text-xs text-stone-400 font-medium">0 hrs logged</span>
+                                            )}
                                         </td>
-                                        <td className="px-5 py-3.5 text-center align-middle">
+                                        <td className="px-6 py-4 text-right align-middle">
                                             {canEditHrRecords ? (
-                                                <div className="flex justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                <div className="flex items-center justify-end gap-1">
                                                     <Link
                                                         href={route('hr.employees.time-card', emp.id)}
-                                                        className="p-2 text-stone-600 hover:bg-stone-100 border border-transparent hover:border-stone-200 shadow-sm transition-all duration-200 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center"
+                                                        className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs"
                                                         title="Time-Card Audit Logs"
                                                     >
                                                         <Clock3 size={14} />
@@ -629,7 +626,7 @@ export default function StaffTable({
                                                     <button
                                                         onClick={() => openEditModal(emp)}
                                                         aria-label={`Update ${emp.name}`}
-                                                        className="p-2 text-clay-600 hover:bg-clay-50/50 border border-transparent hover:border-clay-100/30 shadow-sm transition-all duration-200 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center"
+                                                        className="p-2 text-clay-700 hover:text-clay-900 hover:bg-clay-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs"
                                                         title="Update Data"
                                                         type="button"
                                                     >
@@ -639,13 +636,13 @@ export default function StaffTable({
                                                         onClick={() => deleteEmployee(emp.id)}
                                                         disabled={emp.has_login_account && !canDeleteStaffAccounts}
                                                         aria-label={emp.has_login_account && !canDeleteStaffAccounts ? `Cannot remove ${emp.name}` : `Remove ${emp.name}`}
-                                                        className={`p-2 rounded-xl border shadow-sm transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center ${
+                                                        className={`p-2 rounded-xl border min-w-[36px] min-h-[36px] flex items-center justify-center transition-all duration-200 bg-white shadow-2xs ${
                                                             emp.has_login_account && !canDeleteStaffAccounts
-                                                                ? 'cursor-not-allowed bg-stone-50 border-stone-200 text-stone-300 shadow-none'
-                                                                : 'text-rose-600 hover:bg-rose-50 border-transparent hover:border-rose-100/30'
+                                                                ? 'cursor-not-allowed border-stone-200 text-stone-300 shadow-none'
+                                                                : 'text-rose-600 hover:bg-rose-50 border-stone-200/60'
                                                         }`}
                                                         title={emp.has_login_account && !canDeleteStaffAccounts
-                                                            ? 'Only the shop owner or a user with the proper staff account access level can remove employees with login access'
+                                                            ? 'Only shop owner or staff manager can remove accounts with portal login'
                                                             : 'Remove Employee'}
                                                     >
                                                         <Trash2 size={14} />
