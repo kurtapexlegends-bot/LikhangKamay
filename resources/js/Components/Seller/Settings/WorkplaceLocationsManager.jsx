@@ -225,18 +225,20 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
 
             {/* Add / Edit Location Modal */}
             {isAddModalOpen && (
-                <div className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-stone-900/50 backdrop-blur-xs flex items-center justify-center">
-                    <div className="w-full max-w-xl bg-white rounded-3xl border border-stone-200/80 p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 my-8">
-                        <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                <div className="fixed inset-0 z-[100] p-4 sm:p-6 bg-stone-900/50 backdrop-blur-xs flex items-center justify-center min-h-screen">
+                    <div className="w-full max-w-xl bg-white rounded-3xl border border-stone-200/80 shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in fade-in zoom-in-95">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between border-b border-stone-100 p-5 shrink-0 bg-white">
                             <h3 className="text-base font-black text-stone-900">
                                 {editingLocation ? 'Edit Workplace Location' : 'Add Workplace Location'}
                             </h3>
-                            <button onClick={closeModal} className="p-1 text-stone-400 hover:text-stone-700">
+                            <button onClick={closeModal} className="p-1 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition">
                                 <X size={18} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Modal Scrollable Body */}
+                        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-stone-700 mb-1">Location Name</label>
                                 <input
@@ -297,7 +299,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                             longitude,
                                         }));
                                     }}
-                                    height="240px"
+                                    height="200px"
                                 />
                             </div>
 
@@ -347,7 +349,8 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                 </p>
                             </div>
 
-                            <div className="flex justify-end gap-2 border-t border-stone-100 pt-3">
+                            {/* Modal Actions Footer */}
+                            <div className="flex justify-end gap-2 border-t border-stone-100 pt-4 shrink-0">
                                 <button
                                     type="button"
                                     onClick={closeModal}

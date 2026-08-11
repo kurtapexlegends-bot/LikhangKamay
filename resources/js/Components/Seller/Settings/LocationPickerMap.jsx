@@ -71,6 +71,13 @@ export default function LocationPickerMap({
             circleRef.current = circle;
             mapInstanceRef.current = map;
 
+            // Invalidate size after modal transition to force full tile load
+            const timer = setTimeout(() => {
+                if (mapInstanceRef.current) {
+                    mapInstanceRef.current.invalidateSize();
+                }
+            }, 150);
+
             if (!readOnly && onLocationSelect) {
                 // Drag marker event
                 marker.on('dragend', (e) => {
@@ -89,6 +96,8 @@ export default function LocationPickerMap({
                     onLocationSelect({ latitude: newLat, longitude: newLng });
                 });
             }
+
+            return () => clearTimeout(timer);
         }
 
         return () => {
@@ -120,11 +129,12 @@ export default function LocationPickerMap({
         if (dist > 0.0001) {
             map.panTo([latNum, lngNum], { animate: true });
         }
+        map.invalidateSize();
     }, [latNum, lngNum, radiusNum]);
 
     return (
         <div
-            className={`relative rounded-2xl overflow-hidden border border-stone-200 shadow-2xs z-0 ${className}`}
+            className={`isolate relative rounded-2xl overflow-hidden border border-stone-200 shadow-2xs z-0 ${className}`}
             style={{ height }}
         >
             <div ref={mapContainerRef} className="w-full h-full" />
