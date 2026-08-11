@@ -52,42 +52,70 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
         }
 
         setDetectingGps(true);
+        let handled = false;
 
-        // Check permission state to prevent triggering error toast on browser prompt
+        const completeSuccess = (lat, lng, label = 'Store location detected!') => {
+            if (handled) return;
+            handled = true;
+            setData((prev) => ({
+                ...prev,
+                latitude: lat,
+                longitude: lng,
+            }));
+            setDetectingGps(false);
+            addToast(label, 'success');
+        };
+
+        const completeError = (msg, type = 'error') => {
+            if (handled) return;
+            handled = true;
+            setDetectingGps(false);
+            addToast(msg, type);
+        };
+
+        // Pre-check permission status if query API is supported
         if (navigator.permissions && navigator.permissions.query) {
             try {
                 const status = await navigator.permissions.query({ name: 'geolocation' });
                 if (status.state === 'denied') {
-                    setDetectingGps(false);
-                    addToast('Location access is blocked in your browser settings. Please allow location access in your address bar.', 'error');
+                    completeError('Location access is blocked in browser settings. Please allow location access in your address bar.');
                     return;
                 }
             } catch (e) {
-                // Ignore permission API query failure and proceed
+                // Ignore permission query error
             }
         }
 
+        // Single execution wrapper
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const lat = Number(position.coords.latitude.toFixed(8));
                 const lng = Number(position.coords.longitude.toFixed(8));
-                setData((prev) => ({
-                    ...prev,
-                    latitude: lat,
-                    longitude: lng,
-                }));
-                setDetectingGps(false);
-                addToast('Store location detected!', 'success');
+                completeSuccess(lat, lng, 'Store location detected!');
             },
-            (error) => {
-                setDetectingGps(false);
+            async (error) => {
                 if (error.code === error.PERMISSION_DENIED) {
-                    addToast('Location access was denied. Please allow location access in your browser.', 'error');
-                } else {
-                    addToast('Could not fetch location automatically. Please click on the map to set your position.', 'info');
+                    completeError('Location access was denied. Please allow location access in your browser.');
+                    return;
                 }
+
+                // If browser GPS fails, attempt IP fallback silently
+                try {
+                    const ipRes = await fetch('https://ipapi.co/json/');
+                    const ipData = await ipRes.json();
+                    if (ipData && ipData.latitude && ipData.longitude) {
+                        const lat = Number(parseFloat(ipData.latitude).toFixed(8));
+                        const lng = Number(parseFloat(ipData.longitude).toFixed(8));
+                        completeSuccess(lat, lng, 'Approximate store location detected.');
+                        return;
+                    }
+                } catch (ipErr) {
+                    // IP fallback failed silently
+                }
+
+                completeError('Could not fetch location automatically. Please click on the map to set your position.', 'info');
             },
-            { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
+            { enableHighAccuracy: false, timeout: 6000, maximumAge: 30000 }
         );
     };
 
