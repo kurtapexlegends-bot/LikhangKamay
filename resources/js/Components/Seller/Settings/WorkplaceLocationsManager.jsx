@@ -332,31 +332,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                             />
                         </div>
 
-                        {/* Lat/Lng Fields */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="block text-[10px] font-bold uppercase text-stone-400 mb-1">Latitude</label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    required
-                                    value={data.latitude}
-                                    onChange={(e) => setData('latitude', parseFloat(e.target.value))}
-                                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-mono text-stone-900"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-bold uppercase text-stone-400 mb-1">Longitude</label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    required
-                                    value={data.longitude}
-                                    onChange={(e) => setData('longitude', parseFloat(e.target.value))}
-                                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-mono text-stone-900"
-                                />
-                            </div>
-                        </div>
+
 
                         {/* Radius Slider */}
                         <div>
