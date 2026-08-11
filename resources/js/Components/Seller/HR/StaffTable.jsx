@@ -407,6 +407,7 @@ export default function StaffTable({
                             const attendanceStatus = getAttendanceStatus(emp.attendance);
                             const directoryStatus = getEmployeeDirectoryStatus(emp, attendanceStatus);
                             const modulePermissionSummary = summarizeModulePermissions(emp.login_account?.module_permissions || {});
+                            const hasAttendanceData = emp.attendance?.has_attendance_source && (emp.attendance?.calendar_days?.length || 0) > 0;
 
                             return (
                                 <div key={emp.id} className="p-4 space-y-3 border-b border-stone-100 last:border-0 hover:bg-[#FCF7F2]/30 transition">
