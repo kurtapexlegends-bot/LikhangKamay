@@ -85,14 +85,6 @@ export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuCl
                             </Dropdown.Trigger>
 
                             <Dropdown.Content>
-                                {(auth?.user?.role === 'artisan' || auth?.user?.is_workspace_owner) && (
-                                    <Dropdown.Link
-                                        href={route("seller.settings.index")}
-                                        className="flex items-center gap-2 font-bold"
-                                    >
-                                        <Sliders size={16} /> Global Settings
-                                    </Dropdown.Link>
-                                )}
                                 <Dropdown.Link
                                     href={route("profile.edit")}
                                     className="flex items-center gap-2"
@@ -105,6 +97,14 @@ export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuCl
                                 >
                                     <Clock size={16} /> Activity History
                                 </Dropdown.Link>
+                                {(auth?.user?.role === 'artisan' || auth?.user?.is_workspace_owner) && (
+                                    <Dropdown.Link
+                                        href={route("seller.settings.index")}
+                                        className="flex items-center gap-2 font-bold"
+                                    >
+                                        <Sliders size={16} /> Settings
+                                    </Dropdown.Link>
+                                )}
                                 <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700">
                                     <LogOut size={16} /> Log Out
                                 </WorkspaceLogoutLink>
