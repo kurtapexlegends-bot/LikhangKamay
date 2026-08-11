@@ -114,10 +114,10 @@ export default function StaffDashboard({ auth, hub }) {
 
                             {/* Split Tab Container */}
                             {hasActiveSession ? (
-                                <div className="rounded-[2rem] border border-stone-200/80 bg-white p-6 shadow-sm">
+                                <div className="rounded-3xl border border-stone-200/80 bg-white p-6 shadow-2xs">
                                     
                                     {/* Custom Segmented Tab Headings */}
-                                    <div className="bg-stone-100/60 p-1 rounded-xl flex mb-6 max-w-md mx-auto xl:max-w-none xl:mx-0 w-full relative">
+                                    <div className="bg-stone-100/70 p-1 rounded-2xl flex mb-6 max-w-md mx-auto xl:max-w-none xl:mx-0 w-full relative">
                                         {[
                                             { id: 'tools', label: 'Workspace Tools' },
                                             { id: 'checklist', label: 'Daily Checklist', badge: tasks.filter(t => !t.completed).length },
@@ -129,14 +129,14 @@ export default function StaffDashboard({ auth, hub }) {
                                                     key={tab.id}
                                                     type="button"
                                                     onClick={() => setActiveTab(tab.id)}
-                                                    className={`relative flex-1 py-2 text-xs font-bold rounded-lg transition-colors duration-300 min-h-[36px] ${
+                                                    className={`relative flex-1 py-2.5 text-xs font-extrabold rounded-xl transition-colors duration-200 min-h-[38px] ${
                                                         tab.mobileOnly ? 'xl:hidden' : ''
-                                                    } ${isActive ? 'text-stone-900' : 'text-stone-500 hover:text-stone-850'}`}
+                                                    } ${isActive ? 'text-stone-900' : 'text-stone-500 hover:text-stone-800'}`}
                                                 >
                                                     <span className="relative z-10 flex items-center justify-center gap-1.5">
                                                         {tab.label}
                                                         {tab.badge > 0 && (
-                                                            <span className="inline-flex items-center justify-center h-4.5 min-w-[18px] px-1.5 rounded-full text-[9px] font-black bg-clay-50 text-clay-700 border border-clay-100/60">
+                                                            <span className="inline-flex items-center justify-center h-4.5 min-w-[18px] px-1.5 rounded-full text-[9px] font-black bg-clay-100 text-clay-800 border border-clay-200/60">
                                                                 {tab.badge}
                                                             </span>
                                                         )}
@@ -144,7 +144,7 @@ export default function StaffDashboard({ auth, hub }) {
                                                     {isActive && (
                                                         <motion.div
                                                             layoutId="activeTabBackground"
-                                                            className="absolute inset-0 bg-white rounded-lg shadow-sm border border-stone-200/50"
+                                                            className="absolute inset-0 bg-white rounded-xl shadow-2xs border border-stone-200/60"
                                                             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                                                         />
                                                     )}
@@ -178,16 +178,16 @@ export default function StaffDashboard({ auth, hub }) {
                                     {activeTab === 'console' && (
                                         <div className="space-y-6 xl:hidden animate-in fade-in duration-300">
                                             {/* Mobile attendance control card */}
-                                            <div className="p-5 rounded-[2rem] border border-stone-200 bg-stone-50/45">
-                                                <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-3">
+                                            <div className="p-5 rounded-2xl border border-stone-200 bg-stone-50/60">
+                                                <p className="text-[9px] font-extrabold uppercase tracking-wider text-stone-400 mb-3">
                                                     Attendance Control
                                                 </p>
                                                 <StaffAttendanceDock attendance={attendance} />
                                             </div>
 
                                             {/* Workspace Privileges Cloud */}
-                                            <div className="p-5 rounded-[2rem] border border-stone-200 bg-white">
-                                                <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-2.5">
+                                            <div className="p-5 rounded-2xl border border-stone-200 bg-white">
+                                                <p className="text-[9px] font-extrabold uppercase tracking-wider text-stone-400 mb-2.5">
                                                     Workspace Privileges
                                                 </p>
                                                 {(sellerSidebar?.visibleModules || hub.visibleModules || []).length > 0 ? (
@@ -195,7 +195,7 @@ export default function StaffDashboard({ auth, hub }) {
                                                         {(sellerSidebar?.visibleModules || hub.visibleModules || []).map((module) => (
                                                             <span
                                                                 key={module}
-                                                                className="rounded-lg border border-stone-200 bg-stone-50/60 px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-wide text-stone-600"
+                                                                className="rounded-xl border border-stone-200 bg-stone-50/60 px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-wide text-stone-700"
                                                             >
                                                                 {module.replace(/_/g, ' ')}
                                                             </span>
@@ -207,43 +207,43 @@ export default function StaffDashboard({ auth, hub }) {
                                             </div>
 
                                             {/* Operational Reminders */}
-                                            <div className="p-5 rounded-[2rem] border border-stone-200 bg-white">
-                                                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                                            <div className="p-5 rounded-2xl border border-stone-200 bg-white">
+                                                <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-clay-600 mb-1">
                                                     Operational Reminders
                                                 </p>
-                                                <h4 className="mt-1 text-xs font-bold text-stone-900 border-b border-stone-100 pb-2.5 mb-3.5">
+                                                <h4 className="text-xs font-extrabold text-stone-900 border-b border-stone-100 pb-2.5 mb-3.5">
                                                     Daily Focus Guidelines
                                                 </h4>
                                                 <div className="space-y-3">
                                                     {hub.highlights.map((item) => (
                                                         <div key={item} className="flex gap-3 items-start group">
-                                                            <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-md bg-clay-50 text-clay-600 border border-clay-100/50 transition-colors duration-300 group-hover:bg-clay-100 group-hover:text-clay-700">
+                                                            <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-lg bg-clay-50 text-clay-700 border border-clay-200/60">
                                                                 <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
                                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                                                 </svg>
                                                             </span>
-                                                            <p className="text-xs font-medium leading-relaxed text-stone-600 group-hover:text-stone-850 transition-colors duration-300">{item}</p>
+                                                            <p className="text-xs font-medium leading-relaxed text-stone-600">{item}</p>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
 
                                             {/* Team Messaging */}
-                                            <div className="rounded-[2rem] border border-stone-200 bg-white p-5 flex flex-col justify-between">
+                                            <div className="rounded-2xl border border-stone-200 bg-white p-5 flex flex-col justify-between space-y-4">
                                                 <div>
-                                                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                                                    <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-stone-400">
                                                         Staff Network
                                                     </p>
-                                                    <h3 className="mt-1 text-sm font-bold tracking-tight text-stone-900">
+                                                    <h3 className="mt-1 text-sm font-extrabold tracking-tight text-stone-900">
                                                         Direct Messaging
                                                     </h3>
-                                                    <p className="mt-1.5 text-xs leading-relaxed text-stone-500">
+                                                    <p className="mt-1 text-xs leading-relaxed text-stone-500 font-medium">
                                                         Communicate securely with the shop owner and team.
                                                     </p>
                                                 </div>
                                                 <Link
                                                     href={route(hub.teamMessagesRoute)}
-                                                    className="mt-4 flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-stone-50/80 hover:bg-stone-100 px-3.5 py-2.5 text-xs font-bold text-stone-800 transition active:scale-[0.98]"
+                                                    className="flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-stone-50/80 hover:bg-stone-100 px-3.5 py-2.5 text-xs font-extrabold text-stone-800 transition active:scale-[0.98]"
                                                 >
                                                     Access Team Inbox
                                                     <ArrowRight size={14} className="text-stone-500" />
@@ -254,41 +254,43 @@ export default function StaffDashboard({ auth, hub }) {
 
                                 </div>
                             ) : (
-                                <section className="rounded-[2rem] border border-stone-200 bg-white p-6 sm:p-7 shadow-sm animate-in fade-in duration-300">
-                                    <div className="flex items-start gap-4">
-                                        <div className="h-10 w-10 flex shrink-0 items-center justify-center rounded-xl bg-clay-50 text-clay-600 border border-clay-100">
-                                            <Compass size={18} strokeWidth={2.5} />
+                                <section className="rounded-3xl border border-stone-200/80 bg-white p-6 sm:p-8 shadow-2xs animate-in fade-in duration-300">
+                                    <div className="flex flex-col sm:flex-row items-start gap-5">
+                                        <div className="h-12 w-12 flex shrink-0 items-center justify-center rounded-2xl bg-clay-100/70 text-clay-800 border border-clay-200/80 shadow-2xs">
+                                            <ShieldCheck size={22} strokeWidth={2.4} />
                                         </div>
-                                        <div>
-                                            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
-                                                Workspace Offline
-                                            </p>
-                                            <h2 className="mt-1 text-lg font-bold text-stone-900">
-                                                {isPaused ? 'You are currently on break.' : 'Clock in to start working.'}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-wider border border-amber-200">
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                                    {isPaused ? 'Shift Paused' : 'Workspace Offline'}
+                                                </span>
+                                            </div>
+                                            <h2 className="text-xl font-extrabold text-stone-900 tracking-tight">
+                                                {isPaused ? 'Shift Paused on Break' : 'Ready to Start Your Shift?'}
                                             </h2>
-                                            <p className="mt-1.5 text-xs leading-relaxed text-stone-500 max-w-xl">
+                                            <p className="mt-1.5 text-xs leading-relaxed text-stone-600 max-w-xl font-medium">
                                                 {isPaused
-                                                    ? 'Your assigned modules remain locked while you are on break. Click the button to resume your active workspace shift.'
-                                                    : 'Your session has not started. Please clock in with Selfie & GPS verification to unlock your assigned workspace tools.'}
+                                                    ? 'Your assigned operational modules remain temporarily locked while on break. Resume your shift anytime to restore full workspace access.'
+                                                    : 'Complete biometric selfie proof and GPS workplace geofence verification to unlock your assigned operational tools.'}
                                             </p>
 
-                                            <div className="mt-3 flex flex-wrap items-center gap-3 text-[10px] font-medium text-stone-500">
-                                                <span className="flex items-center gap-1.5">
-                                                    <Camera size={12} className="text-clay-600" /> WebCam Selfie Proof
+                                            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-bold text-stone-600">
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100/80 border border-stone-200/70">
+                                                    <Camera size={13} className="text-clay-600" /> Webcam Selfie Proof
                                                 </span>
-                                                <span className="text-stone-300">•</span>
-                                                <span className="flex items-center gap-1.5">
-                                                    <MapPin size={12} className="text-clay-600" /> GPS Geofence Check
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100/80 border border-stone-200/70">
+                                                    <MapPin size={13} className="text-clay-600" /> GPS Geofence Check
                                                 </span>
                                             </div>
 
                                             <button
                                                 type="button"
                                                 onClick={resumeWork}
-                                                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-clay-700 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-clay-800 active:scale-95 duration-300 shadow-md shadow-clay-700/10 min-h-[44px]"
+                                                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-clay-950 px-6 py-3 text-xs font-extrabold text-white transition-all hover:bg-clay-900 active:scale-[0.98] duration-200 shadow-md shadow-clay-950/15 min-h-[46px]"
                                             >
-                                                <PlayCircle size={14} />
-                                                {isPaused ? 'Resume Shift' : 'Clock In Now'}
+                                                <PlayCircle size={16} strokeWidth={2.4} />
+                                                {isPaused ? 'Resume Active Shift Work' : 'Verify & Start Shift Now'}
                                             </button>
                                         </div>
                                     </div>

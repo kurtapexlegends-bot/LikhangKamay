@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
-import { Calendar, ArrowRight } from 'lucide-react';
+import { Calendar, ArrowRight, ShieldCheck, MessageSquare, Check } from 'lucide-react';
 import StaffClockInModal from '@/Components/Staff/Dashboard/StaffClockInModal';
 
 export default function ShiftConsolePanel({
@@ -17,11 +17,11 @@ export default function ShiftConsolePanel({
     return (
         <div className="hidden xl:grid gap-6 xl:grid-cols-1">
             {/* Shift Console & Attendance */}
-            <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+            <div className="rounded-3xl border border-stone-200/80 bg-white p-6 shadow-2xs">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
                     <div className="flex items-center gap-2">
-                        <Calendar size={14} className="text-stone-400" />
-                        <h3 className="text-xs font-black uppercase tracking-wider text-stone-500">Shift Desk</h3>
+                        <Calendar size={14} className="text-clay-600" />
+                        <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-700">Shift Console</h3>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <span className="relative flex h-2 w-2">
@@ -30,7 +30,7 @@ export default function ShiftConsolePanel({
                             )}
                             <span className={`relative inline-flex rounded-full h-2 w-2 ${hasActiveSession ? 'bg-emerald-500' : 'bg-amber-400'}`}></span>
                         </span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-600">
+                        <span className={`text-[10px] font-extrabold uppercase tracking-wider ${hasActiveSession ? 'text-emerald-700' : 'text-amber-700'}`}>
                             {hasActiveSession ? 'Clocked In' : 'Clocked Out'}
                         </span>
                     </div>
@@ -38,88 +38,91 @@ export default function ShiftConsolePanel({
 
                 <div className="space-y-4">
                     {hasActiveSession ? (
-                        <div className="p-3.5 bg-emerald-50/30 border border-emerald-100/80 rounded-2xl flex items-center justify-between gap-3">
+                        <div className="p-4 bg-emerald-50/50 border border-emerald-200/80 rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
                             <div>
-                                <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Active Shift Session</p>
-                                <p className="text-xs font-bold text-[#1e3d2f] mt-0.5">
-                                    {attendance?.worked_hours_label ? `${attendance.worked_hours_label} Logged Today` : 'Shift Active & Tracked'}
+                                <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800">Active Shift Session</p>
+                                <p className="text-xs font-bold text-emerald-950 mt-0.5">
+                                    {attendance?.worked_hours_label ? `${attendance.worked_hours_label} Logged Today` : 'Shift Active & Verified'}
                                 </p>
                             </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-[10px] font-bold text-emerald-700">Live</span>
+                            <div className="flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-full bg-emerald-100/80 border border-emerald-200">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                                <span className="text-[9px] font-black uppercase text-emerald-800">Live</span>
                             </div>
                         </div>
                     ) : (
-                        <div className="p-3.5 bg-stone-50 border border-stone-200/70 rounded-2xl">
-                            <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Shift Status</p>
-                            <p className="text-xs font-semibold text-stone-600 mt-0.5">Offline · Awaiting Clock In</p>
+                        <div className="p-4 bg-stone-50/80 border border-stone-200/80 rounded-2xl">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Shift Status</p>
+                            <p className="text-xs font-extrabold text-stone-800 mt-0.5">Offline • Verification Pending</p>
                         </div>
                     )}
 
                     {/* Module Privileges Cloud */}
-                    <div className="pt-2">
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-2">Workspace Privileges</p>
+                    <div className="pt-1">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 mb-2.5">Workspace Privileges</p>
                         {hasActiveSession && visibleModules.length > 0 ? (
-                            <div className="flex overflow-x-auto xl:flex-wrap xl:overflow-x-visible gap-1.5 pb-1.5 scrollbar-none snap-x">
+                            <div className="flex overflow-x-auto xl:flex-wrap xl:overflow-x-visible gap-1.5 pb-1 scrollbar-none snap-x">
                                 {visibleModules.map((module) => (
                                     <span
                                         key={module}
-                                        className="rounded-lg border border-stone-200 bg-stone-50/60 px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-wide text-stone-600 shrink-0 snap-start"
+                                        className="rounded-xl border border-stone-200 bg-stone-50/80 px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-wide text-stone-700 shrink-0 snap-start shadow-2xs"
                                     >
                                         {module.replace(/_/g, ' ')}
                                     </span>
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-[11px] text-stone-400 font-medium">Privileges will list here after clocking in.</p>
+                            <p className="text-[11px] text-stone-400 font-medium">Unlocked privileges will list here after clocking in.</p>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Operational Reminders & Focus Guidelines */}
-            <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
-                    Operational Reminders
-                </p>
-                <h4 className="mt-1.5 text-sm font-bold text-stone-900 border-b border-stone-100 pb-2.5">
-                    Daily Focus Guidelines
-                </h4>
+            {/* Operational Guidelines Card */}
+            <div className="rounded-3xl border border-stone-200/80 bg-white p-6 shadow-2xs space-y-4">
+                <div>
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-clay-600">
+                        Operational Focus
+                    </p>
+                    <h4 className="mt-1 text-sm font-extrabold text-stone-900 border-b border-stone-100 pb-3">
+                        Daily Operational Guidelines
+                    </h4>
+                </div>
 
-                <div className="mt-4 space-y-3.5">
+                <div className="space-y-3">
                     {highlights.map((item) => (
                         <div key={item} className="flex gap-3 items-start group">
-                            <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-md bg-clay-50 text-clay-600 border border-clay-100/50 transition-colors duration-300 group-hover:bg-clay-100 group-hover:text-clay-700">
-                                <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                </svg>
+                            <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-lg bg-clay-50 text-clay-700 border border-clay-200/60 transition-colors duration-200 group-hover:bg-clay-600 group-hover:text-white">
+                                <Check size={11} strokeWidth={3} />
                             </span>
-                            <p className="text-xs font-medium leading-relaxed text-stone-600 group-hover:text-stone-850 transition-colors duration-300">{item}</p>
+                            <p className="text-xs font-medium leading-relaxed text-stone-600 group-hover:text-stone-900 transition-colors duration-200">{item}</p>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* Direct Messaging Card - ONLY rendered when staff IS CLOCKED IN */}
+            {/* Direct Messaging Card */}
             {hasActiveSession && (
-                <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm flex flex-col justify-between">
+                <div className="rounded-3xl border border-stone-200/80 bg-white p-6 shadow-2xs flex flex-col justify-between space-y-4">
                     <div>
-                        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">
-                            Staff Network
-                        </p>
-                        <h3 className="mt-1 text-sm font-bold tracking-tight text-stone-900">
-                            Direct Messaging
+                        <div className="flex items-center gap-2 mb-1">
+                            <MessageSquare size={15} className="text-clay-600" />
+                            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-stone-400">
+                                Staff Network
+                            </p>
+                        </div>
+                        <h3 className="text-sm font-extrabold text-stone-900">
+                            Team Direct Messaging
                         </h3>
-                        <p className="mt-1.5 text-xs leading-relaxed text-stone-500">
-                            Communicate securely with the shop owner and team.
+                        <p className="mt-1 text-xs leading-relaxed text-stone-500 font-medium">
+                            Communicate instantly with shop owners and team members.
                         </p>
                     </div>
                     <Link
                         href={route(teamMessagesRoute)}
-                        className="mt-4 flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-stone-50/80 hover:bg-stone-100 px-3.5 py-2.5 text-xs font-bold text-stone-800 transition active:scale-[0.98]"
+                        className="flex items-center justify-between gap-2 rounded-2xl border border-stone-200 bg-stone-50/90 hover:bg-stone-100 px-4 py-3 text-xs font-extrabold text-stone-900 transition active:scale-[0.98] shadow-2xs"
                     >
-                        Access Team Inbox
+                        <span>Access Team Inbox</span>
                         <ArrowRight size={14} className="text-stone-500" />
                     </Link>
                 </div>
