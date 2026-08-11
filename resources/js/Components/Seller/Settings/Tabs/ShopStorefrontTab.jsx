@@ -1,8 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import { Store, UploadCloud, Image, CheckCircle2, MessageSquare } from 'lucide-react';
+import { Store, Image, CheckCircle2, UploadCloud } from 'lucide-react';
+
+const formatImgUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http') || path.startsWith('/storage')) return path;
+    return `/storage/${path}`;
+};
 
 export default function ShopStorefrontTab({ sellerOwner }) {
+    const [avatarPreview, setAvatarPreview] = useState(formatImgUrl(sellerOwner.avatar));
+    const [bannerPreview, setBannerPreview] = useState(formatImgUrl(sellerOwner.banner_image));
+
     const form = useForm({
         bio: sellerOwner.bio || '',
         auto_reply_on_completion: sellerOwner.auto_reply_on_completion || false,
@@ -10,6 +19,22 @@ export default function ShopStorefrontTab({ sellerOwner }) {
         banner_image: null,
         avatar: null,
     });
+
+    const handleAvatarChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            form.setData('avatar', file);
+            setAvatarPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleBannerChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            form.setData('banner_image', file);
+            setBannerPreview(URL.createObjectURL(file));
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -19,7 +44,7 @@ export default function ShopStorefrontTab({ sellerOwner }) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-2xs space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-xs space-y-6">
             <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
                 <div className="w-10 h-10 rounded-xl bg-clay-50 flex items-center justify-center text-clay-700">
                     <Store size={20} />
@@ -30,7 +55,7 @@ export default function ShopStorefrontTab({ sellerOwner }) {
                 </div>
             </div>
 
-            {/* Shop Bio */}
+            {/* Shop Story / Bio */}
             <div>
                 <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
                     Shop Story / Bio
@@ -47,28 +72,28 @@ export default function ShopStorefrontTab({ sellerOwner }) {
                 )}
             </div>
 
-            {/* Image Uploads */}
+            {/* Image Uploads Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
                         Shop Logo / Avatar
                     </label>
                     <div className="flex items-center gap-4 p-3 rounded-xl border border-stone-200 bg-stone-50/50">
-                        {sellerOwner.avatar ? (
+                        {avatarPreview ? (
                             <img
-                                src={`/storage/${sellerOwner.avatar}`}
+                                src={avatarPreview}
                                 alt="Shop Avatar"
-                                className="w-12 h-12 rounded-xl object-cover border border-stone-200"
+                                className="w-14 h-14 rounded-xl object-cover border border-stone-200 shrink-0"
                             />
                         ) : (
-                            <div className="w-12 h-12 rounded-xl bg-stone-200 flex items-center justify-center text-stone-500">
-                                <Store size={20} />
+                            <div className="w-14 h-14 rounded-xl bg-stone-200 flex items-center justify-center text-stone-500 shrink-0">
+                                <Store size={22} />
                             </div>
                         )}
                         <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => form.setData('avatar', e.target.files[0])}
+                            onChange={handleAvatarChange}
                             className="text-xs text-stone-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-clay-600 file:text-white hover:file:bg-clay-700 cursor-pointer"
                         />
                     </div>
@@ -79,21 +104,21 @@ export default function ShopStorefrontTab({ sellerOwner }) {
                         Storefront Banner Image
                     </label>
                     <div className="flex items-center gap-4 p-3 rounded-xl border border-stone-200 bg-stone-50/50">
-                        {sellerOwner.banner_image ? (
+                        {bannerPreview ? (
                             <img
-                                src={`/storage/${sellerOwner.banner_image}`}
+                                src={bannerPreview}
                                 alt="Shop Banner"
-                                className="w-16 h-12 rounded-xl object-cover border border-stone-200"
+                                className="w-20 h-14 rounded-xl object-cover border border-stone-200 shrink-0"
                             />
                         ) : (
-                            <div className="w-16 h-12 rounded-xl bg-stone-200 flex items-center justify-center text-stone-500">
-                                <Image size={20} />
+                            <div className="w-20 h-14 rounded-xl bg-stone-200 flex items-center justify-center text-stone-500 shrink-0">
+                                <Image size={22} />
                             </div>
                         )}
                         <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => form.setData('banner_image', e.target.files[0])}
+                            onChange={handleBannerChange}
                             className="text-xs text-stone-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-clay-600 file:text-white hover:file:bg-clay-700 cursor-pointer"
                         />
                     </div>
