@@ -177,12 +177,12 @@ export default function ProductTable({
                                 </div>
                             </td>
                             <td className="px-5 py-3 text-center">
-                                <div className="flex items-center justify-center gap-1.5">
+                                <div className="flex items-center justify-center gap-1">
                                     <button
                                         type="button"
                                         disabled={!canEditProducts}
                                         onClick={() => openRestockModal(product)}
-                                        className="w-8 h-8 rounded-xl bg-emerald-50/80 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/70 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-40"
+                                        className="p-2 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:opacity-40"
                                         title={canEditProducts ? "Restock" : "Read only"}
                                     >
                                         <RefreshCw size={14} />
@@ -191,7 +191,7 @@ export default function ProductTable({
                                         type="button"
                                         disabled={!canEditProducts}
                                         onClick={() => openDeductModal(product)}
-                                        className="w-8 h-8 rounded-xl bg-rose-50/80 text-rose-700 hover:bg-rose-100 border border-rose-200/70 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-rose-500/20 disabled:opacity-40"
+                                        className="p-2 text-rose-600 hover:text-rose-800 hover:bg-rose-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:opacity-40"
                                         title={canEditProducts ? "Manual Deduct" : "Read only"}
                                     >
                                         <TrendingUp size={14} className="rotate-180" />
@@ -200,7 +200,7 @@ export default function ProductTable({
                                         type="button"
                                         disabled={!canEditProducts}
                                         onClick={() => openEditModal(product)}
-                                        className="w-8 h-8 rounded-xl bg-sky-50/80 text-sky-700 hover:bg-sky-100 border border-sky-200/70 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-sky-500/20 disabled:opacity-40"
+                                        className="p-2 text-clay-700 hover:text-clay-900 hover:bg-clay-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:opacity-40"
                                         title={canEditProducts ? "Edit" : "Read only"}
                                     >
                                         <Edit3 size={14} />
@@ -210,7 +210,7 @@ export default function ProductTable({
                                             type="button"
                                             disabled={!canEditProducts}
                                             onClick={() => openArchiveModal(product)}
-                                            className="w-8 h-8 rounded-xl bg-stone-100 text-stone-700 hover:bg-stone-200 border border-stone-200 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-stone-500/20 disabled:opacity-40"
+                                            className="p-2 text-amber-700 hover:text-amber-900 hover:bg-amber-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:opacity-40"
                                             title={canEditProducts ? "Unarchive" : "Read only"}
                                         >
                                             <RotateCcw size={14} />
@@ -220,7 +220,7 @@ export default function ProductTable({
                                             type="button"
                                             disabled={!canEditProducts}
                                             onClick={() => openArchiveModal(product)}
-                                            className="w-8 h-8 rounded-xl bg-stone-100 text-stone-700 hover:bg-stone-200 border border-stone-200 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-stone-500/20 disabled:opacity-40"
+                                            className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:opacity-40"
                                             title={canEditProducts ? "Archive" : "Read only"}
                                         >
                                             <Archive size={14} />
