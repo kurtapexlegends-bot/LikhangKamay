@@ -456,7 +456,8 @@ class GlobalSearchController extends Controller
 
     private function searchSellerLocations(int $sellerId, string $query, string $like): array
     {
-        return \App\Models\SellerLocation::where('user_id', $sellerId)
+        return \App\Models\SellerLocation::select('id', 'name', 'address', 'radius_meters', 'enforce_strict_geofence')
+            ->where('user_id', $sellerId)
             ->where(function ($q) use ($query, $like) {
                 $q->where('name', $like, "%{$query}%")
                   ->orWhere('address', $like, "%{$query}%");
@@ -475,7 +476,8 @@ class GlobalSearchController extends Controller
 
     private function searchSellerProducts(int $sellerId, string $query, string $like): array
     {
-        return Product::where('user_id', $sellerId)
+        return Product::select('id', 'name', 'sku', 'stock', 'status', 'category')
+            ->where('user_id', $sellerId)
             ->where(function ($q) use ($query, $like) {
                 $q->where('name', $like, "%{$query}%")
                     ->orWhere('sku', $like, "%{$query}%")
@@ -488,7 +490,7 @@ class GlobalSearchController extends Controller
                 'title' => $p->name,
                 'subtitle' => "SKU: {$p->sku} • Stock: {$p->stock}",
                 'type' => 'Product',
-                'url' => route('products.index', ['search' => $p->name]),
+                'url' => $this->safeRoute('products.index', ['search' => $p->name]),
                 'icon' => 'package',
             ])->toArray();
     }
@@ -497,7 +499,8 @@ class GlobalSearchController extends Controller
     {
         $cleanSearch = preg_replace('/^ORD-/i', '', $query);
 
-        return Order::where('artisan_id', $sellerId)
+        return Order::select('id', 'order_number', 'customer_name', 'status')
+            ->where('artisan_id', $sellerId)
             ->where(function ($q) use ($query, $cleanSearch, $like) {
                 $q->where('order_number', $like, "%{$query}%")
                     ->orWhere('order_number', $like, "%{$cleanSearch}%")
@@ -523,14 +526,15 @@ class GlobalSearchController extends Controller
                 'title' => $o->order_number,
                 'subtitle' => "Customer: {$o->customer_name} • Status: {$o->status}",
                 'type' => 'Order',
-                'url' => route('orders.index', ['search' => $o->order_number]),
+                'url' => $this->safeRoute('orders.index', ['search' => $o->order_number]),
                 'icon' => 'shopping-cart',
             ])->toArray();
     }
 
     private function searchSellerSupplies(int $sellerId, string $query, string $like): array
     {
-        return Supply::where('user_id', $sellerId)
+        return Supply::select('id', 'name', 'quantity', 'unit', 'unit_cost')
+            ->where('user_id', $sellerId)
             ->where('name', $like, "%{$query}%")
             ->limit(5)
             ->get()
@@ -539,26 +543,27 @@ class GlobalSearchController extends Controller
                 'title' => "Supply: {$s->name}",
                 'subtitle' => "Stock: {$s->quantity} {$s->unit} • Cost: ₱{$s->unit_cost}",
                 'type' => 'Inventory',
-                'url' => route('procurement.index', ['search' => $s->name]),
+                'url' => $this->safeRoute('procurement.index', ['search' => $s->name]),
                 'icon' => 'box',
             ])->toArray();
     }
 
     private function searchSellerStockRequests(int $sellerId, string $query, string $like): array
     {
-        return StockRequest::where('user_id', $sellerId)
+        return StockRequest::select('id', 'supply_id', 'quantity', 'status')
+            ->where('user_id', $sellerId)
             ->whereHas('supply', function($q) use ($query, $like) {
                 $q->where('name', $like, "%{$query}%");
             })
-            ->with('supply')
+            ->with('supply:id,name')
             ->limit(5)
             ->get()
             ->map(fn ($sr) => [
                 'id' => "sr-{$sr->id}",
-                'title' => "Stock Request: {$sr->supply->name}",
+                'title' => "Stock Request: " . ($sr->supply->name ?? 'Supply'),
                 'subtitle' => "Qty: {$sr->quantity} • Status: {$sr->status}",
                 'type' => 'Stock Request',
-                'url' => route('stock-requests.index', ['search' => $sr->supply->name]),
+                'url' => $this->safeRoute('stock-requests.index', ['search' => $sr->supply->name ?? '']),
                 'icon' => 'truck',
             ])->toArray();
     }
