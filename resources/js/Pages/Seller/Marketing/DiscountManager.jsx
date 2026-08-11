@@ -6,6 +6,7 @@ import DiscountModal from "@/Components/Seller/Catalog/DiscountModal";
 import KPICard from "@/Components/KPICard";
 import WorkspaceEmptyState from "@/Components/WorkspaceEmptyState";
 import ConfirmationModal from "@/Components/ConfirmationModal";
+import FilterToolbarHeader from "@/Components/Seller/Shared/FilterToolbarHeader";
 import { Tag, Plus, PowerOff, CheckCircle2, Clock, TrendingUp, Edit3 } from "lucide-react";
 
 export default function DiscountManager({ discounts, stats, filters, products, auth }) {
@@ -17,6 +18,25 @@ export default function DiscountManager({ discounts, stats, filters, products, a
         isOpen: false,
         discountId: null,
         discountName: "",
+    });
+
+    const [searchQuery, setSearchQuery] = useState(filters?.search || "");
+    const [typeFilter, setTypeFilter] = useState(filters?.type || "all");
+
+    const rawList = Array.isArray(discounts) ? discounts : (discounts?.data || []);
+
+    const filteredDiscounts = rawList.filter((discount) => {
+        if (typeFilter !== "all" && discount.type !== typeFilter) {
+            return false;
+        }
+        if (searchQuery && searchQuery.trim() !== "") {
+            const q = searchQuery.toLowerCase();
+            const nameMatch = (discount.name || "").toLowerCase().includes(q);
+            const valueMatch = String(discount.value).includes(q);
+            const productMatch = discount.products?.some((p) => p.name?.toLowerCase().includes(q));
+            return nameMatch || valueMatch || productMatch;
+        }
+        return true;
     });
 
     const activeStatus = filters?.status || "ongoing";
@@ -136,47 +156,64 @@ export default function DiscountManager({ discounts, stats, filters, products, a
 
                 {/* Status Tabs & Content Container */}
                 <div className="bg-white rounded-3xl border border-stone-200/80 overflow-hidden shadow-sm">
-                    {/* Standardized Single-Row Pill Track */}
-                    <div className="p-3 border-b border-stone-200/80 bg-stone-50/40">
-                        <div className="p-1 bg-stone-100/70 rounded-2xl flex items-center gap-1 overflow-x-auto scrollbar-none">
-                            {[
-                                { key: "ongoing", label: "Ongoing Active", count: stats?.ongoing_count || 0, dot: "bg-emerald-500" },
-                                { key: "upcoming", label: "Upcoming Scheduled", count: stats?.upcoming_count || 0, dot: "bg-amber-500" },
-                                { key: "expired", label: "Expired / Past", count: stats?.expired_count || 0, dot: "bg-stone-300" },
-                            ].map((tab) => {
-                                const isActive = activeStatus === tab.key;
-                                return (
-                                    <Link
-                                        key={tab.key}
-                                        href={route("discounts.index", { status: tab.key })}
-                                        preserveScroll
-                                        className={`px-3.5 py-2 sm:py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
-                                            isActive
-                                                ? "bg-white text-clay-800 shadow-xs font-black"
-                                                : "text-stone-500 hover:text-stone-800 font-semibold"
-                                        }`}
-                                    >
-                                        <span className={`w-2 h-2 rounded-full ${tab.dot}`} />
-                                        <span>{tab.label}</span>
-                                        {tab.count > 0 && (
-                                            <span
-                                                className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${
-                                                    isActive ? "bg-clay-100 text-clay-800" : "bg-stone-200 text-stone-600"
-                                                }`}
-                                            >
-                                                {tab.count}
-                                            </span>
-                                        )}
-                                    </Link>
-                                );
-                            })}
-                        </div>
-                    </div>
+                    {/* Standardized Single-Row Filter Toolbar Header */}
+                    <FilterToolbarHeader
+                        tabs={[
+                            { key: "ongoing", label: "Ongoing Active", count: stats?.ongoing_count || 0 },
+                            { key: "upcoming", label: "Upcoming Scheduled", count: stats?.upcoming_count || 0 },
+                            { key: "expired", label: "Expired / Past", count: stats?.expired_count || 0 },
+                        ]}
+                        activeTab={activeStatus}
+                        onTabChange={(statusKey) => {
+                            router.get(
+                                route("discounts.index"),
+                                { status: statusKey },
+                                { preserveState: true, preserveScroll: true }
+                            );
+                        }}
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        searchPlaceholder="Search campaign name, rate, product..."
+                        activeFiltersCount={typeFilter !== "all" ? 1 : 0}
+                        filterPopoverTitle="Filter Campaigns"
+                        filterPopoverFields={
+                            <div>
+                                <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
+                                    Discount Type
+                                </label>
+                                <select
+                                    value={typeFilter}
+                                    onChange={(e) => setTypeFilter(e.target.value)}
+                                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 outline-none focus:border-clay-500 bg-white"
+                                >
+                                    <option value="all">All Discount Types</option>
+                                    <option value="percentage">Percentage Discount (-X%)</option>
+                                    <option value="fixed">Fixed Amount Discount (₱X)</option>
+                                </select>
+                            </div>
+                        }
+                        onApplyFilters={() => {}}
+                        onResetFilters={() => {
+                            setSearchQuery("");
+                            setTypeFilter("all");
+                        }}
+                        activeFilterTags={
+                            typeFilter !== "all"
+                                ? [
+                                      {
+                                          label: `Type: ${typeFilter === "percentage" ? "Percentage (-X%)" : "Fixed Amount (₱X)"}`,
+                                          onRemove: () => setTypeFilter("all"),
+                                      },
+                                  ]
+                                : []
+                        }
+                        containerClassName="rounded-none border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
+                    />
 
                     {/* MOBILE & TABLET CARD LIST VIEW (< lg) */}
                     <div className="block lg:hidden p-3.5 sm:p-4 space-y-3.5 sm:space-y-4 bg-stone-50/40">
-                        {discounts?.data?.length > 0 ? (
-                            discounts.data.map((discount) => {
+                        {filteredDiscounts.length > 0 ? (
+                            filteredDiscounts.map((discount) => {
                                 const now = new Date();
                                 const start = new Date(discount.start_at);
                                 const end = new Date(discount.end_at);
@@ -309,8 +346,8 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-stone-100">
-                                {discounts?.data?.length > 0 ? (
-                                    discounts.data.map((discount) => {
+                                {filteredDiscounts.length > 0 ? (
+                                    filteredDiscounts.map((discount) => {
                                         const now = new Date();
                                         const start = new Date(discount.start_at);
                                         const end = new Date(discount.end_at);
