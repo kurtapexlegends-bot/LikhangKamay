@@ -1,7 +1,6 @@
-import { useState, createContext, useContext, Fragment } from 'react';
-import { Link } from '@inertiajs/react';
-import { Transition } from '@headlessui/react'; // Standard Breeze uses this, but let's make it optional-safe
-// If you DON'T have @headlessui/react installed, remove the Transition wrapper and just render {open && children}
+import { useState, createContext, useContext, useEffect, Fragment } from 'react';
+import { Link, router } from '@inertiajs/react';
+import { Transition } from '@headlessui/react';
 
 export const DropDownContext = createContext(null);
 
@@ -11,6 +10,27 @@ const Dropdown = ({ children }) => {
     const toggleOpen = () => {
         setOpen((previousState) => !previousState);
     };
+
+    // Auto-close dropdown on Inertia page navigation
+    useEffect(() => {
+        const unbind = router.on('navigate', () => {
+            setOpen(false);
+        });
+        return () => unbind();
+    }, []);
+
+    // Auto-close on Escape key
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setOpen(false);
+            }
+        };
+        if (open) {
+            window.addEventListener('keydown', handleKeyDown);
+        }
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [open]);
 
     return (
         <DropDownContext.Provider value={{ open, setOpen, toggleOpen }}>
@@ -71,10 +91,22 @@ const Content = ({ align = 'right', width = '48', contentClasses = 'py-1 bg-whit
     );
 };
 
-const DropdownLink = ({ className = '', children, ...props }) => {
+const DropdownLink = ({ className = '', children, onClick, ...props }) => {
+    const context = useContext(DropDownContext);
+
+    const handleClick = (e) => {
+        if (context?.setOpen) {
+            context.setOpen(false);
+        }
+        if (onClick) {
+            onClick(e);
+        }
+    };
+
     return (
         <Link
             {...props}
+            onClick={handleClick}
             className={
                 'block w-full px-4 py-2 text-left text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out ' +
                 className
