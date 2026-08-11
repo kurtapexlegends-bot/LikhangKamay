@@ -145,6 +145,39 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
     const pendingCount = rawSessions.filter((s) => (s.approval_status === 'pending' || s.is_flagged) && s.approval_status !== 'rejected').length;
     const offSiteCount = rawSessions.filter((s) => s.distance_meters !== null && !s.is_within_geofence).length;
 
+    const filterFieldsGrid = (
+        <div className="space-y-3.5 text-left">
+            <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                    Audit Status
+                </label>
+                <select
+                    value={draftStatus}
+                    onChange={(e) => setDraftStatus(e.target.value)}
+                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 outline-none focus:border-clay-500 bg-white"
+                >
+                    <option value="all">All Sessions ({rawSessions.length})</option>
+                    <option value="pending">Pending Review ({pendingCount})</option>
+                    <option value="offsite">Off-Site Flagged ({offSiteCount})</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+
+            <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                    Month Period
+                </label>
+                <input
+                    type="month"
+                    value={draftMonth}
+                    onChange={(e) => setDraftMonth(e.target.value)}
+                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 outline-none focus:border-clay-500 bg-white"
+                />
+            </div>
+        </div>
+    );
+
     // Active filters counter
     const activeFiltersCount = (activeTab !== 'all' ? 1 : 0) + (searchQuery.trim() ? 1 : 0);
 
