@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Link } from '@inertiajs/react';
 import { Search, X, Pencil, Trash2, CalendarDays, Users, SlidersHorizontal, Filter, RotateCcw, ChevronDown, Calendar, Clock3 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
@@ -753,14 +754,13 @@ export default function StaffTable({
                                         <td className="px-5 py-3.5 text-center align-middle">
                                             {canEditHrRecords ? (
                                                 <div className="flex justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openAuditDrawer && openAuditDrawer(emp)}
+                                                    <Link
+                                                        href={route('hr.employees.time-card', emp.id)}
                                                         className="p-2 text-stone-600 hover:bg-stone-100 border border-transparent hover:border-stone-200 shadow-sm transition-all duration-200 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center"
                                                         title="Time-Card Audit Logs"
                                                     >
                                                         <Clock3 size={14} />
-                                                    </button>
+                                                    </Link>
                                                     <button
                                                         onClick={() => openEditModal(emp)}
                                                         aria-label={`Update ${emp.name}`}

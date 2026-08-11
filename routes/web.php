@@ -242,6 +242,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/hr/payroll/{payroll}/submit', [\App\Http\Controllers\Seller\HRController::class, 'submitPayrollRun'])->middleware('seller.module:hr')->name('hr.payroll.submit');
         Route::delete('/hr/payroll/{id}', [\App\Http\Controllers\Seller\HRController::class, 'destroyPayroll'])->middleware('seller.module:hr')->name('hr.payroll.destroy');
         Route::get('/hr/employees/{employee}/attendance-logs', [\App\Http\Controllers\Seller\HRController::class, 'attendanceLogs'])->middleware('seller.module:hr')->name('hr.attendance-logs');
+        Route::get('/hr/employees/{employee}/time-card', [\App\Http\Controllers\Seller\HRController::class, 'showTimeCardAudit'])->middleware('seller.module:hr')->name('hr.employees.time-card');
         Route::post('/hr/attendance-sessions/{session}/approve', [\App\Http\Controllers\Seller\HRController::class, 'approveAttendanceSession'])->middleware('seller.module:hr')->name('hr.attendance-sessions.approve');
         Route::post('/hr/attendance-sessions/{session}/reject', [\App\Http\Controllers\Seller\HRController::class, 'rejectAttendanceSession'])->middleware('seller.module:hr')->name('hr.attendance-sessions.reject');
 

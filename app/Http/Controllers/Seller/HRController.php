@@ -438,6 +438,31 @@ class HRController extends Controller
             ->with('success', 'Payroll request sent to Accounting.');
     }
 
+    public function showTimeCardAudit(
+        Request $request,
+        Employee $employee,
+        \App\Services\HR\AttendanceAggregatorService $aggregator
+    ): Response {
+        $seller = $this->sellerOwner();
+        $actor = $this->sellerActor();
+
+        abort_unless($employee->user_id === $seller->id, 403, 'Unauthorized employee attendance access.');
+
+        $month = $request->input('month', now()->format('Y-m'));
+        $start = \Carbon\Carbon::parse($month)->startOfMonth();
+        $end = \Carbon\Carbon::parse($month)->endOfMonth();
+
+        $summary = $aggregator->aggregateForPeriod($employee, $start, $end, $seller);
+        $canEdit = HRWorkflowHelper::canEditHrRecords($actor);
+
+        return Inertia::render('Seller/HR/TimeCardAudit', [
+            'employee' => $employee->loadMissing(['assignedLocation', 'loginAccount']),
+            'summary' => $summary,
+            'selectedMonth' => $month,
+            'canEdit' => $canEdit,
+        ]);
+    }
+
     public function approveAttendanceSession(
         \App\Models\StaffAttendanceSession $session,
         StaffAttendanceService $attendanceService
