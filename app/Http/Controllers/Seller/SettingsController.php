@@ -20,6 +20,8 @@ class SettingsController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = $request->user();
+        abort_unless($user && ($user->isArtisan() || $user->isWorkspaceOwner()), 403, 'Only the shop owner can access workspace settings.');
+
         $sellerOwner = $user->getEffectiveSeller() ?: $user;
 
         $locations = SellerLocation::where('user_id', $sellerOwner->id)

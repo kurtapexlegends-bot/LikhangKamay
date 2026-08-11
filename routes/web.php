@@ -193,7 +193,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/sponsorships', [\App\Http\Controllers\Seller\SponsorshipController::class, 'store'])->middleware(['artisan', 'seller.module:sponsorships'])->name('seller.sponsorships.store');
 
         // SETTINGS
-        Route::get('/seller/settings', [\App\Http\Controllers\Seller\SettingsController::class, 'index'])->name('seller.settings.index');
+        Route::get('/seller/settings', [\App\Http\Controllers\Seller\SettingsController::class, 'index'])->middleware('artisan')->name('seller.settings.index');
         Route::post('/settings/modules', [\App\Http\Controllers\Seller\SettingsController::class, 'updateModules'])->middleware('artisan')->name('settings.modules');
     });
 

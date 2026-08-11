@@ -18,22 +18,11 @@ export default function HRHeaderActions({
         );
     }
 
-    const showSettings = true;
     const showPayroll = activeTab === 'directory' || activeTab === 'payroll';
     const showAdd = activeTab === 'directory' || activeTab === 'access';
 
     return (
         <div className={`flex items-center gap-2 w-full sm:w-auto ${className}`}>
-            {showSettings && (
-                <button
-                    onClick={onSettingsClick}
-                    className="inline-flex items-center justify-center rounded-xl bg-stone-100 px-3 py-2 text-xs font-bold text-stone-700 transition hover:bg-stone-200 min-h-[44px] min-w-[44px]"
-                    title="Payroll Settings"
-                    type="button"
-                >
-                    <SettingsIcon size={16} />
-                </button>
-            )}
 
             {showPayroll && (
                 <button

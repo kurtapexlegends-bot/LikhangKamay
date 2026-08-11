@@ -351,7 +351,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 onToggle={() => toggleGroup('appearance')}
                                 isCollapsed={isCollapsed}
                             >
-                                {visibleModulesSet.has('shop_settings') && (
+                                {(user?.role === 'artisan' || user?.is_workspace_owner) && visibleModulesSet.has('shop_settings') && (
                                     <NavItem href={route('seller.settings.index')} icon={Sliders} active={active === 'settings'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Settings')} onMouseLeave={handleTooltipLeave}>Settings</NavItem>
                                 )}
                             </CategoryGroup>
