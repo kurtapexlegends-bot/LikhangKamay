@@ -438,23 +438,6 @@ class HRController extends Controller
             ->with('success', 'Payroll request sent to Accounting.');
     }
 
-    public function attendanceLogs(
-        Request $request,
-        Employee $employee,
-        \App\Services\HR\AttendanceAggregatorService $aggregator
-    ) {
-        $seller = $this->sellerOwner();
-        $month = $request->input('month', now()->format('Y-m'));
-        $start = \Carbon\Carbon::parse($month)->startOfMonth();
-        $end = \Carbon\Carbon::parse($month)->endOfMonth();
-
-        $summary = $aggregator->aggregateForPeriod($employee, $start, $end, $seller);
-
-        return response()->json([
-            'summary' => $summary,
-        ]);
-    }
-
     public function approveAttendanceSession(
         \App\Models\StaffAttendanceSession $session,
         StaffAttendanceService $attendanceService
