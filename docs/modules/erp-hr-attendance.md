@@ -79,8 +79,27 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
 *   [ProcurementController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/ProcurementController.php), [StockRequestController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/StockRequestController.php): Manages raw material procurement and seller supply resupply requests.
 *   [StaffDashboardController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/StaffDashboardController.php): Provides restricted widget dashboards for non-admin staff users.
 
+---
+
+## 4. Time-Card Audit Architecture
+
+A dedicated full-page view is available for inspecting individual employee attendance records, shift selfie proof, GPS geofencing, and shift approvals.
+
+*   **Route**: `GET /hr/employees/{employee}/time-card` (`hr.employees.time-card`)
+*   **Controller Method**: `HRController::showTimeCardAudit` in [HRController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/HRController.php)
+*   **Frontend Inertia Page**: [TimeCardAudit.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Seller/HR/TimeCardAudit.jsx)
+*   **UI Features**:
+    *   **Header Banner**: Displays user avatar synced with `UserAvatar` component, employee ID, role badge, and assigned location.
+    *   **Metric Summary Cards**: 4 key metrics (`Total Worked`, `Approved Overtime`, `Undertime / Tardy`, `Rest Day OT`).
+    *   **Unified Single-Row Filter Toolbar**: Segmented status pills (`All`, `Pending Review`, `Off-Site`, `Approved`, `Rejected`), search input, and desktop floating dropdown popover (`isPopoverOpen`).
+    *   **Descending Shift Date Sorting**: Displays latest shift dates at the top of the table/timeline list.
+    *   **Geofence Verification & Selfie Proof**: Visual tags for `On-Site` vs `Off-Site` GPS distances and slide-up modal for selfie verification images.
+    *   **Mobile-Native Adaptation**: Responsive coexistence (`hidden lg:block` data table vs `block lg:hidden` card list) with mobile bottom sheets (`SlideOverDrawer`).
+    *   **Z-Index Stacking**: Uses global `Modal.jsx` at `z-[150]` ensuring complete overlay dimming across sticky headers and sidebars.
+
 ### Stock & Procurement Mails & Notifications
 *   [LowStockAlert.php](file:///c:/laragon/www/LikhangKamay/app/Mail/LowStockAlert.php): Dispatches inventory warnings to artisans.
 *   [LowStockNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/LowStockNotification.php) | [LowStockWarningNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/LowStockWarningNotification.php): Dispatches in-app low stock alerts.
 *   [SupplyDepletedNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/SupplyDepletedNotification.php): Alerts sellers when critical supplies run dry.
 *   [AccountingApprovalRequestedNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/AccountingApprovalRequestedNotification.php) | [AccountingRejectedNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/AccountingRejectedNotification.php): Workflow notifications for stock requests.
+
