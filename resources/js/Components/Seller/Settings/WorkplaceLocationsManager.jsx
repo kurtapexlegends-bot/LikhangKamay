@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm, router } from '@inertiajs/react';
 import { MapPin, Navigation, Plus, Trash2, Edit3, Shield, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
+import Modal from '@/Components/Modal';
 import LocationPickerMap from './LocationPickerMap';
 
 export default function WorkplaceLocationsManager({ locations = [], canEdit = true }) {
@@ -223,153 +224,151 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                 </div>
             )}
 
-            {/* Add / Edit Location Modal */}
-            {isAddModalOpen && (
-                <div className="fixed inset-0 z-[100] p-4 sm:p-6 bg-stone-900/50 backdrop-blur-xs flex items-center justify-center min-h-screen">
-                    <div className="w-full max-w-xl bg-white rounded-3xl border border-stone-200/80 shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in fade-in zoom-in-95">
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between border-b border-stone-100 p-5 shrink-0 bg-white">
-                            <h3 className="text-base font-black text-stone-900">
-                                {editingLocation ? 'Edit Workplace Location' : 'Add Workplace Location'}
-                            </h3>
-                            <button onClick={closeModal} className="p-1 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition">
-                                <X size={18} />
-                            </button>
+            {/* Add / Edit Location Modal via Headless UI Portal */}
+            <Modal show={isAddModalOpen} onClose={closeModal} maxWidth="xl">
+                <div className="p-6 space-y-5">
+                    {/* Modal Header */}
+                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                        <h3 className="text-base font-black text-stone-900">
+                            {editingLocation ? 'Edit Workplace Location' : 'Add Workplace Location'}
+                        </h3>
+                        <button onClick={closeModal} className="p-1 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition">
+                            <X size={18} />
+                        </button>
+                    </div>
+
+                    {/* Modal Form Body */}
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-stone-700 mb-1">Location Name</label>
+                            <input
+                                type="text"
+                                required
+                                placeholder="e.g. Main Artisan Workshop"
+                                value={data.name}
+                                onChange={(e) => setData('name', e.target.value)}
+                                className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-medium text-stone-900 focus:border-clay-500 focus:ring-clay-500"
+                            />
                         </div>
 
-                        {/* Modal Scrollable Body */}
-                        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-stone-700 mb-1">Location Name</label>
+                        {/* Search via Address & GPS */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-stone-700">Pinpoint Location</label>
+                            <div className="flex gap-2">
                                 <input
                                     type="text"
-                                    required
-                                    placeholder="e.g. Main Artisan Workshop"
-                                    value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
-                                    className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-medium text-stone-900 focus:border-clay-500 focus:ring-clay-500"
+                                    placeholder="Search address or city..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="flex-1 rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-medium text-stone-900 focus:border-clay-500 focus:ring-clay-500"
                                 />
-                            </div>
-
-                            {/* Search via Address & GPS */}
-                            <div className="space-y-2">
-                                <label className="block text-xs font-bold text-stone-700">Pinpoint Location</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Search address or city..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="flex-1 rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-medium text-stone-900 focus:border-clay-500 focus:ring-clay-500"
-                                    />
-                                    <button
-                                        type="button"
-                                        disabled={searchingAddress}
-                                        onClick={searchAddressWithNominatim}
-                                        className="px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition shrink-0"
-                                    >
-                                        {searchingAddress ? 'Searching...' : 'Search'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={detectingGps}
-                                        onClick={detectGpsLocation}
-                                        className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-clay-50 text-clay-700 hover:bg-clay-100 border border-clay-200 text-xs font-bold transition shrink-0"
-                                        title="Detect My GPS"
-                                    >
-                                        <Navigation size={12} />
-                                        {detectingGps ? 'GPS...' : 'My GPS'}
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Interactive Leaflet Map Visualizer */}
-                            <div>
-                                <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
-                                    Interactive Leaflet Map & Geofence Bounds
-                                </label>
-                                <LocationPickerMap
-                                    latitude={data.latitude}
-                                    longitude={data.longitude}
-                                    radiusMeters={data.radius_meters}
-                                    onLocationSelect={({ latitude, longitude }) => {
-                                        setData((prev) => ({
-                                            ...prev,
-                                            latitude,
-                                            longitude,
-                                        }));
-                                    }}
-                                    height="200px"
-                                />
-                            </div>
-
-                            {/* Lat/Lng Fields */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[10px] font-bold uppercase text-stone-400 mb-1">Latitude</label>
-                                    <input
-                                        type="number"
-                                        step="any"
-                                        required
-                                        value={data.latitude}
-                                        onChange={(e) => setData('latitude', parseFloat(e.target.value))}
-                                        className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-mono text-stone-900"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold uppercase text-stone-400 mb-1">Longitude</label>
-                                    <input
-                                        type="number"
-                                        step="any"
-                                        required
-                                        value={data.longitude}
-                                        onChange={(e) => setData('longitude', parseFloat(e.target.value))}
-                                        className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-mono text-stone-900"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Radius Slider */}
-                            <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <label className="text-xs font-bold text-stone-700">Allowed Geofence Radius</label>
-                                    <span className="text-xs font-extrabold text-clay-700">{data.radius_meters} meters</span>
-                                </div>
-                                <input
-                                    type="range"
-                                    min="20"
-                                    max="1000"
-                                    step="10"
-                                    value={data.radius_meters}
-                                    onChange={(e) => setData('radius_meters', parseInt(e.target.value, 10))}
-                                    className="w-full accent-clay-600"
-                                />
-                                <p className="text-[10px] text-stone-400 font-medium mt-1">
-                                    Staff must be within {data.radius_meters} meters of this coordinate to clock in without an exception flag.
-                                </p>
-                            </div>
-
-                            {/* Modal Actions Footer */}
-                            <div className="flex justify-end gap-2 border-t border-stone-100 pt-4 shrink-0">
                                 <button
                                     type="button"
-                                    onClick={closeModal}
-                                    className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold"
+                                    disabled={searchingAddress}
+                                    onClick={searchAddressWithNominatim}
+                                    className="px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition shrink-0"
                                 >
-                                    Cancel
+                                    {searchingAddress ? 'Searching...' : 'Search'}
                                 </button>
                                 <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="px-4 py-2 rounded-xl bg-clay-600 hover:bg-clay-700 text-white text-xs font-bold shadow-xs"
+                                    type="button"
+                                    disabled={detectingGps}
+                                    onClick={detectGpsLocation}
+                                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-clay-50 text-clay-700 hover:bg-clay-100 border border-clay-200 text-xs font-bold transition shrink-0"
+                                    title="Detect My GPS"
                                 >
-                                    {editingLocation ? 'Save Changes' : 'Create Location'}
+                                    <Navigation size={12} />
+                                    {detectingGps ? 'GPS...' : 'My GPS'}
                                 </button>
                             </div>
-                        </form>
-                    </div>
+                        </div>
+
+                        {/* Interactive Leaflet Map Visualizer */}
+                        <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                                Interactive Leaflet Map & Geofence Bounds
+                            </label>
+                            <LocationPickerMap
+                                latitude={data.latitude}
+                                longitude={data.longitude}
+                                radiusMeters={data.radius_meters}
+                                onLocationSelect={({ latitude, longitude }) => {
+                                    setData((prev) => ({
+                                        ...prev,
+                                        latitude,
+                                        longitude,
+                                    }));
+                                }}
+                                height="200px"
+                            />
+                        </div>
+
+                        {/* Lat/Lng Fields */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase text-stone-400 mb-1">Latitude</label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    required
+                                    value={data.latitude}
+                                    onChange={(e) => setData('latitude', parseFloat(e.target.value))}
+                                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-mono text-stone-900"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase text-stone-400 mb-1">Longitude</label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    required
+                                    value={data.longitude}
+                                    onChange={(e) => setData('longitude', parseFloat(e.target.value))}
+                                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-mono text-stone-900"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Radius Slider */}
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="text-xs font-bold text-stone-700">Allowed Geofence Radius</label>
+                                <span className="text-xs font-extrabold text-clay-700">{data.radius_meters} meters</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="20"
+                                max="1000"
+                                step="10"
+                                value={data.radius_meters}
+                                onChange={(e) => setData('radius_meters', parseInt(e.target.value, 10))}
+                                className="w-full accent-clay-600"
+                            />
+                            <p className="text-[10px] text-stone-400 font-medium mt-1">
+                                Staff must be within {data.radius_meters} meters of this coordinate to clock in without an exception flag.
+                            </p>
+                        </div>
+
+                        {/* Modal Actions Footer */}
+                        <div className="flex justify-end gap-2 border-t border-stone-100 pt-4 shrink-0">
+                            <button
+                                type="button"
+                                onClick={closeModal}
+                                className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={processing}
+                                className="px-4 py-2 rounded-xl bg-clay-600 hover:bg-clay-700 text-white text-xs font-bold shadow-xs"
+                            >
+                                {editingLocation ? 'Save Changes' : 'Create Location'}
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            )}
+            </Modal>
         </div>
     );
 }
