@@ -118,6 +118,8 @@ class ShopController extends Controller
         $user = $request->user()?->getEffectiveSeller();
         abort_unless($user && $user->isArtisan(), 403, 'Seller workspace access only.');
 
+        $user->load(['products' => fn($q) => $q->where('status', 'Active')->latest()->take(12)]);
+
         $productsCount = (int) Product::where('user_id', $user->id)->where('status', 'Active')->count();
         $totalSales = (int) Product::where('user_id', $user->id)->where('status', 'Active')->sum('sold');
 
