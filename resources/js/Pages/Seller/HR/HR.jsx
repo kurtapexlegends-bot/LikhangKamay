@@ -160,10 +160,10 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     animate={shouldAnimateKPI}
                 />
 
-                <HRTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-
                 <HRTabContentWrapper
                     activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    pendingPayrollCount={pendingPayrollCount}
                     staff={staff}
                     searchTerm={searchTerm}
                     setSearchTerm={setSearchTerm}

@@ -5,6 +5,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import CompactPagination from '@/Components/CompactPagination';
+import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
 import {
     formatPeso,
     formatWorkedHoursSummary,
@@ -107,6 +108,9 @@ export function AttendanceSummaryCard({ attendance, attendanceStatus, monthLabel
 }
 
 export default function StaffTable({
+    activeTab,
+    setActiveTab,
+    pendingPayrollCount,
     staff = [],
     searchTerm,
     setSearchTerm,
@@ -243,31 +247,13 @@ export default function StaffTable({
     const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
     const paginatedStaff = filteredStaff.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-    const isSearching = searchTerm.trim().length > 0 || activeFiltersCount > 0;
-
-    const emptyStateProps = isSearching
-        ? {
-              title: "No matching staff found",
-              description: "We couldn't find any employees matching your search or filters. Try adjusting them or clear the active query.",
-              actionLabel: "Clear Filters",
-              onAction: handleClearFilters,
-          }
-        : {
-              title: "No employees found",
-              description: canEditHrRecords
-                  ? "Start by adding your first employee to start managing staff records and portal access."
-                  : "Read-only people access can view records only. No employee entries are available yet.",
-              actionLabel: canEditHrRecords ? "Add Employee" : null,
-              onAction: canEditHrRecords ? onAddClick : undefined,
-          };
-
     const filterFieldsGrid = (
         <div className="space-y-4 text-left">
-            {/* 1. Date Hired / Joined Range */}
+            {/* 1. Date Range Section */}
             <div>
                 <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5 flex items-center gap-1.5">
                     <Calendar size={13} className="text-clay-600" />
-                    <span>Date Hired / Joined Range</span>
+                    <span>Hired / Active Date Range</span>
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                     <div className="relative flex items-center rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 focus-within:border-clay-500 focus-within:ring-1 focus-within:ring-clay-500/20">
@@ -334,172 +320,51 @@ export default function StaffTable({
         </div>
     );
 
+    const activeFilterTags = [
+        statusFilter !== 'all' && {
+            label: `Status: ${statusFilter === 'active' ? 'Active' : statusFilter === 'clocked_in' ? 'Clocked In' : statusFilter === 'suspended' ? 'Suspended' : 'No Login'}`,
+            onRemove: () => setStatusFilter('all'),
+        },
+        entitlementFilter !== 'all' && {
+            label: `Entitlement: ${entitlementFilter === 'accounting' ? 'Accounting' : entitlementFilter === 'orders' ? 'Orders' : 'Procurement'}`,
+            onRemove: () => setEntitlementFilter('all'),
+        },
+        startDateFilter && {
+            label: `From: ${startDateFilter}`,
+            onRemove: () => setStartDateFilter(''),
+        },
+        endDateFilter && {
+            label: `To: ${endDateFilter}`,
+            onRemove: () => setEndDateFilter(''),
+        },
+    ].filter(Boolean);
+
     return (
-        <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm flex flex-col min-h-[400px]">
-            {/* Table Header / Toolbar */}
-            <div className="px-5 py-4 border-b border-stone-100 bg-[#FCFAF7]/40">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                        <Users size={16} className="text-clay-700" />
-                        <h3 className="text-sm font-bold tracking-tight text-stone-900">Employee Directory</h3>
-                        <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-bold text-stone-600 border border-stone-200">
-                            {filteredStaff.length} visible
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-2.5 flex-1 sm:flex-initial">
-                        {/* Search Input */}
-                        <div className="relative flex-1 sm:w-64">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
-                            <input 
-                                type="text" 
-                                placeholder="Search name or role..." 
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-9 pr-8 py-2 bg-white border border-stone-200 rounded-xl text-xs hover:border-stone-300 focus:ring-4 focus:ring-clay-500/10 focus:border-clay-500 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-[38px]"
-                            />
-                            {searchTerm && (
-                                <button 
-                                    onClick={() => setSearchTerm('')} 
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition active:scale-90"
-                                    title="Clear search"
-                                >
-                                    <X size={12} />
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Standardized Filter Button on the Right */}
-                        <div className="relative inline-block text-left" ref={popoverRef}>
-                            <button
-                                type="button"
-                                onClick={handleOpenFilters}
-                                className={`inline-flex h-[38px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-bold transition-all shadow-sm active:scale-95 ${
-                                    activeFiltersCount > 0
-                                        ? 'bg-clay-700 text-white border-clay-800 shadow-clay-200 hover:bg-clay-800'
-                                        : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300 hover:bg-stone-50'
-                                }`}
-                            >
-                                <SlidersHorizontal size={14} strokeWidth={2.2} />
-                                <span>Filters</span>
-                                {activeFiltersCount > 0 && (
-                                    <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-black text-white">
-                                        {activeFiltersCount}
-                                    </span>
-                                )}
-                                <ChevronDown size={14} strokeWidth={2.5} className={`transition-transform duration-200 ${isPopoverOpen ? 'rotate-180' : ''}`} />
-                            </button>
-
-                            {/* Desktop Popover Card */}
-                            {isPopoverOpen && (
-                                <div className="hidden lg:flex flex-col absolute right-0 z-[100] mt-2 w-[400px] max-h-[calc(100vh-180px)] rounded-2xl border border-stone-200 bg-white p-4 sm:p-5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
-                                    <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-3 shrink-0">
-                                        <div className="flex items-center gap-2">
-                                            <Filter size={15} className="text-clay-700" />
-                                            <h3 className="text-sm font-bold text-stone-900">Filter Employees</h3>
-                                        </div>
-                                        {draftActiveCount > 0 && (
-                                            <button
-                                                type="button"
-                                                onClick={handleResetDraft}
-                                                className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-500 hover:text-clay-700 transition"
-                                            >
-                                                <RotateCcw size={12} />
-                                                <span>Reset Selection</span>
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    <div className="flex-1 overflow-y-auto pr-1 space-y-4 max-h-[50vh] no-scrollbar">
-                                        {filterFieldsGrid}
-                                    </div>
-
-                                    <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between shrink-0 bg-white">
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsPopoverOpen(false)}
-                                            className="rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 transition"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={applyDraftFilters}
-                                            className="rounded-xl bg-clay-700 px-5 py-2 text-xs font-bold text-white shadow-md shadow-clay-200 hover:bg-clay-800 transition active:scale-95"
-                                        >
-                                            Apply & Close
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Active Filter Tag Pills */}
-                {activeFiltersCount > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-stone-100">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mr-1">
-                            Active Filters:
-                        </span>
-                        {statusFilter !== 'all' && (
-                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-sm">
-                                <span>Status: {statusFilter === 'active' ? 'Active' : statusFilter === 'clocked_in' ? 'Clocked In' : statusFilter === 'suspended' ? 'Suspended' : 'No Login'}</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setStatusFilter('all')}
-                                    className="rounded-full p-0.5 hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
-                                >
-                                    <X size={12} strokeWidth={2.5} />
-                                </button>
-                            </span>
-                        )}
-                        {entitlementFilter !== 'all' && (
-                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-sm">
-                                <span>Entitlement: {entitlementFilter === 'accounting' ? 'Accounting' : entitlementFilter === 'orders' ? 'Orders' : 'Procurement'}</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setEntitlementFilter('all')}
-                                    className="rounded-full p-0.5 hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
-                                >
-                                    <X size={12} strokeWidth={2.5} />
-                                </button>
-                            </span>
-                        )}
-                        {startDateFilter && (
-                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-sm">
-                                <span>From: {startDateFilter}</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setStartDateFilter('')}
-                                    className="rounded-full p-0.5 hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
-                                >
-                                    <X size={12} strokeWidth={2.5} />
-                                </button>
-                            </span>
-                        )}
-                        {endDateFilter && (
-                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-sm">
-                                <span>To: {endDateFilter}</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setEndDateFilter('')}
-                                    className="rounded-full p-0.5 hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition"
-                                >
-                                    <X size={12} strokeWidth={2.5} />
-                                </button>
-                            </span>
-                        )}
-                        <button
-                            type="button"
-                            onClick={handleClearFilters}
-                            className="text-[11px] font-bold text-clay-700 hover:underline ml-1"
-                        >
-                            Clear All
-                        </button>
-                    </div>
-                )}
-            </div>
+        <div className="rounded-3xl border border-stone-200/80 bg-white shadow-sm flex flex-col min-h-[400px] relative">
+            <FilterToolbarHeader
+                tabs={[
+                    { key: 'directory', label: 'Directory', count: staff.length },
+                    { key: 'payroll', label: 'Payroll History', count: pendingPayrollCount },
+                    { key: 'access', label: 'Access History' },
+                ]}
+                activeTab={activeTab || 'directory'}
+                onTabChange={setActiveTab}
+                searchQuery={searchTerm}
+                onSearchChange={setSearchTerm}
+                searchPlaceholder="Search name or role..."
+                activeFiltersCount={activeFiltersCount}
+                filterPopoverTitle="Filter Employees"
+                filterPopoverFields={filterFieldsGrid}
+                onApplyFilters={applyDraftFilters}
+                onResetFilters={handleResetDraft}
+                activeFilterTags={activeFilterTags}
+                containerClassName="rounded-t-3xl border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
+                extraActions={
+                    <span className="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-600 shadow-2xs shrink-0 min-h-[38px] sm:min-h-0">
+                        {filteredStaff.length} visible
+                    </span>
+                }
+            />
 
             {/* Mobile Bottom-Sheet Filter Drawer */}
             <SlideOverDrawer

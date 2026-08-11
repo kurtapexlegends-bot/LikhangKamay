@@ -155,7 +155,7 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                 </div>
 
                 {/* Status Tabs & Content Container */}
-                <div className="bg-white rounded-3xl border border-stone-200/80 overflow-hidden shadow-sm">
+                <div className="bg-white rounded-3xl border border-stone-200/80 shadow-sm relative">
                     {/* Standardized Single-Row Filter Toolbar Header */}
                     <FilterToolbarHeader
                         tabs={[
@@ -207,11 +207,11 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                                   ]
                                 : []
                         }
-                        containerClassName="rounded-none border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
+                        containerClassName="rounded-t-3xl border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
                     />
 
                     {/* MOBILE & TABLET CARD LIST VIEW (< lg) */}
-                    <div className="block lg:hidden p-3.5 sm:p-4 space-y-3.5 sm:space-y-4 bg-stone-50/40">
+                    <div className="block lg:hidden p-3.5 sm:p-4 space-y-3.5 sm:space-y-4 bg-stone-50/40 rounded-b-3xl">
                         {filteredDiscounts.length > 0 ? (
                             filteredDiscounts.map((discount) => {
                                 const now = new Date();
@@ -331,7 +331,7 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                     </div>
 
                     {/* DESKTOP TABLE VIEW (>= lg) */}
-                    <div className="hidden lg:block overflow-x-auto">
+                    <div className="hidden lg:block overflow-x-auto rounded-b-3xl">
                         <table className="w-full text-left text-xs border-collapse">
                             <thead className="bg-stone-50 border-b border-stone-200/70 text-[10px] uppercase tracking-wider font-extrabold text-stone-400">
                                 <tr>

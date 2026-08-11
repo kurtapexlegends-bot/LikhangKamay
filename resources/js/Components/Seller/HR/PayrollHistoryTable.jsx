@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import CompactPagination from '@/Components/CompactPagination';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
-import TextInput from '@/Components/TextInput';
-import { Banknote, Search, SlidersHorizontal, ChevronDown, RotateCcw, X } from 'lucide-react';
+import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
+import { Banknote } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import {
     formatPeso,
@@ -10,6 +10,10 @@ import {
 } from '@/utils/hrHelpers';
 
 export default function PayrollHistoryTable({
+    activeTab,
+    setActiveTab,
+    pendingPayrollCount = 0,
+    staffCount = 0,
     payrolls = [],
     canEditHrRecords,
     deletePayroll
@@ -17,19 +21,6 @@ export default function PayrollHistoryTable({
     const rawPayrolls = Array.isArray(payrolls) ? payrolls : (payrolls?.data || []);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const filterRef = useRef(null);
-
-    // Close popover when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (filterRef.current && !filterRef.current.contains(e.target)) {
-                setIsFilterOpen(false);
-            }
-        };
-        if (isFilterOpen) document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isFilterOpen]);
 
     const activeFilterCount = statusFilter !== 'all' ? 1 : 0;
 
@@ -45,92 +36,53 @@ export default function PayrollHistoryTable({
     });
 
     return (
-        <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm flex flex-col">
-            <div className="px-6 py-4 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#FDFBF9]">
-                <div>
-                    <h3 className="text-sm font-bold tracking-tight text-stone-900">Payroll Requests History</h3>
-                    <p className="text-[11px] text-stone-400 font-medium">Review and track historical payroll runs.</p>
-                </div>
-                
-                {/* Search & Clean Filter Button Popover */}
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="relative">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <TextInput
-                            type="text"
-                            placeholder="Search month, status, requester..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="pl-9 pr-3 py-1.5 text-xs bg-white border-stone-200 rounded-xl w-full sm:w-56"
-                        />
-                    </div>
-
-                    <div className="relative" ref={filterRef}>
-                        <button
-                            type="button"
-                            onClick={() => setIsFilterOpen(!isFilterOpen)}
-                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-xs ${
-                                activeFilterCount > 0
-                                    ? 'bg-clay-600 text-white border-clay-700 hover:bg-clay-700'
-                                    : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50 hover:border-stone-300'
-                            }`}
+        <div className="rounded-3xl border border-stone-200/80 bg-white shadow-sm flex flex-col min-h-[400px] relative">
+            <FilterToolbarHeader
+                tabs={[
+                    { key: 'directory', label: 'Directory', count: staffCount },
+                    { key: 'payroll', label: 'Payroll History', count: pendingPayrollCount },
+                    { key: 'access', label: 'Access History' },
+                ]}
+                activeTab={activeTab || 'payroll'}
+                onTabChange={setActiveTab}
+                searchQuery={search}
+                onSearchChange={setSearch}
+                searchPlaceholder="Search month, status, requester..."
+                activeFiltersCount={activeFilterCount}
+                filterPopoverTitle="Filter Payroll Status"
+                filterPopoverFields={
+                    <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
+                            Payroll Status
+                        </label>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 outline-none focus:border-clay-500 bg-white"
                         >
-                            <SlidersHorizontal size={14} />
-                            <span>Filter</span>
-                            {activeFilterCount > 0 && (
-                                <span className="inline-flex items-center justify-center bg-white/25 text-white rounded-full text-[10px] w-4 h-4 font-black">
-                                    {activeFilterCount}
-                                </span>
-                            )}
-                            <ChevronDown size={14} className={`transition-transform duration-200 ${isFilterOpen ? 'rotate-180' : ''}`} />
-                        </button>
-
-                        {isFilterOpen && (
-                            <div className="absolute right-0 z-50 mt-2 w-64 rounded-2xl border border-stone-200 bg-white p-4 shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in-95">
-                                <div className="flex items-center justify-between border-b border-stone-100 pb-2.5 mb-3">
-                                    <span className="text-xs font-bold text-stone-900">Filter Status</span>
-                                    {activeFilterCount > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setStatusFilter('all')}
-                                            className="inline-flex items-center gap-1 text-[10px] font-bold text-stone-500 hover:text-clay-700 transition"
-                                        >
-                                            <RotateCcw size={11} /> Reset
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="space-y-1">
-                                    {[
-                                        { key: 'all', label: 'All Statuses' },
-                                        { key: 'Pending', label: 'Pending Review' },
-                                        { key: 'Paid', label: 'Paid Disbursed' },
-                                        { key: 'Rejected', label: 'Rejected' },
-                                    ].map((st) => (
-                                        <button
-                                            key={st.key}
-                                            type="button"
-                                            onClick={() => {
-                                                setStatusFilter(st.key);
-                                                setIsFilterOpen(false);
-                                            }}
-                                            className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-medium transition ${
-                                                statusFilter === st.key
-                                                    ? 'bg-clay-50 text-clay-700 font-bold'
-                                                    : 'text-stone-700 hover:bg-stone-50'
-                                            }`}
-                                        >
-                                            <span>{st.label}</span>
-                                            {statusFilter === st.key && (
-                                                <span className="w-1.5 h-1.5 rounded-full bg-clay-600" />
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                            <option value="all">All Statuses</option>
+                            <option value="pending">Pending Review</option>
+                            <option value="paid">Paid Disbursed</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
                     </div>
-                </div>
-            </div>
+                }
+                onApplyFilters={() => {}}
+                onResetFilters={() => setSearch('')}
+                activeFilterTags={
+                    statusFilter !== 'all'
+                        ? [
+                              {
+                                  label: `Status: ${statusFilter}`,
+                                  onRemove: () => setStatusFilter('all'),
+                              },
+                          ]
+                        : []
+                }
+                containerClassName="rounded-t-3xl border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
+            />
+            
+            {/* Mobile View: Card List */}
             
             {/* Mobile View: Card List */}
             <div className="flex-1 md:hidden">

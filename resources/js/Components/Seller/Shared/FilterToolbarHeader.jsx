@@ -95,7 +95,7 @@ export default function FilterToolbarHeader({
                 <div className="flex items-center gap-2 shrink-0 justify-end">
                     {/* Search Input */}
                     {onSearchChange && (
-                        <div className="relative w-36 sm:w-48 md:w-56 lg:w-64 shrink-0">
+                        <div className="relative w-40 sm:w-56 md:w-64 lg:w-72 shrink-0">
                             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
                             <input
                                 type="text"

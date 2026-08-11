@@ -5,6 +5,8 @@ import AccessAuditLog from '@/Components/Seller/HR/AccessAuditLog';
 
 export default function HRTabContentWrapper({
     activeTab,
+    setActiveTab,
+    pendingPayrollCount,
     staff,
     searchTerm,
     setSearchTerm,
@@ -24,6 +26,9 @@ export default function HRTabContentWrapper({
     if (activeTab === 'directory') {
         return (
             <StaffTable
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                pendingPayrollCount={pendingPayrollCount}
                 staff={staff}
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
@@ -43,6 +48,10 @@ export default function HRTabContentWrapper({
     if (activeTab === 'payroll') {
         return (
             <PayrollHistoryTable
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                pendingPayrollCount={pendingPayrollCount}
+                staffCount={staff?.length || 0}
                 payrolls={payrolls}
                 canEditHrRecords={canEditHrRecords}
                 deletePayroll={deletePayroll}
@@ -53,6 +62,10 @@ export default function HRTabContentWrapper({
     if (activeTab === 'access') {
         return (
             <AccessAuditLog
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                pendingPayrollCount={pendingPayrollCount}
+                staffCount={staff?.length || 0}
                 auditEntries={staffAccessAudits}
             />
         );
