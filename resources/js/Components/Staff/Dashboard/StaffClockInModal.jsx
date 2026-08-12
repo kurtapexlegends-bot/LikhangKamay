@@ -158,8 +158,8 @@ export default function StaffClockInModal({ isOpen, onClose }) {
     };
 
     return (
-        <Modal show={isOpen} onClose={onClose} maxWidth="md">
-            <div className="p-5 sm:p-6 bg-white space-y-4 rounded-2xl border border-stone-200/60 shadow-xl max-h-[90vh] overflow-y-auto">
+        <Modal show={isOpen} onClose={onClose} maxWidth="3xl">
+            <div className="p-5 sm:p-6 bg-white space-y-4 rounded-2xl border border-stone-200/60 shadow-xl max-h-[92vh] overflow-y-auto">
                 {/* Header & Verification Steps */}
                 <div className="border-b border-stone-100 pb-3.5 space-y-3">
                     <div className="flex items-center justify-between">
@@ -221,226 +221,255 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                     </div>
                 </div>
 
-                {/* Biometric Camera Viewfinder Stream / Photo Preview */}
-                <div className="relative overflow-hidden rounded-2xl bg-stone-950 aspect-4/3 flex items-center justify-center border border-stone-800 shadow-inner group">
-                    {capturedPhoto ? (
-                        <div className="relative w-full h-full">
-                            <img src={capturedPhoto} alt="Clock-in selfie preview" className="w-full h-full object-cover" />
-                            {/* Photo Captured Overlay Badge */}
-                            <div className="absolute top-3 left-3 bg-emerald-950/80 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-                                <CheckCircle2 size={12} className="text-emerald-400" />
-                                Snapshot Verified
-                            </div>
+                {/* 2-Column Split Operational Cockpit Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
+                    {/* LEFT COLUMN: Biometric Camera Viewfinder Stream / Photo Preview */}
+                    <div className="flex flex-col h-full space-y-2.5">
+                        <div className="flex items-center justify-between px-0.5">
+                            <span className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                                <Camera size={14} className="text-clay-600" />
+                                Biometric Selfie Proof
+                            </span>
+                            <span className="text-[10px] font-semibold text-stone-400">Step 1 of 2</span>
                         </div>
-                    ) : (
-                        <>
-                            <video
-                                ref={videoRef}
-                                autoPlay
-                                playsInline
-                                muted
-                                className="w-full h-full object-cover transform -scale-x-100"
-                            />
-                            <canvas ref={canvasRef} className="hidden" />
 
-                            {/* Viewfinder Corner Ticks */}
-                            <div className="pointer-events-none absolute inset-4">
-                                <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-emerald-400/70 rounded-tl-lg" />
-                                <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-emerald-400/70 rounded-tr-lg" />
-                                <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-emerald-400/70 rounded-bl-lg" />
-                                <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-emerald-400/70 rounded-br-lg" />
-                            </div>
-
-                            {/* Facial Oval Guide Silhouette */}
-                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                                <div className="w-36 h-48 sm:w-44 sm:h-56 border-2 border-dashed border-white/20 rounded-[50%] flex items-center justify-center">
-                                    <span className="text-[10px] font-medium text-white/40 tracking-widest uppercase">Position Face</span>
+                        <div className="relative overflow-hidden rounded-2xl bg-stone-950 flex-1 min-h-[260px] md:min-h-[290px] flex items-center justify-center border border-stone-800 shadow-inner group">
+                            {capturedPhoto ? (
+                                <div className="relative w-full h-full">
+                                    <img src={capturedPhoto} alt="Clock-in selfie preview" className="w-full h-full object-cover" />
+                                    {/* Photo Captured Overlay Badge */}
+                                    <div className="absolute top-3 left-3 bg-emerald-950/80 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                                        <CheckCircle2 size={12} className="text-emerald-400" />
+                                        Snapshot Verified
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <>
+                                    <video
+                                        ref={videoRef}
+                                        autoPlay
+                                        playsInline
+                                        muted
+                                        className="w-full h-full object-cover transform -scale-x-100"
+                                    />
+                                    <canvas ref={canvasRef} className="hidden" />
 
-                            {/* Live Stream Indicator Badge */}
-                            <div className="absolute top-3 left-3 bg-stone-900/80 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                                <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                </span>
-                                LIVE STREAM
-                            </div>
-                        </>
-                    )}
+                                    {/* Viewfinder Corner Ticks */}
+                                    <div className="pointer-events-none absolute inset-4">
+                                        <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-emerald-400/70 rounded-tl-lg" />
+                                        <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-emerald-400/70 rounded-tr-lg" />
+                                        <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-emerald-400/70 rounded-bl-lg" />
+                                        <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-emerald-400/70 rounded-br-lg" />
+                                    </div>
 
-                    {cameraError && !capturedPhoto && (
-                        <div className="absolute inset-0 bg-stone-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center z-20">
-                            <AlertTriangle size={32} className="text-amber-400 mb-2" />
-                            <p className="text-xs font-bold text-white max-w-xs leading-relaxed">{cameraError}</p>
-                            <button
-                                type="button"
-                                onClick={startCamera}
-                                className="mt-3 px-3.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-xs text-white font-bold transition border border-stone-700 flex items-center gap-1.5"
-                            >
-                                <RefreshCw size={12} />
-                                Retry Camera Stream
-                            </button>
-                        </div>
-                    )}
+                                    {/* Facial Oval Guide Silhouette */}
+                                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                        <div className="w-36 h-48 sm:w-40 sm:h-52 border-2 border-dashed border-white/20 rounded-[50%] flex items-center justify-center">
+                                            <span className="text-[10px] font-medium text-white/40 tracking-widest uppercase">Position Face</span>
+                                        </div>
+                                    </div>
 
-                    {/* Camera Controls Floating Overlay */}
-                    <div className="absolute bottom-3 inset-x-3 flex justify-between items-center bg-stone-950/75 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-white/10 z-10">
-                        {capturedPhoto ? (
-                            <button
-                                type="button"
-                                onClick={retakePhoto}
-                                className="inline-flex items-center gap-1.5 text-xs font-bold text-white hover:text-amber-300 transition"
-                            >
-                                <RefreshCw size={14} />
-                                Retake Photo
-                            </button>
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={capturePhoto}
-                                disabled={!!cameraError}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition shadow-sm active:scale-95"
-                            >
-                                <Camera size={14} />
-                                Snap Photo
-                            </button>
-                        )}
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-300">
-                            {capturedPhoto ? 'Photo Captured' : 'Ready'}
-                        </span>
-                    </div>
-                </div>
-
-                {/* GPS Location Status Indicator & Out-of-Range Feedback Card */}
-                <div className={`relative overflow-hidden rounded-2xl border p-3.5 transition-all duration-300 ${
-                    locationStatus === 'success' && isWithinGeofence
-                        ? 'border-emerald-200 bg-emerald-50/50 shadow-2xs' 
-                        : locationStatus === 'success' && !isWithinGeofence
-                            ? 'border-rose-200 bg-rose-50/70 shadow-2xs'
-                            : locationStatus === 'error' 
-                                ? 'border-amber-200 bg-amber-50/70 shadow-2xs' 
-                                : 'border-stone-200 bg-stone-50/90'
-                }`}>
-                    {/* Animated progress beam when fetching */}
-                    {locationStatus === 'fetching' && (
-                        <div className="absolute top-0 inset-x-0 h-0.5 bg-stone-200 overflow-hidden">
-                            <div className="h-full bg-clay-600 animate-pulse w-full origin-left" />
-                        </div>
-                    )}
-
-                    <div className="flex items-start justify-between gap-3 text-xs">
-                        <div className="flex items-start gap-3">
-                            <div className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-colors ${
-                                locationStatus === 'success' && isWithinGeofence
-                                    ? 'bg-emerald-100/80 text-emerald-700 border-emerald-200'
-                                    : locationStatus === 'success' && !isWithinGeofence
-                                        ? 'bg-rose-100/80 text-rose-700 border-rose-200'
-                                        : locationStatus === 'error'
-                                            ? 'bg-amber-100/80 text-amber-700 border-amber-200'
-                                            : 'bg-white text-stone-600 border-stone-200 shadow-2xs'
-                            }`}>
-                                {locationStatus === 'fetching' ? (
-                                    <Loader2 size={16} className="animate-spin text-clay-600" />
-                                ) : locationStatus === 'success' && isWithinGeofence ? (
-                                    <MapPin size={16} className="text-emerald-700" />
-                                ) : locationStatus === 'success' && !isWithinGeofence ? (
-                                    <ShieldAlert size={16} className="text-rose-700" />
-                                ) : (
-                                    <AlertTriangle size={16} className="text-amber-700" />
-                                )}
-                            </div>
-
-                            <div>
-                                <div className="flex items-center gap-1.5">
-                                    <span className="font-bold text-stone-900 block leading-tight">GPS Geofence Check</span>
-                                    {locationStatus === 'fetching' && (
+                                    {/* Live Stream Indicator Badge */}
+                                    <div className="absolute top-3 left-3 bg-stone-900/80 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5">
                                         <span className="relative flex h-2 w-2">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-clay-400 opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-clay-600"></span>
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                        </span>
+                                        LIVE STREAM
+                                    </div>
+                                </>
+                            )}
+
+                            {cameraError && !capturedPhoto && (
+                                <div className="absolute inset-0 bg-stone-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center z-20">
+                                    <AlertTriangle size={32} className="text-amber-400 mb-2" />
+                                    <p className="text-xs font-bold text-white max-w-xs leading-relaxed">{cameraError}</p>
+                                    <button
+                                        type="button"
+                                        onClick={startCamera}
+                                        className="mt-3 px-3.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-xs text-white font-bold transition border border-stone-700 flex items-center gap-1.5"
+                                    >
+                                        <RefreshCw size={12} />
+                                        Retry Camera Stream
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Camera Controls Floating Overlay */}
+                            <div className="absolute bottom-3 inset-x-3 flex justify-between items-center bg-stone-950/75 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-white/10 z-10">
+                                {capturedPhoto ? (
+                                    <button
+                                        type="button"
+                                        onClick={retakePhoto}
+                                        className="inline-flex items-center gap-1.5 text-xs font-bold text-white hover:text-amber-300 transition"
+                                    >
+                                        <RefreshCw size={14} />
+                                        Retake Photo
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={capturePhoto}
+                                        disabled={!!cameraError}
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition shadow-sm active:scale-95"
+                                    >
+                                        <Camera size={14} />
+                                        Snap Photo
+                                    </button>
+                                )}
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-300">
+                                    {capturedPhoto ? 'Photo Captured' : 'Ready'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: Read-Only Leaflet Map, GPS Geofence Check & Action */}
+                    <div className="flex flex-col h-full space-y-3">
+                        <div className="flex items-center justify-between px-0.5">
+                            <span className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                                <MapPin size={14} className="text-emerald-600" />
+                                Workplace Geofence
+                            </span>
+                            <span className="text-[10px] font-semibold text-stone-400">Step 2 of 2</span>
+                        </div>
+
+                        {/* Read-Only Visual Geofence Map Feedback */}
+                        {isLocationVerified && workplaceLat !== undefined && workplaceLat !== null ? (
+                            <StaffGeofenceMap
+                                workplaceLat={workplaceLat}
+                                workplaceLng={workplaceLng}
+                                radiusMeters={radiusLimit}
+                                staffLat={location.lat}
+                                staffLng={location.lng}
+                                distanceMeters={distanceMeters}
+                                isWithin={isWithinGeofence}
+                                locationName={locationName}
+                                height="170px"
+                            />
+                        ) : (
+                            <div className="h-[170px] rounded-2xl border border-stone-200 bg-stone-50 flex flex-col items-center justify-center p-4 text-center">
+                                <Loader2 size={24} className="animate-spin text-clay-600 mb-2" />
+                                <p className="text-xs font-bold text-stone-700">Acquiring GPS Position...</p>
+                                <p className="text-[10px] text-stone-400 font-medium mt-0.5">Initializing Leaflet geofence visual map</p>
+                            </div>
+                        )}
+
+                        {/* GPS Location Status Indicator & Out-of-Range Feedback Card */}
+                        <div className={`relative overflow-hidden rounded-2xl border p-3 transition-all duration-300 flex-1 flex flex-col justify-center ${
+                            locationStatus === 'success' && isWithinGeofence
+                                ? 'border-emerald-200 bg-emerald-50/50 shadow-2xs' 
+                                : locationStatus === 'success' && !isWithinGeofence
+                                    ? 'border-rose-200 bg-rose-50/70 shadow-2xs'
+                                    : locationStatus === 'error' 
+                                        ? 'border-amber-200 bg-amber-50/70 shadow-2xs' 
+                                        : 'border-stone-200 bg-stone-50/90'
+                        }`}>
+                            {/* Animated progress beam when fetching */}
+                            {locationStatus === 'fetching' && (
+                                <div className="absolute top-0 inset-x-0 h-0.5 bg-stone-200 overflow-hidden">
+                                    <div className="h-full bg-clay-600 animate-pulse w-full origin-left" />
+                                </div>
+                            )}
+
+                            <div className="flex items-start justify-between gap-2.5 text-xs">
+                                <div className="flex items-start gap-2.5 min-w-0">
+                                    <div className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+                                        locationStatus === 'success' && isWithinGeofence
+                                            ? 'bg-emerald-100/80 text-emerald-700 border-emerald-200'
+                                            : locationStatus === 'success' && !isWithinGeofence
+                                                ? 'bg-rose-100/80 text-rose-700 border-rose-200'
+                                                : locationStatus === 'error'
+                                                    ? 'bg-amber-100/80 text-amber-700 border-amber-200'
+                                                    : 'bg-white text-stone-600 border-stone-200 shadow-2xs'
+                                    }`}>
+                                        {locationStatus === 'fetching' ? (
+                                            <Loader2 size={14} className="animate-spin text-clay-600" />
+                                        ) : locationStatus === 'success' && isWithinGeofence ? (
+                                            <MapPin size={14} className="text-emerald-700" />
+                                        ) : locationStatus === 'success' && !isWithinGeofence ? (
+                                            <ShieldAlert size={14} className="text-rose-700" />
+                                        ) : (
+                                            <AlertTriangle size={14} className="text-amber-700" />
+                                        )}
+                                    </div>
+
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="font-bold text-stone-900 block leading-tight text-xs">GPS Geofence Status</span>
+                                            {locationStatus === 'fetching' && (
+                                                <span className="relative flex h-2 w-2">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-clay-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-clay-600"></span>
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <p className="text-[10px] text-stone-600 font-medium mt-0.5 leading-snug">
+                                            {locationStatus === 'fetching' && 'Acquiring satellite lock & GPS coordinates...'}
+                                            {locationStatus === 'success' && isWithinGeofence && (
+                                                <span>Verified within <strong>{locationName}</strong> boundary ({distanceMeters}m away • max {radiusLimit}m)</span>
+                                            )}
+                                            {locationStatus === 'success' && !isWithinGeofence && (
+                                                <span className="text-rose-900 font-bold">
+                                                    Outside Boundary: <strong>{distanceMeters}m</strong> away from {locationName} (max {radiusLimit}m).
+                                                </span>
+                                            )}
+                                            {locationStatus === 'error' && 'Location permission required to verify physical attendance.'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="shrink-0">
+                                    {locationStatus === 'fetching' && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white border border-stone-200 text-[9px] font-bold text-stone-600">
+                                            <RefreshCw size={10} className="animate-spin text-clay-600" />
+                                            Locating
                                         </span>
                                     )}
-                                </div>
-
-                                <p className="text-[11px] text-stone-600 font-medium mt-1 leading-relaxed">
-                                    {locationStatus === 'fetching' && 'Acquiring satellite lock & GPS coordinates...'}
                                     {locationStatus === 'success' && isWithinGeofence && (
-                                        <span>Verified position within <strong>{locationName}</strong> boundary ({distanceMeters}m away • max {radiusLimit}m • ±{location.accuracy}m GPS precision)</span>
+                                        <div className="flex items-center gap-1 text-[9px] font-extrabold text-emerald-700 bg-emerald-100/70 border border-emerald-200/80 px-2 py-0.5 rounded-lg">
+                                            <CheckCircle2 size={11} className="text-emerald-600" />
+                                            In Range
+                                        </div>
                                     )}
                                     {locationStatus === 'success' && !isWithinGeofence && (
-                                        <span className="text-rose-900 font-bold">
-                                            Outside Allowed Boundary: You are <strong>{distanceMeters}m</strong> away from {locationName} (allowed radius limit is {radiusLimit}m).
-                                            {strictGeofence && ' Strict geofence is enforced for this shop.'}
-                                        </span>
+                                        <div className="flex items-center gap-1 text-[9px] font-extrabold text-rose-700 bg-rose-100/90 border border-rose-200 px-2 py-0.5 rounded-lg">
+                                            <ShieldAlert size={11} className="text-rose-600" />
+                                            Out of Range
+                                        </div>
                                     )}
-                                    {locationStatus === 'error' && 'Location permission required to verify physical attendance.'}
-                                </p>
+                                    {locationStatus === 'error' && (
+                                        <button
+                                            type="button"
+                                            onClick={fetchGeolocation}
+                                            className="px-2 py-0.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[9px] font-bold shrink-0 transition active:scale-95 flex items-center gap-1"
+                                        >
+                                            <Navigation size={10} />
+                                            Enable GPS
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
-                        <div>
-                            {locationStatus === 'fetching' && (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-[10px] font-bold text-stone-600 shadow-2xs">
-                                    <RefreshCw size={11} className="animate-spin text-clay-600" />
-                                    Locating...
-                                </span>
-                            )}
-                            {locationStatus === 'success' && isWithinGeofence && (
-                                <div className="flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 bg-emerald-100/70 border border-emerald-200/80 px-2.5 py-1 rounded-lg">
-                                    <CheckCircle2 size={13} className="text-emerald-600" />
-                                    In Range
-                                </div>
-                            )}
-                            {locationStatus === 'success' && !isWithinGeofence && (
-                                <div className="flex items-center gap-1 text-[10px] font-extrabold text-rose-700 bg-rose-100/90 border border-rose-200 px-2.5 py-1 rounded-lg">
-                                    <ShieldAlert size={13} className="text-rose-600" />
-                                    Out of Range
-                                </div>
-                            )}
-                            {locationStatus === 'error' && (
-                                <button
-                                    type="button"
-                                    onClick={fetchGeolocation}
-                                    className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold shrink-0 shadow-2xs transition active:scale-95 flex items-center gap-1"
-                                >
-                                    <Navigation size={11} />
-                                    Enable GPS
-                                </button>
-                            )}
+                        {/* Submit Action Button */}
+                        <div className="pt-0.5">
+                            <button
+                                type="button"
+                                onClick={handleSubmit}
+                                disabled={submitting || !canClockIn}
+                                className="w-full py-3 px-4 rounded-xl bg-clay-800 hover:bg-clay-900 active:bg-clay-950 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-extrabold transition-all shadow-md shadow-clay-800/20 active:scale-[0.98] flex items-center justify-center gap-2"
+                            >
+                                {submitting ? (
+                                    <RefreshCw size={16} className="animate-spin" />
+                                ) : (
+                                    <ShieldCheck size={16} />
+                                )}
+                                {getButtonText()}
+                            </button>
                         </div>
                     </div>
-                </div>
-
-                {/* Read-Only Visual Geofence Map Feedback */}
-                {isLocationVerified && workplaceLat !== undefined && workplaceLat !== null && (
-                    <StaffGeofenceMap
-                        workplaceLat={workplaceLat}
-                        workplaceLng={workplaceLng}
-                        radiusMeters={radiusLimit}
-                        staffLat={location.lat}
-                        staffLng={location.lng}
-                        distanceMeters={distanceMeters}
-                        isWithin={isWithinGeofence}
-                        locationName={locationName}
-                        height="180px"
-                    />
-                )}
-
-                {/* Submit Action Button */}
-                <div className="pt-1">
-                    <button
-                        type="button"
-                        onClick={handleSubmit}
-                        disabled={submitting || !canClockIn}
-                        className="w-full py-3 px-4 rounded-xl bg-clay-800 hover:bg-clay-900 active:bg-clay-950 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-extrabold transition-all shadow-md shadow-clay-800/20 active:scale-[0.98] flex items-center justify-center gap-2"
-                    >
-                        {submitting ? (
-                            <RefreshCw size={16} className="animate-spin" />
-                        ) : (
-                            <ShieldCheck size={16} />
-                        )}
-                        {getButtonText()}
-                    </button>
                 </div>
             </div>
         </Modal>
