@@ -97,6 +97,13 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
         if (processingAction) return;
         setProcessingAction(action);
 
+        if (action === 'direct_logout') {
+            router.post(route('staff.logout.direct'), {}, {
+                onFinish: () => setProcessingAction(null),
+            });
+            return;
+        }
+
         if (action === 'pause') {
             router.post(route('staff.attendance.break'), {}, {
                 preserveScroll: true,
@@ -145,7 +152,9 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                         </div>
                         <div>
                             <div className="flex items-center gap-1.5 mb-0.5">
-                                <h2 className="text-sm font-extrabold text-stone-900 tracking-tight">Shift Session Control</h2>
+                                <h2 className="text-sm font-extrabold text-stone-900 tracking-tight">
+                                    {hasOpenSession || isPaused ? 'Shift Session Control' : 'Sign Out Account'}
+                                </h2>
                                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
                                     isPaused 
                                         ? 'bg-amber-100 text-amber-800 border border-amber-200' 
@@ -154,13 +163,15 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                                             : 'bg-stone-100 text-stone-600 border border-stone-200'
                                 }`}>
                                     <span className="relative flex h-1.5 w-1.5">
-                                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isPaused ? 'bg-amber-400' : 'bg-emerald-400'}`}></span>
-                                        <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${isPaused ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
+                                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isPaused ? 'bg-amber-400' : hasOpenSession ? 'bg-emerald-400' : 'bg-stone-400'}`}></span>
+                                        <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${isPaused ? 'bg-amber-500' : hasOpenSession ? 'bg-emerald-500' : 'bg-stone-500'}`}></span>
                                     </span>
                                     {isPaused ? 'On Break' : hasOpenSession ? 'Shift Active' : 'Off Duty'}
                                 </span>
                             </div>
-                            <p className="text-[11px] text-stone-500 font-medium">Manage break status or sign out securely</p>
+                            <p className="text-[11px] text-stone-500 font-medium">
+                                {hasOpenSession || isPaused ? 'Manage break status or sign out securely' : 'Sign out of your staff workspace session'}
+                            </p>
                         </div>
                     </div>
 
@@ -211,34 +222,47 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
 
                 {/* Actions */}
                 <div className="space-y-2.5">
-                    {isPaused ? (
-                        <ActionTile
-                            icon={PlayCircle}
-                            title={processingAction === 'resume' ? 'Resuming...' : 'Resume Shift Work'}
-                            description="End break period and resume active shift timer"
-                            variant="emerald"
-                            disabled={!!processingAction}
-                            onClick={() => submit('resume')}
-                        />
+                    {hasOpenSession || isPaused ? (
+                        <>
+                            {isPaused ? (
+                                <ActionTile
+                                    icon={PlayCircle}
+                                    title={processingAction === 'resume' ? 'Resuming...' : 'Resume Shift Work'}
+                                    description="End break period and resume active shift timer"
+                                    variant="emerald"
+                                    disabled={!!processingAction}
+                                    onClick={() => submit('resume')}
+                                />
+                            ) : (
+                                <ActionTile
+                                    icon={PauseCircle}
+                                    title={processingAction === 'pause' ? 'Pausing...' : 'Take Shift Break'}
+                                    description="Pause active timer & stay signed in to workspace"
+                                    variant="default"
+                                    disabled={!!processingAction}
+                                    onClick={() => submit('pause')}
+                                />
+                            )}
+
+                            <ActionTile
+                                icon={LogOut}
+                                title={processingAction === 'clock_out' ? 'Closing Shift...' : 'Clock Out & Sign Out'}
+                                description="Record physical clock-out & end workspace session"
+                                variant="danger"
+                                disabled={!!processingAction}
+                                onClick={() => submit('clock_out')}
+                            />
+                        </>
                     ) : (
                         <ActionTile
-                            icon={PauseCircle}
-                            title={processingAction === 'pause' ? 'Pausing...' : 'Take Shift Break'}
-                            description="Pause active timer & stay signed in to workspace"
-                            variant="default"
-                            disabled={!!processingAction || !hasOpenSession}
-                            onClick={() => submit('pause')}
+                            icon={LogOut}
+                            title={processingAction === 'direct_logout' ? 'Signing Out...' : 'Sign Out of Account'}
+                            description="End workspace session (You are currently Off Duty)"
+                            variant="danger"
+                            disabled={!!processingAction}
+                            onClick={() => submit('direct_logout')}
                         />
                     )}
-
-                    <ActionTile
-                        icon={LogOut}
-                        title={processingAction === 'clock_out' ? 'Closing Shift...' : 'Clock Out & Sign Out'}
-                        description="Record physical clock-out & end workspace session"
-                        variant="danger"
-                        disabled={!!processingAction}
-                        onClick={() => submit('clock_out')}
-                    />
                 </div>
 
                 {/* Cancel / Resume Link */}
