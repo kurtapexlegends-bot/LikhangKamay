@@ -456,7 +456,7 @@ class GlobalSearchController extends Controller
 
     private function searchSellerLocations(int $sellerId, string $query, string $like): array
     {
-        return \App\Models\SellerLocation::select('id', 'name', 'address', 'radius_meters', 'enforce_strict_geofence')
+        return \App\Models\SellerLocation::select(['id', 'name', 'address', 'radius_meters', 'enforce_strict_geofence'])
             ->where('user_id', $sellerId)
             ->where(function ($q) use ($query, $like) {
                 $q->where('name', $like, "%{$query}%")
@@ -476,7 +476,7 @@ class GlobalSearchController extends Controller
 
     private function searchSellerProducts(int $sellerId, string $query, string $like): array
     {
-        return Product::select('id', 'name', 'sku', 'stock', 'status', 'category')
+        return Product::select(['id', 'name', 'sku', 'stock', 'status', 'category'])
             ->where('user_id', $sellerId)
             ->where(function ($q) use ($query, $like) {
                 $q->where('name', $like, "%{$query}%")
@@ -499,7 +499,7 @@ class GlobalSearchController extends Controller
     {
         $cleanSearch = preg_replace('/^ORD-/i', '', $query);
 
-        return Order::select('id', 'order_number', 'customer_name', 'status')
+        return Order::select(['id', 'order_number', 'customer_name', 'status'])
             ->where('artisan_id', $sellerId)
             ->where(function ($q) use ($query, $cleanSearch, $like) {
                 $q->where('order_number', $like, "%{$query}%")
@@ -533,7 +533,7 @@ class GlobalSearchController extends Controller
 
     private function searchSellerSupplies(int $sellerId, string $query, string $like): array
     {
-        return Supply::select('id', 'name', 'quantity', 'unit', 'unit_cost')
+        return Supply::select(['id', 'name', 'quantity', 'unit', 'unit_cost'])
             ->where('user_id', $sellerId)
             ->where('name', $like, "%{$query}%")
             ->limit(5)
@@ -550,7 +550,7 @@ class GlobalSearchController extends Controller
 
     private function searchSellerStockRequests(int $sellerId, string $query, string $like): array
     {
-        return StockRequest::select('id', 'supply_id', 'quantity', 'status')
+        return StockRequest::select(['id', 'supply_id', 'quantity', 'status'])
             ->where('user_id', $sellerId)
             ->whereHas('supply', function($q) use ($query, $like) {
                 $q->where('name', $like, "%{$query}%");

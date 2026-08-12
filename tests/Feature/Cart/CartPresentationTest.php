@@ -14,7 +14,9 @@ class CartPresentationTest extends TestCase
 
     public function test_cart_page_backfills_missing_sku_and_slug_from_live_products(): void
     {
+        /** @var User $buyer */
         $buyer = User::factory()->create();
+        /** @var User $seller */
         $seller = User::factory()->artisanApproved()->create();
 
         $product = Product::create([
@@ -63,7 +65,9 @@ class CartPresentationTest extends TestCase
 
     public function test_cart_store_honors_requested_quantity_and_keeps_distinct_variants_separate(): void
     {
+        /** @var User $buyer */
         $buyer = User::factory()->create();
+        /** @var User $seller */
         $seller = User::factory()->artisanApproved()->create();
 
         $product = Product::create([
@@ -106,7 +110,9 @@ class CartPresentationTest extends TestCase
 
     public function test_checkout_create_can_select_cart_lines_by_cart_key(): void
     {
+        /** @var User $buyer */
         $buyer = User::factory()->create();
+        /** @var User $seller */
         $seller = User::factory()->artisanApproved()->create();
 
         $product = Product::create([

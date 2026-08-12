@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\StaffAttendanceLog;
+use App\Models\StaffAttendanceSession;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,8 +23,8 @@ class EnforceSingleDeviceSession
             if ($user->current_session_id !== $currentSessionId) {
                 // If staff member has an active shift running during takeover, pause it and log alert
                 if ($user->isStaff()) {
-                    $activeSession = StaffAttendanceLog::where('user_id', $user->id)
-                        ->whereNull('clock_out')
+                    $activeSession = StaffAttendanceSession::where('staff_user_id', $user->id)
+                        ->whereNull('clock_out_at')
                         ->where('status', 'active')
                         ->latest()
                         ->first();
