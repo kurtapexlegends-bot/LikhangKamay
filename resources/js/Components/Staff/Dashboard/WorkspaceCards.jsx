@@ -175,14 +175,7 @@ export function ActionCard({ card, theme }) {
     const Icon = cardIconMap[card.module] || Briefcase;
     const capabilities = capabilityMap[card.module] || [];
 
-    const isUrgent = (
-        card.module === 'accounting' ||
-        card.module === 'orders' ||
-        card.module === 'reviews' ||
-        card.module === 'products' ||
-        card.module === 'analytics' ||
-        card.module === 'team_messages'
-    ) && card.metricValue > 0;
+    const isUrgent = Number(card.metricValue || 0) > 0;
 
     const iconBoxTone = iconBoxToneMap[card.tone] || iconBoxToneMap.slate;
     const hoverTextTone = hoverTextToneMap[card.tone] || hoverTextToneMap.slate;
@@ -258,14 +251,7 @@ export function ActionCard({ card, theme }) {
 
 export function MobileToolTile({ card, theme }) {
     const Icon = cardIconMap[card.module] || Briefcase;
-    const isUrgent = (
-        card.module === 'accounting' ||
-        card.module === 'orders' ||
-        card.module === 'reviews' ||
-        card.module === 'products' ||
-        card.module === 'analytics' ||
-        card.module === 'team_messages'
-    ) && card.metricValue > 0;
+    const isUrgent = Number(card.metricValue || 0) > 0;
 
     const iconBoxTone = iconBoxToneMap[card.tone] || iconBoxToneMap.slate;
     const hoverTextTone = hoverTextToneMap[card.tone] || hoverTextToneMap.slate;
