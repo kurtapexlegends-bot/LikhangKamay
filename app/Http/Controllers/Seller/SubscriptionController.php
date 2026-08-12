@@ -47,6 +47,13 @@ class SubscriptionController extends Controller
             ->values()
             ->all();
 
+        if ($user->isPremiumTier() && $user->subscription_expires_at === null) {
+            $user->update([
+                'subscription_expires_at' => now()->addDays(30),
+            ]);
+            $user->refresh();
+        }
+
         $expiresAt = $user->subscription_expires_at;
         $cancelledAt = $user->subscription_cancelled_at;
         $daysRemaining = $expiresAt ? max(0, (int) ceil(now()->diffInSeconds($expiresAt, false) / 86400)) : null;
@@ -101,7 +108,7 @@ class SubscriptionController extends Controller
             ? $user->subscription_expires_at->format('M d, Y')
             : 'period end';
 
-        return back()->with('success', "Auto-renewal turned off. Your {$user->getSellerTierLabel()} benefits remain 100% active until {$formattedDate}. Subscriptions are final and non-refundable.");
+        return back()->with('success', "Subscription cancelled. Your {$user->getSellerTierLabel()} plan benefits remain 100% active until {$formattedDate}. All subscription payments are final and non-refundable.");
     }
 
     public function resumeAutoRenewal(Request $request)
@@ -113,7 +120,7 @@ class SubscriptionController extends Controller
             'subscription_cancelled_at' => null,
         ]);
 
-        return back()->with('success', 'Subscription auto-renewal resumed successfully.');
+        return back()->with('success', 'Subscription reactivated successfully.');
     }
 
     public function upgrade(Request $request, InitiateSubscriptionUpgrade $action)

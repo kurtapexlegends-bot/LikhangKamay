@@ -205,13 +205,13 @@ export default function Subscription({
         })
         : null;
 
-    const handleCancelAutoRenewal = () => {
-        if (confirm('Are you sure you want to cancel auto-renewal? Your plan benefits will remain 100% active until your current billing period ends. Note that all subscription sales are final and non-refundable.')) {
+    const handleCancelSubscription = () => {
+        if (confirm(`Are you sure you want to cancel your subscription? Your ${currentPlanMeta.name} plan benefits will remain 100% active until ${formattedExpirationDate || 'period end'}. Note that all subscription purchases are final and non-refundable.`)) {
             submitSubscriptionChange(route('seller.subscription.cancel-auto-renewal'), {});
         }
     };
 
-    const handleResumeAutoRenewal = () => {
+    const handleReactivateSubscription = () => {
         submitSubscriptionChange(route('seller.subscription.resume-auto-renewal'), {});
     };
 
@@ -238,16 +238,16 @@ export default function Subscription({
                                 </span>
 
                                 {formattedExpirationDate && (
-                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-100 px-3 py-1 text-[11px] font-bold text-stone-800">
-                                        <Clock3 size={13} className="text-stone-500" />
-                                        {isCancelled ? `Access until ${formattedExpirationDate}` : `Renews on ${formattedExpirationDate}`}
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-800">
+                                        <Clock3 size={13} className="text-amber-600" />
+                                        {isCancelled ? `Expires on ${formattedExpirationDate}` : `Renews on ${formattedExpirationDate}`}
                                     </span>
                                 )}
 
                                 {daysRemaining !== null && (
                                     <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold ${
                                         isCancelled
-                                            ? 'border-amber-300 bg-amber-50 text-amber-800'
+                                            ? 'border-amber-300 bg-amber-100/80 text-amber-900'
                                             : 'border-emerald-300 bg-emerald-50 text-emerald-800'
                                     }`}>
                                         <span className="relative flex h-1.5 w-1.5">
@@ -263,27 +263,27 @@ export default function Subscription({
                                 </span>
                             </div>
 
-                            {/* Auto-Renewal Controls */}
+                            {/* Subscription Actions */}
                             {currentPlan !== 'free' && (
                                 <div className="shrink-0 flex items-center gap-2">
                                     {isCancelled ? (
                                         <button
                                             type="button"
-                                            onClick={handleResumeAutoRenewal}
+                                            onClick={handleReactivateSubscription}
                                             disabled={isProcessing}
                                             className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-stone-800 active:scale-95 shadow-sm"
                                         >
                                             <CheckCircle2 size={13} className="text-emerald-400" />
-                                            <span>Resume Auto-Renewal</span>
+                                            <span>Reactivate Subscription</span>
                                         </button>
                                     ) : (
                                         <button
                                             type="button"
-                                            onClick={handleCancelAutoRenewal}
+                                            onClick={handleCancelSubscription}
                                             disabled={isProcessing}
                                             className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-bold text-stone-700 transition hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 active:scale-95 shadow-2xs"
                                         >
-                                            <span>Cancel Auto-Renewal</span>
+                                            <span>Cancel Subscription</span>
                                         </button>
                                     )}
                                 </div>
