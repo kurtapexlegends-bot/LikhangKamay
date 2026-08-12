@@ -13,6 +13,7 @@ class SubscriptionCancellationAndExpirationTest extends TestCase
 
     public function test_cancelling_auto_renewal_retains_active_plan_and_product_limits_until_expiration(): void
     {
+        /** @var User $seller */
         $seller = User::factory()->create([
             'role' => 'artisan',
             'artisan_status' => 'approved',
@@ -36,6 +37,7 @@ class SubscriptionCancellationAndExpirationTest extends TestCase
 
     public function test_resuming_auto_renewal_clears_cancellation_timestamp(): void
     {
+        /** @var User $seller */
         $seller = User::factory()->create([
             'role' => 'artisan',
             'artisan_status' => 'approved',
@@ -58,6 +60,7 @@ class SubscriptionCancellationAndExpirationTest extends TestCase
 
     public function test_expired_subscription_falls_back_to_free_tier_limits(): void
     {
+        /** @var User $seller */
         $seller = User::factory()->create([
             'role' => 'artisan',
             'artisan_status' => 'approved',

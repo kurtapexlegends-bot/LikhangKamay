@@ -10,9 +10,12 @@ use App\Models\User;
 
 /**
  * @property array|null $modules_enabled
+ * @property \Illuminate\Support\Carbon|null $subscription_expires_at
+ * @property \Illuminate\Support\Carbon|null $subscription_cancelled_at
+ * @property string|null $pending_downgrade_tier
  * @property-read string|null $formatted_primary_address
  * 
- * @mixin \App\Models\User
+ * @mixin User
  * @mixin \App\Models\Traits\ManagesStaffAccountFlags
  */
 trait HasArtisanSubscriptions
