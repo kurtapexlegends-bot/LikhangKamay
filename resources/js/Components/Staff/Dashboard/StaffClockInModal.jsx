@@ -31,6 +31,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
     const [location, setLocation] = useState({ lat: null, lng: null, accuracy: null });
     const [locationStatus, setLocationStatus] = useState('fetching'); // fetching, success, error
     const [submitting, setSubmitting] = useState(false);
+    const [activeMobileTab, setActiveMobileTab] = useState('selfie'); // 'selfie' | 'geofence'
 
     // Workplace location parameters
     const workplaceLat = assignedLoc?.latitude;
@@ -55,6 +56,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
 
         startCamera();
         fetchGeolocation();
+        setActiveMobileTab('selfie');
 
         return () => {
             stopCamera();
@@ -122,6 +124,9 @@ export default function StaffClockInModal({ isOpen, onClose }) {
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
         setCapturedPhoto(dataUrl);
+
+        // Auto-advance to Step 2 (GPS Geofence) on mobile
+        setActiveMobileTab('geofence');
     };
 
     const retakePhoto = () => {
@@ -129,6 +134,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
         if (!stream) {
             startCamera();
         }
+        setActiveMobileTab('selfie');
     };
 
     const handleSubmit = () => {
@@ -159,9 +165,12 @@ export default function StaffClockInModal({ isOpen, onClose }) {
 
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="3xl">
-            <div className="p-5 sm:p-6 bg-white space-y-4 rounded-2xl border border-stone-200/60 shadow-xl max-h-[92vh] overflow-y-auto">
+            <div className="p-4 sm:p-6 bg-white space-y-3.5 sm:space-y-4 rounded-t-3xl sm:rounded-2xl border border-stone-200/60 shadow-xl max-h-[92vh] overflow-y-auto">
+                {/* Mobile Drag Handle Bar */}
+                <div className="w-12 h-1 bg-stone-200 rounded-full mx-auto sm:hidden -mt-1 mb-1" />
+
                 {/* Header & Verification Steps */}
-                <div className="border-b border-stone-100 pb-3.5 space-y-3">
+                <div className="border-b border-stone-100 pb-3 space-y-3">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100/80 shadow-2xs">
@@ -181,30 +190,42 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                         </button>
                     </div>
 
-                    {/* 2-Step Verification Progress Bar */}
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-all ${
-                            capturedPhoto 
-                                ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800' 
-                                : 'bg-stone-50 border-stone-200 text-stone-600'
-                        }`}>
+                    {/* 2-Step Verification Progress Bar (Acts as Interactive Tab Bar on Mobile) */}
+                    <div className="grid grid-cols-2 gap-2 pt-0.5">
+                        <button
+                            type="button"
+                            onClick={() => setActiveMobileTab('selfie')}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] font-bold transition-all text-left ${
+                                capturedPhoto 
+                                    ? 'bg-emerald-50/80 border-emerald-200 text-emerald-800' 
+                                    : activeMobileTab === 'selfie'
+                                        ? 'bg-clay-50 border-clay-300 text-clay-900 shadow-2xs ring-1 ring-clay-400/30'
+                                        : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100'
+                            }`}
+                        >
                             <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-black ${
                                 capturedPhoto ? 'bg-emerald-600 text-white' : 'bg-stone-200 text-stone-600'
                             }`}>
                                 {capturedPhoto ? <CheckCircle2 size={10} /> : '1'}
                             </div>
                             <span className="truncate">1. Selfie Photo</span>
-                        </div>
+                        </button>
 
-                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-all ${
-                            isLocationVerified && isWithinGeofence
-                                ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800' 
-                                : isLocationVerified && !isWithinGeofence
-                                    ? 'bg-rose-50/90 border-rose-200 text-rose-800'
-                                    : locationStatus === 'error'
-                                        ? 'bg-amber-50/80 border-amber-200 text-amber-800'
-                                        : 'bg-stone-50 border-stone-200 text-stone-600'
-                        }`}>
+                        <button
+                            type="button"
+                            onClick={() => setActiveMobileTab('geofence')}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] font-bold transition-all text-left ${
+                                isLocationVerified && isWithinGeofence
+                                    ? 'bg-emerald-50/80 border-emerald-200 text-emerald-800' 
+                                    : isLocationVerified && !isWithinGeofence
+                                        ? 'bg-rose-50/90 border-rose-200 text-rose-800'
+                                        : activeMobileTab === 'geofence'
+                                            ? 'bg-clay-50 border-clay-300 text-clay-900 shadow-2xs ring-1 ring-clay-400/30'
+                                            : locationStatus === 'error'
+                                                ? 'bg-amber-50/80 border-amber-200 text-amber-800'
+                                                : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100'
+                            }`}
+                        >
                             <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-black ${
                                 isLocationVerified && isWithinGeofence
                                     ? 'bg-emerald-600 text-white' 
@@ -217,14 +238,16 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                 {isLocationVerified && isWithinGeofence ? <CheckCircle2 size={10} /> : '2'}
                             </div>
                             <span className="truncate">2. Workplace GPS</span>
-                        </div>
+                        </button>
                     </div>
                 </div>
 
-                {/* 2-Column Split Operational Cockpit Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
+                {/* Cockpit Container: 2-Column Split on Desktop/Tablet (md+), Single Tabbed View on Mobile (< md) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 items-stretch">
                     {/* LEFT COLUMN: Biometric Camera Viewfinder Stream / Photo Preview */}
-                    <div className="flex flex-col h-full space-y-2.5">
+                    <div className={`flex flex-col space-y-2.5 ${
+                        activeMobileTab === 'selfie' ? 'block' : 'hidden md:flex'
+                    }`}>
                         <div className="flex items-center justify-between px-0.5">
                             <span className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
                                 <Camera size={14} className="text-clay-600" />
@@ -233,7 +256,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                             <span className="text-[10px] font-semibold text-stone-400">Step 1 of 2</span>
                         </div>
 
-                        <div className="relative overflow-hidden rounded-2xl bg-stone-950 flex-1 min-h-[260px] md:min-h-[290px] flex items-center justify-center border border-stone-800 shadow-inner group">
+                        <div className="relative overflow-hidden rounded-2xl bg-stone-950 aspect-square sm:aspect-4/3 md:aspect-auto flex-1 min-h-[240px] sm:min-h-[270px] md:min-h-[290px] flex items-center justify-center border border-stone-800 shadow-inner group">
                             {capturedPhoto ? (
                                 <div className="relative w-full h-full">
                                     <img src={capturedPhoto} alt="Clock-in selfie preview" className="w-full h-full object-cover" />
@@ -255,7 +278,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                     <canvas ref={canvasRef} className="hidden" />
 
                                     {/* Viewfinder Corner Ticks */}
-                                    <div className="pointer-events-none absolute inset-4">
+                                    <div className="pointer-events-none absolute inset-3.5 sm:inset-4">
                                         <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-emerald-400/70 rounded-tl-lg" />
                                         <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-emerald-400/70 rounded-tr-lg" />
                                         <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-emerald-400/70 rounded-bl-lg" />
@@ -264,7 +287,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
 
                                     {/* Facial Oval Guide Silhouette */}
                                     <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                                        <div className="w-36 h-48 sm:w-40 sm:h-52 border-2 border-dashed border-white/20 rounded-[50%] flex items-center justify-center">
+                                        <div className="w-32 h-44 sm:w-40 sm:h-52 border-2 border-dashed border-white/20 rounded-[50%] flex items-center justify-center">
                                             <span className="text-[10px] font-medium text-white/40 tracking-widest uppercase">Position Face</span>
                                         </div>
                                     </div>
@@ -322,10 +345,30 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                 </span>
                             </div>
                         </div>
+
+                        {/* Mobile-Only CTA to advance to Step 2 */}
+                        <div className="pt-1 md:hidden">
+                            {capturedPhoto ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveMobileTab('geofence')}
+                                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-1.5"
+                                >
+                                    <span>Proceed to GPS Map & Geofence</span>
+                                    <CheckCircle2 size={14} />
+                                </button>
+                            ) : (
+                                <p className="text-[10px] text-stone-400 font-medium text-center">
+                                    Snap your selfie photo to automatically advance to GPS Geofence check.
+                                </p>
+                            )}
+                        </div>
                     </div>
 
                     {/* RIGHT COLUMN: Read-Only Leaflet Map, GPS Geofence Check & Action */}
-                    <div className="flex flex-col h-full space-y-3">
+                    <div className={`flex flex-col space-y-3 ${
+                        activeMobileTab === 'geofence' ? 'block' : 'hidden md:flex'
+                    }`}>
                         <div className="flex items-center justify-between px-0.5">
                             <span className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
                                 <MapPin size={14} className="text-emerald-600" />
@@ -345,10 +388,10 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                 distanceMeters={distanceMeters}
                                 isWithin={isWithinGeofence}
                                 locationName={locationName}
-                                height="170px"
+                                height="160px"
                             />
                         ) : (
-                            <div className="h-[170px] rounded-2xl border border-stone-200 bg-stone-50 flex flex-col items-center justify-center p-4 text-center">
+                            <div className="h-[160px] rounded-2xl border border-stone-200 bg-stone-50 flex flex-col items-center justify-center p-4 text-center">
                                 <Loader2 size={24} className="animate-spin text-clay-600 mb-2" />
                                 <p className="text-xs font-bold text-stone-700">Acquiring GPS Position...</p>
                                 <p className="text-[10px] text-stone-400 font-medium mt-0.5">Initializing Leaflet geofence visual map</p>
