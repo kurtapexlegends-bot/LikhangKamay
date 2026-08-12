@@ -91,7 +91,7 @@ class BuyerInitiateDispute
             // Notify seller
             $seller = User::find($order->artisan_id);
             if ($seller) {
-                $seller->notify(new RefundRequestNotification($order));
+                $seller->notifySellerWorkspace(new RefundRequestNotification($order), 'orders');
                 $this->sendMailSilently($seller->email, new ReturnRequested($order));
             }
         });

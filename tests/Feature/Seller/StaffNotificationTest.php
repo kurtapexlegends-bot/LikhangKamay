@@ -72,16 +72,16 @@ class StaffNotificationTest extends TestCase
         $response = $this->actingAs($staff)->post(route('notifications.read', $notification->id));
         $response->assertRedirect();
         
-        $notification->refresh();
-        $this->assertNotNull($notification->read_at);
+        // Assert staff account sees notification as read (unread count = 0) while owner account remains unread (unread count = 1)
         $this->assertEquals(0, $staff->getUnreadNotificationsQuery()->count());
+        $this->assertEquals(1, $owner->getUnreadNotificationsQuery()->count());
+        $this->assertNotNull(NotificationPresenter::present($notification, $staff)['read_at']);
+        $this->assertNull(NotificationPresenter::present($notification, $owner)['read_at']);
 
         // Mark as unread acting as staff
         $response = $this->actingAs($staff)->post(route('notifications.unread', $notification->id));
         $response->assertRedirect();
 
-        $notification->refresh();
-        $this->assertNull($notification->read_at);
         $this->assertEquals(1, $staff->getUnreadNotificationsQuery()->count());
     }
 

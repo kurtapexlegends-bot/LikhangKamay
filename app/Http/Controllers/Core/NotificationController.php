@@ -38,29 +38,25 @@ class NotificationController extends Controller
     }
 
     /**
-     * Mark a specific notification as read.
+     * Mark a specific notification as read for the current user account.
      */
     public function markAsRead(string $id)
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $notification = $user->getNotificationsQuery()->find($id);
-        
-        if ($notification) {
-            $notification->markAsRead();
-        }
+        $user->markWorkspaceNotificationAsRead($id);
 
         return back();
     }
 
     /**
-     * Mark all notifications as read.
+     * Mark all notifications as read for the current user account.
      */
     public function markAllAsRead()
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $user->getUnreadNotificationsQuery()->update(['read_at' => now()]);
+        $user->markAllWorkspaceNotificationsAsRead();
 
         return back();
     }
@@ -69,11 +65,7 @@ class NotificationController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $notification = $user->getNotificationsQuery()->find($id);
-        
-        if ($notification) {
-            $notification->markAsUnread();
-        }
+        $user->markWorkspaceNotificationAsUnread($id);
 
         return back();
     }
@@ -82,11 +74,7 @@ class NotificationController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $notification = $user->getNotificationsQuery()->find($id);
-        
-        if ($notification) {
-            $notification->delete();
-        }
+        $user->deleteWorkspaceNotification($id);
 
         return back();
     }
@@ -95,7 +83,7 @@ class NotificationController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $user->getNotificationsQuery()->delete();
+        $user->deleteAllWorkspaceNotifications();
 
         return back();
     }

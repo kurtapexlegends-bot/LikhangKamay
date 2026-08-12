@@ -14,6 +14,19 @@ class NotificationPresenter
     {
         $data = $notification->data ?? [];
 
+        $readAt = $notification->read_at;
+        if ($user) {
+            $userState = \App\Models\UserNotificationState::where('user_id', $user->id)
+                ->where('notification_id', $notification->id)
+                ->first();
+
+            if ($userState) {
+                $readAt = $userState->read_at;
+            } elseif ($notification->notifiable_id != $user->id) {
+                $readAt = null;
+            }
+        }
+
         return [
             'id' => $notification->id,
             'type' => $data['type'] ?? 'general',
@@ -24,7 +37,7 @@ class NotificationPresenter
             'request_type' => $data['request_type'] ?? null,
             'request_id' => $data['request_id'] ?? null,
             'url' => self::resolveUrl($data, $user),
-            'read_at' => $notification->read_at,
+            'read_at' => $readAt ? ($readAt instanceof \Carbon\CarbonInterface ? $readAt->toIso8601String() : (string) $readAt) : null,
             'created_at_raw' => $notification->created_at?->toIso8601String(),
             'created_at' => $notification->created_at?->diffForHumans(),
         ];

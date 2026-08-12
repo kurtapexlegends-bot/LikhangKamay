@@ -216,7 +216,7 @@ class PlaceOrder
                     if ($product->stock <= 5) {
                         $seller = User::find($product->user_id);
                         if ($seller) {
-                            $seller->notify(new \App\Notifications\LowStockNotification($product));
+                            $seller->notifySellerWorkspace(new \App\Notifications\LowStockNotification($product), 'products');
                         }
                     }
 
@@ -258,7 +258,7 @@ class PlaceOrder
                         'order_placed',
                         ['order_id' => $order->id, 'order_number' => $order->order_number]
                     );
-                    $seller->notify(new \App\Notifications\NewOrderNotification($order));
+                    $seller->notifySellerWorkspace(new \App\Notifications\NewOrderNotification($order), 'orders');
                 }
 
                 PlatformActivity::create([
