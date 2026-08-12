@@ -1,12 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { router } from '@inertiajs/react';
-import { Camera, MapPin, RefreshCw, CheckCircle2, AlertTriangle, ShieldCheck, X, Loader2, Navigation } from 'lucide-react';
+import { usePage, router } from '@inertiajs/react';
+import { Camera, MapPin, RefreshCw, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, X, Loader2, Navigation } from 'lucide-react';
 import Modal from '@/Components/Modal';
+import StaffGeofenceMap from './StaffGeofenceMap';
+
+const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
+    if (lat1 === null || lon1 === null || lat2 === null || lon2 === null) return null;
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c);
+};
 
 export default function StaffClockInModal({ isOpen, onClose }) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     
+    const { attendance } = usePage().props;
+    const assignedLoc = attendance?.assigned_location;
+
     const [stream, setStream] = useState(null);
     const [cameraError, setCameraError] = useState(null);
     const [capturedPhoto, setCapturedPhoto] = useState(null);
@@ -14,6 +31,20 @@ export default function StaffClockInModal({ isOpen, onClose }) {
     const [location, setLocation] = useState({ lat: null, lng: null, accuracy: null });
     const [locationStatus, setLocationStatus] = useState('fetching'); // fetching, success, error
     const [submitting, setSubmitting] = useState(false);
+
+    // Workplace location parameters
+    const workplaceLat = assignedLoc?.latitude;
+    const workplaceLng = assignedLoc?.longitude;
+    const radiusLimit = Number(assignedLoc?.radius_meters || 200);
+    const locationName = assignedLoc?.name || 'Assigned Workplace';
+    const strictGeofence = !!assignedLoc?.enforce_strict_geofence;
+
+    // Calculate actual distance between staff and workplace center
+    const distanceMeters = (locationStatus === 'success' && location.lat !== null && workplaceLat !== undefined && workplaceLat !== null)
+        ? calculateDistanceMeters(location.lat, location.lng, workplaceLat, workplaceLng)
+        : null;
+
+    const isWithinGeofence = distanceMeters !== null ? (distanceMeters <= radiusLimit) : true;
 
     // Initialize WebCam and Geolocation when modal opens
     useEffect(() => {
@@ -115,19 +146,20 @@ export default function StaffClockInModal({ isOpen, onClose }) {
     };
 
     const isLocationVerified = locationStatus === 'success' && location.lat !== null && location.lng !== null;
-    const canClockIn = Boolean(capturedPhoto) && isLocationVerified;
+    const canClockIn = Boolean(capturedPhoto) && isLocationVerified && (!strictGeofence || isWithinGeofence);
 
     const getButtonText = () => {
         if (submitting) return 'Clocking In...';
         if (!capturedPhoto) return 'Take Selfie Photo to Continue';
         if (locationStatus === 'fetching') return 'Verifying GPS Location...';
         if (!isLocationVerified) return 'GPS Location Verification Required';
+        if (strictGeofence && !isWithinGeofence) return `Clock In Blocked: Move Within ${radiusLimit}m of ${locationName}`;
         return 'Confirm Physical Clock In';
     };
 
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="md">
-            <div className="p-5 sm:p-6 bg-white space-y-4 rounded-2xl border border-stone-200/60 shadow-xl">
+            <div className="p-5 sm:p-6 bg-white space-y-4 rounded-2xl border border-stone-200/60 shadow-xl max-h-[90vh] overflow-y-auto">
                 {/* Header & Verification Steps */}
                 <div className="border-b border-stone-100 pb-3.5 space-y-3">
                     <div className="flex items-center justify-between">
@@ -165,20 +197,24 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                         </div>
 
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-all ${
-                            isLocationVerified 
+                            isLocationVerified && isWithinGeofence
                                 ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800' 
-                                : locationStatus === 'error'
-                                    ? 'bg-amber-50/80 border-amber-200 text-amber-800'
-                                    : 'bg-stone-50 border-stone-200 text-stone-600'
+                                : isLocationVerified && !isWithinGeofence
+                                    ? 'bg-rose-50/90 border-rose-200 text-rose-800'
+                                    : locationStatus === 'error'
+                                        ? 'bg-amber-50/80 border-amber-200 text-amber-800'
+                                        : 'bg-stone-50 border-stone-200 text-stone-600'
                         }`}>
                             <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-black ${
-                                isLocationVerified 
+                                isLocationVerified && isWithinGeofence
                                     ? 'bg-emerald-600 text-white' 
-                                    : locationStatus === 'error'
-                                        ? 'bg-amber-600 text-white'
-                                        : 'bg-stone-200 text-stone-600'
+                                    : isLocationVerified && !isWithinGeofence
+                                        ? 'bg-rose-600 text-white'
+                                        : locationStatus === 'error'
+                                            ? 'bg-amber-600 text-white'
+                                            : 'bg-stone-200 text-stone-600'
                             }`}>
-                                {isLocationVerified ? <CheckCircle2 size={10} /> : '2'}
+                                {isLocationVerified && isWithinGeofence ? <CheckCircle2 size={10} /> : '2'}
                             </div>
                             <span className="truncate">2. Workplace GPS</span>
                         </div>
@@ -276,13 +312,15 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                     </div>
                 </div>
 
-                {/* GPS Location Status Indicator */}
+                {/* GPS Location Status Indicator & Out-of-Range Feedback Card */}
                 <div className={`relative overflow-hidden rounded-2xl border p-3.5 transition-all duration-300 ${
-                    locationStatus === 'success' 
+                    locationStatus === 'success' && isWithinGeofence
                         ? 'border-emerald-200 bg-emerald-50/50 shadow-2xs' 
-                        : locationStatus === 'error' 
-                            ? 'border-amber-200 bg-amber-50/70 shadow-2xs' 
-                            : 'border-stone-200 bg-stone-50/90'
+                        : locationStatus === 'success' && !isWithinGeofence
+                            ? 'border-rose-200 bg-rose-50/70 shadow-2xs'
+                            : locationStatus === 'error' 
+                                ? 'border-amber-200 bg-amber-50/70 shadow-2xs' 
+                                : 'border-stone-200 bg-stone-50/90'
                 }`}>
                     {/* Animated progress beam when fetching */}
                     {locationStatus === 'fetching' && (
@@ -291,19 +329,23 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                         </div>
                     )}
 
-                    <div className="flex items-center justify-between gap-3 text-xs">
-                        <div className="flex items-center gap-3">
+                    <div className="flex items-start justify-between gap-3 text-xs">
+                        <div className="flex items-start gap-3">
                             <div className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-colors ${
-                                locationStatus === 'success'
+                                locationStatus === 'success' && isWithinGeofence
                                     ? 'bg-emerald-100/80 text-emerald-700 border-emerald-200'
-                                    : locationStatus === 'error'
-                                        ? 'bg-amber-100/80 text-amber-700 border-amber-200'
-                                        : 'bg-white text-stone-600 border-stone-200 shadow-2xs'
+                                    : locationStatus === 'success' && !isWithinGeofence
+                                        ? 'bg-rose-100/80 text-rose-700 border-rose-200'
+                                        : locationStatus === 'error'
+                                            ? 'bg-amber-100/80 text-amber-700 border-amber-200'
+                                            : 'bg-white text-stone-600 border-stone-200 shadow-2xs'
                             }`}>
                                 {locationStatus === 'fetching' ? (
                                     <Loader2 size={16} className="animate-spin text-clay-600" />
-                                ) : locationStatus === 'success' ? (
+                                ) : locationStatus === 'success' && isWithinGeofence ? (
                                     <MapPin size={16} className="text-emerald-700" />
+                                ) : locationStatus === 'success' && !isWithinGeofence ? (
+                                    <ShieldAlert size={16} className="text-rose-700" />
                                 ) : (
                                     <AlertTriangle size={16} className="text-amber-700" />
                                 )}
@@ -319,9 +361,18 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                         </span>
                                     )}
                                 </div>
-                                <p className="text-[11px] text-stone-500 font-medium mt-0.5">
+
+                                <p className="text-[11px] text-stone-600 font-medium mt-1 leading-relaxed">
                                     {locationStatus === 'fetching' && 'Acquiring satellite lock & GPS coordinates...'}
-                                    {locationStatus === 'success' && `Verified position within workplace boundary (±${location.accuracy}m)`}
+                                    {locationStatus === 'success' && isWithinGeofence && (
+                                        <span>Verified position within <strong>{locationName}</strong> boundary ({distanceMeters}m away • max {radiusLimit}m • ±{location.accuracy}m GPS precision)</span>
+                                    )}
+                                    {locationStatus === 'success' && !isWithinGeofence && (
+                                        <span className="text-rose-900 font-bold">
+                                            Outside Allowed Boundary: You are <strong>{distanceMeters}m</strong> away from {locationName} (allowed radius limit is {radiusLimit}m).
+                                            {strictGeofence && ' Strict geofence is enforced for this shop.'}
+                                        </span>
+                                    )}
                                     {locationStatus === 'error' && 'Location permission required to verify physical attendance.'}
                                 </p>
                             </div>
@@ -334,10 +385,16 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                     Locating...
                                 </span>
                             )}
-                            {locationStatus === 'success' && (
+                            {locationStatus === 'success' && isWithinGeofence && (
                                 <div className="flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 bg-emerald-100/70 border border-emerald-200/80 px-2.5 py-1 rounded-lg">
                                     <CheckCircle2 size={13} className="text-emerald-600" />
-                                    Verified
+                                    In Range
+                                </div>
+                            )}
+                            {locationStatus === 'success' && !isWithinGeofence && (
+                                <div className="flex items-center gap-1 text-[10px] font-extrabold text-rose-700 bg-rose-100/90 border border-rose-200 px-2.5 py-1 rounded-lg">
+                                    <ShieldAlert size={13} className="text-rose-600" />
+                                    Out of Range
                                 </div>
                             )}
                             {locationStatus === 'error' && (
@@ -354,13 +411,28 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                     </div>
                 </div>
 
+                {/* Read-Only Visual Geofence Map Feedback */}
+                {isLocationVerified && workplaceLat !== undefined && workplaceLat !== null && (
+                    <StaffGeofenceMap
+                        workplaceLat={workplaceLat}
+                        workplaceLng={workplaceLng}
+                        radiusMeters={radiusLimit}
+                        staffLat={location.lat}
+                        staffLng={location.lng}
+                        distanceMeters={distanceMeters}
+                        isWithin={isWithinGeofence}
+                        locationName={locationName}
+                        height="180px"
+                    />
+                )}
+
                 {/* Submit Action Button */}
                 <div className="pt-1">
                     <button
                         type="button"
                         onClick={handleSubmit}
                         disabled={submitting || !canClockIn}
-                        className="w-full py-3 px-4 rounded-xl bg-clay-600 hover:bg-clay-700 active:bg-clay-800 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-extrabold transition-all shadow-md shadow-clay-200/60 active:scale-[0.98] flex items-center justify-center gap-2"
+                        className="w-full py-3 px-4 rounded-xl bg-clay-800 hover:bg-clay-900 active:bg-clay-950 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-extrabold transition-all shadow-md shadow-clay-800/20 active:scale-[0.98] flex items-center justify-center gap-2"
                     >
                         {submitting ? (
                             <RefreshCw size={16} className="animate-spin" />

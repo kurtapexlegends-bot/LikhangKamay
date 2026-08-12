@@ -497,6 +497,14 @@ class StaffAttendanceService
             $currentState = 'clocked_out';
         }
 
+        $staff->loadMissing('employee.assignedLocation');
+        $assignedLocation = $staff->employee?->assignedLocation;
+        if (!$assignedLocation) {
+            $assignedLocation = \App\Models\SellerLocation::where('user_id', $staff->getEffectiveSellerId())
+                ->where('is_active', true)
+                ->first();
+        }
+
         return [
             'has_open_session' => (bool) $openSession,
             'clock_in_at' => $openSession?->clock_in_at?->toIso8601String(),
@@ -510,6 +518,14 @@ class StaffAttendanceService
             'break_started_at' => $currentState === 'paused'
                 ? $latestSession?->clock_out_at?->toIso8601String()
                 : null,
+            'assigned_location' => $assignedLocation ? [
+                'id' => $assignedLocation->id,
+                'name' => $assignedLocation->name,
+                'latitude' => (float) $assignedLocation->latitude,
+                'longitude' => (float) $assignedLocation->longitude,
+                'radius_meters' => (int) ($assignedLocation->radius_meters ?: 200),
+                'enforce_strict_geofence' => (bool) $assignedLocation->enforce_strict_geofence,
+            ] : null,
         ];
     }
 
