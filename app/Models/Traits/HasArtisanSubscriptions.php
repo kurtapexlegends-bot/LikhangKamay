@@ -56,9 +56,18 @@ trait HasArtisanSubscriptions
 
     // ========== PREMIUM TIER HELPERS ==========
 
+    public function getEffectivePremiumTier(): string
+    {
+        if ($this->subscription_expires_at !== null && $this->subscription_expires_at->isPast()) {
+            return $this->pending_downgrade_tier ?? 'free';
+        }
+
+        return $this->premium_tier ?? 'free';
+    }
+
     public function getActiveProductLimit(): int
     {
-        return match($this->premium_tier) {
+        return match($this->getEffectivePremiumTier()) {
             'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
             'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
             default => (int) \App\Facades\Settings::get('tier_free_limit', 3),
@@ -73,17 +82,17 @@ trait HasArtisanSubscriptions
 
     public function isPremiumTier(): bool
     {
-        return in_array($this->premium_tier, ['premium', 'super_premium'], true);
+        return in_array($this->getEffectivePremiumTier(), ['premium', 'super_premium'], true);
     }
 
     public function isEliteTier(): bool
     {
-        return $this->premium_tier === 'super_premium';
+        return $this->getEffectivePremiumTier() === 'super_premium';
     }
 
     public function getSellerTierLabel(): string
     {
-        return match($this->premium_tier) {
+        return match($this->getEffectivePremiumTier()) {
             'super_premium' => 'Elite',
             'premium' => 'Premium',
             default => 'Standard',

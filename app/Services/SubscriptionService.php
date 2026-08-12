@@ -42,7 +42,12 @@ class SubscriptionService
                     'new_tier' => $targetPlan,
                 ]);
 
-                $user->update(['premium_tier' => $targetPlan]);
+                $user->update([
+                    'premium_tier' => $targetPlan,
+                    'subscription_expires_at' => now()->addDays(30),
+                    'subscription_cancelled_at' => null,
+                    'pending_downgrade_tier' => 'free',
+                ]);
                 
                 // Clear plan-based staff suspension if they had any
                 $user->staffMembers()

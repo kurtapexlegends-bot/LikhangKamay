@@ -21,6 +21,10 @@ export default function Subscription({
     pendingUpgrade = null,
     recentTransactions = [],
     planSettings = {},
+    subscriptionExpiresAt = null,
+    subscriptionCancelledAt = null,
+    isCancelled = false,
+    daysRemaining = null,
 }) {
     const [finalDowngradeModalOpen, setFinalDowngradeModalOpen] = useState(false);
     const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
@@ -193,6 +197,24 @@ export default function Subscription({
 
     const currentPlanMeta = plans.find((plan) => plan.id === currentPlan) ?? plans[0];
 
+    const formattedExpirationDate = subscriptionExpiresAt
+        ? new Date(subscriptionExpiresAt).toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+        })
+        : null;
+
+    const handleCancelAutoRenewal = () => {
+        if (confirm('Are you sure you want to cancel auto-renewal? Your plan benefits will remain 100% active until your current billing period ends. Note that all subscription sales are final and non-refundable.')) {
+            submitSubscriptionChange(route('seller.subscription.cancel-auto-renewal'), {});
+        }
+    };
+
+    const handleResumeAutoRenewal = () => {
+        submitSubscriptionChange(route('seller.subscription.resume-auto-renewal'), {});
+    };
+
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">
             <Head title="Subscription Plan" />
@@ -207,29 +229,79 @@ export default function Subscription({
 
                 <main className="mx-auto w-full max-w-[1120px] px-4 py-5 sm:px-6 lg:px-7">
                     <div className="space-y-5">
-                        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-                            <span className="inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-[11px] font-bold text-stone-600">
-                                <ShieldCheck size={13} />
-                                Current plan: {currentPlanMeta.name}
-                            </span>
-                            {pendingUpgrade ? (
-                                <span className="inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">
-                                    <Clock3 size={13} />
-                                    Payment pending until PayMongo confirms it
+                        {/* Expiration & Policy Status Banner */}
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-[11px] font-bold text-stone-700">
+                                    <ShieldCheck size={13} />
+                                    Active tier: {currentPlanMeta.name}
                                 </span>
-                            ) : (
-                                <span className="inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">
-                                    <CheckCircle2 size={13} />
-                                    Plan changes apply after paid upgrades or confirmed downgrades
+
+                                {formattedExpirationDate && (
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-100 px-3 py-1 text-[11px] font-bold text-stone-800">
+                                        <Clock3 size={13} className="text-stone-500" />
+                                        {isCancelled ? `Access until ${formattedExpirationDate}` : `Renews on ${formattedExpirationDate}`}
+                                    </span>
+                                )}
+
+                                {daysRemaining !== null && (
+                                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold ${
+                                        isCancelled
+                                            ? 'border-amber-300 bg-amber-50 text-amber-800'
+                                            : 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                                    }`}>
+                                        <span className="relative flex h-1.5 w-1.5">
+                                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCancelled ? 'bg-amber-400' : 'bg-emerald-400'}`}></span>
+                                            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${isCancelled ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
+                                        </span>
+                                        {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} remaining
+                                    </span>
+                                )}
+
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                                    Final Purchase • Non-Refundable
                                 </span>
-                            )}
-                            {activeProductsCount > limit && (
-                                <span className="inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[11px] font-bold text-red-700">
-                                    <AlertCircle size={13} />
-                                    Some products must return to draft under the current limit
-                                </span>
+                            </div>
+
+                            {/* Auto-Renewal Controls */}
+                            {currentPlan !== 'free' && (
+                                <div className="shrink-0 flex items-center gap-2">
+                                    {isCancelled ? (
+                                        <button
+                                            type="button"
+                                            onClick={handleResumeAutoRenewal}
+                                            disabled={isProcessing}
+                                            className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-stone-800 active:scale-95 shadow-sm"
+                                        >
+                                            <CheckCircle2 size={13} className="text-emerald-400" />
+                                            <span>Resume Auto-Renewal</span>
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={handleCancelAutoRenewal}
+                                            disabled={isProcessing}
+                                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-bold text-stone-700 transition hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 active:scale-95 shadow-2xs"
+                                        >
+                                            <span>Cancel Auto-Renewal</span>
+                                        </button>
+                                    )}
+                                </div>
                             )}
                         </div>
+
+                        {/* Cancellation Warning Banner */}
+                        {isCancelled && formattedExpirationDate && (
+                            <div className="flex items-start gap-3 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4 text-amber-900 shadow-2xs">
+                                <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                                <div>
+                                    <h4 className="text-xs font-bold text-amber-950">Subscription Scheduled for Cancellation</h4>
+                                    <p className="mt-0.5 text-xs leading-relaxed text-amber-800 font-medium">
+                                        Your auto-renewal has been cancelled. Your <strong>{currentPlanMeta.name}</strong> benefits will remain <strong>100% active until {formattedExpirationDate}</strong>. Per our strict policy, subscription payments are non-refundable. You can resume auto-renewal anytime before expiration.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         <SubscriptionPlans
                             plans={plans}

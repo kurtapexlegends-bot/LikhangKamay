@@ -5,6 +5,7 @@ namespace App\Actions\Consumer;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\Discount;
 use App\Models\PlatformActivity;
 use App\Mail\OrderPlaced;
 use App\Support\OrderWorkflowHelper;
@@ -20,9 +21,9 @@ use Illuminate\Support\Facades\Log;
 
 class PlaceOrder
 {
-    private $sponsorshipAnalytics;
-    private $orderFinanceService;
-    private $checkoutShippingService;
+    private SponsorshipAnalyticsService $sponsorshipAnalytics;
+    private OrderFinanceService $orderFinanceService;
+    private CheckoutShippingService $checkoutShippingService;
 
     public function __construct(
         SponsorshipAnalyticsService $sponsorshipAnalytics,
@@ -72,7 +73,7 @@ class PlaceOrder
         $paymentMethod = $request->shipping_method === 'Pick Up' ? 'COD' : $request->payment_method;
 
         if ($request->boolean('save_address') && $request->shipping_method === 'Delivery' && $selectedAddress === null) {
-            $buyer->addresses()->update(['is_default' => \Illuminate\Support\Facades\DB::raw('false')]);
+            $buyer->addresses()->update(['is_default' => DB::raw('false')]);
 
             $buyer->addresses()->create([
                 'label' => ucfirst((string) $shippingAddressType),
@@ -85,7 +86,7 @@ class PlaceOrder
                 'city' => $shippingCity,
                 'region' => $shippingRegion,
                 'postal_code' => $shippingPostalCode,
-                'is_default' => \Illuminate\Support\Facades\DB::raw('true'),
+                'is_default' => DB::raw('true'),
             ]);
 
             $buyer->update(['saved_address' => $shippingAddress]);

@@ -47,12 +47,23 @@ class SubscriptionController extends Controller
             ->values()
             ->all();
 
+        $expiresAt = $user->subscription_expires_at;
+        $cancelledAt = $user->subscription_cancelled_at;
+        $daysRemaining = $expiresAt ? max(0, (int) ceil(now()->diffInSeconds($expiresAt, false) / 86400)) : null;
+
         return Inertia::render('Seller/Settings/Subscription', [
-            'currentPlan' => $user->premium_tier,
+            'currentPlan' => $user->getEffectivePremiumTier(),
+            'rawPlan' => $user->premium_tier,
+            'effectivePlan' => $user->getEffectivePremiumTier(),
             'activeProductsCount' => $activeProductsCount,
             'limit' => $limit,
             'linkedStaffCount' => $linkedStaffCount,
             'recentTransactions' => $recentTransactions,
+            'subscriptionExpiresAt' => $expiresAt?->toIso8601String(),
+            'subscriptionCancelledAt' => $cancelledAt?->toIso8601String(),
+            'isCancelled' => $cancelledAt !== null,
+            'daysRemaining' => $daysRemaining,
+            'noRefundPolicy' => 'All subscription payments are final and non-refundable. Auto-renewal can be cancelled anytime with full benefits retained until period expiration.',
             'planSettings' => [
                 'free_limit' => (int) \App\Facades\Settings::get('tier_free_limit', 3),
                 'premium_price' => (float) \App\Facades\Settings::get('tier_premium_price', 199),
@@ -71,6 +82,38 @@ class SubscriptionController extends Controller
             ] : null,
             'activeProducts' => $user->products()->where('status', 'Active')->select('id', 'name', 'sku', 'cover_photo_path', 'price')->get(),
         ]);
+    }
+
+    public function cancelAutoRenewal(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user->premium_tier === 'free') {
+            return back()->with('error', 'You do not have an active paid subscription to cancel.');
+        }
+
+        $user->update([
+            'subscription_cancelled_at' => now(),
+        ]);
+
+        $formattedDate = $user->subscription_expires_at
+            ? $user->subscription_expires_at->format('M d, Y')
+            : 'period end';
+
+        return back()->with('success', "Auto-renewal turned off. Your {$user->getSellerTierLabel()} benefits remain 100% active until {$formattedDate}. Subscriptions are final and non-refundable.");
+    }
+
+    public function resumeAutoRenewal(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $user->update([
+            'subscription_cancelled_at' => null,
+        ]);
+
+        return back()->with('success', 'Subscription auto-renewal resumed successfully.');
     }
 
     public function upgrade(Request $request, InitiateSubscriptionUpgrade $action)
