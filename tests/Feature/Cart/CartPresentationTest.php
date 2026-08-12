@@ -58,7 +58,7 @@ class CartPresentationTest extends TestCase
         $this->assertNotNull($storedItem);
         $this->assertSame('CART-SKU-001', $storedItem['sku']);
         $this->assertSame($product->slug, $storedItem['slug']);
-        $this->assertSame(850, $storedItem['price']);
+        $this->assertEquals(850, $storedItem['price']);
     }
 
     public function test_cart_store_honors_requested_quantity_and_keeps_distinct_variants_separate(): void

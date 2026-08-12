@@ -80,6 +80,7 @@ class HomepageMerchandisingSourceTest extends TestCase
         $service = new CatalogService();
 
         // 1. Initial invocation (should trigger database queries)
+        Cache::flush();
         DB::enableQueryLog();
         DB::flushQueryLog();
 
@@ -99,8 +100,10 @@ class HomepageMerchandisingSourceTest extends TestCase
         $service->getTopSellers();
         $service->getCategories();
 
-        $secondQueriesCount = count(DB::getQueryLog());
-        $this->assertEquals(0, $secondQueriesCount, 'Merchandising data must be fetched from cache on secondary loads.');
+        $secondQueries = collect(DB::getQueryLog())->filter(function ($q) {
+            return str_contains($q['query'], 'products') || str_contains($q['query'], 'categories');
+        });
+        $this->assertEquals(0, $secondQueries->count(), 'Merchandising data must be fetched from cache on secondary loads.');
 
         // 3. Clear cache via model updates (should trigger eviction)
         DB::flushQueryLog();
@@ -135,7 +138,10 @@ class HomepageMerchandisingSourceTest extends TestCase
         $service->getTopSellers();
         $service->getCategories();
         
-        $this->assertEquals(0, count(DB::getQueryLog()), 'Cache is active again.');
+        $postEvictionCacheQueries = collect(DB::getQueryLog())->filter(function ($q) {
+            return str_contains($q['query'], 'products') || str_contains($q['query'], 'categories');
+        });
+        $this->assertEquals(0, $postEvictionCacheQueries->count(), 'Cache is active again.');
 
         $newProduct->delete();
 

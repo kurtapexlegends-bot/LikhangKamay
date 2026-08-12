@@ -1,0 +1,42 @@
+# CHANGES (August 4, 2026 – August 12, 2026)
+
+## 1. Notifications and Account Isolation
+- Enforced strict per-account notification read and deletion state tracking.
+- Resolved shared notification bug so marking notifications as read or deleting them on a staff account does not affect the seller owner or other staff accounts.
+- Updated order, dispute, and inventory system events to dispatch distinct notification rows per recipient.
+
+## 2. Staff Attendance and Geofencing
+- Implemented geofenced clock-in verification with assigned workplace coordinates, customizable radius limits, and real-time Haversine distance calculations.
+- Integrated read-only Leaflet geofence map with center pin, radius boundary ring, and live staff GPS marker.
+- Added biometric WebCam selfie proof capture for attendance verification.
+- Optimized Clock-In Verification modal for mobile and tablet screens with step tab navigation and 1:1 camera framing.
+- Added live shift duration counter, inactivity heartbeat tracking, and automated pause and resume prompts.
+- Added automatic closure for stale unclosed sessions to prevent time inflation.
+
+## 3. Human Resources, Time-Card Audit, and Payroll
+- Integrated staff attendance time-cards into automated payroll calculations.
+- Added Time-Card Audit drawer for manager shift review.
+- Redesigned Employee Payslip view with DOLE-compliant earnings and deductions tables, signature blocks, and 1-click PDF print export.
+- Added search, category filters, and compact pagination to Payroll History and Access History views.
+
+## 4. Seller Discount Engine
+- Built seller discount engine with campaign scheduling, strategy modals, and batch application workflows.
+- Integrated active product discounts into storefront product cards with percentage-off overlays and live countdown badges.
+- Updated shopping cart, checkout execution, and pricing calculations to apply active promotions.
+
+## 5. Logistics and Order Management
+- Redesigned Bulk Labels generator to industry-standard dispatch waybill templates with SVG barcodes.
+- Standardized Employee Payslips and Order Receipts to real-world POS and DOLE invoice standards.
+
+## 6. Chat Automation and Communication
+- Added automated seller-to-buyer thank-you auto-replies upon order completion with customizable templates.
+- Embedded Chat Automation & Templates manager modal directly into the Messages module.
+- Optimized chat performance by removing heavy GPU backdrop-blur layers and reflow triggers.
+
+## 7. System Architecture, Security, and UI/UX
+- Completely removed platform seller commission fees across backend, frontend, database, and documentation.
+- Added formal distinction between Shop Owner and Shop Manager roles with backend guards preventing staff self-elevation.
+- Restricted staff account deletion and email modification privileges.
+- Standardized toast notifications to top-right viewport with high-visibility badges.
+- Added unified Breadcrumb navigation component across Seller Header and Product details views.
+- Conducted copy audit across all modules to eliminate redundant helper text, filler descriptions, and emojis.

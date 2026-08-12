@@ -41,6 +41,12 @@ class AuthenticatedSessionController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
+        if ($user) {
+            $user->update([
+                'current_session_id' => $request->session()->getId(),
+            ]);
+        }
+
         return $authRedirectService->redirectAfterLogin($user);
     }
 

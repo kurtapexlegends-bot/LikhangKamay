@@ -96,6 +96,18 @@ class StaffAttendanceService
             }
         }
 
+        if (!empty($payload['workplace_pin'])) {
+            $staff->loadMissing('employee.assignedLocation');
+            $targetLocation = $staff->employee?->assignedLocation ?: \App\Models\SellerLocation::where('user_id', $staff->getEffectiveSellerId())->where('is_active', true)->first();
+            $expectedPin = $targetLocation?->getOrGenerateDailyPin();
+
+            if ($expectedPin && trim((string)$payload['workplace_pin']) !== trim((string)$expectedPin)) {
+                throw ValidationException::withMessages([
+                    'workplace_pin' => ['Invalid 4-digit Workplace Daily PIN. Please check with your workplace manager.'],
+                ]);
+            }
+        }
+
         $isFlagged = !$isWithinGeofence;
         $flagReason = $isFlagged ? "Off-Site Clock In ({$distanceMeters}m from assigned workplace)" : null;
         $approvalStatus = $isFlagged ? 'pending' : 'approved';
@@ -525,6 +537,7 @@ class StaffAttendanceService
                 'longitude' => (float) $assignedLocation->longitude,
                 'radius_meters' => (int) ($assignedLocation->radius_meters ?: 200),
                 'enforce_strict_geofence' => (bool) $assignedLocation->enforce_strict_geofence,
+                'daily_workplace_pin' => $assignedLocation->getOrGenerateDailyPin(),
             ] : null,
         ];
     }

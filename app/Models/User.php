@@ -119,6 +119,8 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'must_change_password',
         'staff_plan_suspended_at',
         'created_by_user_id',
+        'current_session_id',
+        'current_device_uuid',
         'banned_at',
         'employee_id',
         'shop_name',

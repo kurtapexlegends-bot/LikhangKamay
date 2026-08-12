@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
-import { Camera, MapPin, RefreshCw, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, X, Loader2, Navigation } from 'lucide-react';
+import { Camera, MapPin, RefreshCw, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, X, Loader2, Navigation, Key } from 'lucide-react';
 import Modal from '@/Components/Modal';
 import StaffGeofenceMap from './StaffGeofenceMap';
 
@@ -137,10 +137,14 @@ export default function StaffClockInModal({ isOpen, onClose }) {
         setActiveMobileTab('selfie');
     };
 
+    const [usePinFallback, setUsePinFallback] = useState(false);
+    const [workplacePin, setWorkplacePin] = useState('');
+
     const handleSubmit = () => {
         setSubmitting(true);
         router.post('/staff/attendance/resume', {
             photo_data: capturedPhoto,
+            workplace_pin: usePinFallback ? workplacePin : null,
             latitude: location.lat,
             longitude: location.lng
         }, {
@@ -152,11 +156,12 @@ export default function StaffClockInModal({ isOpen, onClose }) {
     };
 
     const isLocationVerified = locationStatus === 'success' && location.lat !== null && location.lng !== null;
-    const canClockIn = Boolean(capturedPhoto) && isLocationVerified && (!strictGeofence || isWithinGeofence);
+    const canClockIn = (Boolean(capturedPhoto) || (usePinFallback && workplacePin.length >= 4)) && isLocationVerified && (!strictGeofence || isWithinGeofence);
 
     const getButtonText = () => {
         if (submitting) return 'Clocking In...';
-        if (!capturedPhoto) return 'Take Selfie Photo to Continue';
+        if (usePinFallback && workplacePin.length < 4) return 'Enter 4-Digit Workplace PIN';
+        if (!capturedPhoto && !usePinFallback) return 'Take Selfie Photo to Continue';
         if (locationStatus === 'fetching') return 'Verifying GPS Location...';
         if (!isLocationVerified) return 'GPS Location Verification Required';
         if (strictGeofence && !isWithinGeofence) return `Clock In Blocked: Move Within ${radiusLimit}m of ${locationName}`;
@@ -250,101 +255,148 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                     }`}>
                         <div className="flex items-center justify-between px-0.5">
                             <span className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
-                                <Camera size={14} className="text-clay-600" />
-                                Biometric Selfie Proof
+                                {usePinFallback ? <Key size={14} className="text-amber-600" /> : <Camera size={14} className="text-clay-600" />}
+                                {usePinFallback ? 'Workplace Daily PIN' : 'Biometric Selfie Proof'}
                             </span>
                             <span className="text-[10px] font-semibold text-stone-400">Step 1 of 2</span>
                         </div>
 
-                        <div className="relative overflow-hidden rounded-2xl bg-stone-950 aspect-square sm:aspect-4/3 md:aspect-auto flex-1 min-h-[240px] sm:min-h-[270px] md:min-h-[290px] flex items-center justify-center border border-stone-800 shadow-inner group">
-                            {capturedPhoto ? (
-                                <div className="relative w-full h-full">
-                                    <img src={capturedPhoto} alt="Clock-in selfie preview" className="w-full h-full object-cover" />
-                                    {/* Photo Captured Overlay Badge */}
-                                    <div className="absolute top-3 left-3 bg-emerald-950/80 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-                                        <CheckCircle2 size={12} className="text-emerald-400" />
-                                        Snapshot Verified
-                                    </div>
+                        {usePinFallback ? (
+                            <div className="rounded-2xl bg-amber-50/70 border border-amber-200 p-4 flex flex-col items-center justify-center text-center space-y-3 min-h-[240px] sm:min-h-[270px] md:min-h-[290px]">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800 border border-amber-200/80 shadow-2xs">
+                                    <Key size={20} />
                                 </div>
-                            ) : (
-                                <>
-                                    <video
-                                        ref={videoRef}
-                                        autoPlay
-                                        playsInline
-                                        muted
-                                        className="w-full h-full object-cover transform -scale-x-100"
-                                    />
-                                    <canvas ref={canvasRef} className="hidden" />
-
-                                    {/* Viewfinder Corner Ticks */}
-                                    <div className="pointer-events-none absolute inset-3.5 sm:inset-4">
-                                        <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-emerald-400/70 rounded-tl-lg" />
-                                        <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-emerald-400/70 rounded-tr-lg" />
-                                        <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-emerald-400/70 rounded-bl-lg" />
-                                        <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-emerald-400/70 rounded-br-lg" />
-                                    </div>
-
-                                    {/* Facial Oval Guide Silhouette */}
-                                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                                        <div className="w-32 h-44 sm:w-40 sm:h-52 border-2 border-dashed border-white/20 rounded-[50%] flex items-center justify-center">
-                                            <span className="text-[10px] font-medium text-white/40 tracking-widest uppercase">Position Face</span>
+                                <div>
+                                    <h4 className="text-xs font-bold text-stone-900">Workplace Daily PIN Verification</h4>
+                                    <p className="text-[11px] text-stone-600 font-medium mt-0.5 max-w-xs leading-relaxed">
+                                        Enter the 4-digit Workplace Daily PIN provided verbally by your on-site manager.
+                                    </p>
+                                </div>
+                                <input
+                                    type="text"
+                                    maxLength={4}
+                                    value={workplacePin}
+                                    onChange={(e) => setWorkplacePin(e.target.value.replace(/\D/g, ''))}
+                                    placeholder="0 0 0 0"
+                                    className="w-36 text-center text-xl font-mono font-black tracking-[0.3em] px-3 py-2 rounded-xl border border-amber-300 focus:border-amber-500 focus:ring-amber-500 bg-white shadow-2xs text-stone-900"
+                                />
+                                <p className="text-[10px] text-stone-400 font-medium">
+                                    Camera unavailable fallback mode active
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="relative overflow-hidden rounded-2xl bg-stone-950 aspect-square sm:aspect-4/3 md:aspect-auto flex-1 min-h-[240px] sm:min-h-[270px] md:min-h-[290px] flex items-center justify-center border border-stone-800 shadow-inner group">
+                                {capturedPhoto ? (
+                                    <div className="relative w-full h-full">
+                                        <img src={capturedPhoto} alt="Clock-in selfie preview" className="w-full h-full object-cover" />
+                                        {/* Photo Captured Overlay Badge */}
+                                        <div className="absolute top-3 left-3 bg-emerald-950/80 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                                            <CheckCircle2 size={12} className="text-emerald-400" />
+                                            Snapshot Verified
                                         </div>
                                     </div>
-
-                                    {/* Live Stream Indicator Badge */}
-                                    <div className="absolute top-3 left-3 bg-stone-900/80 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                                        <span className="relative flex h-2 w-2">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                        </span>
-                                        LIVE STREAM
-                                    </div>
-                                </>
-                            )}
-
-                            {cameraError && !capturedPhoto && (
-                                <div className="absolute inset-0 bg-stone-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center z-20">
-                                    <AlertTriangle size={32} className="text-amber-400 mb-2" />
-                                    <p className="text-xs font-bold text-white max-w-xs leading-relaxed">{cameraError}</p>
-                                    <button
-                                        type="button"
-                                        onClick={startCamera}
-                                        className="mt-3 px-3.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-xs text-white font-bold transition border border-stone-700 flex items-center gap-1.5"
-                                    >
-                                        <RefreshCw size={12} />
-                                        Retry Camera Stream
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* Camera Controls Floating Overlay */}
-                            <div className="absolute bottom-3 inset-x-3 flex justify-between items-center bg-stone-950/75 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-white/10 z-10">
-                                {capturedPhoto ? (
-                                    <button
-                                        type="button"
-                                        onClick={retakePhoto}
-                                        className="inline-flex items-center gap-1.5 text-xs font-bold text-white hover:text-amber-300 transition"
-                                    >
-                                        <RefreshCw size={14} />
-                                        Retake Photo
-                                    </button>
                                 ) : (
-                                    <button
-                                        type="button"
-                                        onClick={capturePhoto}
-                                        disabled={!!cameraError}
-                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition shadow-sm active:scale-95"
-                                    >
-                                        <Camera size={14} />
-                                        Snap Photo
-                                    </button>
+                                    <>
+                                        <video
+                                            ref={videoRef}
+                                            autoPlay
+                                            playsInline
+                                            muted
+                                            className="w-full h-full object-cover transform -scale-x-100"
+                                        />
+                                        <canvas ref={canvasRef} className="hidden" />
+
+                                        {/* Viewfinder Corner Ticks */}
+                                        <div className="pointer-events-none absolute inset-3.5 sm:inset-4">
+                                            <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-emerald-400/70 rounded-tl-lg" />
+                                            <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-emerald-400/70 rounded-tr-lg" />
+                                            <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-emerald-400/70 rounded-bl-lg" />
+                                            <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-emerald-400/70 rounded-br-lg" />
+                                        </div>
+
+                                        {/* Facial Oval Guide Silhouette */}
+                                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                            <div className="w-32 h-44 sm:w-40 sm:h-52 border-2 border-dashed border-white/20 rounded-[50%] flex items-center justify-center">
+                                                <span className="text-[10px] font-medium text-white/40 tracking-widest uppercase">Position Face</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Live Stream Indicator Badge */}
+                                        <div className="absolute top-3 left-3 bg-stone-900/80 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                                            <span className="relative flex h-2 w-2">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                            </span>
+                                            LIVE STREAM
+                                        </div>
+                                    </>
                                 )}
-                                <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-300">
-                                    {capturedPhoto ? 'Photo Captured' : 'Ready'}
-                                </span>
+
+                                {cameraError && !capturedPhoto && (
+                                    <div className="absolute inset-0 bg-stone-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center z-20">
+                                        <AlertTriangle size={32} className="text-amber-400 mb-2" />
+                                        <p className="text-xs font-bold text-white max-w-xs leading-relaxed">{cameraError}</p>
+                                        <div className="mt-3 flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={startCamera}
+                                                className="px-3.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-xs text-white font-bold transition border border-stone-700 flex items-center gap-1.5"
+                                            >
+                                                <RefreshCw size={12} />
+                                                Retry Stream
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setUsePinFallback(true)}
+                                                className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-xs text-white font-bold transition flex items-center gap-1.5"
+                                            >
+                                                <Key size={12} />
+                                                Use Workplace PIN
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Camera Controls Floating Overlay */}
+                                <div className="absolute bottom-3 inset-x-3 flex justify-between items-center bg-stone-950/75 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-white/10 z-10">
+                                    {capturedPhoto ? (
+                                        <button
+                                            type="button"
+                                            onClick={retakePhoto}
+                                            className="inline-flex items-center gap-1.5 text-xs font-bold text-white hover:text-amber-300 transition"
+                                        >
+                                            <RefreshCw size={14} />
+                                            Retake Photo
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={capturePhoto}
+                                            disabled={!!cameraError}
+                                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition shadow-sm active:scale-95"
+                                        >
+                                            <Camera size={14} />
+                                            Snap Photo
+                                        </button>
+                                    )}
+                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-300">
+                                        {capturedPhoto ? 'Photo Captured' : 'Ready'}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const nextVal = !usePinFallback;
+                                setUsePinFallback(nextVal);
+                                if (!nextVal) startCamera();
+                            }}
+                            className="text-[10px] text-stone-500 hover:text-stone-800 font-bold underline text-center pt-0.5"
+                        >
+                            {usePinFallback ? 'Switch Back to Camera Selfie Stream' : 'Camera Broken or Unavailable? Use Workplace Daily PIN'}
+                        </button>
 
                         {/* Mobile-Only CTA to advance to Step 2 */}
                         <div className="pt-1 md:hidden">

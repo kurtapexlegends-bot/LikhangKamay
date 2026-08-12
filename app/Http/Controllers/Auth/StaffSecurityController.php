@@ -99,9 +99,10 @@ class StaffSecurityController extends Controller
             'photo_data' => 'nullable|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'workplace_pin' => 'nullable|string|max:10',
         ]);
 
-        $attendanceService->ensureClockedIn($user, $request->only(['photo_data', 'latitude', 'longitude']));
+        $attendanceService->ensureClockedIn($user, $request->only(['photo_data', 'latitude', 'longitude', 'workplace_pin']));
 
         $intended = $request->session()->pull('staff.attendance.intended');
 

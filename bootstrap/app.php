@@ -28,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\UpdateLastSeen::class,
             \App\Http\Middleware\TrackStaffActivity::class,
             \App\Http\Middleware\EnsureNotBanned::class,
+            \App\Http\Middleware\EnforceSingleDeviceSession::class,
         ]);
 
         // 2. MIDDLEWARE ALIASES
