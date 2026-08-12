@@ -287,10 +287,10 @@ export default function StaffDashboard({ auth, hub }) {
                                             <button
                                                 type="button"
                                                 onClick={resumeWork}
-                                                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-clay-950 px-6 py-3 text-xs font-extrabold text-white transition-all hover:bg-clay-900 active:scale-[0.98] duration-200 shadow-md shadow-clay-950/15 min-h-[46px]"
+                                                className="mt-6 inline-flex items-center gap-2.5 rounded-2xl bg-clay-800 text-white hover:bg-clay-900 active:scale-[0.98] transition-all duration-200 px-6 py-3 text-xs font-extrabold shadow-md shadow-clay-800/20 min-h-[46px]"
                                             >
-                                                <PlayCircle size={16} strokeWidth={2.4} />
-                                                {isPaused ? 'Resume Active Shift Work' : 'Verify & Start Shift Now'}
+                                                <PlayCircle size={18} strokeWidth={2.4} />
+                                                <span>{isPaused ? 'Resume Active Shift Work' : 'Verify & Start Shift Now'}</span>
                                             </button>
                                         </div>
                                     </div>
