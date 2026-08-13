@@ -373,7 +373,7 @@ export default function StaffTable({
     ].filter(Boolean);
 
     return (
-        <div className="rounded-3xl border border-stone-200/80 bg-white shadow-sm flex flex-col min-h-[220px] relative overflow-hidden">
+        <div className="rounded-3xl border border-stone-200/80 bg-white shadow-sm flex flex-col min-h-[320px] relative">
             <FilterToolbarHeader
                 tabs={[
                     { key: 'directory', label: 'Directory', count: staff.length },
