@@ -208,13 +208,21 @@ export default function StaffTable({
     };
 
     const filteredStaff = staff.filter(emp => {
-        const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              emp.role.toLowerCase().includes(searchTerm.toLowerCase());
+        const searchLower = searchTerm.toLowerCase();
+        const matchesSearch =
+            emp.name.toLowerCase().includes(searchLower) ||
+            emp.role.toLowerCase().includes(searchLower) ||
+            (emp.employee_id && emp.employee_id.toLowerCase().includes(searchLower)) ||
+            (emp.login_account?.email && emp.login_account.email.toLowerCase().includes(searchLower)) ||
+            (emp.login_account?.role_preset_key && (presetLabelByKey[emp.login_account.role_preset_key] || '').toLowerCase().includes(searchLower));
+
         if (!matchesSearch) return false;
 
         if (statusFilter !== 'all') {
             if (statusFilter === 'active' && !(emp.status?.toLowerCase() === 'active' || !emp.status)) return false;
             if (statusFilter === 'clocked_in' && !(emp.attendance?.current_state === 'clocked_in' || emp.attendance?.open_session)) return false;
+            if (statusFilter === 'paused' && emp.attendance?.current_state !== 'paused') return false;
+            if (statusFilter === 'clocked_out' && (emp.attendance?.current_state === 'clocked_in' || emp.attendance?.current_state === 'paused')) return false;
             if (statusFilter === 'suspended' && !(emp.login_account?.workspace_access_enabled === false || emp.status?.toLowerCase() === 'suspended')) return false;
             if (statusFilter === 'no_login' && emp.has_login_account) return false;
         }
@@ -224,14 +232,17 @@ export default function StaffTable({
             if (entitlementFilter === 'accounting' && !perms.accounting) return false;
             if (entitlementFilter === 'orders' && !perms.orders) return false;
             if (entitlementFilter === 'procurement' && !perms.procurement) return false;
+            if (entitlementFilter === 'hr' && !perms.hr) return false;
+            if (entitlementFilter === 'catalog' && !perms.catalog) return false;
         }
 
-        if (startDateFilter && emp.created_at) {
-            const empDate = emp.created_at.substring(0, 10);
+        const hireDateRaw = emp.join_date || emp.created_at;
+        if (startDateFilter && hireDateRaw) {
+            const empDate = hireDateRaw.substring(0, 10);
             if (empDate < startDateFilter) return false;
         }
-        if (endDateFilter && emp.created_at) {
-            const empDate = emp.created_at.substring(0, 10);
+        if (endDateFilter && hireDateRaw) {
+            const empDate = hireDateRaw.substring(0, 10);
             if (empDate > endDateFilter) return false;
         }
 
@@ -292,6 +303,8 @@ export default function StaffTable({
                         <option value="all">All Staff (Active & Suspended)</option>
                         <option value="active">Active Employees</option>
                         <option value="clocked_in">Currently Clocked In</option>
+                        <option value="paused">Currently On Break / Paused</option>
+                        <option value="clocked_out">Clocked Out / Off-Duty</option>
                         <option value="suspended">Suspended Workspace Access</option>
                         <option value="no_login">No Portal Login Account</option>
                     </select>
@@ -314,6 +327,8 @@ export default function StaffTable({
                         <option value="accounting">Finance & Accounting Access</option>
                         <option value="orders">Orders & Fulfillment Access</option>
                         <option value="procurement">Procurement & Inventory Access</option>
+                        <option value="hr">People & Payroll Access</option>
+                        <option value="catalog">Catalog & Products Access</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />
                 </div>
@@ -321,13 +336,30 @@ export default function StaffTable({
         </div>
     );
 
+    const statusLabels = {
+        active: 'Active',
+        clocked_in: 'Clocked In',
+        paused: 'On Break',
+        clocked_out: 'Clocked Out',
+        suspended: 'Suspended',
+        no_login: 'No Login',
+    };
+
+    const entitlementLabels = {
+        accounting: 'Accounting',
+        orders: 'Orders',
+        procurement: 'Procurement',
+        hr: 'People & Payroll',
+        catalog: 'Catalog',
+    };
+
     const activeFilterTags = [
         statusFilter !== 'all' && {
-            label: `Status: ${statusFilter === 'active' ? 'Active' : statusFilter === 'clocked_in' ? 'Clocked In' : statusFilter === 'suspended' ? 'Suspended' : 'No Login'}`,
+            label: `Status: ${statusLabels[statusFilter] || statusFilter}`,
             onRemove: () => setStatusFilter('all'),
         },
         entitlementFilter !== 'all' && {
-            label: `Entitlement: ${entitlementFilter === 'accounting' ? 'Accounting' : entitlementFilter === 'orders' ? 'Orders' : 'Procurement'}`,
+            label: `Entitlement: ${entitlementLabels[entitlementFilter] || entitlementFilter}`,
             onRemove: () => setEntitlementFilter('all'),
         },
         startDateFilter && {
