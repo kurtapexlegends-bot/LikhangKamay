@@ -45,7 +45,7 @@ export default function TermsOfService() {
         {
             title: "Subscriptions and Billing",
             icon: CreditCard,
-            content: "Sellers may subscribe to Premium or Elite membership plans. All subscription fees are billed in advance on a monthly basis, are processed securely via PayMongo, and are strictly non-refundable once processed. Upgrades are applied immediately upon payment confirmation. Cancellations apply to pending transactions or prevent future auto-renewals; past payments will not be refunded. Downgrades are subject to active catalog limits and will enforce standard tier caps (3 active listings for Standard, 10 for Premium, 50 for Elite) and suspend linked staff accounts at the end of the current billing cycle."
+            content: "Sellers may subscribe to Premium or Elite membership plans. All subscription fees are billed in advance on a monthly basis, processed securely via PayMongo, and are strictly non-refundable once processed. Tier entitlements include active product limits (3 for Standard, 10 for Premium, 50 for Elite), automated thank-you messages on order completion (Premium & Elite), and the Discounts & Campaign Engine (Elite) alongside Sponsorship credits. Upgrades are applied immediately upon payment. Cancellations prevent future auto-renewals while paid plan benefits remain 100% active until billing cycle completion; past payments will not be refunded. Downgrades take effect upon period completion and enforce standard listing caps and suspend staff access."
         },
         {
             title: "User Conduct",

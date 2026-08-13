@@ -10,6 +10,13 @@ import SubscriptionPlans from '@/Components/Seller/Settings/SubscriptionPlans';
 import SubscriptionComparisonModal from '@/Components/Seller/Settings/SubscriptionComparisonModal';
 import BillingActivity from '@/Components/Seller/Settings/BillingActivity';
 import DowngradeModal from '@/Components/Seller/Settings/DowngradeModal';
+import CancelSubscriptionModal from '@/Components/Seller/Settings/CancelSubscriptionModal';
+
+const VaseIcon = ({ className = "h-4 w-4" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 3h8l1 4s.5 2.5 2.5 4.5S20 15 20 18a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3c0-3 .5-4.5 2.5-6.5S9 7 9 7L8 3z" />
+    </svg>
+);
 
 export default function Subscription({
     auth,
@@ -28,6 +35,7 @@ export default function Subscription({
 }) {
     const [finalDowngradeModalOpen, setFinalDowngradeModalOpen] = useState(false);
     const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
     const [targetPlan, setTargetPlan] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [activePageIndex, setActivePageIndex] = useState(0);
@@ -91,6 +99,7 @@ export default function Subscription({
                     'Premium badge visibility',
                     'Analytics report export',
                     'Module customization',
+                    'Automated thank-you messages',
                 ],
             },
             {
@@ -116,6 +125,8 @@ export default function Subscription({
                     `Up to ${superPremiumLimit} active products`,
                     'Elite badge',
                     '5 sponsorship credits every 30 days',
+                    'Discounts module & marketing',
+                    'Automated thank-you messages',
                     'All seller modules unlocked',
                     'Sponsored homepage and catalog placement',
                 ],
@@ -206,9 +217,18 @@ export default function Subscription({
         : null;
 
     const handleCancelSubscription = () => {
-        if (confirm(`Are you sure you want to cancel your subscription? Your ${currentPlanMeta.name} plan benefits will remain 100% active until ${formattedExpirationDate || 'period end'}. Note that all subscription purchases are final and non-refundable.`)) {
-            submitSubscriptionChange(route('seller.subscription.cancel-auto-renewal'), {});
-        }
+        setCancelModalOpen(true);
+    };
+
+    const confirmCancelSubscription = () => {
+        submitSubscriptionChange(
+            route('seller.subscription.cancel-auto-renewal'),
+            {},
+            {
+                onSuccess: () => setCancelModalOpen(false),
+                onError: () => setCancelModalOpen(true),
+            }
+        );
     };
 
     const handleReactivateSubscription = () => {
@@ -232,34 +252,25 @@ export default function Subscription({
                         {/* Expiration & Policy Status Banner */}
                         <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
                             <div className="flex flex-wrap items-center gap-2">
-                                <span className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-[11px] font-bold text-stone-700">
-                                    <ShieldCheck size={13} />
-                                    Active tier: {currentPlanMeta.name}
+                                <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/80 bg-amber-50/70 px-3.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                                    <VaseIcon className="h-3.5 w-3.5 text-amber-700 shrink-0" />
+                                    <span>Your Current Plan: <strong className="font-black text-amber-950">{currentPlanMeta.name}</strong></span>
                                 </span>
 
                                 {formattedExpirationDate && (
-                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-800">
-                                        <Clock3 size={13} className="text-amber-600" />
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50/80 px-3 py-1 text-xs font-semibold text-stone-700">
+                                        <Clock3 size={13} className="text-stone-500" />
                                         {isCancelled ? `Expires on ${formattedExpirationDate}` : `Renews on ${formattedExpirationDate}`}
-                                    </span>
-                                )}
-
-                                {daysRemaining !== null && (
-                                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold ${
-                                        isCancelled
-                                            ? 'border-amber-300 bg-amber-100/80 text-amber-900'
-                                            : 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                                    }`}>
-                                        <span className="relative flex h-1.5 w-1.5">
-                                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCancelled ? 'bg-amber-400' : 'bg-emerald-400'}`}></span>
-                                            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${isCancelled ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
-                                        </span>
-                                        {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} remaining
+                                        {daysRemaining !== null && (
+                                            <span className="font-bold text-stone-900">
+                                                ({daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left)
+                                            </span>
+                                        )}
                                     </span>
                                 )}
 
                                 <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                                    Final Purchase • Non-Refundable
+                                    Non-Refundable
                                 </span>
                             </div>
 
@@ -341,6 +352,16 @@ export default function Subscription({
                 limit={limit}
                 linkedStaffCount={linkedStaffCount}
                 confirmDowngrade={confirmDowngrade}
+                isProcessing={isProcessing}
+            />
+
+            <CancelSubscriptionModal
+                isOpen={cancelModalOpen}
+                onClose={() => setCancelModalOpen(false)}
+                currentPlanName={currentPlanMeta.name}
+                formattedExpirationDate={formattedExpirationDate}
+                daysRemaining={daysRemaining}
+                onConfirm={confirmCancelSubscription}
                 isProcessing={isProcessing}
             />
         </div>

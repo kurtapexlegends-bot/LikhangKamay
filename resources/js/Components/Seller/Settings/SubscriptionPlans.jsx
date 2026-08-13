@@ -1,5 +1,11 @@
 import React from 'react';
-import { Crown, ShieldCheck, Clock3, AlertCircle, CheckCircle2, ArrowRight, ChevronRight, HelpCircle } from 'lucide-react';
+import { Crown, Clock3, AlertCircle, CheckCircle2, ArrowRight, ChevronRight, HelpCircle } from 'lucide-react';
+
+const VaseIcon = ({ className = "h-4 w-4" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 3h8l1 4s.5 2.5 2.5 4.5S20 15 20 18a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3c0-3 .5-4.5 2.5-6.5S9 7 9 7L8 3z" />
+    </svg>
+);
 
 export default function SubscriptionPlans({
     plans,
@@ -71,12 +77,6 @@ export default function SubscriptionPlans({
                                 ? 'border-stone-300 shadow-[0_28px_50px_-44px_rgba(255,138,28,0.45)]'
                                 : 'border-stone-200 shadow-[0_24px_40px_-42px_rgba(15,23,42,0.45)]';
 
-                        const labelClass = current
-                            ? 'bg-[#6D5EF6] text-white shadow-sm'
-                            : isPremiumPlan
-                                ? 'bg-gradient-to-r from-[#FFB432] to-[#FF8A1C] text-white shadow-sm'
-                                : 'hidden';
-
                         const iconClass = isElitePlan
                             ? 'bg-[#6D5EF6] text-white'
                             : isPremiumPlan
@@ -99,9 +99,9 @@ export default function SubscriptionPlans({
                                     <div className="flex-1 min-w-0">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <h3 className="text-xl sm:text-[1.55rem] font-black leading-none tracking-tight text-stone-900">{plan.name}</h3>
-                                            {(current || isPremiumPlan) && (
-                                                <span className={`rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap ${labelClass}`}>
-                                                    {current ? 'Current Plan' : 'Most Popular'}
+                                            {isPremiumPlan && (
+                                                <span className="rounded-full bg-gradient-to-r from-[#FFB432] to-[#FF8A1C] text-white shadow-sm px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap">
+                                                    Most Popular
                                                 </span>
                                             )}
                                         </div>
@@ -132,10 +132,10 @@ export default function SubscriptionPlans({
                                         <button
                                             type="button"
                                             disabled
-                                            className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-stone-100 px-4 py-2.5 text-[14px] font-bold text-stone-400"
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-stone-100 border border-stone-200 px-4 py-2.5 text-[14px] font-extrabold text-stone-700 cursor-default"
                                         >
-                                            <ShieldCheck className="h-4 w-4" />
-                                            Active Plan
+                                            <VaseIcon className="h-4 w-4 text-amber-700" />
+                                            Your Current Plan
                                         </button>
                                     ) : isUpgrade ? (
                                         <button
@@ -177,12 +177,9 @@ export default function SubscriptionPlans({
 
             <div className="flex flex-col gap-2.5 border-t border-stone-100 px-5 py-3 text-[12px] text-stone-500 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                    <p>Plans can be changed anytime. Downgrades will enforce listing limits and suspend staff accounts at the end of the current billing cycle.</p>
-                    <p className="mt-1 text-[11px] text-stone-400 font-semibold uppercase tracking-wider">
-                        All payments are strictly non-refundable once processed.
-                    </p>
+                    <p>Plans can be changed anytime. Downgrades take effect at the end of the billing cycle (payments non-refundable).</p>
                 </div>
-                {pendingUpgrade && pendingUpgrade.checkoutUrl ? (
+                {pendingUpgrade && pendingUpgrade.checkoutUrl && (
                     <button
                         type="button"
                         onClick={() => window.location.assign(pendingUpgrade.checkoutUrl)}
@@ -191,8 +188,6 @@ export default function SubscriptionPlans({
                         Continue Payment
                         <ChevronRight className="h-[15px] w-[15px]" />
                     </button>
-                ) : (
-                    <p className="font-semibold text-orange-600">Current plan: {currentPlanMeta.name}</p>
                 )}
             </div>
         </section>

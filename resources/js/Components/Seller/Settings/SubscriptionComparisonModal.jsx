@@ -35,6 +35,13 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                         premium: { text: 'Full Access', status: 'unlocked' },
                         super_premium: { text: 'Full Access', status: 'unlocked' },
                     },
+                    {
+                        name: 'Automated Thank-You Messages',
+                        subtext: 'Automated buyer appreciation notes sent on order completion',
+                        free: { text: 'Locked', status: 'locked' },
+                        premium: { text: 'Full Access', status: 'unlocked' },
+                        super_premium: { text: 'Full Access', status: 'unlocked' },
+                    },
                 ],
             },
             {
@@ -92,6 +99,13 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
             {
                 category: 'Marketing & Sponsorships',
                 features: [
+                    {
+                        name: 'Discounts & Campaign Engine',
+                        subtext: 'Promotional discount codes, percentage flash sales & stock limits',
+                        free: { text: 'Locked', status: 'locked' },
+                        premium: { text: 'Locked', status: 'locked' },
+                        super_premium: { text: 'Full Access', status: 'unlocked' },
+                    },
                     {
                         name: 'Platform Sponsorship Credits',
                         subtext: 'Featured homepage banners, artisan spotlights & promotional event slots',

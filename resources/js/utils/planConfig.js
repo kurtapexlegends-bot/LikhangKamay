@@ -69,6 +69,7 @@ export const PLANS = [
             'Premium Badge (Crown Icon)',
             'Analytics Report Export',
             'Module Customization',
+            'Automated Thank-You Messages',
         ],
     },
     {
@@ -88,6 +89,8 @@ export const PLANS = [
             'Up to 50 Active Products',
             'Elite Badge',
             '5 Sponsorship Credits Every 30 Days',
+            'Discounts Module & Marketing',
+            'Automated Thank-You Messages',
             'All Seller Modules Unlocked',
             'Sponsored Homepage and Catalog Placement',
         ],

@@ -1,5 +1,11 @@
 import React from 'react';
-import { Star, Check, Shield, Rocket, ArrowRight } from 'lucide-react';
+import { Star, Check, Rocket, ArrowRight } from 'lucide-react';
+
+const VaseIcon = ({ className = "h-3.5 w-3.5" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 3h8l1 4s.5 2.5 2.5 4.5S20 15 20 18a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3c0-3 .5-4.5 2.5-6.5S9 7 9 7L8 3z" />
+    </svg>
+);
 
 export default function PlanPricingCard({
     plan,
@@ -47,12 +53,7 @@ export default function PlanPricingCard({
                 <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">
                         <h3 className="text-[1.05rem] font-extrabold leading-none text-stone-900">{plan.name}</h3>
-                        {isCurrent && (
-                            <span className="rounded-full bg-stone-100 border border-stone-200 px-1.5 py-0.5 text-[7px] font-extrabold uppercase tracking-[0.1em] text-stone-600 whitespace-nowrap">
-                                Current
-                            </span>
-                        )}
-                        {plan.recommended && !isCurrent && (
+                        {plan.recommended && (
                             <span className="flex items-center gap-0.5 rounded-full bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[7px] font-extrabold uppercase tracking-[0.1em] text-amber-700 whitespace-nowrap">
                                 <Star size={7} fill="currentColor" />
                                 Popular
@@ -95,10 +96,10 @@ export default function PlanPricingCard({
                 {isCurrent ? (
                     <button
                         disabled
-                        className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-stone-100 px-4 py-2 text-[11px] font-bold text-stone-400 cursor-not-allowed"
+                        className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-stone-100 border border-stone-200 px-4 py-2 text-[11px] font-extrabold text-stone-700 cursor-default"
                     >
-                        <Shield size={14} />
-                        Active Plan
+                        <VaseIcon className="h-3.5 w-3.5 text-amber-700" />
+                        Your Current Plan
                     </button>
                 ) : !canManagePlan ? (
                     <button
