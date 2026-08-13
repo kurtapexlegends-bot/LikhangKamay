@@ -277,22 +277,22 @@ export default function StaffTable({
                     <span>Hired / Active Date Range</span>
                 </label>
                 <div className="grid grid-cols-2 gap-2.5">
-                    <div className="relative flex items-center rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 focus-within:border-clay-500 focus-within:ring-1 focus-within:ring-clay-500/20">
+                    <div className="relative flex items-center rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 overflow-hidden focus-within:border-clay-500 focus-within:ring-1 focus-within:ring-clay-500/20">
                         <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 mr-1.5 shrink-0">From</span>
                         <input
                             type="date"
                             value={draftStartDate}
                             onChange={(e) => setDraftStartDate(e.target.value)}
-                            className="w-full bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
+                            className="min-w-0 flex-1 bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
                         />
                     </div>
-                    <div className="relative flex items-center rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 focus-within:border-clay-500 focus-within:ring-1 focus-within:ring-clay-500/20">
+                    <div className="relative flex items-center rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 overflow-hidden focus-within:border-clay-500 focus-within:ring-1 focus-within:ring-clay-500/20">
                         <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 mr-1.5 shrink-0">To</span>
                         <input
                             type="date"
                             value={draftEndDate}
                             onChange={(e) => setDraftEndDate(e.target.value)}
-                            className="w-full bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
+                            className="min-w-0 flex-1 bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
                         />
                     </div>
                 </div>
