@@ -50,31 +50,35 @@ export default function Reviews({ auth, reviews, stats, flash }) {
         "Thank you for sharing your feedback. We are always striving to improve and your input is incredibly valuable to us."
     ];
 
-    const filteredReviews = reviews.filter((review) => {
-        const matchesFilter = filter === 'All'
-            ? true
-            : filter === 'Hidden'
-                ? review.is_hidden_from_marketplace
-                : review.rating === parseInt(filter);
+    const filteredReviews = useMemo(() => {
+        return reviews.filter((review) => {
+            const matchesFilter = filter === 'All'
+                ? true
+                : filter === 'Hidden'
+                    ? review.is_hidden_from_marketplace
+                    : review.rating === parseInt(filter);
 
-        if (!matchesFilter) return false;
+            if (!matchesFilter) return false;
 
-        if (!searchTerm.trim()) return true;
+            if (!searchTerm.trim()) return true;
 
-        const search = searchTerm.toLowerCase();
-        return (
-            review.customer?.toLowerCase().includes(search) ||
-            review.comment?.toLowerCase().includes(search) ||
-            review.product_name?.toLowerCase().includes(search)
-        );
-    });
+            const search = searchTerm.toLowerCase();
+            return (
+                review.customer?.toLowerCase().includes(search) ||
+                review.comment?.toLowerCase().includes(search) ||
+                review.product_name?.toLowerCase().includes(search)
+            );
+        });
+    }, [reviews, filter, searchTerm]);
 
     // Sort: pinned first, then by date (already sorted by latest from backend)
-    const sortedReviews = [...filteredReviews].sort((a, b) => {
-        if (a.is_pinned && !b.is_pinned) return -1;
-        if (!a.is_pinned && b.is_pinned) return 1;
-        return 0;
-    });
+    const sortedReviews = useMemo(() => {
+        return [...filteredReviews].sort((a, b) => {
+            if (a.is_pinned && !b.is_pinned) return -1;
+            if (!a.is_pinned && b.is_pinned) return 1;
+            return 0;
+        });
+    }, [filteredReviews]);
 
     const itemsPerPage = 10;
     const totalPages = Math.max(1, Math.ceil(sortedReviews.length / itemsPerPage));

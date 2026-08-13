@@ -500,13 +500,13 @@ function FilterSelect({ value, onChange, options }) {
 
 function DateInput({ label, value, onChange }) {
     return (
-        <label className="flex flex-1 h-full items-center gap-2 px-3 hover:bg-stone-50 transition cursor-pointer min-h-[42px]">
+        <label className="flex flex-1 h-full items-center gap-2 px-3 hover:bg-stone-50 transition cursor-pointer min-h-[42px] min-w-0">
             <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 shrink-0">{label}</span>
             <input
                 type="date"
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                className="flex-1 w-full bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0"
+                className="min-w-0 flex-1 bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
             />
         </label>
     );

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Head, Link, router } from "@inertiajs/react";
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from "@/Layouts/SellerWorkspaceLayout";
 import SellerHeader from "@/Layouts/SellerHeader";
@@ -23,21 +23,25 @@ export default function DiscountManager({ discounts, stats, filters, products, a
     const [searchQuery, setSearchQuery] = useState(filters?.search || "");
     const [typeFilter, setTypeFilter] = useState(filters?.type || "all");
 
-    const rawList = Array.isArray(discounts) ? discounts : (discounts?.data || []);
+    const rawList = useMemo(() => {
+        return Array.isArray(discounts) ? discounts : (discounts?.data || []);
+    }, [discounts]);
 
-    const filteredDiscounts = rawList.filter((discount) => {
-        if (typeFilter !== "all" && discount.type !== typeFilter) {
-            return false;
-        }
-        if (searchQuery && searchQuery.trim() !== "") {
-            const q = searchQuery.toLowerCase();
-            const nameMatch = (discount.name || "").toLowerCase().includes(q);
-            const valueMatch = String(discount.value).includes(q);
-            const productMatch = discount.products?.some((p) => p.name?.toLowerCase().includes(q));
-            return nameMatch || valueMatch || productMatch;
-        }
-        return true;
-    });
+    const filteredDiscounts = useMemo(() => {
+        return rawList.filter((discount) => {
+            if (typeFilter !== "all" && discount.type !== typeFilter) {
+                return false;
+            }
+            if (searchQuery && searchQuery.trim() !== "") {
+                const q = searchQuery.toLowerCase();
+                const nameMatch = (discount.name || "").toLowerCase().includes(q);
+                const valueMatch = String(discount.value).includes(q);
+                const productMatch = discount.products?.some((p) => p.name?.toLowerCase().includes(q));
+                return nameMatch || valueMatch || productMatch;
+            }
+            return true;
+        });
+    }, [rawList, typeFilter, searchQuery]);
 
     const activeStatus = filters?.status || "ongoing";
 

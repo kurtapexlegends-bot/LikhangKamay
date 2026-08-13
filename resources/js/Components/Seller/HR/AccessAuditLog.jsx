@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import CompactPagination from '@/Components/CompactPagination';
 import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
@@ -20,17 +20,19 @@ export default function AccessAuditLog({
 
     const activeFilterCount = eventFilter !== 'all' ? 1 : 0;
 
-    const filteredEntries = auditEntries.filter((audit) => {
-        const matchesEvent = eventFilter === 'all' || audit.event === eventFilter;
-        const q = search.toLowerCase();
-        const matchesSearch = !search ||
-            (audit.staff_user?.name && audit.staff_user.name.toLowerCase().includes(q)) ||
-            (audit.actor?.name && audit.actor.name.toLowerCase().includes(q)) ||
-            (audit.summary && audit.summary.toLowerCase().includes(q)) ||
-            (audit.event && audit.event.toLowerCase().includes(q));
+    const filteredEntries = useMemo(() => {
+        return auditEntries.filter((audit) => {
+            const matchesEvent = eventFilter === 'all' || audit.event === eventFilter;
+            const q = search.toLowerCase();
+            const matchesSearch = !search ||
+                (audit.staff_user?.name && audit.staff_user.name.toLowerCase().includes(q)) ||
+                (audit.actor?.name && audit.actor.name.toLowerCase().includes(q)) ||
+                (audit.summary && audit.summary.toLowerCase().includes(q)) ||
+                (audit.event && audit.event.toLowerCase().includes(q));
 
-        return matchesEvent && matchesSearch;
-    });
+            return matchesEvent && matchesSearch;
+        });
+    }, [auditEntries, eventFilter, search]);
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Package, AlertTriangle, Search, X, Banknote, Trash2, Pencil, SlidersHorizontal, ChevronDown, RotateCcw, Filter } from 'lucide-react';
 import QuickRestock from '@/Components/Seller/Shared/QuickRestock';
@@ -93,16 +93,22 @@ export default function SuppliesTable({
     };
 
     // Filter supplies locally based on props & popover filters
-    const filteredSupplies = supplies.filter(s => {
-        const matchSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                           (s.supplier && s.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
-        const matchCategory = filterCategory === 'all' || s.category === filterCategory;
-        const matchStock = stockStatus === 'all' ||
-                           (stockStatus === 'low_stock' && s.quantity <= s.min_stock) ||
-                           (stockStatus === 'in_stock' && s.quantity > s.min_stock);
-        const matchUnit = unitType === 'all' || s.unit === unitType;
-        return matchSearch && matchCategory && matchStock && matchUnit;
-    });
+    const filteredSupplies = useMemo(() => {
+        if (!Array.isArray(supplies) || supplies.length === 0) return [];
+        const searchLower = searchTerm ? searchTerm.toLowerCase().trim() : '';
+
+        return supplies.filter(s => {
+            const matchSearch = !searchLower ||
+                s.name.toLowerCase().includes(searchLower) || 
+                (s.supplier && s.supplier.toLowerCase().includes(searchLower));
+            const matchCategory = filterCategory === 'all' || s.category === filterCategory;
+            const matchStock = stockStatus === 'all' ||
+                               (stockStatus === 'low_stock' && s.quantity <= s.min_stock) ||
+                               (stockStatus === 'in_stock' && s.quantity > s.min_stock);
+            const matchUnit = unitType === 'all' || s.unit === unitType;
+            return matchSearch && matchCategory && matchStock && matchUnit;
+        });
+    }, [supplies, searchTerm, filterCategory, stockStatus, unitType]);
 
     const activeFiltersCount = [
         filterCategory && filterCategory !== 'all',

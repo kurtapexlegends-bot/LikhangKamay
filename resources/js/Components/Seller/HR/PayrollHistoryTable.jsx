@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import CompactPagination from '@/Components/CompactPagination';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
@@ -18,22 +18,27 @@ export default function PayrollHistoryTable({
     canEditHrRecords,
     deletePayroll
 }) {
-    const rawPayrolls = Array.isArray(payrolls) ? payrolls : (payrolls?.data || []);
+    const rawPayrolls = useMemo(() => {
+        return Array.isArray(payrolls) ? payrolls : (payrolls?.data || []);
+    }, [payrolls]);
+
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
 
     const activeFilterCount = statusFilter !== 'all' ? 1 : 0;
 
-    const filteredPayrolls = rawPayrolls.filter((payroll) => {
-        const matchesStatus = statusFilter === 'all' || (payroll.status && payroll.status.toLowerCase() === statusFilter.toLowerCase());
-        const q = search.toLowerCase();
-        const matchesSearch = !search || 
-            (payroll.month && payroll.month.toLowerCase().includes(q)) ||
-            (payroll.requester?.name && payroll.requester.name.toLowerCase().includes(q)) ||
-            (payroll.status && payroll.status.toLowerCase().includes(q));
+    const filteredPayrolls = useMemo(() => {
+        return rawPayrolls.filter((payroll) => {
+            const matchesStatus = statusFilter === 'all' || (payroll.status && payroll.status.toLowerCase() === statusFilter.toLowerCase());
+            const q = search.toLowerCase();
+            const matchesSearch = !search || 
+                (payroll.month && payroll.month.toLowerCase().includes(q)) ||
+                (payroll.requester?.name && payroll.requester.name.toLowerCase().includes(q)) ||
+                (payroll.status && payroll.status.toLowerCase().includes(q));
 
-        return matchesStatus && matchesSearch;
-    });
+            return matchesStatus && matchesSearch;
+        });
+    }, [rawPayrolls, statusFilter, search]);
 
     return (
         <div className="rounded-3xl border border-stone-200/80 bg-white shadow-sm flex flex-col min-h-[400px] relative">

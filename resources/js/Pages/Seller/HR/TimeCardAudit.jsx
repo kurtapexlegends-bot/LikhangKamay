@@ -114,33 +114,37 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
     const rawSessions = summary?.sessions || [];
 
     // Sort raw sessions DESCENDING (latest date on top)
-    const sortedSessions = [...rawSessions].sort((a, b) => {
-        const timeA = a.clock_in_at ? new Date(a.clock_in_at).getTime() : (a.date ? new Date(a.date).getTime() : 0);
-        const timeB = b.clock_in_at ? new Date(b.clock_in_at).getTime() : (b.date ? new Date(b.date).getTime() : 0);
-        return timeB - timeA;
-    });
+    const sortedSessions = useMemo(() => {
+        return [...rawSessions].sort((a, b) => {
+            const timeA = a.clock_in_at ? new Date(a.clock_in_at).getTime() : (a.date ? new Date(a.date).getTime() : 0);
+            const timeB = b.clock_in_at ? new Date(b.clock_in_at).getTime() : (b.date ? new Date(b.date).getTime() : 0);
+            return timeB - timeA;
+        });
+    }, [rawSessions]);
 
     // Filter sessions based on active tab & search query
-    const filteredSessions = sortedSessions.filter((session) => {
-        const isOffSite = session.distance_meters !== null && !session.is_within_geofence;
-        const isPending = session.approval_status === 'pending' || session.is_flagged;
-        const isApproved = session.approval_status === 'approved' && !session.is_flagged;
-        const isRejected = session.approval_status === 'rejected';
+    const filteredSessions = useMemo(() => {
+        return sortedSessions.filter((session) => {
+            const isOffSite = session.distance_meters !== null && !session.is_within_geofence;
+            const isPending = session.approval_status === 'pending' || session.is_flagged;
+            const isApproved = session.approval_status === 'approved' && !session.is_flagged;
+            const isRejected = session.approval_status === 'rejected';
 
-        if (activeTab === 'pending' && (!isPending || isRejected)) return false;
-        if (activeTab === 'offsite' && !isOffSite) return false;
-        if (activeTab === 'approved' && !isApproved) return false;
-        if (activeTab === 'rejected' && !isRejected) return false;
+            if (activeTab === 'pending' && (!isPending || isRejected)) return false;
+            if (activeTab === 'offsite' && !isOffSite) return false;
+            if (activeTab === 'approved' && !isApproved) return false;
+            if (activeTab === 'rejected' && !isRejected) return false;
 
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            const dateMatch = session.date?.toLowerCase().includes(query);
-            const flagMatch = session.flag_reason?.toLowerCase().includes(query);
-            return dateMatch || flagMatch;
-        }
+            if (searchQuery.trim()) {
+                const query = searchQuery.toLowerCase();
+                const dateMatch = session.date?.toLowerCase().includes(query);
+                const flagMatch = session.flag_reason?.toLowerCase().includes(query);
+                return dateMatch || flagMatch;
+            }
 
-        return true;
-    });
+            return true;
+        });
+    }, [sortedSessions, activeTab, searchQuery]);
 
     const pendingCount = rawSessions.filter((s) => (s.approval_status === 'pending' || s.is_flagged) && s.approval_status !== 'rejected').length;
     const offSiteCount = rawSessions.filter((s) => s.distance_meters !== null && !s.is_within_geofence).length;
