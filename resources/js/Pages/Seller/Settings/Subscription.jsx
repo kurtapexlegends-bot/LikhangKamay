@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useToast } from '@/Components/ToastContext';
 import SellerHeader from '@/Layouts/SellerHeader';
-import { AlertCircle, CheckCircle2, Clock3, ShieldCheck, Crown, Package, Sparkles } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock3, ShieldCheck, Crown, Package, Sparkles, BadgeCheck } from 'lucide-react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 
 // Subcomponents
@@ -11,12 +11,6 @@ import SubscriptionComparisonModal from '@/Components/Seller/Settings/Subscripti
 import BillingActivity from '@/Components/Seller/Settings/BillingActivity';
 import DowngradeModal from '@/Components/Seller/Settings/DowngradeModal';
 import CancelSubscriptionModal from '@/Components/Seller/Settings/CancelSubscriptionModal';
-
-const VaseIcon = ({ className = "h-4 w-4" }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 3h8l1 4s.5 2.5 2.5 4.5S20 15 20 18a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3c0-3 .5-4.5 2.5-6.5S9 7 9 7L8 3z" />
-    </svg>
-);
 
 export default function Subscription({
     auth,
@@ -253,7 +247,7 @@ export default function Subscription({
                         <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
                             <div className="flex flex-wrap items-center gap-2">
                                 <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/80 bg-amber-50/70 px-3.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
-                                    <VaseIcon className="h-3.5 w-3.5 text-amber-700 shrink-0" />
+                                    <BadgeCheck className="h-4 w-4 text-emerald-600 shrink-0" />
                                     <span>Your Current Plan: <strong className="font-black text-amber-950">{currentPlanMeta.name}</strong></span>
                                 </span>
 

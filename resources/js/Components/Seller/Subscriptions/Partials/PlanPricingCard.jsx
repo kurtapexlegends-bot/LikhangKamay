@@ -1,11 +1,5 @@
 import React from 'react';
-import { Star, Check, Rocket, ArrowRight } from 'lucide-react';
-
-const VaseIcon = ({ className = "h-3.5 w-3.5" }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 3h8l1 4s.5 2.5 2.5 4.5S20 15 20 18a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3c0-3 .5-4.5 2.5-6.5S9 7 9 7L8 3z" />
-    </svg>
-);
+import { Star, Check, Rocket, ArrowRight, BadgeCheck } from 'lucide-react';
 
 export default function PlanPricingCard({
     plan,
@@ -98,7 +92,7 @@ export default function PlanPricingCard({
                         disabled
                         className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-stone-100 border border-stone-200 px-4 py-2 text-[11px] font-extrabold text-stone-700 cursor-default"
                     >
-                        <VaseIcon className="h-3.5 w-3.5 text-amber-700" />
+                        <BadgeCheck className="h-3.5 w-3.5 text-emerald-600" />
                         Your Current Plan
                     </button>
                 ) : !canManagePlan ? (

@@ -1,11 +1,5 @@
 import React from 'react';
-import { Crown, Clock3, AlertCircle, CheckCircle2, ArrowRight, ChevronRight, HelpCircle } from 'lucide-react';
-
-const VaseIcon = ({ className = "h-4 w-4" }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 3h8l1 4s.5 2.5 2.5 4.5S20 15 20 18a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3c0-3 .5-4.5 2.5-6.5S9 7 9 7L8 3z" />
-    </svg>
-);
+import { Crown, Clock3, AlertCircle, CheckCircle2, ArrowRight, ChevronRight, HelpCircle, BadgeCheck } from 'lucide-react';
 
 export default function SubscriptionPlans({
     plans,
@@ -134,7 +128,7 @@ export default function SubscriptionPlans({
                                             disabled
                                             className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-stone-100 border border-stone-200 px-4 py-2.5 text-[14px] font-extrabold text-stone-700 cursor-default"
                                         >
-                                            <VaseIcon className="h-4 w-4 text-amber-700" />
+                                            <BadgeCheck className="h-4 w-4 text-emerald-600" />
                                             Your Current Plan
                                         </button>
                                     ) : isUpgrade ? (
