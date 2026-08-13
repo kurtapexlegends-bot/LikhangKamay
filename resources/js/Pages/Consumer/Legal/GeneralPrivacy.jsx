@@ -97,7 +97,7 @@ export default function GeneralPrivacy() {
                         <div className="border-b border-stone-200/80 pb-5">
                             <span className="text-[10px] font-bold tracking-widest text-sage-600 uppercase">Legal Policy</span>
                             <h1 className="font-serif text-3xl font-bold text-stone-900 mt-1">Privacy Policy</h1>
-                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: January 2026</p>
+                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: August 2026</p>
                         </div>
 
                         {/* DPA Notice */}
@@ -169,7 +169,7 @@ export default function GeneralPrivacy() {
                         <div className="lg:hidden border-b border-stone-200/80 pb-5 mb-6">
                             <span className="text-[9px] font-bold tracking-widest text-sage-600 uppercase">Legal Policy</span>
                             <h1 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">Privacy Policy</h1>
-                            <p className="text-[10px] text-stone-500 mt-1">Last updated: January 2026</p>
+                            <p className="text-[10px] text-stone-500 mt-1">Last updated: August 2026</p>
                         </div>
 
                         <p className="text-stone-600 text-sm leading-relaxed pb-4 border-b border-stone-100">
