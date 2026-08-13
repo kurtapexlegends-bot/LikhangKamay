@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link } from '@inertiajs/react';
 import { Search, X, Pencil, Trash2, CalendarDays, Users, SlidersHorizontal, Filter, RotateCcw, ChevronDown, Calendar, Clock3 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
@@ -207,47 +207,54 @@ export default function StaffTable({
         setEndDateFilter('');
     };
 
-    const filteredStaff = staff.filter(emp => {
-        const searchLower = searchTerm.toLowerCase();
-        const matchesSearch =
-            emp.name.toLowerCase().includes(searchLower) ||
-            emp.role.toLowerCase().includes(searchLower) ||
-            (emp.employee_id && emp.employee_id.toLowerCase().includes(searchLower)) ||
-            (emp.login_account?.email && emp.login_account.email.toLowerCase().includes(searchLower)) ||
-            (emp.login_account?.role_preset_key && (presetLabelByKey[emp.login_account.role_preset_key] || '').toLowerCase().includes(searchLower));
+    const filteredStaff = useMemo(() => {
+        if (!Array.isArray(staff) || staff.length === 0) return [];
 
-        if (!matchesSearch) return false;
+        const searchLower = searchTerm ? searchTerm.trim().toLowerCase() : '';
 
-        if (statusFilter !== 'all') {
-            if (statusFilter === 'active' && !(emp.status?.toLowerCase() === 'active' || !emp.status)) return false;
-            if (statusFilter === 'clocked_in' && !(emp.attendance?.current_state === 'clocked_in' || emp.attendance?.open_session)) return false;
-            if (statusFilter === 'paused' && emp.attendance?.current_state !== 'paused') return false;
-            if (statusFilter === 'clocked_out' && (emp.attendance?.current_state === 'clocked_in' || emp.attendance?.current_state === 'paused')) return false;
-            if (statusFilter === 'suspended' && !(emp.login_account?.workspace_access_enabled === false || emp.status?.toLowerCase() === 'suspended')) return false;
-            if (statusFilter === 'no_login' && emp.has_login_account) return false;
-        }
+        return staff.filter((emp) => {
+            if (searchLower) {
+                const matchesSearch =
+                    (emp.name && emp.name.toLowerCase().includes(searchLower)) ||
+                    (emp.role && emp.role.toLowerCase().includes(searchLower)) ||
+                    (emp.employee_id && emp.employee_id.toLowerCase().includes(searchLower)) ||
+                    (emp.login_account?.email && emp.login_account.email.toLowerCase().includes(searchLower)) ||
+                    (emp.login_account?.role_preset_key && (presetLabelByKey[emp.login_account.role_preset_key] || '').toLowerCase().includes(searchLower));
 
-        if (entitlementFilter !== 'all') {
-            const perms = emp.login_account?.module_permissions || {};
-            if (entitlementFilter === 'accounting' && !perms.accounting) return false;
-            if (entitlementFilter === 'orders' && !perms.orders) return false;
-            if (entitlementFilter === 'procurement' && !perms.procurement) return false;
-            if (entitlementFilter === 'hr' && !perms.hr) return false;
-            if (entitlementFilter === 'catalog' && !perms.catalog) return false;
-        }
+                if (!matchesSearch) return false;
+            }
 
-        const hireDateRaw = emp.join_date || emp.created_at;
-        if (startDateFilter && hireDateRaw) {
-            const empDate = hireDateRaw.substring(0, 10);
-            if (empDate < startDateFilter) return false;
-        }
-        if (endDateFilter && hireDateRaw) {
-            const empDate = hireDateRaw.substring(0, 10);
-            if (empDate > endDateFilter) return false;
-        }
+            if (statusFilter !== 'all') {
+                if (statusFilter === 'active' && !(emp.status?.toLowerCase() === 'active' || !emp.status)) return false;
+                if (statusFilter === 'clocked_in' && !(emp.attendance?.current_state === 'clocked_in' || emp.attendance?.open_session)) return false;
+                if (statusFilter === 'paused' && emp.attendance?.current_state !== 'paused') return false;
+                if (statusFilter === 'clocked_out' && (emp.attendance?.current_state === 'clocked_in' || emp.attendance?.current_state === 'paused')) return false;
+                if (statusFilter === 'suspended' && !(emp.login_account?.workspace_access_enabled === false || emp.status?.toLowerCase() === 'suspended')) return false;
+                if (statusFilter === 'no_login' && emp.has_login_account) return false;
+            }
 
-        return true;
-    });
+            if (entitlementFilter !== 'all') {
+                const perms = emp.login_account?.module_permissions || {};
+                if (entitlementFilter === 'accounting' && !perms.accounting) return false;
+                if (entitlementFilter === 'orders' && !perms.orders) return false;
+                if (entitlementFilter === 'procurement' && !perms.procurement) return false;
+                if (entitlementFilter === 'hr' && !perms.hr) return false;
+                if (entitlementFilter === 'catalog' && !perms.catalog) return false;
+            }
+
+            const hireDateRaw = emp.join_date || emp.created_at;
+            if (startDateFilter && hireDateRaw) {
+                const empDate = hireDateRaw.substring(0, 10);
+                if (empDate < startDateFilter) return false;
+            }
+            if (endDateFilter && hireDateRaw) {
+                const empDate = hireDateRaw.substring(0, 10);
+                if (empDate > endDateFilter) return false;
+            }
+
+            return true;
+        });
+    }, [staff, searchTerm, statusFilter, entitlementFilter, startDateFilter, endDateFilter, presetLabelByKey]);
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
@@ -257,7 +264,9 @@ export default function StaffTable({
     }, [searchTerm, statusFilter, entitlementFilter, startDateFilter, endDateFilter]);
 
     const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
-    const paginatedStaff = filteredStaff.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const paginatedStaff = useMemo(() => {
+        return filteredStaff.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    }, [filteredStaff, currentPage, itemsPerPage]);
 
     const filterFieldsGrid = (
         <div className="space-y-3 text-left">
@@ -267,14 +276,14 @@ export default function StaffTable({
                     <Calendar size={13} className="text-clay-600" />
                     <span>Hired / Active Date Range</span>
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                     <div className="relative flex items-center rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 focus-within:border-clay-500 focus-within:ring-1 focus-within:ring-clay-500/20">
                         <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 mr-1.5 shrink-0">From</span>
                         <input
                             type="date"
                             value={draftStartDate}
                             onChange={(e) => setDraftStartDate(e.target.value)}
-                            className="w-full bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0"
+                            className="w-full bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
                         />
                     </div>
                     <div className="relative flex items-center rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 focus-within:border-clay-500 focus-within:ring-1 focus-within:ring-clay-500/20">
@@ -283,7 +292,7 @@ export default function StaffTable({
                             type="date"
                             value={draftEndDate}
                             onChange={(e) => setDraftEndDate(e.target.value)}
-                            className="w-full bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0"
+                            className="w-full bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
                         />
                     </div>
                 </div>
