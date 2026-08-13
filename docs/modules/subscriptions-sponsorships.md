@@ -43,7 +43,22 @@ LikhangKamay supports three seller levels normalized in [SubscriptionService.php
 
 ---
 
-## 4. Subscription Downgrade Constraints
+## 4. Subscription Auto-Renewal Cancellation & Period Entitlements
+
+*   **Period Fields on User Model**:
+    *   `subscription_expires_at`: The timestamp when active tier benefits expire (e.g. end of paid 30-day billing cycle).
+    *   `subscription_cancelled_at`: The timestamp when auto-renewal cancellation was requested.
+    *   `pending_downgrade_tier`: Tier level (`free` or `premium`) the user will transition to upon expiration.
+*   **Active Entitlements During Period**:
+    *   When a seller cancels auto-renewal on an active paid plan, benefits remain active until `subscription_expires_at`.
+    *   `getEffectivePremiumTier()` returns `premium_tier` while `subscription_expires_at` is in the future.
+    *   Once `subscription_expires_at` passes, `getEffectivePremiumTier()` transitions to `pending_downgrade_tier` (or `free`), enforcing listing limits and staff suspensions.
+*   **No-Refund Policy**:
+    *   All payments for subscription upgrades are non-refundable upon checkout verification.
+
+---
+
+## 5. Subscription Downgrade Constraints
 
 Handled by the [DowngradeSubscription.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Subscription/DowngradeSubscription.php) action:
 

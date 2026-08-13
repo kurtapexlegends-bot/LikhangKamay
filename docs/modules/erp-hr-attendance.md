@@ -76,6 +76,7 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
 
 ### HR Domain Services
 *   [PayrollCalculatorService.php](file:///c:/laragon/www/LikhangKamay/app/Services/HR/PayrollCalculatorService.php): Service executing the salary and overtime arithmetic for payroll runs.
+*   [AttendanceAggregatorService.php](file:///c:/laragon/www/LikhangKamay/app/Services/HR/AttendanceAggregatorService.php): Aggregates daily worked hours, overtime, and tardiness metrics for HR reports.
 *   [StaffAttendanceService.php](file:///c:/laragon/www/LikhangKamay/app/Services/StaffAttendanceService.php): Handles checking staff in/out, recording heartbeats, timeout sweeps, and geofence validation (supports both soft-flagging manager approval and strict hard-blocking based on `enforce_strict_geofence`).
 
 ### ERP Controllers
@@ -101,7 +102,8 @@ A dedicated full-page view is available for inspecting individual employee atten
     *   **Mobile-Native Adaptation**: Responsive coexistence (`hidden lg:block` data table vs `block lg:hidden` card list) with mobile bottom sheets (`SlideOverDrawer`).
     *   **Z-Index Stacking**: Uses global `Modal.jsx` at `z-[150]` ensuring complete overlay dimming across sticky headers and sidebars.
 
-### Stock & Procurement Mails & Notifications
+### Stock, HR & Procurement Mails & Notifications
+*   [OffSiteClockInNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/OffSiteClockInNotification.php): Dispatches manager alerts when an employee clocks in outside approved geofence boundaries.
 *   [LowStockAlert.php](file:///c:/laragon/www/LikhangKamay/app/Mail/LowStockAlert.php): Dispatches inventory warnings to artisans.
 *   [LowStockNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/LowStockNotification.php) | [LowStockWarningNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/LowStockWarningNotification.php): Dispatches in-app low stock alerts.
 *   [SupplyDepletedNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/SupplyDepletedNotification.php): Alerts sellers when critical supplies run dry.

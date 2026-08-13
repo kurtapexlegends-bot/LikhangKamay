@@ -117,14 +117,24 @@ All order operations are processed through dedicated single-responsibility Actio
 *   **Avatar Handling**: Dynamic avatar retrieval with Supabase CDN image width transformation (defaults to webp, 200x200).
 *   **Support Utilities**: [PersonName.php](file:///c:/laragon/www/LikhangKamay/app/Support/PersonName.php) helper.
 *   **Suspension / Banning**: Enforces direct account bans and disables staff access using the `banned_at` column.
+*   **Subscription Period Fields**: `subscription_expires_at` (expiry timestamp for active tier benefits), `subscription_cancelled_at` (timestamp when auto-renewal cancellation was requested), and `pending_downgrade_tier` (target tier upon period expiration).
+
+### Related User Models & Preferences
+*   [FollowedShop.php](file:///c:/laragon/www/LikhangKamay/app/Models/FollowedShop.php): Tracks buyer subscriptions and follows to artisan shop profiles.
+*   [UserNotificationState.php](file:///c:/laragon/www/LikhangKamay/app/Models/UserNotificationState.php): Manages read/unread notification states per user.
+*   [Wishlist.php](file:///c:/laragon/www/LikhangKamay/app/Models/Wishlist.php): Buyer saved product bookmark items.
+*   [PostgresCompatibleBoolean.php](file:///c:/laragon/www/LikhangKamay/app/Casts/PostgresCompatibleBoolean.php): Custom Eloquent cast standardizing boolean values across MySQL and PostgreSQL environments.
 
 ### User & Auth Controllers
 *   [ArtisanSetupController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/ArtisanSetupController.php), [AuthenticatedSessionController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/AuthenticatedSessionController.php), [ConfirmablePasswordController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/ConfirmablePasswordController.php), [EmailVerificationNotificationController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/EmailVerificationNotificationController.php), [EmailVerificationPromptController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/EmailVerificationPromptController.php), [NewPasswordController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/NewPasswordController.php), [PasswordController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/PasswordController.php), [PasswordResetLinkController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/PasswordResetLinkController.php), [RegisteredUserController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/RegisteredUserController.php), [SocialAuthController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/SocialAuthController.php), [VerifyEmailCodeController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/VerifyEmailCodeController.php): Manages complete Laravel Breeze/Fortify authentication scaffolding, social logins, and password recovery.
 *   [UserAddressController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/UserAddressController.php): Manages saving address coordinate locations.
+*   [BuyerSignalController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/BuyerSignalController.php): Endpoint tracking real-time engagement signals from active buyers.
 
-### User Form Requests & Model Traits
+### User Form Requests, Services & Model Traits
 *   [ProfileUpdateRequest.php](file:///c:/laragon/www/LikhangKamay/app/Http/Requests/ProfileUpdateRequest.php): Validates user setting profile updates.
 *   [LoginRequest.php](file:///c:/laragon/www/LikhangKamay/app/Http/Requests/Auth/LoginRequest.php): Validates credentials format.
+*   [BuyerSignalService.php](file:///c:/laragon/www/LikhangKamay/app/Services/BuyerSignalService.php): Handles buyer behavior telemetry.
+*   [StorageUrl.php](file:///c:/laragon/www/LikhangKamay/app/Services/StorageUrl.php): Storage URL resolver service.
 *   [HasTransformableImages.php](file:///c:/laragon/www/LikhangKamay/app/Traits/HasTransformableImages.php): Eloquent model trait implementing dynamic Supabase URL transformation for user profiles and product models images.
 *   [HasArtisanSubscriptions.php](file:///c:/laragon/www/LikhangKamay/app/Models/Traits/HasArtisanSubscriptions.php), [HasStaffCapabilities.php](file:///c:/laragon/www/LikhangKamay/app/Models/Traits/HasStaffCapabilities.php), [HasWorkspaceNotifications.php](file:///c:/laragon/www/LikhangKamay/app/Models/Traits/HasWorkspaceNotifications.php), [ManagesStaffAccountFlags.php](file:///c:/laragon/www/LikhangKamay/app/Models/Traits/ManagesStaffAccountFlags.php), [InteractsWithSellerContext.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Concerns/InteractsWithSellerContext.php): Composable trait utilities separating user membership and staff access responsibilities.
 

@@ -53,6 +53,7 @@ Security checks are managed in [TeamMessageController.php](file:///c:/laragon/ww
 
 ### Core Business Actions
 *   [ResolveCurrentOrderContext.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Chat/ResolveCurrentOrderContext.php): Automatically resolves which active order context applies to the current chat workspace stream.
+*   [SendOrderCompletionAutoReply.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Chat/SendOrderCompletionAutoReply.php): Dispatches auto-reply messages upon order completion.
 *   [CreateTeamChannel.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Chat/CreateTeamChannel.php), [GetTeamMessageThread.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Chat/GetTeamMessageThread.php), [StoreTeamMessage.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Chat/StoreTeamMessage.php), [ToggleTeamMessageReaction.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Chat/ToggleTeamMessageReaction.php): Modifies channels, threads, and reaction payloads within team workspaces.
 
 ### Messaging Controllers

@@ -45,6 +45,9 @@ graph TD
 10. `SecurityHeaders` & `XssSanitization`: Enforces CSP headers and request payload security filtering. Backed by [SecurityHeaders.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/SecurityHeaders.php) and [XssSanitization.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/XssSanitization.php).
 11. `CheckMaintenanceMode`: Standard Laravel maintenance wall. Backed by [CheckMaintenanceMode.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/CheckMaintenanceMode.php).
 12. `EnsureNotBanned`: Automatically terminates active sessions and blocks login attempts for suspended users or staff. Backed by [EnsureNotBanned.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnsureNotBanned.php).
+13. `EnsureNotPendingArtisan`: Restricts onboarding artisans from accessing full seller dashboards. Backed by [EnsureNotPendingArtisan.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnsureNotPendingArtisan.php).
+14. `EnforceSingleDeviceSession`: Invalidates previous sessions on new device authentication logins. Backed by [EnforceSingleDeviceSession.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnforceSingleDeviceSession.php).
+15. `TrackStaffActivity` & `UpdateLastSeen`: Telemetry loggers tracking user presence and staff interactions. Backed by [TrackStaffActivity.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/TrackStaffActivity.php) and [UpdateLastSeen.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/UpdateLastSeen.php).
 
 ---
 

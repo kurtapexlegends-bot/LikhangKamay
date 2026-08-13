@@ -38,12 +38,13 @@ The system automatically scans and replaces the following 10 placeholder tags at
 
 ## 3. Administration & Controller API
 
-Managed in [EmailStudioController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Admin/EmailStudioController.php):
+Managed in [EmailStudioController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Admin/EmailStudioController.php) and [TestMailDispatchController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Admin/TestMailDispatchController.php):
 
 *   `GET /admin/settings/email-templates`: Returns template library list and user lookup index.
 *   `POST /admin/settings/email-templates`: Upserts template records via AJAX, returning JSON responses.
-*   `POST /admin/settings/email-templates/dispatch`: Broadcasts customized emails to specific users, role groups (`all_artisans`, `approved_artisans`, `all_buyers`, `elite_sellers`, `premium_sellers`), or custom external emails.
+*   `POST /admin/settings/email-templates/dispatch`: Broadcasts customized emails using [CustomDynamicMail.php](file:///c:/laragon/www/LikhangKamay/app/Mail/CustomDynamicMail.php) to specific users, role groups (`all_artisans`, `approved_artisans`, `all_buyers`, `elite_sellers`, `premium_sellers`), or custom external emails.
 *   `DELETE /admin/settings/email-templates/{template}`: Deletes custom templates while protecting default system templates.
+*   `POST /admin/settings/email-templates/test-dispatch`: [TestMailDispatchController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Admin/TestMailDispatchController.php) sends preview emails for template testing.
 
 ---
 
