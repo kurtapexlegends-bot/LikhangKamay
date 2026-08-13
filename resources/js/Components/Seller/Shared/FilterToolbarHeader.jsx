@@ -148,8 +148,8 @@ export default function FilterToolbarHeader({
 
                             {/* Desktop Dropdown Popover */}
                             {isPopoverOpen && (
-                                <div className="hidden sm:flex flex-col absolute right-0 z-50 mt-2 w-[340px] sm:w-[380px] rounded-2xl border border-stone-200 bg-white p-4 shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
-                                    <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-3">
+                                <div className="hidden sm:flex flex-col absolute right-0 z-50 mt-2 w-[310px] sm:w-[330px] rounded-2xl border border-stone-200 bg-white p-3.5 shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+                                    <div className="flex items-center justify-between border-b border-stone-100 pb-2.5 mb-2.5">
                                         <div className="flex items-center gap-2">
                                             <Filter size={15} className="text-clay-700" />
                                             <h3 className="text-xs font-bold text-stone-900">{filterPopoverTitle}</h3>

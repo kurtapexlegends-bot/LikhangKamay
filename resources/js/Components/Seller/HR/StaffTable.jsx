@@ -260,16 +260,16 @@ export default function StaffTable({
     const paginatedStaff = filteredStaff.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const filterFieldsGrid = (
-        <div className="space-y-4 text-left">
+        <div className="space-y-3 text-left">
             {/* 1. Date Range Section */}
             <div>
-                <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1 flex items-center gap-1.5">
                     <Calendar size={13} className="text-clay-600" />
                     <span>Hired / Active Date Range</span>
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                     <div className="relative flex items-center rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 focus-within:border-clay-500 focus-within:ring-1 focus-within:ring-clay-500/20">
-                        <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 mr-2 shrink-0">From</span>
+                        <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 mr-1.5 shrink-0">From</span>
                         <input
                             type="date"
                             value={draftStartDate}
@@ -278,7 +278,7 @@ export default function StaffTable({
                         />
                     </div>
                     <div className="relative flex items-center rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 focus-within:border-clay-500 focus-within:ring-1 focus-within:ring-clay-500/20">
-                        <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 mr-2 shrink-0">To</span>
+                        <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 mr-1.5 shrink-0">To</span>
                         <input
                             type="date"
                             value={draftEndDate}
@@ -291,14 +291,14 @@ export default function StaffTable({
 
             {/* 2. Employment & Access Status */}
             <div>
-                <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1">
                     Employment & Access Status
                 </label>
                 <div className="relative">
                     <select
                         value={draftStatus}
                         onChange={(e) => setDraftStatus(e.target.value)}
-                        className="pr-8 text-xs py-2 w-full min-h-[40px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer appearance-none px-3"
+                        className="pr-8 text-xs py-1.5 w-full min-h-[36px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer appearance-none px-3"
                     >
                         <option value="all">All Staff (Active & Suspended)</option>
                         <option value="active">Active Employees</option>
@@ -314,14 +314,14 @@ export default function StaffTable({
 
             {/* 3. Entitlement Permissions */}
             <div>
-                <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1">
                     Entitlement / Access Capabilities
                 </label>
                 <div className="relative">
                     <select
                         value={draftEntitlement}
                         onChange={(e) => setDraftEntitlement(e.target.value)}
-                        className="pr-8 text-xs py-2 w-full min-h-[40px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer appearance-none px-3"
+                        className="pr-8 text-xs py-1.5 w-full min-h-[36px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer appearance-none px-3"
                     >
                         <option value="all">All Granted Entitlements</option>
                         <option value="accounting">Finance & Accounting Access</option>
@@ -373,7 +373,7 @@ export default function StaffTable({
     ].filter(Boolean);
 
     return (
-        <div className="rounded-3xl border border-stone-200/80 bg-white shadow-sm flex flex-col min-h-[400px] relative">
+        <div className="rounded-3xl border border-stone-200/80 bg-white shadow-sm flex flex-col min-h-[220px] relative overflow-hidden">
             <FilterToolbarHeader
                 tabs={[
                     { key: 'directory', label: 'Directory', count: staff.length },
