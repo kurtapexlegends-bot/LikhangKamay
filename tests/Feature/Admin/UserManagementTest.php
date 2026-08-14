@@ -179,6 +179,41 @@ class UserManagementTest extends TestCase
             );
     }
 
+    public function test_super_admin_can_search_staff_by_email_and_return_only_matching_nested_staff(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $owner = User::factory()->artisanApproved()->create([
+            'shop_name' => 'Heritage Clay House',
+        ]);
+
+        $matchingStaff = User::factory()->staff($owner)->create([
+            'name' => 'Alice Ledger',
+            'email' => 'alice.staff@heritageclay.com',
+        ]);
+        $otherStaff = User::factory()->staff($owner)->create([
+            'name' => 'Brian Support',
+            'email' => 'brian.staff@heritageclay.com',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.manager', ['search' => 'alice.staff@heritageclay.com']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Users/UserManager')
+                ->where('filters.search', 'alice.staff@heritageclay.com')
+                ->where('users.data', function ($users) use ($owner, $matchingStaff, $otherStaff) {
+                    $ownerRow = collect($users)->firstWhere('id', $owner->id);
+                    $visibleNestedIds = collect($ownerRow['staff_members'] ?? [])->pluck('id');
+
+                    return count($users) === 1
+                        && $ownerRow !== null
+                        && $ownerRow['matched_staff_count'] === 1
+                        && $visibleNestedIds->contains($matchingStaff->id)
+                        && !$visibleNestedIds->contains($otherStaff->id);
+                })
+            );
+    }
+
     public function test_super_admin_surfaces_unlinked_staff_group_for_orphaned_staff_accounts(): void
     {
         $admin = User::factory()->superAdmin()->create();

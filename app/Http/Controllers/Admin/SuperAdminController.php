@@ -612,12 +612,20 @@ class SuperAdminController extends Controller
         }
 
         if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('shop_name', 'like', "%{$search}%")
-                    ->orWhereHas('staffMembers', function ($sq) use ($search) {
-                        $sq->where('name', 'like', "%{$search}%");
+            $like = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
+            $query->where(function ($q) use ($search, $like) {
+                $q->where('name', $like, "%{$search}%")
+                    ->orWhere('first_name', $like, "%{$search}%")
+                    ->orWhere('last_name', $like, "%{$search}%")
+                    ->orWhere('email', $like, "%{$search}%")
+                    ->orWhere('shop_name', $like, "%{$search}%")
+                    ->orWhere('phone_number', $like, "%{$search}%")
+                    ->orWhereHas('staffMembers', function ($sq) use ($search, $like) {
+                        $sq->where('name', $like, "%{$search}%")
+                           ->orWhere('first_name', $like, "%{$search}%")
+                           ->orWhere('last_name', $like, "%{$search}%")
+                           ->orWhere('email', $like, "%{$search}%")
+                           ->orWhere('phone_number', $like, "%{$search}%");
                     });
             });
         }
