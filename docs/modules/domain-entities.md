@@ -175,3 +175,34 @@ Calculations are orchestrated by [AccountingLedgerService.php](file:///c:/larago
     $$\text{Balance} = \text{Base Funds} + \text{Total Revenue} - (\text{Stock Expenses} + \text{Payroll Expenses})$$
 *   **Artisan Unpaid Balance**: Balance outstanding for disbursements.
     $$\text{Unpaid Balance} = \text{Revenue} - \text{Payouts}$$
+
+---
+
+## 6. Universal Global Search & RBAC Engine
+
+*   **Endpoint**: `GET /api/global-search`
+*   **Backend Controller**: [GlobalSearchController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/GlobalSearchController.php)
+*   **Frontend Component**: [GlobalSearch.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Consumer/GlobalSearch.jsx)
+
+### Multi-Tenant Isolation & Role Scoping
+1. **Super Admin Scope**:
+   * Searches platform-wide entities: Users (including pending artisan applications), Orders, Catalog Products, Disputes, Review Disputes, Payout Records, Sponsorships, Email Studio Templates, Category Taxonomy, Flagged Content Moderation, and Platform Activities.
+   * Directly routes to deep tabs (`tab: 'approvals'`, `tab: 'disputes'`, `tab: 'flags'`, `tab: 'taxonomy'`) with automated search queries populated.
+2. **Seller Workspace Scope**:
+   * Strictly scopes every SQL query to `$sellerId = $user->getEffectiveSellerId()`, completely eliminating cross-tenant leakage.
+   * **Module-Gated RBAC for Staff**:
+     * `products`: Products, Marketing Discounts, 3D Models.
+     * `orders`: Orders (searchable by number, recipient, address, tracking number, buyer email).
+     * `procurement`: Raw Supplies & Inventory.
+     * `stock_requests`: Supply replenishment requests.
+     * `reviews`: Product reviews & ratings.
+     * `hr`: Employee directory & shift roles.
+     * `accounting` / `hr`: Payroll runs and summaries.
+     * `messages`: Internal team channels.
+   * **Owner-Only Gating**:
+     * Workplace locations, subscription plans, activity history logs, and staff access audits are strictly hidden from staff search results.
+3. **Frontend Search Optimization**:
+   * Uses `AbortController` in `useEffect` to abort outdated in-flight HTTP requests during fast keystrokes.
+   * Provides rapid command shortcuts via `>` command palette mode.
+   * Groups results with semantic category badges and distinct Lucide icons.
+
