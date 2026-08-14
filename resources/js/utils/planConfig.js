@@ -22,11 +22,11 @@ export const PLAN_CONFIG = {
     super_premium: {
         label: 'Elite',
         icon: Sparkles,
-        bg: 'bg-gradient-to-r from-violet-50 to-indigo-50',
-        border: 'border-violet-200/60',
-        text: 'text-violet-800',
-        iconColor: 'text-violet-500',
-        hoverBg: 'hover:from-violet-100/80 hover:to-indigo-100/80',
+        bg: 'bg-stone-100',
+        border: 'border-stone-300',
+        text: 'text-stone-900',
+        iconColor: 'text-amber-500',
+        hoverBg: 'hover:bg-stone-200/80',
     },
 };
 
@@ -80,11 +80,11 @@ export const PLANS = [
         description: 'Unlock the full seller suite and sponsored placements.',
         icon: Sparkles,
         limit: 50,
-        color: 'violet',
-        gradient: 'from-violet-500 to-indigo-500',
-        lightBg: 'bg-violet-50',
-        lightBorder: 'border-violet-200',
-        lightText: 'text-violet-700',
+        color: 'stone',
+        gradient: 'from-stone-800 to-stone-950',
+        lightBg: 'bg-stone-50',
+        lightBorder: 'border-stone-300',
+        lightText: 'text-stone-900',
         features: [
             'Up to 50 Active Products',
             'Elite Badge',
