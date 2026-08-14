@@ -87,20 +87,24 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
 ---
 
 ## 4. Time-Card Audit Architecture
-
-A dedicated full-page view is available for inspecting individual employee attendance records, shift selfie proof, GPS geofencing, and shift approvals.
-
-*   **Route**: `GET /hr/employees/{employee}/time-card` (`hr.employees.time-card`)
-*   **Controller Method**: `HRController::showTimeCardAudit` in [HRController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/HRController.php)
-*   **Frontend Inertia Page**: [TimeCardAudit.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Seller/HR/TimeCardAudit.jsx)
-*   **UI Features**:
-    *   **Header Banner**: Displays user avatar synced with `UserAvatar` component, employee ID, role badge, and assigned location.
-    *   **Metric Summary Cards**: 4 key metrics (`Total Worked`, `Approved Overtime`, `Undertime / Tardy`, `Rest Day OT`).
-    *   **Unified Single-Row Filter Toolbar**: Segmented status pills (`All`, `Pending Review`, `Off-Site`, `Approved`, `Rejected`), search input, and desktop floating dropdown popover (`isPopoverOpen`).
-    *   **Descending Shift Date Sorting**: Displays latest shift dates at the top of the table/timeline list.
-    *   **Geofence Verification & Selfie Proof**: Visual tags for `On-Site` vs `Off-Site` GPS distances and slide-up modal for selfie verification images.
-    *   **Mobile-Native Adaptation**: Responsive coexistence (`hidden lg:block` data table vs `block lg:hidden` card list) with mobile bottom sheets (`SlideOverDrawer`).
-    *   **Z-Index Stacking**: Uses global `Modal.jsx` at `z-[150]` ensuring complete overlay dimming across sticky headers and sidebars.
+ 
+ A dedicated full-page view is available for inspecting individual employee attendance records, shift selfie proof, GPS geofencing, and shift approvals.
+ 
+ *   **Route**: `GET /hr/employees/{employee}/time-card` (`hr.employees.time-card`)
+ *   **Controller Methods**:
+     *   `HRController::showTimeCardAudit`: In [HRController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/HRController.php), aggregates monthly worked hours, overtime, undertime, and full attendance session logs via [AttendanceAggregatorService.php](file:///c:/laragon/www/LikhangKamay/app/Services/HR/AttendanceAggregatorService.php).
+     *   `HRController::approveAttendanceSession`: Approves flagged or off-site shifts, crediting hours to payroll.
+     *   `HRController::rejectAttendanceSession`: Rejects flagged shifts with a recorded reason, permanently disqualifying the hours from payroll wage totals.
+ *   **Frontend Inertia Page**: [TimeCardAudit.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Seller/HR/TimeCardAudit.jsx)
+ *   **UI Features**:
+     *   **Header Profile & In-Content Breadcrumbs**: Displays user avatar synced with `UserAvatar`, employee ID, role badge, and assigned location with in-content breadcrumb navigation.
+     *   **Metric Summary Cards**: 4 key metrics (`Total Worked`, `Approved Overtime`, `Undertime / Tardy`, `Rest Day OT`).
+     *   **Unified Single-Row Filter Toolbar**: Segmented status pills (`All`, `Pending Review`, `Off-Site`, `Approved`, `Rejected`), search input, and desktop floating dropdown popover (`isPopoverOpen`).
+     *   **Descending Shift Date Sorting**: Displays latest shift dates at the top of the table/timeline list.
+     *   **Geofence Verification & Selfie Proof**: Clean single-line badges for `On-Site` vs `Off-Site` GPS distances and slide-up modal for selfie verification images.
+     *   **Manager Action Controls**: Real-time Approve and Reject actions for off-site or flagged shifts with instant optimistic updates and audit trail logging.
+     *   **Mobile-Native Adaptation**: Responsive coexistence (`hidden lg:block` data table vs `block lg:hidden` card list) with mobile bottom sheets (`SlideOverDrawer`).
+     *   **Z-Index Stacking**: Uses global `Modal.jsx` at `z-[150]` ensuring complete overlay dimming across sticky headers and sidebars.
 
 ### Stock, HR & Procurement Mails & Notifications
 *   [OffSiteClockInNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/OffSiteClockInNotification.php): Dispatches manager alerts when an employee clocks in outside approved geofence boundaries.

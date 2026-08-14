@@ -43,16 +43,19 @@ LikhangKamay supports three seller levels normalized in [SubscriptionService.php
 
 ---
 
-## 4. Subscription Auto-Renewal Cancellation & Period Entitlements
+## 4. Subscription Auto-Renewal Cancellation, Scheduled Renewals & Period Entitlements
 
 *   **Period Fields on User Model**:
-    *   `subscription_expires_at`: The timestamp when active tier benefits expire (e.g. end of paid 30-day billing cycle).
+    *   `subscription_expires_at`: The timestamp when active tier benefits expire (end of paid 30-day billing cycle).
     *   `subscription_cancelled_at`: The timestamp when auto-renewal cancellation was requested.
     *   `pending_downgrade_tier`: Tier level (`free` or `premium`) the user will transition to upon expiration.
-*   **Active Entitlements During Period**:
-    *   When a seller cancels auto-renewal on an active paid plan, benefits remain active until `subscription_expires_at`.
+*   **Active Entitlements During Period & Prepaid 30-Day Pass**:
+    *   Because PayMongo subscriptions function as 30-day prepaid passes, canceling auto-renewal or scheduling a lower tier does **not** immediately cut off access or draft active products.
     *   `getEffectivePremiumTier()` returns `premium_tier` while `subscription_expires_at` is in the future.
     *   Once `subscription_expires_at` passes, `getEffectivePremiumTier()` transitions to `pending_downgrade_tier` (or `free`), enforcing listing limits and staff suspensions.
+*   **Scheduled Renewal Plan Selection**:
+    *   `POST /subscription/schedule-renewal` (`seller.subscription.schedule-renewal`) in [SubscriptionController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/SubscriptionController.php) updates `pending_downgrade_tier` without drafting listings or altering the current active tier while days remain.
+    *   When expiration arrives, the system smoothly transitions the seller to the scheduled tier.
 *   **No-Refund Policy**:
     *   All payments for subscription upgrades are non-refundable upon checkout verification.
 
