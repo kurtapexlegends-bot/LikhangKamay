@@ -318,14 +318,14 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-xs text-stone-700 border-collapse">
                                 <thead>
-                                    <tr className="bg-stone-50/80 border-b border-stone-200/80 text-[10px] uppercase font-black text-stone-500 tracking-wider">
-                                        <th className="py-4 px-6">Shift Date (Latest First)</th>
-                                        <th className="py-4 px-4">Selfie Proof</th>
-                                        <th className="py-4 px-4">Clock In / Out</th>
-                                        <th className="py-4 px-4">Geofence Distance</th>
-                                        <th className="py-4 px-4">Audit Status</th>
-                                        <th className="py-4 px-4 text-right">Worked Hours</th>
-                                        <th className="py-4 px-6 text-right">Manager Actions</th>
+                                    <tr className="bg-stone-50/80 border-b border-stone-200/80 text-[10px] uppercase font-bold text-stone-500 tracking-wider select-none">
+                                        <th className="py-3.5 px-6 whitespace-nowrap">Shift Date</th>
+                                        <th className="py-3.5 px-4 whitespace-nowrap">Selfie Proof</th>
+                                        <th className="py-3.5 px-4 whitespace-nowrap">Clock In / Out</th>
+                                        <th className="py-3.5 px-4 whitespace-nowrap">Geofence Distance</th>
+                                        <th className="py-3.5 px-4 whitespace-nowrap">Audit Status</th>
+                                        <th className="py-3.5 px-4 text-right whitespace-nowrap">Worked Hours</th>
+                                        <th className="py-3.5 px-6 text-right whitespace-nowrap">Manager Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-stone-100">
@@ -338,14 +338,14 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                                             <tr
                                                 key={session.id}
                                                 className={`transition hover:bg-stone-50/60 ${
-                                                    isRejected ? 'bg-rose-50/20' : isPending ? 'bg-amber-50/20' : ''
+                                                    isRejected ? 'bg-rose-50/20' : isPending ? 'bg-amber-50/15' : ''
                                                 }`}
                                             >
-                                                <td className="py-4 px-6 font-bold text-stone-900">
+                                                <td className="py-3.5 px-6 font-bold text-stone-900 whitespace-nowrap">
                                                     {session.date}
                                                 </td>
 
-                                                <td className="py-4 px-4">
+                                                <td className="py-3.5 px-4 whitespace-nowrap">
                                                     {session.photo_url ? (
                                                         <div
                                                             className="relative group w-10 h-10 shrink-0 cursor-pointer"
@@ -367,71 +367,77 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                                                     )}
                                                 </td>
 
-                                                <td className="py-4 px-4 font-medium text-stone-700">
-                                                    <div>
+                                                <td className="py-3.5 px-4 font-medium text-stone-700 whitespace-nowrap">
+                                                    <div className="flex items-center">
                                                         <span>{session.clock_in_at ? new Date(session.clock_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
                                                         <span className="text-stone-400 mx-1.5">-</span>
                                                         <span>{session.clock_out_at ? new Date(session.clock_out_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Active'}</span>
                                                     </div>
                                                     {session.close_mode === 'paused' && (
-                                                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100/60 px-1.5 py-0.2 rounded mt-0.5 inline-block">
+                                                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100/60 px-1.5 py-0.5 rounded mt-1 inline-block">
                                                             Auto-Paused
                                                         </span>
                                                     )}
                                                 </td>
 
-                                                <td className="py-4 px-4">
+                                                <td className="py-3.5 px-4 whitespace-nowrap">
                                                     {session.distance_meters !== null ? (
                                                         session.is_within_geofence ? (
-                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200 px-2.5 py-1 rounded-full">
-                                                                <MapPin size={11} /> On-Site ({session.distance_meters}m)
+                                                            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full whitespace-nowrap">
+                                                                <MapPin size={11} className="text-emerald-600 shrink-0" />
+                                                                <span>On-Site ({session.distance_meters}m)</span>
                                                             </span>
                                                         ) : (
-                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-800 bg-rose-100/80 border border-rose-200 px-2.5 py-1 rounded-full">
-                                                                <ShieldAlert size={11} /> Off-Site ({session.distance_meters}m)
+                                                            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200/80 px-2.5 py-1 rounded-full whitespace-nowrap">
+                                                                <ShieldAlert size={11} className="text-rose-600 shrink-0" />
+                                                                <span>Off-Site ({session.distance_meters}m)</span>
                                                             </span>
                                                         )
                                                     ) : (
-                                                        <span className="text-stone-400 text-[11px]">Unverified</span>
+                                                        <span className="text-stone-400 text-[11px] whitespace-nowrap">Unverified</span>
                                                     )}
                                                 </td>
 
-                                                <td className="py-4 px-4">
+                                                <td className="py-3.5 px-4 whitespace-nowrap">
                                                     {isApproved && (
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100/80 border border-emerald-200 px-2.5 py-1 rounded-full">
-                                                            <CheckCircle2 size={11} /> Approved
+                                                        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full whitespace-nowrap">
+                                                            <CheckCircle2 size={11} className="text-emerald-600 shrink-0" />
+                                                            <span>Approved</span>
                                                         </span>
                                                     )}
                                                     {isPending && !isRejected && (
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100/90 border border-amber-200 px-2.5 py-1 rounded-full">
-                                                            <AlertCircle size={11} /> Pending Review
+                                                        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-full whitespace-nowrap">
+                                                            <AlertCircle size={11} className="text-amber-600 shrink-0" />
+                                                            <span>Pending Review</span>
                                                         </span>
                                                     )}
                                                     {isRejected && (
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-800 bg-rose-100 border border-rose-200 px-2.5 py-1 rounded-full">
-                                                            <Ban size={11} /> Rejected
+                                                        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200/80 px-2.5 py-1 rounded-full whitespace-nowrap">
+                                                            <Ban size={11} className="text-rose-600 shrink-0" />
+                                                            <span>Rejected</span>
                                                         </span>
                                                     )}
                                                 </td>
 
-                                                <td className="py-4 px-4 text-right font-black text-stone-900 text-sm">
+                                                <td className="py-3.5 px-4 text-right font-black text-stone-900 text-sm whitespace-nowrap">
                                                     {session.worked_hours_label}
                                                 </td>
 
-                                                <td className="py-4 px-6 text-right">
+                                                <td className="py-3.5 px-6 text-right whitespace-nowrap">
                                                     {canEdit && (session.is_flagged || session.approval_status === 'pending') && !isRejected ? (
-                                                        <div className="flex items-center justify-end gap-2">
+                                                        <div className="inline-flex items-center justify-end gap-1.5">
                                                             <button
                                                                 type="button"
                                                                 disabled={submittingActionId === session.id}
                                                                 onClick={() => handleApproveSession(session.id)}
-                                                                className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 px-3 py-1.5 rounded-xl shadow-xs transition disabled:opacity-50 min-h-[32px]"
+                                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 px-3 py-1.5 rounded-lg shadow-2xs transition disabled:opacity-50 min-h-[30px]"
                                                             >
                                                                 {submittingActionId === session.id ? (
-                                                                    <span className="animate-spin text-white">...</span>
+                                                                    <span className="animate-spin text-white text-[10px]">...</span>
                                                                 ) : (
                                                                     <>
-                                                                        <Check size={12} /> Approve
+                                                                        <Check size={13} strokeWidth={2.5} />
+                                                                        <span>Approve</span>
                                                                     </>
                                                                 )}
                                                             </button>
@@ -442,9 +448,10 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                                                                     setRejectingSessionId(session.id);
                                                                     setRejectionReason('');
                                                                 }}
-                                                                className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 border border-rose-200 px-3 py-1.5 rounded-xl transition disabled:opacity-50 min-h-[32px]"
+                                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100/80 border border-rose-200 px-3 py-1.5 rounded-lg transition disabled:opacity-50 min-h-[30px]"
                                                             >
-                                                                <Ban size={12} /> Reject
+                                                                <Ban size={13} />
+                                                                <span>Reject</span>
                                                             </button>
                                                         </div>
                                                     ) : (
@@ -511,29 +518,34 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                                     <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-stone-100">
                                         {session.distance_meters !== null && (
                                             session.is_within_geofence ? (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                                    <MapPin size={10} /> On-Site ({session.distance_meters}m)
+                                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                                                    <MapPin size={11} className="text-emerald-600 shrink-0" />
+                                                    <span>On-Site ({session.distance_meters}m)</span>
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-800 bg-rose-100/80 border border-rose-200 px-2 py-0.5 rounded-full">
-                                                    <ShieldAlert size={10} /> Off-Site ({session.distance_meters}m)
+                                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200/80 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                                                    <ShieldAlert size={11} className="text-rose-600 shrink-0" />
+                                                    <span>Off-Site ({session.distance_meters}m)</span>
                                                 </span>
                                             )
                                         )}
 
                                         {isApproved && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100/80 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                                <CheckCircle2 size={10} /> Approved
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                                                <CheckCircle2 size={11} className="text-emerald-600 shrink-0" />
+                                                <span>Approved</span>
                                             </span>
                                         )}
                                         {isPending && !isRejected && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100/90 border border-amber-200 px-2 py-0.5 rounded-full">
-                                                <AlertCircle size={10} /> Pending Review
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                                                <AlertCircle size={11} className="text-amber-600 shrink-0" />
+                                                <span>Pending Review</span>
                                             </span>
                                         )}
                                         {isRejected && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-800 bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-full">
-                                                <Ban size={10} /> Rejected
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200/80 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                                                <Ban size={11} className="text-rose-600 shrink-0" />
+                                                <span>Rejected</span>
                                             </span>
                                         )}
                                     </div>
