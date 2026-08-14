@@ -191,6 +191,24 @@ export default function Subscription({
         );
     };
 
+    const handleScheduleRenewal = (planValue) => {
+        submitSubscriptionChange(
+            route('seller.subscription.schedule-renewal'),
+            {
+                plan: planValue || targetPlan?.value,
+            },
+            {
+                onSuccess: () => {
+                    closeDowngradeFlow();
+                    addToast('Renewal plan updated successfully.', 'success');
+                },
+                onError: () => {
+                    setFinalDowngradeModalOpen(true);
+                }
+            }
+        );
+    };
+
     const pendingUpgradeDate = pendingUpgrade?.createdAt
         ? new Date(pendingUpgrade.createdAt).toLocaleString('en-PH', {
             month: 'short',
