@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Check, Rocket, ArrowRight, BadgeCheck } from 'lucide-react';
+import { Star, Check, Rocket, ArrowRight, BadgeCheck, Clock } from 'lucide-react';
 
 export default function PlanPricingCard({
     plan,
@@ -15,6 +15,8 @@ export default function PlanPricingCard({
     canManagePlan,
     handleUpgrade,
     handleDowngrade,
+    pendingDowngradeTier,
+    daysRemaining,
 }) {
     const PlanIcon = plan.icon;
 
@@ -115,15 +117,35 @@ export default function PlanPricingCard({
                         <ArrowRight size={13} className="ml-0.5" />
                     </button>
                 ) : isDowngrade ? (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleDowngrade(plan.id, planLimit);
-                        }}
-                        className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-stone-200 bg-white px-4 py-2 text-[11px] font-bold text-stone-600 transition-all duration-200 hover:border-stone-300 hover:text-stone-900"
-                    >
-                        Downgrade
-                    </button>
+                    pendingDowngradeTier === plan.id ? (
+                        <button
+                            disabled
+                            className="flex w-full items-center justify-center gap-1 rounded-xl bg-amber-50 border border-amber-200/80 px-3 py-2 text-[10.5px] font-bold text-amber-800 cursor-default"
+                        >
+                            <Clock size={12} className="text-amber-600 shrink-0" />
+                            Renewal Plan Set
+                        </button>
+                    ) : daysRemaining !== null && daysRemaining > 0 ? (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDowngrade(plan.id, planLimit);
+                            }}
+                            className="flex w-full items-center justify-center gap-1 rounded-xl border border-stone-300 bg-white px-3 py-2 text-[10.5px] font-bold text-stone-700 transition-all duration-200 hover:border-amber-400 hover:text-stone-900 shadow-2xs"
+                        >
+                            Switch on Renewal
+                        </button>
+                    ) : (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDowngrade(plan.id, planLimit);
+                            }}
+                            className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-stone-200 bg-white px-4 py-2 text-[11px] font-bold text-stone-600 transition-all duration-200 hover:border-stone-300 hover:text-stone-900"
+                        >
+                            Downgrade
+                        </button>
+                    )
                 ) : null}
             </div>
         </div>

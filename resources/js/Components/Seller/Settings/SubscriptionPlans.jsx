@@ -10,6 +10,10 @@ export default function SubscriptionPlans({
     isProcessing,
     handleUpgrade,
     initiateDowngrade,
+    handleScheduleRenewal,
+    pendingDowngradeTier = 'free',
+    daysRemaining = null,
+    subscriptionExpiresAt = null,
     handleScroll,
     activePageIndex,
     pendingUpgradeDate,
@@ -142,13 +146,32 @@ export default function SubscriptionPlans({
                                             {!isProcessing && <ArrowRight className="h-[15px] w-[15px]" />}
                                         </button>
                                     ) : isDowngrade ? (
-                                        <button
-                                            type="button"
-                                            onClick={() => initiateDowngrade(plan.id, plan.limit)}
-                                            className="inline-flex w-full items-center justify-center rounded-[1rem] border-2 border-stone-200 bg-white px-4 py-2.5 text-[14px] font-bold text-stone-600 transition-all hover:border-stone-300 hover:text-stone-900 active:scale-95"
-                                        >
-                                            Downgrade
-                                        </button>
+                                        pendingDowngradeTier === plan.id ? (
+                                            <button
+                                                type="button"
+                                                disabled
+                                                className="inline-flex w-full items-center justify-center gap-1.5 rounded-[1rem] bg-amber-50 border border-amber-200/80 px-4 py-2.5 text-[13px] font-bold text-amber-800 cursor-default"
+                                            >
+                                                <Clock3 className="h-4 w-4 text-amber-600" />
+                                                Scheduled on Renewal
+                                            </button>
+                                        ) : daysRemaining !== null && daysRemaining > 0 ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => initiateDowngrade(plan.id, plan.limit)}
+                                                className="inline-flex w-full items-center justify-center rounded-[1rem] border border-stone-300 bg-white px-4 py-2.5 text-[13px] font-bold text-stone-700 transition-all hover:border-amber-400 hover:text-stone-900 active:scale-95 shadow-2xs"
+                                            >
+                                                Switch to {plan.name} on Renewal
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => initiateDowngrade(plan.id, plan.limit)}
+                                                className="inline-flex w-full items-center justify-center rounded-[1rem] border-2 border-stone-200 bg-white px-4 py-2.5 text-[14px] font-bold text-stone-600 transition-all hover:border-stone-300 hover:text-stone-900 active:scale-95"
+                                            >
+                                                Downgrade to {plan.name}
+                                            </button>
+                                        )
                                     ) : null}
                                 </div>
                             </article>

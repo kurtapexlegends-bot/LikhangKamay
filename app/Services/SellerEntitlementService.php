@@ -197,6 +197,10 @@ class SellerEntitlementService
             return null;
         }
 
+        $expiresAt = $seller->subscription_expires_at;
+        $cancelledAt = $seller->subscription_cancelled_at;
+        $daysRemaining = $expiresAt ? max(0, (int) ceil(now()->diffInSeconds($expiresAt, false) / 86400)) : null;
+
         return [
             'activeCount' => isset($seller->products_count) ? (int) $seller->products_count : $seller->products()->where('status', 'Active')->count(),
             'limit' => $seller->getActiveProductLimit(),
@@ -207,6 +211,11 @@ class SellerEntitlementService
             'canExportAnalytics' => $seller->isPremiumTier(),
             'canCustomizeModules' => $entitlements['canManageModuleSettings'],
             'canRequestSponsorships' => $seller->isEliteTier(),
+            'pendingDowngradeTier' => $seller->pending_downgrade_tier,
+            'subscriptionExpiresAt' => $expiresAt?->toIso8601String(),
+            'subscriptionCancelledAt' => $cancelledAt?->toIso8601String(),
+            'isCancelled' => $cancelledAt !== null,
+            'daysRemaining' => $daysRemaining,
             'tierLimits' => [
                 'free' => (int) \App\Facades\Settings::get('tier_free_limit', 3),
                 'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),

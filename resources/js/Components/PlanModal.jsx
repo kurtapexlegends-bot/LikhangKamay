@@ -102,6 +102,22 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
         );
     };
 
+    const confirmScheduleRenewal = (planId) => {
+        if (!canManagePlan || isDowngrading) return;
+
+        setIsDowngrading(true);
+        router.post(
+            route('seller.subscription.schedule-renewal'),
+            { plan: planId || pendingDowngrade?.id },
+            {
+                preserveScroll: true,
+                onSuccess: () => handleClose(),
+                onError: () => setIsDowngrading(false),
+                onFinish: () => setIsDowngrading(false),
+            }
+        );
+    };
+
     const handleManage = () => {
         if (!canManagePlan) return;
         router.visit(route('seller.subscription'));
@@ -114,6 +130,14 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
     const activeCount = sellerSubscription?.activeCount ?? 0;
     const draftCount = pendingDowngrade ? Math.max(0, activeCount - pendingDowngrade.limit) : 0;
     const showsEliteStandardWarning = currentTier === 'super_premium' && pendingDowngrade?.id === 'free';
+    const daysRemaining = sellerSubscription?.daysRemaining ?? null;
+    const formattedExpirationDate = sellerSubscription?.subscriptionExpiresAt
+        ? new Date(sellerSubscription.subscriptionExpiresAt).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+        })
+        : null;
 
     const modalContent = (
         <div
@@ -125,7 +149,6 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                 ref={overlayRef}
                 onClick={handleOverlayClick}
                 className="flex min-h-full items-center justify-center p-3 sm:p-4"
-                style={{ perspective: '1200px' }}
             >
                 <div
                     className={`relative w-full max-w-[52rem] overflow-hidden rounded-[1.5rem] bg-white shadow-2xl transition-all duration-500 ease-out ${
@@ -133,10 +156,6 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                             ? 'opacity-100 translate-y-0 scale-100'
                             : 'opacity-0 translate-y-8 scale-95'
                     }`}
-                    style={{
-                        transformStyle: 'preserve-3d',
-                        transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
-                    }}
                 >
                     <div className="relative border-b border-stone-100 px-5 py-3 sm:px-6">
                         <div className="absolute right-3 top-0 h-20 w-20 -translate-y-1/3 rounded-full bg-gradient-to-br from-amber-100/25 to-orange-100/20 blur-2xl pointer-events-none" />
@@ -167,22 +186,22 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                         </div>
                     </div>
 
-                    <div className="bg-stone-50/30 p-4 sm:p-4">
-                        <div
+                    <div className="p-4 sm:p-5">
+                        <div 
                             onScroll={handleScroll}
-                            className="flex overflow-x-auto snap-x snap-mandatory pb-4 gap-4 lg:grid lg:grid-cols-3 lg:gap-5 no-scrollbar"
+                            className="flex overflow-x-auto snap-x snap-mandatory pb-3 gap-3.5 lg:grid lg:grid-cols-3 lg:gap-4 no-scrollbar items-stretch"
                         >
                             {PLANS.map((plan, index) => {
-                                const isCurrent = plan.id === currentTier;
+                                const isCurrent = currentTier === plan.id;
                                 const isUpgrade = index > currentIndex;
                                 const isDowngrade = index < currentIndex;
-
                                 const limits = sellerSubscription?.tierLimits || { free: 3, premium: 10, super_premium: 50 };
                                 const prices = sellerSubscription?.tierPrices || { free: 0, premium: 199, super_premium: 399 };
-
+                                
                                 const planLimit = limits[plan.id] ?? plan.limit;
-                                const rawPrice = prices[plan.id] ?? 0;
-                                const planPrice = plan.id === 'free' ? 'Free' : `₱${rawPrice}`;
+                                const planPrice = plan.id === 'free' 
+                                    ? 'Free' 
+                                    : `₱${prices[plan.id] ?? plan.price.replace('₱', '')}`;
 
                                 return (
                                     <PlanPricingCard
@@ -200,28 +219,18 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                         canManagePlan={canManagePlan}
                                         handleUpgrade={handleUpgrade}
                                         handleDowngrade={handleDowngrade}
+                                        pendingDowngradeTier={sellerSubscription?.pendingDowngradeTier}
+                                        daysRemaining={daysRemaining}
                                     />
                                 );
                             })}
-                        </div>
-
-                        {/* Page Indicator Dots on Mobile */}
-                        <div className="flex justify-center gap-1.5 mt-2 lg:hidden">
-                            {PLANS.map((_, i) => (
-                                <span
-                                    key={i}
-                                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                                        activePageIndex === i ? 'w-4 bg-[#6D5EF6]' : 'w-1.5 bg-stone-200'
-                                    }`}
-                                />
-                            ))}
                         </div>
                     </div>
 
                     <div className="flex flex-col items-center justify-between gap-2 border-t border-stone-100 bg-white px-5 py-2.5 sm:flex-row sm:px-6">
                         <p className="text-center text-[10px] font-medium text-stone-500 sm:text-left">
                             {canManagePlan
-                                ? 'Plans can be changed anytime. Downgrades may deactivate some products.'
+                                ? 'Plans can be changed anytime. Active 30-day passes are retained through period end.'
                                 : 'Your access to subscription details is read-only.'}
                         </p>
 
@@ -246,6 +255,9 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                 pendingDowngrade={pendingDowngrade}
                                 setPendingDowngrade={setPendingDowngrade}
                                 confirmDowngrade={confirmDowngrade}
+                                onScheduleRenewal={confirmScheduleRenewal}
+                                daysRemaining={daysRemaining}
+                                formattedExpirationDate={formattedExpirationDate}
                                 isDowngrading={isDowngrading}
                                 currentTier={currentTier}
                                 draftCount={draftCount}

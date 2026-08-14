@@ -26,6 +26,7 @@ export default function Subscription({
     subscriptionCancelledAt = null,
     isCancelled = false,
     daysRemaining = null,
+    pendingDowngradeTier = 'free',
 }) {
     const [finalDowngradeModalOpen, setFinalDowngradeModalOpen] = useState(false);
     const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
@@ -317,6 +318,10 @@ export default function Subscription({
                             isProcessing={isProcessing}
                             handleUpgrade={handleUpgrade}
                             initiateDowngrade={initiateDowngrade}
+                            handleScheduleRenewal={handleScheduleRenewal}
+                            pendingDowngradeTier={pendingDowngradeTier}
+                            daysRemaining={daysRemaining}
+                            subscriptionExpiresAt={subscriptionExpiresAt}
                             handleScroll={handleScroll}
                             activePageIndex={activePageIndex}
                             pendingUpgradeDate={pendingUpgradeDate}
@@ -346,6 +351,9 @@ export default function Subscription({
                 limit={limit}
                 linkedStaffCount={linkedStaffCount}
                 confirmDowngrade={confirmDowngrade}
+                onScheduleRenewal={handleScheduleRenewal}
+                daysRemaining={daysRemaining}
+                formattedExpirationDate={formattedExpirationDate}
                 isProcessing={isProcessing}
             />
 

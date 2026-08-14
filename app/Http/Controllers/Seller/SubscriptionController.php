@@ -70,6 +70,7 @@ class SubscriptionController extends Controller
             'subscriptionCancelledAt' => $cancelledAt?->toIso8601String(),
             'isCancelled' => $cancelledAt !== null,
             'daysRemaining' => $daysRemaining,
+            'pendingDowngradeTier' => $user->pending_downgrade_tier,
             'noRefundPolicy' => 'All subscription payments are final and non-refundable. Auto-renewal can be cancelled anytime with full benefits retained until period expiration.',
             'planSettings' => [
                 'free_limit' => (int) \App\Facades\Settings::get('tier_free_limit', 3),
@@ -91,6 +92,32 @@ class SubscriptionController extends Controller
         ]);
     }
 
+    public function scheduleRenewalPlan(Request $request)
+    {
+        $validated = $request->validate([
+            'plan' => 'required|in:free,premium,super_premium'
+        ]);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $user->update([
+            'pending_downgrade_tier' => $validated['plan'],
+        ]);
+
+        $planName = match ($validated['plan']) {
+            'super_premium' => 'Elite',
+            'premium' => 'Premium',
+            default => 'Standard',
+        };
+
+        $formattedDate = $user->subscription_expires_at
+            ? $user->subscription_expires_at->format('M d, Y')
+            : 'your current period end';
+
+        return back()->with('success', "Renewal plan set to {$planName}. You will keep all current {$user->getSellerTierLabel()} features until {$formattedDate}, when your shop will gracefully switch to {$planName}.");
+    }
+
     public function cancelAutoRenewal(Request $request)
     {
         /** @var \App\Models\User $user */
@@ -102,13 +129,14 @@ class SubscriptionController extends Controller
 
         $user->update([
             'subscription_cancelled_at' => now(),
+            'pending_downgrade_tier' => 'free',
         ]);
 
         $formattedDate = $user->subscription_expires_at
             ? $user->subscription_expires_at->format('M d, Y')
             : 'period end';
 
-        return back()->with('success', "Subscription cancelled. Your {$user->getSellerTierLabel()} plan benefits remain 100% active until {$formattedDate}. All subscription payments are final and non-refundable.");
+        return back()->with('success', "Subscription auto-renewal cancelled. Your {$user->getSellerTierLabel()} plan benefits remain 100% active until {$formattedDate}. All subscription payments are final and non-refundable.");
     }
 
     public function resumeAutoRenewal(Request $request)

@@ -187,6 +187,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::get('/subscription', [\App\Http\Controllers\Seller\SubscriptionController::class, 'index'])->middleware('artisan')->name('seller.subscription');
         Route::post('/subscription/upgrade', [\App\Http\Controllers\Seller\SubscriptionController::class, 'upgrade'])->middleware('artisan')->name('seller.subscription.upgrade');
         Route::post('/subscription/downgrade', [\App\Http\Controllers\Seller\SubscriptionController::class, 'downgrade'])->middleware('artisan')->name('seller.subscription.downgrade');
+        Route::post('/subscription/schedule-renewal', [\App\Http\Controllers\Seller\SubscriptionController::class, 'scheduleRenewalPlan'])->middleware('artisan')->name('seller.subscription.schedule-renewal');
         Route::post('/subscription/cancel-auto-renewal', [\App\Http\Controllers\Seller\SubscriptionController::class, 'cancelAutoRenewal'])->middleware('artisan')->name('seller.subscription.cancel-auto-renewal');
         Route::post('/subscription/resume-auto-renewal', [\App\Http\Controllers\Seller\SubscriptionController::class, 'resumeAutoRenewal'])->middleware('artisan')->name('seller.subscription.resume-auto-renewal');
 
