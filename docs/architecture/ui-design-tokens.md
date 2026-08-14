@@ -50,8 +50,24 @@ To maintain a bespoke, developer-crafted aesthetic:
 
 ---
 
-## 4. Interaction & Feedback
+## 4. Filter Toolbar & Form Controls Standard
+
+*   **Unified Filter Toolbar**:
+    All seller workspaces utilize [FilterToolbarHeader.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Shared/FilterToolbarHeader.jsx) to standardize single-row responsive controls:
+    *   Left side: Segmented tab controls with item counter badges.
+    *   Right side: Live search bar with instant clear icon, active filter counter pill, and a popover dropdown toggle (`Filters` button with animated chevron).
+    *   Bottom side: Active filter tags with individual dismiss tags and a "Clear all" button.
+*   **Popover Bounds & Clipping Prevention**:
+    Outer card wrappers containing desktop popovers must avoid `overflow-hidden`, and must provide adequate `min-h-[300px]` to `min-h-[400px]` so absolute floating popovers (`z-[100]`) are never clipped by the card container boundary.
+*   **Date Picker Flexbox & Indicator Alignment**:
+    Native `<input type="date">` elements rendered inside flex containers must use `min-w-0 flex-1` (never plain `w-full`) and wrapper `overflow-hidden` with `[&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50`. This prevents Chromium's layout engine from pushing the date picker icon past the right edge of adjacent label pills.
+
+---
+
+## 5. Interaction & Feedback
 
 *   **Toasts**: Slide-up floating notifications (bottom-right, auto-dismiss).
 *   **Flash Messages**: Handled via Inertia redirect payload (`usePage().props.flash`). Never double-toast on redirect.
 *   **Debouncing**: All text searches that send AJAX queries to the server must be debounced (300-400ms delay) to prevent rate limit exhaustion.
+*   **Client-Side Performance**: Heavy list filtering (e.g. Catalog, HR Directory, Order Lists, Supplies, Discounts) must be wrapped in React `useMemo` hooks to ensure zero stuttering during keystroke search queries.
+

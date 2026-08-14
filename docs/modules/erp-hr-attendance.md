@@ -109,3 +109,18 @@ A dedicated full-page view is available for inspecting individual employee atten
 *   [SupplyDepletedNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/SupplyDepletedNotification.php): Alerts sellers when critical supplies run dry.
 *   [AccountingApprovalRequestedNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/AccountingApprovalRequestedNotification.php) | [AccountingRejectedNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/AccountingRejectedNotification.php): Workflow notifications for stock requests.
 
+---
+
+## 5. Employee Directory & Account Provisioning Security
+
+*   **Search & Multi-Dimensional Filtering**:
+    [StaffTable.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/StaffTable.jsx) provides real-time memoized filtering across:
+    *   **Keyword Search**: Queries against Employee Name, Employee ID, Role, and linked User Email.
+    *   **Hire Date Range**: `From` and `To` date boundaries with flexbox constraints (`min-w-0 flex-1`) and custom webkit calendar picker indicator styling.
+    *   **Module Entitlements**: Multi-select pills filtering by active permissions (`Catalog`, `Orders`, `HR`, `Procurement`, `Accounting`, `CRM`).
+    *   **Employment & Login Status**: Segmented status tabs (`Active`, `On Leave`, `Terminated`, `With Portal Access`).
+*   **Account Provisioning Security Guards**:
+    *   [ProvisionStaffAccount.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/HR/ProvisionStaffAccount.php) and [HRStaffProvisioner.php](file:///c:/laragon/www/LikhangKamay/app/Support/HR/HRStaffProvisioner.php) enforce strict email uniqueness rules.
+    *   Employees provisioned with login credentials cannot use an email already registered to any existing seller, buyer, or administrator, preventing privilege escalation and collision attacks.
+
+
