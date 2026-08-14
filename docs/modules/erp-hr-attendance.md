@@ -119,6 +119,10 @@ A dedicated full-page view is available for inspecting individual employee atten
     *   **Hire Date Range**: `From` and `To` date boundaries with flexbox constraints (`min-w-0 flex-1`) and custom webkit calendar picker indicator styling.
     *   **Module Entitlements**: Multi-select pills filtering by active permissions (`Catalog`, `Orders`, `HR`, `Procurement`, `Accounting`, `CRM`).
     *   **Employment & Login Status**: Segmented status tabs (`Active`, `On Leave`, `Terminated`, `With Portal Access`).
+*   **Employment Lifecycle & Suspension**:
+    *   **Quick Suspension / Reactivation**: `POST /hr/employees/{id}/toggle-suspension` (`hr.employees.toggle-suspension`) managed by [HRController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/HRController.php) toggles `status` (`Active` $\leftrightarrow$ `Suspended`) and updates `__workspace_access_enabled` on the linked [User.php](file:///c:/laragon/www/LikhangKamay/app/Models/User.php) account. Suspending an employee immediately pauses open attendance sessions and revokes login access without deleting historical payroll runs or timecards.
+    *   **RBAC & Self-Protection Guards**: Restricted to Shop Owners and Staff Managers (`canManageStaffAccounts`). Staff members are strictly forbidden from suspending their own accounts or the Shop Owner.
+    *   **Permanent Offboarding / Removal**: Moved inside the [EmployeeFormModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/EmployeeFormModal.jsx) edit drawer behind a high-risk confirmation modal to prevent accidental deletion from the main directory table.
 *   **Account Provisioning Security Guards**:
     *   [ProvisionStaffAccount.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/HR/ProvisionStaffAccount.php) and [HRStaffProvisioner.php](file:///c:/laragon/www/LikhangKamay/app/Support/HR/HRStaffProvisioner.php) enforce strict email uniqueness rules.
     *   Employees provisioned with login credentials cannot use an email already registered to any existing seller, buyer, or administrator, preventing privilege escalation and collision attacks.
