@@ -4,7 +4,7 @@ import SellerHeader from '@/Layouts/SellerHeader';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
-import { AlertCircle, History, Search, X, LoaderCircle, ArrowLeft } from 'lucide-react';
+import { AlertCircle, History, Search, X, LoaderCircle, ArrowLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import ExportButton from '@/Components/ExportButton';
@@ -260,14 +260,6 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
-                breadcrumbs={
-                    reviewModal.item
-                        ? [
-                              { label: 'Finance & Approvals', href: route('accounting.index') },
-                              { label: `Request #${reviewModal.item.id}` }
-                          ]
-                        : null
-                }
                 actions={
                     reviewModal.item ? null : (
                         <ExportButton href={route('accounting.export')} variant="primary">
@@ -279,7 +271,24 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-6 pb-8">
                 {reviewModal.item ? (
-                    <div className="max-w-5xl mx-auto">
+                    <div className="max-w-5xl mx-auto space-y-4">
+                        {/* ── BREADCRUMBS (in-content navigation) ── */}
+                        <nav className="flex items-center gap-2 text-xs text-stone-500 font-medium overflow-x-auto scrollbar-none">
+                            <button
+                                type="button"
+                                onClick={closeReviewModal}
+                                className="hover:text-stone-900 transition shrink-0 font-medium cursor-pointer"
+                            >
+                                Finance &amp; Approvals
+                            </button>
+                            <ChevronRight size={12} className="text-stone-400 shrink-0" />
+                            <span className="text-stone-400 font-medium shrink-0">Review Request</span>
+                            <ChevronRight size={12} className="text-stone-400 shrink-0" />
+                            <span className="text-stone-900 font-bold tracking-tight shrink-0">
+                                {reviewModal.item.order_number || `#${reviewModal.item.id}`}
+                            </span>
+                        </nav>
+
                         <ReleaseRequestDetails
                             item={reviewModal.item}
                             source={reviewModal.source}
