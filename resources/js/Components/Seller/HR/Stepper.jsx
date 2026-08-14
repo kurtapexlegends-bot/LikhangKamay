@@ -19,7 +19,7 @@ export default function Stepper({ activeStep, steps }) {
                             }`}>
                                 {isCompleted ? '✓' : stepNum}
                             </div>
-                            <span className={`text-[11px] font-bold transition-colors uppercase tracking-wider ${
+                            <span className={`text-[11px] font-bold transition-colors uppercase tracking-wider whitespace-nowrap ${
                                 isActive ? 'text-clay-800' : isCompleted ? 'text-emerald-700' : 'text-stone-400'
                             }`}>
                                 {step}

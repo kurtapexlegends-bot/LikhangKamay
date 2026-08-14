@@ -192,29 +192,30 @@ export default function PayrollGenerator({
         <Modal show={isOpen} onClose={onClose} maxWidth="5xl" closeable={!activeAttendanceEmployee}>
             <form onSubmit={handleSubmit} className="flex h-[88vh] flex-col bg-[#FDFBF9]">
                 {/* Header */}
-                <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-stone-150 bg-[#FDFBF9] gap-3">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-stone-200 bg-stone-50 text-stone-500">
-                            <Banknote size={16} strokeWidth={2.5} />
+                <div className="shrink-0 flex items-center justify-between px-6 py-3.5 border-b border-stone-200/80 bg-white gap-4">
+                    <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-stone-200 bg-stone-50 text-stone-600">
+                            <Banknote size={16} strokeWidth={2.2} />
                         </div>
                         <div>
                             <h2 className="text-sm font-bold text-stone-900 tracking-tight">Generate Payroll</h2>
-                            <p className="text-[10px] font-semibold text-stone-500 mt-0.5">
+                            <p className="text-[10px] font-medium text-stone-500">
                                 Period: <span className="text-stone-700 font-bold">{data.month}</span>
                             </p>
                         </div>
                     </div>
                     
-                    <div className="hidden sm:block flex-1 max-w-sm">
+                    <div className="hidden sm:block flex-1 max-w-sm px-4">
                         <Stepper activeStep={activeStep} steps={['Roster Selection', 'Adjust & Preview']} />
                     </div>
 
                     <button
                         type="button"
                         onClick={onClose}
-                        className="absolute right-4 top-4 text-stone-400 hover:text-stone-600 transition min-h-[40px] min-w-[40px] flex items-center justify-center rounded-lg"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition shrink-0"
+                        title="Close"
                     >
-                        <X size={18} strokeWidth={2.5} />
+                        <X size={18} strokeWidth={2} />
                     </button>
                 </div>
 
