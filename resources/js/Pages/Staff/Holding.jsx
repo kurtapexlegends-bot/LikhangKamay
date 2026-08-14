@@ -1,6 +1,7 @@
+import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
-import { Building2, LogOut, ShieldCheck, UserRoundCog } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, ShieldCheck, UserRoundCog, Store, Mail, Clock, LogOut } from 'lucide-react';
 
 const formatRolePreset = (value) => {
     if (!value) {
@@ -18,104 +19,142 @@ export default function Holding({ staffAccount, sellerOwner }) {
     const planSuspended = !!staffAccount?.plan_workspace_suspended;
     const accountSuspended = !workspaceAccessEnabled && !planSuspended;
 
-    return (
-        <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(196,143,103,0.14),_transparent_38%),linear-gradient(180deg,#fcfaf7_0%,#f4efe7_100%)] px-4 py-10 font-sans text-stone-800 sm:px-6">
-            <Head title="Staff Workspace" />
+    let iconConfig = {
+        icon: ShieldAlert,
+        iconWrapClass: 'border-red-200 bg-red-50 text-red-600',
+        badgeClass: 'border-red-200 bg-red-50 text-red-700',
+        dotClass: 'bg-red-500',
+        badgeText: 'Workspace Suspended',
+        title: 'Your workspace account is suspended',
+        description: 'The shop owner has temporarily paused this workspace account. Active shift attendance and seller modules are currently disabled.',
+        infoPoints: [
+            { icon: ShieldAlert, text: 'Portal login and clock-in access are on hold until reactivated by the shop owner.' },
+            { icon: Mail, text: 'All your past timecards and payroll records remain safely archived in the system.' },
+        ],
+    };
 
-            <div className="mx-auto max-w-3xl">
-                <div className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-[0_22px_70px_-40px_rgba(120,79,46,0.55)]">
-                    <div className="border-b border-stone-200 bg-[linear-gradient(135deg,#6f4e37_0%,#8f6647_100%)] px-6 py-8 text-white sm:px-8">
-                        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="max-w-xl">
-                                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/16 text-white ring-1 ring-white/20">
-                                    <ShieldCheck size={24} />
+    if (planSuspended) {
+        iconConfig = {
+            icon: AlertTriangle,
+            iconWrapClass: 'border-amber-200 bg-amber-50 text-amber-600',
+            badgeClass: 'border-amber-200 bg-amber-50 text-amber-700',
+            dotClass: 'bg-amber-500',
+            badgeText: 'Plan Downgrade: Access Paused',
+            title: 'Workspace access is paused',
+            description: 'The shop recently downgraded its subscription tier. Additional staff workspace access will resume when the shop owner upgrades their plan.',
+            infoPoints: [
+                { icon: Clock, text: 'Your account credentials and attendance history are fully preserved.' },
+                { icon: Store, text: 'Contact your shop owner to renew or upgrade their seller subscription.' },
+            ],
+        };
+    } else if (workspaceAccessEnabled) {
+        iconConfig = {
+            icon: ShieldCheck,
+            iconWrapClass: 'border-clay-200 bg-clay-50 text-clay-700',
+            badgeClass: 'border-clay-200 bg-clay-50 text-clay-700',
+            dotClass: 'bg-clay-500',
+            badgeText: 'Workspace Inactive',
+            title: 'Workspace access needs routing',
+            description: 'Your account is verified, but has not yet been assigned active seller workspace routes.',
+            infoPoints: [
+                { icon: Clock, text: 'Ask your shop administrator to assign module permissions to your account.' },
+            ],
+        };
+    }
+
+    const Icon = iconConfig.icon;
+
+    return (
+        <>
+            <Head title={iconConfig.title} />
+
+            <div className="min-h-screen bg-[#FDFBF9] flex items-center justify-center p-4 font-sans text-stone-800">
+                <div className="w-full max-w-[480px] text-center animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    {/* Top Icon Badge */}
+                    <div className={`mx-auto mb-6 inline-flex h-20 w-20 items-center justify-center rounded-2xl border shadow-sm ${iconConfig.iconWrapClass}`}>
+                        <Icon size={36} strokeWidth={2.2} />
+                    </div>
+
+                    {/* Main Card */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-8 text-center">
+                        <h1 className="text-xl font-bold text-stone-900 tracking-tight">
+                            {iconConfig.title}
+                        </h1>
+                        <p className="mt-2 text-[13px] font-medium leading-relaxed text-stone-500">
+                            {iconConfig.description}
+                        </p>
+
+                        {/* Status Alert Badge */}
+                        <div className={`mt-6 flex items-center justify-center gap-2 rounded-xl border py-2.5 px-4 text-xs font-bold uppercase tracking-wide ${iconConfig.badgeClass}`}>
+                            <span className={`h-2 w-2 rounded-full ${iconConfig.dotClass}`} />
+                            <span>{iconConfig.badgeText}</span>
+                        </div>
+
+                        {/* Account & Shop Summary Box */}
+                        <div className="mt-6 rounded-xl border border-stone-100 bg-[#FCF7F2] p-4 text-left space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-white shadow-2xs text-stone-500">
+                                    <UserRoundCog size={18} />
                                 </div>
-                                <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/70">
-                                    {workspaceAccessEnabled ? 'Workspace Status' : planSuspended ? 'Seller Plan Suspension' : accountSuspended ? 'Workspace Account Suspended' : 'Workspace Status'}
-                                </p>
-                                <h1 className="mt-3 font-serif text-3xl font-bold tracking-tight sm:text-4xl">
-                                    {workspaceAccessEnabled ? 'Workspace access needs a route.' : planSuspended ? 'Workspace access is paused by the current seller plan.' : accountSuspended ? 'Your workspace account is suspended.' : 'Workspace access is paused.'}
-                                </h1>
-                                <p className="mt-3 max-w-lg text-sm leading-6 text-stone-100/90">
-                                    {workspaceAccessEnabled
-                                        ? 'This page is now only used when a workspace account signs in without an active seller workspace route. Once a seller context and workspace access are both available, the account should land in the correct role-specific hub instead.'
-                                        : planSuspended
-                                            ? 'This workspace account still exists, but the seller recently downgraded plans and workspace access is paused until the shop upgrades again.'
-                                            : accountSuspended
-                                                ? 'The shop owner has suspended this workspace account. Contact the shop owner if you believe access should be restored.'
-                                                : 'Workspace access is currently unavailable.'}
-                                </p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-bold text-stone-900">
+                                        {staffAccount?.name || 'Staff Member'}
+                                    </p>
+                                    <p className="truncate text-xs text-stone-500">
+                                        {staffAccount?.email}
+                                    </p>
+                                </div>
+                                <span className="shrink-0 text-[11px] font-bold text-clay-700 bg-white px-2.5 py-1 rounded-full border border-[#E7D8C9] shadow-2xs">
+                                    {formatRolePreset(staffAccount?.role_preset_key)}
+                                </span>
                             </div>
 
+                            <div className="pt-3 border-t border-stone-200/60 flex items-center justify-between text-xs text-stone-500">
+                                <span className="font-medium">Shop / Artisan:</span>
+                                <span className="font-bold text-stone-800 truncate ml-2">
+                                    {sellerOwner?.name || 'Shop Linked'}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Info Bullet Points */}
+                        <div className="mt-6 space-y-3 text-left">
+                            {iconConfig.infoPoints.map((point, idx) => {
+                                const PointIcon = point.icon;
+                                return (
+                                    <div key={idx} className="flex items-start gap-3">
+                                        <PointIcon size={16} className="mt-0.5 shrink-0 text-stone-400" />
+                                        <p className="text-[13px] font-medium leading-relaxed text-stone-600">
+                                            {point.text}
+                                        </p>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="mt-8 flex flex-col gap-2 pt-6 border-t border-stone-100">
+                            <Link
+                                href={route('home')}
+                                className="inline-flex w-full items-center justify-center rounded-xl bg-clay-700 px-4 py-2.5 text-[13px] font-bold text-white transition hover:bg-clay-800 min-h-[44px]"
+                            >
+                                Return to Homepage
+                            </Link>
                             <WorkspaceLogoutLink
                                 variant="button"
-                                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/20"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white border border-stone-200 px-4 py-2.5 text-[13px] font-bold text-stone-700 transition hover:bg-stone-50 min-h-[44px]"
                             >
-                                <LogOut size={14} />
-                                Log Out
+                                <LogOut size={14} /> Sign Out
                             </WorkspaceLogoutLink>
                         </div>
                     </div>
 
-                    <div className="grid gap-4 px-6 py-6 sm:grid-cols-2 sm:px-8">
-                        <div className="rounded-2xl border border-stone-200 bg-stone-50/80 p-5">
-                            <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-clay-100 text-clay-700">
-                                <UserRoundCog size={20} />
-                            </div>
-                            <p className="text-xs font-bold uppercase tracking-[0.22em] text-stone-400">
-                                Workspace Account
-                            </p>
-                            <h2 className="mt-2 text-lg font-bold text-stone-900">{staffAccount.name}</h2>
-                            <p className="mt-1 text-sm text-stone-500">{staffAccount.email}</p>
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                <div className="inline-flex rounded-full border border-clay-200 bg-clay-50 px-3 py-1 text-xs font-bold text-clay-700">
-                                    {formatRolePreset(staffAccount.role_preset_key)}
-                                </div>
-                                {!workspaceAccessEnabled && (
-                                    <div className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
-                                        {planSuspended ? 'Plan Suspended' : 'Workspace Suspended'}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="rounded-2xl border border-stone-200 bg-stone-50/80 p-5">
-                            <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-stone-200 text-stone-700">
-                                <Building2 size={20} />
-                            </div>
-                            <p className="text-xs font-bold uppercase tracking-[0.22em] text-stone-400">
-                                Seller Context
-                            </p>
-                            <h2 className="mt-2 text-lg font-bold text-stone-900">
-                                {sellerOwner?.name || 'Seller owner not linked yet'}
-                            </h2>
-                            <p className="mt-1 text-sm text-stone-500">
-                                {sellerOwner?.id
-                                    ? `Effective seller ID: ${sellerOwner.id}`
-                                    : 'This account needs a valid seller owner link before seller modules can be enabled later.'}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="border-t border-stone-200 bg-[#f8f3ec] px-6 py-5 sm:px-8">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-sm text-stone-600">
-                                {workspaceAccessEnabled
-                                    ? 'Security setup is complete, but the workspace still needs a valid seller route before staff modules can open safely.'
-                                    : planSuspended
-                                        ? 'This account can still sign in, but seller workspace routes stay blocked until the shop upgrades to restore staff access.'
-                                        : 'This account can sign in, but seller workspace routes stay blocked while the suspension is in effect.'}
-                            </p>
-                            <Link
-                                href={route('home')}
-                                className="inline-flex items-center justify-center rounded-full border border-stone-300 px-4 py-2 text-xs font-bold text-stone-700 transition hover:border-stone-400 hover:bg-white"
-                            >
-                                Return to Homepage
-                            </Link>
-                        </div>
-                    </div>
+                    {/* Footer Support Note */}
+                    <p className="mt-6 text-xs font-medium text-stone-400">
+                        Questions? Contact the shop owner or support at likhangkamaybusiness@gmail.com
+                    </p>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
