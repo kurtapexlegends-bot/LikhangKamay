@@ -276,7 +276,7 @@ class GlobalSearchController extends Controller
 
     private function searchAdminSponsorships(string $query, string $like): array
     {
-        return SponsorshipRequest::select(['id', 'product_id', 'user_id', 'amount', 'duration_days', 'status', 'created_at'])
+        return SponsorshipRequest::select(['id', 'product_id', 'user_id', 'status', 'created_at'])
             ->whereHas('product', function($q) use ($query, $like) {
                 $q->where('name', $like, "%{$query}%");
             })
@@ -290,7 +290,7 @@ class GlobalSearchController extends Controller
             ->map(fn ($s) => [
                 'id' => "spons-{$s->id}",
                 'title' => "Sponsorship: " . ($s->product->name ?? 'Product'),
-                'subtitle' => "₱" . number_format((float) $s->amount, 2) . " ({$s->duration_days} Days) • Artisan: " . ($s->user->shop_name ?? $s->user->name ?? 'Artisan') . " • Status: {$s->status}",
+                'subtitle' => "Artisan: " . ($s->user->shop_name ?? $s->user->name ?? 'Artisan') . " • Status: " . ucfirst($s->status),
                 'type' => 'Sponsorship',
                 'url' => route('admin.catalog.index', ['tab' => 'sponsorships', 'search' => $s->product->name ?? '']),
                 'icon' => 'star',
@@ -318,9 +318,8 @@ class GlobalSearchController extends Controller
 
     private function searchAdminCategories(string $query, string $like): array
     {
-        return Category::select(['id', 'name', 'slug', 'description'])
+        return Category::select(['id', 'name', 'slug'])
             ->where('name', $like, "%{$query}%")
-            ->orWhere('description', $like, "%{$query}%")
             ->limit(3)
             ->get()
             ->map(fn ($c) => [
@@ -647,9 +646,9 @@ class GlobalSearchController extends Controller
 
     private function searchSeller3DModels(int $sellerId, string $query, string $like): array
     {
-        return Product::select(['id', 'name', 'sku', 'three_d_model_path'])
+        return Product::select(['id', 'name', 'sku', 'model_3d_path'])
             ->where('user_id', $sellerId)
-            ->whereNotNull('three_d_model_path')
+            ->whereNotNull('model_3d_path')
             ->where(function ($q) use ($query, $like) {
                 $q->where('name', $like, "%{$query}%")
                     ->orWhere('sku', $like, "%{$query}%");
@@ -749,13 +748,12 @@ class GlobalSearchController extends Controller
 
     private function searchSellerReviews(int $sellerId, string $query, string $like): array
     {
-        return Review::select(['id', 'product_id', 'user_id', 'rating', 'comment', 'customer', 'created_at'])
+        return Review::select(['id', 'product_id', 'user_id', 'rating', 'comment', 'created_at'])
             ->whereHas('product', function($q) use ($sellerId) {
                 $q->where('user_id', $sellerId);
             })
             ->where(function ($q) use ($query, $like) {
                 $q->where('comment', $like, "%{$query}%")
-                    ->orWhere('customer', $like, "%{$query}%")
                     ->orWhereHas('user', function($uq) use ($query, $like) {
                         $uq->where('name', $like, "%{$query}%");
                     })
@@ -769,16 +767,16 @@ class GlobalSearchController extends Controller
             ->map(fn ($r) => [
                 'id' => "rev-{$r->id}",
                 'title' => "Review: " . ($r->product->name ?? 'Product'),
-                'subtitle' => "★ {$r->rating}/5 • By " . ($r->customer ?: $r->user->name ?? 'Buyer') . " • \"" . substr($r->comment, 0, 35) . "...\"",
+                'subtitle' => "★ {$r->rating}/5 • By " . ($r->user->name ?? 'Buyer') . " • \"" . substr($r->comment ?? '', 0, 35) . "...\"",
                 'type' => 'Review',
-                'url' => route('reviews.index', ['search' => $r->customer ?: $r->user->name ?? '']),
+                'url' => route('reviews.index', ['search' => $r->user->name ?? '']),
                 'icon' => 'star',
             ])->toArray();
     }
 
     private function searchSellerSponsorships(int $sellerId, string $query, string $like): array
     {
-        return SponsorshipRequest::select(['id', 'product_id', 'user_id', 'amount', 'duration_days', 'status'])
+        return SponsorshipRequest::select(['id', 'product_id', 'user_id', 'status'])
             ->with(['product:id,name'])
             ->where('user_id', $sellerId)
             ->whereHas('product', function($q) use ($query, $like) {
@@ -789,7 +787,7 @@ class GlobalSearchController extends Controller
             ->map(fn ($s) => [
                 'id' => "sell-spons-{$s->id}",
                 'title' => "Sponsorship: " . ($s->product->name ?? 'Product'),
-                'subtitle' => "₱" . number_format((float) $s->amount, 2) . " ({$s->duration_days} Days) • Status: {$s->status}",
+                'subtitle' => "Status: " . ucfirst($s->status),
                 'type' => 'Sponsorship',
                 'url' => route('seller.sponsorships', ['search' => $s->product->name ?? '']),
                 'icon' => 'award',
