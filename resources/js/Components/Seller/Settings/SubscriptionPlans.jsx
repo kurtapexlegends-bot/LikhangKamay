@@ -66,20 +66,20 @@ export default function SubscriptionPlans({
                         const isElitePlan = plan.id === 'super_premium';
 
                         const cardClass = current
-                            ? 'border-clay-400 ring-2 ring-clay-200/60 shadow-sm'
+                            ? 'border-[#C4B5FD] ring-2 ring-[#DDD6FE] shadow-[0_28px_50px_-42px_rgba(109,94,246,0.55)]'
                             : isPremiumPlan
-                                ? 'border-stone-300 shadow-sm'
-                                : 'border-stone-200 shadow-2xs';
+                                ? 'border-stone-300 shadow-[0_28px_50px_-44px_rgba(255,138,28,0.45)]'
+                                : 'border-stone-200 shadow-[0_24px_40px_-42px_rgba(15,23,42,0.45)]';
 
                         const iconClass = isElitePlan
-                            ? 'bg-stone-900 text-amber-400 shadow-2xs'
+                            ? 'bg-[#6D5EF6] text-white'
                             : isPremiumPlan
-                                ? 'bg-clay-700 text-white shadow-2xs'
-                                : 'bg-stone-700 text-white shadow-2xs';
+                                ? 'bg-gradient-to-br from-[#FFA426] to-[#FF7A00] text-white'
+                                : 'bg-[#6D625C] text-white';
 
                         const upgradeButtonClass = isElitePlan
-                            ? 'bg-stone-900 text-white hover:bg-stone-800'
-                            : 'bg-clay-700 text-white hover:bg-clay-800';
+                            ? 'bg-[#6D5EF6] text-white hover:bg-[#5C4DEA]'
+                            : 'bg-orange-600 text-white hover:bg-orange-700';
 
                         return (
                             <article
@@ -94,7 +94,7 @@ export default function SubscriptionPlans({
                                         <div className="flex flex-wrap items-center gap-2">
                                             <h3 className="text-xl sm:text-[1.55rem] font-black leading-none tracking-tight text-stone-900">{plan.name}</h3>
                                             {isPremiumPlan && (
-                                                <span className="rounded-full bg-clay-700 text-white shadow-2xs px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap">
+                                                <span className="rounded-full bg-gradient-to-r from-[#FFB432] to-[#FF8A1C] text-white shadow-sm px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap">
                                                     Most Popular
                                                 </span>
                                             )}
@@ -115,7 +115,7 @@ export default function SubscriptionPlans({
                                 <ul className="mt-5 space-y-3">
                                     {plan.features.map((feature, index) => (
                                         <li key={index} className="flex items-start gap-3">
-                                            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                                            <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${isElitePlan ? 'text-[#6D5EF6]' : 'text-green-500'}`} />
                                             <span className="text-[13px] leading-6 text-stone-700">{feature}</span>
                                         </li>
                                     ))}
