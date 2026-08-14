@@ -124,6 +124,12 @@ class AttendanceAggregatorService
                 'longitude' => $s->clock_in_longitude,
                 'distance_meters' => $s->distance_meters,
                 'is_within_geofence' => (bool) $s->is_within_geofence,
+                'is_flagged' => (bool) ($s->is_flagged || (!$s->is_within_geofence && $s->distance_meters !== null && $s->approval_status === 'pending')),
+                'flag_reason' => $s->flag_reason,
+                'approval_status' => $s->approval_status ?: (($s->is_flagged || (!$s->is_within_geofence && $s->distance_meters !== null)) ? 'pending' : 'approved'),
+                'rejection_reason' => $s->rejection_reason,
+                'approved_at' => $s->approved_at?->toIso8601String(),
+                'approver_name' => $s->approver?->name,
             ])->values()->all(),
         ];
     }
