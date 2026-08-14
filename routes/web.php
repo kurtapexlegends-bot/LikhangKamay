@@ -239,6 +239,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/hr/employees', [\App\Http\Controllers\Seller\HRController::class, 'store'])->middleware('seller.module:hr')->name('hr.store');
         Route::patch('/hr/employees/{id}', [\App\Http\Controllers\Seller\HRController::class, 'update'])->middleware('seller.module:hr')->name('hr.update');
         Route::delete('/hr/employees/{id}', [\App\Http\Controllers\Seller\HRController::class, 'destroy'])->middleware('seller.module:hr')->name('hr.destroy');
+        Route::post('/hr/employees/{id}/toggle-suspension', [\App\Http\Controllers\Seller\HRController::class, 'toggleSuspension'])->middleware('seller.module:hr')->name('hr.employees.toggle-suspension');
         Route::post('/hr/generate', [\App\Http\Controllers\Seller\HRController::class, 'generatePayroll'])->middleware('seller.module:hr')->name('hr.generate');
         Route::post('/hr/settings', [\App\Http\Controllers\Seller\HRController::class, 'updateSettings'])->middleware('seller.module:hr')->name('hr.settings');
         Route::get('/hr/payroll/{payroll}', [\App\Http\Controllers\Seller\HRController::class, 'showPayroll'])->middleware('seller.module:hr')->name('hr.payroll.show');

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Link } from '@inertiajs/react';
-import { Search, X, Pencil, Trash2, CalendarDays, Users, SlidersHorizontal, Filter, RotateCcw, ChevronDown, Calendar, Clock3 } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { Search, X, Pencil, Trash2, UserX, UserCheck, CalendarDays, Users, SlidersHorizontal, Filter, RotateCcw, ChevronDown, Calendar, Clock3 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
@@ -116,15 +116,18 @@ export default function StaffTable({
     searchTerm,
     setSearchTerm,
     canEditHrRecords,
+    canManageStaffAccounts,
     canDeleteStaffAccounts,
     openEditModal,
     deleteEmployee,
+    onToggleSuspension,
     openAttendanceModal,
     openAuditDrawer,
     presetLabelByKey,
     monthLabel,
     onAddClick
 }) {
+    const { auth } = usePage().props;
     const [statusFilter, setStatusFilter] = useState('all');
     const [entitlementFilter, setEntitlementFilter] = useState('all');
     const [startDateFilter, setStartDateFilter] = useState('');
@@ -532,21 +535,41 @@ export default function StaffTable({
                                                     >
                                                         <Pencil size={14} />
                                                     </button>
-                                                    <button
-                                                        onClick={() => deleteEmployee(emp.id)}
-                                                        disabled={emp.has_login_account && !canDeleteStaffAccounts}
-                                                        aria-label={emp.has_login_account && !canDeleteStaffAccounts ? `Cannot remove ${emp.name}` : `Remove ${emp.name}`}
-                                                        className={`p-2 rounded-xl border min-w-[36px] min-h-[36px] flex items-center justify-center transition-all duration-200 bg-white shadow-2xs active:scale-95 ${
-                                                            emp.has_login_account && !canDeleteStaffAccounts
-                                                                ? 'cursor-not-allowed border-stone-200 text-stone-300 shadow-none'
-                                                                : 'text-rose-600 hover:bg-rose-50 border-stone-200/60'
-                                                        }`}
-                                                        title={emp.has_login_account && !canDeleteStaffAccounts
-                                                            ? 'Only shop owner or staff manager can remove accounts with portal login'
-                                                            : 'Remove Employee'}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
+                                                    {(() => {
+                                                        const isSuspended = emp.status?.toLowerCase() === 'suspended' || emp.login_account?.workspace_access_enabled === false;
+                                                        const isSelf = !!(auth?.user?.id && emp.login_account?.id === auth.user.id);
+                                                        const isOwnerAccount = !!(emp.login_account?.role === 'artisan' || emp.login_account?.is_owner);
+                                                        const isDisabled = !canManageStaffAccounts || isSelf || isOwnerAccount;
+
+                                                        const tooltip = isSelf
+                                                            ? 'You cannot suspend your own account'
+                                                            : isOwnerAccount
+                                                                ? 'Cannot suspend shop owner'
+                                                                : !canManageStaffAccounts
+                                                                    ? 'Only shop owner or staff manager can suspend staff accounts'
+                                                                    : isSuspended
+                                                                        ? `Reactivate ${emp.name}`
+                                                                        : `Suspend ${emp.name}`;
+
+                                                        return (
+                                                            <button
+                                                                onClick={() => onToggleSuspension?.(emp)}
+                                                                disabled={isDisabled}
+                                                                aria-label={tooltip}
+                                                                className={`p-2 rounded-xl border min-w-[36px] min-h-[36px] flex items-center justify-center transition-all duration-200 bg-white shadow-2xs active:scale-95 ${
+                                                                    isDisabled
+                                                                        ? 'cursor-not-allowed border-stone-200 text-stone-300 shadow-none'
+                                                                        : isSuspended
+                                                                            ? 'text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 border-stone-200/60'
+                                                                            : 'text-amber-600 hover:bg-amber-50 hover:text-amber-700 border-stone-200/60'
+                                                                }`}
+                                                                title={tooltip}
+                                                                type="button"
+                                                            >
+                                                                {isSuspended ? <UserCheck size={14} /> : <UserX size={14} />}
+                                                            </button>
+                                                        );
+                                                    })()}
                                                 </div>
                                             )}
                                         </div>
@@ -677,21 +700,41 @@ export default function StaffTable({
                                                     >
                                                         <Pencil size={14} />
                                                     </button>
-                                                    <button
-                                                        onClick={() => deleteEmployee(emp.id)}
-                                                        disabled={emp.has_login_account && !canDeleteStaffAccounts}
-                                                        aria-label={emp.has_login_account && !canDeleteStaffAccounts ? `Cannot remove ${emp.name}` : `Remove ${emp.name}`}
-                                                        className={`p-2 rounded-xl border min-w-[36px] min-h-[36px] flex items-center justify-center transition-all duration-200 bg-white shadow-2xs ${
-                                                            emp.has_login_account && !canDeleteStaffAccounts
-                                                                ? 'cursor-not-allowed border-stone-200 text-stone-300 shadow-none'
-                                                                : 'text-rose-600 hover:bg-rose-50 border-stone-200/60'
-                                                        }`}
-                                                        title={emp.has_login_account && !canDeleteStaffAccounts
-                                                            ? 'Only shop owner or staff manager can remove accounts with portal login'
-                                                            : 'Remove Employee'}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
+                                                    {(() => {
+                                                        const isSuspended = emp.status?.toLowerCase() === 'suspended' || emp.login_account?.workspace_access_enabled === false;
+                                                        const isSelf = !!(auth?.user?.id && emp.login_account?.id === auth.user.id);
+                                                        const isOwnerAccount = !!(emp.login_account?.role === 'artisan' || emp.login_account?.is_owner);
+                                                        const isDisabled = !canManageStaffAccounts || isSelf || isOwnerAccount;
+
+                                                        const tooltip = isSelf
+                                                            ? 'You cannot suspend your own account'
+                                                            : isOwnerAccount
+                                                                ? 'Cannot suspend shop owner'
+                                                                : !canManageStaffAccounts
+                                                                    ? 'Only shop owner or staff manager can suspend staff accounts'
+                                                                    : isSuspended
+                                                                        ? `Reactivate ${emp.name}`
+                                                                        : `Suspend ${emp.name}`;
+
+                                                        return (
+                                                            <button
+                                                                onClick={() => onToggleSuspension?.(emp)}
+                                                                disabled={isDisabled}
+                                                                aria-label={tooltip}
+                                                                className={`p-2 rounded-xl border min-w-[36px] min-h-[36px] flex items-center justify-center transition-all duration-200 bg-white shadow-2xs ${
+                                                                    isDisabled
+                                                                        ? 'cursor-not-allowed border-stone-200 text-stone-300 shadow-none'
+                                                                        : isSuspended
+                                                                            ? 'text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 border-stone-200/60'
+                                                                            : 'text-amber-600 hover:bg-amber-50 hover:text-amber-700 border-stone-200/60'
+                                                                }`}
+                                                                title={tooltip}
+                                                                type="button"
+                                                            >
+                                                                {isSuspended ? <UserCheck size={14} /> : <UserX size={14} />}
+                                                            </button>
+                                                        );
+                                                    })()}
                                                 </div>
                                             ) : (
                                                 <span className="text-[11px] font-medium text-stone-400">View only</span>

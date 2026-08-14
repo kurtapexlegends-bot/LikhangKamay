@@ -1153,6 +1153,91 @@ class HrStaffProvisioningTest extends TestCase
         );
     }
 
+    public function test_owner_can_suspend_and_reactivate_employee(): void
+    {
+        $owner = $this->createOwnerWithHrAccess();
+
+        $employee = Employee::create([
+            'user_id' => $owner->id,
+            'name' => 'John Doe',
+            'role' => 'Artisan Assistant',
+            'salary' => 20000,
+            'status' => 'Active',
+            'join_date' => now(),
+        ]);
+
+        $linkedLogin = User::factory()->staff($owner)->create([
+            'employee_id' => $employee->id,
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_module_permissions' => [
+                'hr' => true,
+                User::STAFF_WORKSPACE_ACCESS_FLAG => true,
+            ],
+        ]);
+
+        // 1. Suspend employee
+        $response = $this->actingAs($owner)->post(route('hr.employees.toggle-suspension', $employee->id));
+        $response->assertRedirect();
+        $this->assertEquals('Suspended', $employee->fresh()->status);
+        $this->assertFalse($linkedLogin->fresh()->isWorkspaceAccessEnabled());
+
+        // 2. Reactivate employee
+        $response2 = $this->actingAs($owner)->post(route('hr.employees.toggle-suspension', $employee->id));
+        $response2->assertRedirect();
+        $this->assertEquals('Active', $employee->fresh()->status);
+        $this->assertTrue($linkedLogin->fresh()->isWorkspaceAccessEnabled());
+    }
+
+    public function test_staff_cannot_suspend_themselves_or_owner(): void
+    {
+        $owner = $this->createOwnerWithHrAccess();
+
+        $staffEmployee = Employee::create([
+            'user_id' => $owner->id,
+            'name' => 'Manager Staff',
+            'role' => 'Shop Manager',
+            'salary' => 25000,
+            'status' => 'Active',
+            'join_date' => now(),
+        ]);
+
+        $staffUser = $this->createClockedInStaff($owner, [
+            'employee_id' => $staffEmployee->id,
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_module_permissions' => User::withStaffUserLevelFlag([
+                'hr' => true,
+                User::STAFF_MANAGE_STAFF_ACCOUNTS_FLAG => true,
+            ], 'manager'),
+        ]);
+
+        // Self-suspension guard
+        $response = $this->actingAs($staffUser)->post(route('hr.employees.toggle-suspension', $staffEmployee->id));
+        $response->assertForbidden();
+
+        // Regular staff without staff management access cannot suspend anyone
+        $regularEmployee = Employee::create([
+            'user_id' => $owner->id,
+            'name' => 'Regular Worker',
+            'role' => 'Potter',
+            'salary' => 15000,
+            'status' => 'Active',
+            'join_date' => now(),
+        ]);
+
+        $readOnlyStaff = $this->createClockedInStaff($owner, [
+            'email_verified_at' => now(),
+            'staff_module_permissions' => User::withStaffAccessPermissionLevelFlag([
+                'hr' => 'read_only',
+                User::STAFF_MANAGE_STAFF_ACCOUNTS_FLAG => false,
+            ], User::STAFF_ACCESS_PERMISSION_READ_ONLY),
+        ]);
+
+        $response2 = $this->actingAs($readOnlyStaff)->post(route('hr.employees.toggle-suspension', $regularEmployee->id));
+        $response2->assertForbidden();
+    }
+
     private function createOwnerWithHrAccess(): User
     {
         $owner = User::factory()->artisanApproved()->create([

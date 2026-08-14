@@ -11,9 +11,11 @@ export default function HRTabContentWrapper({
     searchTerm,
     setSearchTerm,
     canEditHrRecords,
+    canManageStaffAccounts,
     canDeleteStaffAccounts,
     openEditModal,
     deleteEmployee,
+    onToggleSuspension,
     openAttendanceModal,
     openAuditDrawer,
     presetLabelByKey,
@@ -33,9 +35,11 @@ export default function HRTabContentWrapper({
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
                 canEditHrRecords={canEditHrRecords}
+                canManageStaffAccounts={canManageStaffAccounts}
                 canDeleteStaffAccounts={canDeleteStaffAccounts}
                 openEditModal={openEditModal}
                 deleteEmployee={deleteEmployee}
+                onToggleSuspension={onToggleSuspension}
                 openAttendanceModal={openAttendanceModal}
                 openAuditDrawer={openAuditDrawer}
                 presetLabelByKey={presetLabelByKey}

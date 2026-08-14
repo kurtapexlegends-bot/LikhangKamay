@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import SellerHeader from '@/Layouts/SellerHeader';
-import { Trash2 } from 'lucide-react';
+import { Trash2, UserX, UserCheck } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 
@@ -58,6 +58,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     };
 
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, id: null });
+    const [suspensionModal, setSuspensionModal] = useState({ isOpen: false, employee: null });
     const [activeTab, setActiveTab] = useState('directory');
     const { addToast } = useToast();
     const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
@@ -81,8 +82,6 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         return list.filter((p) => p.status === 'Pending').length;
     }, [payrolls]);
     
-
-
     const openEditModal = (employee) => {
         if (!canEditHrRecords) { showReadOnlyToast(); return; }
         setEditingEmployee(employee);
@@ -97,6 +96,28 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     const deleteEmployee = (id) => {
         if (!canEditHrRecords) { showReadOnlyToast(); return; }
         setConfirmModal({ isOpen: true, type: 'employee', id });
+    };
+
+    const toggleSuspension = (employee) => {
+        if (!canEditHrRecords) { showReadOnlyToast(); return; }
+        setSuspensionModal({ isOpen: true, employee });
+    };
+
+    const confirmToggleSuspension = () => {
+        if (!suspensionModal.employee) return;
+        const emp = suspensionModal.employee;
+        router.post(route('hr.employees.toggle-suspension', emp.id), {}, {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                addToast(page?.props?.flash?.success || 'Employee status updated', 'success');
+                setSuspensionModal({ isOpen: false, employee: null });
+            },
+            onError: (err) => {
+                const errorMsg = Object.values(err)[0] || 'Failed to update employee status.';
+                addToast(errorMsg, 'error');
+                setSuspensionModal({ isOpen: false, employee: null });
+            },
+        });
     };
 
     const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
@@ -168,9 +189,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     searchTerm={searchTerm}
                     setSearchTerm={setSearchTerm}
                     canEditHrRecords={canEditHrRecords}
+                    canManageStaffAccounts={canManageStaffAccounts}
                     canDeleteStaffAccounts={canDeleteStaffAccounts}
                     openEditModal={openEditModal}
                     deleteEmployee={deleteEmployee}
+                    onToggleSuspension={toggleSuspension}
                     openAttendanceModal={setAttendanceCalendarEmployee}
                     openAuditDrawer={setAuditDrawerEmployee}
                     presetLabelByKey={presetLabelByKey}
@@ -190,6 +213,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 availableModules={availableModules}
                 canProvisionStaffAccounts={canProvisionStaffAccounts}
                 canUpdateStaffAccounts={canUpdateStaffAccounts}
+                canDeleteStaffAccounts={canDeleteStaffAccounts}
                 requiresStaffSchemaUpdate={requiresStaffSchemaUpdate}
                 canEditHrRecords={canEditHrRecords}
                 sellerLocations={locations}
@@ -205,9 +229,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     availableModules={availableModules}
                     canProvisionStaffAccounts={canProvisionStaffAccounts}
                     canUpdateStaffAccounts={canUpdateStaffAccounts}
+                    canDeleteStaffAccounts={canDeleteStaffAccounts}
                     requiresStaffSchemaUpdate={requiresStaffSchemaUpdate}
                     canEditHrRecords={canEditHrRecords}
                     sellerLocations={locations}
+                    onDelete={deleteEmployee}
                 />
             )}
 
@@ -231,15 +257,51 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 isOpen={confirmModal.isOpen}
                 onClose={() => setConfirmModal({ isOpen: false, type: null, id: null })}
                 onConfirm={confirmDeleteAction}
-                title={confirmModal.type === 'employee' ? 'Remove employee?' : 'Delete payroll request?'}
+                title={confirmModal.type === 'employee' ? 'Remove employee record?' : 'Delete payroll request?'}
                 message={confirmModal.type === 'employee'
-                    ? 'This will remove the employee record and stop their payroll calculation.'
+                    ? 'This will remove the employee from your directory and unlink any login accounts. Historical payroll runs and past timecards will be safely preserved.'
                     : 'This payroll request will be removed from the list.'}
                 icon={Trash2}
                 iconBg="bg-red-50 text-red-600"
-                confirmText={confirmModal.type === 'employee' ? 'Remove' : 'Delete'}
+                confirmText={confirmModal.type === 'employee' ? 'Remove Employee' : 'Delete'}
                 confirmColor="bg-red-600 hover:bg-red-700"
                 isVeryHighRisk={true}
+            />
+
+            <ConfirmationModal
+                isOpen={suspensionModal.isOpen}
+                onClose={() => setSuspensionModal({ isOpen: false, employee: null })}
+                onConfirm={confirmToggleSuspension}
+                title={
+                    suspensionModal.employee?.status?.toLowerCase() === 'suspended' || suspensionModal.employee?.login_account?.workspace_access_enabled === false
+                        ? `Reactivate ${suspensionModal.employee?.name}?`
+                        : `Suspend ${suspensionModal.employee?.name}?`
+                }
+                message={
+                    suspensionModal.employee?.status?.toLowerCase() === 'suspended' || suspensionModal.employee?.login_account?.workspace_access_enabled === false
+                        ? 'This will restore their workspace portal login, shift clock-in capabilities, and role module access.'
+                        : 'This will temporarily pause their portal login and shift attendance. All past payroll logs and timesheets remain safely saved.'
+                }
+                icon={
+                    suspensionModal.employee?.status?.toLowerCase() === 'suspended' || suspensionModal.employee?.login_account?.workspace_access_enabled === false
+                        ? UserCheck
+                        : UserX
+                }
+                iconBg={
+                    suspensionModal.employee?.status?.toLowerCase() === 'suspended' || suspensionModal.employee?.login_account?.workspace_access_enabled === false
+                        ? 'bg-emerald-50 text-emerald-600'
+                        : 'bg-amber-50 text-amber-600'
+                }
+                confirmText={
+                    suspensionModal.employee?.status?.toLowerCase() === 'suspended' || suspensionModal.employee?.login_account?.workspace_access_enabled === false
+                        ? 'Reactivate Employee'
+                        : 'Suspend Employee'
+                }
+                confirmColor={
+                    suspensionModal.employee?.status?.toLowerCase() === 'suspended' || suspensionModal.employee?.login_account?.workspace_access_enabled === false
+                        ? 'bg-emerald-600 hover:bg-emerald-700'
+                        : 'bg-amber-600 hover:bg-amber-700'
+                }
             />
 
             <AttendanceCalendarModal

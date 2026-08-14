@@ -215,7 +215,77 @@ class HRController extends Controller
             ]);
         }
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Employee record removed.');
+    }
+
+    public function toggleSuspension(int $id, StaffAttendanceService $attendanceService)
+    {
+        $actor = $this->sellerActor();
+        $seller = $this->sellerOwner();
+
+        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access cannot change employee status.');
+        abort_unless($actor->canManageStaffAccounts(), 403, 'Only the shop owner or a user with staff management access can suspend employees.');
+
+        $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
+        $employeeQuery = Employee::query()
+            ->where('user_id', $this->sellerOwnerId())
+            ->where('id', $id);
+
+        if ($supportsEmployeeLoginLinks) {
+            $employeeQuery->with('loginAccount');
+        }
+
+        $employee = $employeeQuery->firstOrFail();
+        $linkedLogin = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
+
+        // Guardrail 1: Self-suspension protection
+        if ($actor->isStaff() && $linkedLogin && $linkedLogin->id === $actor->id) {
+            abort(403, 'You cannot suspend your own staff account.');
+        }
+
+        // Guardrail 2: Owner protection
+        if ($actor->isStaff() && $linkedLogin && $linkedLogin->isSellerOwner()) {
+            abort(403, 'Only the Shop Owner can manage owner accounts.');
+        }
+
+        $isCurrentlySuspended = strcasecmp((string) $employee->status, 'Suspended') === 0
+            || ($linkedLogin && !$linkedLogin->isWorkspaceAccessEnabled());
+
+        $newStatus = $isCurrentlySuspended ? 'Active' : 'Suspended';
+        $workspaceAccessEnabled = $isCurrentlySuspended;
+
+        DB::transaction(function () use ($employee, $linkedLogin, $newStatus, $workspaceAccessEnabled, $attendanceService) {
+            $employee->update(['status' => $newStatus]);
+
+            if ($linkedLogin) {
+                $permissions = is_array($linkedLogin->staff_module_permissions) ? $linkedLogin->staff_module_permissions : [];
+                $permissions[User::STAFF_WORKSPACE_ACCESS_FLAG] = $workspaceAccessEnabled;
+
+                $linkedLogin->update([
+                    'staff_module_permissions' => $permissions,
+                ]);
+
+                // If suspending, close any open attendance session immediately
+                if (!$workspaceAccessEnabled) {
+                    $attendanceService->closeOpenSession($linkedLogin, StaffAttendanceService::MODE_PAUSED);
+                }
+            }
+        });
+
+        // Audit logging
+        $auditAction = $isCurrentlySuspended ? 'employee_reactivated' : 'employee_suspended';
+        HRWorkflowHelper::recordStaffAccessAudit($seller, $actor, $auditAction, $employee, $linkedLogin, [
+            'changes' => [
+                $isCurrentlySuspended ? 'Reactivated employee and restored workspace access' : 'Suspended employee and paused workspace access'
+            ],
+            'after' => $linkedLogin ? HRWorkflowHelper::buildStaffAccessSnapshot($linkedLogin->fresh()) : null,
+        ]);
+
+        $message = $isCurrentlySuspended
+            ? "{$employee->name} has been reactivated successfully."
+            : "{$employee->name} has been suspended. Workspace login and attendance are paused.";
+
+        return redirect()->back()->with('success', $message);
     }
 
     public function update(

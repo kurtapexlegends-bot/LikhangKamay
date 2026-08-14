@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, UserPlus, Pencil, ShieldAlert, RefreshCw, Loader2 } from 'lucide-react';
+import { X, UserPlus, Pencil, ShieldAlert, RefreshCw, Loader2, Trash2 } from 'lucide-react';
 import { useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import RolePermissionSelector from './RolePermissionSelector';
@@ -24,9 +24,11 @@ export default function EmployeeFormModal({
     availableModules,
     canProvisionStaffAccounts,
     canUpdateStaffAccounts,
+    canDeleteStaffAccounts,
     requiresStaffSchemaUpdate,
     canEditHrRecords,
-    sellerLocations = []
+    sellerLocations = [],
+    onDelete = null,
 }) {
     const { addToast } = useToast();
     const [showPassword, setShowPassword] = useState(false);
@@ -417,6 +419,25 @@ export default function EmployeeFormModal({
 
                 {/* Footer Actions */}
                 <div className="shrink-0 flex items-center justify-end gap-3 px-6 py-4 border-t border-stone-100 bg-[#FCF7F2]/50">
+                    {mode === 'edit' && onDelete && employee && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onClose();
+                                onDelete(employee.id);
+                            }}
+                            disabled={processing || !canEditHrRecords || (employee.has_login_account && !canDeleteStaffAccounts)}
+                            className="mr-auto inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed"
+                            title={
+                                employee.has_login_account && !canDeleteStaffAccounts
+                                    ? 'Only shop owner or staff manager can remove accounts with portal login'
+                                    : 'Remove Employee Record'
+                            }
+                        >
+                            <Trash2 size={14} />
+                            <span>Remove Employee</span>
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={onClose}
