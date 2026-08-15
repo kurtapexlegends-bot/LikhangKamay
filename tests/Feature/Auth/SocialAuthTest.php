@@ -36,6 +36,7 @@ class SocialAuthTest extends TestCase
         $abstractUser->shouldReceive('getAvatar')->andReturn('https://lh3.googleusercontent.com/a/avatar.jpg');
 
         $provider = Mockery::mock(\Laravel\Socialite\Two\GoogleProvider::class);
+        $provider->shouldReceive('stateless')->andReturnSelf();
         $provider->shouldReceive('user')->andReturn($abstractUser);
 
         Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
@@ -57,6 +58,7 @@ class SocialAuthTest extends TestCase
         $abstractUser->shouldReceive('getAvatar')->andReturn('https://lh3.googleusercontent.com/a/new.jpg');
 
         $provider = Mockery::mock(\Laravel\Socialite\Two\GoogleProvider::class);
+        $provider->shouldReceive('stateless')->andReturnSelf();
         $provider->shouldReceive('user')->andReturn($abstractUser);
 
         Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
@@ -66,26 +68,5 @@ class SocialAuthTest extends TestCase
         $response->assertRedirect(route('auth.complete-profile'));
         $this->assertGuest();
         $this->assertEquals('newuser@gmail.com', session('social_auth.email'));
-    }
-
-    public function test_state_exception_falls_back_to_stateless(): void
-    {
-        $abstractUser = Mockery::mock(SocialiteUser::class);
-        $abstractUser->shouldReceive('getId')->andReturn('google-stateless');
-        $abstractUser->shouldReceive('getEmail')->andReturn('stateless@gmail.com');
-        $abstractUser->shouldReceive('getName')->andReturn('Stateless User');
-        $abstractUser->shouldReceive('getAvatar')->andReturn('https://lh3.googleusercontent.com/a/stateless.jpg');
-
-        $provider = Mockery::mock(\Laravel\Socialite\Two\GoogleProvider::class);
-        $provider->shouldReceive('user')->once()->andThrow(new \Laravel\Socialite\Two\InvalidStateException());
-        $provider->shouldReceive('stateless')->once()->andReturnSelf();
-        $provider->shouldReceive('user')->once()->andReturn($abstractUser);
-
-        Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
-
-        $response = $this->get('/auth/google/callback');
-
-        $response->assertRedirect(route('auth.complete-profile'));
-        $this->assertEquals('stateless@gmail.com', session('social_auth.email'));
     }
 }
