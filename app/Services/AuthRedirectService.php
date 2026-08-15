@@ -11,14 +11,18 @@ class AuthRedirectService
     public function redirectAfterLogin(User $user): RedirectResponse
     {
         if ($user->isAdmin()) {
+            session()->forget('url.intended');
+
             if (!$user->hasVerifiedEmail()) {
                 return redirect()->route('verification.notice');
             }
 
-            return $this->redirectToIntendedOrRoute($user, 'admin.dashboard');
+            return redirect()->route('admin.dashboard');
         }
 
         if ($user->isStaff()) {
+            session()->forget('url.intended');
+
             if (!$user->hasVerifiedEmail()) {
                 return redirect()->route('verification.notice');
             }
@@ -27,7 +31,7 @@ class AuthRedirectService
                 return redirect()->route('staff.password.edit');
             }
 
-            return $this->redirectToIntendedOrRoute($user, 'staff.dashboard');
+            return redirect()->route('staff.dashboard');
         }
 
         if (!$user->hasVerifiedEmail()) {
@@ -35,6 +39,8 @@ class AuthRedirectService
         }
 
         if ($user->isArtisan()) {
+            session()->forget('url.intended');
+
             if (is_null($user->setup_completed_at) || $user->artisan_status === 'rejected') {
                 return redirect()->route('artisan.setup');
             }
@@ -43,7 +49,7 @@ class AuthRedirectService
                 return redirect()->route('artisan.pending');
             }
 
-            return $this->redirectToIntendedOrRoute($user, 'dashboard');
+            return redirect()->route('dashboard');
         }
 
         return $this->redirectToIntendedOrRoute($user, '/');
