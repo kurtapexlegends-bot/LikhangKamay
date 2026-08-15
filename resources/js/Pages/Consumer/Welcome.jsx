@@ -32,9 +32,31 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                 
                 <HeroSection />
 
+                {/* SPONSORED PRODUCTS SECTION */}
+                {sponsoredProducts.length > 0 && (
+                    <section className="order-1 relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50/60 via-white to-clay-50/30 border border-amber-100/50 p-4 shadow-sm flex flex-col gap-4">
+                        <div className="flex items-center gap-3">
+                            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-amber-100 to-amber-50 text-amber-700 shadow-sm border border-amber-200/50">
+                                <Award size={14} className="drop-shadow-sm" />
+                            </span>
+                            <div>
+                                <h2 className="text-base font-serif font-bold text-gray-900 leading-none">Sponsored Collection</h2>
+                                <p className="text-[10px] text-gray-500 font-medium mt-1">Curated selections from our finest artisans</p>
+                            </div>
+                        </div>
+
+                        <SponsoredProductsCarousel 
+                            sponsoredProducts={sponsoredProducts} 
+                            sponsoredPlacement={sponsoredPlacement} 
+                            formatSold={formatSold}
+                            data-sponsored-placement={sponsoredPlacement}
+                        />
+                    </section>
+                )}
+
                 {/* FROM STUDIOS YOU FOLLOW */}
                 {followedProducts.length > 0 && (
-                    <section className="order-1 relative rounded-2xl bg-white border border-stone-200/80 p-4 sm:p-5 shadow-xs flex flex-col gap-4">
+                    <section className="order-2 relative rounded-2xl bg-white border border-stone-200/80 p-4 sm:p-5 shadow-xs flex flex-col gap-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
                                 <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-clay-50 text-clay-700 border border-clay-100">
@@ -66,28 +88,6 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                                 />
                             ))}
                         </div>
-                    </section>
-                )}
-
-                {/* SPONSORED PRODUCTS SECTION */}
-                {sponsoredProducts.length > 0 && (
-                    <section className="order-2 relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50/60 via-white to-clay-50/30 border border-amber-100/50 p-4 shadow-sm flex flex-col gap-4">
-                        <div className="flex items-center gap-3">
-                            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-amber-100 to-amber-50 text-amber-700 shadow-sm border border-amber-200/50">
-                                <Award size={14} className="drop-shadow-sm" />
-                            </span>
-                            <div>
-                                <h2 className="text-base font-serif font-bold text-gray-900 leading-none">Sponsored Collection</h2>
-                                <p className="text-[10px] text-gray-500 font-medium mt-1">Curated selections from our finest artisans</p>
-                            </div>
-                        </div>
-
-                        <SponsoredProductsCarousel 
-                            sponsoredProducts={sponsoredProducts} 
-                            sponsoredPlacement={sponsoredPlacement} 
-                            formatSold={formatSold}
-                            data-sponsored-placement={sponsoredPlacement}
-                        />
                     </section>
                 )}
 
