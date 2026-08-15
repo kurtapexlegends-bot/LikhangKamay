@@ -81,8 +81,20 @@ class SocialAuthController extends Controller
 
         try {
             $socialUser = Socialite::driver($provider)->user();
-        } catch (\Exception $e) {
-            return redirect()->route('login')->with('error', 'Authentication failed. Please try again.');
+        } catch (\Laravel\Socialite\Two\InvalidStateException $e) {
+            try {
+                $socialUser = Socialite::driver($provider)->stateless()->user();
+            } catch (\Throwable $inner) {
+                \Illuminate\Support\Facades\Log::error("Socialite {$provider} stateless fallback failed: " . $inner->getMessage(), [
+                    'exception' => $inner,
+                ]);
+                return redirect()->route('login')->with('error', 'Authentication failed: ' . $inner->getMessage());
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Socialite {$provider} authentication failed: " . $e->getMessage(), [
+                'exception' => $e,
+            ]);
+            return redirect()->route('login')->with('error', 'Authentication failed: ' . $e->getMessage());
         }
 
         // Check if email is provided
