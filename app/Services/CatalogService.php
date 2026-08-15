@@ -206,8 +206,18 @@ class CatalogService
             })
             ->with(['user']);
 
-        if (!empty($filters['followed_only']) && $user) {
-            $followedShopIds = $user->followingShops()->pluck('users.id')->all();
+        if (!empty($filters['followed_only'])) {
+            $followedShopIds = [];
+            if ($user) {
+                $followedShopIds = $user->followingShops()->pluck('users.id')->all();
+            }
+            if (!empty($filters['followed_shop_ids'])) {
+                $passedIds = is_array($filters['followed_shop_ids'])
+                    ? $filters['followed_shop_ids']
+                    : explode(',', (string) $filters['followed_shop_ids']);
+                $passedIds = array_filter(array_map('intval', $passedIds));
+                $followedShopIds = array_unique(array_merge($followedShopIds, $passedIds));
+            }
             $query->whereIn('user_id', !empty($followedShopIds) ? $followedShopIds : [0]);
         }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { MessageCircle, Store, MapPin, Crown, Sparkles, UserPlus, Check } from 'lucide-react';
+import { MessageCircle, Store, MapPin, Crown, Sparkles, Heart } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import { isShopFollowed, toggleFollowedShop } from '@/utils/buyerSignals';
 import { useToast } from '@/Components/ToastContext';
@@ -65,14 +65,14 @@ export default function SellerAboutPanel({ product, handleChatSeller, chatRequir
                     <button
                         type="button"
                         onClick={toggleFollow}
-                        className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
+                        className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/30 ${
                             isFollowed
-                                ? 'bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100'
-                                : 'border border-gray-200 text-gray-700 hover:bg-gray-50'
+                                ? 'border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100'
+                                : 'border border-stone-200 bg-white text-stone-700 hover:border-clay-300 hover:text-clay-700 hover:bg-stone-50'
                         }`}
                     >
-                        {isFollowed ? <Check size={14} className="text-sky-700" /> : <UserPlus size={14} />}
-                        {isFollowed ? 'Following' : 'Follow'}
+                        <Heart size={14} className={isFollowed ? 'fill-current text-rose-600' : 'text-stone-500'} />
+                        {isFollowed ? 'Following' : 'Follow Shop'}
                     </button>
                     <button
                         type="button"

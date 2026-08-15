@@ -13,6 +13,7 @@ import { useSponsoredImpressionTracking } from '@/utils/sponsorshipTracking';
 import FilterSidebar from './Partials/FilterSidebar';
 import ProductCard from '@/Pages/Consumer/Shop/Partials/ProductCard';
 import CatalogSkeleton from '@/Components/Consumer/CatalogSkeleton';
+import { getFollowedShopIds } from '@/utils/buyerSignals';
 import axios from 'axios';
 
 export default function Catalog(props) {
@@ -107,6 +108,7 @@ export default function Catalog(props) {
     // --- FILTER LOGIC ---
     const applyFilters = (overrides = {}) => {
         const isFollowed = overrides.followed_only !== undefined ? overrides.followed_only : (followedOnly ? 1 : undefined);
+        const localFollowedIds = getFollowedShopIds(props.auth?.user?.id);
         const params = {
             search: searchTerm,
             category: activeCategory,
@@ -117,6 +119,7 @@ export default function Catalog(props) {
             materials: selectedMaterials.join(','),
             min_rating: minRating,
             followed_only: isFollowed ? 1 : undefined,
+            followed_shop_ids: isFollowed && localFollowedIds.length > 0 ? localFollowedIds.join(',') : undefined,
             ...overrides
         };
         

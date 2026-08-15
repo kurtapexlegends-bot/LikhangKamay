@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import MobileDock from '@/Layouts/MobileDock';
+import { syncSignalsWithServer } from '@/utils/buyerSignals';
 
 export default function BuyerNavbar({ hideMobileDock = false }) {
     // Enable Real-time synchronization
@@ -17,6 +18,12 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
 
     const { auth, cartCount, sellerSidebar, unreadMessageCount, platform } = usePage().props;
     const user = auth?.user;
+
+    useEffect(() => {
+        if (user?.id) {
+            syncSignalsWithServer(user.id);
+        }
+    }, [user?.id]);
     const rawBuyerName = user?.name?.trim()
         || [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim();
     const buyerDisplayName = rawBuyerName
