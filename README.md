@@ -1,82 +1,112 @@
 # Likhang Kamay
 
-> Integrated Clayworks Management Platform & 3D E-Commerce Marketplace
+Integrated Clayworks ERP Management Platform & 3D E-Commerce Marketplace
 
-Likhang Kamay is an all-in-one ERP (Enterprise Resource Planning) system and e-commerce marketplace engineered specifically for traditional pottery studios and claywork artisans in Cavite, Philippines. The platform replaces paper-based workflows with unified digitizations of inventory, procurement, finance, human resources, logistics, and real-time client communications.
+Likhang Kamay is an enterprise resource planning (ERP) platform and specialized e-commerce marketplace engineered for pottery studios and claywork artisans. It replaces fragmented paper-based processes with an integrated system covering inventory control, procurement, financial ledgers, HR and shift attendance, courier logistics, and real-time customer and team communications.
 
-To bridge the sensory gap of online shopping, Likhang Kamay implements an interactive WebGL 3D viewer, allowing buyers to inspect clay textures, glazes, and physical shapes from any device.
+To resolve the physical inspection challenge of purchasing handmade ceramics online, Likhang Kamay embeds an interactive WebGL 3D viewer that enables buyers to inspect clay textures, glazes, dimensions, and craftsmanship details prior to checkout.
 
 ---
 
-## Key Features
+## Key Modules & Capabilities
 
-### 1. Interactive WebGL 3D Viewer
-*   **360-Degree Evaluation:** View, rotate, and zoom into ceramic pieces in real time.
-*   **Asset Support:** Parsed and rendered high-fidelity `.glb` and `.gltf` assets using Three.js, `@react-three/fiber`, and `@react-three/drei`.
-*   **Visual Trust:** Replicates physical volume, texture details, and dimensions to build buyer confidence.
+### 1. Interactive WebGL 3D Inspection Engine
+*   **360-Degree Mesh Evaluation:** Real-time orbit, pan, and zoom controls for handcrafted ceramic pieces.
+*   **Asset Support:** High-fidelity `.glb` and `.gltf` asset parsing rendered via Three.js, `@react-three/fiber`, and `@react-three/drei`.
+*   **3D Asset Management:** Seller-side model validation, bundle uploads, and asset linking per product variant.
 
-### 2. Business Operations (ERP)
-*   **Human Resources:** Shift schedule manager with chronometer logs and automatic session suspension to secure labor-time logs.
-*   **Automated Payroll:** Attendance logs multiplied against wage rates, writing net payouts (minus commissions, materials, and shipping fees) straight to the ledger.
-*   **Procurement & Restocking:** permanent material-recipe mapping. Depleted supply levels trigger multi-stage requisition lists requiring internal accountant approval before purchase release.
-*   **Business Analytics:** Interactive margin, revenue, and material drain dashboards powered by Recharts.
+### 2. Artisan ERP & Business Operations
+*   **Human Resources & Time Tracking:** Shift schedule orchestration with chronometer logs, automatic break handling, and idle session suspension.
+*   **Automated Payroll:** Time-card calculations mapped to hourly wage rates, deducting material usage or advances and syncing directly with the financial ledger.
+*   **Procurement & Recipe Restocking:** Recipe-to-supply mapping. Low-stock supply thresholds generate multi-stage requisition lists with maker-checker approval controls.
+*   **Financial & Margin Analytics:** Real-time revenue, expense breakdown, and material drain dashboards built with Recharts.
 
-### 3. Commerce & Logistics Gateway
-*   **Secure Payment:** PayMongo API integration supporting GCash, Card, and e-wallets, backed by HMAC SHA-256 webhook signature verification.
-*   **Logistics Automation:** Direct Lalamove API integration for real-time shipping costs based on precise seller/buyer coordinates. Webhooks track driver routing phases.
-*   **Active Inventory Control:** Rigid item categorization (Available, Reserved, Shipped) that updates during checkouts, with automated background jobs to prune unpaid carts and restore stock.
+### 3. Commerce, Payments & Logistics
+*   **Payment Processing:** PayMongo API integration supporting Card, GCash, Maya, and e-wallets with HMAC SHA-256 webhook signature verification.
+*   **Logistics Automation:** Lalamove API integration calculating precise coordinate-based shipping rates with automatic driver dispatch and delivery lifecycle tracking.
+*   **Inventory Synchronization:** Multi-state stock reservation lifecycle (Available, Reserved, Shipped) with automated scheduled background jobs to expire abandoned carts.
 
-### 4. Direct Messaging & Reviews
-*   **WebSocket Chat:** Direct buyer-to-artisan negotiation chat window powered by Laravel Reverb/Echo.
-*   **Verified Review System:** Confirmed transaction owners can post ratings, comments, and upload product inspection photos.
+### 4. Collaboration, CRM & Real-Time Messaging
+*   **Team Messaging:** Internal communication hub featuring role-scoped channels, direct messaging, threaded replies, `@mentions`, and reactions.
+*   **Customer Negotiation Chat:** Real-time buyer-to-artisan chat backed by Supabase Real-Time / Laravel Reverb with auto-reply message templates and typing indicators.
+*   **Verified Reviews:** Transaction-authenticated product ratings, text reviews, and photo attachments with admin moderation workflows.
+
+### 5. Multi-Tier Subscriptions & Monetization
+*   **Plan Quota Enforcement:** Tiered capabilities across Free, Standard, and Elite plans (product limits, staff seat allocations, sponsorship requests, and report exports).
+*   **Automated PayMongo Subscriptions:** Recurring billing, checkout sessions, and grace-period management upon downgrade or cancellation.
+
+### 6. Email Studio & Universal Global Search
+*   **Dynamic Email Studio:** Visual template editor with variable hydration tags and broadcast dispatching via Resend.
+*   **Multi-Tenant Global Search:** Keyboard-navigable command palette (`>`) querying products, orders, inventory, staff, and disputes scoped strictly by tenant permissions.
+
+---
+
+## Security & Authentication Architecture
+
+*   **Role-Based Access Control (RBAC):** Strict isolation across four tenant boundaries: `super_admin`, `artisan` (owner), `staff`, and `buyer`.
+*   **Single Device Session Enforcement:** Active session ID verification (`EnforceSingleDeviceSession`) invalidating concurrent logins to protect against multi-device takeover.
+*   **OAuth Integration:** Socialite-powered Google and Facebook authentication with automatic email verification and session synchronization.
+*   **Data Protection & Rate Limiting:** Form Request validation, XSS sanitization, database transaction closures, and route throttling configured for search, login, and administrative exports.
 
 ---
 
 ## Technology Stack
 
 ### Backend
-*   **Framework:** Laravel 12 / PHP 8.2+
-*   **WebSockets:** Laravel Reverb & Echo
-*   **Email Engine:** Resend PHP
-*   **Errors & Analytics:** Sentry Integration
-*   **Exports:** Barryvdh DomPDF & PHPWord
+*   **Framework:** Laravel 12 (PHP 8.2+)
+*   **Database:** MySQL / PostgreSQL (served via Laragon locally)
+*   **Real-Time / WebSockets:** Supabase Real-Time & Laravel Reverb / Echo
+*   **Transactional Email:** Resend PHP
+*   **Document Generation:** Barryvdh DomPDF & PHPWord
+*   **Monitoring & Tracing:** Sentry Laravel SDK
 
 ### Frontend
-*   **Core:** React 18, Vite 7, Inertia.js (Inertia React)
-*   **Styling:** TailwindCSS 3 / 4, Framer Motion (Transitions & Micro-animations)
-*   **Rendering:** Three.js, `@react-three/fiber`, `@react-three/drei`
-*   **Charts:** Recharts
-
-### Testing & Linting
-*   **Testing Framework:** Pest / PHPUnit (405 tests, 2890 assertions)
-*   **Coding Standards:** Laravel Pint (PHP) & ESLint (React/JS)
+*   **Framework:** React 18 with Inertia.js SPA architecture
+*   **Build Tool:** Vite 7
+*   **Styling:** Tailwind CSS with standardized design tokens (`clay`, `stone`, `rose`)
+*   **3D Rendering:** Three.js, `@react-three/fiber`, `@react-three/drei`
+*   **Motion & Charts:** Framer Motion, Recharts, Lucide Icons
 
 ---
 
-## Installation & Setup
+## Development Setup
 
 ### Prerequisites
 *   PHP 8.2 or higher
 *   Composer
 *   Node.js (v18+) & npm
-*   SQLite or MySQL Database
-*   Lalamove & PayMongo API developer credentials
+*   MySQL or PostgreSQL
+*   PayMongo & Lalamove developer sandbox credentials
 
-### Automated Installation
-Initialize the environment configurations, dependencies, migrations, keys, and asset builds using the automated setup script:
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/kurtapexlegends-bot/LikhangKamay.git
+   cd LikhangKamay
+   ```
+
+2. Initialize dependencies, environment variables, database migrations, and front-end builds:
+   ```bash
+   npm run setup
+   ```
+
+3. Start the local development server (web server, queue worker, scheduler, and Vite):
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## Testing & Quality Assurance
+
+The codebase enforces automated test coverage across authentication, ERP business logic, logistics, subscriptions, and security boundaries.
+
+Run the test suite:
 ```bash
-npm run setup
+php artisan test
 ```
 
-### Running Locally
-To launch the concurrent developer ecosystem (web server, queue listener, scheduler, logs, and Vite dev server) in one command:
-```bash
-npm run dev
-```
-
-### Running the Test Suite
-Ensure the application integrity and check for route or transaction regressions:
-```bash
-composer test
-```
-*(Or execute `php artisan test` directly)*
+**Current Test Metrics:**
+*   **Tests:** 490 passed
+*   **Assertions:** 3,281 passing
+*   **Code Standard:** Laravel Pint (PHP) & ESLint (React/JS)
