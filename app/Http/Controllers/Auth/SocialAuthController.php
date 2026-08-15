@@ -110,13 +110,18 @@ class SocialAuthController extends Controller
         $existingUser = User::where('email', $socialUser->getEmail())->first();
 
         if ($existingUser) {
-            // For existing users, just log them in (don't change their role)
+            // For existing users, link social provider and auto-verify email since Google proved ownership
+            $updateData = [];
             if (!$existingUser->social_provider) {
-                $existingUser->update([
-                    'social_provider' => $provider,
-                    'social_id' => $socialUser->getId(),
-                    'avatar' => $socialUser->getAvatar(),
-                ]);
+                $updateData['social_provider'] = $provider;
+                $updateData['social_id'] = $socialUser->getId();
+                $updateData['avatar'] = $socialUser->getAvatar();
+            }
+            if (!$existingUser->hasVerifiedEmail()) {
+                $updateData['email_verified_at'] = now();
+            }
+            if (!empty($updateData)) {
+                $existingUser->update($updateData);
             }
 
             Auth::login($existingUser, $rememberSocialLogin);

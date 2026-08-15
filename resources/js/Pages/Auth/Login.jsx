@@ -5,11 +5,12 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { Eye, EyeOff, Store, Loader2, Mail, Lock } from 'lucide-react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Eye, EyeOff, Store, Loader2, Mail, Lock, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Login({ status, canResetPassword }) {
+    const { flash } = usePage().props;
     const { data, setData, post, processing, errors, reset, setError, clearErrors } = useForm({
         email: '',
         password: '',
@@ -109,9 +110,19 @@ export default function Login({ status, canResetPassword }) {
                 {status && (
                     <motion.div 
                         variants={itemVariants}
-                        className="mb-6 font-medium text-xs text-green-700 bg-green-50/80 p-3.5 rounded-xl border border-green-100/50 text-center shadow-sm"
+                        className="mb-6 font-medium text-xs text-emerald-700 bg-emerald-50/80 p-3.5 rounded-xl border border-emerald-100/50 text-center shadow-sm"
                     >
                         {status}
+                    </motion.div>
+                )}
+
+                {flash?.error && (
+                    <motion.div 
+                        variants={itemVariants}
+                        className="mb-6 font-medium text-xs text-rose-700 bg-rose-50/80 p-3.5 rounded-xl border border-rose-200/60 flex items-center justify-center gap-2 shadow-sm text-center"
+                    >
+                        <AlertCircle size={15} className="shrink-0 text-rose-600" />
+                        <span>{flash.error}</span>
                     </motion.div>
                 )}
 

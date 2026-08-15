@@ -4,9 +4,8 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Socialite\Contracts\Provider;
-use Laravel\Socialite\Contracts\User as SocialiteUserContract;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\User as SocialiteUser;
 use Mockery;
 use Tests\TestCase;
 
@@ -14,70 +13,79 @@ class SocialAuthTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function fakeSocialiteUser(string $email): void
+    public function test_user_can_redirect_to_google_provider(): void
     {
-        $socialUser = Mockery::mock(SocialiteUserContract::class);
-        $socialUser->shouldReceive('getEmail')->andReturn($email);
-        $socialUser->shouldReceive('getId')->andReturn('provider-123');
-        $socialUser->shouldReceive('getAvatar')->andReturn('https://example.com/avatar.png');
-        $socialUser->shouldReceive('getName')->andReturn('Social Test');
+        $response = $this->get(route('auth.social', ['provider' => 'google']));
 
-        $provider = Mockery::mock(Provider::class);
-        $provider->shouldReceive('user')->once()->andReturn($socialUser);
-
-        Socialite::shouldReceive('driver')
-            ->once()
-            ->with('google')
-            ->andReturn($provider);
+        $response->assertStatus(302);
+        $this->assertStringContainsString('accounts.google.com', $response->headers->get('Location') ?? '');
     }
 
-    public function test_existing_verified_buyers_using_social_auth_follow_normal_buyer_redirects(): void
+    public function test_existing_user_logs_in_via_google_callback(): void
     {
         $user = User::factory()->create([
-            'email' => 'buyer@example.com',
+            'email' => 'kurtstanleytalastas@gmail.com',
             'role' => 'buyer',
+            'email_verified_at' => null,
         ]);
 
-        $this->fakeSocialiteUser($user->email);
+        $abstractUser = Mockery::mock(SocialiteUser::class);
+        $abstractUser->shouldReceive('getId')->andReturn('google-12345');
+        $abstractUser->shouldReceive('getEmail')->andReturn('kurtstanleytalastas@gmail.com');
+        $abstractUser->shouldReceive('getName')->andReturn('Kurt Stanley Talastas');
+        $abstractUser->shouldReceive('getAvatar')->andReturn('https://lh3.googleusercontent.com/a/avatar.jpg');
 
-        $response = $this
-            ->withSession(['social_auth_role' => 'buyer', 'social_auth_remember' => false])
-            ->get('/auth/google/callback');
+        $provider = Mockery::mock(\Laravel\Socialite\Two\GoogleProvider::class);
+        $provider->shouldReceive('user')->andReturn($abstractUser);
+
+        Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
+
+        $response = $this->get('/auth/google/callback');
 
         $this->assertAuthenticatedAs($user);
-        $response->assertRedirect('/');
+        $this->assertNotNull($user->fresh()->email_verified_at);
+        $this->assertEquals('google', $user->fresh()->social_provider);
+        $this->assertEquals('google-12345', $user->fresh()->social_id);
     }
 
-    public function test_existing_unverified_users_using_social_auth_are_redirected_to_email_verification(): void
+    public function test_new_user_redirects_to_complete_profile(): void
     {
-        $user = User::factory()->unverified()->create([
-            'email' => 'unverified@example.com',
-            'role' => 'buyer',
-        ]);
+        $abstractUser = Mockery::mock(SocialiteUser::class);
+        $abstractUser->shouldReceive('getId')->andReturn('google-99999');
+        $abstractUser->shouldReceive('getEmail')->andReturn('newuser@gmail.com');
+        $abstractUser->shouldReceive('getName')->andReturn('New Google User');
+        $abstractUser->shouldReceive('getAvatar')->andReturn('https://lh3.googleusercontent.com/a/new.jpg');
 
-        $this->fakeSocialiteUser($user->email);
+        $provider = Mockery::mock(\Laravel\Socialite\Two\GoogleProvider::class);
+        $provider->shouldReceive('user')->andReturn($abstractUser);
 
-        $response = $this
-            ->withSession(['social_auth_role' => 'buyer', 'social_auth_remember' => false])
-            ->get('/auth/google/callback');
+        Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
 
-        $this->assertAuthenticatedAs($user);
-        $response->assertRedirect(route('verification.notice', absolute: false));
+        $response = $this->get('/auth/google/callback');
+
+        $response->assertRedirect(route('auth.complete-profile'));
+        $this->assertGuest();
+        $this->assertEquals('newuser@gmail.com', session('social_auth.email'));
     }
 
-    public function test_existing_pending_artisans_using_social_auth_are_redirected_to_pending(): void
+    public function test_state_exception_falls_back_to_stateless(): void
     {
-        $user = User::factory()->artisanPending()->create([
-            'email' => 'artisan@example.com',
-        ]);
+        $abstractUser = Mockery::mock(SocialiteUser::class);
+        $abstractUser->shouldReceive('getId')->andReturn('google-stateless');
+        $abstractUser->shouldReceive('getEmail')->andReturn('stateless@gmail.com');
+        $abstractUser->shouldReceive('getName')->andReturn('Stateless User');
+        $abstractUser->shouldReceive('getAvatar')->andReturn('https://lh3.googleusercontent.com/a/stateless.jpg');
 
-        $this->fakeSocialiteUser($user->email);
+        $provider = Mockery::mock(\Laravel\Socialite\Two\GoogleProvider::class);
+        $provider->shouldReceive('user')->once()->andThrow(new \Laravel\Socialite\Two\InvalidStateException());
+        $provider->shouldReceive('stateless')->once()->andReturnSelf();
+        $provider->shouldReceive('user')->once()->andReturn($abstractUser);
 
-        $response = $this
-            ->withSession(['social_auth_role' => 'artisan', 'social_auth_remember' => false])
-            ->get('/auth/google/callback');
+        Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
 
-        $this->assertAuthenticatedAs($user);
-        $response->assertRedirect(route('artisan.pending', absolute: false));
+        $response = $this->get('/auth/google/callback');
+
+        $response->assertRedirect(route('auth.complete-profile'));
+        $this->assertEquals('stateless@gmail.com', session('social_auth.email'));
     }
 }

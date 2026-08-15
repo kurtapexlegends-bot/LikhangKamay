@@ -6,11 +6,12 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
 import LegalModal from '@/Components/LegalModal';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { Eye, EyeOff, Loader2, Store, Mail, Lock, User, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Register() {
+    const { flash } = usePage().props;
     const { data, setData, post, processing, errors, reset, setError, clearErrors } = useForm({
         first_name: '',
         last_name: '',
@@ -237,6 +238,16 @@ export default function Register() {
                     <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight mb-1.5">Create Account</h1>
                     <p className="text-stone-400 text-xs font-medium">Sign up to discover unique local pottery.</p>
                 </motion.div>
+
+                {flash?.error && (
+                    <motion.div 
+                        variants={itemVariants}
+                        className="mb-6 font-medium text-xs text-rose-700 bg-rose-50/80 p-3.5 rounded-xl border border-rose-200/60 flex items-center justify-center gap-2 shadow-sm text-center"
+                    >
+                        <AlertCircle size={15} className="shrink-0 text-rose-600" />
+                        <span>{flash.error}</span>
+                    </motion.div>
+                )}
 
                 {/* Form */}
                 <motion.form 
