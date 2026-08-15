@@ -151,46 +151,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
         }
 
         setIsAddingToCart(true);
-
-        const mainImage = document.getElementById('main-product-image');
-        const cartIcon = document.getElementById('navbar-cart-icon');
-
-        if (mainImage && cartIcon && window.innerWidth >= 768) {
-            const imgRect = mainImage.getBoundingClientRect();
-            const cartRect = cartIcon.getBoundingClientRect();
-
-            const clone = mainImage.cloneNode();
-            clone.className = 'flying-product-thumbnail';
-            
-            clone.style.width = `${imgRect.width}px`;
-            clone.style.height = `${imgRect.height}px`;
-            clone.style.top = `${imgRect.top}px`;
-            clone.style.left = `${imgRect.left}px`;
-            clone.style.objectFit = 'cover';
-            clone.style.borderRadius = '12px';
-
-            document.body.appendChild(clone);
-
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    clone.style.top = `${cartRect.top}px`;
-                    clone.style.left = `${cartRect.left}px`;
-                    clone.style.width = '24px';
-                    clone.style.height = '24px';
-                    clone.style.opacity = '0.5';
-                    clone.style.transform = 'scale(0.2)';
-                });
-            });
-
-            setTimeout(() => {
-                if (document.body.contains(clone)) {
-                    document.body.removeChild(clone);
-                }
-                window.dispatchEvent(new CustomEvent('cart-add-animate', { detail: { quantity } }));
-            }, 800);
-        } else if (cartIcon && window.innerWidth < 768) {
-            window.dispatchEvent(new CustomEvent('cart-add-animate', { detail: { quantity } }));
-        }
+        window.dispatchEvent(new CustomEvent('cart-add-animate', { detail: { quantity } }));
 
         router.post(route('cart.store'), { 
             product_id: product.id,

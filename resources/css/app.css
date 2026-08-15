@@ -130,15 +130,6 @@ body.has-sticky-action-bar .mobile-dock {
 }
 }
 
-/* Fly to Cart Animation */
-.flying-product-thumbnail {
-    position: fixed;
-    z-index: 9999;
-    border-radius: 50%;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    pointer-events: none;
-    transition: top 0.8s cubic-bezier(0.5, 0, 0.5, 1), left 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s ease-in, opacity 0.8s ease-in, width 0.8s ease-in, height 0.8s ease-in;
-}
 
 @keyframes cart-shake {
     0%, 100% { transform: rotate(0deg) scale(1); }
