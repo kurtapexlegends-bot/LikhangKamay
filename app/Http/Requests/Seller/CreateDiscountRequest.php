@@ -30,6 +30,7 @@ class CreateDiscountRequest extends FormRequest
             'max_purchase_limit' => ['nullable', 'integer', 'min:1'],
             'start_at' => ['required', 'date'],
             'end_at' => ['required', 'date', 'after:start_at'],
+            'is_followers_only' => ['nullable', 'boolean'],
             'product_ids' => ['nullable', 'array'],
             'product_ids.*' => ['integer', 'exists:products,id'],
             'items' => ['nullable', 'array', 'min:1'],

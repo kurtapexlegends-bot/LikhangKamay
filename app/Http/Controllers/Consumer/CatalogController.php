@@ -27,15 +27,18 @@ class CatalogController extends Controller
         }
 
         try {
+            $user = $request->user();
             $sponsoredProducts = $catalogService->getSponsoredProducts();
             $featuredProducts = $catalogService->getFeaturedProducts(
                 collect($sponsoredProducts)->pluck('id')->all()
             );
+            $followedProducts = $catalogService->getFollowedShopsProducts($user);
             $topSellers = $catalogService->getTopSellers();
             $categories = $catalogService->getCategories();
         } catch (\Exception $e) {
             $sponsoredProducts = [];
             $featuredProducts = [];
+            $followedProducts = [];
             $topSellers = [];
             $categories = [];
             
@@ -49,6 +52,7 @@ class CatalogController extends Controller
             'canRegister' => Route::has('register'),
             'featuredProducts' => $featuredProducts,
             'sponsoredProducts' => $sponsoredProducts,
+            'followedProducts' => $followedProducts,
             'topSellers' => $topSellers,
             'categories' => $categories,
         ]);
@@ -60,6 +64,7 @@ class CatalogController extends Controller
     public function index(Request $request, CatalogService $catalogService)
     {
         try {
+            $user = $request->user();
             $isDefaultRequest = !$request->filled('search') &&
                                 (!$request->filled('category') || $request->category === 'All') &&
                                 !$request->filled('price_min') &&
@@ -67,6 +72,7 @@ class CatalogController extends Controller
                                 !$request->filled('locations') &&
                                 !$request->filled('materials') &&
                                 !$request->filled('min_rating') &&
+                                !$request->boolean('followed_only') &&
                                 (!$request->filled('sort') || $request->sort === 'newest') &&
                                 ((int) $request->get('page', 1) === 1);
 
@@ -93,7 +99,7 @@ class CatalogController extends Controller
                     ['path' => $request->url(), 'query' => $request->query()]
                 );
             } else {
-                $query = $catalogService->buildCatalogQuery($request->all());
+                $query = $catalogService->buildCatalogQuery($request->all(), $user);
                 $paginator = $query->paginate(20)->withQueryString();
                 $paginator->through(fn ($product) => $catalogService->serializeCatalogProduct($product));
             }
@@ -131,7 +137,7 @@ class CatalogController extends Controller
             'materialCounts' => $metadata['materialCounts'] ?? [],
             'locationCounts' => $metadata['locationCounts'] ?? [],
             'filters' => $request->only([
-                'search', 'category', 'price_min', 'price_max', 'sort', 'locations', 'materials', 'min_rating'
+                'search', 'category', 'price_min', 'price_max', 'sort', 'locations', 'materials', 'min_rating', 'followed_only'
             ])
         ]);
     }

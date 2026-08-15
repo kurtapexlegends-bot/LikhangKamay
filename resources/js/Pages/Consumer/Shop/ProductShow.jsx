@@ -357,6 +357,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                 {/* ========== SELLER CARD & DESCRIPTION ========== */}
                 <SellerAboutPanel 
                     product={product}
+                    auth={auth}
                     handleChatSeller={handleChatSeller}
                     chatRequirementMessage={chatRequirementMessage}
                 />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Check, Package, Clock, Award, X } from 'lucide-react';
+import { Star, Check, Package, Clock, Award, X, Users } from 'lucide-react';
 import DiscountCountdownBadge from '@/Components/Consumer/DiscountCountdownBadge';
 
 export default function ProductDetailsCard({ product, productRating }) {
@@ -41,13 +41,25 @@ export default function ProductDetailsCard({ product, productRating }) {
                             <span className="text-sm font-semibold text-gray-400 line-through">
                                 PHP {Number(product.discount_info?.original_price || product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                             </span>
-                            <span className="bg-rose-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                                {product.discount_info?.percentage_off ? `-${product.discount_info.percentage_off}% OFF` : 'PROMO'}
-                            </span>
+                            {product.discount_info?.is_followers_only ? (
+                                <span className="bg-sky-800 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+                                    <Users size={11} />
+                                    {product.discount_info?.percentage_off ? `-${product.discount_info.percentage_off}% Followers Only` : 'Followers Deal'}
+                                </span>
+                            ) : (
+                                <span className="bg-rose-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                                    {product.discount_info?.percentage_off ? `-${product.discount_info.percentage_off}% OFF` : 'PROMO'}
+                                </span>
+                            )}
                         </div>
                         {product.discount_info?.saved_amount > 0 && (
                             <p className="text-xs text-emerald-700 font-semibold mt-1">
                                 You save PHP {Number(product.discount_info.saved_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}!
+                            </p>
+                        )}
+                        {product.discount_info?.is_followers_only && (
+                            <p className="text-[11px] text-sky-800 font-semibold mt-1.5 flex items-center gap-1.5">
+                                <Users size={12} className="shrink-0" /> Follow this artisan studio to enjoy this exclusive discounted rate!
                             </p>
                         )}
                         {product.discount_info?.end_at && (

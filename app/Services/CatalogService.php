@@ -161,9 +161,40 @@ class CatalogService
     }
 
     /**
+     * Get recent products from shops the authenticated user follows.
+     */
+    public function getFollowedShopsProducts(?User $user, int $limit = 8): array
+    {
+        if (!$user) {
+            return [];
+        }
+
+        $followedShopIds = $user->followingShops()->pluck('users.id')->all();
+        if (empty($followedShopIds)) {
+            return [];
+        }
+
+        return Product::with('user')
+            ->approved()
+            ->whereIn('user_id', $followedShopIds)
+            ->whereHas('user', function ($q) {
+                $q->where('role', 'artisan')
+                  ->where('artisan_status', 'approved')
+                  ->whereHas('complianceAgreements', function ($cq) {
+                      $cq->where('document_type', 'seller_terms');
+                  });
+            })
+            ->latest()
+            ->take($limit)
+            ->get()
+            ->map(fn(Product $product) => $this->formatProductForHome($product))
+            ->all();
+    }
+
+    /**
      * Build catalog query with filters and sorting.
      */
-    public function buildCatalogQuery(array $filters)
+    public function buildCatalogQuery(array $filters, ?User $user = null)
     {
         $query = Product::approved()
             ->whereHas('user', function ($q) {
@@ -174,6 +205,11 @@ class CatalogService
                   });
             })
             ->with(['user']);
+
+        if (!empty($filters['followed_only']) && $user) {
+            $followedShopIds = $user->followingShops()->pluck('users.id')->all();
+            $query->whereIn('user_id', !empty($followedShopIds) ? $followedShopIds : [0]);
+        }
 
         if (!empty($filters['category']) && $filters['category'] !== 'All') {
             $query->where('category', $filters['category']);

@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import Footer from '@/Layouts/Footer';
-import { Award, ArrowRight, Package } from 'lucide-react';
+import { Award, ArrowRight, Package, Store } from 'lucide-react';
 import { useSponsoredImpressionTracking } from '@/utils/sponsorshipTracking';
 import { formatSold } from '@/utils/catalog';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
@@ -15,7 +15,7 @@ import CategoryPillTabs from '@/Components/Consumer/Welcome/CategoryPillTabs';
 import SponsoredProductsCarousel from '@/Components/Consumer/Welcome/SponsoredProductsCarousel';
 import TopArtisansGrid from '@/Components/Consumer/Welcome/TopArtisansGrid';
 
-export default function Welcome({ featuredProducts = [], sponsoredProducts = [], topSellers = [], categories = [] }) {
+export default function Welcome({ featuredProducts = [], sponsoredProducts = [], followedProducts = [], topSellers = [], categories = [] }) {
     const sponsoredPlacement = 'home_sponsored';
 
     useSponsoredImpressionTracking(sponsoredProducts, sponsoredPlacement);
@@ -32,9 +32,46 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                 
                 <HeroSection />
 
+                {/* FROM STUDIOS YOU FOLLOW */}
+                {followedProducts.length > 0 && (
+                    <section className="order-1 relative rounded-2xl bg-white border border-stone-200/80 p-4 sm:p-5 shadow-xs flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-clay-50 text-clay-700 border border-clay-100">
+                                    <Store size={14} />
+                                </span>
+                                <div>
+                                    <h2 className="text-base font-serif font-bold text-stone-900 leading-none">From Studios You Follow</h2>
+                                    <p className="text-[11px] text-stone-500 font-medium mt-1">Fresh releases from your favorite artisan workshops</p>
+                                </div>
+                            </div>
+                            <Link 
+                                href={route('shop.index', { followed_only: 1 })} 
+                                className="text-xs text-clay-700 font-semibold hover:underline flex items-center gap-1 min-h-[36px]"
+                            >
+                                View Followed Feed <ArrowRight size={12} />
+                            </Link>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                            {followedProducts.map((product) => (
+                                <ProductCard
+                                    key={`followed-${product.id}`}
+                                    product={{
+                                        ...product,
+                                        image: product.img || product.image,
+                                        seller: product.seller || product.seller_name,
+                                        location: product.location || 'Philippines',
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
+
                 {/* SPONSORED PRODUCTS SECTION */}
                 {sponsoredProducts.length > 0 && (
-                    <section className="order-1 relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50/60 via-white to-clay-50/30 border border-amber-100/50 p-4 shadow-sm flex flex-col gap-4">
+                    <section className="order-2 relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50/60 via-white to-clay-50/30 border border-amber-100/50 p-4 shadow-sm flex flex-col gap-4">
                         <div className="flex items-center gap-3">
                             <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-amber-100 to-amber-50 text-amber-700 shadow-sm border border-amber-200/50">
                                 <Award size={14} className="drop-shadow-sm" />

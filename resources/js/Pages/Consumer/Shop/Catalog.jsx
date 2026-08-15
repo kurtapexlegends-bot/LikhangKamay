@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import {
-    ChevronDown, SlidersHorizontal, MapPin, Search, X, ArrowUpDown
+    ChevronDown, SlidersHorizontal, MapPin, Search, X, ArrowUpDown, Store
 } from 'lucide-react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
@@ -40,6 +40,7 @@ export default function Catalog(props) {
         setSelectedLocations(safeFilters.locations ? String(safeFilters.locations).split(',') : []);
         setSelectedMaterials(safeFilters.materials ? String(safeFilters.materials).split(',') : []);
         setMinRating(safeFilters.min_rating || '');
+        setFollowedOnly(Boolean(safeFilters.followed_only));
         setSortBy(safeFilters.sort || 'newest');
     }, [props.products, props.filters]);
 
@@ -78,6 +79,7 @@ export default function Catalog(props) {
     const [activeCategory, setActiveCategory] = useState(safeFilters.category || 'All');
     const [sortBy, setSortBy] = useState(safeFilters.sort || 'newest');
     const [searchTerm, setSearchTerm] = useState(safeFilters.search || '');
+    const [followedOnly, setFollowedOnly] = useState(Boolean(safeFilters.followed_only));
     
     // Location filter
     const initialLocations = safeFilters.locations ? String(safeFilters.locations).split(',') : [];
@@ -104,6 +106,7 @@ export default function Catalog(props) {
 
     // --- FILTER LOGIC ---
     const applyFilters = (overrides = {}) => {
+        const isFollowed = overrides.followed_only !== undefined ? overrides.followed_only : (followedOnly ? 1 : undefined);
         const params = {
             search: searchTerm,
             category: activeCategory,
@@ -113,12 +116,13 @@ export default function Catalog(props) {
             locations: selectedLocations.join(','),
             materials: selectedMaterials.join(','),
             min_rating: minRating,
+            followed_only: isFollowed ? 1 : undefined,
             ...overrides
         };
         
         // Remove empty values
         Object.keys(params).forEach(key => {
-            if (!params[key] || params[key] === 'All') delete params[key];
+            if (params[key] === undefined || params[key] === null || params[key] === '' || params[key] === 'All') delete params[key];
         });
         
         setIsLoading(true);
@@ -174,6 +178,7 @@ export default function Catalog(props) {
         setSelectedLocations([]);
         setSelectedMaterials([]);
         setMinRating('');
+        setFollowedOnly(false);
         setSortBy('newest');
         router.visit(route('shop.index'));
     };
@@ -185,6 +190,7 @@ export default function Catalog(props) {
         selectedLocations.length > 0,
         selectedMaterials.length > 0,
         minRating,
+        followedOnly,
     ].filter(Boolean).length;
 
     const quickRecoverySearches = ['Planter', 'Mug', 'Tableware'];
@@ -194,9 +200,20 @@ export default function Catalog(props) {
         setIsLoadingMore(true);
         try {
             const response = await axios.get(nextPageUrl, {
-                headers: { 'X-Inertia': 'true' }
+                params: {
+                    search: searchTerm,
+                    category: activeCategory !== 'All' ? activeCategory : undefined,
+                    price_min: minPrice || undefined,
+                    price_max: maxPrice || undefined,
+                    locations: selectedLocations.length > 0 ? selectedLocations.join(',') : undefined,
+                    materials: selectedMaterials.length > 0 ? selectedMaterials.join(',') : undefined,
+                    min_rating: minRating || undefined,
+                    followed_only: followedOnly ? 1 : undefined,
+                    sort: sortBy,
+                },
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
-            const newProducts = response.data.props.products.data.map((product) => ({
+            const newProducts = (response.data.props.products.data || []).map((product) => ({
                 ...product,
                 rating: normalizeRating(product?.rating),
             }));
@@ -322,23 +339,42 @@ export default function Catalog(props) {
                                 )}
                             </div>
 
-                            {/* RIGHT: Sort (Mobile) Dropdown */}
-                            <div className="flex items-center gap-2 ml-auto sm:ml-0">
-                                <ArrowUpDown size={14} className="text-gray-400" />
-                                <span className="text-xs text-gray-400">Sort:</span>
-                                <div className="relative">
-                                    <select 
-                                        value={sortBy} 
-                                        onChange={(e) => handleSortChange(e.target.value)}
-                                        className="appearance-none bg-white border border-gray-200 text-gray-700 py-1.5 pl-3 pr-8 rounded-lg text-sm font-medium focus:outline-none focus:ring-1 focus:ring-clay-200 cursor-pointer hover:border-clay-300 transition active:scale-95"
-                                    >
-                                        {sortOptions.map(option => (
-                                            <option key={option.value} value={option.value}>
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
+                            {/* RIGHT: Followed Toggle & Sort Dropdown */}
+                            <div className="flex flex-wrap items-center gap-2.5 ml-auto sm:ml-0">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const nextVal = !followedOnly;
+                                        setFollowedOnly(nextVal);
+                                        applyFilters({ followed_only: nextVal ? 1 : undefined });
+                                    }}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                                        followedOnly
+                                            ? 'bg-clay-700 text-white border-clay-700 shadow-2xs'
+                                            : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300 hover:bg-stone-50'
+                                    }`}
+                                >
+                                    <Store size={13} className={followedOnly ? 'text-white' : 'text-clay-700'} />
+                                    Studios You Follow
+                                </button>
+
+                                <div className="flex items-center gap-2">
+                                    <ArrowUpDown size={14} className="text-gray-400" />
+                                    <span className="text-xs text-gray-400">Sort:</span>
+                                    <div className="relative">
+                                        <select 
+                                            value={sortBy} 
+                                            onChange={(e) => handleSortChange(e.target.value)}
+                                            className="appearance-none bg-white border border-gray-200 text-gray-700 py-1.5 pl-3 pr-8 rounded-lg text-sm font-medium focus:outline-none focus:ring-1 focus:ring-clay-200 cursor-pointer hover:border-clay-300 transition active:scale-95"
+                                        >
+                                            {sortOptions.map(option => (
+                                                <option key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -347,6 +383,17 @@ export default function Catalog(props) {
                         {(activeFilterCount > 0 || searchTerm) && (
                             <div className="flex flex-wrap items-center gap-2 mb-5 p-3 bg-stone-50 border border-stone-200/70 rounded-xl text-xs">
                                 <span className="font-bold text-stone-500 text-[10px] uppercase tracking-wider mr-1">Active Filters:</span>
+
+                                {/* Followed Only Chip */}
+                                {followedOnly && (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-clay-50 border border-clay-200 text-clay-800 font-bold rounded-lg shadow-2xs">
+                                        <Store size={12} />
+                                        Studios You Follow
+                                        <button onClick={() => { setFollowedOnly(false); applyFilters({ followed_only: undefined }); }} className="hover:text-clay-900 transition" title="Clear followed filter">
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                )}
 
                                 {/* Search Term Chip */}
                                 {searchTerm && (

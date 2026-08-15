@@ -1,10 +1,37 @@
-import React, { useState } from 'react';
-import { Link } from '@inertiajs/react';
-import { MessageCircle, Store, MapPin, Crown, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, router } from '@inertiajs/react';
+import { MessageCircle, Store, MapPin, Crown, Sparkles, UserPlus, Check } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
+import { isShopFollowed, toggleFollowedShop } from '@/utils/buyerSignals';
+import { useToast } from '@/Components/ToastContext';
 
-export default function SellerAboutPanel({ product, handleChatSeller, chatRequirementMessage }) {
+export default function SellerAboutPanel({ product, handleChatSeller, chatRequirementMessage, auth }) {
+    const { addToast } = useToast();
     const [isExpanded, setIsExpanded] = useState(false);
+    const sellerId = product.seller?.id || product.user_id;
+    const [isFollowed, setIsFollowed] = useState(() => (auth?.user && sellerId ? isShopFollowed(sellerId, auth.user.id) : false));
+
+    useEffect(() => {
+        setIsFollowed(auth?.user && sellerId ? isShopFollowed(sellerId, auth.user.id) : false);
+    }, [sellerId, auth?.user]);
+
+    const toggleFollow = () => {
+        if (!auth?.user) {
+            addToast('Please log in to follow artisan studios.', 'info');
+            router.get(route('login'));
+            return;
+        }
+
+        const sellerObj = product.seller || { id: sellerId, name: product.seller_name };
+        const nextFollowed = toggleFollowedShop(sellerObj, auth.user.id);
+        setIsFollowed(nextFollowed);
+        addToast(
+            nextFollowed
+                ? 'Studio followed! You will receive restock and new release alerts.'
+                : 'Studio removed from followed shops.',
+            'success',
+        );
+    };
 
     return (
         <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
@@ -37,6 +64,18 @@ export default function SellerAboutPanel({ product, handleChatSeller, chatRequir
                 <div className="flex flex-col sm:flex-row gap-2 w-full mt-3">
                     <button
                         type="button"
+                        onClick={toggleFollow}
+                        className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
+                            isFollowed
+                                ? 'bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100'
+                                : 'border border-gray-200 text-gray-700 hover:bg-gray-50'
+                        }`}
+                    >
+                        {isFollowed ? <Check size={14} className="text-sky-700" /> : <UserPlus size={14} />}
+                        {isFollowed ? 'Following' : 'Follow'}
+                    </button>
+                    <button
+                        type="button"
                         onClick={handleChatSeller}
                         aria-label={product?.viewer_can_chat_seller ? 'Open seller chat' : 'View seller chat policy'}
                         className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
@@ -46,14 +85,14 @@ export default function SellerAboutPanel({ product, handleChatSeller, chatRequir
                         }`}
                     >
                         <MessageCircle size={14} />
-                        {product?.viewer_can_chat_seller ? 'Chat' : 'Chat Policy'}
+                        {product?.viewer_can_chat_seller ? 'Chat' : 'Policy'}
                     </button>
                     <Link 
                         href={route('shop.seller', product.seller?.slug || '#')} 
                         className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-clay-600 px-3 py-2.5 text-xs font-bold text-white transition-colors hover:bg-clay-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
                     >
                         <Store size={14} />
-                        View Shop
+                        Shop
                     </Link>
                 </div>
                 {!product?.viewer_can_chat_seller && chatRequirementMessage && (

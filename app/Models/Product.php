@@ -140,6 +140,7 @@ class Product extends Model
             'name' => $activeDiscount->name,
             'type' => $activeDiscount->type,
             'value' => (float) $activeDiscount->value,
+            'is_followers_only' => (bool) $activeDiscount->is_followers_only,
             'original_price' => $originalPrice,
             'discounted_price' => $discountedPrice,
             'saved_amount' => $savedAmount,

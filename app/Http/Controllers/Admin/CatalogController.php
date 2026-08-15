@@ -290,6 +290,11 @@ class CatalogController extends Controller
                     $action === 'approve' ? 'approved' : $action,
                     $feedback
                 ));
+
+                // If approved, notify shop followers of new release
+                if ($action === 'approve') {
+                    app(\App\Services\FollowerNotificationService::class)->notifyFollowersOfNewProduct($product);
+                }
             }
         });
 

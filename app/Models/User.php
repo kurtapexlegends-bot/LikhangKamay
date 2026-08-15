@@ -284,6 +284,11 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         return $this->belongsToMany(User::class, 'followed_shops', 'user_id', 'shop_id')->withTimestamps();
     }
 
+    public function shopFollowers()
+    {
+        return $this->belongsToMany(User::class, 'followed_shops', 'shop_id', 'user_id')->withTimestamps();
+    }
+
     public function addresses()
     {
         return $this->hasMany(UserAddress::class);

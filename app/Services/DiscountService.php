@@ -58,6 +58,7 @@ class DiscountService
                         'start_at' => $data['start_at'],
                         'end_at' => $data['end_at'],
                         'is_active' => $data['is_active'] ?? true,
+                        'is_followers_only' => (bool) ($data['is_followers_only'] ?? false),
                     ]);
 
                     $discount->products()->sync($validProductIds);
@@ -90,6 +91,7 @@ class DiscountService
             'start_at' => $data['start_at'],
             'end_at' => $data['end_at'],
             'is_active' => $data['is_active'] ?? true,
+            'is_followers_only' => (bool) ($data['is_followers_only'] ?? false),
         ]);
 
         $validProductIds = Product::where('user_id', $seller->id)
@@ -115,6 +117,7 @@ class DiscountService
                 'max_purchase_limit' => isset($data['max_purchase_limit']) ? (int) $data['max_purchase_limit'] : $discount->max_purchase_limit,
                 'start_at' => $data['start_at'] ?? $discount->start_at,
                 'end_at' => $data['end_at'] ?? $discount->end_at,
+                'is_followers_only' => isset($data['is_followers_only']) ? (bool) $data['is_followers_only'] : $discount->is_followers_only,
             ]);
 
             if (isset($data['product_ids']) && is_array($data['product_ids'])) {

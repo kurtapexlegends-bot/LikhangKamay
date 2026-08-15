@@ -3,7 +3,7 @@ import Modal from "@/Components/Modal";
 import DiscountScheduleCard from "./DiscountModal/DiscountScheduleCard";
 import DiscountStrategySelector from "./DiscountModal/DiscountStrategySelector";
 import DiscountProductTable from "./DiscountModal/DiscountProductTable";
-import { Tag, AlertCircle, CheckCircle2, Loader2, X } from "lucide-react";
+import { Tag, AlertCircle, CheckCircle2, Loader2, X, Users } from "lucide-react";
 import { router } from "@inertiajs/react";
 
 export default function DiscountModal({
@@ -27,6 +27,9 @@ export default function DiscountModal({
     // Global settings
     const [globalType, setGlobalType] = useState("percentage");
     const [globalValue, setGlobalValue] = useState("");
+
+    // Followers-Exclusive toggle
+    const [isFollowersOnly, setIsFollowersOnly] = useState(false);
 
     // Individual settings: { [productId]: { type: 'percentage'|'fixed', value: '' } }
     const [individualMap, setIndividualMap] = useState({});
@@ -58,6 +61,7 @@ export default function DiscountModal({
             setEndAt(discountToEdit.end_at ? formatForInput(new Date(discountToEdit.end_at)) : formatForInput(new Date(Date.now() + 7 * 86400000)));
             setGlobalType(discountToEdit.type || "percentage");
             setGlobalValue(discountToEdit.value ? String(discountToEdit.value) : "");
+            setIsFollowersOnly(Boolean(discountToEdit.is_followers_only));
             setMaxPurchaseLimit(discountToEdit.max_purchase_limit ? String(discountToEdit.max_purchase_limit) : "");
 
             const existingPids = discountToEdit.products ? discountToEdit.products.map((p) => p.id) : [];
@@ -81,6 +85,7 @@ export default function DiscountModal({
             setMode("global");
             setGlobalType("percentage");
             setGlobalValue("");
+            setIsFollowersOnly(false);
             setMaxPurchaseLimit("");
 
             const preselectedPids = selectedProducts.length > 0
@@ -166,6 +171,7 @@ export default function DiscountModal({
             name: name || undefined,
             start_at: payloadStartAt,
             end_at: payloadEndAt,
+            is_followers_only: isFollowersOnly,
             max_purchase_limit: maxPurchaseLimit ? Number(maxPurchaseLimit) : null,
         };
 
@@ -295,6 +301,28 @@ export default function DiscountModal({
                                 maxPurchaseLimit={maxPurchaseLimit}
                                 setMaxPurchaseLimit={setMaxPurchaseLimit}
                             />
+
+                            {/* Followers-Exclusive Toggle Card */}
+                            <div className="p-3.5 bg-white border border-stone-200/80 rounded-xl space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Users size={15} className="text-clay-600 shrink-0" />
+                                        <label htmlFor="followers-only-toggle" className="text-xs font-bold text-stone-900 cursor-pointer">
+                                            Followers Exclusive
+                                        </label>
+                                    </div>
+                                    <input
+                                        id="followers-only-toggle"
+                                        type="checkbox"
+                                        checked={isFollowersOnly}
+                                        onChange={(e) => setIsFollowersOnly(e.target.checked)}
+                                        className="h-4 w-4 rounded border-stone-300 text-clay-600 focus:ring-clay-500 cursor-pointer"
+                                    />
+                                </div>
+                                <p className="text-[11px] text-stone-500 leading-relaxed">
+                                    Only registered buyers who follow your shop can unlock and claim this discount rate.
+                                </p>
+                            </div>
                         </div>
 
                         {/* RIGHT MAIN PANEL: PRODUCT SELECTION & TABLE */}

@@ -48,6 +48,10 @@ class RestockProduct
                 'target_url' => route('products.index', ['highlight_product' => $lockedProduct->id]),
                 'target_label' => 'Open Products',
             ]);
+
+            if ($lockedProduct->status === 'Active') {
+                app(\App\Services\FollowerNotificationService::class)->notifyFollowersOfRestock($lockedProduct);
+            }
         });
     }
 }

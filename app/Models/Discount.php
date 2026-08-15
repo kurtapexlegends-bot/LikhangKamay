@@ -20,6 +20,7 @@ class Discount extends Model
         'start_at',
         'end_at',
         'is_active',
+        'is_followers_only',
     ];
 
     protected $casts = [
@@ -30,6 +31,7 @@ class Discount extends Model
         'start_at' => 'datetime',
         'end_at' => 'datetime',
         'is_active' => \App\Casts\PostgresCompatibleBoolean::class,
+        'is_followers_only' => \App\Casts\PostgresCompatibleBoolean::class,
     ];
 
     protected $appends = ['is_currently_active', 'remaining_promo_stock'];

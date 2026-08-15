@@ -9,7 +9,8 @@ import {
     Activity,
     DollarSign,
     TrendingUp,
-    Star
+    Star,
+    Users
 } from 'lucide-react';
 import {
     AreaChart,
@@ -71,10 +72,10 @@ export default function OverviewTab({
             <div className="space-y-2">
                 <StaggerContainer 
                     onScroll={handleCardScroll}
-                    className="flex overflow-x-auto pb-2.5 gap-6 flex-nowrap snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0"
+                    className="flex overflow-x-auto pb-2.5 gap-4 lg:gap-5 flex-nowrap snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-5 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0"
                 >
                     {isLoading ? (
-                        <ArtisanSkeleton variant="stat" count={4} />
+                        <ArtisanSkeleton variant="stat" count={5} />
                     ) : (
                         <>
                             <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
@@ -129,13 +130,25 @@ export default function OverviewTab({
                                     animate={shouldAnimateKPI} 
                                 />
                             </div>
+                            <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
+                                <KPICard 
+                                    title="Shop Followers" 
+                                    value={metrics.follower_metrics?.total ?? 0} 
+                                    growth={metrics.growth?.followers} 
+                                    growthSuffix=" vs last 30 days"
+                                    icon={Users} 
+                                    bg="bg-sky-50" 
+                                    color="text-sky-700" 
+                                    animate={shouldAnimateKPI} 
+                                />
+                            </div>
                         </>
                     )}
                 </StaggerContainer>
 
                 {/* Page Indicator Dots on Mobile */}
                 <div className="flex justify-center gap-1.5 mt-1 sm:hidden">
-                    {[0, 1, 2, 3].map((i) => (
+                    {[0, 1, 2, 3, 4].map((i) => (
                         <span
                             key={i}
                             className={`h-1 rounded-full transition-all duration-300 ${

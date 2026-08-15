@@ -32,6 +32,7 @@ class AnalyticsController extends Controller
             return [
                 'rollup' => $shopAnalyticsService->getAnalyticsRollup($sellerId),
                 'financials' => $metricsService->getFinancialMetrics($sellerId),
+                'followerMetrics' => $metricsService->getFollowerMetrics($sellerId),
                 'chartData' => $metricsService->getSalesChartData($sellerId, $categoryFilter),
                 'categoryPerformance' => $metricsService->getCategoryPerformance($sellerId),
                 'topProducts' => $metricsService->getTopProducts($sellerId),
@@ -42,6 +43,7 @@ class AnalyticsController extends Controller
 
         $rollup = $analyticsData['rollup'];
         $financials = $analyticsData['financials'];
+        $followerMetrics = $analyticsData['followerMetrics'];
         $chartData = $analyticsData['chartData'];
         $categoryPerformance = $analyticsData['categoryPerformance'];
         $topProducts = $analyticsData['topProducts'];
@@ -68,11 +70,16 @@ class AnalyticsController extends Controller
                         'profit' => 0,
                         'margin' => 0,
                     ],
-                    ['rating' => $reviewStats['growth']]
+                    [
+                        'rating' => $reviewStats['growth'],
+                        'followers' => $followerMetrics['growth_rate'],
+                    ]
                 ),
                 'average_rating' => $reviewStats['average'],
                 'review_stats' => $reviewStats,
+                'follower_metrics' => $followerMetrics,
             ],
+            'followerMetrics' => $followerMetrics,
             'financials_masked' => !$canViewRevenue,
             'insights' => [
                 'sales_heatmap' => $intelligence['sales_heatmap'],

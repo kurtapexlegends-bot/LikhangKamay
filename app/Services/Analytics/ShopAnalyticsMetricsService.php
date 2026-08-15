@@ -286,6 +286,37 @@ class ShopAnalyticsMetricsService
             ->pluck('category');
     }
 
+    public function getFollowerMetrics(int $sellerId): array
+    {
+        $now = Carbon::now();
+        $startOfThisMonth = $now->copy()->startOfMonth();
+        $startOfLastMonth = $now->copy()->subMonth()->startOfMonth();
+        $endOfLastMonth = $now->copy()->subMonth()->endOfMonth();
+
+        $totalFollowers = (int) DB::table('followed_shops')
+            ->where('shop_id', $sellerId)
+            ->count();
+
+        $newThisMonth = (int) DB::table('followed_shops')
+            ->where('shop_id', $sellerId)
+            ->where('created_at', '>=', $startOfThisMonth)
+            ->count();
+
+        $newLastMonth = (int) DB::table('followed_shops')
+            ->where('shop_id', $sellerId)
+            ->whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])
+            ->count();
+
+        $growthRate = $this->calculatePercentage((float) $newThisMonth, (float) $newLastMonth);
+
+        return [
+            'total' => $totalFollowers,
+            'new_this_month' => $newThisMonth,
+            'new_last_month' => $newLastMonth,
+            'growth_rate' => $growthRate,
+        ];
+    }
+
     public function calculatePercentage(float|int $current, float|int $previous)
     {
         if ($previous == 0) {

@@ -68,8 +68,12 @@ export default function ProductCard({ product, sponsoredPlacement, previewOnly =
 
                 {/* Top Right Overlay: Percentage Off Badge */}
                 {product.has_discount || product.discount_info ? (
-                    <span className="absolute top-2 right-2 bg-rose-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase shadow-sm z-10 animate-in fade-in zoom-in-50 duration-300">
-                        {product.discount_info?.percentage_off ? `-${product.discount_info.percentage_off}% OFF` : 'SALE'}
+                    <span className={`absolute top-2 right-2 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase shadow-sm z-10 animate-in fade-in zoom-in-50 duration-300 ${
+                        product.discount_info?.is_followers_only ? 'bg-sky-800' : 'bg-rose-600'
+                    }`}>
+                        {product.discount_info?.is_followers_only 
+                            ? (product.discount_info?.percentage_off ? `-${product.discount_info.percentage_off}% Followers` : 'Followers Deal')
+                            : (product.discount_info?.percentage_off ? `-${product.discount_info.percentage_off}% OFF` : 'SALE')}
                     </span>
                 ) : null}
             </div>
