@@ -74,6 +74,9 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        $user->update([
+            'current_session_id' => $request->session()->getId(),
+        ]);
 
         try {
             event(new Registered($user));

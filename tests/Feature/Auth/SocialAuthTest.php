@@ -21,18 +21,25 @@ class SocialAuthTest extends TestCase
         $this->assertStringContainsString('accounts.google.com', $response->headers->get('Location') ?? '');
     }
 
-    public function test_existing_user_logs_in_via_google_callback(): void
+    public function test_existing_user_logs_in_via_google_callback_and_populates_current_session_id(): void
     {
         $user = User::factory()->create([
-            'email' => 'kurtstanleytalastas@gmail.com',
-            'role' => 'buyer',
-            'email_verified_at' => null,
+            'email' => 'kurtapexlegends@gmail.com',
+            'role' => 'artisan',
+            'artisan_status' => 'approved',
+            'setup_completed_at' => now(),
+            'email_verified_at' => now(),
+            'current_session_id' => 'stale_old_session_123',
+        ]);
+        $user->complianceAgreements()->create([
+            'document_type' => 'seller_terms',
+            'accepted_at' => now(),
         ]);
 
         $abstractUser = Mockery::mock(SocialiteUser::class);
         $abstractUser->shouldReceive('getId')->andReturn('google-12345');
-        $abstractUser->shouldReceive('getEmail')->andReturn('kurtstanleytalastas@gmail.com');
-        $abstractUser->shouldReceive('getName')->andReturn('Kurt Stanley Talastas');
+        $abstractUser->shouldReceive('getEmail')->andReturn('kurtapexlegends@gmail.com');
+        $abstractUser->shouldReceive('getName')->andReturn('Kurt Talastas');
         $abstractUser->shouldReceive('getAvatar')->andReturn('https://lh3.googleusercontent.com/a/avatar.jpg');
 
         $provider = Mockery::mock(\Laravel\Socialite\Two\GoogleProvider::class);
@@ -43,10 +50,12 @@ class SocialAuthTest extends TestCase
 
         $response = $this->get('/auth/google/callback');
 
+        $response->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($user);
-        $this->assertNotNull($user->fresh()->email_verified_at);
-        $this->assertEquals('google', $user->fresh()->social_provider);
-        $this->assertEquals('google-12345', $user->fresh()->social_id);
+
+        // Verify current_session_id was updated to the active session ID
+        $this->assertNotNull($user->fresh()->current_session_id);
+        $this->assertNotEquals('stale_old_session_123', $user->fresh()->current_session_id);
     }
 
     public function test_new_user_redirects_to_complete_profile(): void

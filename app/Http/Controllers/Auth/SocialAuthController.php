@@ -73,7 +73,7 @@ class SocialAuthController extends Controller
     /**
      * Handle OAuth callback
      */
-    public function callback(string $provider, AuthRedirectService $authRedirectService)
+    public function callback(Request $request, string $provider, AuthRedirectService $authRedirectService)
     {
         if (!in_array($provider, $this->providers)) {
             return redirect()->route('login')->with('error', 'Unsupported provider.');
@@ -94,8 +94,8 @@ class SocialAuthController extends Controller
         }
 
         // Get the intended role from session
-        $intendedRole = session('social_auth_role', 'buyer');
-        $rememberSocialLogin = session('social_auth_remember', false);
+        $intendedRole = $request->session()->get('social_auth_role', 'buyer');
+        $rememberSocialLogin = $request->session()->get('social_auth_remember', false);
 
         // Check if user already exists with this email
         $existingUser = User::where('email', $socialUser->getEmail())->first();
@@ -116,8 +116,11 @@ class SocialAuthController extends Controller
             }
 
             Auth::login($existingUser, $rememberSocialLogin);
-            request()->session()->regenerate();
-            session()->forget([
+            $request->session()->regenerate();
+            $existingUser->update([
+                'current_session_id' => $request->session()->getId(),
+            ]);
+            $request->session()->forget([
                 'social_auth',
                 'social_auth_role',
                 'social_auth_remember',
@@ -127,16 +130,14 @@ class SocialAuthController extends Controller
         }
 
         // New user - store social data in session and redirect to complete profile
-        session([
-            'social_auth' => [
-                'provider' => $provider,
-                'id' => $socialUser->getId(),
-                'email' => $socialUser->getEmail(),
-                'name' => $socialUser->getName(),
-                'avatar' => $socialUser->getAvatar(),
-                'role' => $intendedRole,
-                'remember' => $rememberSocialLogin,
-            ]
+        $request->session()->put('social_auth', [
+            'provider' => $provider,
+            'id' => $socialUser->getId(),
+            'email' => $socialUser->getEmail(),
+            'name' => $socialUser->getName(),
+            'avatar' => $socialUser->getAvatar(),
+            'role' => $intendedRole,
+            'remember' => $rememberSocialLogin,
         ]);
 
         return redirect()->route('auth.complete-profile');
@@ -251,6 +252,9 @@ class SocialAuthController extends Controller
         }
         Auth::login($user, (bool) ($socialData['remember'] ?? false));
         $request->session()->regenerate();
+        $user->update([
+            'current_session_id' => $request->session()->getId(),
+        ]);
 
         return $isArtisan
             ? redirect()->to($authRedirectService->pathForVerifiedUser($user))
