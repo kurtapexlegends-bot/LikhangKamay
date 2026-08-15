@@ -90,10 +90,15 @@ Protected under `seller.workspace` and feature-toggled via `seller.module`:
 *   [RouteObfuscator.php](file:///c:/laragon/www/LikhangKamay/app/Support/RouteObfuscator.php): Secures public and private resource routing by obfuscating sensitive database IDs in URLs to prevent scraping and enumeration attacks.
 
 ### Auth & Settings Services & Facades
-*   [AuthRedirectService.php](file:///c:/laragon/www/LikhangKamay/app/Services/AuthRedirectService.php): Handles custom redirect behaviors for different user role classifications upon authentication.
+*   [AuthRedirectService.php](file:///c:/laragon/www/LikhangKamay/app/Services/AuthRedirectService.php): Enforces strict role landing targets upon login (`super_admin` -> `/admin/dashboard`, `artisan` -> `/dashboard`, `staff` -> `/staff/dashboard`, `buyer` -> safe intended consumer path). Sanitizes intended URLs to block buyers from landing on 403 seller/procurement pages.
 *   [EmailVerificationCodeService.php](file:///c:/laragon/www/LikhangKamay/app/Services/EmailVerificationCodeService.php): Manages generation, throttling, and verification validation checks for registration security.
 *   [SystemSettingsService.php](file:///c:/laragon/www/LikhangKamay/app/Services/SystemSettingsService.php): Orchestrates read and write operations for global site variables.
 *   [Settings.php](file:///c:/laragon/www/LikhangKamay/app/Facades/Settings.php): Global settings facade simplifying access to system settings.
+
+### Single Device & Session Synchronization
+*   **Enforcement**: [EnforceSingleDeviceSession.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnforceSingleDeviceSession.php) validates that `$user->current_session_id === $request->session()->getId()`.
+*   **Login Synchronization**: Every authentication channel ([AuthenticatedSessionController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/AuthenticatedSessionController.php), [RegisteredUserController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/RegisteredUserController.php), and [SocialAuthController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/SocialAuthController.php)) explicitly updates `$user->update(['current_session_id' => $request->session()->getId()])` after `$request->session()->regenerate()`.
+*   **Verification Suites**: [RoleGuardrailsTest.php](file:///c:/laragon/www/LikhangKamay/tests/Feature/Auth/RoleGuardrailsTest.php) and [SocialAuthTest.php](file:///c:/laragon/www/LikhangKamay/tests/Feature/Auth/SocialAuthTest.php).
 
 ---
 
