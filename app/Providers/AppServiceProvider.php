@@ -88,9 +88,9 @@ class AppServiceProvider extends ServiceProvider
 
         // --- RATE LIMITERS ---
         
-        // 1. Marketplace Search (Prevent scraping/DOS)
+        // 1. Marketplace Search & Catalog Browsing
         \Illuminate\Support\Facades\RateLimiter::for('marketplace.search', function (\Illuminate\Http\Request $request) {
-            return \Illuminate\Cache\RateLimiting\Limit::perMinute(30)->by($request->ip());
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(120)->by($request->ip());
         });
 
         // 2. CSV & Bulk Operations (Resource Intensive)

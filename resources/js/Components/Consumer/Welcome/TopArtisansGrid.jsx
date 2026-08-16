@@ -60,14 +60,14 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
     };
 
     return (
-        <section className="order-4">
-            <h2 className="text-lg font-serif font-black text-stone-900 mb-5 flex items-center gap-2">
+        <section>
+            <h2 className="text-base sm:text-lg md:text-xl font-serif font-bold text-stone-900 mb-4 sm:mb-5 flex items-center gap-2">
                 <Trophy size={18} className="text-[#D4A373]" />
                 Top Selling Stores
             </h2>
             
             {/* Mobile view: Horizontal swiping boutique carousel */}
-            <div className="flex md:hidden gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x scrollbar-hide">
+            <div className="flex md:hidden gap-3.5 overflow-x-auto pb-3 -mx-4 px-4 snap-x scrollbar-hide">
                 {topSellers.map((store, originalIdx) => {
                     const theme = getRankTheme(originalIdx);
 

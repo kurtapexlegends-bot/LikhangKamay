@@ -17,7 +17,7 @@ class CatalogService
     public function getSponsoredProducts(): array
     {
         return Cache::remember('home_sponsored_products', 1800, function () {
-            return Product::with('user')
+            return Product::with(['user', 'discounts'])
                 ->approved()
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
@@ -39,7 +39,7 @@ class CatalogService
     public function getFeaturedProducts(array $sponsoredProductIds = []): array
     {
         $pool = Cache::remember('home_featured_products_pool', 1800, function () {
-            return Product::with('user')
+            return Product::with(['user', 'discounts'])
                 ->approved()
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
@@ -115,7 +115,7 @@ class CatalogService
             $storeIds = $topStores->pluck('user_id')->all();
             $sellers = User::with(['products' => function ($q) {
                     $q->approved()
-                      ->with('user')
+                      ->with(['user', 'discounts'])
                       ->orderByDesc('sold')
                       ->orderByDesc('rating')
                       ->orderByDesc('created_at')
@@ -174,7 +174,7 @@ class CatalogService
             return [];
         }
 
-        return Product::with('user')
+        return Product::with(['user', 'discounts'])
             ->approved()
             ->whereIn('user_id', $followedShopIds)
             ->whereHas('user', function ($q) {
@@ -204,7 +204,7 @@ class CatalogService
                       $cq->where('document_type', 'seller_terms');
                   });
             })
-            ->with(['user']);
+            ->with(['user', 'discounts']);
 
         if (!empty($filters['followed_only'])) {
             $followedShopIds = [];

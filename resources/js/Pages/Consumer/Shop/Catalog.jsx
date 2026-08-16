@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import {
-    ChevronDown, SlidersHorizontal, MapPin, Search, X, ArrowUpDown, Store
+    ChevronDown, SlidersHorizontal, MapPin, Search, X, ArrowUpDown, Store, Loader2
 } from 'lucide-react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
@@ -14,7 +14,6 @@ import FilterSidebar from './Partials/FilterSidebar';
 import ProductCard from '@/Pages/Consumer/Shop/Partials/ProductCard';
 import CatalogSkeleton from '@/Components/Consumer/CatalogSkeleton';
 import { getFollowedShopIds } from '@/utils/buyerSignals';
-import axios from 'axios';
 
 export default function Catalog(props) {
     // Explicitly handle potentially null props BEFORE any hooks
@@ -28,10 +27,14 @@ export default function Catalog(props) {
     const [products, setProducts] = useState(initialProducts);
     const [nextPageUrl, setNextPageUrl] = useState(props.products?.next_page_url);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const observerRef = useRef(null);
     
     useEffect(() => {
-        setProducts(initialProducts);
-        setNextPageUrl(props.products?.next_page_url);
+        // Reset products and next page URL only on initial load or filter/search resets (page 1)
+        if (!props.products?.current_page || props.products.current_page === 1) {
+            setProducts(initialProducts);
+            setNextPageUrl(props.products?.next_page_url || null);
+        }
 
         // Sync local filter state with incoming props.filters
         setSearchTerm(safeFilters.search || '');
@@ -198,46 +201,68 @@ export default function Catalog(props) {
 
     const quickRecoverySearches = ['Planter', 'Mug', 'Tableware'];
 
-    const loadMore = async () => {
+    const loadMore = () => {
         if (!nextPageUrl || isLoadingMore) return;
         setIsLoadingMore(true);
-        try {
-            const response = await axios.get(nextPageUrl, {
-                params: {
-                    search: searchTerm,
-                    category: activeCategory !== 'All' ? activeCategory : undefined,
-                    price_min: minPrice || undefined,
-                    price_max: maxPrice || undefined,
-                    locations: selectedLocations.length > 0 ? selectedLocations.join(',') : undefined,
-                    materials: selectedMaterials.length > 0 ? selectedMaterials.join(',') : undefined,
-                    min_rating: minRating || undefined,
-                    followed_only: followedOnly ? 1 : undefined,
-                    sort: sortBy,
+
+        router.get(
+            nextPageUrl,
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['products'],
+                showProgress: false,
+                onSuccess: (page) => {
+                    const incomingProducts = Array.isArray(page.props.products?.data)
+                        ? page.props.products.data.map((product) => ({
+                            ...product,
+                            rating: normalizeRating(product?.rating),
+                        }))
+                        : [];
+
+                    setProducts((prev) => {
+                        const existingIds = new Set(prev.map((p) => p.id));
+                        const uniqueNew = incomingProducts.filter((p) => !existingIds.has(p.id));
+                        return [...prev, ...uniqueNew];
+                    });
+                    setNextPageUrl(page.props.products?.next_page_url || null);
                 },
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            const newProducts = (response.data.props.products.data || []).map((product) => ({
-                ...product,
-                rating: normalizeRating(product?.rating),
-            }));
-            setProducts(prev => [...prev, ...newProducts]);
-            setNextPageUrl(response.data.props.products.next_page_url);
-        } catch (error) {
-            console.error("Error loading more products:", error);
-        } finally {
-            setIsLoadingMore(false);
-        }
+                onError: (err) => {
+                    console.error("Error loading more products:", err);
+                    setNextPageUrl(null);
+                },
+                onFinish: () => {
+                    setIsLoadingMore(false);
+                },
+            }
+        );
     };
 
-    // Bind scroll bottom listener for infinite scrolling
+    // IntersectionObserver sentinel for smooth, non-flickering infinite scroll
     useEffect(() => {
-        const handleScroll = () => {
-            if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200) {
-                loadMore();
+        if (!nextPageUrl || isLoadingMore) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !isLoadingMore && nextPageUrl) {
+                    loadMore();
+                }
+            },
+            { rootMargin: '250px' }
+        );
+
+        const currentTarget = observerRef.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
             }
+            observer.disconnect();
         };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
     }, [nextPageUrl, isLoadingMore]);
 
     return (
@@ -550,9 +575,15 @@ export default function Catalog(props) {
                                         </motion.div>
                                     ))}
                                 </motion.div>
-                                {isLoadingMore && (
-                                    <div className="mt-3">
-                                        <CatalogSkeleton />
+                                {/* Infinite scroll sentinel & subtle loading indicator */}
+                                {nextPageUrl && (
+                                    <div ref={observerRef} className="h-16 w-full flex items-center justify-center py-4">
+                                        {isLoadingMore && (
+                                            <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 bg-white/90 backdrop-blur px-4 py-2 rounded-full border border-stone-200 shadow-xs animate-in fade-in">
+                                                <Loader2 size={14} className="animate-spin text-clay-600" />
+                                                <span>Loading more items...</span>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

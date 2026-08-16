@@ -36,12 +36,12 @@ export default function CategoryPillTabs({ categories = [] }) {
 
     return (
         <section>
-            <h2 className="text-xl font-serif font-bold text-gray-900 mb-4 flex items-center gap-3">
+            <h2 className="text-base sm:text-lg md:text-xl font-serif font-bold text-stone-900 mb-3 sm:mb-4 flex items-center gap-2">
                 Browse by Category
             </h2>
-            <div className="bg-white rounded-2xl p-4 md:p-6 border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl p-3 sm:p-4 md:p-6 border border-stone-200/60 shadow-xs overflow-hidden">
                 {/* Desktop/Tablet View: Grid */}
-                <div className="hidden md:grid md:grid-cols-4 lg:grid-cols-7 gap-4">
+                <div className="hidden md:grid md:grid-cols-4 lg:grid-cols-7 gap-3 lg:gap-4">
                     {categories.map((cat, idx) => {
                         const catName = typeof cat === 'object' ? cat.name : cat;
                         const catIcon = typeof cat === 'object' ? cat.icon : null;
@@ -50,12 +50,12 @@ export default function CategoryPillTabs({ categories = [] }) {
                             <Link 
                                 href={`${route('shop.index')}?category=${encodeURIComponent(catName)}`} 
                                 key={idx} 
-                                className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl hover:bg-clay-50/60 hover:border-clay-200 border border-transparent transition-all duration-300 group bg-transparent min-h-[44px]"
+                                className="flex flex-col items-center justify-center gap-2.5 p-3.5 rounded-xl hover:bg-clay-50/70 hover:border-clay-200 border border-transparent transition-all duration-200 group bg-transparent active:scale-95 min-h-[44px]"
                             >
-                                <div className="w-12 h-12 rounded-full bg-clay-100 text-clay-600 flex items-center justify-center group-hover:bg-clay-600 group-hover:text-white transition-colors duration-300">
-                                    <Icon size={22} strokeWidth={1.5} />
+                                <div className="w-11 h-11 rounded-full bg-clay-100/70 text-clay-700 flex items-center justify-center group-hover:bg-clay-600 group-hover:text-white transition-colors duration-200">
+                                    <Icon size={20} strokeWidth={1.5} />
                                 </div>
-                                <span className="text-sm font-bold text-stone-600 group-hover:text-clay-800 text-center leading-tight">
+                                <span className="text-xs font-bold text-stone-700 group-hover:text-clay-900 text-center leading-tight">
                                     {catName}
                                 </span>
                             </Link>
@@ -64,7 +64,7 @@ export default function CategoryPillTabs({ categories = [] }) {
                 </div>
 
                 {/* Mobile View: Horizontal Scroll */}
-                <div className="flex md:hidden overflow-x-auto gap-3 pb-2 -mx-4 px-4 scrollbar-hide snap-x">
+                <div className="flex md:hidden overflow-x-auto gap-2.5 pb-1 -mx-3 px-3 scrollbar-hide snap-x">
                     {categories.map((cat, idx) => {
                         const catName = typeof cat === 'object' ? cat.name : cat;
                         const catIcon = typeof cat === 'object' ? cat.icon : null;
@@ -73,12 +73,12 @@ export default function CategoryPillTabs({ categories = [] }) {
                             <Link 
                                 href={`${route('shop.index')}?category=${encodeURIComponent(catName)}`} 
                                 key={idx} 
-                                className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border border-stone-100 transition-all duration-300 group min-w-[100px] snap-center bg-stone-50/40 min-h-[44px]"
+                                className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl border border-stone-100 transition-all duration-200 group min-w-[88px] snap-center bg-stone-50/50 active:scale-[0.96] min-h-[44px]"
                             >
-                                <div className="w-10 h-10 rounded-full bg-clay-100 text-clay-600 flex items-center justify-center">
-                                    <Icon size={20} strokeWidth={1.5} />
+                                <div className="w-9 h-9 rounded-full bg-clay-100 text-clay-700 flex items-center justify-center">
+                                    <Icon size={18} strokeWidth={1.5} />
                                 </div>
-                                <span className="text-[11px] font-bold text-stone-600 text-center leading-tight">
+                                <span className="text-[11px] font-bold text-stone-700 text-center leading-tight truncate max-w-[80px]">
                                     {catName}
                                 </span>
                             </Link>
