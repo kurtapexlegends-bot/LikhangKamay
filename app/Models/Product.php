@@ -111,45 +111,49 @@ class Product extends Model
 
     public function getDiscountInfoAttribute()
     {
-        $activeDiscounts = $this->relationLoaded('discounts') 
-            ? $this->discounts->filter(fn($d) => $d->is_currently_active)
-            : $this->activeDiscounts()->get();
+        try {
+            $activeDiscounts = $this->relationLoaded('discounts') 
+                ? $this->discounts->filter(fn($d) => $d->is_currently_active)
+                : $this->activeDiscounts()->get();
 
-        if ($activeDiscounts->isEmpty()) {
+            if ($activeDiscounts->isEmpty()) {
+                return null;
+            }
+
+            $originalPrice = (float) $this->price;
+
+            // Lowest Price Wins Strategy: Sort active discounts by calculated discounted price ascending
+            $bestDiscount = $activeDiscounts->sortBy(fn($d) => $d->calculateDiscountedPrice($originalPrice))->first();
+
+            if (!$bestDiscount) {
+                return null;
+            }
+
+            $activeDiscount = $bestDiscount;
+            $discountedPrice = $activeDiscount->calculateDiscountedPrice($originalPrice);
+            $savedAmount = max(0, round($originalPrice - $discountedPrice, 2));
+            $percentageOff = $originalPrice > 0 
+                ? round(($savedAmount / $originalPrice) * 100) 
+                : 0;
+
+            return [
+                'id' => $activeDiscount->id,
+                'name' => $activeDiscount->name,
+                'type' => $activeDiscount->type,
+                'value' => (float) $activeDiscount->value,
+                'is_followers_only' => (bool) $activeDiscount->is_followers_only,
+                'original_price' => $originalPrice,
+                'discounted_price' => $discountedPrice,
+                'saved_amount' => $savedAmount,
+                'percentage_off' => $percentageOff,
+                'start_at' => $activeDiscount->start_at ? $activeDiscount->start_at->toIso8601String() : null,
+                'end_at' => $activeDiscount->end_at ? $activeDiscount->end_at->toIso8601String() : null,
+                'end_at_formatted' => $activeDiscount->end_at ? $activeDiscount->end_at->format('M d, Y') : null,
+                'max_purchase_limit' => $activeDiscount->max_purchase_limit,
+            ];
+        } catch (\Throwable $e) {
             return null;
         }
-
-        $originalPrice = (float) $this->price;
-
-        // Lowest Price Wins Strategy: Sort active discounts by calculated discounted price ascending
-        $bestDiscount = $activeDiscounts->sortBy(fn($d) => $d->calculateDiscountedPrice($originalPrice))->first();
-
-        if (!$bestDiscount) {
-            return null;
-        }
-
-        $activeDiscount = $bestDiscount;
-        $discountedPrice = $activeDiscount->calculateDiscountedPrice($originalPrice);
-        $savedAmount = max(0, round($originalPrice - $discountedPrice, 2));
-        $percentageOff = $originalPrice > 0 
-            ? round(($savedAmount / $originalPrice) * 100) 
-            : 0;
-
-        return [
-            'id' => $activeDiscount->id,
-            'name' => $activeDiscount->name,
-            'type' => $activeDiscount->type,
-            'value' => (float) $activeDiscount->value,
-            'is_followers_only' => (bool) $activeDiscount->is_followers_only,
-            'original_price' => $originalPrice,
-            'discounted_price' => $discountedPrice,
-            'saved_amount' => $savedAmount,
-            'percentage_off' => $percentageOff,
-            'start_at' => $activeDiscount->start_at ? $activeDiscount->start_at->toIso8601String() : null,
-            'end_at' => $activeDiscount->end_at ? $activeDiscount->end_at->toIso8601String() : null,
-            'end_at_formatted' => $activeDiscount->end_at ? $activeDiscount->end_at->format('M d, Y') : null,
-            'max_purchase_limit' => $activeDiscount->max_purchase_limit,
-        ];
     }
 
     public function calculateTotalPriceForQuantity(int $qty): float

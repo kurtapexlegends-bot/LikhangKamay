@@ -86,7 +86,7 @@ class HandleInertiaRequests extends Middleware
             
             // Shared counts evaluated on initial page load (for real-time headers/sidebar)
             'unreadNotificationCount' => fn () => $user ? $user->getUnreadNotificationsQuery()->count() : 0,
-            'unreadMessageCount' => fn () => $user ? \App\Models\Message::where('receiver_id', $user->id)->whereRaw('is_read = false')->count() : 0,
+            'unreadMessageCount' => fn () => $user ? \App\Models\Message::where('receiver_id', $user->id)->where('is_read', \App\Casts\PostgresCompatibleBoolean::dbVal(false))->count() : 0,
             'pendingArtisanCount' => fn () => $user && $user->role === 'super_admin' 
                 ? \App\Models\User::where('role', 'artisan')->where('artisan_status', 'pending')->whereNotNull('setup_completed_at')->count() 
                 : 0,

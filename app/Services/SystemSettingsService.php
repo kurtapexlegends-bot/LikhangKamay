@@ -14,14 +14,18 @@ class SystemSettingsService
      */
     protected function getAllSettings(): array
     {
-        return Cache::remember('all_platform_settings', 3600, function () {
-            return PlatformVariable::all()->mapWithKeys(function ($variable) {
-                return [$variable->key => [
-                    'value' => $variable->value,
-                    'type' => $variable->type,
-                ]];
-            })->toArray();
-        });
+        try {
+            return Cache::remember('all_platform_settings', 3600, function () {
+                return PlatformVariable::all()->mapWithKeys(function ($variable) {
+                    return [$variable->key => [
+                        'value' => $variable->value,
+                        'type' => $variable->type,
+                    ]];
+                })->toArray();
+            });
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /**
@@ -35,7 +39,7 @@ class SystemSettingsService
             return $default;
         }
 
-        return $this->castValue($all[$key]['value'], $all[$key]['type']);
+        return $this->castValue($all[$key]['value'], $all[$key]['type']) ?? $default;
     }
 
     /**
@@ -68,8 +72,12 @@ class SystemSettingsService
     /**
      * Cast the string value from DB to its intended type.
      */
-    protected function castValue(string $value, string $type): mixed
+    protected function castValue(?string $value, string $type): mixed
     {
+        if ($value === null) {
+            return null;
+        }
+
         return match ($type) {
             'integer', 'int' => (int) $value,
             'boolean', 'bool' => filter_var($value, FILTER_VALIDATE_BOOLEAN),

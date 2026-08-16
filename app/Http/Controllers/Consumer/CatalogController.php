@@ -35,16 +35,14 @@ class CatalogController extends Controller
             $followedProducts = $catalogService->getFollowedShopsProducts($user);
             $topSellers = $catalogService->getTopSellers();
             $categories = $catalogService->getCategories();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $sponsoredProducts = [];
             $featuredProducts = [];
             $followedProducts = [];
             $topSellers = [];
             $categories = [];
             
-            if (config('app.debug')) {
-                report($e);
-            }
+            report($e);
         }
 
         return Inertia::render('Consumer/Welcome', [
