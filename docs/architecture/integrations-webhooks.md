@@ -79,3 +79,21 @@ sequenceDiagram
 If the webhook processing throws a server-side exception (e.g., database lock or temporary service failure), the controller catches the error, logs it, and returns a standard `200 OK` response.
 > [!NOTE]
 > Returning `200 OK` on processing failure is intentional. It prevents the Lalamove server from initiating infinite webhook payload retries, which would flood the system logs.
+
+---
+
+## 4. Production Webhooks & Maintenance
+
+### Migration Webhook (`/webhooks/migrate`)
+*   **Route**: `GET /webhooks/migrate` (defined in [web.php](file:///c:/laragon/www/LikhangKamay/routes/web.php)).
+*   **Purpose**: Allows running `php artisan migrate --force` securely on serverless host environments (such as Vercel).
+*   **Authorization Modes**:
+    1. Query secret matching `CRON_SECRET` environment variable (`?secret=<CRON_SECRET>`).
+    2. Authenticated `super_admin` or `artisan` user session.
+    3. Emergency migration key parameter (`?secret=likhangkamay_migrate_2026`).
+*   **Response Format**: Returns JSON payload with migration output and structured error reports.
+
+### Background Queue Worker Webhook (`/webhooks/cron/queue`)
+*   **Route**: `GET /webhooks/cron/queue` (defined in [web.php](file:///c:/laragon/www/LikhangKamay/routes/web.php)).
+*   **Security Header**: Validates `X-Vercel-Cron-Secret` against `CRON_SECRET`.
+*   **Execution**: Dispatches `queue:work --stop-when-empty --max-time=50` to process queued notifications, mailings, and async tasks without blocking HTTP serverless requests.

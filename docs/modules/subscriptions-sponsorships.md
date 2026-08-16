@@ -94,3 +94,11 @@ Handled by the [DowngradeSubscription.php](file:///c:/laragon/www/LikhangKamay/a
 *   [NewArtisanApplicationNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/NewArtisanApplicationNotification.php) | [NewArtisanApplication.php](file:///c:/laragon/www/LikhangKamay/app/Mail/NewArtisanApplication.php): Alerts admins of new artisan onboarding submissions.
 *   [ArtisanApproved.php](file:///c:/laragon/www/LikhangKamay/app/Mail/ArtisanApproved.php) | [ArtisanRejected.php](file:///c:/laragon/www/LikhangKamay/app/Mail/ArtisanRejected.php): Dispatches onboarding review results to applicants.
 *   [SponsorshipStatusNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/SponsorshipStatusNotification.php) | [SponsorshipStatusUpdated.php](file:///c:/laragon/www/LikhangKamay/app/Mail/SponsorshipStatusUpdated.php): Dispatches alerts regarding product promotion and sponsorship approvals.
+
+---
+
+## 6. Settings Hub Tier Gating
+
+In the Unified Global Settings Hub ([GlobalSettings.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Seller/Settings/GlobalSettings.jsx) and [SettingsController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/SettingsController.php)):
+*   **Standard / Free Plan**: Only the **Shop Storefront** tab is visible.
+*   **Premium / Elite Plan**: Unlocks advanced enterprise tabs including **Workplace Locations** (GPS coordinates and geofences), **People & Payroll** (overtime multipliers, cutoffs, tax rules), and **Finance & Payouts** (banking and automated payout reconciliation).
