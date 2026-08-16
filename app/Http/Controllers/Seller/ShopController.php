@@ -127,10 +127,10 @@ class ShopController extends Controller
             ->visibleToMarketplace()
             ->avg('rating') ?? 0);
 
-        $locations = \App\Models\SellerLocation::where('user_id', $user->id)
+        $locations = rescue(fn() => \App\Models\SellerLocation::where('user_id', $user->id)
             ->withCount('employees')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get(), collect());
 
         return Inertia::render('Seller/Settings/ShopSettings', [
             'user'  => $user,

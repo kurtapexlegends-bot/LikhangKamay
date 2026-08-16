@@ -375,10 +375,18 @@ Route::get('/webhooks/cron/queue', function () {
     ]);
 })->name('webhooks.cron.queue');
 
-Route::get('/webhooks/migrate', function () {
-    if (request()->query('secret') !== env('CRON_SECRET')) {
-        return response()->json(['error' => 'Unauthorized'], 401);
+Route::get('/webhooks/migrate', function (\Illuminate\Http\Request $request) {
+    $user = $request->user();
+    $cronSecret = env('CRON_SECRET');
+    $providedSecret = $request->query('secret');
+
+    $isAuthorized = ($cronSecret && $providedSecret === $cronSecret)
+        || ($user && in_array($user->role, ['super_admin', 'artisan', 'admin']));
+
+    if (!$isAuthorized) {
+        return response()->json(['error' => 'Unauthorized. Please provide valid ?secret= or log in as an administrator/artisan.'], 401);
     }
+
     \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
     return response()->json([
         'status' => 'success',

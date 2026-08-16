@@ -48,7 +48,7 @@ class HRController extends Controller
         $canEditHrRecords = HRWorkflowHelper::canEditHrRecords($actor);
         $recentAccessAudits = HRWorkflowHelper::getRecentAccessAudits($seller);
 
-        $locations = \App\Models\SellerLocation::where('user_id', $seller->id)->get();
+        $locations = rescue(fn() => \App\Models\SellerLocation::where('user_id', $seller->id)->get(), collect());
 
         return Inertia::render('Seller/HR/HR', [
             'staff' => $employees,

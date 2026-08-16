@@ -24,10 +24,10 @@ class SettingsController extends Controller
 
         $sellerOwner = $user->getEffectiveSeller() ?: $user;
 
-        $locations = SellerLocation::where('user_id', $sellerOwner->id)
+        $locations = rescue(fn() => SellerLocation::where('user_id', $sellerOwner->id)
             ->withCount('employees')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get(), collect());
 
         $productsCount = (int) Product::where('user_id', $sellerOwner->id)->where('status', 'Active')->count();
         $totalSales = (int) Product::where('user_id', $sellerOwner->id)->where('status', 'Active')->sum('sold');
