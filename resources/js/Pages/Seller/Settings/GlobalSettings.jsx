@@ -12,11 +12,13 @@ export default function GlobalSettings({ auth, sellerOwner, stats, locations = [
     const { openSidebar } = useSellerWorkspaceShell();
     const [activeTab, setActiveTab] = useState('storefront');
 
+    const isPremiumOrElite = permissions.is_premium_tier ?? (sellerOwner?.premium_tier === 'premium' || sellerOwner?.premium_tier === 'super_premium');
+
     const tabs = [
-        { id: 'storefront', label: 'Shop Storefront', show: permissions.can_edit_shop_settings },
-        { id: 'locations', label: 'Workplace Locations', show: permissions.can_edit_shop_settings },
-        { id: 'payroll', label: 'People & Payroll', show: permissions.can_edit_hr_settings },
-        { id: 'finance', label: 'Finance & Payouts', show: permissions.can_edit_accounting },
+        { id: 'storefront', label: 'Shop Storefront', show: Boolean(permissions.can_edit_shop_settings) },
+        { id: 'locations', label: 'Workplace Locations', show: Boolean(permissions.can_edit_shop_settings && isPremiumOrElite) },
+        { id: 'payroll', label: 'People & Payroll', show: Boolean(permissions.can_edit_hr_settings && isPremiumOrElite) },
+        { id: 'finance', label: 'Finance & Payouts', show: Boolean(permissions.can_edit_accounting && isPremiumOrElite) },
     ].filter((t) => t.show);
 
     return (

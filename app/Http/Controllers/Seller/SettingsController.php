@@ -85,8 +85,9 @@ class SettingsController extends Controller
             'locations' => $locations,
             'permissions' => [
                 'can_edit_shop_settings' => $user->isArtisan() || $user->isWorkspaceOwner(),
-                'can_edit_hr_settings' => $user->isArtisan() || $user->can_edit_hr_records,
-                'can_edit_accounting' => $user->isArtisan() || $user->can_access_accounting,
+                'can_edit_hr_settings' => ($user->isArtisan() || $user->can_edit_hr_records) && in_array($sellerOwner->premium_tier, ['premium', 'super_premium']),
+                'can_edit_accounting' => ($user->isArtisan() || $user->can_access_accounting) && in_array($sellerOwner->premium_tier, ['premium', 'super_premium']),
+                'is_premium_tier' => in_array($sellerOwner->premium_tier, ['premium', 'super_premium']),
             ],
         ]);
     }
