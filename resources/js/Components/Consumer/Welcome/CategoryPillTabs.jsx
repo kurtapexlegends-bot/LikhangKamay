@@ -35,8 +35,8 @@ export default function CategoryPillTabs({ categories = [] }) {
     if (categories.length === 0) return null;
 
     return (
-        <section className="order-2">
-            <h2 className="text-xl font-serif font-bold text-gray-900 mb-6 flex items-center gap-3">
+        <section>
+            <h2 className="text-xl font-serif font-bold text-gray-900 mb-4 flex items-center gap-3">
                 Browse by Category
             </h2>
             <div className="bg-white rounded-2xl p-4 md:p-6 border border-gray-100 shadow-sm overflow-hidden">

@@ -28,13 +28,13 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
             <BuyerNavbar />
 
             {/* --- MAIN CONTENT --- */}
-            <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6 flex flex-col gap-10">
+            <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6 flex flex-col gap-8">
                 
                 <HeroSection />
 
-                {/* SPONSORED PRODUCTS SECTION */}
+                {/* 1. SPONSORED PRODUCTS SECTION */}
                 {sponsoredProducts.length > 0 && (
-                    <section className="order-1 relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50/60 via-white to-clay-50/30 border border-amber-100/50 p-4 shadow-sm flex flex-col gap-4">
+                    <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50/60 via-white to-clay-50/30 border border-amber-100/50 p-4 shadow-sm flex flex-col gap-4">
                         <div className="flex items-center gap-3">
                             <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-amber-100 to-amber-50 text-amber-700 shadow-sm border border-amber-200/50">
                                 <Award size={14} className="drop-shadow-sm" />
@@ -54,28 +54,31 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                     </section>
                 )}
 
-                {/* FROM STUDIOS YOU FOLLOW */}
+                {/* 2. BROWSE BY CATEGORY */}
+                <CategoryPillTabs categories={categories} />
+
+                {/* 3. FROM STUDIOS YOU FOLLOW (COMPACT) */}
                 {followedProducts.length > 0 && (
-                    <section className="order-2 relative rounded-2xl bg-white border border-stone-200/80 p-4 sm:p-5 shadow-xs flex flex-col gap-4">
+                    <section className="relative rounded-2xl bg-stone-50/40 border border-stone-200/70 p-3.5 sm:p-4 shadow-xs flex flex-col gap-3">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5">
-                                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-clay-50 text-clay-700 border border-clay-100">
-                                    <Store size={14} />
+                            <div className="flex items-center gap-2">
+                                <span className="flex items-center justify-center w-6 h-6 rounded-md bg-clay-50 text-clay-700 border border-clay-100/80">
+                                    <Store size={12} />
                                 </span>
                                 <div>
-                                    <h2 className="text-base font-serif font-bold text-stone-900 leading-none">From Studios You Follow</h2>
-                                    <p className="text-[11px] text-stone-500 font-medium mt-1">Fresh releases from your favorite artisan workshops</p>
+                                    <h2 className="text-sm sm:text-base font-serif font-bold text-stone-900 leading-none">From Studios You Follow</h2>
+                                    <p className="text-[10px] text-stone-500 font-medium mt-0.5">Fresh releases from your favorite artisan workshops</p>
                                 </div>
                             </div>
                             <Link 
                                 href={route('shop.index', { followed_only: 1 })} 
-                                className="text-xs text-clay-700 font-semibold hover:underline flex items-center gap-1 min-h-[36px]"
+                                className="text-[11px] text-clay-700 font-semibold hover:underline flex items-center gap-1 min-h-[36px]"
                             >
-                                View Followed Feed <ArrowRight size={12} />
+                                View Feed <ArrowRight size={11} />
                             </Link>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3">
                             {followedProducts.map((product) => (
                                 <ProductCard
                                     key={`followed-${product.id}`}
@@ -91,11 +94,8 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                     </section>
                 )}
 
-                {/* CATEGORIES */}
-                <CategoryPillTabs categories={categories} />
-
-                {/* FEATURED PRODUCTS */}
-                <section className="order-3">
+                {/* 4. FEATURED PRODUCTS */}
+                <section>
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
                             <span className="w-1 h-5 bg-clay-600 rounded-full"></span>
@@ -144,7 +144,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                     )}
                 </section>
 
-                {/* TOP STORES - DSS Dashboard */}
+                {/* 5. TOP STORES - DSS Dashboard */}
                 <TopArtisansGrid topSellers={topSellers} formatSold={formatSold} />
 
             </main>

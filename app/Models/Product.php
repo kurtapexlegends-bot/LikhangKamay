@@ -378,7 +378,7 @@ class Product extends Model
             ->where('status', 'Active')
             ->where('id', '!=', $this->id)
             ->where('category', $this->category)
-            ->with('user')
+            ->with(['user', 'discounts'])
             ->orderByRaw("
                 CASE
                     WHEN user_id = ? THEN 1
@@ -407,7 +407,7 @@ class Product extends Model
                 ->where('status', 'Active')
                 ->where('id', '!=', $this->id)
                 ->whereNotIn('id', $preferredMatches->pluck('id'))
-                ->with('user')
+                ->with(['user', 'discounts'])
                 ->orderByRaw("
                     CASE
                         WHEN category = ? THEN 1
@@ -431,11 +431,17 @@ class Product extends Model
                     'id' => $relatedProduct->id,
                     'name' => $relatedProduct->name,
                     'slug' => $relatedProduct->slug,
-                    'price' => $relatedProduct->price,
+                    'price' => $relatedProduct->effective_price,
+                    'original_price' => $relatedProduct->price,
                     'image' => $relatedProduct->img,
                     'rating' => (float) ($relatedProduct->rating ?? 0),
+                    'reviews_count' => $relatedProduct->reviews_count ?? 0,
                     'sold' => $relatedProduct->sold,
-                    'location' => $relatedProduct->user->city ?? 'PH',
+                    'location' => $relatedProduct->user->city ?? 'Philippines',
+                    'seller' => $relatedProduct->user->shop_name ?? $relatedProduct->user->name ?? 'LikhangKamay Artisan',
+                    'has_discount' => $relatedProduct->has_discount,
+                    'discount_info' => $relatedProduct->discount_info,
+                    'is_sponsored' => $relatedProduct->is_sponsored && $relatedProduct->sponsored_until && \Carbon\Carbon::parse($relatedProduct->sponsored_until)->isFuture(),
                 ];
             })
             ->values();
