@@ -82,13 +82,13 @@ class HandleInertiaRequests extends Middleware
             'isImpersonating' => fn () => Session::has('impersonator_id'),
             
             // LAZY LOADED: Notifications list (only loaded when requested/dropdown is opened)
-            'notifications' => Inertia::lazy(fn () => $user ? $user->getNotificationsQuery()->latest()->take(10)->get()->map(fn ($n) => NotificationPresenter::present($n, $user)) : []),
+            'notifications' => Inertia::lazy(fn () => $user ? rescue(fn () => $user->getNotificationsQuery()->latest()->take(10)->get()->map(fn ($n) => NotificationPresenter::present($n, $user)), [], false) : []),
             
             // Shared counts evaluated on initial page load (for real-time headers/sidebar)
-            'unreadNotificationCount' => fn () => $user ? $user->getUnreadNotificationsQuery()->count() : 0,
-            'unreadMessageCount' => fn () => $user ? \App\Models\Message::where('receiver_id', $user->id)->where('is_read', \App\Casts\PostgresCompatibleBoolean::dbVal(false))->count() : 0,
+            'unreadNotificationCount' => fn () => $user ? rescue(fn () => $user->getUnreadNotificationsQuery()->count(), 0, false) : 0,
+            'unreadMessageCount' => fn () => $user ? rescue(fn () => \App\Models\Message::where('receiver_id', $user->id)->where('is_read', \App\Casts\PostgresCompatibleBoolean::dbVal(false))->count(), 0, false) : 0,
             'pendingArtisanCount' => fn () => $user && $user->role === 'super_admin' 
-                ? \App\Models\User::where('role', 'artisan')->where('artisan_status', 'pending')->whereNotNull('setup_completed_at')->count() 
+                ? rescue(fn () => \App\Models\User::where('role', 'artisan')->where('artisan_status', 'pending')->whereNotNull('setup_completed_at')->count(), 0, false) 
                 : 0,
             
             'flash' => [

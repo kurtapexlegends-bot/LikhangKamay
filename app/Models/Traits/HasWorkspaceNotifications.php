@@ -61,13 +61,17 @@ trait HasWorkspaceNotifications
             $query->where('notifiable_id', $this->id);
         }
 
-        // Exclude notifications soft-deleted specifically by this user account
-        $deletedIds = UserNotificationState::where('user_id', $this->id)
-            ->whereNotNull('deleted_at')
-            ->pluck('notification_id');
+        try {
+            // Exclude notifications soft-deleted specifically by this user account
+            $deletedIds = UserNotificationState::where('user_id', $this->id)
+                ->whereNotNull('deleted_at')
+                ->pluck('notification_id');
 
-        if ($deletedIds->isNotEmpty()) {
-            $query->whereNotIn('id', $deletedIds);
+            if ($deletedIds->isNotEmpty()) {
+                $query->whereNotIn('id', $deletedIds);
+            }
+        } catch (\Throwable $e) {
+            // Table may not exist yet or connection issue; gracefully skip state filtering
         }
 
         return $query;
@@ -80,35 +84,39 @@ trait HasWorkspaceNotifications
     {
         $userId = $this->id;
 
-        // Collect notification IDs explicitly marked as read for this specific account
-        $userReadIds = UserNotificationState::where('user_id', $userId)
-            ->whereNotNull('read_at')
-            ->pluck('notification_id');
+        try {
+            // Collect notification IDs explicitly marked as read for this specific account
+            $userReadIds = UserNotificationState::where('user_id', $userId)
+                ->whereNotNull('read_at')
+                ->pluck('notification_id');
 
-        // Collect notification IDs explicitly marked as unread for this specific account
-        $userUnreadIds = UserNotificationState::where('user_id', $userId)
-            ->whereNull('read_at')
-            ->pluck('notification_id');
+            // Collect notification IDs explicitly marked as unread for this specific account
+            $userUnreadIds = UserNotificationState::where('user_id', $userId)
+                ->whereNull('read_at')
+                ->pluck('notification_id');
 
-        return $this->getNotificationsQuery()
-            ->where(function ($q) use ($userId, $userReadIds, $userUnreadIds) {
-                if ($userUnreadIds->isNotEmpty()) {
-                    $q->whereIn('id', $userUnreadIds);
-                }
-
-                $q->orWhere(function ($sq) use ($userId, $userReadIds) {
-                    if ($userReadIds->isNotEmpty()) {
-                        $sq->whereNotIn('id', $userReadIds);
+            return $this->getNotificationsQuery()
+                ->where(function ($q) use ($userId, $userReadIds, $userUnreadIds) {
+                    if ($userUnreadIds->isNotEmpty()) {
+                        $q->whereIn('id', $userUnreadIds);
                     }
 
-                    $sq->where(function ($ownerQ) use ($userId) {
-                        $ownerQ->where(function ($directQ) use ($userId) {
-                            $directQ->where('notifiable_id', $userId)
-                                    ->whereNull('read_at');
-                        })->orWhere('notifiable_id', '!=', $userId);
+                    $q->orWhere(function ($sq) use ($userId, $userReadIds) {
+                        if ($userReadIds->isNotEmpty()) {
+                            $sq->whereNotIn('id', $userReadIds);
+                        }
+
+                        $sq->where(function ($ownerQ) use ($userId) {
+                            $ownerQ->where(function ($directQ) use ($userId) {
+                                $directQ->where('notifiable_id', $userId)
+                                        ->whereNull('read_at');
+                            })->orWhere('notifiable_id', '!=', $userId);
+                        });
                     });
                 });
-            });
+        } catch (\Throwable $e) {
+            return $this->getNotificationsQuery()->whereNull('read_at');
+        }
     }
 
     public function markWorkspaceNotificationAsRead(string $id): void
@@ -120,10 +128,14 @@ trait HasWorkspaceNotifications
             $notification->markAsRead();
         }
 
-        UserNotificationState::updateOrCreate(
-            ['user_id' => $this->id, 'notification_id' => $id],
-            ['read_at' => now()]
-        );
+        try {
+            UserNotificationState::updateOrCreate(
+                ['user_id' => $this->id, 'notification_id' => $id],
+                ['read_at' => now()]
+            );
+        } catch (\Throwable $e) {
+            // Fallback silently if states table is unavailable
+        }
     }
 
     public function markWorkspaceNotificationAsUnread(string $id): void
@@ -135,10 +147,14 @@ trait HasWorkspaceNotifications
             $notification->markAsUnread();
         }
 
-        UserNotificationState::updateOrCreate(
-            ['user_id' => $this->id, 'notification_id' => $id],
-            ['read_at' => null]
-        );
+        try {
+            UserNotificationState::updateOrCreate(
+                ['user_id' => $this->id, 'notification_id' => $id],
+                ['read_at' => null]
+            );
+        } catch (\Throwable $e) {
+            // Fallback silently
+        }
     }
 
     public function markAllWorkspaceNotificationsAsRead(): void
@@ -151,10 +167,14 @@ trait HasWorkspaceNotifications
                 $notification->markAsRead();
             }
 
-            UserNotificationState::updateOrCreate(
-                ['user_id' => $this->id, 'notification_id' => $notification->id],
-                ['read_at' => $now]
-            );
+            try {
+                UserNotificationState::updateOrCreate(
+                    ['user_id' => $this->id, 'notification_id' => $notification->id],
+                    ['read_at' => $now]
+                );
+            } catch (\Throwable $e) {
+                // Fallback silently
+            }
         }
     }
 
@@ -167,10 +187,14 @@ trait HasWorkspaceNotifications
             $notification->delete();
         }
 
-        UserNotificationState::updateOrCreate(
-            ['user_id' => $this->id, 'notification_id' => $id],
-            ['deleted_at' => now()]
-        );
+        try {
+            UserNotificationState::updateOrCreate(
+                ['user_id' => $this->id, 'notification_id' => $id],
+                ['deleted_at' => now()]
+            );
+        } catch (\Throwable $e) {
+            // Fallback silently
+        }
     }
 
     public function deleteAllWorkspaceNotifications(): void
@@ -183,10 +207,14 @@ trait HasWorkspaceNotifications
                 $notification->delete();
             }
 
-            UserNotificationState::updateOrCreate(
-                ['user_id' => $this->id, 'notification_id' => $notification->id],
-                ['deleted_at' => $now]
-            );
+            try {
+                UserNotificationState::updateOrCreate(
+                    ['user_id' => $this->id, 'notification_id' => $notification->id],
+                    ['deleted_at' => $now]
+                );
+            } catch (\Throwable $e) {
+                // Fallback silently
+            }
         }
     }
 
