@@ -150,7 +150,7 @@ export default function ProductTable({
                             <td className="px-5 py-3">
                                 <div className="flex flex-col items-center gap-1">
                                     <span
-                                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                                        className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
                                             product.status === "Active"
                                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
                                                 : product.status === "Draft"
