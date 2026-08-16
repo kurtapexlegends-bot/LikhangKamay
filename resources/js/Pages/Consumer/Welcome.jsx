@@ -32,9 +32,9 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                 
                 <HeroSection />
 
-                {/* 1. SPONSORED PRODUCTS SECTION */}
+                {/* SPONSORED PRODUCTS SECTION */}
                 {sponsoredProducts.length > 0 && (
-                    <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50/60 via-white to-clay-50/30 border border-amber-100/50 p-3.5 sm:p-4 shadow-xs flex flex-col gap-3 sm:gap-4">
+                    <section className="order-1 relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50/60 via-white to-clay-50/30 border border-amber-100/50 p-3.5 sm:p-4 shadow-xs flex flex-col gap-3 sm:gap-4">
                         <div className="flex items-center gap-2.5 sm:gap-3">
                             <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-amber-100 to-amber-50 text-amber-700 shadow-2xs border border-amber-200/50 shrink-0">
                                 <Award size={14} className="drop-shadow-2xs" />
@@ -54,7 +54,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                     </section>
                 )}
 
-                {/* 2. BROWSE BY CATEGORY */}
+                {/* CATEGORIES */}
                 <CategoryPillTabs categories={categories} />
 
                 {/* 3. FROM STUDIOS YOU FOLLOW (COMPACT) */}
@@ -95,7 +95,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                     </section>
                 )}
 
-                {/* 4. FEATURED PRODUCTS */}
+                {/* FEATURED PRODUCTS */}
                 <section>
                     <div className="flex items-center justify-between mb-3 sm:mb-4">
                         <h2 className="text-base sm:text-lg font-serif font-bold text-stone-900 flex items-center gap-2">
@@ -146,7 +146,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                     )}
                 </section>
 
-                {/* 5. TOP STORES - DSS Dashboard */}
+                {/* TOP STORES - DSS Dashboard */}
                 <TopArtisansGrid topSellers={topSellers} formatSold={formatSold} />
 
             </main>

@@ -26,7 +26,7 @@ class CatalogService
                           $cq->where('document_type', 'seller_terms');
                       });
                 })
-                ->where('is_sponsored', DB::raw('true'))
+                ->where('is_sponsored', \App\Casts\PostgresCompatibleBoolean::dbVal(true))
                 ->where('sponsored_until', '>', now())
                 ->inRandomOrder()
                 ->take(8)
@@ -103,7 +103,6 @@ class CatalogService
                 ->selectRaw('user_id, SUM(sold) as total_sold')
                 ->groupBy('user_id')
                 ->orderByDesc('total_sold')
-                ->orderByDesc(DB::raw('(SELECT COALESCE(AVG(rating), 0) FROM products p2 WHERE p2.user_id = products.user_id AND p2.status = \'Active\')'))
                 ->orderBy('user_id')
                 ->take(3)
                 ->get();
@@ -113,17 +112,17 @@ class CatalogService
             }
 
             $storeIds = $topStores->pluck('user_id')->all();
-            $sellers = User::with(['products' => function ($q) {
-                    $q->approved()
-                      ->with(['user', 'discounts'])
-                      ->orderByDesc('sold')
-                      ->orderByDesc('rating')
-                      ->orderByDesc('created_at')
-                      ->take(3);
-                }])
-                ->whereIn('id', $storeIds)
+            $sellers = User::whereIn('id', $storeIds)->get()->keyBy('id');
+
+            // Load top products per seller cleanly without query-wide limit bugs
+            $productsBySeller = Product::approved()
+                ->whereIn('user_id', $storeIds)
+                ->with(['user', 'discounts'])
+                ->orderByDesc('sold')
+                ->orderByDesc('rating')
+                ->orderByDesc('created_at')
                 ->get()
-                ->keyBy('id');
+                ->groupBy('user_id');
 
             $topSellers = [];
             foreach ($topStores as $rank => $store) {
@@ -131,7 +130,8 @@ class CatalogService
                 $seller = $sellers->get($userId);
                 if (!$seller) continue;
 
-                $products = $seller->products
+                $products = ($productsBySeller->get($userId) ?? collect())
+                    ->take(3)
                     ->map(fn(Product $product) => $this->formatProductForHome($product, true))
                     ->values();
 

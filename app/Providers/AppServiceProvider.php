@@ -62,12 +62,20 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
 
-            // Vercel read-only filesystem fix
-            $viewPath = '/tmp/storage/framework/views';
-            if (!is_dir($viewPath)) {
-                mkdir($viewPath, 0755, true);
+            // Vercel read-only filesystem fix for views, cache, and sessions
+            $tmpStorage = '/tmp/storage/framework';
+            foreach (['views', 'cache/data', 'sessions'] as $sub) {
+                $dir = $tmpStorage . '/' . $sub;
+                if (!is_dir($dir)) {
+                    @mkdir($dir, 0755, true);
+                }
             }
-            config(['view.compiled' => $viewPath]);
+            config([
+                'view.compiled' => $tmpStorage . '/views',
+                'cache.stores.file.path' => $tmpStorage . '/cache/data',
+                'cache.stores.file.lock_path' => $tmpStorage . '/cache/data',
+                'session.files' => $tmpStorage . '/sessions',
+            ]);
         }
         
         Vite::prefetch(concurrency: 3);

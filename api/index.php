@@ -16,10 +16,12 @@ if ($uri !== '/' && file_exists(__DIR__ . '/../public' . $uri)) {
     return false;
 }
 
-// Ensure the writable view compiled path directory exists in /tmp before booting
-$viewCompiledPath = '/tmp/storage/framework/views';
-if (!is_dir($viewCompiledPath)) {
-    @mkdir($viewCompiledPath, 0755, true);
+// Ensure writable storage directories exist in /tmp before booting on serverless
+foreach (['views', 'cache/data', 'sessions'] as $sub) {
+    $dir = '/tmp/storage/framework/' . $sub;
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
 }
 
 try {
