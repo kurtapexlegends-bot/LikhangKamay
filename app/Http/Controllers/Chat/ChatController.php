@@ -122,7 +122,7 @@ class ChatController extends Controller
 
         Message::where('sender_id', $request->sender_id)
             ->where('receiver_id', $conversationUserId)
-            ->whereRaw('is_read = false')
+            ->where('is_read', \App\Casts\PostgresCompatibleBoolean::dbVal(false))
             ->update(['is_read' => \App\Casts\PostgresCompatibleBoolean::dbVal(true)]);
 
         try {

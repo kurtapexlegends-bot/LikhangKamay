@@ -310,7 +310,7 @@ class TeamMessageController extends Controller
             ->where('seller_owner_id', $sellerOwner->id)
             ->where('sender_id', $sender->id)
             ->where('receiver_id', $actor->id)
-            ->whereRaw('is_read = false')
+            ->where('is_read', \App\Casts\PostgresCompatibleBoolean::dbVal(false))
             ->update(['is_read' => \App\Casts\PostgresCompatibleBoolean::dbVal(true)]);
 
         try {

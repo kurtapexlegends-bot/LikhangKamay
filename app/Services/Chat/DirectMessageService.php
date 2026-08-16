@@ -46,7 +46,7 @@ class DirectMessageService
             // Also pre-fetch unread counts
             $unreadCounts = Message::whereIn('sender_id', $contactIds)
                 ->where('receiver_id', $userId)
-                ->whereRaw('is_read = false')
+                ->where('is_read', \App\Casts\PostgresCompatibleBoolean::dbVal(false))
                 ->selectRaw('sender_id, count(*) as count')
                 ->groupBy('sender_id')
                 ->pluck('count', 'sender_id');
@@ -89,7 +89,7 @@ class DirectMessageService
                 // Automatically mark unread incoming messages from activeChatId to current user as read
                 $readUpdated = Message::where('sender_id', $activeChatId)
                     ->where('receiver_id', $userId)
-                    ->whereRaw('is_read = false')
+                    ->where('is_read', \App\Casts\PostgresCompatibleBoolean::dbVal(false))
                     ->update(['is_read' => \App\Casts\PostgresCompatibleBoolean::dbVal(true)]);
 
                 if ($readUpdated > 0) {

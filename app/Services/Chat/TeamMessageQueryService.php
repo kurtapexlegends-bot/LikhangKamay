@@ -67,7 +67,7 @@ class TeamMessageQueryService
             ->whereNull('team_channel_id') // Exclude channel messages
             ->whereIn('sender_id', $contactIds)
             ->where('receiver_id', $actor->id)
-            ->whereRaw('is_read = false')
+            ->where('is_read', \App\Casts\PostgresCompatibleBoolean::dbVal(false))
             ->selectRaw('sender_id, count(*) as count')
             ->groupBy('sender_id')
             ->pluck('count', 'sender_id');
