@@ -111,7 +111,7 @@ The initialization and bootstrap configurations are run within [AppServiceProvid
 *   **Production Vercel Storage Fix**: Diverts Compiled Blade views to the writable serverless directory `/tmp/storage/framework/views` when running on production environment.
 *   **Password Complexity Default Rules**: Sets a strict password limit (minimum 12 chars, mixedCase, numbers, symbols, uncompromised validation check) on production.
 *   **Configured Rate Limiters**:
-    1.  `marketplace.search`: Caps search requests at 30 per minute per IP.
+    1.  `marketplace.search`: Caps search and catalog browsing requests at 120 per minute per IP.
     2.  `bulk.ops`: Caps heavy bulk operations (CSV exports) at 5 per minute.
     3.  `admin.heavy`: Caps analytics rendering queries at 10 per minute.
     4.  `login`: Enforces brute force defense, capping login attempts to 5 per minute per IP.
