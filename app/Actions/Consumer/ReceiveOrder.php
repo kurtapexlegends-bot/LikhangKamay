@@ -59,6 +59,15 @@ class ReceiveOrder
 
             $order->update($updateData);
             $order->refresh();
+
+            foreach ($order->items as $item) {
+                $product = \App\Models\Product::lockForUpdate()->find($item->product_id);
+                if ($product) {
+                    $product->increment('sold', $item->quantity);
+                    $product->refresh();
+                }
+            }
+
             $this->orderFinanceService->settleCompletedOrder($order);
 
             $order->load('items');

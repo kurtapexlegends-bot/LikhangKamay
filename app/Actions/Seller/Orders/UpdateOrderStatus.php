@@ -274,11 +274,11 @@ class UpdateOrderStatus
         }
 
         return match ($order->status) {
-            'Pending' => ['Accepted', 'Rejected'],
-            'Accepted' => ['Processing', 'Rejected'],
+            'Pending' => ['Accepted', 'Rejected', 'Cancelled'],
+            'Accepted' => ['Processing', 'Rejected', 'Cancelled'],
             'Processing' => $order->shipping_method === 'Pick Up'
-                ? ['Ready for Pickup']
-                : ['Shipped'],
+                ? ['Ready for Pickup', 'Rejected', 'Cancelled']
+                : ['Shipped', 'Rejected', 'Cancelled'],
             'Shipped' => ['Delivered'],
             'Ready for Pickup' => ['Delivered'],
             'Delivered' => ['Completed'],
@@ -305,15 +305,21 @@ class UpdateOrderStatus
                     $supply->decrement('quantity', $totalRequired);
 
                     // Log the deduction
-                    SellerActivityLog::create([
-                        'user_id' => $order->artisan_id,
-                        'action' => 'supply_deducted',
-                        'description' => "Deducted {$totalRequired} {$supply->unit} of {$supply->name} for order #{$order->order_number}",
-                        'metadata' => [
+                    SellerActivityLog::recordEvent([
+                        'seller_owner_id' => $order->artisan_id,
+                        'actor_user_id' => $order->artisan_id,
+                        'category' => 'inventory',
+                        'module' => 'procurement',
+                        'event_type' => 'supply_deducted',
+                        'severity' => 'info',
+                        'status' => 'deducted',
+                        'title' => 'Supply Deducted',
+                        'summary' => "Deducted {$totalRequired} {$supply->unit} of {$supply->name} for order #{$order->order_number}",
+                        'details' => [
                             'order_id' => $order->id,
                             'supply_id' => $supply->id,
-                            'quantity' => $totalRequired
-                        ]
+                            'quantity' => $totalRequired,
+                        ],
                     ]);
                 }
             }
