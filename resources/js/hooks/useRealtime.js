@@ -70,23 +70,34 @@ export const useRealtime = () => {
 
         const getPollKeys = () => {
             const reloadKeys = ['notifications', 'unreadNotificationCount', 'unreadMessageCount'];
-            if (window.location.pathname.includes('/products')) {
-                reloadKeys.push('products');
-                reloadKeys.push('metrics');
+            const path = window.location.pathname;
+
+            if (path.includes('/products')) {
+                reloadKeys.push('products', 'metrics');
             }
-            if (window.location.pathname.includes('/orders')) {
+            if (path.includes('/orders')) {
                 reloadKeys.push('orders');
             }
-            if (window.location.pathname.includes('/admin/catalog')) {
+            if (path.includes('/admin/catalog')) {
                 reloadKeys.push('products');
             }
+            if (path.includes('/hr')) {
+                reloadKeys.push('staff', 'payrolls', 'locations');
+            }
+            if (path.includes('/procurement')) {
+                reloadKeys.push('supplies', 'requests', 'finances');
+            }
+            if (path.includes('/accounting')) {
+                reloadKeys.push('pendingRequests', 'history', 'finances');
+            }
+            if (path.includes('/reviews')) {
+                reloadKeys.push('reviews');
+            }
+
             if (user.role === 'super_admin') {
-                reloadKeys.push('pendingArtisanCount');
-                reloadKeys.push('logs');
-                reloadKeys.push('adminStats');
+                reloadKeys.push('pendingArtisanCount', 'logs', 'adminStats');
             } else if (user.role === 'artisan' || user.role === 'staff') {
-                reloadKeys.push('stats');
-                reloadKeys.push('recentOrders');
+                reloadKeys.push('stats', 'recentOrders');
             }
             return reloadKeys;
         };
