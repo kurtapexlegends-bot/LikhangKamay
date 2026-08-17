@@ -51,8 +51,10 @@ Webhooks from the Lalamove API dispatch events that update the `status` of `Orde
 *   **Structure Validation**: Addresses are stored as structured columns rather than loose text blocks. They are formatted using `StructuredAddress::formatPhilippineAddress()` before geocoding.
 *   **Address Type Selection**: Default and custom address options (Home/Work) are handled on checkout using `UserAddress` models. Malformed or tampered address references trigger validation errors rather than allowing database query crashes.
 
-### Address Validation Helpers
-*   [StructuredAddress.php](file:///c:/laragon/www/LikhangKamay/app/Support/StructuredAddress.php): Helper class providing standardized formatting methods for Philippine addresses.
+### Address Validation & Regional Scope
+*   **Strict Cavite Scope**: LikhangKamay operations, artisan studios, buyer delivery addresses, and logistics dispatching are strictly restricted to the **Province of Cavite** (23 official cities and municipalities). Addresses outside Cavite are rejected on registration, profile update, address management, and checkout.
+*   [CaviteAddress.php](file:///c:/laragon/www/LikhangKamay/app/Support/CaviteAddress.php): Single source of truth defining valid Cavite LGUs, canonical city resolution, and regional validation guards.
+*   [StructuredAddress.php](file:///c:/laragon/www/LikhangKamay/app/Support/StructuredAddress.php): Helper class providing standardized formatting methods for structured addresses.
 *   [CourierAddressResolver.php](file:///c:/laragon/www/LikhangKamay/app/Support/CourierAddressResolver.php): Helper class resolving address details to Lalamove location payload structures.
 
 ### Logistics Domain Services

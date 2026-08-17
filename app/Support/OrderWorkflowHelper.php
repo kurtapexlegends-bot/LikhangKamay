@@ -109,10 +109,23 @@ class OrderWorkflowHelper
                     'shipping_address_type' => 'required|string|in:home,office,other',
                 ]);
 
+                $addressErrors = [];
+                if (!\App\Support\CaviteAddress::isCaviteRegion((string) $request->shipping_region)) {
+                    $addressErrors['shipping_region'] = 'LikhangKamay operations and deliveries are strictly within the Province of Cavite.';
+                }
+
+                if (!\App\Support\CaviteAddress::isValidCity((string) $request->shipping_city)) {
+                    $addressErrors['shipping_city'] = 'Please select a valid city or municipality within Cavite.';
+                }
+
+                if (!empty($addressErrors)) {
+                    throw ValidationException::withMessages($addressErrors);
+                }
+
                 $shippingStreetAddress = StructuredAddress::clean($request->shipping_street_address);
                 $shippingBarangay = StructuredAddress::clean($request->shipping_barangay);
-                $shippingCity = StructuredAddress::clean($request->shipping_city);
-                $shippingRegion = StructuredAddress::clean($request->shipping_region);
+                $shippingCity = \App\Support\CaviteAddress::resolveCanonicalCity(StructuredAddress::clean($request->shipping_city));
+                $shippingRegion = \App\Support\CaviteAddress::PROVINCE;
                 $shippingPostalCode = StructuredAddress::clean($request->shipping_postal_code);
                 $shippingAddress = StructuredAddress::formatPhilippineAddress([
                     'street_address' => $shippingStreetAddress,

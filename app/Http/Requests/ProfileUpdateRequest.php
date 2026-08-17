@@ -32,8 +32,26 @@ class ProfileUpdateRequest extends FormRequest
             'phone_number' => ['nullable', 'string', 'max:20'],
             'street_address' => ['nullable', 'string', 'max:255'],
             'barangay' => ['nullable', 'string', 'max:255'],
-            'city' => ['nullable', 'string', 'max:255'],
-            'region' => ['nullable', 'string', 'max:255'],
+            'city' => [
+                'nullable',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    if ($value !== null && trim($value) !== '' && !\App\Support\CaviteAddress::isValidCity($value)) {
+                        $fail('Please select a valid city or municipality within Cavite.');
+                    }
+                },
+            ],
+            'region' => [
+                'nullable',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    if ($value !== null && trim($value) !== '' && !\App\Support\CaviteAddress::isCaviteRegion($value)) {
+                        $fail('LikhangKamay operations and studios are strictly within the Province of Cavite.');
+                    }
+                },
+            ],
             'zip_code' => ['nullable', 'string', 'max:20'],
             'avatar' => ['nullable', 'image', 'max:10240'], // Max 10MB
         ];

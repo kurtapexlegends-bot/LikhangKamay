@@ -226,8 +226,8 @@ class ProfileTest extends TestCase
                 'address_type' => 'office',
                 'recipient_name' => 'New Name',
                 'phone_number' => '09179999999',
-                'full_address' => '123 New Street, Dasmarinas City, Cavite, Philippines',
-                'city' => 'Dasmarinas City',
+                'full_address' => '123 New Street, Dasmariñas City, Cavite, Philippines',
+                'city' => 'Dasmariñas City',
                 'region' => 'Cavite',
             ]);
 
@@ -241,8 +241,8 @@ class ProfileTest extends TestCase
         $this->assertSame('office', $address->address_type);
         $this->assertSame('New Name', $address->recipient_name);
         $this->assertSame('09179999999', $address->phone_number);
-        $this->assertSame('123 New Street, Dasmarinas City, Cavite, Philippines', $address->full_address);
-        $this->assertSame('Dasmarinas City', $address->city);
+        $this->assertSame('123 New Street, Dasmariñas City, Cavite, Philippines', $address->full_address);
+        $this->assertSame('Dasmariñas City', $address->city);
         $this->assertSame('Cavite', $address->region);
     }
 
