@@ -39,7 +39,7 @@ export default function FulfillmentActionGroup({
     // Wrapper for sticky bottom layout on mobile for primary quick-actions
     const renderStickyActions = (children) => {
         return (
-            <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-stone-100 p-3 -mx-4 -mb-4 rounded-b-2xl shadow-[0_-4px_12px_rgba(0,0,0,0.04)] z-20 md:relative md:bottom-auto md:bg-transparent md:border-t-0 md:p-0 md:mx-0 md:mb-0 md:rounded-none md:shadow-none">
+            <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-stone-100 p-3 -mx-4 -mb-4 rounded-b-2xl shadow-[0_-4px_12px_rgba(0,0,0,0.04)] z-10 md:relative md:bottom-auto md:bg-transparent md:border-t-0 md:p-0 md:mx-0 md:mb-0 md:rounded-none md:shadow-none">
                 {children}
             </div>
         );

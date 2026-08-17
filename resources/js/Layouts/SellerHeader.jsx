@@ -29,7 +29,7 @@ export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuCl
     return (
         <>
             {actions && <FloatingModuleActions actions={actions} />}
-            <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-20">
+            <header className="bg-white border-b border-stone-200/80 flex items-center justify-between px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-30 shadow-xs">
                 {/* Left: Menu & Title */}
                 <div className="flex min-w-0 items-center gap-3">
                     <button
