@@ -105,7 +105,11 @@ class StoreTeamMessage
                               ->orWhere('data->team_channel_id', (int) $channel->id);
                         })
                         ->delete();
+                } catch (\Throwable $e) {
+                    report($e);
+                }
 
+                try {
                     Notification::send($members, new NewTeamChannelMessageNotification($message, $actor->name, $channel->name));
                 } catch (\Throwable $e) {
                     report($e);
@@ -150,7 +154,11 @@ class StoreTeamMessage
                       ->orWhere('data->sender_id', (int) $actor->id);
                 })
                 ->delete();
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
+        try {
             $receiver->notify(new NewTeamMessageNotification($message, $actor->name));
         } catch (\Throwable $e) {
             report($e);

@@ -92,7 +92,11 @@ class ChatController extends Controller
                       ->orWhere('data->sender_id', (int) $senderId);
                 })
                 ->delete();
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
+        try {
             if ($receiver->isArtisan()) {
                 $receiver->notifySellerWorkspace(new \App\Notifications\NewMessageNotification($msg, $senderName), 'messages');
             } else {

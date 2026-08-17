@@ -100,7 +100,11 @@ class SendOrderCompletionAutoReply
                           ->orWhere('data->sender_id', (int) $seller->id);
                     })
                     ->delete();
+            } catch (\Throwable $e) {
+                report($e);
+            }
 
+            try {
                 $buyer->notify(new NewMessageNotification($message, $shopName));
             } catch (\Throwable $e) {
                 report($e);
