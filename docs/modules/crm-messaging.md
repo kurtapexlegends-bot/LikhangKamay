@@ -22,8 +22,8 @@ This document details the communication topology, internal chat channels, custom
     *   Stores message emoji reactions.
     *   Fields: `team_message_id`, `user_id`, `reaction_type`.
 *   **Chat Message Template**: [ChatMessageTemplate.php](file:///c:/laragon/www/LikhangKamay/app/Models/ChatMessageTemplate.php)
-    *   Stores quick-replies for customer support interactions.
-    *   Fields: `user_id`, `shortcut`, `message`.
+    *   Stores quick-reply templates for artisan customer support interactions with inline slash-command (`/keyword`) autocomplete triggers.
+    *   Fields: `user_id`, `title`, `shortcut`, `content`.
 
 ---
 
