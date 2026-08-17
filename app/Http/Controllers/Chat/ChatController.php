@@ -182,13 +182,19 @@ class ChatController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'content' => 'required|string|max:2000',
+            'content' => 'nullable|string|max:2000',
+            'message' => 'nullable|string|max:2000',
         ]);
+
+        $content = trim((string) ($validated['content'] ?? $validated['message'] ?? ''));
+        if ($content === '') {
+            return back()->withErrors(['content' => 'The message content field is required.']);
+        }
 
         \App\Models\ChatMessageTemplate::create([
             'user_id' => $this->sellerOwnerId(),
             'title' => $validated['title'],
-            'content' => $validated['content'],
+            'content' => $content,
         ]);
 
         return back()->with('success', 'Message template created.');
@@ -203,10 +209,19 @@ class ChatController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'content' => 'required|string|max:2000',
+            'content' => 'nullable|string|max:2000',
+            'message' => 'nullable|string|max:2000',
         ]);
 
-        $template->update($validated);
+        $content = trim((string) ($validated['content'] ?? $validated['message'] ?? ''));
+        if ($content === '') {
+            return back()->withErrors(['content' => 'The message content field is required.']);
+        }
+
+        $template->update([
+            'title' => $validated['title'],
+            'content' => $content,
+        ]);
 
         return back()->with('success', 'Message template updated.');
     }

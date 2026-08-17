@@ -12,7 +12,8 @@ export default function ChatAutomationModal({
 }) {
     if (!isOpen) return null;
 
-    const [activeTab, setActiveTab] = useState('auto-reply'); // 'auto-reply' | 'templates'
+    const hasAutoReply = Boolean(autoReplySettings);
+    const [activeTab, setActiveTab] = useState(hasAutoReply ? 'auto-reply' : 'templates');
     const { addToast } = useToast();
 
     // Auto-Reply Form
@@ -26,7 +27,7 @@ export default function ChatAutomationModal({
     const templateForm = useForm({
         title: '',
         shortcut: '',
-        message: '',
+        content: '',
     });
 
     const handleSaveAutoReply = (e) => {
@@ -36,8 +37,9 @@ export default function ChatAutomationModal({
             onSuccess: () => {
                 addToast('Order completion auto-reply settings saved!', 'success');
             },
-            onError: () => {
-                addToast('Failed to save auto-reply settings.', 'error');
+            onError: (errs) => {
+                const firstError = Object.values(errs || {})[0];
+                addToast(firstError || 'Failed to save auto-reply settings.', 'error');
             }
         });
     };
@@ -54,6 +56,10 @@ export default function ChatAutomationModal({
                 onSuccess: () => {
                     addToast('Template updated successfully.', 'success');
                     resetTemplateForm();
+                },
+                onError: (errs) => {
+                    const firstError = Object.values(errs || {})[0];
+                    addToast(firstError || 'Failed to update template.', 'error');
                 }
             });
         } else {
@@ -62,6 +68,10 @@ export default function ChatAutomationModal({
                 onSuccess: () => {
                     addToast('Quick template added.', 'success');
                     resetTemplateForm();
+                },
+                onError: (errs) => {
+                    const firstError = Object.values(errs || {})[0];
+                    addToast(firstError || 'Failed to save template.', 'error');
                 }
             });
         }
@@ -72,7 +82,7 @@ export default function ChatAutomationModal({
         templateForm.setData({
             title: tmpl.title || '',
             shortcut: tmpl.shortcut || '',
-            message: tmpl.message || '',
+            content: tmpl.content || tmpl.message || '',
         });
     };
 
@@ -83,6 +93,10 @@ export default function ChatAutomationModal({
             onSuccess: () => {
                 addToast('Template removed.', 'info');
                 if (editingTemplateId === id) resetTemplateForm();
+            },
+            onError: (errs) => {
+                const firstError = Object.values(errs || {})[0];
+                addToast(firstError || 'Failed to delete template.', 'error');
             }
         });
     };
@@ -114,17 +128,19 @@ export default function ChatAutomationModal({
 
                 {/* Tabs Header */}
                 <div className="flex border-b border-stone-100 bg-white px-6">
-                    <button
-                        onClick={() => setActiveTab('auto-reply')}
-                        className={`flex items-center gap-2 py-3 px-1 text-xs font-bold border-b-2 transition ${
-                            activeTab === 'auto-reply'
-                                ? 'border-clay-600 text-clay-700'
-                                : 'border-transparent text-stone-400 hover:text-stone-600'
-                        }`}
-                    >
-                        <Sparkles size={14} />
-                        Order Completion Auto-Reply
-                    </button>
+                    {hasAutoReply && (
+                        <button
+                            onClick={() => setActiveTab('auto-reply')}
+                            className={`flex items-center gap-2 py-3 px-1 text-xs font-bold border-b-2 transition ${
+                                activeTab === 'auto-reply'
+                                    ? 'border-clay-600 text-clay-700'
+                                    : 'border-transparent text-stone-400 hover:text-stone-600'
+                            }`}
+                        >
+                            <Sparkles size={14} />
+                            Order Completion Auto-Reply
+                        </button>
+                    )}
                     <button
                         onClick={() => setActiveTab('templates')}
                         className={`flex items-center gap-2 py-3 px-1 text-xs font-bold border-b-2 transition ${
@@ -140,7 +156,7 @@ export default function ChatAutomationModal({
 
                 {/* Modal Body */}
                 <div className="flex-1 overflow-y-auto p-5">
-                    {activeTab === 'auto-reply' && (
+                    {activeTab === 'auto-reply' && hasAutoReply && (
                         <form onSubmit={handleSaveAutoReply} className="space-y-4">
                             <div className="flex items-center justify-between gap-4 rounded-2xl border border-stone-200/80 bg-stone-50/50 px-4 py-3.5">
                                 <span className="text-xs font-bold text-stone-900">
@@ -243,8 +259,8 @@ export default function ChatAutomationModal({
                                 </div>
                                 <textarea
                                     placeholder="Quick reply message body..."
-                                    value={templateForm.data.message}
-                                    onChange={(e) => templateForm.setData('message', e.target.value)}
+                                    value={templateForm.data.content}
+                                    onChange={(e) => templateForm.setData('content', e.target.value)}
                                     required
                                     rows={2}
                                     className="w-full rounded-xl border border-stone-200 bg-white p-3 text-xs font-medium focus:border-clay-500 focus:ring-0 resize-none"
@@ -286,7 +302,7 @@ export default function ChatAutomationModal({
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-xs text-stone-600 mt-1 line-clamp-2">{tmpl.message}</p>
+                                                    <p className="text-xs text-stone-600 mt-1 line-clamp-2">{tmpl.content || tmpl.message}</p>
                                                 </div>
                                                 <div className="flex items-center gap-1 shrink-0">
                                                     <button
