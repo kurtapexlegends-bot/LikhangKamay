@@ -51,6 +51,7 @@
 - **Cross-Database JSON Queries:** In queries filtering JSON/data columns (e.g., `data->sender_id`), always cast values to strings (or check both string and integer formats) to guarantee compatibility across PostgreSQL and MySQL.
 
 ## 7. DevOps & Environment Strategy
+- **Dual-Environment Parity (Local & Production):** Every implementation, refactor, Eloquent query, asset build, and route must be strictly compatible with both Local development (Laragon, MySQL, local filesystem) and Production (Vercel serverless, PostgreSQL, cloud storage, compiled assets). Never use local-only file paths, database-specific raw SQL dialect, or synchronous execution for external network requests.
 - **Webhost:** The application is hosted on Vercel. Ensure configurations, builds, and routing structures are compatible with Vercel deployment requirements (e.g., `vercel.json` configurations).
 - **Containerization:** Assume containerized or serverless deployment. Keep applications stateless.
 - **Environment:** Validate env vars at startup. Fail fast if missing.
