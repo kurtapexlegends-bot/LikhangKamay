@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\StaffAttendanceSession;
+use App\Services\StaffAttendanceService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +10,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnforceSingleDeviceSession
 {
+    public function __construct(
+        protected StaffAttendanceService $attendanceService
+    ) {}
+
     /**
      * Handle an incoming request.
      */
@@ -23,18 +27,14 @@ class EnforceSingleDeviceSession
             if ($user->current_session_id !== $currentSessionId) {
                 // If staff member has an active shift running during takeover, pause it and log alert
                 if ($user->isStaff()) {
-                    $activeSession = StaffAttendanceSession::where('staff_user_id', $user->id)
-                        ->whereNull('clock_out_at')
-                        ->where('status', 'active')
-                        ->latest()
-                        ->first();
-
-                    if ($activeSession) {
-                        $activeSession->update([
-                            'status' => 'paused',
-                            'paused_at' => now(),
-                            'pause_reason' => 'Suspicious Multi-Device Access: Account logged in on another device',
-                        ]);
+                    try {
+                        $this->attendanceService->closeOpenSession(
+                            $user,
+                            StaffAttendanceService::MODE_PAUSED,
+                            'Suspicious Multi-Device Access: Account logged in on another device'
+                        );
+                    } catch (\Throwable $e) {
+                        report($e);
                     }
                 }
 

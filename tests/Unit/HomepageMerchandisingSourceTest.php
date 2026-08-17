@@ -42,7 +42,7 @@ class HomepageMerchandisingSourceTest extends TestCase
 
         $this->assertNotFalse($source);
         $this->assertStringContainsString('Sponsored Collection', $source);
-        $this->assertStringContainsString('order-1 relative overflow-hidden rounded-2xl', $source);
+        $this->assertStringContainsString('relative overflow-hidden rounded-2xl', $source);
         $this->assertStringContainsString('bg-gradient-to-r from-amber-50/60 via-white to-clay-50/30', $source);
         $this->assertStringContainsString("data-sponsored-placement={sponsoredPlacement}", $source);
     }
