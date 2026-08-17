@@ -22,6 +22,7 @@ class OrderCompletionAutoReplyTest extends TestCase
             'role' => 'artisan',
             'artisan_status' => 'approved',
             'shop_name' => 'Artisan Craft Haven',
+            'premium_tier' => 'premium',
             'auto_reply_on_completion' => true,
             'auto_reply_completion_message' => 'Thank you {buyer_name}! Order #{order_number} is completed by {shop_name}.',
         ]);
@@ -63,6 +64,7 @@ class OrderCompletionAutoReplyTest extends TestCase
     {
         $seller = User::factory()->create([
             'role' => 'artisan',
+            'premium_tier' => 'premium',
             'auto_reply_on_completion' => true,
         ]);
 
@@ -92,10 +94,45 @@ class OrderCompletionAutoReplyTest extends TestCase
         $this->assertEquals(1, Message::where('receiver_id', $buyer->id)->count());
     }
 
+    public function test_does_not_send_message_when_seller_is_standard_free_tier(): void
+    {
+        $seller = User::factory()->create([
+            'role' => 'artisan',
+            'premium_tier' => 'standard',
+            'auto_reply_on_completion' => true,
+        ]);
+
+        $buyer = User::factory()->create(['role' => 'customer']);
+
+        $order = Order::create([
+            'seller_id' => $seller->id,
+            'artisan_id' => $seller->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-555444',
+            'status' => 'Completed',
+            'total_amount' => 500,
+            'payment_method' => 'GCash',
+            'payment_status' => 'paid',
+            'shipping_method' => 'Delivery',
+            'customer_name' => 'Maria Santos',
+            'customer_email' => $buyer->email,
+            'shipping_address' => 'Manila',
+        ]);
+
+        $action = new SendOrderCompletionAutoReply();
+        $message = $action->execute($order);
+
+        $this->assertNull($message);
+        $this->assertDatabaseMissing('messages', [
+            'receiver_id' => $buyer->id,
+        ]);
+    }
+
     public function test_does_not_send_message_when_auto_reply_is_disabled(): void
     {
         $seller = User::factory()->create([
             'role' => 'artisan',
+            'premium_tier' => 'premium',
             'auto_reply_on_completion' => false,
         ]);
 

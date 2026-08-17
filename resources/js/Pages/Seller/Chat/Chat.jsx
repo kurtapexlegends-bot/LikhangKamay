@@ -360,10 +360,6 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                 title={
                     <div className="flex items-center gap-3">
                         <span>Messages</span>
-                        <div className="flex items-center gap-1.5 bg-green-50 text-green-600 text-xs font-bold px-2.5 py-1 rounded-full hidden sm:flex">
-                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                            Live
-                        </div>
                         {conversations.length > 0 && (
                             <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">
                                 {conversations.length}

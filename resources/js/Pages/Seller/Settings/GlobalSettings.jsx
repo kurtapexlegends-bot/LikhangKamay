@@ -27,7 +27,7 @@ export default function GlobalSettings({ auth, sellerOwner, stats, locations = [
 
             <SellerHeader
                 title="Shop Settings"
-                subtitle="Configure shop storefront branding, GPS locations, payroll configuration, and payout settlement."
+                subtitle="Configure your shop branding, storefront profile, and workspace preferences."
                 auth={auth}
                 onMenuClick={openSidebar}
             />

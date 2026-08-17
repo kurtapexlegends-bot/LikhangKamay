@@ -17,6 +17,7 @@ const formatImgUrl = (path) => {
 export default function ShopStorefrontTab({ sellerOwner, stats, products = [], permissions }) {
     const { addToast } = useToast();
     const canEdit = permissions?.can_edit_shop_settings ?? true;
+    const isPremiumOrElite = permissions?.is_premium_tier ?? (sellerOwner?.premium_tier === 'premium' || sellerOwner?.premium_tier === 'super_premium');
 
     const bannerInputRef = useRef(null);
     const avatarInputRef = useRef(null);
@@ -245,35 +246,37 @@ export default function ShopStorefrontTab({ sellerOwner, stats, products = [], p
                 </div>
             </div>
 
-            {/* Automated Thank You Message Card */}
-            <div className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-xs space-y-3">
-                <div className="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        id="auto_reply"
-                        checked={data.auto_reply_on_completion}
-                        onChange={(e) => setData('auto_reply_on_completion', e.target.checked)}
-                        disabled={!canEdit}
-                        className="rounded border-stone-300 text-clay-600 focus:ring-clay-500"
-                    />
-                    <label htmlFor="auto_reply" className="text-xs font-bold text-stone-800">
-                        Automated Thank-You Message on Order Completion
-                    </label>
-                </div>
-
-                {data.auto_reply_on_completion && (
-                    <div>
-                        <textarea
-                            rows={3}
-                            value={data.auto_reply_completion_message}
-                            onChange={(e) => setData('auto_reply_completion_message', e.target.value)}
+            {/* Automated Thank You Message Card (Premium / Elite only) */}
+            {isPremiumOrElite && (
+                <div className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-xs space-y-3">
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="auto_reply"
+                            checked={data.auto_reply_on_completion}
+                            onChange={(e) => setData('auto_reply_on_completion', e.target.checked)}
                             disabled={!canEdit}
-                            placeholder="Thank you for supporting our artisan craft! We hope you love your handcrafted item..."
-                            className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500"
+                            className="rounded border-stone-300 text-clay-600 focus:ring-clay-500"
                         />
+                        <label htmlFor="auto_reply" className="text-xs font-bold text-stone-800">
+                            Automated Thank-You Message on Order Completion
+                        </label>
                     </div>
-                )}
-            </div>
+
+                    {data.auto_reply_on_completion && (
+                        <div>
+                            <textarea
+                                rows={3}
+                                value={data.auto_reply_completion_message}
+                                onChange={(e) => setData('auto_reply_completion_message', e.target.value)}
+                                disabled={!canEdit}
+                                placeholder="Thank you for supporting our artisan craft! We hope you love your handcrafted item..."
+                                className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500"
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Products Collection Preview */}
             <div className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-xs space-y-4">

@@ -163,11 +163,13 @@ class ShopController extends Controller
         ]);
 
         $user->bio = $validated['bio'] ?? null;
-        if (array_key_exists('auto_reply_on_completion', $validated)) {
-            $user->auto_reply_on_completion = (bool) $validated['auto_reply_on_completion'];
-        }
-        if (array_key_exists('auto_reply_completion_message', $validated)) {
-            $user->auto_reply_completion_message = $validated['auto_reply_completion_message'];
+        if ($user->isPremiumTier()) {
+            if (array_key_exists('auto_reply_on_completion', $validated)) {
+                $user->auto_reply_on_completion = (bool) $validated['auto_reply_on_completion'];
+            }
+            if (array_key_exists('auto_reply_completion_message', $validated)) {
+                $user->auto_reply_completion_message = $validated['auto_reply_completion_message'];
+            }
         }
 
         if ($request->hasFile('banner_image')) {

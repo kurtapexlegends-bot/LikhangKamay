@@ -36,6 +36,11 @@ class SendOrderCompletionAutoReply
             return null;
         }
 
+        // Only premium/super_premium sellers have automated thank-you messages
+        if (!$seller->isPremiumTier()) {
+            return null;
+        }
+
         // Check if seller enabled completion auto-reply (defaults to true)
         $isEnabled = $seller->auto_reply_on_completion ?? true;
         if (!$isEnabled) {
