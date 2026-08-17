@@ -46,6 +46,18 @@ class QuoteCheckoutShipping
                 continue;
             }
 
+            $pickupCandidates = $seller->getCourierPickupAddressCandidates();
+            $normalizedDropoff = \App\Support\StructuredAddress::normalizeForComparison($shippingContext['shipping_address'] ?? '');
+
+            foreach ($pickupCandidates as $pickupCandidate) {
+                if (\App\Support\StructuredAddress::normalizeForComparison($pickupCandidate) === $normalizedDropoff && $normalizedDropoff !== '') {
+                    $shopName = $seller->shop_name ?: $seller->name;
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'shipping_address' => "The delivery address is identical to {$shopName}'s studio pickup location. Please select 'Pick Up' or provide a different delivery address.",
+                    ]);
+                }
+            }
+
             $quote = $this->checkoutShippingService->estimateForSeller($seller, [
                 ...$shippingContext,
                 'shipping_method' => $request->shipping_method,

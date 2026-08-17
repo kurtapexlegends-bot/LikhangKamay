@@ -114,6 +114,21 @@ class PlaceOrder
             }
 
             $seller = User::find((int) $artisanId);
+
+            if ($request->shipping_method === 'Delivery' && $seller) {
+                $pickupCandidates = $seller->getCourierPickupAddressCandidates();
+                $normalizedDropoff = \App\Support\StructuredAddress::normalizeForComparison($shippingAddress);
+
+                foreach ($pickupCandidates as $pickupCandidate) {
+                    if (\App\Support\StructuredAddress::normalizeForComparison($pickupCandidate) === $normalizedDropoff && $normalizedDropoff !== '') {
+                        $shopName = $seller->shop_name ?: $seller->name;
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'shipping_address' => "The delivery address is identical to {$shopName}'s studio pickup location. Please select 'Pick Up' or provide a different delivery address.",
+                        ]);
+                    }
+                }
+            }
+
             $shippingFee = 0.0;
 
             if ($request->shipping_method === 'Delivery' && $seller) {

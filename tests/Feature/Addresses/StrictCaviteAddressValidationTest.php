@@ -165,4 +165,40 @@ class StrictCaviteAddressValidationTest extends TestCase
         $this->assertFalse(CaviteAddress::isValidCity('Makati'));
         $this->assertFalse(CaviteAddress::isValidCity('Manila'));
     }
+
+    public function test_checkout_rejects_delivery_when_dropoff_matches_seller_pickup_address(): void
+    {
+        // Seller pickup is 'Blk 1 Lot 2', 'San Miguel I', 'Dasmariñas City', 'Cavite', '4114'
+        $response = $this->actingAs($this->buyer)->post(route('checkout.store'), [
+            'items' => [['id' => $this->product->id, 'qty' => 1]],
+            'shipping_method' => 'Delivery',
+            'payment_method' => 'COD',
+            'recipient_name' => 'Juan Dela Cruz',
+            'phone_number' => '09171234567',
+            'shipping_street_address' => 'Blk 1 Lot 2',
+            'shipping_barangay' => 'San Miguel I',
+            'shipping_city' => 'Dasmariñas City',
+            'shipping_region' => 'Cavite',
+            'shipping_postal_code' => '4114',
+            'shipping_address_type' => 'home',
+            'total' => 550.00,
+        ]);
+
+        $response->assertSessionHasErrors(['shipping_address']);
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_checkout_allows_pickup_when_buyer_address_is_same(): void
+    {
+        // Same address but Pick Up method is valid
+        $response = $this->actingAs($this->buyer)->post(route('checkout.store'), [
+            'items' => [['id' => $this->product->id, 'qty' => 1]],
+            'shipping_method' => 'Pick Up',
+            'payment_method' => 'COD',
+            'total' => 500.00,
+        ]);
+
+        $response->assertRedirect(route('my-orders.index'));
+        $this->assertDatabaseCount('orders', 1);
+    }
 }
