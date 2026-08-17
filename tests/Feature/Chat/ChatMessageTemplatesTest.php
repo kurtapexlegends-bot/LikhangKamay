@@ -11,13 +11,14 @@ class ChatMessageTemplatesTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_artisan_can_create_chat_message_template_with_content(): void
+    public function test_artisan_can_create_chat_message_template_with_shortcut(): void
     {
         $artisan = User::factory()->artisanApproved()->create();
 
         $response = $this->actingAs($artisan)
             ->post(route('chat.templates.store'), [
                 'title' => 'Location',
+                'shortcut' => 'location', // automatically adds leading slash
                 'content' => 'Blk 35 lot 17 Brgy. San Miguel 1 Dasmarinas City Cavite',
             ]);
 
@@ -27,6 +28,7 @@ class ChatMessageTemplatesTest extends TestCase
         $this->assertDatabaseHas('chat_message_templates', [
             'user_id' => $artisan->id,
             'title' => 'Location',
+            'shortcut' => '/location',
             'content' => 'Blk 35 lot 17 Brgy. San Miguel 1 Dasmarinas City Cavite',
         ]);
     }
@@ -38,6 +40,7 @@ class ChatMessageTemplatesTest extends TestCase
         $response = $this->actingAs($artisan)
             ->post(route('chat.templates.store'), [
                 'title' => 'Shipping Policy',
+                'shortcut' => '/shipping',
                 'message' => 'We ship within 24 to 48 hours nationwide.',
             ]);
 
@@ -47,6 +50,7 @@ class ChatMessageTemplatesTest extends TestCase
         $this->assertDatabaseHas('chat_message_templates', [
             'user_id' => $artisan->id,
             'title' => 'Shipping Policy',
+            'shortcut' => '/shipping',
             'content' => 'We ship within 24 to 48 hours nationwide.',
         ]);
     }
@@ -58,12 +62,14 @@ class ChatMessageTemplatesTest extends TestCase
         $template = ChatMessageTemplate::create([
             'user_id' => $artisan->id,
             'title' => 'Old Title',
+            'shortcut' => '/old',
             'content' => 'Old Content',
         ]);
 
         $updateResponse = $this->actingAs($artisan)
             ->put(route('chat.templates.update', $template->id), [
                 'title' => 'Updated Title',
+                'shortcut' => '/newshortcut',
                 'content' => 'Updated Content',
             ]);
 
@@ -71,6 +77,7 @@ class ChatMessageTemplatesTest extends TestCase
         $this->assertDatabaseHas('chat_message_templates', [
             'id' => $template->id,
             'title' => 'Updated Title',
+            'shortcut' => '/newshortcut',
             'content' => 'Updated Content',
         ]);
 
@@ -91,12 +98,14 @@ class ChatMessageTemplatesTest extends TestCase
         $template = ChatMessageTemplate::create([
             'user_id' => $seller1->id,
             'title' => 'Seller 1 Title',
+            'shortcut' => '/seller1',
             'content' => 'Seller 1 Content',
         ]);
 
         $this->actingAs($seller2)
             ->put(route('chat.templates.update', $template->id), [
                 'title' => 'Hacked Title',
+                'shortcut' => '/hacked',
                 'content' => 'Hacked Content',
             ])
             ->assertNotFound();

@@ -182,6 +182,7 @@ class ChatController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
+            'shortcut' => 'nullable|string|max:50',
             'content' => 'nullable|string|max:2000',
             'message' => 'nullable|string|max:2000',
         ]);
@@ -191,9 +192,16 @@ class ChatController extends Controller
             return back()->withErrors(['content' => 'The message content field is required.']);
         }
 
+        $shortcut = null;
+        if (!empty($validated['shortcut'])) {
+            $cleaned = trim($validated['shortcut']);
+            $shortcut = str_starts_with($cleaned, '/') ? $cleaned : '/' . $cleaned;
+        }
+
         \App\Models\ChatMessageTemplate::create([
             'user_id' => $this->sellerOwnerId(),
             'title' => $validated['title'],
+            'shortcut' => $shortcut,
             'content' => $content,
         ]);
 
@@ -209,6 +217,7 @@ class ChatController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
+            'shortcut' => 'nullable|string|max:50',
             'content' => 'nullable|string|max:2000',
             'message' => 'nullable|string|max:2000',
         ]);
@@ -218,8 +227,15 @@ class ChatController extends Controller
             return back()->withErrors(['content' => 'The message content field is required.']);
         }
 
+        $shortcut = null;
+        if (!empty($validated['shortcut'])) {
+            $cleaned = trim($validated['shortcut']);
+            $shortcut = str_starts_with($cleaned, '/') ? $cleaned : '/' . $cleaned;
+        }
+
         $template->update([
             'title' => $validated['title'],
+            'shortcut' => $shortcut,
             'content' => $content,
         ]);
 

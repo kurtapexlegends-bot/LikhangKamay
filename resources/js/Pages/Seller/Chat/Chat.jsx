@@ -82,6 +82,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     } = useForm({
         id: null,
         title: '',
+        shortcut: '',
         content: ''
     });
 
@@ -318,6 +319,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         setTemplateData({
             id: template.id,
             title: template.title,
+            shortcut: template.shortcut || '',
             content: template.content
         });
     };

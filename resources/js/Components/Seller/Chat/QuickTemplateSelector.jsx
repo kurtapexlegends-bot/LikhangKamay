@@ -77,7 +77,14 @@ export default function QuickTemplateSelector({
                                         }`}
                                     >
                                         <div className="flex justify-between items-start gap-2 mb-1">
-                                            <h4 className="text-xs font-bold text-gray-900 truncate">{tpl.title}</h4>
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                <h4 className="text-xs font-bold text-gray-900 truncate">{tpl.title}</h4>
+                                                {tpl.shortcut && (
+                                                    <span className="rounded bg-clay-50 border border-clay-100 px-1.5 py-0.2 text-[9px] font-mono font-bold text-clay-700 shrink-0">
+                                                        {tpl.shortcut}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="flex gap-1 shrink-0">
                                                 <button 
                                                     onClick={() => handleEditTemplate(tpl)} 
@@ -123,6 +130,17 @@ export default function QuickTemplateSelector({
                                         required
                                     />
                                     {templateErrors.title && <p className="mt-1 text-[10px] text-red-500 font-bold">{templateErrors.title}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-bold text-gray-700 mb-1.5 uppercase">Shortcut Keyword (Optional)</label>
+                                    <input 
+                                        type="text"
+                                        value={templateData.shortcut || ''}
+                                        onChange={e => setTemplateData('shortcut', e.target.value)}
+                                        placeholder="e.g. /shipping, /location..."
+                                        className="w-full bg-white border-gray-200 rounded-xl text-sm focus:ring-clay-500 focus:border-clay-500 shadow-sm min-h-[44px]"
+                                    />
+                                    {templateErrors.shortcut && <p className="mt-1 text-[10px] text-red-500 font-bold">{templateErrors.shortcut}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-[11px] font-bold text-gray-700 mb-1.5 uppercase">Message Content</label>

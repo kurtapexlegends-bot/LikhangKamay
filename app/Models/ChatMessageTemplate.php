@@ -12,6 +12,7 @@ class ChatMessageTemplate extends Model
     protected $fillable = [
         'user_id',
         'title',
+        'shortcut',
         'content',
     ];
 

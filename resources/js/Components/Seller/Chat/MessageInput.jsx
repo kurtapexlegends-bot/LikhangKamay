@@ -12,6 +12,7 @@ import {
     Package,
 } from 'lucide-react';
 import MentionsList, { useMentions } from './MentionsList';
+import { SlashCommandsList, useSlashCommands } from './SlashCommandsList';
 import TemplateDropdown from './TemplateDropdown';
 import { compressImage } from "@/utils/imageCompressor";
 import { OrderMentionsList, useOrderMentions } from '@/Components/Chat/OrderMentionsList';
@@ -94,6 +95,7 @@ export default function MessageInput({
     
     const mentionsDropdownRef = useRef(null);
     const orderMentionsRef = useRef(null);
+    const slashCommandsDropdownRef = useRef(null);
 
     // 4. Typing trigger
     const lastTypingSignal = useRef(0);
@@ -115,6 +117,21 @@ export default function MessageInput({
         inputRef,
         eligibleContacts,
         currentChannel
+    });
+
+    const {
+        isDropdownVisible: isSlashDropdownVisible,
+        filteredTemplates: filteredSlashTemplates,
+        selectedIndex: slashSelectedIndex,
+        selectTemplate: selectSlashTemplate,
+        checkSlashCommands,
+        handleKeyDown: handleSlashKeyDown,
+        setShowSlashMenu
+    } = useSlashCommands({
+        message: data.message,
+        setMessage: (val) => setData('message', val),
+        inputRef,
+        chatTemplates
     });
 
     const {
@@ -181,13 +198,18 @@ export default function MessageInput({
             if (isDropdownVisible && mentionsDropdownRef.current && !mentionsDropdownRef.current.contains(event.target)) {
                 setShowMentions(false);
             }
+
+            // Click outside slash commands dropdown
+            if (isSlashDropdownVisible && slashCommandsDropdownRef.current && !slashCommandsDropdownRef.current.contains(event.target)) {
+                setShowSlashMenu(false);
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showEmojiPicker, showTemplateSelector, isDropdownVisible, setShowMentions, emojiPickerRef, templateSelectorRef]);
+    }, [showEmojiPicker, showTemplateSelector, isDropdownVisible, isSlashDropdownVisible, setShowMentions, setShowSlashMenu, emojiPickerRef, templateSelectorRef]);
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -332,6 +354,14 @@ export default function MessageInput({
     return (
         <div className="relative z-10 w-full shrink-0 border-t border-stone-200/80 bg-white p-3 shadow-xs sm:p-4">
             <div className="relative mx-auto flex w-full max-w-4xl flex-col">
+                <SlashCommandsList
+                    ref={slashCommandsDropdownRef}
+                    isVisible={!form && isSlashDropdownVisible}
+                    filteredTemplates={filteredSlashTemplates}
+                    selectedIndex={slashSelectedIndex}
+                    onSelect={selectSlashTemplate}
+                />
+
                 <MentionsList
                     ref={mentionsDropdownRef}
                     isVisible={isDropdownVisible}
@@ -479,17 +509,23 @@ export default function MessageInput({
                                 event.target.style.height = 'auto';
                                 event.target.style.height = `${Math.min(event.target.scrollHeight, 120)}px`;
                                 signalTyping();
+                                checkSlashCommands(val, event.target.selectionStart);
                                 checkMentions(val, event.target.selectionStart);
                                 checkOrderMentions(val, event.target.selectionStart);
                             }}
                             onSelect={(event) => {
+                                checkSlashCommands(event.target.value, event.target.selectionStart);
                                 checkMentions(event.target.value, event.target.selectionStart);
                                 checkOrderMentions(event.target.value, event.target.selectionStart);
                             }}
                             disabled={isMessagesReadOnly}
-                            placeholder={isMessagesReadOnly ? "Chat is read-only..." : (form ? "Message your team..." : "Type a message or @ to tag an order...")}
+                            placeholder={isMessagesReadOnly ? "Chat is read-only..." : (form ? "Message your team..." : "Type a message, / for templates, @ for orders...")}
                             className="custom-scrollbar max-h-[120px] min-h-[42px] w-full flex-1 resize-none border-none bg-transparent px-3 py-2.5 text-sm font-medium leading-relaxed text-gray-700 placeholder-gray-400 focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
                             onKeyDown={(event) => {
+                                if (handleSlashKeyDown(event)) {
+                                    return;
+                                }
+
                                 if (handleMentionsKeyDown(event)) {
                                     return;
                                 }

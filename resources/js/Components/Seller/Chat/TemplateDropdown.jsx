@@ -31,7 +31,14 @@ export default function TemplateDropdown({
                             className="w-full text-left px-3 py-2.5 hover:bg-stone-50 transition rounded-lg text-xs font-semibold text-gray-700 flex flex-col gap-0.5"
                             type="button"
                         >
-                            <span className="font-bold text-gray-900 truncate block w-full">{tpl.title}</span>
+                            <div className="flex items-center justify-between gap-2 w-full">
+                                <span className="font-bold text-gray-900 truncate">{tpl.title}</span>
+                                {tpl.shortcut && (
+                                    <span className="rounded bg-clay-50 border border-clay-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-clay-700 shrink-0">
+                                        {tpl.shortcut}
+                                    </span>
+                                )}
+                            </div>
                             <span className="text-gray-500 line-clamp-2 leading-relaxed">{tpl.content}</span>
                         </button>
                     ))
