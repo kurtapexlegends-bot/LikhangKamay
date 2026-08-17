@@ -44,16 +44,16 @@ export default function NotificationDropdown() {
     const dropdownRef = useRef(null);
 
     useEffect(() => {
-        if (isOpen && notifications.length === 0) {
+        if (isOpen) {
             setLoading(true);
             router.reload({
-                only: ['notifications'],
+                only: ['notifications', 'unreadNotificationCount'],
                 preserveScroll: true,
                 preserveState: true,
                 onFinish: () => setLoading(false),
             });
         }
-    }, [isOpen, notifications.length]);
+    }, [isOpen]);
 
     useEffect(() => {
         if (typeof unreadNotificationCount === 'number') {

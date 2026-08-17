@@ -95,14 +95,21 @@ class StoreTeamMessage
             if ($members->isNotEmpty()) {
                 $memberIds = $members->pluck('id')->all();
 
-                DB::table('notifications')
-                    ->whereIn('notifiable_id', $memberIds)
-                    ->where('notifiable_type', User::class)
-                    ->where('type', NewTeamChannelMessageNotification::class)
-                    ->where('data->team_channel_id', $channel->id)
-                    ->delete();
+                try {
+                    DB::table('notifications')
+                        ->whereIn('notifiable_id', $memberIds)
+                        ->where('notifiable_type', User::class)
+                        ->where('type', NewTeamChannelMessageNotification::class)
+                        ->where(function ($q) use ($channel) {
+                            $q->where('data->team_channel_id', (string) $channel->id)
+                              ->orWhere('data->team_channel_id', (int) $channel->id);
+                        })
+                        ->delete();
 
-                Notification::send($members, new NewTeamChannelMessageNotification($message, $actor->name, $channel->name));
+                    Notification::send($members, new NewTeamChannelMessageNotification($message, $actor->name, $channel->name));
+                } catch (\Throwable $e) {
+                    report($e);
+                }
             }
 
             try {
@@ -135,12 +142,19 @@ class StoreTeamMessage
             'is_read' => false,
         ]);
 
-        $receiver->unreadNotifications()
-            ->where('type', NewTeamMessageNotification::class)
-            ->where('data->sender_id', $actor->id)
-            ->delete();
+        try {
+            $receiver->unreadNotifications()
+                ->where('type', NewTeamMessageNotification::class)
+                ->where(function ($q) use ($actor) {
+                    $q->where('data->sender_id', (string) $actor->id)
+                      ->orWhere('data->sender_id', (int) $actor->id);
+                })
+                ->delete();
 
-        $receiver->notify(new NewTeamMessageNotification($message, $actor->name));
+            $receiver->notify(new NewTeamMessageNotification($message, $actor->name));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         try {
             broadcast(new TeamMessageSent($message))->toOthers();
@@ -224,14 +238,21 @@ class StoreTeamMessage
         if ($targetUsers->isNotEmpty()) {
             $targetUserIds = $targetUsers->pluck('id')->all();
 
-            DB::table('notifications')
-                ->whereIn('notifiable_id', $targetUserIds)
-                ->where('notifiable_type', User::class)
-                ->where('type', TeamMessageMentionedNotification::class)
-                ->where('data->team_message_id', $message->id)
-                ->delete();
+            try {
+                DB::table('notifications')
+                    ->whereIn('notifiable_id', $targetUserIds)
+                    ->where('notifiable_type', User::class)
+                    ->where('type', TeamMessageMentionedNotification::class)
+                    ->where(function ($q) use ($message) {
+                        $q->where('data->team_message_id', (string) $message->id)
+                          ->orWhere('data->team_message_id', (int) $message->id);
+                    })
+                    ->delete();
 
-            Notification::send($targetUsers, new TeamMessageMentionedNotification($message, $actor->name));
+                Notification::send($targetUsers, new TeamMessageMentionedNotification($message, $actor->name));
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
     }
 }

@@ -84,12 +84,23 @@ class ChatController extends Controller
         $senderName = $senderIdentity->shop_name ?: $senderIdentity->name;
 
         // Notify Receiver (Remove older unread notifications from same sender to prevent spam)
-        $receiver->unreadNotifications()
-            ->where('type', \App\Notifications\NewMessageNotification::class)
-            ->where('data->sender_id', $senderId)
-            ->delete();
+        try {
+            $receiver->unreadNotifications()
+                ->where('type', \App\Notifications\NewMessageNotification::class)
+                ->where(function ($q) use ($senderId) {
+                    $q->where('data->sender_id', (string) $senderId)
+                      ->orWhere('data->sender_id', (int) $senderId);
+                })
+                ->delete();
 
-        $receiver->notify(new \App\Notifications\NewMessageNotification($msg, $senderName));
+            if ($receiver->isArtisan()) {
+                $receiver->notifySellerWorkspace(new \App\Notifications\NewMessageNotification($msg, $senderName), 'messages');
+            } else {
+                $receiver->notify(new \App\Notifications\NewMessageNotification($msg, $senderName));
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         try {
             broadcast(new \App\Events\MessageSent($msg))->toOthers();

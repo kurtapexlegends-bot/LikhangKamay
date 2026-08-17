@@ -87,12 +87,19 @@ class SendOrderCompletionAutoReply
 
         // Send push notification & broadcast event
         if ($buyer) {
-            $buyer->unreadNotifications()
-                ->where('type', NewMessageNotification::class)
-                ->where('data->sender_id', $seller->id)
-                ->delete();
+            try {
+                $buyer->unreadNotifications()
+                    ->where('type', NewMessageNotification::class)
+                    ->where(function ($q) use ($seller) {
+                        $q->where('data->sender_id', (string) $seller->id)
+                          ->orWhere('data->sender_id', (int) $seller->id);
+                    })
+                    ->delete();
 
-            $buyer->notify(new NewMessageNotification($message, $shopName));
+                $buyer->notify(new NewMessageNotification($message, $shopName));
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         try {

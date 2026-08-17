@@ -340,6 +340,52 @@ class OrderAwareMessagingTest extends TestCase
         $this->assertSame('Pending', $order->fresh()->status);
     }
 
+    public function test_buyer_message_creates_workspace_notification_for_seller_and_appears_in_dropdown(): void
+    {
+        $seller = User::factory()->artisanApproved()->create(['shop_name' => 'Kurt Clay Studio']);
+        $buyer = User::factory()->create(['name' => 'Kurt Stanley']);
+        $this->createOrder($seller, $buyer);
+
+        $this->actingAs($buyer)
+            ->post(route('chat.store'), [
+                'receiver_id' => $seller->id,
+                'message' => 'Hello artisan, whattup?',
+            ])
+            ->assertRedirect();
+
+        // Ensure database notification was created
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $seller->id,
+            'notifiable_type' => User::class,
+            'type' => \App\Notifications\NewMessageNotification::class,
+        ]);
+
+        $notification = $seller->notifications()->latest()->first();
+        $this->assertNotNull($notification);
+        $this->assertEquals('new_message', $notification->data['type']);
+        $this->assertEquals('New Message', $notification->data['title']);
+        $this->assertEquals('Kurt Stanley sent you a message.', $notification->data['message']);
+
+        // Test presenter
+        $presented = \App\Support\NotificationPresenter::present($notification, $seller);
+        $this->assertEquals('new_message', $presented['type']);
+        $this->assertEquals(route('chat.index', ['user_id' => $buyer->id]), $presented['url']);
+        $this->assertNull($presented['read_at']);
+
+        // Test unread query
+        $this->assertEquals(1, $seller->getUnreadNotificationsQuery()->count());
+
+        // Test subsequent message deduplication (prevents notification spam)
+        $this->actingAs($buyer)
+            ->post(route('chat.store'), [
+                'receiver_id' => $seller->id,
+                'message' => 'Second message from buyer',
+            ])
+            ->assertRedirect();
+
+        $this->assertEquals(1, $seller->getUnreadNotificationsQuery()->count());
+    }
+
     private function createOrder(User $seller, User $buyer, array $overrides = []): Order
     {
         $createdAt = $overrides['created_at'] ?? null;
