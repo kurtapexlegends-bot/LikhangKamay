@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useForm, router } from '@inertiajs/react';
-import { MapPin, Navigation, Crosshair, Plus, Trash2, Edit3, Shield, CheckCircle2, AlertCircle, X, Search, Loader2, Key } from 'lucide-react';
+import { MapPin, Navigation, Crosshair, Plus, Trash2, Edit3, Shield, CheckCircle2, AlertCircle, X, Search, Loader2, Mail } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import Modal from '@/Components/Modal';
 import LocationPickerMap from './LocationPickerMap';
@@ -338,18 +338,16 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                 height="150px"
                             />
 
-                            {/* Workplace Daily PIN Display Badge */}
-                            {loc.daily_workplace_pin && (
-                                <div className="flex items-center justify-between text-xs bg-amber-50/80 border border-amber-200/80 rounded-xl px-3 py-2">
-                                    <span className="font-bold text-amber-900 flex items-center gap-1.5">
-                                        <Key size={13} className="text-amber-600" />
-                                        Today's Workplace PIN:
-                                    </span>
-                                    <span className="font-mono font-black text-sm text-amber-900 tracking-widest bg-white px-2 py-0.5 rounded border border-amber-200 shadow-2xs">
-                                        {loc.daily_workplace_pin}
-                                    </span>
-                                </div>
-                            )}
+                            {/* Staff Verification Security Badge */}
+                            <div className="flex items-center justify-between text-xs bg-emerald-50/80 border border-emerald-200/80 rounded-xl px-3 py-2">
+                                <span className="font-bold text-emerald-900 flex items-center gap-1.5">
+                                    <Mail size={13} className="text-emerald-600" />
+                                    Staff Clock-In Verification:
+                                </span>
+                                <span className="font-semibold text-[11px] text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200 shadow-2xs">
+                                    Email OTP Active
+                                </span>
+                            </div>
 
                             <div className="flex items-center justify-between text-[11px] border-t border-stone-200/60 pt-2.5 text-stone-500 font-mono">
                                 <span>Lat: {loc.latitude}</span>

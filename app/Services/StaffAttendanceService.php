@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\StaffAttendanceSession;
 use App\Models\User;
 use App\Models\Employee;
+use App\Mail\StaffClockInOtpMail;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
@@ -96,7 +99,19 @@ class StaffAttendanceService
             }
         }
 
-        if (!empty($payload['workplace_pin'])) {
+        if (!empty($payload['otp_code'])) {
+            $cacheKey = 'staff_clockin_otp:' . $staff->id;
+            $cachedData = Cache::get($cacheKey);
+
+            if (!$cachedData || trim((string)$payload['otp_code']) !== (string)($cachedData['code'] ?? '')) {
+                throw ValidationException::withMessages([
+                    'otp_code' => ['Invalid or expired verification OTP. Please request a new code.'],
+                ]);
+            }
+
+            // Invalidate OTP on successful verification so it cannot be reused
+            Cache::forget($cacheKey);
+        } elseif (!empty($payload['workplace_pin'])) {
             $staff->loadMissing('employee.assignedLocation');
             $targetLocation = $staff->employee?->assignedLocation ?: \App\Models\SellerLocation::where('user_id', $staff->getEffectiveSellerId())->where('is_active', true)->first();
             $expectedPin = $targetLocation?->getOrGenerateDailyPin();
@@ -530,6 +545,8 @@ class StaffAttendanceService
             'break_started_at' => $currentState === 'paused'
                 ? $latestSession?->clock_out_at?->toIso8601String()
                 : null,
+            'staff_email' => $staff->email,
+            'masked_email' => $this->maskEmail((string) $staff->email),
             'assigned_location' => $assignedLocation ? [
                 'id' => $assignedLocation->id,
                 'name' => $assignedLocation->name,
@@ -540,6 +557,73 @@ class StaffAttendanceService
                 'daily_workplace_pin' => $assignedLocation->getOrGenerateDailyPin(),
             ] : null,
         ];
+    }
+
+    /**
+     * Generate, cache, and email a single-use clock-in OTP to the staff member's email.
+     *
+     * @return array{masked_email: string, expires_in_minutes: int, cooldown_seconds: int}
+     */
+    public function sendClockInOtp(User $staff): array
+    {
+        $cooldownKey = 'staff_clockin_otp_cooldown:' . $staff->id;
+        if (Cache::has($cooldownKey)) {
+            $timestamp = (int) Cache::get($cooldownKey);
+            $secondsRemaining = max(1, $timestamp - now()->timestamp);
+            if ($secondsRemaining > 0) {
+                throw ValidationException::withMessages([
+                    'otp' => ["Please wait {$secondsRemaining}s before requesting another verification code."],
+                ]);
+            }
+        }
+
+        $code = (string) random_int(100000, 999999);
+        $expiresInMinutes = 10;
+
+        // Store OTP in Cache for 10 minutes
+        Cache::put('staff_clockin_otp:' . $staff->id, [
+            'code' => $code,
+            'email' => $staff->email,
+            'created_at' => now()->timestamp,
+        ], now()->addMinutes($expiresInMinutes));
+
+        // Set 60-second resend cooldown
+        Cache::put($cooldownKey, now()->addSeconds(60)->timestamp, now()->addSeconds(60));
+
+        // Queue or dispatch OTP mail
+        try {
+            Mail::to($staff->email)->queue(new StaffClockInOtpMail($staff, $code, $expiresInMinutes));
+        } catch (\Throwable $e) {
+            // If mail queueing fails synchronously, try direct send or log
+            report($e);
+        }
+
+        return [
+            'masked_email' => $this->maskEmail((string) $staff->email),
+            'expires_in_minutes' => $expiresInMinutes,
+            'cooldown_seconds' => 60,
+        ];
+    }
+
+    /**
+     * Mask email address for user privacy (e.g., ku***@gmail.com).
+     */
+    public function maskEmail(string $email): string
+    {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $email;
+        }
+
+        [$name, $domain] = explode('@', $email, 2);
+        $len = strlen($name);
+
+        if ($len <= 2) {
+            $maskedName = substr($name, 0, 1) . '***';
+        } else {
+            $maskedName = substr($name, 0, 2) . str_repeat('*', max(3, $len - 3)) . substr($name, -1);
+        }
+
+        return $maskedName . '@' . $domain;
     }
 
     /**

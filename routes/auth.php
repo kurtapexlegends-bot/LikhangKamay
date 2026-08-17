@@ -64,6 +64,9 @@ Route::middleware(['auth', 'staff.security'])->group(function () {
     Route::post('staff/attendance/resume', [StaffSecurityController::class, 'resumeAttendance'])
         ->name('staff.attendance.resume');
 
+    Route::post('staff/attendance/otp', [StaffSecurityController::class, 'requestOtp'])
+        ->name('staff.attendance.otp');
+
     Route::post('staff/attendance/break', [StaffSecurityController::class, 'pauseAttendance'])
         ->name('staff.attendance.break');
 

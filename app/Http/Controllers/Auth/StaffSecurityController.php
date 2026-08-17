@@ -89,6 +89,23 @@ class StaffSecurityController extends Controller
         ]);
     }
 
+    public function requestOtp(Request $request, StaffAttendanceService $attendanceService): JsonResponse
+    {
+        $user = $this->getStaffUser($request);
+
+        abort_unless($user->canAccessSellerWorkspace(), 403, 'Staff workspace access only.');
+
+        $result = $attendanceService->sendClockInOtp($user);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Verification code sent to {$result['masked_email']}.",
+            'masked_email' => $result['masked_email'],
+            'expires_in_minutes' => $result['expires_in_minutes'],
+            'cooldown_seconds' => $result['cooldown_seconds'],
+        ]);
+    }
+
     public function resumeAttendance(Request $request, StaffAttendanceService $attendanceService): RedirectResponse
     {
         $user = $this->getStaffUser($request);
@@ -100,9 +117,10 @@ class StaffSecurityController extends Controller
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'workplace_pin' => 'nullable|string|max:10',
+            'otp_code' => 'nullable|string|max:10',
         ]);
 
-        $attendanceService->ensureClockedIn($user, $request->only(['photo_data', 'latitude', 'longitude', 'workplace_pin']));
+        $attendanceService->ensureClockedIn($user, $request->only(['photo_data', 'latitude', 'longitude', 'workplace_pin', 'otp_code']));
 
         $intended = $request->session()->pull('staff.attendance.intended');
 

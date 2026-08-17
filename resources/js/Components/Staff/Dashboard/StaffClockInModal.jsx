@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
-import { Camera, MapPin, RefreshCw, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, X, Loader2, Navigation, Key } from 'lucide-react';
+import { Camera, MapPin, RefreshCw, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, X, Loader2, Navigation, Mail, Send, Inbox } from 'lucide-react';
+import axios from 'axios';
 import Modal from '@/Components/Modal';
 import StaffGeofenceMap from './StaffGeofenceMap';
 
@@ -137,14 +138,46 @@ export default function StaffClockInModal({ isOpen, onClose }) {
         setActiveMobileTab('selfie');
     };
 
-    const [usePinFallback, setUsePinFallback] = useState(false);
-    const [workplacePin, setWorkplacePin] = useState('');
+    const [useOtpFallback, setUseOtpFallback] = useState(false);
+    const [otpCode, setOtpCode] = useState('');
+    const [isSendingOtp, setIsSendingOtp] = useState(false);
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpError, setOtpError] = useState(null);
+    const [otpCooldown, setOtpCooldown] = useState(0);
+    const [maskedEmail, setMaskedEmail] = useState(attendance?.masked_email || '');
+
+    // Cooldown countdown timer for resending OTP
+    useEffect(() => {
+        if (otpCooldown <= 0) return;
+        const timer = setInterval(() => {
+            setOtpCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [otpCooldown]);
+
+    const handleRequestOtp = async () => {
+        if (otpCooldown > 0 || isSendingOtp) return;
+        setIsSendingOtp(true);
+        setOtpError(null);
+        try {
+            const res = await axios.post('/staff/attendance/otp');
+            setOtpSent(true);
+            setOtpCooldown(res.data.cooldown_seconds || 60);
+            if (res.data.masked_email) {
+                setMaskedEmail(res.data.masked_email);
+            }
+        } catch (err) {
+            setOtpError(err.response?.data?.errors?.otp?.[0] || err.response?.data?.message || 'Failed to send OTP code. Please try again.');
+        } finally {
+            setIsSendingOtp(false);
+        }
+    };
 
     const handleSubmit = () => {
         setSubmitting(true);
         router.post('/staff/attendance/resume', {
             photo_data: capturedPhoto,
-            workplace_pin: usePinFallback ? workplacePin : null,
+            otp_code: useOtpFallback ? otpCode : null,
             latitude: location.lat,
             longitude: location.lng
         }, {
@@ -156,12 +189,12 @@ export default function StaffClockInModal({ isOpen, onClose }) {
     };
 
     const isLocationVerified = locationStatus === 'success' && location.lat !== null && location.lng !== null;
-    const canClockIn = (Boolean(capturedPhoto) || (usePinFallback && workplacePin.length >= 4)) && isLocationVerified && (!strictGeofence || isWithinGeofence);
+    const canClockIn = (Boolean(capturedPhoto) || (useOtpFallback && otpCode.length >= 6)) && isLocationVerified && (!strictGeofence || isWithinGeofence);
 
     const getButtonText = () => {
         if (submitting) return 'Clocking In...';
-        if (usePinFallback && workplacePin.length < 4) return 'Enter 4-Digit Workplace PIN';
-        if (!capturedPhoto && !usePinFallback) return 'Take Selfie Photo to Continue';
+        if (useOtpFallback && otpCode.length < 6) return 'Enter 6-Digit Email OTP';
+        if (!capturedPhoto && !useOtpFallback) return 'Take Selfie Photo to Continue';
         if (locationStatus === 'fetching') return 'Verifying GPS Location...';
         if (!isLocationVerified) return 'GPS Location Verification Required';
         if (strictGeofence && !isWithinGeofence) return `Clock In Blocked: Move Within ${radiusLimit}m of ${locationName}`;
@@ -255,34 +288,75 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                     }`}>
                         <div className="flex items-center justify-between px-0.5">
                             <span className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
-                                {usePinFallback ? <Key size={14} className="text-amber-600" /> : <Camera size={14} className="text-clay-600" />}
-                                {usePinFallback ? 'Workplace Daily PIN' : 'Biometric Selfie Proof'}
+                                {useOtpFallback ? <Mail size={14} className="text-amber-600" /> : <Camera size={14} className="text-clay-600" />}
+                                {useOtpFallback ? 'Email OTP Verification' : 'Biometric Selfie Proof'}
                             </span>
                             <span className="text-[10px] font-semibold text-stone-400">Step 1 of 2</span>
                         </div>
 
-                        {usePinFallback ? (
-                            <div className="rounded-2xl bg-amber-50/70 border border-amber-200 p-4 flex flex-col items-center justify-center text-center space-y-3 min-h-[240px] sm:min-h-[270px] md:min-h-[290px]">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800 border border-amber-200/80 shadow-2xs">
-                                    <Key size={20} />
+                        {useOtpFallback ? (
+                            <div className="rounded-2xl bg-amber-50/60 border border-amber-200/80 p-4 sm:p-5 flex flex-col items-center justify-center text-center space-y-3 min-h-[240px] sm:min-h-[270px] md:min-h-[290px]">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-900 border border-amber-200 shadow-2xs">
+                                    <Mail size={22} className="text-amber-700" />
                                 </div>
-                                <div>
-                                    <h4 className="text-xs font-bold text-stone-900">Workplace Daily PIN Verification</h4>
-                                    <p className="text-[11px] text-stone-600 font-medium mt-0.5 max-w-xs leading-relaxed">
-                                        Enter the 4-digit Workplace Daily PIN provided verbally by your on-site manager.
+                                <div className="space-y-1">
+                                    <h4 className="text-xs sm:text-sm font-bold text-stone-900">Email OTP Verification</h4>
+                                    <p className="text-[11px] text-stone-600 font-medium max-w-xs leading-relaxed">
+                                        A single-use 6-digit verification code will be sent to your registered Gmail address.
                                     </p>
+                                    {maskedEmail && (
+                                        <span className="inline-block text-[11px] font-mono font-bold text-stone-800 bg-white px-2.5 py-0.5 rounded-full border border-stone-200 shadow-2xs mt-1">
+                                            {maskedEmail}
+                                        </span>
+                                    )}
                                 </div>
-                                <input
-                                    type="text"
-                                    maxLength={4}
-                                    value={workplacePin}
-                                    onChange={(e) => setWorkplacePin(e.target.value.replace(/\D/g, ''))}
-                                    placeholder="0 0 0 0"
-                                    className="w-36 text-center text-xl font-mono font-black tracking-[0.3em] px-3 py-2 rounded-xl border border-amber-300 focus:border-amber-500 focus:ring-amber-500 bg-white shadow-2xs text-stone-900"
-                                />
-                                <p className="text-[10px] text-stone-400 font-medium">
-                                    Camera unavailable fallback mode active
-                                </p>
+
+                                {/* Send / Resend OTP Action */}
+                                <div className="pt-0.5">
+                                    <button
+                                        type="button"
+                                        onClick={handleRequestOtp}
+                                        disabled={isSendingOtp || otpCooldown > 0}
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:bg-stone-200 disabled:text-stone-500 text-white text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer disabled:cursor-not-allowed"
+                                    >
+                                        {isSendingOtp ? (
+                                            <>
+                                                <Loader2 size={13} className="animate-spin" />
+                                                Sending Code...
+                                            </>
+                                        ) : otpCooldown > 0 ? (
+                                            <>
+                                                <Mail size={13} />
+                                                Resend Code ({otpCooldown}s)
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send size={13} />
+                                                {otpSent ? 'Resend Code to Email' : 'Send Verification Code'}
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+
+                                {/* OTP Input Form */}
+                                <div className="space-y-1.5 w-full max-w-[200px]">
+                                    <input
+                                        type="text"
+                                        maxLength={6}
+                                        value={otpCode}
+                                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                                        placeholder="0 0 0 0 0 0"
+                                        className="w-full text-center text-xl font-mono font-black tracking-[0.25em] px-3 py-2 rounded-xl border border-amber-300 focus:border-amber-500 focus:ring-amber-500 bg-white shadow-2xs text-stone-900"
+                                    />
+                                    {otpError && (
+                                        <p className="text-[10px] text-red-600 font-bold">{otpError}</p>
+                                    )}
+                                    {otpSent && !otpError && (
+                                        <p className="text-[10px] text-emerald-700 font-bold flex items-center justify-center gap-1">
+                                            <CheckCircle2 size={11} /> Code sent! Check your Gmail.
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         ) : (
                             <div className="relative overflow-hidden rounded-2xl bg-stone-950 aspect-square sm:aspect-4/3 md:aspect-auto flex-1 min-h-[240px] sm:min-h-[270px] md:min-h-[290px] flex items-center justify-center border border-stone-800 shadow-inner group">
@@ -347,11 +421,14 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => setUsePinFallback(true)}
+                                                onClick={() => {
+                                                    setUseOtpFallback(true);
+                                                    handleRequestOtp();
+                                                }}
                                                 className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-xs text-white font-bold transition flex items-center gap-1.5"
                                             >
-                                                <Key size={12} />
-                                                Use Workplace PIN
+                                                <Mail size={12} />
+                                                Send Verification OTP
                                             </button>
                                         </div>
                                     </div>
@@ -389,13 +466,17 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                         <button
                             type="button"
                             onClick={() => {
-                                const nextVal = !usePinFallback;
-                                setUsePinFallback(nextVal);
-                                if (!nextVal) startCamera();
+                                const nextVal = !useOtpFallback;
+                                setUseOtpFallback(nextVal);
+                                if (!nextVal) {
+                                    startCamera();
+                                } else if (!otpSent) {
+                                    handleRequestOtp();
+                                }
                             }}
                             className="text-[10px] text-stone-500 hover:text-stone-800 font-bold underline text-center pt-0.5"
                         >
-                            {usePinFallback ? 'Switch Back to Camera Selfie Stream' : 'Camera Broken or Unavailable? Use Workplace Daily PIN'}
+                            {useOtpFallback ? 'Switch Back to Camera Selfie Stream' : 'Camera Broken or Unavailable? Use Email OTP Verification'}
                         </button>
 
                         {/* Mobile-Only CTA to advance to Step 2 */}
