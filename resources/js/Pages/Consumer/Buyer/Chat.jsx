@@ -72,18 +72,22 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
 
     // Fallback polling when Echo is disconnected or offline
     useEffect(() => {
-        if (isEchoConnected || !currentChatUser) return undefined;
+        if (isEchoConnected) return undefined;
 
         const pollData = () => {
+            const reloadKeys = currentChatUser
+                ? ['activeMessages', 'conversations', 'currentOrderContext']
+                : ['conversations'];
+
             router.reload({
-                only: ['activeMessages', 'conversations', 'currentOrderContext'],
+                only: reloadKeys,
                 preserveScroll: true,
                 preserveState: true,
                 showProgress: false,
             });
         };
 
-        const interval = setInterval(pollData, 2500);
+        const interval = setInterval(pollData, currentChatUser ? 2500 : 4000);
 
         const handleVisibility = () => {
             if (!document.hidden) {

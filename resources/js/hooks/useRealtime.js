@@ -61,12 +61,56 @@ export const useRealtime = () => {
     useEffect(() => {
         if (!user) return;
 
-        // 2. Setup Supabase real-time sync if available, or fall back to polling
         let notificationChannel = null;
         let sellerNotificationChannel = null;
         let orderChannel = null;
         let adminChannel = null;
         let fallbackPollInterval = null;
+        let isRealtimeSubscribed = false;
+
+        const getPollKeys = () => {
+            const reloadKeys = ['notifications', 'unreadNotificationCount', 'unreadMessageCount'];
+            if (window.location.pathname.includes('/products')) {
+                reloadKeys.push('products');
+                reloadKeys.push('metrics');
+            }
+            if (window.location.pathname.includes('/orders')) {
+                reloadKeys.push('orders');
+            }
+            if (window.location.pathname.includes('/admin/catalog')) {
+                reloadKeys.push('products');
+            }
+            if (user.role === 'super_admin') {
+                reloadKeys.push('pendingArtisanCount');
+                reloadKeys.push('logs');
+                reloadKeys.push('adminStats');
+            } else if (user.role === 'artisan' || user.role === 'staff') {
+                reloadKeys.push('stats');
+                reloadKeys.push('recentOrders');
+            }
+            return reloadKeys;
+        };
+
+        const executeSync = () => {
+            router.reload({
+                only: getPollKeys(),
+                preserveScroll: true,
+                preserveState: true,
+                showProgress: false,
+            });
+        };
+
+        const startFallbackPolling = () => {
+            if (fallbackPollInterval) return;
+            fallbackPollInterval = setInterval(executeSync, 5000);
+        };
+
+        const stopFallbackPolling = () => {
+            if (fallbackPollInterval) {
+                clearInterval(fallbackPollInterval);
+                fallbackPollInterval = null;
+            }
+        };
 
         if (supabase) {
             // Notification Listener for User directly
@@ -81,8 +125,6 @@ export const useRealtime = () => {
                         filter: `notifiable_id=eq.${user.id}`,
                     },
                     (payload) => {
-                        console.log('New notification received via Supabase:', payload);
-
                         const notifData = typeof payload.new.data === 'string' 
                             ? JSON.parse(payload.new.data) 
                             : payload.new.data;
@@ -91,8 +133,7 @@ export const useRealtime = () => {
                         const notifChannelId = notifData?.team_channel_id;
                         const notifSenderId = notifData?.sender_id;
 
-                        // If it's a team chat/channel message and we are actively viewing that chat,
-                        // ignore the database notification reload to avoid race conditions with Echo broadcast.
+                        // If viewing active chat, skip database reload to prevent race conditions
                         if (
                             window.location.pathname.includes('/team-messages') &&
                             (notifType === 'team_channel_message' || notifType === 'team_mention' || notifType === 'team_message')
@@ -105,27 +146,19 @@ export const useRealtime = () => {
                             }
                         }
                         
-                        const reloadKeys = ['notifications', 'unreadNotificationCount'];
-                        if (window.location.pathname.includes('/products')) {
-                            reloadKeys.push('products');
-                            reloadKeys.push('metrics');
-                        }
-                        if (window.location.pathname.includes('/orders')) {
-                            reloadKeys.push('orders');
-                        }
-                        if (window.location.pathname.includes('/admin/catalog')) {
-                            reloadKeys.push('products');
-                        }
-
-                        router.reload({
-                            only: reloadKeys,
-                            preserveScroll: true,
-                        });
-                        
+                        executeSync();
                         window.dispatchEvent(new CustomEvent('new-notification', { detail: payload.new }));
                     }
                 )
-                .subscribe();
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        isRealtimeSubscribed = true;
+                        stopFallbackPolling();
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                        isRealtimeSubscribed = false;
+                        startFallbackPolling();
+                    }
+                });
 
             // Notification Listener for Effective Seller Owner (for Staff)
             const effectiveSellerId = auth?.effectiveSellerId;
@@ -141,8 +174,6 @@ export const useRealtime = () => {
                             filter: `notifiable_id=eq.${effectiveSellerId}`,
                         },
                         (payload) => {
-                            console.log('New shop notification received via Supabase:', payload);
-
                             const notifData = typeof payload.new.data === 'string' 
                                 ? JSON.parse(payload.new.data) 
                                 : payload.new.data;
@@ -151,8 +182,6 @@ export const useRealtime = () => {
                             const notifChannelId = notifData?.team_channel_id;
                             const notifSenderId = notifData?.sender_id;
 
-                            // If it's a team chat/channel message and we are actively viewing that chat,
-                            // ignore the database notification reload to avoid race conditions with Echo broadcast.
                             if (
                                 window.location.pathname.includes('/team-messages') &&
                                 (notifType === 'team_channel_message' || notifType === 'team_mention' || notifType === 'team_message')
@@ -165,20 +194,7 @@ export const useRealtime = () => {
                                 }
                             }
                             
-                            const reloadKeys = ['notifications', 'unreadNotificationCount'];
-                            if (window.location.pathname.includes('/products')) {
-                                reloadKeys.push('products');
-                                reloadKeys.push('metrics');
-                            }
-                            if (window.location.pathname.includes('/orders')) {
-                                reloadKeys.push('orders');
-                            }
-
-                            router.reload({
-                                only: reloadKeys,
-                                preserveScroll: true,
-                            });
-                            
+                            executeSync();
                             window.dispatchEvent(new CustomEvent('new-notification', { detail: payload.new }));
                         }
                     )
@@ -201,8 +217,6 @@ export const useRealtime = () => {
                             filter: `artisan_id=eq.${sellerIdForOrders}`,
                         },
                         (payload) => {
-                            console.log('Order update received:', payload);
-                            
                             if (payload.eventType === 'INSERT') {
                                 addToast(`New Order Received! #${payload.new.order_number}`, 'success', 8000);
                                 window.dispatchEvent(new CustomEvent('new-order', { detail: payload.new }));
@@ -229,7 +243,6 @@ export const useRealtime = () => {
                             table: 'activity_logs',
                         },
                         (payload) => {
-                            console.log('Admin activity received:', payload);
                             router.reload({
                                 only: ['logs', 'adminStats'],
                                 preserveScroll: true,
@@ -238,43 +251,49 @@ export const useRealtime = () => {
                     )
                     .subscribe();
             }
+
+            // Safety timeout: if Supabase websocket doesn't subscribe within 3 seconds, start fallback polling
+            const connectionGuard = setTimeout(() => {
+                if (!isRealtimeSubscribed) {
+                    startFallbackPolling();
+                }
+            }, 3000);
+
+            // Visibility / focus event listener for immediate sync
+            const handleFocusSync = () => {
+                if (!document.hidden) {
+                    executeSync();
+                }
+            };
+            window.addEventListener('focus', handleFocusSync);
+            document.addEventListener('visibilitychange', handleFocusSync);
+
+            return () => {
+                clearTimeout(connectionGuard);
+                window.removeEventListener('focus', handleFocusSync);
+                document.removeEventListener('visibilitychange', handleFocusSync);
+                if (notificationChannel) supabase.removeChannel(notificationChannel);
+                if (sellerNotificationChannel) supabase.removeChannel(sellerNotificationChannel);
+                if (orderChannel) supabase.removeChannel(orderChannel);
+                if (adminChannel) supabase.removeChannel(adminChannel);
+                stopFallbackPolling();
+            };
         } else {
-            console.log('Supabase not available. Falling back to active Inertia polling...');
-            fallbackPollInterval = setInterval(() => {
-                const reloadKeys = ['notifications', 'unreadNotificationCount', 'unreadMessageCount'];
-                if (window.location.pathname.includes('/products')) {
-                    reloadKeys.push('products');
-                    reloadKeys.push('metrics');
-                }
-                if (window.location.pathname.includes('/orders')) {
-                    reloadKeys.push('orders');
-                }
-                if (window.location.pathname.includes('/admin/catalog')) {
-                    reloadKeys.push('products');
-                }
-                if (user.role === 'super_admin') {
-                    reloadKeys.push('pendingArtisanCount');
-                    reloadKeys.push('logs');
-                    reloadKeys.push('adminStats');
-                } else if (user.role === 'artisan' || user.role === 'staff') {
-                    reloadKeys.push('stats');
-                    reloadKeys.push('recentOrders');
-                }
+            startFallbackPolling();
 
-                router.reload({
-                    only: reloadKeys,
-                    preserveScroll: true,
-                    preserveState: true,
-                });
-            }, 8000); // Check every 8 seconds
+            const handleFocusSync = () => {
+                if (!document.hidden) {
+                    executeSync();
+                }
+            };
+            window.addEventListener('focus', handleFocusSync);
+            document.addEventListener('visibilitychange', handleFocusSync);
+
+            return () => {
+                window.removeEventListener('focus', handleFocusSync);
+                document.removeEventListener('visibilitychange', handleFocusSync);
+                stopFallbackPolling();
+            };
         }
-
-        return () => {
-            if (notificationChannel) supabase.removeChannel(notificationChannel);
-            if (sellerNotificationChannel) supabase.removeChannel(sellerNotificationChannel);
-            if (orderChannel) supabase.removeChannel(orderChannel);
-            if (adminChannel) supabase.removeChannel(adminChannel);
-            if (fallbackPollInterval) clearInterval(fallbackPollInterval);
-        };
     }, [user?.id, auth?.effectiveSellerId]);
 };
