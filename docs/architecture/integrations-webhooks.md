@@ -97,3 +97,24 @@ If the webhook processing throws a server-side exception (e.g., database lock or
 *   **Route**: `GET /webhooks/cron/queue` (defined in [web.php](file:///c:/laragon/www/LikhangKamay/routes/web.php)).
 *   **Security Header**: Validates `X-Vercel-Cron-Secret` against `CRON_SECRET`.
 *   **Execution**: Dispatches `queue:work --stop-when-empty --max-time=50` to process queued notifications, mailings, and async tasks without blocking HTTP serverless requests.
+
+---
+
+## 5. Real-Time Synchronization & Resilient Fallbacks
+
+LikhangKamay uses a dual-layer real-time architecture to deliver live updates seamlessly across both local (Laragon/MySQL) and production (Vercel serverless / PostgreSQL).
+
+### Client Hook & Component Topology
+*   **Global Listener**: [useRealtime.js](file:///c:/laragon/www/LikhangKamay/resources/js/hooks/useRealtime.js) (included in `AuthenticatedLayout`, `AdminLayout`, and `BuyerNavbar`).
+*   **Chat Hook**: [useEchoConnection.js](file:///c:/laragon/www/LikhangKamay/resources/js/hooks/useEchoConnection.js), [useTeamChatEcho.js](file:///c:/laragon/www/LikhangKamay/resources/js/hooks/useTeamChatEcho.js).
+
+### Protocol & Fallback Strategy
+1.  **Primary Channel (Supabase & WebSockets)**:
+    *   Listens for `postgres_changes` on the `notifications` and `orders` tables.
+    *   Listens for private chat broadcasts via Laravel Echo (`chat.{id}`, `team-chat.{id}`).
+2.  **Continuous Heartbeat Fallback**:
+    *   If Supabase or Echo WebSockets disconnect, timeout, or error, the client automatically starts a background synchronization heartbeat (2.5s on active conversations, 4s on inboxes, and 5s on dashboards/orders/ERP modules).
+3.  **Instant Window Focus Synchronization**:
+    *   Whenever the user refocuses the window or switches back to the browser tab (`visibilitychange` / `focus`), an immediate sync request updates notification badges and counters without page refreshes.
+4.  **Cross-Database JSON Compatibility**:
+    *   The `notifications.data` column uses native `jsonb` on PostgreSQL and `json` on MySQL, allowing robust JSON path filters (`data->sender_id`) without syntax errors.
