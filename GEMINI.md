@@ -15,6 +15,7 @@
 
 ## 2. Security & Authentication
 - **Access Control:** Mandate authorization via Laravel Policies and Gates (`Gate::authorize`). Forbid raw, inline role checks (e.g. `$user->role === 'admin'`) inside controller actions or routes.
+- **Dual-Layer Tier Gating:** Any feature restricted to specific subscription plans (e.g. Premium/Elite) must be strictly gated on both backend (action/controller aborts) and frontend (conditional prop passing & UI tab omission for free/standard tiers).
 - **Data Protection:** Sanitize rich text inputs using the project's custom `RichTextSanitizer` class. Never expose sensitive keys, credentials, or API secret tokens.
 
 ## 3. UI/UX Design (Anti- "AI Slop")
@@ -32,6 +33,7 @@
 ## 4. Code Quality & Best Practices
 - **Clean Code:** DRY and SOLID. Single responsibility functions. Restrict any single controller method or React handler function to under 50 lines; extract complex logic block chunks to helper services or utility modules.
 - **Fail-Fast:** Implement defensive programming via guard clauses and early returns. Validate pre-conditions immediately and exit functions early to eliminate deep nesting and high cognitive load.
+- **Form-Schema Parity & Error Handling:** Ensure Inertia `useForm` field keys strictly match backend request validation and Eloquent column names. Every modal, drawer, or isolated form submission must implement `onError` callback handlers (e.g. toast notification) to prevent silent submission failures.
 - **State & Inertia.js:** Optimize state management by using local component state for UI concerns, and Inertia's partial reloads (`only` or `lazy` props) for backend-driven data to minimize payload sizes on dashboard updates.
 - **Testing Standard:** Enforce backend test coverage using Pest/PHPUnit for new service or action classes, and Vitest for complex frontend components.
 - **Error Handling:** Global error handling. Log appropriately, return sanitized responses.
@@ -46,6 +48,7 @@
 - **NEVER DESTROY DATA:** `migrate:fresh`, `migrate:reset`, and `db:wipe` are PERMANENTLY BANNED. Always use additive migrations (`php artisan make:migration`) to modify schemas. No exceptions.
 - **Transactions:** Wrap multi-step database writes in closure-based transactions (`DB::transaction(fn() => ...)`) to guarantee auto-rollback on exception. Avoid manual `beginTransaction`/`commit`/`rollback` loops which risk resource leaks.
 - **Soft Deletes:** Default to soft deletes for critical entities for audit trails.
+- **Cross-Database JSON Queries:** In queries filtering JSON/data columns (e.g., `data->sender_id`), always cast values to strings (or check both string and integer formats) to guarantee compatibility across PostgreSQL and MySQL.
 
 ## 7. DevOps & Environment Strategy
 - **Webhost:** The application is hosted on Vercel. Ensure configurations, builds, and routing structures are compatible with Vercel deployment requirements (e.g., `vercel.json` configurations).
@@ -57,6 +60,7 @@
 - **Trade-offs:** Briefly state pros/cons of major architectural decisions before coding.
 - **Diffs:** Provide clear file paths and diffs for modifications rather than full file rewrites.
 - **Task Focus:** Focus strictly on the assigned task. Do not make random, unrelated, or unnecessary changes to the codebase unless they are absolutely required to complete the specified task.
+- **Knowledge Graph & Brain Sync Cadence:** Do not run `graphify update` or Obsidian doc syncs on every single prompt. Batch sync execution to every 5 prompts or when explicitly requested by the user.
 - **Proactive Diagnostic & User Information Requests:** If a problem cannot be pinpointed with 100% certainty from existing codebase files alone (e.g. browser console errors, HTTP status headers, network tab responses, runtime UI behavior), explicitly ask the user for the exact diagnostic data or steps needed. Never rely on theoretical guesses when user-provided environment logs can surface the exact root cause.
 
 ## 9. Technology Stack & Integrations
