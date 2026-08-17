@@ -799,5 +799,92 @@ class StrictOrderLifecycleFlowE2ETest extends TestCase
         $checkoutResponse->assertRedirect(route('my-orders.index'));
         $this->assertSame(3, (int) $discount->fresh()->promo_sold);
     }
+
+    /**
+     * TEST 14: Seller can book Lalamove from Processing state (after raw materials deducted)
+     */
+    public function test_seller_can_book_lalamove_from_processing_state(): void
+    {
+        $this->actingAs($this->buyer)->post(route('checkout.store'), [
+            'items' => [['id' => $this->productA->id, 'qty' => 1, 'variant' => 'Standard']],
+            'shipping_method' => 'Delivery',
+            'payment_method' => 'COD',
+            'recipient_name' => 'Juan Dela Cruz',
+            'phone_number' => '09171234567',
+            'shipping_street_address' => 'Block 1 Lot 2 Acacia St.',
+            'shipping_barangay' => 'Burol I',
+            'shipping_city' => 'Dasmariñas',
+            'shipping_region' => 'Cavite',
+            'shipping_postal_code' => '4114',
+            'shipping_address' => 'Block 1 Lot 2 Acacia St., Burol I, Dasmariñas, Cavite, 4114',
+            'shipping_address_type' => 'home',
+            'total' => 307.50,
+        ]);
+
+        $order = Order::where('user_id', $this->buyer->id)->first();
+
+        // Seller accepts and moves to Processing
+        $this->actingAs($this->sellerA)->post(route('orders.update', $order->order_number), ['status' => 'Accepted']);
+        $this->actingAs($this->sellerA)->post(route('orders.update', $order->order_number), ['status' => 'Processing']);
+        $this->assertSame('Processing', $order->fresh()->status);
+
+        // Mock Geocoding and Lalamove
+        $geocoder = Mockery::mock(AddressGeocodingService::class);
+        $geocoder->shouldReceive('geocode')
+            ->once()
+            ->with(Mockery::any(), 'seller pickup')
+            ->andReturn([
+                'lat' => '14.3294',
+                'lng' => '120.9367',
+                'display_name' => 'Seller Studio, Silang, Cavite',
+                'matched_query' => 'Silang, Cavite',
+            ]);
+        $geocoder->shouldReceive('geocode')
+            ->once()
+            ->with(Mockery::any(), 'buyer drop-off')
+            ->andReturn([
+                'lat' => '14.3330',
+                'lng' => '120.9420',
+                'display_name' => 'Buyer Home, Dasmariñas, Cavite',
+                'matched_query' => 'Dasmariñas, Cavite',
+            ]);
+        $this->app->instance(AddressGeocodingService::class, $geocoder);
+
+        $lalamove = Mockery::mock(LalamoveService::class);
+        $lalamove->shouldReceive('createQuotation')->once()->andReturn([
+            'quotationId' => 'qt_proc_123',
+            'serviceType' => 'MOTORCYCLE',
+            'priceBreakdown' => ['currency' => 'PHP', 'total' => 150.00],
+            'stops' => [
+                ['stopId' => 'stop_p'],
+                ['stopId' => 'stop_d'],
+            ],
+        ]);
+        $lalamove->shouldReceive('normalizePhone')->times(2)->andReturn('+639171234567');
+        $lalamove->shouldReceive('createOrder')->once()->andReturn([
+            'orderId' => 'llm_proc_order_456',
+            'status' => 'ASSIGNING_DRIVER',
+            'shareLink' => 'https://track.lalamove.test/llm_proc_order_456',
+            'priceBreakdown' => ['currency' => 'PHP', 'total' => 150.00],
+        ]);
+        $this->app->instance(LalamoveService::class, $lalamove);
+
+        // Book Lalamove while in Processing!
+        $lalamoveResponse = $this->actingAs($this->sellerA)->post(route('orders.lalamove.store', $order->order_number));
+        $lalamoveResponse->assertRedirect();
+        $lalamoveResponse->assertSessionHas('success');
+
+        $this->assertSame('Shipped', $order->fresh()->status);
+        $this->assertSame('llm_proc_order_456', $order->fresh()->tracking_number);
+
+        // Now test manual Mark as Delivered with proof
+        $deliverResponse = $this->actingAs($this->sellerA)->post(route('orders.update', $order->order_number), [
+            'status' => 'Delivered',
+            'proof_of_delivery' => UploadedFile::fake()->image('lalamove_received_proof.jpg'),
+        ]);
+        $deliverResponse->assertRedirect();
+        $deliverResponse->assertSessionHas('success');
+        $this->assertSame('Delivered', $order->fresh()->status);
+    }
 }
 

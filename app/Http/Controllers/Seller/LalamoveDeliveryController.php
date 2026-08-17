@@ -65,8 +65,8 @@ class LalamoveDeliveryController extends Controller
                 if ($order->shipping_method !== 'Delivery') {
                     throw new \RuntimeException('Lalamove booking is available for delivery orders only.');
                 }
-                if ($order->status !== 'Accepted') {
-                    throw new \RuntimeException('Only accepted orders can be booked with Lalamove.');
+                if (!in_array($order->status, ['Accepted', 'Processing'], true)) {
+                    throw new \RuntimeException('Only accepted or processing orders can be booked with Lalamove.');
                 }
                 if ($order->delivery?->external_order_id) {
                     throw new \RuntimeException('This order already has a Lalamove delivery.');

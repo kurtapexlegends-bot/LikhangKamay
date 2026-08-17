@@ -54,12 +54,6 @@ class UpdateOrderStatus
                 }
             }
 
-            if ($lockedOrder->shipping_method === 'Delivery'
-                && $lockedOrder->delivery?->external_order_id
-                && in_array($status, ['Shipped', 'Delivered'], true)) {
-                throw new \Exception('Lalamove-managed delivery orders update automatically from courier status.');
-            }
-
             $replacementInProgress = $lockedOrder->replacement_started_at !== null && $lockedOrder->replacement_resolved_at === null;
 
             if ($status === 'Completed' && $replacementInProgress) {
@@ -265,17 +259,11 @@ class UpdateOrderStatus
 
     private function allowedSellerNextStatuses(Order $order): array
     {
-        if ($order->shipping_method === 'Delivery' && $order->relationLoaded('delivery') && $order->delivery?->external_order_id) {
-            return match ($order->status) {
-                'Pending' => ['Accepted', 'Rejected'],
-                'Refund/Return' => ['Completed'],
-                default => [],
-            };
-        }
-
         return match ($order->status) {
             'Pending' => ['Accepted', 'Rejected', 'Cancelled'],
-            'Accepted' => ['Processing', 'Rejected', 'Cancelled'],
+            'Accepted' => $order->shipping_method === 'Pick Up'
+                ? ['Processing', 'Ready for Pickup', 'Rejected', 'Cancelled']
+                : ['Processing', 'Shipped', 'Rejected', 'Cancelled'],
             'Processing' => $order->shipping_method === 'Pick Up'
                 ? ['Ready for Pickup', 'Rejected', 'Cancelled']
                 : ['Shipped', 'Rejected', 'Cancelled'],

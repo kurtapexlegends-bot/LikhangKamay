@@ -304,11 +304,12 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
             isOpen: true, orderId: order.id, trackingNumber: mode === "ship" ? order.tracking_number || "" : "",
             shippingNotes: order.shipping_notes || "", proofOfDelivery: null, previewUrl: null,
             isPickup: order.shipping_method === "Pick Up", existingProofUrl: order.proof_of_delivery || null,
-            processing: false, mode, status: mode === "pickup-ready" ? "Ready for Pickup" : (mode === "deliver" ? "Delivered" : "Shipped")
+            processing: false, mode, status: mode === "pickup-ready" ? "Ready for Pickup" : (mode === "deliver" ? "Delivered" : "Shipped"),
+            error: ""
         });
     };
 
-    const closeShippingModal = () => setShippingModal(c => ({ ...c, isOpen: false, proofOfDelivery: null, previewUrl: null, existingProofUrl: null, processing: false }));
+    const closeShippingModal = () => setShippingModal(c => ({ ...c, isOpen: false, proofOfDelivery: null, previewUrl: null, existingProofUrl: null, processing: false, error: "" }));
 
     const submitShipping = () => {
         if (!canEditOrders) return;
@@ -320,8 +321,21 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
 
         router.post(route("orders.update", shippingModal.orderId), formData, {
             preserveScroll: true,
-            onStart: () => setShippingModal(c => ({ ...c, processing: true })),
-            onSuccess: (p) => { if (!p.props.flash.error) closeShippingModal(); },
+            onStart: () => setShippingModal(c => ({ ...c, processing: true, error: "" })),
+            onError: (errs) => {
+                const message = errs.status || errs.proof_of_delivery || errs.message || "Failed to update order status.";
+                setShippingModal(c => ({ ...c, error: message }));
+                addToast(message, "error");
+            },
+            onSuccess: (p) => {
+                if (p.props?.flash?.error) {
+                    setShippingModal(c => ({ ...c, error: p.props.flash.error }));
+                    addToast(p.props.flash.error, "error");
+                } else {
+                    closeShippingModal();
+                    addToast("Order status updated successfully.", "success");
+                }
+            },
             onFinish: () => setShippingModal(c => ({ ...c, processing: false })),
             forceFormData: true,
         });
@@ -385,6 +399,16 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
         router.post(route("orders.lalamove.store", orderId), {}, {
             preserveScroll: true,
             onStart: () => setBookingOrderId(orderId),
+            onError: (errs) => {
+                addToast(errs.message || "Failed to create Lalamove delivery.", "error");
+            },
+            onSuccess: (p) => {
+                if (p.props?.flash?.error) {
+                    addToast(p.props.flash.error, "error");
+                } else if (p.props?.flash?.success) {
+                    addToast(p.props.flash.success, "success");
+                }
+            },
             onFinish: () => setBookingOrderId(null),
         });
     };

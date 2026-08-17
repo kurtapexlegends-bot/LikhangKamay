@@ -215,17 +215,15 @@ export default function FulfillmentActionGroup({
                             </p>
                         </div>
                     </div>
-                    {!isLalamoveManagedOrder(order) && (
-                        <button
-                            disabled={!canEditOrders}
-                            onClick={() => openShippingModal(order, "deliver")}
-                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-teal-200 transition-colors hover:bg-teal-700 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
-                            type="button"
-                        >
-                            <MapPin size={18} />
-                            {order.status === "Ready for Pickup" ? "Mark as Picked Up" : "Mark as Delivered"}
-                        </button>
-                    )}
+                    <button
+                        disabled={!canEditOrders}
+                        onClick={() => openShippingModal(order, "deliver")}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-teal-200 transition-colors hover:bg-teal-700 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
+                        type="button"
+                    >
+                        <MapPin size={18} />
+                        {order.status === "Ready for Pickup" ? "Mark as Picked Up" : "Mark as Delivered"}
+                    </button>
                 </div>
             )}
 

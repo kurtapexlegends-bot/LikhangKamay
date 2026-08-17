@@ -15,7 +15,8 @@ import {
     Hash,
     Camera as CameraIcon,
     CheckCircle2,
-    LoaderCircle
+    LoaderCircle,
+    AlertTriangle
 } from "lucide-react";
 
 export default function FulfillmentModal({
@@ -107,6 +108,12 @@ export default function FulfillmentModal({
     const renderContent = () => {
         return (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+                {shippingModal.error && (
+                    <div className="lg:col-span-12 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2.5">
+                        <AlertTriangle size={18} className="text-red-500 shrink-0" />
+                        <span className="font-medium">{shippingModal.error}</span>
+                    </div>
+                )}
                 {/* LEFT COLUMN: Order Context */}
                 <div className="lg:col-span-7 space-y-6">
                     {/* Customer & Destination */}

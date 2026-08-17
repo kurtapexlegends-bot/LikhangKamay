@@ -240,7 +240,7 @@ class ListSellerOrders
                 'cancellation_reason' => $order->cancellation_reason,
                 'delivery' => OrderWorkflowHelper::serializeDelivery($order->delivery),
                 'timeline' => OrderWorkflowHelper::buildOrderTimeline($order),
-                'can_book_lalamove' => $order->status === 'Accepted'
+                'can_book_lalamove' => in_array($order->status, ['Accepted', 'Processing'], true)
                     && $order->shipping_method === 'Delivery'
                     && $order->delivery?->external_order_id === null,
                 'lalamove_booking_ready' => empty($bookingRequirements),
