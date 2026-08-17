@@ -108,11 +108,15 @@ export default function TeamMessages({
 
     // Fallback polling when Echo is disconnected or offline
     useEffect(() => {
-        if (isEchoConnected || (!currentChatUser && !currentChannel) || form.processing) return undefined;
+        if (isEchoConnected || form.processing) return undefined;
 
         const pollTeamData = () => {
+            const reloadKeys = (currentChatUser || currentChannel)
+                ? ['activeMessages', 'conversations', 'currentChatUser', 'currentChannel']
+                : ['conversations', 'channels'];
+
             router.reload({
-                only: ['activeMessages', 'conversations', 'currentChatUser', 'currentChannel'],
+                only: reloadKeys,
                 preserveScroll: true,
                 preserveState: true,
                 showProgress: false,
@@ -120,7 +124,7 @@ export default function TeamMessages({
             });
         };
 
-        const interval = setInterval(pollTeamData, 2500);
+        const interval = setInterval(pollTeamData, (currentChatUser || currentChannel) ? 2500 : 4000);
 
         const handleVisibility = () => {
             if (!document.hidden) {
