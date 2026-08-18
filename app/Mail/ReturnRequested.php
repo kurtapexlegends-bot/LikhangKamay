@@ -27,7 +27,7 @@ class ReturnRequested extends Mailable
             replacements: [
                 '{user_name}' => 'Artisan',
                 '{order_number}' => $this->order->order_number,
-                '{action_url}' => route('seller.dashboard'),
+                '{action_url}' => route('orders.index'),
             ],
             fallbackSubject: 'Return Requested for Order #' . $this->order->order_number,
             fallbackView: 'emails.orders.return-requested',

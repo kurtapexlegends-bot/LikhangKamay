@@ -27,7 +27,7 @@ class ShipmentReminder extends Mailable
             replacements: [
                 '{user_name}' => 'Artisan',
                 '{order_number}' => $this->order->order_number,
-                '{action_url}' => route('seller.dashboard'),
+                '{action_url}' => route('orders.index'),
             ],
             fallbackSubject: 'Action Required: Ship Order #' . $this->order->order_number,
             fallbackView: 'emails.sellers.shipment_reminder',

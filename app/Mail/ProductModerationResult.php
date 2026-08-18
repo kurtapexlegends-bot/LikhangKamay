@@ -38,7 +38,7 @@ class ProductModerationResult extends Mailable
             replacements: [
                 '{product_name}' => $this->productName,
                 '{rejection_reason}' => $this->reason ?? 'Status: ' . $statusLabel,
-                '{action_url}' => route('seller.dashboard'),
+                '{action_url}' => route('products.index'),
             ],
             fallbackSubject: "Listing {$statusLabel} - {$this->productName}",
             fallbackView: 'emails.artisan.product-moderation',
