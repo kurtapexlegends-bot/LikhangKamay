@@ -21,10 +21,15 @@ class StaffClockInOtpTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        \Carbon\Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(9, 0));
 
         $this->owner = User::factory()->artisanApproved()->create([
             'premium_tier' => 'premium',
             'modules_enabled' => ['hr' => true, 'procurement' => true],
+            'shift_start_time' => '08:00',
+            'shift_end_time' => '17:00',
+            'earliest_clock_in_minutes' => 30,
+            'enforce_strict_shift_window' => true,
         ]);
 
         $this->staff = User::factory()->staff($this->owner)->create([
@@ -34,6 +39,12 @@ class StaffClockInOtpTest extends TestCase
             'staff_role_preset_key' => 'general_staff',
             'staff_module_permissions' => User::withWorkspaceAccessFlag([], true),
         ]);
+    }
+
+    protected function tearDown(): void
+    {
+        \Carbon\Carbon::setTestNow();
+        parent::tearDown();
     }
 
     public function test_staff_can_request_clock_in_otp(): void
