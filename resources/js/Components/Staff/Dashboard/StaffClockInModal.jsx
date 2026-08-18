@@ -20,13 +20,9 @@ const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
 };
 
 export default function StaffClockInModal({ isOpen, onClose }) {
-    const videoRef = useRef(null);
-    const canvasRef = useRef(null);
-    
     const { attendance } = usePage().props;
     const assignedLoc = attendance?.assigned_location;
 
-    const [stream, setStream] = useState(null);
     const [cameraError, setCameraError] = useState(null);
     const [capturedPhoto, setCapturedPhoto] = useState(null);
     
@@ -49,45 +45,13 @@ export default function StaffClockInModal({ isOpen, onClose }) {
 
     const isWithinGeofence = distanceMeters !== null ? (distanceMeters <= radiusLimit) : true;
 
-    // Initialize WebCam and Geolocation when modal opens
+    // Initialize Geolocation when modal opens
     useEffect(() => {
-        if (!isOpen) {
-            stopCamera();
-            return;
-        }
+        if (!isOpen) return;
 
-        startCamera();
         fetchGeolocation();
         setActiveMobileTab('selfie');
-
-        return () => {
-            stopCamera();
-        };
     }, [isOpen]);
-
-    const startCamera = async () => {
-        setCameraError(null);
-        try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
-                audio: false
-            });
-            setStream(mediaStream);
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
-            }
-        } catch (err) {
-            console.error('Camera access error:', err);
-            setCameraError('Camera access required for physical attendance verification.');
-        }
-    };
-
-    const stopCamera = () => {
-        if (stream) {
-            stream.getTracks().forEach((track) => track.stop());
-            setStream(null);
-        }
-    };
 
     const fetchGeolocation = () => {
         if (!navigator.geolocation) {
@@ -111,32 +75,6 @@ export default function StaffClockInModal({ isOpen, onClose }) {
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
-    };
-
-    const capturePhoto = () => {
-        if (!videoRef.current || !canvasRef.current) return;
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
-
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        setCapturedPhoto(dataUrl);
-
-        // Auto-advance to Step 2 (GPS Geofence) on mobile
-        setActiveMobileTab('geofence');
-    };
-
-    const retakePhoto = () => {
-        setCapturedPhoto(null);
-        if (!stream) {
-            startCamera();
-        }
-        setActiveMobileTab('selfie');
     };
 
     const [useOtpFallback, setUseOtpFallback] = useState(false);

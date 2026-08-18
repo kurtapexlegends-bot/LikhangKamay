@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera, CheckCircle2, RefreshCw, AlertCircle, Sparkles, Scan } from 'lucide-react';
+import { Camera, CheckCircle2, RefreshCw, AlertCircle, Sparkles, Scan, Smile, Eye } from 'lucide-react';
 
 const CHALLENGES = [
-    { id: 'blink', label: 'Blink your eyes naturally', instruction: 'Please blink once or twice towards the camera' },
-    { id: 'nod', label: 'Turn your head slightly to the left', instruction: 'Tilt or rotate slightly to confirm 3D depth' },
+    { id: 'blink', label: 'Blink your eyes naturally', instruction: 'Blink once or twice towards the camera' },
+    { id: 'nod', label: 'Turn your head slightly', instruction: 'Slight head movement confirms 3D depth' },
 ];
 
 export default function LivenessFaceScanner({ onVerified, onError }) {
@@ -12,13 +12,15 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
     const prevFrameRef = useRef(null);
     const streamRef = useRef(null);
     const animFrameRef = useRef(null);
+    const lastAnalysisTimeRef = useRef(0);
+    const consecutiveMotionRef = useRef(0);
+    const steadyFramesRef = useRef(0);
 
     const [cameraReady, setCameraReady] = useState(false);
     const [cameraError, setCameraError] = useState(null);
     const [challengeIndex, setChallengeIndex] = useState(0);
     const [challengeState, setChallengeState] = useState('aligning'); // 'aligning' | 'challenging' | 'verifying' | 'completed'
     const [progress, setProgress] = useState(0);
-    const [motionScore, setMotionScore] = useState(0);
     const [capturedPhoto, setCapturedPhoto] = useState(null);
 
     const activeChallenge = CHALLENGES[challengeIndex % CHALLENGES.length];
@@ -27,8 +29,10 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
         setCameraError(null);
         setCameraReady(false);
         setChallengeState('aligning');
-        setProgress(0);
+        setProgress(15);
         setCapturedPhoto(null);
+        consecutiveMotionRef.current = 0;
+        steadyFramesRef.current = 0;
 
         try {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -64,6 +68,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
     const stopCamera = useCallback(() => {
         if (animFrameRef.current) {
             cancelAnimationFrame(animFrameRef.current);
+            animFrameRef.current = null;
         }
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
@@ -78,102 +83,105 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
         };
     }, [startCamera, stopCamera]);
 
-    // Continuous Frame Analysis for 3D Liveness Detection
+    // Throttled, smooth optical analysis for 3D liveness detection
     useEffect(() => {
         if (!cameraReady || challengeState === 'completed') return;
 
-        let frameCounter = 0;
-        let consecutiveMotionFrames = 0;
-
-        const analyzeFrame = () => {
+        const analyzeFrame = (timestamp) => {
             const video = videoRef.current;
             const canvas = canvasRef.current;
+
             if (!video || !canvas || video.readyState !== 4) {
                 animFrameRef.current = requestAnimationFrame(analyzeFrame);
                 return;
             }
 
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            const width = 160;
-            const height = 120;
-            canvas.width = width;
-            canvas.height = height;
+            // Throttle optical difference checks to ~12 FPS (every 80ms) to prevent UI frame thrashing
+            if (timestamp - lastAnalysisTimeRef.current >= 80) {
+                lastAnalysisTimeRef.current = timestamp;
 
-            ctx.drawImage(video, 0, 0, width, height);
-            const currentImageData = ctx.getImageData(0, 0, width, height);
-            const currentData = currentImageData.data;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                const width = 120;
+                const height = 90;
+                canvas.width = width;
+                canvas.height = height;
 
-            if (prevFrameRef.current) {
-                let diff = 0;
-                const prevData = prevFrameRef.current;
-                const totalPixels = currentData.length / 4;
+                ctx.drawImage(video, 0, 0, width, height);
+                const currentImageData = ctx.getImageData(0, 0, width, height);
+                const currentData = currentImageData.data;
 
-                // Sample pixels in central oval zone (face area)
-                const startY = Math.floor(height * 0.2);
-                const endY = Math.floor(height * 0.8);
-                const startX = Math.floor(width * 0.25);
-                const endX = Math.floor(width * 0.75);
+                if (prevFrameRef.current) {
+                    let diff = 0;
+                    const prevData = prevFrameRef.current;
 
-                let sampledPixels = 0;
-                for (let y = startY; y < endY; y += 2) {
-                    for (let x = startX; x < endX; x += 2) {
-                        const idx = (y * width + x) * 4;
-                        const delta = Math.abs(currentData[idx] - prevData[idx])
-                            + Math.abs(currentData[idx + 1] - prevData[idx + 1])
-                            + Math.abs(currentData[idx + 2] - prevData[idx + 2]);
-                        diff += delta;
-                        sampledPixels++;
+                    // Sample pixels strictly in central face area
+                    const startY = Math.floor(height * 0.25);
+                    const endY = Math.floor(height * 0.75);
+                    const startX = Math.floor(width * 0.25);
+                    const endX = Math.floor(width * 0.75);
+
+                    let sampledPixels = 0;
+                    for (let y = startY; y < endY; y += 3) {
+                        for (let x = startX; x < endX; x += 3) {
+                            const idx = (y * width + x) * 4;
+                            const delta = Math.abs(currentData[idx] - prevData[idx])
+                                + Math.abs(currentData[idx + 1] - prevData[idx + 1])
+                                + Math.abs(currentData[idx + 2] - prevData[idx + 2]);
+                            diff += delta;
+                            sampledPixels++;
+                        }
+                    }
+
+                    const avgDiff = diff / (sampledPixels * 3);
+
+                    // Stage 1: Face Centered / Aligning
+                    if (challengeState === 'aligning') {
+                        if (avgDiff > 0.5 && avgDiff < 15) {
+                            steadyFramesRef.current++;
+                            if (steadyFramesRef.current >= 4) {
+                                setProgress(45);
+                                setChallengeState('challenging');
+                            }
+                        }
+                    } 
+                    // Stage 2: Active Gesture / Micro-Movement Challenge
+                    else if (challengeState === 'challenging') {
+                        if (avgDiff >= 1.5 && avgDiff <= 28.0) {
+                            consecutiveMotionRef.current++;
+                            if (consecutiveMotionRef.current >= 2) {
+                                setProgress(85);
+                                setChallengeState('verifying');
+                            }
+                        }
+                    } 
+                    // Stage 3: Instant Verified Snapshot Capture
+                    else if (challengeState === 'verifying') {
+                        setProgress(100);
+
+                        const captureCanvas = document.createElement('canvas');
+                        captureCanvas.width = video.videoWidth || 640;
+                        captureCanvas.height = video.videoHeight || 480;
+                        const captureCtx = captureCanvas.getContext('2d');
+                        captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+                        const photoData = captureCanvas.toDataURL('image/jpeg', 0.88);
+
+                        setCapturedPhoto(photoData);
+                        setChallengeState('completed');
+                        stopCamera();
+
+                        if (onVerified) {
+                            onVerified({
+                                photoData,
+                                livenessVerified: true,
+                            });
+                        }
+                        return;
                     }
                 }
 
-                const avgDiff = diff / (sampledPixels * 3);
-                setMotionScore(Math.round(avgDiff * 10) / 10);
-
-                frameCounter++;
-
-                if (challengeState === 'aligning') {
-                    // Requires steady face in frame for 10 frames
-                    if (avgDiff > 0.8 && avgDiff < 12) {
-                        setProgress(prev => Math.min(40, prev + 4));
-                        if (frameCounter > 15) {
-                            setChallengeState('challenging');
-                        }
-                    }
-                } else if (challengeState === 'challenging') {
-                    // Detect dynamic active gesture (blink or micro head rotation: avgDiff spikes between 2.5 and 18)
-                    if (avgDiff >= 2.0 && avgDiff <= 25.0) {
-                        consecutiveMotionFrames++;
-                        setProgress(prev => Math.min(85, prev + 8));
-
-                        if (consecutiveMotionFrames >= 4) {
-                            setChallengeState('verifying');
-                        }
-                    }
-                } else if (challengeState === 'verifying') {
-                    setProgress(100);
-                    // Capture high-res snapshot
-                    const captureCanvas = document.createElement('canvas');
-                    captureCanvas.width = video.videoWidth || 640;
-                    captureCanvas.height = video.videoHeight || 480;
-                    const captureCtx = captureCanvas.getContext('2d');
-                    captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
-                    const photoData = captureCanvas.toDataURL('image/jpeg', 0.88);
-
-                    setCapturedPhoto(photoData);
-                    setChallengeState('completed');
-                    stopCamera();
-
-                    if (onVerified) {
-                        onVerified({
-                            photoData,
-                            livenessVerified: true,
-                        });
-                    }
-                    return;
-                }
+                prevFrameRef.current = new Uint8ClampedArray(currentData);
             }
 
-            prevFrameRef.current = new Uint8ClampedArray(currentData);
             animFrameRef.current = requestAnimationFrame(analyzeFrame);
         };
 
@@ -192,10 +200,10 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
     };
 
     return (
-        <div className="flex flex-col items-center">
-            {/* Viewfinder Container */}
-            <div className="relative w-full max-w-[320px] aspect-[4/3] rounded-3xl overflow-hidden bg-stone-900 border-2 border-stone-200 shadow-inner flex items-center justify-center">
-                {/* Live Video */}
+        <div className="flex flex-col items-center w-full">
+            {/* Viewfinder Frame */}
+            <div className="relative w-full max-w-[310px] aspect-[4/3] rounded-2xl overflow-hidden bg-stone-950 border border-stone-200 shadow-sm flex items-center justify-center">
+                {/* Live Camera Stream */}
                 <video
                     ref={videoRef}
                     playsInline
@@ -206,60 +214,62 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                     }`}
                 />
 
-                {/* Captured Photo Preview on Completion */}
+                {/* Verified Selfie Capture Preview */}
                 {challengeState === 'completed' && capturedPhoto && (
                     <img
                         src={capturedPhoto}
-                        alt="Verified Liveness Selfie"
+                        alt="Verified Selfie"
                         className="w-full h-full object-cover scale-x-[-1]"
                     />
                 )}
 
-                {/* Hidden Analysis Canvas */}
+                {/* Offscreen Analysis Canvas */}
                 <canvas ref={canvasRef} className="hidden" />
 
-                {/* 3D Oval Viewfinder Reticle Overlay */}
+                {/* Steady Oval Guide Reticle */}
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-3">
                     <div
-                        className={`w-44 h-56 rounded-[50%] border-2 transition-all duration-300 flex items-center justify-center relative ${
+                        className={`w-40 h-52 rounded-[50%] border-2 transition-all duration-300 flex items-center justify-center relative ${
                             challengeState === 'completed'
-                                ? 'border-emerald-500 bg-emerald-500/10 shadow-[0_0_24px_rgba(16,185,129,0.3)]'
+                                ? 'border-emerald-500 bg-emerald-500/10'
                                 : challengeState === 'verifying'
-                                ? 'border-amber-400 bg-amber-400/10 animate-pulse'
+                                ? 'border-amber-400 bg-amber-400/10'
                                 : challengeState === 'challenging'
-                                ? 'border-clay-500 shadow-[0_0_16px_rgba(180,83,9,0.25)]'
-                                : 'border-white/60'
+                                ? 'border-amber-500/80 bg-amber-500/5'
+                                : 'border-white/50'
                         }`}
                     >
-                        {/* Scanning HUD Crosshairs */}
-                        <div className="absolute top-2 w-4 h-0.5 bg-white/70" />
-                        <div className="absolute bottom-2 w-4 h-0.5 bg-white/70" />
-                        <div className="absolute left-2 h-4 w-0.5 bg-white/70" />
-                        <div className="absolute right-2 h-4 w-0.5 bg-white/70" />
+                        {/* Clean Subtle Guide Notches */}
+                        <div className="absolute -top-1 w-3 h-0.5 bg-white/70 rounded-full" />
+                        <div className="absolute -bottom-1 w-3 h-0.5 bg-white/70 rounded-full" />
+                        <div className="absolute -left-1 h-3 w-0.5 bg-white/70 rounded-full" />
+                        <div className="absolute -right-1 h-3 w-0.5 bg-white/70 rounded-full" />
 
                         {challengeState === 'completed' && (
-                            <CheckCircle2 size={36} className="text-emerald-400 drop-shadow-md animate-bounce" />
+                            <div className="w-12 h-12 rounded-full bg-emerald-500/90 text-white flex items-center justify-center shadow-lg animate-scale-in">
+                                <CheckCircle2 size={28} />
+                            </div>
                         )}
                     </div>
                 </div>
 
-                {/* Scanning Progress Bar */}
+                {/* Smooth Progress Bar */}
                 <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20">
                     <div
-                        className="h-full bg-clay-600 transition-all duration-300"
+                        className="h-full bg-clay-500 transition-all duration-500 ease-out"
                         style={{ width: `${progress}%` }}
                     />
                 </div>
 
-                {/* Error Banner */}
+                {/* Camera Error Display */}
                 {cameraError && (
-                    <div className="absolute inset-0 bg-stone-900/90 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center">
-                        <AlertCircle size={28} className="text-rose-400 mb-2" />
-                        <p className="text-xs font-semibold text-white leading-relaxed">{cameraError}</p>
+                    <div className="absolute inset-0 bg-stone-950/95 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center">
+                        <AlertCircle size={26} className="text-rose-400 mb-2" />
+                        <p className="text-xs text-white leading-relaxed font-medium">{cameraError}</p>
                         <button
                             type="button"
                             onClick={handleRestart}
-                            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-stone-900 text-xs font-bold shadow-xs hover:bg-stone-100"
+                            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-stone-900 text-xs font-bold shadow-xs hover:bg-stone-100 cursor-pointer"
                         >
                             <RefreshCw size={13} />
                             Try Again
@@ -268,39 +278,39 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                 )}
             </div>
 
-            {/* Instruction Badge & Feedback Card */}
-            <div className="mt-3.5 w-full max-w-[320px] text-center">
+            {/* Instruction Card */}
+            <div className="mt-3 w-full max-w-[310px] text-center">
                 {challengeState === 'aligning' && (
-                    <div className="rounded-2xl border border-stone-200/80 bg-stone-50/80 p-2.5 flex items-center justify-center gap-2">
-                        <Scan size={15} className="text-stone-600 animate-spin" />
-                        <span className="text-xs font-bold text-stone-800">
-                            Center face inside the oval
+                    <div className="rounded-xl border border-stone-200 bg-stone-50/90 py-2 px-3 flex items-center justify-center gap-2">
+                        <Eye size={14} className="text-stone-500" />
+                        <span className="text-xs font-bold text-stone-700">
+                            Fit your face inside the oval
                         </span>
                     </div>
                 )}
 
                 {challengeState === 'challenging' && (
-                    <div className="rounded-2xl border border-clay-200 bg-amber-50/70 p-2.5 flex items-center justify-center gap-2 animate-fade-in">
-                        <Sparkles size={15} className="text-clay-700" />
-                        <span className="text-xs font-bold text-clay-900">
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 py-2 px-3 flex items-center justify-center gap-2">
+                        <Sparkles size={14} className="text-amber-700" />
+                        <span className="text-xs font-bold text-amber-900">
                             {activeChallenge.label}
                         </span>
                     </div>
                 )}
 
                 {challengeState === 'verifying' && (
-                    <div className="rounded-2xl border border-amber-300 bg-amber-50 p-2.5 flex items-center justify-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                    <div className="rounded-xl border border-amber-300 bg-amber-50/90 py-2 px-3 flex items-center justify-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping" />
                         <span className="text-xs font-bold text-amber-900">
-                            Verifying 3D depth & capture...
+                            Verifying liveness...
                         </span>
                     </div>
                 )}
 
                 {challengeState === 'completed' && (
-                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-2.5 flex items-center justify-between gap-2 animate-fade-in">
-                        <div className="flex items-center gap-2">
-                            <CheckCircle2 size={16} className="text-emerald-700" />
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-2 px-3 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                            <CheckCircle2 size={15} className="text-emerald-700" />
                             <span className="text-xs font-bold text-emerald-900">
                                 3D Liveness Verified
                             </span>
@@ -308,7 +318,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                         <button
                             type="button"
                             onClick={handleRestart}
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-stone-600 hover:text-stone-900"
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-stone-500 hover:text-stone-800 cursor-pointer"
                         >
                             <RefreshCw size={11} /> Retake
                         </button>
