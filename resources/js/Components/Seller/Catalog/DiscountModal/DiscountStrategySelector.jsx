@@ -14,7 +14,7 @@ export default function DiscountStrategySelector({
     return (
         <div className="space-y-3 pt-2">
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-400 border-b border-stone-200/60 pb-1.5 flex items-center gap-1.5">
-                <Sliders size={13} className="text-stone-500" /> Pricing Strategy
+                <Sliders size={13} className="text-stone-500" /> Discount Type &amp; Rules
             </h3>
 
             <div className="space-y-2">
@@ -34,8 +34,8 @@ export default function DiscountStrategySelector({
                         {mode === "global" && <Check size={10} strokeWidth={3} />}
                     </div>
                     <div>
-                        <span className="text-xs font-bold block">Apply Uniform Discount</span>
-                        <span className="text-[10px] text-stone-400 font-normal">Same discount for all checked items</span>
+                        <span className="text-xs font-bold block">Same Discount for All Products</span>
+                        <span className="text-[10px] text-stone-400 font-normal">Apply the same discount rate to selected items</span>
                     </div>
                 </button>
 
@@ -55,8 +55,8 @@ export default function DiscountStrategySelector({
                         {mode === "individual" && <Check size={10} strokeWidth={3} />}
                     </div>
                     <div>
-                        <span className="text-xs font-bold block">Custom Per Product</span>
-                        <span className="text-[10px] text-stone-400 font-normal">Individual row rates + Batch Apply</span>
+                        <span className="text-xs font-bold block">Custom Discount per Product</span>
+                        <span className="text-[10px] text-stone-400 font-normal">Set individual discount rates for each item</span>
                     </div>
                 </button>
             </div>
@@ -74,7 +74,7 @@ export default function DiscountStrategySelector({
                                     : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"
                             }`}
                         >
-                            <Percent size={12} /> Percentage
+                            <Percent size={12} /> Percentage Off (%)
                         </button>
 
                         <button
@@ -86,7 +86,7 @@ export default function DiscountStrategySelector({
                                     : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"
                             }`}
                         >
-                            <span className="font-extrabold text-xs">₱</span> Fixed Price
+                            <span className="font-extrabold text-xs">₱</span> Fixed Amount Off (₱)
                         </button>
                     </div>
 
