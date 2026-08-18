@@ -73,8 +73,8 @@ export default function DocumentsStep({
                         <FileText size={20} className="text-amber-600" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900">Legal Verification</h2>
-                        <p className="text-sm text-gray-500">Upload clear photos or scans of your documents (uploaded one-by-one to avoid platform size limits)</p>
+                        <h2 className="text-xl font-bold text-gray-900">Business &amp; Artisan Verification</h2>
+                        <p className="text-sm text-gray-500">Upload clear photos or scans of your business permits and documents.</p>
                     </div>
                 </div>
             </div>

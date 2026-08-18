@@ -3,7 +3,7 @@ import React from 'react';
 export const FALLBACK_ROLE_PRESETS = [
     { key: 'hr', label: 'People & Payroll', description: 'Employee records, payroll prep, and workspace access coordination.', modules: ['hr'] },
     { key: 'accounting', label: 'Finance Review', description: 'Business funds, payroll approval, and finance visibility.', modules: ['accounting'] },
-    { key: 'procurement', label: 'Inventory & Restocking', description: 'Supply tracking, stock requests, and purchasing coordination.', modules: ['procurement', 'stock_requests'] },
+    { key: 'procurement', label: 'Materials & Restocking', description: 'Supply tracking, material requests, and restock coordination.', modules: ['procurement', 'stock_requests'] },
     { key: 'customer_support', label: 'Customer Care', description: 'Orders, buyer messages, and customer review handling.', modules: ['orders', 'messages', 'reviews'] },
     { key: 'custom', label: 'Custom Access', description: 'Configure individual module permissions manually.', modules: [] },
 ];
@@ -33,7 +33,7 @@ export const FALLBACK_MODULES = [
     { key: 'shop_settings', label: 'Shop Settings', description: 'Seller storefront profile settings.' },
     { key: 'hr', label: 'People & Payroll', description: 'Employee records, payroll prep, and workspace access management.' },
     { key: 'accounting', label: 'Finance Approvals', description: 'Finance review, fund visibility, and payroll approval.' },
-    { key: 'procurement', label: 'Inventory', description: 'Inventory tracking, supply management, and purchasing workflows.' },
+    { key: 'procurement', label: 'Materials & Supplies', description: 'Material tracking, supply inventory, and restock workflows.' },
     { key: 'stock_requests', label: 'Restock Requests', description: 'Restock request tracking.' },
 ];
 
