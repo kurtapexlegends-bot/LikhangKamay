@@ -67,7 +67,7 @@ export default function ForgotPassword({ status }) {
             >
                 {/* Header Section */}
                 <motion.div variants={itemVariants} className="mb-8 text-left">
-                    <span className="text-[9px] font-sans tracking-[0.25em] uppercase text-clay-600 font-bold mb-2 block">Reset Channel</span>
+                    <span className="text-[9px] font-sans tracking-[0.25em] uppercase text-clay-600 font-bold mb-2 block">Account Recovery</span>
                     <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight mb-1.5">
                         Forgot Password?
                     </h1>

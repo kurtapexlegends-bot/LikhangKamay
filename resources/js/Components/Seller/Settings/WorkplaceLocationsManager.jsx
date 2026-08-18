@@ -361,7 +361,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                 <div className="py-12 bg-stone-50/50 rounded-2xl border border-dashed border-stone-200 text-center space-y-2">
                     <MapPin size={24} className="mx-auto text-stone-300" />
                     <p className="text-xs font-bold text-stone-700">No workplace locations configured yet.</p>
-                    <p className="text-[11px] text-stone-400">Add your workshop or store location to enforce physical clock-in perimeters.</p>
+                    <p className="text-[11px] text-stone-400">Add your workshop or store location so staff can clock in on-site.</p>
                 </div>
             )}
 

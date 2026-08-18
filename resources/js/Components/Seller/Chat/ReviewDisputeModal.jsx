@@ -29,10 +29,10 @@ export default function ReviewDisputeModal({
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    const title = mode === 'edit' ? 'Edit Moderation Request' : 'Request Review Moderation';
+    const title = mode === 'edit' ? 'Edit Reported Review' : 'Report Review for Admin Help';
     const subtitle = mode === 'edit'
         ? 'Update the reason or details before the request is closed.'
-        : 'Flag this review for admin review with a clear reason.';
+        : 'Report this review to our admin team with a clear reason.';
 
     const formContent = (
         <div className="space-y-4">
@@ -64,7 +64,7 @@ export default function ReviewDisputeModal({
                     onChange={(event) => setDisputeDetails(event.target.value)}
                     rows={4}
                     maxLength={1500}
-                    placeholder="State what looks inaccurate or why this review needs moderation."
+                    placeholder="Explain what is inaccurate or abusive about this review."
                     className={`w-full rounded-xl border px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-clay-300 ${disputeErrors.details ? 'border-rose-300 bg-rose-50/40' : 'border-stone-200'}`}
                 />
                 <p className="mt-1 text-[11px] text-stone-400">{disputeDetails.length} / 1500</p>

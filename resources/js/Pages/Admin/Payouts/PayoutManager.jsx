@@ -47,7 +47,7 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
 
                     <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto bg-white overflow-hidden rounded-2xl border border-stone-200 p-5 shadow-sm flex items-start justify-between">
                         <div>
-                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Total Payouts Disbursed</p>
+                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Total Earnings Transferred</p>
                             <h3 className="text-2xl font-black text-stone-900 mt-1">{formatCurrency(metrics.total_paid || 0)}</h3>
                         </div>
                         <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-600 shrink-0">
@@ -297,8 +297,8 @@ function DisbursePayoutModal({ artisan, onClose, formatCurrency }) {
     return (
         <Modal show={true} onClose={onClose} maxWidth="md">
             <form onSubmit={handleSubmit} className="p-6 bg-[#FDFBF9]">
-                <h3 className="text-base font-bold text-stone-900 mb-1">Disburse Payout</h3>
-                <p className="text-xs font-semibold text-stone-500 mb-5">Log a manual fund transfer. This reduces the shop outstanding balance.</p>
+                <h3 className="text-base font-bold text-stone-900 mb-1">Transfer Earnings to Artisan</h3>
+                <p className="text-xs font-semibold text-stone-500 mb-5">Record a transfer to the artisan's GCash or bank account.</p>
 
                 <div className="rounded-xl bg-stone-50 border border-stone-200 p-4 mb-5 space-y-2">
                     <div className="flex justify-between text-xs font-semibold">
