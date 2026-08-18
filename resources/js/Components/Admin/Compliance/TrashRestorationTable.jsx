@@ -47,7 +47,7 @@ export default function TrashRestorationTable({
                             <th className="px-8 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest border-b border-stone-100">Item Type</th>
                             <th className="px-8 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest border-b border-stone-100">Name / Identifier</th>
                             <th className="px-8 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest border-b border-stone-100">Deleted By / Context</th>
-                            <th className="px-8 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest border-b border-stone-100">Auto-Purge In</th>
+                            <th className="px-8 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest border-b border-stone-100">Permanently Deleted In</th>
                             <th className="px-8 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest text-right border-b border-stone-100">Actions</th>
                         </tr>
                     </thead>

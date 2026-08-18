@@ -257,7 +257,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                         <div className="relative flex-1 sm:w-64">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
                             <TextInput 
-                                placeholder="Search by title or SKU..." 
+                                placeholder="Search by title or product code..." 
                                 className="pl-9 text-xs py-2 w-full min-h-[38px] bg-white hover:border-stone-300 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -563,7 +563,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                                                         </div>
                                                         <div className="max-w-[200px] text-left">
                                                             <p className="text-xs font-bold text-stone-900 truncate hover:text-clay-600 transition-colors">{product.name}</p>
-                                                            <p className="text-[10px] text-stone-550 font-mono tracking-wider bg-stone-100/80 rounded px-1.5 py-0.5 w-fit mt-1">SKU: {product.sku}</p>
+                                                            <p className="text-[10px] text-stone-550 font-mono tracking-wider bg-stone-100/80 rounded px-1.5 py-0.5 w-fit mt-1">Code: {product.sku}</p>
                                                         </div>
                                                     </div>
                                                 </td>

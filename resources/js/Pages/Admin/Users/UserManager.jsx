@@ -267,8 +267,8 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                 isOpen={!!impersonateTarget}
                 onClose={() => setImpersonateTarget(null)}
                 onConfirm={confirmImpersonation}
-                title="Support Impersonation"
-                message="Are you sure you want to securely log in as this user? You will temporarily leave your Super Admin session to view the platform exactly as they do."
+                title="Support Mode (View as User)"
+                message="Are you sure you want to securely log in as this user to assist them? You will temporarily view the platform from their perspective."
                 icon={Users}
                 iconBg="bg-stone-100 text-stone-600"
                 confirmText="Login As User"

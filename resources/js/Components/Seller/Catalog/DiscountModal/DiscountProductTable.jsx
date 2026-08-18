@@ -28,7 +28,7 @@ export default function DiscountProductTable({
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search product by title or SKU..."
+                        placeholder="Search product by title or code..."
                         className="w-full text-xs rounded-xl border-stone-200 pl-9 pr-8 py-2.5 focus:border-clay-500 focus:ring-clay-500 bg-stone-50/50 font-medium"
                     />
                     {searchQuery && (
@@ -158,7 +158,7 @@ export default function DiscountProductTable({
                                                 />
                                                 <div className="min-w-0">
                                                     <p className="font-bold text-stone-900 truncate max-w-[180px]">{product.name}</p>
-                                                    <p className="text-[10px] text-stone-400 font-mono">SKU: {product.sku || "N/A"}</p>
+                                                    <p className="text-[10px] text-stone-400 font-mono">Code: {product.sku || "N/A"}</p>
                                                 </div>
                                             </div>
                                         </td>

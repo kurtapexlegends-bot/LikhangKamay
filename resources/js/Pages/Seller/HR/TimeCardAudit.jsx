@@ -197,7 +197,7 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
             <Head title={`${employee.name} - Time-Card Audit - Artisan Dashboard`} />
             <SellerHeader
                 title="Time-Card Audit"
-                subtitle={`Time-card audit logs and shift approvals for ${employee.name}.`}
+                subtitle={`Work logs, attendance history, and shift reviews for ${employee.name}.`}
                 auth={auth}
                 onMenuClick={openSidebar}
             />
@@ -210,7 +210,7 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                         People &amp; HR
                     </Link>
                     <ChevronRight size={12} className="text-stone-400 shrink-0" />
-                    <span className="text-stone-400 font-medium shrink-0">Time-Card Audit</span>
+                    <span className="text-stone-400 font-medium shrink-0">Work Logs & Attendance</span>
                     <ChevronRight size={12} className="text-stone-400 shrink-0" />
                     <span className="text-stone-900 font-bold tracking-tight truncate">{employee.name}</span>
                 </nav>

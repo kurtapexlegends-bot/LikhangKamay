@@ -95,7 +95,7 @@ export default function AccountingFilterPanel({
                     >
                         <option value="all">All Transaction Types</option>
                         <option value="sale">Sales Revenue & Settlements</option>
-                        <option value="payout">Payout Release & Transfer</option>
+                        <option value="payout">Bank & E-Wallet Transfers</option>
                         <option value="payroll">People & Payroll Expenses</option>
                         <option value="stock_request">Material Supplies & Restocks</option>
                         <option value="refund">Refund Deductions</option>

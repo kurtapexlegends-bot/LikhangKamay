@@ -14,7 +14,7 @@ export default function RosterSelector({
             <div className="rounded-2xl border border-[#E7D8C9] bg-[#FCF7F2] p-4 text-[11px] leading-relaxed text-clay-700 flex gap-3">
                 <Sparkles className="shrink-0 mt-0.5 text-clay-600" size={16} />
                 <div>
-                    <span className="font-bold">Prefill Sync Active</span>: Absent days, undertime, and overtime are loaded automatically from linked staff work logs for the selected month. Verify the roster selection below to proceed.
+                    <span className="font-bold">Attendance Auto-Filled</span>: Absent days, undertime, and overtime are loaded automatically from staff daily work logs for the selected month. Verify the employee selection below to proceed.
                 </div>
             </div>
 
