@@ -48,8 +48,8 @@ export default function PlatformOpsForm({ data, setData }) {
                         <ShieldAlert className="text-stone-700" size={15} />
                     </div>
                     <div>
-                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Gateways & Safety Mode</h3>
-                        <p className="text-[10px] text-stone-400 font-medium">Control live payment processing and platform access locks.</p>
+                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Payments &amp; Maintenance</h3>
+                        <p className="text-[10px] text-stone-400 font-medium">Manage PayMongo payment processing and turn maintenance mode on or off.</p>
                     </div>
                 </div>
 

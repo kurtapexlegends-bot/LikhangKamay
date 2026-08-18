@@ -401,7 +401,7 @@ export default function GlobalSearch() {
                                             { label: 'User Directory & Approvals', sub: 'Manage user profiles, accounts, and artisan vetting.', icon: Users, color: 'text-indigo-600 bg-indigo-50', url: getSafeRoute('admin.users.manager') },
                                             { label: 'Catalog & Categories', sub: 'Inspect product listings, flags, and store categories.', icon: FolderTree, color: 'text-rose-600 bg-rose-50', url: getSafeRoute('admin.catalog.index') },
                                             { label: 'Disputes & Compliance', sub: 'Order disputes, review reports, and moderation queue.', icon: ShieldAlert, color: 'text-red-600 bg-red-50', url: getSafeRoute('admin.compliance') },
-                                            { label: 'Platform Operations & Logs', sub: 'System telemetry, activity history, and server cache.', icon: Shield, color: 'text-clay-600 bg-clay-50', url: getSafeRoute('admin.operations') },
+                                            { label: 'Platform Operations & Logs', sub: 'System health, activity history, and server cache.', icon: Shield, color: 'text-clay-600 bg-clay-50', url: getSafeRoute('admin.operations') },
                                         ] : [
                                             { label: 'Products & Discounts', sub: 'Manage catalog items, prices, 3D assets, and promos.', icon: Box, color: 'text-rose-600 bg-rose-50', modules: ['products'], url: getSafeRoute('products.index') },
                                             { label: 'Orders & Fulfillment', sub: 'Process customer shipments, receipts, and returns.', icon: ShoppingBag, color: 'text-emerald-600 bg-emerald-50', modules: ['orders'], url: getSafeRoute('orders.index') },

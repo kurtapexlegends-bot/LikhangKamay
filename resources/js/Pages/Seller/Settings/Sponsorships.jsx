@@ -165,7 +165,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                     <div>
                                         <h3 className="text-xs font-bold text-amber-800">Elite Subscription Only</h3>
                                         <p className="text-[11px] text-amber-700/80 mt-1 mb-3 leading-relaxed">
-                                            Upgrade to the Elite tier to unlock sponsored features, marketing telemetry, and premium visibility slots.
+                                            Upgrade to the Elite tier to unlock sponsored features, campaign performance stats, and premium visibility slots.
                                         </p>
                                         <button 
                                             onClick={() => router.visit(route('seller.subscription'))}
