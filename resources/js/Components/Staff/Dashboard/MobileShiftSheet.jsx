@@ -58,6 +58,12 @@ export default function MobileShiftSheet({
                                 </span>
                             </div>
                             <div className="flex items-center justify-between text-[11px] text-stone-600 font-medium pt-1 border-t border-amber-200/60">
+                                <span>Earliest Entry</span>
+                                <span className="font-bold text-stone-800 font-mono">
+                                    {attendance.shift_policy.earliest_clock_in_minutes ?? 30}m before shift
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between text-[11px] text-stone-600 font-medium pt-1 border-t border-amber-200/60">
                                 <span>Lunch Break</span>
                                 <span className="font-bold text-stone-800 font-mono">
                                     {attendance.shift_policy.break_window_start || '11:30'} - {attendance.shift_policy.break_window_end || '13:30'} ({attendance.shift_policy.break_allowance_minutes || 60}m)

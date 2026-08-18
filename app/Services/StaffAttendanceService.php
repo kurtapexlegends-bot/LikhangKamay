@@ -63,6 +63,7 @@ class StaffAttendanceService
         // GPS Geofencing Check
         $lat = isset($payload['latitude']) ? (float) $payload['latitude'] : null;
         $lng = isset($payload['longitude']) ? (float) $payload['longitude'] : null;
+        $sellerLocation = null;
         $sellerLocationId = null;
         $distanceMeters = null;
         $isWithinGeofence = true;
@@ -125,17 +126,58 @@ class StaffAttendanceService
 
         $sellerOwner = User::find($staff->getEffectiveSellerId());
 
-        // Shift schedule late arrival evaluation
+        // Shift schedule & Operating window evaluation
         $isLate = false;
         $lateMinutes = 0;
+        $isOutOfShiftWindow = false;
+        $outOfShiftReason = null;
+
         if ($sellerOwner && $sellerOwner->shift_start_time) {
             try {
                 $shiftStart = Carbon::parse($now->toDateString() . ' ' . $sellerOwner->shift_start_time, config('app.timezone'));
+                $earliestBuffer = (int) ($sellerOwner->earliest_clock_in_minutes ?? 30);
+                $earliestAllowed = $shiftStart->copy()->subMinutes($earliestBuffer);
                 $graceThreshold = $shiftStart->copy()->addMinutes((int) ($sellerOwner->grace_period_minutes ?? 15));
-                if ($now->gt($graceThreshold)) {
+
+                $shiftEnd = $sellerOwner->shift_end_time 
+                    ? Carbon::parse($now->toDateString() . ' ' . $sellerOwner->shift_end_time, config('app.timezone'))
+                    : $shiftStart->copy()->addHours(9);
+                $latestAllowed = $shiftEnd->copy()->addMinutes(60);
+
+                // 1. Check if too early (e.g. attempting to clock in before earliest allowed entry)
+                if ($now->lt($earliestAllowed)) {
+                    $minutesEarly = (int) $now->diffInMinutes($shiftStart);
+                    if ($sellerOwner->enforce_strict_shift_window ?? true) {
+                        $earliestFormatted = $earliestAllowed->format('h:i A');
+                        $shiftStartFormatted = $shiftStart->format('h:i A');
+                        throw ValidationException::withMessages([
+                            'shift' => ["Workshop is closed. Earliest allowed clock-in for your {$shiftStartFormatted} shift is {$earliestFormatted}."],
+                        ]);
+                    }
+
+                    $isOutOfShiftWindow = true;
+                    $outOfShiftReason = "Early Clock In ({$minutesEarly}m before shift start)";
+                }
+                // 2. Check if too late after closing hours
+                elseif ($now->gt($latestAllowed)) {
+                    $minutesAfter = (int) $shiftEnd->diffInMinutes($now);
+                    if ($sellerOwner->enforce_strict_shift_window ?? true) {
+                        $shiftEndFormatted = $shiftEnd->format('h:i A');
+                        throw ValidationException::withMessages([
+                            'shift' => ["Workshop is closed. Shift ended at {$shiftEndFormatted}."],
+                        ]);
+                    }
+
+                    $isOutOfShiftWindow = true;
+                    $outOfShiftReason = "After-Hours Clock In ({$minutesAfter}m after shift end)";
+                }
+                // 3. Normal shift window tardiness check
+                elseif ($now->gt($graceThreshold)) {
                     $isLate = true;
                     $lateMinutes = (int) $shiftStart->diffInMinutes($now);
                 }
+            } catch (ValidationException $valEx) {
+                throw $valEx;
             } catch (\Throwable $e) {
                 // Ignore parsing errors and fallback
             }
@@ -154,8 +196,15 @@ class StaffAttendanceService
 
         $livenessVerified = !empty($payload['liveness_verified']) || !empty($photoPath);
 
-        $isFlagged = !$isWithinGeofence;
-        $flagReason = $isFlagged ? "Off-Site Clock In ({$distanceMeters}m from assigned workplace)" : null;
+        $isFlagged = !$isWithinGeofence || $isOutOfShiftWindow;
+        $flagReasons = [];
+        if (!$isWithinGeofence) {
+            $flagReasons[] = "Off-Site Clock In ({$distanceMeters}m from assigned workplace)";
+        }
+        if ($isOutOfShiftWindow && $outOfShiftReason) {
+            $flagReasons[] = $outOfShiftReason;
+        }
+        $flagReason = !empty($flagReasons) ? implode(' • ', $flagReasons) : null;
         $approvalStatus = $isFlagged ? 'pending' : 'approved';
 
         $session = StaffAttendanceSession::create([
@@ -632,6 +681,8 @@ class StaffAttendanceService
                 'shift_start_time' => $sellerOwner->shift_start_time ?? '08:00',
                 'shift_end_time' => $sellerOwner->shift_end_time ?? '17:00',
                 'grace_period_minutes' => (int) ($sellerOwner->grace_period_minutes ?? 15),
+                'earliest_clock_in_minutes' => (int) ($sellerOwner->earliest_clock_in_minutes ?? 30),
+                'enforce_strict_shift_window' => (bool) ($sellerOwner->enforce_strict_shift_window ?? true),
                 'break_window_start' => $sellerOwner->break_window_start ?? '11:30',
                 'break_window_end' => $sellerOwner->break_window_end ?? '13:30',
                 'break_allowance_minutes' => (int) ($sellerOwner->break_allowance_minutes ?? 60),

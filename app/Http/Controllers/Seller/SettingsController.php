@@ -78,6 +78,8 @@ class SettingsController extends Controller
                 'shift_start_time' => $sellerOwner->shift_start_time ?? '08:00',
                 'shift_end_time' => $sellerOwner->shift_end_time ?? '17:00',
                 'grace_period_minutes' => $sellerOwner->grace_period_minutes ?? 15,
+                'earliest_clock_in_minutes' => $sellerOwner->earliest_clock_in_minutes ?? 30,
+                'enforce_strict_shift_window' => (bool) ($sellerOwner->enforce_strict_shift_window ?? true),
                 'break_window_start' => $sellerOwner->break_window_start ?? '11:30',
                 'break_window_end' => $sellerOwner->break_window_end ?? '13:30',
                 'break_allowance_minutes' => $sellerOwner->break_allowance_minutes ?? 60,

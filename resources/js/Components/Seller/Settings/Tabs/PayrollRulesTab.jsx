@@ -64,6 +64,8 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
         shift_start_time: sellerOwner.shift_start_time || '08:00',
         shift_end_time: sellerOwner.shift_end_time || '17:00',
         grace_period_minutes: sellerOwner.grace_period_minutes ?? 15,
+        earliest_clock_in_minutes: sellerOwner.earliest_clock_in_minutes ?? 30,
+        enforce_strict_shift_window: sellerOwner.enforce_strict_shift_window !== undefined ? Boolean(sellerOwner.enforce_strict_shift_window) : true,
         break_window_start: sellerOwner.break_window_start || '11:30',
         break_window_end: sellerOwner.break_window_end || '13:30',
         break_allowance_minutes: sellerOwner.break_allowance_minutes ?? 60,
@@ -321,24 +323,75 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                             </div>
                         </div>
 
-                        <div>
-                            <InputLabel value="Late Grace Period" />
-                            <div className="mt-1 relative rounded-xl shadow-2xs">
-                                <input
-                                    type="number"
-                                    className="w-full rounded-xl border border-stone-300 pr-16 text-xs font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[42px] bg-white"
-                                    value={data.grace_period_minutes ?? 15}
-                                    onChange={(e) => setData('grace_period_minutes', e.target.value)}
-                                    disabled={!canEdit}
-                                    min="0"
-                                    max="120"
-                                    required
-                                />
-                                <span className="absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-stone-400 pointer-events-none">
-                                    minutes
-                                </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <InputLabel value="Earliest Clock-In" />
+                                <div className="mt-1 relative rounded-xl shadow-2xs">
+                                    <input
+                                        type="number"
+                                        className="w-full rounded-xl border border-stone-300 pr-16 text-xs font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[42px] bg-white"
+                                        value={data.earliest_clock_in_minutes ?? 30}
+                                        onChange={(e) => setData('earliest_clock_in_minutes', e.target.value)}
+                                        disabled={!canEdit}
+                                        min="0"
+                                        max="120"
+                                        required
+                                    />
+                                    <span className="absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-stone-400 pointer-events-none">
+                                        mins early
+                                    </span>
+                                </div>
+                                <span className="text-[10px] text-stone-500 mt-1 block">Staff can clock in up to {data.earliest_clock_in_minutes ?? 30}m before shift</span>
                             </div>
-                            <span className="text-[10px] text-stone-500 mt-1 block">Staff arriving within 15 mins are marked on-time</span>
+
+                            <div>
+                                <InputLabel value="Late Grace Period" />
+                                <div className="mt-1 relative rounded-xl shadow-2xs">
+                                    <input
+                                        type="number"
+                                        className="w-full rounded-xl border border-stone-300 pr-16 text-xs font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[42px] bg-white"
+                                        value={data.grace_period_minutes ?? 15}
+                                        onChange={(e) => setData('grace_period_minutes', e.target.value)}
+                                        disabled={!canEdit}
+                                        min="0"
+                                        max="120"
+                                        required
+                                    />
+                                    <span className="absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-stone-400 pointer-events-none">
+                                        minutes
+                                    </span>
+                                </div>
+                                <span className="text-[10px] text-stone-500 mt-1 block">Staff arriving within {data.grace_period_minutes ?? 15}m are marked on-time</span>
+                            </div>
+                        </div>
+
+                        {/* Strict Shift Window Enforcement Toggle */}
+                        <div className="pt-3 border-t border-stone-200/80 flex items-start justify-between gap-3">
+                            <div className="space-y-0.5">
+                                <label className="text-xs font-bold text-stone-900 cursor-pointer" htmlFor="enforce_strict_shift_window">
+                                    Strict Shift Window Enforcement
+                                </label>
+                                <p className="text-[11px] text-stone-500 leading-relaxed font-medium">
+                                    Block clock-in when workshop is closed. When off, out-of-bounds clock-ins are flagged for manager approval.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                role="switch"
+                                id="enforce_strict_shift_window"
+                                aria-checked={data.enforce_strict_shift_window}
+                                onClick={() => canEdit && setData('enforce_strict_shift_window', !data.enforce_strict_shift_window)}
+                                disabled={!canEdit}
+                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                    data.enforce_strict_shift_window ? 'bg-clay-600' : 'bg-stone-200'
+                                } ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                <span
+                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                                        data.enforce_strict_shift_window ? 'translate-x-5' : 'translate-x-0'
+                                    }`}
+                                />
+                            </button>
                         </div>
                     </div>
 

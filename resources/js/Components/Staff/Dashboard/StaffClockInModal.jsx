@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { usePage, router } from '@inertiajs/react';
-import { Camera, MapPin, RefreshCw, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, X, Loader2, Navigation, Mail, Send, Inbox } from 'lucide-react';
+import { Camera, MapPin, RefreshCw, CheckCircle2, AlertTriangle, AlertCircle, ShieldCheck, ShieldAlert, X, Loader2, Navigation, Mail, Send, Inbox } from 'lucide-react';
 import axios from 'axios';
 import Modal from '@/Components/Modal';
 import StaffGeofenceMap from './StaffGeofenceMap';
@@ -25,6 +25,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
 
     const [cameraError, setCameraError] = useState(null);
     const [capturedPhoto, setCapturedPhoto] = useState(null);
+    const [submitError, setSubmitError] = useState(null);
     
     const [location, setLocation] = useState({ lat: null, lng: null, accuracy: null });
     const [locationStatus, setLocationStatus] = useState('fetching'); // fetching, success, error
@@ -49,6 +50,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
     useEffect(() => {
         if (!isOpen) return;
 
+        setSubmitError(null);
         fetchGeolocation();
         setActiveMobileTab('selfie');
     }, [isOpen]);
@@ -114,15 +116,21 @@ export default function StaffClockInModal({ isOpen, onClose }) {
 
     const handleSubmit = () => {
         setSubmitting(true);
+        setSubmitError(null);
         router.post('/staff/attendance/resume', {
             photo_data: capturedPhoto,
             otp_code: useOtpFallback ? otpCode : null,
             latitude: location.lat,
             longitude: location.lng
         }, {
-            onFinish: () => {
+            onSuccess: () => {
                 setSubmitting(false);
                 onClose();
+            },
+            onError: (errors) => {
+                setSubmitting(false);
+                const errMsg = errors.shift || errors.location || errors.workplace_pin || errors.otp_code || errors.photo_data || Object.values(errors)[0] || 'Unable to clock in. Please try again.';
+                setSubmitError(errMsg);
             }
         });
     };
@@ -166,6 +174,16 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                             <X size={18} />
                         </button>
                     </div>
+
+                    {/* Submit Error Banner (e.g. Workshop Closed) */}
+                    {submitError && (
+                        <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex items-start gap-2.5 shadow-2xs">
+                            <AlertCircle size={17} className="text-rose-600 shrink-0 mt-0.5" />
+                            <div className="text-xs font-semibold leading-relaxed">
+                                {submitError}
+                            </div>
+                        </div>
+                    )}
 
                     {/* 2-Step Verification Progress Bar (Acts as Interactive Tab Bar on Mobile) */}
                     <div className="grid grid-cols-2 gap-2 pt-0.5">

@@ -109,6 +109,76 @@ class AttendanceShiftPolicyTest extends TestCase
         $this->assertSame(90, $session2->total_break_minutes);
     }
 
+    public function test_early_clock_in_is_strictly_blocked_when_strict_enforcement_is_on(): void
+    {
+        [$owner, $employee, $staff] = $this->createStaffWithShiftPolicy(
+            shiftStart: '08:00',
+            earliestBuffer: 30,
+            strictWindow: true
+        );
+
+        // Staff attempts to clock in at 1:52 AM (hours before 7:30 AM earliest entry)
+        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(1, 52));
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $service = app(StaffAttendanceService::class);
+        $service->ensureClockedIn($staff);
+    }
+
+    public function test_early_clock_in_is_flagged_for_approval_when_strict_enforcement_is_off(): void
+    {
+        [$owner, $employee, $staff] = $this->createStaffWithShiftPolicy(
+            shiftStart: '08:00',
+            earliestBuffer: 30,
+            strictWindow: false
+        );
+
+        // Staff clocks in at 1:52 AM (allowed but flagged for manager review)
+        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(1, 52));
+
+        $service = app(StaffAttendanceService::class);
+        $session = $service->ensureClockedIn($staff);
+
+        $this->assertTrue($session->is_flagged);
+        $this->assertSame('pending', $session->approval_status);
+        $this->assertStringContainsString('Early Clock In', $session->flag_reason);
+    }
+
+    public function test_clock_in_within_earliest_allowed_window_is_approved(): void
+    {
+        [$owner, $employee, $staff] = $this->createStaffWithShiftPolicy(
+            shiftStart: '08:00',
+            earliestBuffer: 30,
+            strictWindow: true
+        );
+
+        // Staff clocks in at 7:45 AM (within 7:30 AM - 8:00 AM window)
+        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(7, 45));
+
+        $service = app(StaffAttendanceService::class);
+        $session = $service->ensureClockedIn($staff);
+
+        $this->assertFalse($session->is_flagged);
+        $this->assertSame('approved', $session->approval_status);
+        $this->assertFalse($session->is_late);
+    }
+
+    public function test_after_hours_clock_in_is_blocked_when_strict_enforcement_is_on(): void
+    {
+        [$owner, $employee, $staff] = $this->createStaffWithShiftPolicy(
+            shiftStart: '08:00',
+            shiftEnd: '17:00',
+            strictWindow: true
+        );
+
+        // Staff attempts to clock in at 11:00 PM (23:00) after closing
+        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(23, 0));
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $service = app(StaffAttendanceService::class);
+        $service->ensureClockedIn($staff);
+    }
+
     /**
      * @return array{0: \App\Models\User, 1: \App\Models\Employee, 2: \App\Models\User}
      */
@@ -116,13 +186,17 @@ class AttendanceShiftPolicyTest extends TestCase
         string $shiftStart = '08:00',
         string $shiftEnd = '17:00',
         int $gracePeriod = 15,
-        int $breakAllowance = 60
+        int $breakAllowance = 60,
+        int $earliestBuffer = 30,
+        bool $strictWindow = true
     ): array {
         $owner = User::factory()->artisanApproved()->create([
             'premium_tier' => 'premium',
             'shift_start_time' => $shiftStart,
             'shift_end_time' => $shiftEnd,
             'grace_period_minutes' => $gracePeriod,
+            'earliest_clock_in_minutes' => $earliestBuffer,
+            'enforce_strict_shift_window' => $strictWindow,
             'break_window_start' => '11:30',
             'break_window_end' => '13:30',
             'break_allowance_minutes' => $breakAllowance,
