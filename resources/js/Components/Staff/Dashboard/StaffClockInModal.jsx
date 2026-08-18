@@ -140,12 +140,12 @@ export default function StaffClockInModal({ isOpen, onClose }) {
 
     const getButtonText = () => {
         if (submitting) return 'Clocking In...';
-        if (useOtpFallback && otpCode.length < 6) return 'Enter 6-Digit Email OTP';
-        if (!capturedPhoto && !useOtpFallback) return 'Take Selfie Photo to Continue';
-        if (locationStatus === 'fetching') return 'Verifying GPS Location...';
-        if (!isLocationVerified) return 'GPS Location Verification Required';
-        if (strictGeofence && !isWithinGeofence) return `Clock In Blocked: Move Within ${radiusLimit}m of ${locationName}`;
-        return 'Confirm Physical Clock In';
+        if (useOtpFallback && otpCode.length < 6) return 'Enter 6-Digit Email Code';
+        if (!capturedPhoto && !useOtpFallback) return 'Take Photo to Continue';
+        if (locationStatus === 'fetching') return 'Checking Store Location...';
+        if (!isLocationVerified) return 'Allow Location Access to Continue';
+        if (strictGeofence && !isWithinGeofence) return `Too Far from Store: Move Closer to ${locationName}`;
+        return 'Confirm Clock In';
     };
 
     return (
@@ -163,7 +163,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                             </div>
                             <div>
                                 <h3 className="text-base font-bold text-stone-900 leading-tight">Clock In Verification</h3>
-                                <p className="text-xs text-stone-500 font-medium">Selfie Proof & Workplace Geofence Required</p>
+                                <p className="text-xs text-stone-500 font-medium">Photo Check & Store Location Required</p>
                             </div>
                         </div>
                         <button
@@ -203,7 +203,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                             }`}>
                                 {capturedPhoto ? <CheckCircle2 size={10} /> : '1'}
                             </div>
-                            <span className="truncate">1. Selfie Photo</span>
+                            <span className="truncate">1. Photo Check</span>
                         </button>
 
                         <button
@@ -232,7 +232,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                             }`}>
                                 {isLocationVerified && isWithinGeofence ? <CheckCircle2 size={10} /> : '2'}
                             </div>
-                            <span className="truncate">2. Workplace GPS</span>
+                            <span className="truncate">2. Store Location</span>
                         </button>
                     </div>
                 </div>
@@ -246,7 +246,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                         <div className="flex items-center justify-between px-0.5">
                             <span className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
                                 {useOtpFallback ? <Mail size={14} className="text-amber-600" /> : <Camera size={14} className="text-clay-600" />}
-                                {useOtpFallback ? 'Email OTP Verification' : 'Biometric Selfie Proof'}
+                                {useOtpFallback ? 'Email Security Code' : 'Quick Face Photo'}
                             </span>
                             <span className="text-[10px] font-semibold text-stone-400">Step 1 of 2</span>
                         </div>
@@ -257,9 +257,9 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                     <Mail size={22} className="text-amber-700" />
                                 </div>
                                 <div className="space-y-1">
-                                    <h4 className="text-xs sm:text-sm font-bold text-stone-900">Email OTP Verification</h4>
+                                    <h4 className="text-xs sm:text-sm font-bold text-stone-900">Email Security Code</h4>
                                     <p className="text-[11px] text-stone-600 font-medium max-w-xs leading-relaxed">
-                                        A single-use 6-digit verification code will be sent to your registered Gmail address.
+                                        We will send a 6-digit verification code to your registered email address.
                                     </p>
                                     {maskedEmail && (
                                         <span className="inline-block text-[11px] font-mono font-bold text-stone-800 bg-white px-2.5 py-0.5 rounded-full border border-stone-200 shadow-2xs mt-1">
@@ -289,7 +289,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                         ) : (
                                             <>
                                                 <Send size={13} />
-                                                {otpSent ? 'Resend Code to Email' : 'Send Verification Code'}
+                                                {otpSent ? 'Resend Code' : 'Send Security Code'}
                                             </>
                                         )}
                                     </button>
@@ -310,7 +310,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                     )}
                                     {otpSent && !otpError && (
                                         <p className="text-[10px] text-emerald-700 font-bold flex items-center justify-center gap-1">
-                                            <CheckCircle2 size={11} /> Code sent! Check your Gmail.
+                                            <CheckCircle2 size={11} /> Code sent! Please check your email.
                                         </p>
                                     )}
                                 </div>
@@ -341,7 +341,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                             }}
                             className="text-[10px] text-stone-500 hover:text-stone-800 font-bold underline text-center pt-0.5"
                         >
-                            {useOtpFallback ? 'Switch Back to 3D Liveness Selfie Scan' : 'Camera Broken or Unavailable? Use Email OTP Verification'}
+                            {useOtpFallback ? 'Switch back to Face Camera' : 'Camera not working? Use Email Security Code instead'}
                         </button>
 
                         {/* Mobile-Only CTA to advance to Step 2 */}
@@ -352,12 +352,12 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                     onClick={() => setActiveMobileTab('geofence')}
                                     className="w-full py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold transition shadow-sm flex items-center justify-center gap-1.5"
                                 >
-                                    <span>Proceed to GPS Map & Geofence</span>
+                                    <span>Proceed to Store Location</span>
                                     <CheckCircle2 size={14} />
                                 </button>
                             ) : (
                                 <p className="text-[10px] text-stone-400 font-medium text-center">
-                                    Snap your selfie photo to automatically advance to GPS Geofence check.
+                                    Complete photo check to continue to location check.
                                 </p>
                             )}
                         </div>
@@ -370,7 +370,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                         <div className="flex items-center justify-between px-0.5">
                             <span className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
                                 <MapPin size={14} className="text-emerald-600" />
-                                Workplace Geofence
+                                Store Location
                             </span>
                             <span className="text-[10px] font-semibold text-stone-400">Step 2 of 2</span>
                         </div>
@@ -391,8 +391,8 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                         ) : (
                             <div className="h-[160px] rounded-2xl border border-stone-200 bg-stone-50 flex flex-col items-center justify-center p-4 text-center">
                                 <Loader2 size={24} className="animate-spin text-clay-600 mb-2" />
-                                <p className="text-xs font-bold text-stone-700">Acquiring GPS Position...</p>
-                                <p className="text-[10px] text-stone-400 font-medium mt-0.5">Initializing Leaflet geofence visual map</p>
+                                <p className="text-xs font-bold text-stone-700">Checking your location...</p>
+                                <p className="text-[10px] text-stone-400 font-medium mt-0.5">Verifying distance to store</p>
                             </div>
                         )}
 
@@ -437,7 +437,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
 
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-1.5">
-                                            <span className="font-bold text-stone-900 block leading-tight text-xs">GPS Geofence Status</span>
+                                            <span className="font-bold text-stone-900 block leading-tight text-xs">Store Location</span>
                                             {locationStatus === 'fetching' && (
                                                 <span className="relative flex h-2 w-2">
                                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-clay-400 opacity-75"></span>
@@ -447,16 +447,16 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                         </div>
 
                                         <p className="text-[10px] text-stone-600 font-medium mt-0.5 leading-snug">
-                                            {locationStatus === 'fetching' && 'Acquiring satellite lock & GPS coordinates...'}
+                                            {locationStatus === 'fetching' && 'Finding your location...'}
                                             {locationStatus === 'success' && isWithinGeofence && (
-                                                <span>Verified within <strong>{locationName}</strong> boundary ({distanceMeters}m away • max {radiusLimit}m)</span>
+                                                <span>You are at <strong>{locationName}</strong> ({distanceMeters}m away • allowed within {radiusLimit}m)</span>
                                             )}
                                             {locationStatus === 'success' && !isWithinGeofence && (
                                                 <span className="text-rose-900 font-bold">
-                                                    Outside Boundary: <strong>{distanceMeters}m</strong> away from {locationName} (max {radiusLimit}m).
+                                                    Too far from store: You are <strong>{distanceMeters}m</strong> away from {locationName} (must be within {radiusLimit}m to clock in).
                                                 </span>
                                             )}
-                                            {locationStatus === 'error' && 'Location permission required to verify physical attendance.'}
+                                            {locationStatus === 'error' && 'Location is turned off. Please allow location in your browser or phone settings.'}
                                         </p>
                                     </div>
                                 </div>
@@ -471,13 +471,13 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                     {locationStatus === 'success' && isWithinGeofence && (
                                         <div className="flex items-center gap-1 text-[9px] font-extrabold text-emerald-700 bg-emerald-100/70 border border-emerald-200/80 px-2 py-0.5 rounded-lg">
                                             <CheckCircle2 size={11} className="text-emerald-600" />
-                                            In Range
+                                            At Store
                                         </div>
                                     )}
                                     {locationStatus === 'success' && !isWithinGeofence && (
                                         <div className="flex items-center gap-1 text-[9px] font-extrabold text-rose-700 bg-rose-100/90 border border-rose-200 px-2 py-0.5 rounded-lg">
                                             <ShieldAlert size={11} className="text-rose-600" />
-                                            Out of Range
+                                            Too Far
                                         </div>
                                     )}
                                     {locationStatus === 'error' && (
@@ -487,7 +487,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                             className="px-2 py-0.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[9px] font-bold shrink-0 transition active:scale-95 flex items-center gap-1"
                                         >
                                             <Navigation size={10} />
-                                            Enable GPS
+                                            Allow Location
                                         </button>
                                     )}
                                 </div>

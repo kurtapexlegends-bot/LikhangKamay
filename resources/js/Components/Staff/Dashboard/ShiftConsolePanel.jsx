@@ -40,20 +40,20 @@ export default function ShiftConsolePanel({
                     {hasActiveSession ? (
                         <div className="p-4 bg-emerald-50/50 border border-emerald-200/80 rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
                             <div>
-                                <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800">Active Shift Session</p>
+                                <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800">Shift in Progress</p>
                                 <p className="text-xs font-bold text-emerald-950 mt-0.5">
-                                    {attendance?.worked_hours_label ? `${attendance.worked_hours_label} Logged Today` : 'Shift Active & Verified'}
+                                    {attendance?.worked_hours_label ? `${attendance.worked_hours_label} Logged Today` : 'Clocked In & Active'}
                                 </p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-full bg-emerald-100/80 border border-emerald-200">
                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                                <span className="text-[9px] font-black uppercase text-emerald-800">Live</span>
+                                <span className="text-[9px] font-black uppercase text-emerald-800">Active</span>
                             </div>
                         </div>
                     ) : (
                         <div className="p-4 bg-stone-50/80 border border-stone-200/80 rounded-2xl">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Shift Status</p>
-                            <p className="text-xs font-extrabold text-stone-800 mt-0.5">Offline • Verification Pending</p>
+                            <p className="text-xs font-extrabold text-stone-800 mt-0.5">Clocked Out (Off Duty)</p>
                         </div>
                     )}
 
@@ -85,7 +85,7 @@ export default function ShiftConsolePanel({
 
                     {/* Module Privileges Cloud */}
                     <div className="pt-1">
-                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 mb-2.5">Workspace Privileges</p>
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 mb-2.5">Assigned Modules</p>
                         {hasActiveSession && visibleModules.length > 0 ? (
                             <div className="flex overflow-x-auto xl:flex-wrap xl:overflow-x-visible gap-1.5 pb-1 scrollbar-none snap-x">
                                 {visibleModules.map((module) => (
@@ -98,7 +98,7 @@ export default function ShiftConsolePanel({
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-[11px] text-stone-400 font-medium">Unlocked privileges will list here after clocking in.</p>
+                            <p className="text-[11px] text-stone-400 font-medium">Your assigned workspace tools will appear here when you clock in.</p>
                         )}
                     </div>
                 </div>

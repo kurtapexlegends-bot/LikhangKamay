@@ -263,10 +263,10 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                         <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-clay-50 text-clay-700 border border-clay-100">
                             <MapPin size={16} />
                         </div>
-                        <h3 className="text-base font-black text-stone-900 tracking-tight">Workplace Geofence Locations</h3>
+                        <h3 className="text-base font-black text-stone-900 tracking-tight">Workplace & Store Locations</h3>
                     </div>
                     <p className="text-xs text-stone-500 font-medium mt-1">
-                        Define physical store or workshop GPS perimeters for staff attendance clock-in enforcement.
+                        Set store or workshop locations to verify where staff clock in.
                     </p>
                 </div>
 
@@ -453,7 +453,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                         {/* Interactive Leaflet Map Visualizer with Locating Overlay */}
                         <div>
                             <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
-                                Interactive Leaflet Map & Geofence Bounds
+                                Pin Location on Map
                             </label>
                             <LocationPickerMap
                                 latitude={data.latitude}
@@ -471,12 +471,10 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                             />
                         </div>
 
-
-
                         {/* Radius Slider */}
                         <div>
                             <div className="flex items-center justify-between mb-1">
-                                <label className="text-xs font-bold text-stone-700">Allowed Geofence Radius</label>
+                                <label className="text-xs font-bold text-stone-700">Allowed Clock-In Distance</label>
                                 <span className="text-xs font-extrabold text-clay-700">{data.radius_meters} meters</span>
                             </div>
                             <input
@@ -489,7 +487,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                 className="w-full accent-clay-600"
                             />
                             <p className="text-[10px] text-stone-400 font-medium mt-1">
-                                Staff must be within {data.radius_meters} meters of this coordinate to clock in without an exception flag.
+                                Staff can clock in within {data.radius_meters} meters of this store location.
                             </p>
                         </div>
 
@@ -503,9 +501,9 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                 className="mt-0.5 rounded border-stone-300 text-clay-600 focus:ring-clay-500 w-4 h-4 cursor-pointer"
                             />
                             <label htmlFor="enforce_strict_geofence" className="text-xs cursor-pointer select-none">
-                                <span className="font-extrabold text-stone-900 block">Strict Geofence Enforcement (Hard Block)</span>
+                                <span className="font-extrabold text-stone-900 block">Require staff to be at store to clock in</span>
                                 <span className="text-[11px] text-stone-500 font-medium leading-relaxed block mt-0.5">
-                                    When checked, clock-ins outside the {data.radius_meters}m radius will be <strong>rejected immediately</strong>. When unchecked (recommended default), off-site clock-ins are flagged for manager approval.
+                                    When turned on, staff cannot clock in if they are outside the {data.radius_meters}m store area. When off, off-site clock-ins are flagged for manager approval.
                                 </span>
                             </label>
                         </div>

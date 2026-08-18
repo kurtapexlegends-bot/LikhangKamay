@@ -74,7 +74,7 @@ export default function MobileShiftSheet({
 
                     <div className="rounded-2xl border border-stone-200 bg-stone-50/50 p-4">
                         <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 mb-2">
-                            Session Privileges
+                            Assigned Modules
                         </p>
                         {visibleModules.length > 0 ? (
                             <div className="flex flex-wrap gap-1.5">

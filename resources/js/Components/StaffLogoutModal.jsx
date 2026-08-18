@@ -208,7 +208,7 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                                 </span>
                             </div>
                             <p className="text-[11px] text-stone-500 font-medium">
-                                {hasOpenSession || isPaused ? 'Manage break status or sign out securely' : 'Sign out of your staff workspace session'}
+                                {hasOpenSession || isPaused ? 'Choose whether to take a break or end your shift' : 'Sign out of your account on this device'}
                             </p>
                         </div>
                     </div>
@@ -236,11 +236,11 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                                 <div className={`flex h-8 w-8 items-center justify-center rounded-xl border bg-white shadow-2xs ${
                                     isPaused ? 'text-amber-700 border-amber-200' : 'text-emerald-700 border-emerald-200'
                                 }`}>
-                                    <Clock3 size={15} />
+                                <Clock3 size={15} />
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                                        {isPaused ? 'Break Duration' : 'Shift Duration'}
+                                        {isPaused ? 'Break Time' : 'Time Worked Today'}
                                     </p>
                                     <p className="text-sm font-black text-stone-900 font-mono tracking-tight">
                                         {isPaused ? (breakDuration || '0m 00s') : (activeDuration || '0m 00s')}
@@ -265,8 +265,8 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                             {isPaused ? (
                                 <ActionTile
                                     icon={PlayCircle}
-                                    title={processingAction === 'resume' ? 'Resuming...' : 'Resume Shift Work'}
-                                    description="End break period and resume active shift timer"
+                                    title={processingAction === 'resume' ? 'Resuming...' : 'Back to Work'}
+                                    description="End break and resume working"
                                     variant="emerald"
                                     disabled={!!processingAction}
                                     onClick={() => submit('resume')}
@@ -275,7 +275,7 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                                 <ActionTile
                                     icon={PauseCircle}
                                     title={processingAction === 'pause' ? 'Pausing...' : 'Take Shift Break'}
-                                    description="Pause active timer & stay signed in to workspace"
+                                    description="Take a meal or rest break"
                                     variant="default"
                                     disabled={!!processingAction}
                                     onClick={() => submit('pause')}
@@ -285,7 +285,7 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                             <ActionTile
                                 icon={LogOut}
                                 title={processingAction === 'clock_out' ? 'Closing Shift...' : 'Clock Out & Sign Out'}
-                                description="Record physical clock-out & end workspace session"
+                                description="End your shift and sign out"
                                 variant="danger"
                                 disabled={!!processingAction}
                                 onClick={() => submit('clock_out')}
@@ -295,7 +295,7 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                         <ActionTile
                             icon={LogOut}
                             title={processingAction === 'direct_logout' ? 'Signing Out...' : 'Sign Out of Account'}
-                            description="End workspace session (You are currently Off Duty)"
+                            description="Sign out of this device (Your shift is already ended)"
                             variant="danger"
                             disabled={!!processingAction}
                             onClick={() => submit('direct_logout')}

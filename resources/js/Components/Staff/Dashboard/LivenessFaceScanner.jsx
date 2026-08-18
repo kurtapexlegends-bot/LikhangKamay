@@ -3,10 +3,10 @@ import * as faceapi from '@vladmandic/face-api';
 import { Camera, CheckCircle2, RefreshCw, AlertCircle, Sparkles, Eye, Check, ArrowLeft, ArrowRight, ArrowUp, Smile, ShieldCheck } from 'lucide-react';
 
 const CHALLENGE_POOL = [
-    { id: 'turn_left', label: 'Turn head slightly LEFT', instruction: 'Turn your face gently to the left', icon: ArrowLeft },
-    { id: 'turn_right', label: 'Turn head slightly RIGHT', instruction: 'Turn your face gently to the right', icon: ArrowRight },
-    { id: 'smile', label: 'Smile or open mouth', instruction: 'Show a natural smile to the camera', icon: Smile },
-    { id: 'nod', label: 'Nod or tilt head UP', instruction: 'Tilt your chin and head upward', icon: ArrowUp },
+    { id: 'turn_left', label: 'Turn your face LEFT', instruction: 'Turn gently to your left', icon: ArrowLeft },
+    { id: 'turn_right', label: 'Turn your face RIGHT', instruction: 'Turn gently to your right', icon: ArrowRight },
+    { id: 'smile', label: 'Smile at the camera', instruction: 'Show a gentle smile', icon: Smile },
+    { id: 'nod', label: 'Nod or tilt head UP', instruction: 'Tilt your chin upward', icon: ArrowUp },
 ];
 
 function generateChallengeSequence() {
@@ -188,8 +188,8 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
             }
         } catch (err) {
             const msg = err.name === 'NotAllowedError'
-                ? 'Camera access denied. Please enable camera permissions in your browser.'
-                : (err.message || 'Unable to access camera.');
+                ? 'Camera access is blocked. Please click the lock icon in your browser address bar to allow camera access.'
+                : (err.message || 'Unable to access camera. Please check your camera connection.');
             setCameraError(msg);
             if (onErrorRef.current) onErrorRef.current(msg);
         }
@@ -491,7 +491,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                             : 'border-stone-200 bg-stone-50 text-stone-700 font-medium text-xs'
                     }`}>
                         <Eye size={15} className={isInsideOval ? 'text-emerald-700' : 'text-stone-500'} />
-                        <span>{isInsideOval ? 'Face aligned! Preparing challenges...' : 'Fit real face inside the oval'}</span>
+                        <span>{isInsideOval ? 'Face aligned! Getting ready...' : 'Fit your face inside the oval'}</span>
                     </div>
                 )}
 
@@ -500,7 +500,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                         <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1">
                                 <ShieldCheck size={12} className="text-amber-700" />
-                                3D Liveness Step {currentStep + 1} of 2
+                                Face Check Step {currentStep + 1} of 2
                             </span>
                             <div className="flex items-center gap-1.5">
                                 <span className={`w-2 h-2 rounded-full transition-all ${step1Passed ? 'bg-emerald-600 ring-2 ring-emerald-300' : 'bg-amber-600'}`} />
@@ -531,8 +531,8 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                         <div className="flex items-center gap-2">
                             <CheckCircle2 size={16} className="text-emerald-700" />
                             <div>
-                                <h6 className="text-xs font-bold text-emerald-950">3D Liveness Verified</h6>
-                                <p className="text-[10px] text-emerald-700 font-medium">Interactive challenges passed</p>
+                                <h6 className="text-xs font-bold text-emerald-950">Face Check Completed</h6>
+                                <p className="text-[10px] text-emerald-700 font-medium">Photo ready for clock-in</p>
                             </div>
                         </div>
                         <button
