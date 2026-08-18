@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { ArrowRight, Clock3, LogOut, PauseCircle, PlayCircle, ShieldCheck, MapPin, X, CheckCircle2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Modal from '@/Components/Modal';
 import EarlyClockOutModal from '@/Components/Staff/Dashboard/EarlyClockOutModal';
 
