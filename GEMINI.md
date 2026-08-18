@@ -28,6 +28,14 @@
 - **Mobile-First:** Prioritize responsive layouts. All UI must be optimized for mobile touch-points first, then scaled for desktop.
 - **Balanced Proportions:** Avoid oversized typography or elements that feel overwhelming ("slapping the user"). Maintain a sophisticated balance between whitespace and content.
 - **Minimalist Copy Standard:** Keep modals, cards, and views clean. Omit obvious filler text, redundant subheadings, and verbose explanatory paragraphs. Let input placeholders and concise field labels convey purpose.
+- **Eliminate Unnecessary Field Subtext/Helper Labels:** Keep inputs clutter-free. Never add redundant micro-captions under fields whose labels and placeholders are already self-explanatory (e.g., avoid adding *"Enter your shop name here"* under a field labeled *"Shop Name"*). Reserve helper subtext exclusively for non-obvious business rules or hard system constraints (e.g., *"Must be between 10 to 60 minutes"*).
+- **Plain-Language & Non-Tech Accessibility Standard:** Always write user-facing copy, labels, and modals for non-technical artisans, local workshop staff, and buyers. Strictly ban engineering/developer jargon across the UI:
+  - Prefer *"Store Location / Store Perimeter"* over *"Geofence"*.
+  - Prefer *"Quick Face Photo / Face Check"* over *"Biometric 3D Liveness Calibration"*.
+  - Prefer *"Email Security Code"* over *"OTP Code Fallback"*.
+  - Prefer *"Sales Summary"* over *"Rollup Analytics"*.
+  - Prefer *"Clocked Out (Off Duty)"* / *"Shift in Progress"* over *"Offline • Verification Pending"*.
+- **Actionable Permission Guidance (No Raw Error Codes):** When hardware access (camera, microphone, geolocation) is blocked or denied, never display raw JavaScript exception names (e.g. `NotAllowedError`, `GeolocationPositionError`). Provide friendly, step-by-step guidance (e.g., *"Camera access is blocked. Click the lock icon in your browser address bar to allow camera access"*).
 - **Single-Source Information:** Avoid repeating identical amounts, status badges, or headers multiple times within the same card container or view hierarchy.
 
 ## 4. Code Quality & Best Practices
