@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as faceapi from '@vladmandic/face-api';
-import { Camera, CheckCircle2, RefreshCw, AlertCircle, Sparkles, Eye, Check, ArrowLeft, ArrowRight, Smile, ShieldCheck } from 'lucide-react';
+import { Camera, CheckCircle2, RefreshCw, AlertCircle, Sparkles, Eye, Check, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Smile, ShieldCheck } from 'lucide-react';
 
 const CHALLENGE_POOL = [
     { id: 'turn_left', label: 'Turn head slightly LEFT', instruction: 'Turn your face to the left', icon: ArrowLeft },
     { id: 'turn_right', label: 'Turn head slightly RIGHT', instruction: 'Turn your face to the right', icon: ArrowRight },
-    { id: 'smile', label: 'Smile or open mouth', instruction: 'Show a natural smile to the camera', icon: Smile },
-    { id: 'blink', label: 'Blink your eyes naturally', instruction: 'Blink once or twice towards the camera', icon: Eye },
+    { id: 'smile', label: 'Smile or open mouth', instruction: 'Show a natural smile or open mouth', icon: Smile },
+    { id: 'nod', label: 'Nod or tilt head UP', instruction: 'Tilt or nod your head slightly upward', icon: ArrowUp },
 ];
 
 function generateChallengeSequence() {
@@ -28,7 +28,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
     const currentStepIndexRef = useRef(0);
     const baselineEARRef = useRef(null);
     const baselineNoseRatioRef = useRef(null);
-    const blinkClosedDetectedRef = useRef(false);
+    const baselinePitchRatioRef = useRef(null);
     const consecutivePassFramesRef = useRef(0);
 
     // Callbacks
@@ -83,11 +83,11 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
 
             // Subtle official verification watermark
             ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-            ctx.fillRect(10, captureCanvas.height - 35, 240, 25);
+            ctx.fillRect(10, captureCanvas.height - 35, 260, 25);
             ctx.font = '12px sans-serif';
             ctx.fillStyle = '#FFFFFF';
             const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            ctx.fillText(`LikhangKamay • 3D Verified • ${now}`, 20, captureCanvas.height - 18);
+            ctx.fillText(`LikhangKamay • 3D Biometric Verified • ${now}`, 20, captureCanvas.height - 18);
 
             const photoData = captureCanvas.toDataURL('image/jpeg', 0.88);
 
@@ -147,7 +147,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
         setScanPhase('align');
         baselineEARRef.current = null;
         baselineNoseRatioRef.current = null;
-        blinkClosedDetectedRef.current = false;
+        baselinePitchRatioRef.current = null;
         consecutivePassFramesRef.current = 0;
 
         setCameraError(null);
@@ -219,7 +219,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                     if (isModelLoadedRef.current) {
                         const detectorOptions = new faceapi.TinyFaceDetectorOptions({
                             inputSize: 160,
-                            scoreThreshold: 0.50,
+                            scoreThreshold: 0.45,
                         });
 
                         const detection = await faceapi
@@ -239,12 +239,12 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
 
                             const ovalCenterX = videoW / 2;
                             const ovalCenterY = videoH / 2;
-                            const ovalRadiusX = videoW * 0.30;
-                            const ovalRadiusY = videoH * 0.40;
+                            const ovalRadiusX = videoW * 0.32;
+                            const ovalRadiusY = videoH * 0.42;
 
                             const normalizedX = (faceCenterX - ovalCenterX) / ovalRadiusX;
                             const normalizedY = (faceCenterY - ovalCenterY) / ovalRadiusY;
-                            const insideOval = (normalizedX * normalizedX + normalizedY * normalizedY) <= 1.30 && (box.width / videoW >= 0.22);
+                            const insideOval = (normalizedX * normalizedX + normalizedY * normalizedY) <= 1.35 && (box.width / videoW >= 0.20);
 
                             setIsInsideOval(insideOval);
 
@@ -254,8 +254,9 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                                 const rightEye = landmarks.getRightEye();
                                 const nose = landmarks.getNose();
                                 const mouth = landmarks.getMouth();
+                                const jaw = landmarks.getJawOutline();
 
-                                // 1. Eye Aspect Ratio (EAR) for blink
+                                // 1. Eye Aspect Ratio (EAR)
                                 const calcEyeOpenness = (eyePts) => {
                                     const v1 = Math.hypot(eyePts[1].x - eyePts[5].x, eyePts[1].y - eyePts[5].y);
                                     const v2 = Math.hypot(eyePts[2].x - eyePts[4].x, eyePts[2].y - eyePts[4].y);
@@ -275,16 +276,23 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                                 const mouthWidth = Math.hypot(mouth[6].x - mouth[0].x, mouth[6].y - mouth[0].y);
                                 const mar = mouthHeight / (mouthWidth || 1);
 
+                                // 4. 3D Head Pitch Ratio (Nose to Chin vs Nose to Eyes)
+                                const eyeCenterY = (leftEye[0].y + rightEye[3].y) / 2;
+                                const chinY = jaw[8]?.y || (box.y + box.height);
+                                const distNoseToChin = Math.abs(chinY - noseTip.y);
+                                const distNoseToEyes = Math.abs(noseTip.y - eyeCenterY);
+                                const pitchRatio = distNoseToChin / (distNoseToEyes || 1);
+
                                 // If aligning phase, capture initial neutral baseline
                                 if (scanPhase === 'align') {
                                     baselineEARRef.current = avgEAR;
                                     baselineNoseRatioRef.current = yawRatio;
+                                    baselinePitchRatioRef.current = pitchRatio;
                                     consecutivePassFramesRef.current++;
 
                                     if (consecutivePassFramesRef.current >= 3) {
                                         setScanPhase('challenge');
                                         consecutivePassFramesRef.current = 0;
-                                        blinkClosedDetectedRef.current = false;
                                     }
                                 } 
                                 // Interactive Challenge Validation
@@ -293,42 +301,32 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                                     let passedCurrent = false;
 
                                     if (currentChallenge.id === 'turn_left') {
-                                        // Because camera is mirrored (scaleX(-1)): User turning left moves nose right in pixel coords
-                                        if (yawRatio > 1.60 || (baselineNoseRatioRef.current && yawRatio > baselineNoseRatioRef.current * 1.40)) {
+                                        // Camera mirrored: User turning left moves nose right
+                                        if (yawRatio > 1.50 || (baselineNoseRatioRef.current && yawRatio > baselineNoseRatioRef.current * 1.30)) {
                                             passedCurrent = true;
                                         }
                                     } else if (currentChallenge.id === 'turn_right') {
-                                        // User turning right moves nose left in pixel coords
-                                        if (yawRatio < 0.65 || (baselineNoseRatioRef.current && yawRatio < baselineNoseRatioRef.current * 0.70)) {
+                                        // User turning right moves nose left
+                                        if (yawRatio < 0.70 || (baselineNoseRatioRef.current && yawRatio < baselineNoseRatioRef.current * 0.75)) {
                                             passedCurrent = true;
                                         }
                                     } else if (currentChallenge.id === 'smile') {
                                         // Smile / Open Mouth
-                                        if (mar > 0.26 || mouthWidth / (box.width || 1) > 0.46) {
+                                        if (mar > 0.24 || mouthWidth / (box.width || 1) > 0.44) {
                                             passedCurrent = true;
                                         }
-                                    } else if (currentChallenge.id === 'blink') {
-                                        // Adaptive Blink Detection:
-                                        // Relative drop of >= 20% from personalized open baseline OR absolute low EAR
-                                        const baseline = baselineEARRef.current || 0.22;
-                                        const closedThreshold = Math.min(0.20, baseline * 0.80);
-                                        const reopenThreshold = Math.max(0.16, baseline * 0.90);
-
-                                        if (avgEAR <= closedThreshold) {
-                                            blinkClosedDetectedRef.current = true;
-                                        }
-                                        if (blinkClosedDetectedRef.current && avgEAR >= reopenThreshold) {
+                                    } else if (currentChallenge.id === 'nod') {
+                                        // Nod or Tilt Head UP/DOWN (3D Pitch)
+                                        if (pitchRatio > 1.75 || (baselinePitchRatioRef.current && pitchRatio > baselinePitchRatioRef.current * 1.25) || pitchRatio < 0.95) {
                                             passedCurrent = true;
                                         }
                                     }
 
                                     if (passedCurrent) {
-                                        const requiredFrames = currentChallenge.id === 'blink' ? 1 : 2;
                                         consecutivePassFramesRef.current++;
 
-                                        if (consecutivePassFramesRef.current >= requiredFrames) {
+                                        if (consecutivePassFramesRef.current >= 2) {
                                             consecutivePassFramesRef.current = 0;
-                                            blinkClosedDetectedRef.current = false;
 
                                             if (currentStepIndexRef.current === 0) {
                                                 // Advance to Step 2 Challenge
@@ -336,6 +334,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                                                 setCurrentStep(1);
                                                 baselineEARRef.current = avgEAR;
                                                 baselineNoseRatioRef.current = yawRatio;
+                                                baselinePitchRatioRef.current = pitchRatio;
                                             } else {
                                                 // Completed both challenges! Execute instant capture
                                                 executeCapture();
