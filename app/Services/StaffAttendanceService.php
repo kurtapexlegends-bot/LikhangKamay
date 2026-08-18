@@ -590,11 +590,10 @@ class StaffAttendanceService
         // Set 60-second resend cooldown
         Cache::put($cooldownKey, now()->addSeconds(60)->timestamp, now()->addSeconds(60));
 
-        // Queue or dispatch OTP mail
+        // Send OTP mail immediately
         try {
-            Mail::to($staff->email)->queue(new StaffClockInOtpMail($staff, $code, $expiresInMinutes));
+            Mail::to($staff->email)->send(new StaffClockInOtpMail($staff, $code, $expiresInMinutes));
         } catch (\Throwable $e) {
-            // If mail queueing fails synchronously, try direct send or log
             report($e);
         }
 

@@ -50,7 +50,7 @@ class StaffClockInOtpTest extends TestCase
                 'cooldown_seconds' => 60,
             ]);
 
-        Mail::assertQueued(StaffClockInOtpMail::class, function ($mail) {
+        Mail::assertSent(StaffClockInOtpMail::class, function ($mail) {
             return $mail->hasTo('artisanstaff@example.com')
                 && strlen($mail->code) === 6;
         });
