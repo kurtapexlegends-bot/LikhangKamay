@@ -382,7 +382,7 @@ export default function Checkout({ auth, pricing }) {
                                 />
                                 <div className="mt-2.5 flex items-start gap-2 rounded-xl bg-stone-50 p-3 text-[11px] leading-relaxed text-stone-500">
                                     <Info size={14} className="shrink-0 text-stone-400 mt-0.5" />
-                                    <span>Notes will be shared with the artisan seller and the courier if this order is dispatched via unified Lalamove delivery.</span>
+                                    <span>Notes will be shared with the artisan and your delivery rider.</span>
                                 </div>
                             </div>
                         </div>

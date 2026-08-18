@@ -119,7 +119,7 @@ export default function FulfillmentActionGroup({
                             }`}
                             type="button"
                         >
-                            <Play size={14} /> Start Production
+                            <Play size={14} /> Start Crafting
                         </button>
 
                         <button
@@ -139,10 +139,10 @@ export default function FulfillmentActionGroup({
                     <div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 text-center">
                         <div className="flex items-center justify-center gap-2 text-indigo-700 font-bold text-xs mb-1">
                             <LoaderCircle size={14} className="animate-spin" />
-                            <span>Currently in Production</span>
+                            <span>Currently Being Crafted</span>
                         </div>
                         <p className="text-[10px] text-indigo-600">
-                            Materials have been deducted. Complete the item then dispatch.
+                            Materials have been deducted. Finish crafting the item then hand over for delivery.
                         </p>
                     </div>
 
@@ -173,7 +173,7 @@ export default function FulfillmentActionGroup({
                                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-700 shadow-sm transition-colors hover:bg-blue-100 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
                                 type="button"
                             >
-                                <PackageCheck size={18} /> Dispatch Order
+                                <PackageCheck size={18} /> Mark as Shipped
                             </button>
                             <button
                                 onClick={() => createLalamoveDelivery(order.id)}
@@ -187,11 +187,11 @@ export default function FulfillmentActionGroup({
                             >
                                 {bookingOrderId === order.id ? (
                                     <>
-                                        <LoaderCircle size={18} className="animate-spin" /> Creating Lalamove...
+                                        <LoaderCircle size={18} className="animate-spin" /> Booking Lalamove...
                                     </>
                                 ) : (
                                     <>
-                                        <Truck size={18} /> Use Lalamove
+                                        <Truck size={18} /> Book Lalamove Rider
                                     </>
                                 )}
                             </button>

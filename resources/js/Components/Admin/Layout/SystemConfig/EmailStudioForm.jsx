@@ -836,8 +836,8 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                                 </div>
                                 {dispatchResult.success && (
                                     <div className="flex flex-wrap gap-4 text-[10px] font-semibold text-emerald-700 pt-1 border-t border-emerald-200/60">
-                                        <span>Latency: <strong>{dispatchResult.latency}ms</strong></span>
-                                        <span>Driver: <strong className="uppercase">{dispatchResult.driver}</strong></span>
+                                        <span>Delivery Speed: <strong>{dispatchResult.latency}ms</strong></span>
+                                        <span>Mail Service: <strong className="uppercase">{dispatchResult.driver}</strong></span>
                                     </div>
                                 )}
                             </div>

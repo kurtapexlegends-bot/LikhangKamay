@@ -85,7 +85,7 @@ export default function BulkLabels({ orders = [] }) {
                             Batch Label Printing
                         </h1>
                         <p className="text-xs text-stone-500 font-medium">
-                            {orders.length} shipping label{orders.length === 1 ? '' : 's'} ready for dispatch
+                            {orders.length} shipping label{orders.length === 1 ? '' : 's'} ready for courier pickup
                         </p>
                     </div>
                 </div>
