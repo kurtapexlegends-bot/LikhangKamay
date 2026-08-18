@@ -274,10 +274,14 @@ class StaffAttendanceService
 
         if ($mode === self::MODE_CLOCKED_OUT) {
             $sellerOwner = User::find($staff->getEffectiveSellerId());
-            if ($sellerOwner && $sellerOwner->shift_end_time) {
+            if ($sellerOwner && $sellerOwner->shift_end_time && $openSession->clock_in_at) {
                 try {
-                    $shiftEnd = Carbon::parse($now->toDateString() . ' ' . $sellerOwner->shift_end_time, config('app.timezone'));
-                    if ($now->lt($shiftEnd)) {
+                    $shiftDateStr = $openSession->clock_in_at->toDateString();
+                    $shiftStart = Carbon::parse($shiftDateStr . ' ' . ($sellerOwner->shift_start_time ?? '08:00'), config('app.timezone'));
+                    $shiftEnd = Carbon::parse($shiftDateStr . ' ' . $sellerOwner->shift_end_time, config('app.timezone'));
+
+                    // Only count as early departure if leaving before shift end during the workday
+                    if ($now->gte($shiftStart->copy()->subHours(2)) && $now->lt($shiftEnd)) {
                         $isEarlyDeparture = true;
                         $undertimeMinutes = (int) $now->diffInMinutes($shiftEnd);
                         $earlyDepartureReason = $reason ?: 'Early Departure';
@@ -632,6 +636,8 @@ class StaffAttendanceService
                 'break_window_end' => $sellerOwner->break_window_end ?? '13:30',
                 'break_allowance_minutes' => (int) ($sellerOwner->break_allowance_minutes ?? 60),
             ],
+            'server_time' => $this->now()->toIso8601String(),
+            'server_timestamp' => $this->now()->timestamp,
             'assigned_location' => $assignedLocation ? [
                 'id' => $assignedLocation->id,
                 'name' => $assignedLocation->name,

@@ -31,15 +31,21 @@ const formatWorkedDayTimer = (baseSeconds, activeSessionStartedAt, hasOpenSessio
 function StaffAttendanceDock({ attendance, isCollapsed = false, onMouseEnter, onMouseLeave }) {
     const [isClockInModalOpen, setIsClockInModalOpen] = useState(false);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-    const [timerNow, setTimerNow] = useState(() => Date.now());
+
+    const serverOffsetMs = React.useMemo(() => {
+        if (!attendance?.server_timestamp) return 0;
+        return (attendance.server_timestamp * 1000) - Date.now();
+    }, [attendance?.server_timestamp]);
+
+    const [timerNow, setTimerNow] = useState(() => Date.now() + serverOffsetMs);
 
     const hasOpenSession = !!attendance?.has_open_session;
     const isPaused = attendance?.current_state === 'paused';
 
     useEffect(() => {
-        const interval = window.setInterval(() => setTimerNow(Date.now()), 1000);
+        const interval = window.setInterval(() => setTimerNow(Date.now() + serverOffsetMs), 1000);
         return () => window.clearInterval(interval);
-    }, []);
+    }, [serverOffsetMs]);
 
     const activeDurationLabel = formatWorkedDayTimer(
         attendance?.today_worked_seconds_base,

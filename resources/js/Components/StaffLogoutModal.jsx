@@ -84,25 +84,40 @@ function ActionTile({ icon: Icon, title, description, variant = 'default', disab
 
 export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) {
     const [processingAction, setProcessingAction] = useState(null);
-    const [timerNow, setTimerNow] = useState(() => Date.now());
+    const serverOffsetMs = useMemo(() => {
+        if (!attendance?.server_timestamp) return 0;
+        return (attendance.server_timestamp * 1000) - Date.now();
+    }, [attendance?.server_timestamp]);
+
+    const [timerNow, setTimerNow] = useState(() => Date.now() + serverOffsetMs);
     const [showEarlyModal, setShowEarlyModal] = useState(false);
 
     const hasOpenSession = !!attendance?.has_open_session;
     const isPaused = attendance?.current_state === 'paused';
 
+    const shiftStartTime = attendance?.shift_policy?.shift_start_time || '08:00';
     const shiftEndTime = attendance?.shift_policy?.shift_end_time || '17:00';
+    
+    // Evaluate synchronized server date and time
     const now = new Date(timerNow);
+    const [startH, startM] = shiftStartTime.split(':').map(Number);
     const [endH, endM] = shiftEndTime.split(':').map(Number);
-    const shiftEndDate = new Date(timerNow);
+
+    const sessionStartDate = attendance?.clock_in_at ? new Date(attendance.clock_in_at) : now;
+    const shiftStartDate = new Date(sessionStartDate);
+    shiftStartDate.setHours(startH || 8, startM || 0, 0, 0);
+
+    const shiftEndDate = new Date(sessionStartDate);
     shiftEndDate.setHours(endH || 17, endM || 0, 0, 0);
 
-    const isEarly = now < shiftEndDate;
-    const undertimeMinutes = isEarly ? Math.floor((shiftEndDate.getTime() - now.getTime()) / 60000) : 0;
+    // Only count as early if leaving during active workday shift before shift end
+    const isEarly = now >= new Date(shiftStartDate.getTime() - 2 * 3600000) && now < shiftEndDate;
+    const undertimeMinutes = isEarly ? Math.max(0, Math.floor((shiftEndDate.getTime() - now.getTime()) / 60000)) : 0;
 
     useEffect(() => {
-        const interval = window.setInterval(() => setTimerNow(Date.now()), 1000);
+        const interval = window.setInterval(() => setTimerNow(Date.now() + serverOffsetMs), 1000);
         return () => window.clearInterval(interval);
-    }, []);
+    }, [serverOffsetMs]);
 
     const submit = (action, earlyReason = null) => {
         if (processingAction) return;
