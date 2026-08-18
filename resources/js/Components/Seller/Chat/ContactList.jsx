@@ -93,7 +93,7 @@ export default function ContactList({
                     <div>
                         <div className="px-3.5 mb-1.5 flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                                Direct Messages
+                                Private Messages
                             </span>
                         </div>
                         {directList.length > 0 ? (

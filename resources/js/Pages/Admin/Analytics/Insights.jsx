@@ -209,7 +209,7 @@ export default function Insights({
                         bg="bg-emerald-50"
                         color="text-emerald-600"
                         formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
-                        subtitle="Platform average GMV"
+                        subtitle="Average spent per order"
                     />
                 </div>
                 <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
@@ -237,14 +237,14 @@ export default function Insights({
             {/* MASTER THREE-COLUMN GRID */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                {/* Left 2 Columns - Marketplace Velocity */}
+                {/* Left 2 Columns - Marketplace Growth & Sales */}
                 <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col relative">
                     <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/30 flex-wrap gap-2">
                         <div>
                             <h3 className="font-bold text-stone-900 text-sm sm:text-base">
-                                Marketplace Velocity
+                                Marketplace Growth &amp; Sales
                             </h3>
-                            <p className="text-xs font-medium text-stone-500 mt-0.5">Historical order volume and marketplace GMV</p>
+                            <p className="text-xs font-medium text-stone-500 mt-0.5">Order volume and platform sales over time</p>
                         </div>
                         <div className="flex bg-stone-150 p-1 rounded-lg border border-stone-200/50">
                             {['7D', 'Monthly', 'Yearly'].map((filter) => (

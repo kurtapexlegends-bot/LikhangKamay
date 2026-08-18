@@ -75,9 +75,9 @@ export default function ProductDetailsCard({ product, productRating }) {
                 )}
             </div>
 
-            {/* Specifications - Premium Clay Card Tray */}
+            {/* Item Details & Dimensions - Premium Clay Card Tray */}
             <div className="bg-[#FAF8F5]/85 border border-stone-200/40 rounded-2xl p-4 sm:p-5 mb-5 space-y-3 shadow-sm">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 border-b border-stone-200/50 pb-2 mb-2">Specifications</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 border-b border-stone-200/50 pb-2 mb-2">Item Details & Dimensions</h4>
                 <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-[11px] sm:flex sm:flex-col sm:space-y-2 sm:text-xs">
                     {product.clay_type && (
                         <div className="flex flex-col sm:flex-row sm:items-baseline">

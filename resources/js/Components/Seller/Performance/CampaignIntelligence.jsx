@@ -78,16 +78,16 @@ export default function CampaignIntelligence({
                         {/* Grid parameters */}
                         <div className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-4 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0 campaign-kpis-container">
                             <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
-                                <KPICard title="Impressions" value={sponsorshipMetrics?.impressions || 0} icon={BarChart3} bg="bg-stone-50" color="text-clay-600" animate={animate} />
+                                <KPICard title="Product Views" value={sponsorshipMetrics?.impressions || 0} icon={BarChart3} bg="bg-stone-50" color="text-clay-600" animate={animate} />
                             </div>
                             <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
                                 <KPICard title="Total Clicks" value={sponsorshipMetrics?.clicks || 0} icon={Activity} bg="bg-stone-50" color="text-amber-600" animate={animate} />
                             </div>
                             <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
-                                <KPICard title="CTR" value={`${Number(sponsorshipMetrics?.ctr || 0).toFixed(2)}%`} icon={TrendingUp} bg="bg-emerald-50" color="text-emerald-600" animate={animate} />
+                                <KPICard title="Click Rate" value={`${Number(sponsorshipMetrics?.ctr || 0).toFixed(2)}%`} icon={TrendingUp} bg="bg-emerald-50" color="text-emerald-600" animate={animate} />
                             </div>
                             <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
-                                <KPICard title="Ad Revenue" value={sponsorshipMetrics?.sponsored_revenue || 0} icon={DollarSign} bg="bg-clay-50" color="text-clay-600" animate={animate} />
+                                <KPICard title="Sales from Promotions" value={sponsorshipMetrics?.sponsored_revenue || 0} icon={DollarSign} bg="bg-clay-50" color="text-clay-600" animate={animate} />
                             </div>
                         </div>
 
@@ -102,7 +102,7 @@ export default function CampaignIntelligence({
                                         </span>
                                     </p>
                                     <div className="flex gap-4">
-                                        <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-clay-500" /><span className="text-[9px] font-bold text-stone-500 uppercase tracking-wider">Impressions</span></div>
+                                        <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-clay-500" /><span className="text-[9px] font-bold text-stone-500 uppercase tracking-wider">Views</span></div>
                                         <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /><span className="text-[9px] font-bold text-stone-500 uppercase tracking-wider">Clicks</span></div>
                                     </div>
                                 </div>
