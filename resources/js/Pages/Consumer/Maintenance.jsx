@@ -7,7 +7,7 @@ export default function Maintenance() {
 
     return (
         <div className="min-h-screen bg-[#FAF9F5] flex flex-col items-center justify-center p-6 text-stone-800">
-            <Head title="Maintenance Mode" />
+            <Head title="Under Scheduled Maintenance" />
 
             {/* Content Card */}
             <div className="max-w-xl w-full bg-white rounded-3xl border border-stone-200/60 p-8 md:p-12 shadow-sm text-center space-y-8 relative overflow-hidden">
@@ -30,10 +30,9 @@ export default function Maintenance() {
                             <Clock size={28} />
                         </div>
                         <div className="space-y-2">
-                            <h2 className="text-xl font-bold text-stone-900 tracking-tight">System Refinement in Progress</h2>
+                            <h2 className="text-xl font-bold text-stone-900 tracking-tight">LikhangKamay is Under Scheduled Maintenance</h2>
                             <p className="text-stone-500 text-xs font-medium leading-relaxed max-w-sm mx-auto">
-                                We are currently performing scheduled maintenance to refine the artisan experience. 
-                                We will be back shortly with a better, more robust platform.
+                                We are currently upgrading our platform to improve your experience. We will be back online shortly.
                             </p>
                         </div>
                     </div>

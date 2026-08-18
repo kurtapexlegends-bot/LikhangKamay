@@ -28,7 +28,7 @@ export default function Error({ status, message }) {
 
                 <div className="mt-5">
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-stone-100 text-stone-600 border border-stone-200/60">
-                        {status || 403} Forbidden
+                        {status === 404 ? '404 • Not Found' : status === 403 ? '403 • Restricted' : status === 503 ? '503 • Maintenance' : `${status || 500} • Server Error`}
                     </span>
                     <h1 className="mt-3 text-xl font-black text-stone-900 tracking-tight">
                         {title}
