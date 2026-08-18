@@ -1,16 +1,15 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as faceapi from '@vladmandic/face-api';
-import { Camera, CheckCircle2, RefreshCw, AlertCircle, Sparkles, Eye, Check, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Smile, ShieldCheck } from 'lucide-react';
+import { Camera, CheckCircle2, RefreshCw, AlertCircle, Sparkles, Eye, Check, ArrowLeft, ArrowRight, ArrowUp, Smile, ShieldCheck } from 'lucide-react';
 
 const CHALLENGE_POOL = [
-    { id: 'turn_left', label: 'Turn head slightly LEFT', instruction: 'Turn your face to the left', icon: ArrowLeft },
-    { id: 'turn_right', label: 'Turn head slightly RIGHT', instruction: 'Turn your face to the right', icon: ArrowRight },
-    { id: 'smile', label: 'Smile or open mouth', instruction: 'Show a natural smile or open mouth', icon: Smile },
-    { id: 'nod', label: 'Nod or tilt head UP', instruction: 'Tilt or nod your head slightly upward', icon: ArrowUp },
+    { id: 'turn_left', label: 'Turn head slightly LEFT', instruction: 'Turn your face gently to the left', icon: ArrowLeft },
+    { id: 'turn_right', label: 'Turn head slightly RIGHT', instruction: 'Turn your face gently to the right', icon: ArrowRight },
+    { id: 'smile', label: 'Smile or open mouth', instruction: 'Show a natural smile to the camera', icon: Smile },
+    { id: 'nod', label: 'Nod or tilt head UP', instruction: 'Tilt your chin and head upward', icon: ArrowUp },
 ];
 
 function generateChallengeSequence() {
-    // Pick 2 distinct challenges at random
     const shuffled = [...CHALLENGE_POOL].sort(() => 0.5 - Math.random());
     return [shuffled[0], shuffled[1]];
 }
@@ -22,13 +21,15 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
     const isModelLoadedRef = useRef(false);
     const isProcessingRef = useRef(false);
     const animFrameRef = useRef(null);
+    const transitionTimerRef = useRef(null);
 
-    // Dynamic Challenge State
+    // Challenge & Calibration State (Refs for stable animation loop)
     const challengesRef = useRef(generateChallengeSequence());
     const currentStepIndexRef = useRef(0);
-    const baselineEARRef = useRef(null);
-    const baselineNoseRatioRef = useRef(null);
-    const baselinePitchRatioRef = useRef(null);
+    const isCalibratingStepRef = useRef(false);
+    const baselineYawRef = useRef(null);
+    const baselinePitchRef = useRef(null);
+    const baselineMARRef = useRef(null);
     const consecutivePassFramesRef = useRef(0);
 
     // Callbacks
@@ -46,14 +47,19 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
     const [isInsideOval, setIsInsideOval] = useState(false);
     const [currentStep, setCurrentStep] = useState(0); // 0 = Step 1, 1 = Step 2, 2 = Completed
     const [activeChallenges, setActiveChallenges] = useState(challengesRef.current);
-    const [scanPhase, setScanPhase] = useState('align'); // 'align' | 'challenge' | 'completed'
+    const [scanPhase, setScanPhase] = useState('align'); // 'align' | 'calibrating' | 'challenge' | 'completed'
     const [capturedPhoto, setCapturedPhoto] = useState(null);
+    const [step1Passed, setStep1Passed] = useState(false);
 
-    // Stop camera stream & analysis loop
+    // Stop camera stream & timers
     const stopCamera = useCallback(() => {
         if (animFrameRef.current) {
             cancelAnimationFrame(animFrameRef.current);
             animFrameRef.current = null;
+        }
+        if (transitionTimerRef.current) {
+            clearTimeout(transitionTimerRef.current);
+            transitionTimerRef.current = null;
         }
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
@@ -144,10 +150,12 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
         setActiveChallenges(challengesRef.current);
         currentStepIndexRef.current = 0;
         setCurrentStep(0);
+        setStep1Passed(false);
         setScanPhase('align');
-        baselineEARRef.current = null;
-        baselineNoseRatioRef.current = null;
-        baselinePitchRatioRef.current = null;
+        isCalibratingStepRef.current = false;
+        baselineYawRef.current = null;
+        baselinePitchRef.current = null;
+        baselineMARRef.current = null;
         consecutivePassFramesRef.current = 0;
 
         setCameraError(null);
@@ -233,7 +241,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                             const videoW = video.videoWidth || 640;
                             const videoH = video.videoHeight || 480;
 
-                            // Calculate if face center is inside the central oval boundary
+                            // Central oval boundary validation
                             const faceCenterX = box.x + box.width / 2;
                             const faceCenterY = box.y + box.height / 2;
 
@@ -256,68 +264,70 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                                 const mouth = landmarks.getMouth();
                                 const jaw = landmarks.getJawOutline();
 
-                                // 1. Eye Aspect Ratio (EAR)
-                                const calcEyeOpenness = (eyePts) => {
-                                    const v1 = Math.hypot(eyePts[1].x - eyePts[5].x, eyePts[1].y - eyePts[5].y);
-                                    const v2 = Math.hypot(eyePts[2].x - eyePts[4].x, eyePts[2].y - eyePts[4].y);
-                                    const h = Math.hypot(eyePts[0].x - eyePts[3].x, eyePts[0].y - eyePts[3].y);
-                                    return (v1 + v2) / (2.0 * (h || 1));
-                                };
-                                const avgEAR = (calcEyeOpenness(leftEye) + calcEyeOpenness(rightEye)) / 2;
-
-                                // 2. 3D Head Yaw Asymmetry (Nose to Left Eye vs Nose to Right Eye)
+                                // 1. 3D Head Yaw Asymmetry (Nose to Left Eye vs Nose to Right Eye)
                                 const noseTip = nose[3] || nose[0];
                                 const distLeft = Math.abs(noseTip.x - leftEye[0].x);
                                 const distRight = Math.abs(rightEye[3].x - noseTip.x);
-                                const yawRatio = distLeft / (distRight || 1);
+                                const currentYaw = distLeft / (distRight || 1);
 
-                                // 3. Mouth Opening Ratio (MAR) for smile / mouth open
+                                // 2. Mouth Opening Ratio (MAR) for smile / open mouth
                                 const mouthHeight = Math.hypot(mouth[18].x - mouth[14].x, mouth[18].y - mouth[14].y);
                                 const mouthWidth = Math.hypot(mouth[6].x - mouth[0].x, mouth[6].y - mouth[0].y);
-                                const mar = mouthHeight / (mouthWidth || 1);
+                                const currentMAR = mouthHeight / (mouthWidth || 1);
 
-                                // 4. 3D Head Pitch Ratio (Nose to Chin vs Nose to Eyes)
+                                // 3. 3D Head Pitch Ratio (Nose to Chin vs Nose to Eyes)
                                 const eyeCenterY = (leftEye[0].y + rightEye[3].y) / 2;
                                 const chinY = jaw[8]?.y || (box.y + box.height);
                                 const distNoseToChin = Math.abs(chinY - noseTip.y);
                                 const distNoseToEyes = Math.abs(noseTip.y - eyeCenterY);
-                                const pitchRatio = distNoseToChin / (distNoseToEyes || 1);
+                                const currentPitch = distNoseToChin / (distNoseToEyes || 1);
 
-                                // If aligning phase, capture initial neutral baseline
+                                // PHASE 1: Initial Face Alignment inside oval
                                 if (scanPhase === 'align') {
-                                    baselineEARRef.current = avgEAR;
-                                    baselineNoseRatioRef.current = yawRatio;
-                                    baselinePitchRatioRef.current = pitchRatio;
                                     consecutivePassFramesRef.current++;
 
-                                    if (consecutivePassFramesRef.current >= 3) {
-                                        setScanPhase('challenge');
+                                    if (consecutivePassFramesRef.current >= 4) {
                                         consecutivePassFramesRef.current = 0;
+                                        setScanPhase('calibrating');
+                                        isCalibratingStepRef.current = true;
+
+                                        // 1.0s Pause to allow user to read Step 1 instruction & calibrate neutral pose
+                                        transitionTimerRef.current = setTimeout(() => {
+                                            baselineYawRef.current = currentYaw;
+                                            baselinePitchRef.current = currentPitch;
+                                            baselineMARRef.current = currentMAR;
+                                            isCalibratingStepRef.current = false;
+                                            setScanPhase('challenge');
+                                        }, 1000);
                                     }
                                 } 
-                                // Interactive Challenge Validation
-                                else if (scanPhase === 'challenge') {
+                                // PHASE 2: Interactive Challenge Validation (Only runs after 1s calibration finishes)
+                                else if (scanPhase === 'challenge' && !isCalibratingStepRef.current) {
                                     const currentChallenge = challengesRef.current[currentStepIndexRef.current];
                                     let passedCurrent = false;
 
                                     if (currentChallenge.id === 'turn_left') {
-                                        // Camera mirrored: User turning left moves nose right
-                                        if (yawRatio > 1.50 || (baselineNoseRatioRef.current && yawRatio > baselineNoseRatioRef.current * 1.30)) {
+                                        // User turning left moves nose right in mirrored frame
+                                        const baseline = baselineYawRef.current || 1.0;
+                                        if (currentYaw >= baseline * 1.38 || currentYaw > 1.60) {
                                             passedCurrent = true;
                                         }
                                     } else if (currentChallenge.id === 'turn_right') {
-                                        // User turning right moves nose left
-                                        if (yawRatio < 0.70 || (baselineNoseRatioRef.current && yawRatio < baselineNoseRatioRef.current * 0.75)) {
+                                        // User turning right moves nose left in mirrored frame
+                                        const baseline = baselineYawRef.current || 1.0;
+                                        if (currentYaw <= baseline * 0.68 || currentYaw < 0.65) {
                                             passedCurrent = true;
                                         }
                                     } else if (currentChallenge.id === 'smile') {
                                         // Smile / Open Mouth
-                                        if (mar > 0.24 || mouthWidth / (box.width || 1) > 0.44) {
+                                        const baseline = baselineMARRef.current || 0.15;
+                                        if (currentMAR >= baseline * 1.40 && currentMAR > 0.24) {
                                             passedCurrent = true;
                                         }
                                     } else if (currentChallenge.id === 'nod') {
-                                        // Nod or Tilt Head UP/DOWN (3D Pitch)
-                                        if (pitchRatio > 1.75 || (baselinePitchRatioRef.current && pitchRatio > baselinePitchRatioRef.current * 1.25) || pitchRatio < 0.95) {
+                                        // 3D Head Tilt / Nod UP: requires genuine upward chin movement relative to neutral baseline
+                                        const baseline = baselinePitchRef.current || 1.4;
+                                        if (currentPitch >= baseline * 1.30 && currentPitch > 1.70) {
                                             passedCurrent = true;
                                         }
                                     }
@@ -329,14 +339,23 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                                             consecutivePassFramesRef.current = 0;
 
                                             if (currentStepIndexRef.current === 0) {
-                                                // Advance to Step 2 Challenge
-                                                currentStepIndexRef.current = 1;
+                                                // Step 1 passed! Set green check and start 1-second transition to Step 2
+                                                setStep1Passed(true);
                                                 setCurrentStep(1);
-                                                baselineEARRef.current = avgEAR;
-                                                baselineNoseRatioRef.current = yawRatio;
-                                                baselinePitchRatioRef.current = pitchRatio;
+                                                currentStepIndexRef.current = 1;
+                                                setScanPhase('calibrating');
+                                                isCalibratingStepRef.current = true;
+
+                                                // 1-second pause to let user read Step 2 challenge and calibrate pose
+                                                transitionTimerRef.current = setTimeout(() => {
+                                                    baselineYawRef.current = currentYaw;
+                                                    baselinePitchRef.current = currentPitch;
+                                                    baselineMARRef.current = currentMAR;
+                                                    isCalibratingStepRef.current = false;
+                                                    setScanPhase('challenge');
+                                                }, 1000);
                                             } else {
-                                                // Completed both challenges! Execute instant capture
+                                                // Step 2 passed! Execute verified capture
                                                 executeCapture();
                                                 return;
                                             }
@@ -434,7 +453,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                 <div className="absolute top-0 inset-x-0 h-1.5 bg-black/40 flex">
                     <div
                         className={`h-full transition-all duration-300 ${
-                            currentStep >= 1 ? 'bg-emerald-500 w-1/2' : isInsideOval ? 'bg-amber-400 w-1/4' : 'bg-transparent w-0'
+                            step1Passed ? 'bg-emerald-500 w-1/2' : isInsideOval ? 'bg-amber-400 w-1/4' : 'bg-transparent w-0'
                         }`}
                     />
                     <div
@@ -476,29 +495,31 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                     </div>
                 )}
 
-                {scanPhase === 'challenge' && (
+                {(scanPhase === 'challenge' || scanPhase === 'calibrating') && (
                     <div className="rounded-xl border border-amber-300 bg-amber-50/95 p-3 space-y-2 shadow-2xs animate-fade-in">
                         <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1">
                                 <ShieldCheck size={12} className="text-amber-700" />
                                 3D Liveness Step {currentStep + 1} of 2
                             </span>
-                            <div className="flex items-center gap-1">
-                                <span className={`w-2 h-2 rounded-full ${currentStep >= 0 ? 'bg-amber-600' : 'bg-stone-300'}`} />
-                                <span className={`w-2 h-2 rounded-full ${currentStep >= 1 ? 'bg-emerald-600' : 'bg-stone-300'}`} />
+                            <div className="flex items-center gap-1.5">
+                                <span className={`w-2 h-2 rounded-full transition-all ${step1Passed ? 'bg-emerald-600 ring-2 ring-emerald-300' : 'bg-amber-600'}`} />
+                                <span className={`w-2 h-2 rounded-full transition-all ${currentStep >= 2 ? 'bg-emerald-600' : 'bg-stone-300'}`} />
                             </div>
                         </div>
 
                         <div className="flex items-center gap-2.5 bg-white/80 rounded-lg p-2 border border-amber-200/80">
-                            <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                            <div className={`w-8 h-8 rounded-lg text-white flex items-center justify-center shrink-0 shadow-2xs transition-colors ${
+                                scanPhase === 'calibrating' ? 'bg-stone-600 animate-pulse' : 'bg-amber-500'
+                            }`}>
                                 <ChallengeIcon size={18} />
                             </div>
                             <div className="text-left">
                                 <h5 className="text-xs font-black text-stone-900 leading-tight">
-                                    {currentChallenge.label}
+                                    {scanPhase === 'calibrating' ? `Get ready for Step ${currentStep + 1}...` : currentChallenge.label}
                                 </h5>
                                 <p className="text-[10px] text-stone-500 font-medium">
-                                    {currentChallenge.instruction}
+                                    {scanPhase === 'calibrating' ? currentChallenge.instruction : currentChallenge.instruction}
                                 </p>
                             </div>
                         </div>
