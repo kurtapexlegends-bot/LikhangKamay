@@ -306,8 +306,8 @@ export default function EmployeeFormModal({
                     {requiresStaffSchemaUpdate && (
                         <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-4 py-3 text-xs font-medium text-amber-800">
                             {mode === 'add'
-                                ? 'Database migration required before login provisioning is available.'
-                                : 'Database migration required before login access can be updated here.'}
+                                ? 'System update in progress. Staff login setup will be available shortly.'
+                                : 'System update in progress. Staff login updates will be available shortly.'}
                         </div>
                     )}
 

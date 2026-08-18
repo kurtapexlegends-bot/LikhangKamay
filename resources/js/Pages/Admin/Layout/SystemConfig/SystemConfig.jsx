@@ -461,9 +461,9 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                         <div className="flex gap-2.5">
                                             <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={16} />
                                             <div>
-                                                <h4 className="text-[10px] font-black text-amber-800 uppercase tracking-wider">Warning: Downgrade Impact</h4>
+                                                <h4 className="text-[10px] font-black text-amber-800 uppercase tracking-wider">Warning: Plan Limit Changes</h4>
                                                 <p className="text-[9px] text-amber-700 font-medium leading-relaxed mt-1">
-                                                    Reducing product limits will draft excess listings of sellers when their accounts reconcile. Set limits carefully to prevent catalog disruption.
+                                                    Lowering product limits will automatically move excess active products to draft for affected artisans. Set limits carefully to avoid disruption.
                                                 </p>
                                             </div>
                                         </div>
@@ -531,7 +531,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                     onConfirm={confirmSubmit}
                     title={activeTab === 'plans' ? "Confirm Subscription Plan Update" : "Confirm System Config Update"}
                     message={activeTab === 'plans' 
-                        ? "Are you sure you want to update the subscription plan tier details? Lowering limits will automatically draft excess active listings on next artisan account reconciliation."
+                        ? "Are you sure you want to update subscription plans? Lowering limits will automatically move excess active listings to draft for affected artisans."
                         : "Are you sure you want to update the system configuration? Branding and operational settings will apply immediately to all active processes."}
                     icon={activeTab === 'plans' ? ShieldCheck : Settings}
                     iconBg="bg-clay-50 text-clay-700"
