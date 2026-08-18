@@ -229,12 +229,12 @@ export const buyerIssueSummary = (order) => {
             badgeTone = 'border-purple-200 bg-white text-purple-700';
         } else if (dispute.status === 'seller_rejected') {
             title = 'Dispute Rejected by Seller';
-            detail = 'The seller rejected your return request. You can negotiate via chat, accept the decision, or escalate to Admin Helpdesk for arbitration.';
+            detail = 'The seller rejected your return request. You can chat with the seller, accept the decision, or ask LikhangKamay Support to review and help.';
             tone = 'border-red-200 bg-red-50';
             badgeTone = 'border-red-200 bg-white text-red-700';
         } else if (dispute.status === 'seller_proposed_replacement') {
             title = 'Replacement Exchange Proposed';
-            detail = 'The seller proposed a replacement exchange. Please review the details below. You can accept this offer or escalate the dispute to Admin Helpdesk.';
+            detail = 'The seller proposed a replacement exchange. Please review the details below. You can accept this offer or ask LikhangKamay Support to step in.';
             tone = 'border-blue-200 bg-blue-50';
             badgeTone = 'border-blue-200 bg-white text-blue-700';
         } else if (dispute.status === 'escalated') {
@@ -244,7 +244,7 @@ export const buyerIssueSummary = (order) => {
             badgeTone = 'border-amber-200 bg-white text-amber-700';
         } else if (dispute.status === 'resolved_refunded') {
             title = 'Dispute Resolved: Refunded';
-            detail = 'Admin support or seller ruled in favor of a refund. The transaction has been refunded.';
+            detail = 'A refund was approved and returned to your original payment method.';
             tone = 'border-purple-200 bg-purple-50';
             badgeTone = 'border-purple-200 bg-white text-purple-700';
         } else if (dispute.status === 'resolved_rejected') {

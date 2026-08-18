@@ -18,7 +18,7 @@ export default function PortalCredentialsSection({
     return (
         <div className="space-y-4">
             <h3 className="text-xs font-black uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-1.5">
-                Seller Portal Credentials
+                Staff Login &amp; Account
             </h3>
             <div className="grid gap-5 md:grid-cols-2">
                 {/* Email Address */}
