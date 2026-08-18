@@ -314,7 +314,7 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
                                     <p className="text-sm font-bold text-gray-600">
                                         {dragActive ? 'Drop file here' : 'Click or Drag & Drop'}
                                     </p>
-                                    <p className="text-xs text-gray-400 mt-1">GLB or GLTF up to 50MB</p>
+                                    <p className="text-xs text-gray-400 mt-1">3D model file (GLB or GLTF) up to 50MB</p>
                                 </label>
                             )}
                         </div>
@@ -323,13 +323,13 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
                             <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
-                                        <p className="text-xs font-bold text-amber-800">GLTF companion files</p>
+                                        <p className="text-xs font-bold text-amber-800">Companion Textures & Materials</p>
                                         <p className="mt-1 text-[11px] text-amber-700">
-                                            Upload the asset folder too if this model references external <code>.bin</code> or textures.
+                                            Upload your texture folder if this model references external images or material files.
                                         </p>
                                     </div>
                                     <label className={`rounded-lg border px-3 py-1.5 text-[11px] font-bold transition ${canEditThreeD ? 'cursor-pointer border-amber-300 bg-white text-amber-700 hover:bg-amber-100' : 'cursor-not-allowed border-stone-200 bg-stone-100 text-stone-500'}`}>
-                                        Upload Asset Folder
+                                        Upload Textures Folder
                                         <input
                                             type="file"
                                             className="hidden"

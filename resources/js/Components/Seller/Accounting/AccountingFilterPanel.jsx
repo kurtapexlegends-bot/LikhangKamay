@@ -97,7 +97,7 @@ export default function AccountingFilterPanel({
                         <option value="sale">Sales Revenue & Settlements</option>
                         <option value="payout">Payout Release & Transfer</option>
                         <option value="payroll">People & Payroll Expenses</option>
-                        <option value="stock_request">Inventory & Materials Procurement</option>
+                        <option value="stock_request">Material Supplies & Restocks</option>
                         <option value="refund">Refund Deductions</option>
                         <option value="subscription">Subscription & Platform Fees</option>
                     </select>

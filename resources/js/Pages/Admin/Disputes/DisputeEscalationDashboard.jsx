@@ -30,7 +30,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
     const handleArbitrate = (decision) => {
         if (!selectedDispute) return;
         if (!notes.trim()) {
-            setError('Arbitration internal notes are required to resolve a dispute.');
+            setError('Internal notes are required to resolve this dispute.');
             return;
         }
 
@@ -46,7 +46,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    addToast(`Dispute resolved successfully: ${decision === 'refund' ? 'Full Refund Ruled' : 'Claim Rejected'}.`, 'success');
+                    addToast(`Dispute resolved: ${decision === 'refund' ? 'Full Refund Approved' : 'Claim Declined'}.`, 'success');
                     setNotes('');
                     setShowMobileDetail(false);
                     // Select another dispute if any
@@ -58,7 +58,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                     }
                 },
                 onError: (errs) => {
-                    setError(errs.message || errs.admin_notes || 'Failed to submit arbitration ruling.');
+                    setError(errs.message || errs.admin_notes || 'Failed to submit decision.');
                 },
                 onFinish: () => {
                     setIsSubmitting(false);
@@ -69,14 +69,14 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
 
     return (
         <>
-            <Head title="Dispute Arbitration Dashboard" />
+            <Head title="Order Dispute Resolution" />
 
             <div className="space-y-6">
                 {disputes.length === 0 ? (
                     <WorkspaceEmptyState
                         icon={CheckCircle2}
                         title="All disputes resolved"
-                        description="There are currently no active escalated disputes awaiting arbitration."
+                        description="There are currently no active escalated disputes awaiting review."
                     />
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -156,7 +156,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                                 </span>
                                             </div>
                                             <h3 className="text-lg font-black text-stone-900 mt-2">
-                                                Arbitration Case #{selectedDispute.id}
+                                                Dispute Case #{selectedDispute.id}
                                             </h3>
                                         </div>
                                     </div>
@@ -298,19 +298,19 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                         </div>
                                     </div>
 
-                                    {/* Arbitration Action Panel */}
+                                    {/* Dispute Resolution Decision Panel */}
                                     <div className="bg-stone-50 border border-stone-200 rounded-3xl p-5 sm:p-6 space-y-4">
                                         <div className="flex items-center gap-2 text-stone-900 font-bold text-xs sm:text-sm">
                                             <Info size={16} className="text-stone-500" />
-                                            <span>Arbitration Ruling Panel</span>
+                                            <span>Dispute Decision Panel</span>
                                         </div>
                                         <p className="text-xs text-stone-500 font-medium leading-relaxed">
-                                            Carefully evaluate both statements and proof photos. Approving the refund reverses the transaction and returns payment to the buyer. Rejecting the claim retains the funds for the seller and sets the order back to completed status.
+                                            Review the statements and proof photos from both parties. Approving the refund returns payment to the buyer. Declining the claim retains the funds for the artisan and completes the order.
                                         </p>
 
                                         <div>
                                             <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5">
-                                                Internal Moderation Notes / Ruling Explanation
+                                                Internal Notes & Decision Reasoning
                                             </label>
                                             <textarea
                                                 rows={3}
@@ -319,7 +319,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                                     setNotes(e.target.value);
                                                     setError('');
                                                 }}
-                                                placeholder="Document the final decision reasoning, findings, and evidence references. This will be permanently recorded in the platform's activity history..."
+                                                placeholder="Document the decision reasoning, findings, and evidence references. This will be recorded in the dispute history..."
                                                 className="w-full border-stone-200 rounded-xl focus:border-clay-500 focus:ring-0 shadow-sm text-xs font-medium resize-none"
                                             />
                                             {error && (
@@ -340,7 +340,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                                 ) : (
                                                     <XCircle size={14} className="text-rose-500" />
                                                 )}
-                                                Reject Claim (Rule for Seller)
+                                                Decline Claim (Keep with Seller)
                                             </button>
                                             <button
                                                 onClick={() => handleArbitrate('refund')}
@@ -352,7 +352,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                                 ) : (
                                                     <CheckCircle2 size={14} className="text-white" />
                                                 )}
-                                                Approve Refund (Rule for Buyer)
+                                                Approve Refund (Return to Buyer)
                                             </button>
                                         </div>
                                     </div>

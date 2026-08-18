@@ -463,8 +463,8 @@ export default function SuppliesTable({
                     <WorkspaceEmptyState
                         icon={Package}
                         title="No supplies found"
-                        description="Start by adding inventory items so Procurement can track stock levels, restocks, and accounting requests."
-                        actionLabel={canEditProcurement ? 'Add New Supply' : 'Read Only'}
+                        description="Add materials and raw supplies to track stock levels, product recipes, and restock requests."
+                        actionLabel={canEditProcurement ? 'Add New Material' : 'Read Only'}
                         onAction={canEditProcurement ? onOpenAddSupply : undefined}
                     />
                 )}
@@ -574,8 +574,8 @@ export default function SuppliesTable({
                                     <WorkspaceEmptyState
                                         icon={Package}
                                         title="No supplies found"
-                                        description="Start by adding inventory items so Procurement can track stock levels, restocks, and accounting requests."
-                                        actionLabel={canEditProcurement ? 'Add New Supply' : 'Read Only'}
+                                        description="Add materials and raw supplies to track stock levels, product recipes, and restock requests."
+                                        actionLabel={canEditProcurement ? 'Add New Material' : 'Read Only'}
                                         onAction={canEditProcurement ? onOpenAddSupply : undefined}
                                     />
                                 </td>

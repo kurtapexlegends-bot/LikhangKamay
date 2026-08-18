@@ -12,7 +12,7 @@ export default function CreateRequestModal({ show, onClose }) {
                 </div>
                 <h2 className="text-lg font-bold text-gray-900 mb-2">Request Stock</h2>
                 <p className="text-xs text-stone-500 mb-5 leading-relaxed">
-                    To request stock for raw materials, please go to the Procurement Catalog page where you can check current supply capacities and request restock.
+                    To request more raw materials, please go to the Materials & Supplies page where you can check available stock and submit a restock request.
                 </p>
                 <div className="flex justify-center gap-3">
                     <button 
@@ -26,7 +26,7 @@ export default function CreateRequestModal({ show, onClose }) {
                         href={route('procurement.index')}
                         className="px-4 py-2 bg-clay-600 text-white rounded-lg text-xs font-bold hover:bg-clay-700 transition shadow-sm shadow-clay-100 active:scale-95 min-h-[44px] flex items-center justify-center"
                     >
-                        Go to Procurement
+                        Go to Materials & Supplies
                     </Link>
                 </div>
             </div>

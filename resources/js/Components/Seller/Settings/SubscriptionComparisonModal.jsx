@@ -48,9 +48,9 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                 category: 'Inventory & Procurement',
                 features: [
                     {
-                        name: 'Procurement & Raw Material BOM',
-                        subtext: 'Warehouse supply tracking, Bill of Materials recipes & automatic supply deduction',
-                        free: { text: 'Locked (Resell Mode Only)', status: 'locked' },
+                        name: 'Material Supplies & Product Recipes',
+                        subtext: 'Raw material inventory, recipe requirements & automatic material deduction',
+                        free: { text: 'Locked (Ready-to-Sell Only)', status: 'locked' },
                         premium: { text: 'Full Access', status: 'unlocked' },
                         super_premium: { text: 'Full Access', status: 'unlocked' },
                     },

@@ -115,14 +115,14 @@ export default function GlobalSearch() {
             return [
                 { label: 'Go to User Manager', cmd: '> users', url: getSafeRoute('admin.users.manager'), icon: Users, color: 'text-indigo-600 bg-indigo-50' },
                 { label: 'Go to Artisan Applications', cmd: '> applications', url: getSafeRoute('admin.users.manager', { tab: 'approvals' }), icon: Award, color: 'text-amber-600 bg-amber-50' },
-                { label: 'Go to Category Taxonomy', cmd: '> taxonomy', url: getSafeRoute('admin.settings.index', { tab: 'taxonomy' }), icon: FolderTree, color: 'text-rose-600 bg-rose-50' },
+                { label: 'Go to Product Categories', cmd: '> categories', url: getSafeRoute('admin.settings.index', { tab: 'taxonomy' }), icon: FolderTree, color: 'text-rose-600 bg-rose-50' },
                 { label: 'Go to Payouts & Fund Releases', cmd: '> payouts', url: getSafeRoute('admin.payouts.index'), icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50' },
                 { label: 'Go to Email Studio & Templates', cmd: '> email', url: getSafeRoute('admin.email-templates.index'), icon: Mail, color: 'text-sky-600 bg-sky-50' },
                 { label: 'Go to Platform Revenue & Monetization', cmd: '> revenue', url: getSafeRoute('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50' },
                 { label: 'Go to Insights & Analytics', cmd: '> insights', url: getSafeRoute('admin.insights'), icon: BarChart2, color: 'text-purple-600 bg-purple-50' },
                 { label: 'Go to Platform Operations & Audit', cmd: '> operations', url: getSafeRoute('admin.operations'), icon: Shield, color: 'text-clay-600 bg-clay-50' },
                 { label: 'Go to Safety & Moderation Queue', cmd: '> moderation', url: getSafeRoute('admin.compliance', { tab: 'flags' }), icon: ShieldAlert, color: 'text-red-600 bg-red-50' },
-                { label: 'Go to Order Disputes Arbitration', cmd: '> disputes', url: getSafeRoute('admin.disputes.index'), icon: RotateCcw, color: 'text-rose-600 bg-rose-50' },
+                { label: 'Go to Order Disputes & Returns', cmd: '> disputes', url: getSafeRoute('admin.disputes.index'), icon: RotateCcw, color: 'text-rose-600 bg-rose-50' },
                 { label: 'Go to Product Catalog Moderation', cmd: '> catalog', url: getSafeRoute('admin.catalog.index', { tab: 'moderation' }), icon: ShoppingBag, color: 'text-indigo-600 bg-indigo-50' },
                 { label: 'Go to Sponsorship Manager', cmd: '> sponsorships', url: getSafeRoute('admin.catalog.index', { tab: 'sponsorships' }), icon: Star, color: 'text-amber-600 bg-amber-50' },
                 { label: 'Go to Review Disputes Queue', cmd: '> review-disputes', url: getSafeRoute('admin.compliance', { tab: 'disputes' }), icon: MessageSquare, color: 'text-orange-600 bg-orange-50' },
@@ -399,13 +399,13 @@ export default function GlobalSearch() {
                                     <div className="grid grid-cols-1 gap-1">
                                         {(isAdmin ? [
                                             { label: 'User Directory & Approvals', sub: 'Manage user profiles, accounts, and artisan vetting.', icon: Users, color: 'text-indigo-600 bg-indigo-50', url: getSafeRoute('admin.users.manager') },
-                                            { label: 'Catalog Moderation & Taxonomy', sub: 'Inspect product listings, flags, and categories.', icon: FolderTree, color: 'text-rose-600 bg-rose-50', url: getSafeRoute('admin.catalog.index') },
+                                            { label: 'Catalog & Categories', sub: 'Inspect product listings, flags, and store categories.', icon: FolderTree, color: 'text-rose-600 bg-rose-50', url: getSafeRoute('admin.catalog.index') },
                                             { label: 'Disputes & Compliance', sub: 'Order disputes, review reports, and moderation queue.', icon: ShieldAlert, color: 'text-red-600 bg-red-50', url: getSafeRoute('admin.compliance') },
                                             { label: 'Platform Operations & Logs', sub: 'System telemetry, activity history, and server cache.', icon: Shield, color: 'text-clay-600 bg-clay-50', url: getSafeRoute('admin.operations') },
                                         ] : [
                                             { label: 'Products & Discounts', sub: 'Manage catalog items, prices, 3D assets, and promos.', icon: Box, color: 'text-rose-600 bg-rose-50', modules: ['products'], url: getSafeRoute('products.index') },
                                             { label: 'Orders & Fulfillment', sub: 'Process customer shipments, receipts, and returns.', icon: ShoppingBag, color: 'text-emerald-600 bg-emerald-50', modules: ['orders'], url: getSafeRoute('orders.index') },
-                                            { label: 'Procurement & Inventory', sub: 'Raw supplies, recipes, and stock restock requests.', icon: Box, color: 'text-blue-600 bg-blue-50', modules: ['procurement', 'stock_requests'], url: getSafeRoute('procurement.index') },
+                                            { label: 'Materials & Stock', sub: 'Raw supplies, product recipes, and restock requests.', icon: Box, color: 'text-blue-600 bg-blue-50', modules: ['procurement', 'stock_requests'], url: getSafeRoute('procurement.index') },
                                             { label: 'HR & Payroll Ledger', sub: 'Manage team roster, attendance time cards, and salary runs.', icon: Users, color: 'text-purple-600 bg-purple-50', modules: ['hr', 'accounting'], url: getSafeRoute('hr.index') },
                                         ].filter(tip => !tip.modules || tip.modules.some(m => visibleModules.includes(m)))).map((tip, i) => (
                                             <button 

@@ -30,7 +30,7 @@ export default function ProductFormRecipePanel({
                             Production Method
                         </h3>
                         <p className="mt-1 text-xs text-stone-500">
-                            Define how this product is sourced and managed.
+                            Define how this product is made or sourced.
                         </p>
                     </div>
                     <div className="flex bg-stone-100 p-1 rounded-xl shrink-0 w-fit select-none">
@@ -39,14 +39,14 @@ export default function ProductFormRecipePanel({
                             onClick={() => setData("production_method", "resell")}
                             className={`px-4 py-1.5 rounded-lg text-xs font-bold transition min-h-[36px] ${data.production_method === "resell" ? "bg-white text-clay-700 shadow-sm" : "text-stone-500 hover:text-stone-700"}`}
                         >
-                            Resell
+                            Ready-to-Sell
                         </button>
                         <button
                             type="button"
                             onClick={() => setData("production_method", "manufactured")}
                             className={`px-4 py-1.5 rounded-lg text-xs font-bold transition min-h-[36px] ${data.production_method === "manufactured" ? "bg-white text-clay-700 shadow-sm" : "text-stone-500 hover:text-stone-700"}`}
                         >
-                            Manufactured
+                            Crafted / Made with Materials
                         </button>
                     </div>
                 </div>
@@ -56,14 +56,14 @@ export default function ProductFormRecipePanel({
                         <div className="space-y-6">
                             <div className="flex items-center justify-between">
                                 <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">
-                                    Bill of Materials (Recipe)
+                                    Product Recipe (Materials Needed)
                                 </h4>
                                 <button
                                     type="button"
                                     onClick={addRecipeItem}
                                     className="flex items-center gap-1.5 text-xs font-bold text-clay-600 hover:text-clay-700 transition p-1"
                                 >
-                                    <Plus size={14} /> Add Ingredient
+                                    <Plus size={14} /> Add Material
                                 </button>
                             </div>
 
@@ -114,8 +114,8 @@ export default function ProductFormRecipePanel({
                             ) : (
                                 <WorkspaceEmptyState
                                     icon={Settings}
-                                    title="No ingredients added"
-                                    description="Add ingredients from your supplies to define the bill of materials."
+                                    title="No materials added"
+                                    description="Add materials from your supplies to define the recipe for this product."
                                     compact={true}
                                 />
                             )}
@@ -130,10 +130,10 @@ export default function ProductFormRecipePanel({
                                         />
                                         <div>
                                             <span className="text-sm font-bold text-gray-700 transition group-hover:text-clay-600">
-                                                Auto-Deduct Supplies
+                                                Auto-Deduct Materials
                                             </span>
                                             <p className="text-xs text-gray-500">
-                                                Deduct materials automatically upon successful production runs.
+                                                Deduct materials automatically when crafted goods are added to stock.
                                             </p>
                                         </div>
                                     </label>
@@ -148,14 +148,14 @@ export default function ProductFormRecipePanel({
                             <div className="max-w-md mx-auto space-y-1.5">
                                 <div className="flex items-center justify-center gap-2 flex-wrap">
                                     <h4 className="text-sm font-bold text-stone-900">
-                                        Bill of Materials & Supply Auto-Deduction
+                                        Material Recipes & Automatic Stock Deduction
                                     </h4>
                                     <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-100/80 text-amber-900 border border-amber-200/70 shadow-2xs">
                                         Pro / Elite Feature
                                     </span>
                                 </div>
                                 <p className="text-xs text-stone-500 leading-relaxed">
-                                    Manufactured products are logged as handmade/crafted goods. Raw material recipe tracking, ingredient costing, and automated supply deductions require a Pro or Elite subscription.
+                                    Track the exact raw materials needed to craft each product. Material recipe tracking and automated supply deductions require a Pro or Elite subscription.
                                 </p>
                             </div>
                             <div className="pt-1">
@@ -164,7 +164,7 @@ export default function ProductFormRecipePanel({
                                     className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-stone-900 text-white hover:bg-stone-800 transition-all shadow-xs active:scale-[0.98]"
                                 >
                                     <Sparkles size={14} className="text-amber-400" />
-                                    <span>Upgrade Plan to Unlock Raw Material Tracking</span>
+                                    <span>Upgrade Plan to Unlock Material Recipe Tracking</span>
                                 </Link>
                             </div>
                         </div>
@@ -173,10 +173,10 @@ export default function ProductFormRecipePanel({
                     <div className="rounded-xl bg-stone-50 p-6 text-center border border-stone-100">
                         <Store className="mx-auto text-stone-400 mb-3" size={32} />
                         <h4 className="text-sm font-bold text-gray-900">
-                            Resell Mode Active
+                            Ready-to-Sell Mode Active
                         </h4>
                         <p className="mt-2 text-xs text-stone-500 max-w-xs mx-auto">
-                            In resell mode, you simply manage stock and prices without a bill of materials. Perfect for finished goods sourced from other artisans.
+                            In ready-to-sell mode, manage stock quantities and prices directly without tracking individual materials. Perfect for finished crafts.
                         </p>
                     </div>
                 )}
