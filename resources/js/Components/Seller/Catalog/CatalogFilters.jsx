@@ -39,7 +39,7 @@ export default function CatalogFilters({
                 onTabChange={handleTabChange}
                 searchQuery={searchQuery}
                 onSearchChange={handleSearch}
-                searchPlaceholder="Search product, category, or code..."
+                searchPlaceholder="Search product, category, or SKU..."
                 onResetFilters={resetSavedView}
                 containerClassName="rounded-none border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
                 extraActions={

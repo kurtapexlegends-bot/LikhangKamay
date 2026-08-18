@@ -234,8 +234,8 @@ export default function Cart({ cart }) {
                                                                     {item.name}
                                                                 </span>
                                                             )}
-                                                            <p className="text-xs text-gray-400 mt-1">Item Code: {item.sku || 'Unavailable'}</p>
-                                                            <p className="text-xs text-gray-400 mt-0.5">Option: {item.variant || 'Standard'}</p>
+                                                            <p className="text-xs text-gray-400 mt-1">SKU: {item.sku || 'Unavailable'}</p>
+                                                            <p className="text-xs text-gray-400 mt-0.5">Variant: {item.variant || 'Standard'}</p>
                                                             <button 
                                                                 onClick={() => removeItem(getCartKey(item))}
                                                                 disabled={removingId === getCartKey(item)}

@@ -232,7 +232,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                                             </div>
                                                             <div className="min-w-0 flex-1">
                                                                 <p className="text-xs font-bold text-stone-950 truncate">{p.name}</p>
-                                                                <p className="text-[10px] text-stone-400 font-mono tracking-tight mt-0.5">{p.sku || 'No Code'}</p>
+                                                                <p className="text-[10px] text-stone-400 font-mono tracking-tight mt-0.5">{p.sku || 'No SKU'}</p>
                                                             </div>
                                                             <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
                                                                 isSelected ? 'bg-clay-600 border-clay-600 text-white' : 'border-stone-300'
@@ -304,7 +304,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="truncate text-xs font-bold text-stone-950 leading-none mb-1">{req.product?.name || 'Unknown Product'}</p>
-                                                    <p className="text-[9px] text-stone-400 font-mono tracking-tight">{req.product?.sku || 'No Code'}</p>
+                                                    <p className="text-[9px] text-stone-400 font-mono tracking-tight">{req.product?.sku || 'No SKU'}</p>
                                                 </div>
                                             </div>
                                             <div className="shrink-0">{getStatusBadge(req.status)}</div>
