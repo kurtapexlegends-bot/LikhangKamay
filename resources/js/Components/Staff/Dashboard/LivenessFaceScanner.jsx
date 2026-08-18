@@ -6,7 +6,7 @@ const CHALLENGE_POOL = [
     { id: 'turn_left', label: 'Turn head slightly LEFT', instruction: 'Turn your face to the left', icon: ArrowLeft },
     { id: 'turn_right', label: 'Turn head slightly RIGHT', instruction: 'Turn your face to the right', icon: ArrowRight },
     { id: 'smile', label: 'Smile or open mouth', instruction: 'Show a natural smile to the camera', icon: Smile },
-    { id: 'blink', label: 'Blink both eyes', instruction: 'Blink your eyes naturally', icon: Eye },
+    { id: 'blink', label: 'Blink your eyes naturally', instruction: 'Blink once or twice towards the camera', icon: Eye },
 ];
 
 function generateChallengeSequence() {
@@ -284,6 +284,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                                     if (consecutivePassFramesRef.current >= 3) {
                                         setScanPhase('challenge');
                                         consecutivePassFramesRef.current = 0;
+                                        blinkClosedDetectedRef.current = false;
                                     }
                                 } 
                                 // Interactive Challenge Validation
@@ -293,33 +294,39 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
 
                                     if (currentChallenge.id === 'turn_left') {
                                         // Because camera is mirrored (scaleX(-1)): User turning left moves nose right in pixel coords
-                                        if (yawRatio > 1.65 || (baselineNoseRatioRef.current && yawRatio > baselineNoseRatioRef.current * 1.45)) {
+                                        if (yawRatio > 1.60 || (baselineNoseRatioRef.current && yawRatio > baselineNoseRatioRef.current * 1.40)) {
                                             passedCurrent = true;
                                         }
                                     } else if (currentChallenge.id === 'turn_right') {
                                         // User turning right moves nose left in pixel coords
-                                        if (yawRatio < 0.60 || (baselineNoseRatioRef.current && yawRatio < baselineNoseRatioRef.current * 0.65)) {
+                                        if (yawRatio < 0.65 || (baselineNoseRatioRef.current && yawRatio < baselineNoseRatioRef.current * 0.70)) {
                                             passedCurrent = true;
                                         }
                                     } else if (currentChallenge.id === 'smile') {
                                         // Smile / Open Mouth
-                                        if (mar > 0.28 || mouthWidth / (box.width || 1) > 0.48) {
+                                        if (mar > 0.26 || mouthWidth / (box.width || 1) > 0.46) {
                                             passedCurrent = true;
                                         }
                                     } else if (currentChallenge.id === 'blink') {
-                                        // Blink: Closed eyes (EAR < 0.18) followed by Open eyes (EAR > 0.25)
-                                        if (avgEAR < 0.18) {
+                                        // Adaptive Blink Detection:
+                                        // Relative drop of >= 20% from personalized open baseline OR absolute low EAR
+                                        const baseline = baselineEARRef.current || 0.22;
+                                        const closedThreshold = Math.min(0.20, baseline * 0.80);
+                                        const reopenThreshold = Math.max(0.16, baseline * 0.90);
+
+                                        if (avgEAR <= closedThreshold) {
                                             blinkClosedDetectedRef.current = true;
                                         }
-                                        if (blinkClosedDetectedRef.current && avgEAR > 0.25) {
+                                        if (blinkClosedDetectedRef.current && avgEAR >= reopenThreshold) {
                                             passedCurrent = true;
                                         }
                                     }
 
                                     if (passedCurrent) {
+                                        const requiredFrames = currentChallenge.id === 'blink' ? 1 : 2;
                                         consecutivePassFramesRef.current++;
 
-                                        if (consecutivePassFramesRef.current >= 2) {
+                                        if (consecutivePassFramesRef.current >= requiredFrames) {
                                             consecutivePassFramesRef.current = 0;
                                             blinkClosedDetectedRef.current = false;
 
