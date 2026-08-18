@@ -403,19 +403,31 @@ class HRController extends Controller
             'holiday_ot_multiplier' => 'nullable|numeric|min:0.01|max:10',
             'payroll_working_days' => 'required|integer|min:1|max:31',
             'standard_workday_hours' => 'required|numeric|min:4|max:12',
+            'shift_start_time' => ['nullable', 'string', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d$/'],
+            'shift_end_time' => ['nullable', 'string', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d$/'],
+            'grace_period_minutes' => 'nullable|integer|min:0|max:120',
+            'break_window_start' => ['nullable', 'string', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d$/'],
+            'break_window_end' => ['nullable', 'string', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d$/'],
+            'break_allowance_minutes' => 'nullable|integer|min:0|max:180',
         ]);
 
         User::where('id', $this->sellerOwnerId())->update([
-            'overtime_rate' => $request->overtime_rate,
+            'overtime_rate' => $request->overtime_rate ?? 50.00,
             'overtime_multiplier' => $request->overtime_multiplier ?? 1.25,
             'payroll_factor_method' => $request->payroll_factor_method ?? 'custom',
             'rest_day_ot_multiplier' => $request->rest_day_ot_multiplier ?? 1.69,
             'holiday_ot_multiplier' => $request->holiday_ot_multiplier ?? 2.60,
             'payroll_working_days' => $request->payroll_working_days,
             'standard_workday_hours' => $request->standard_workday_hours ?? 8.00,
+            'shift_start_time' => $request->shift_start_time ?? '08:00',
+            'shift_end_time' => $request->shift_end_time ?? '17:00',
+            'grace_period_minutes' => $request->grace_period_minutes ?? 15,
+            'break_window_start' => $request->break_window_start ?? '11:30',
+            'break_window_end' => $request->break_window_end ?? '13:30',
+            'break_allowance_minutes' => $request->break_allowance_minutes ?? 60,
         ]);
 
-        return redirect()->back()->with('success', 'Payroll settings updated successfully.');
+        return redirect()->back()->with('success', 'People & Payroll settings updated successfully.');
     }
 
     public function generatePayroll(Request $request, PayrollCalculatorService $payrollService)

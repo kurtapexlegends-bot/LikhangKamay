@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { ArrowRight, Clock3, LogOut, PauseCircle, PlayCircle, ShieldCheck, MapPin, X, CheckCircle2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Modal from '@/Components/Modal';
+import EarlyClockOutModal from '@/Components/Staff/Dashboard/EarlyClockOutModal';
 
 const formatDuration = (startedAt, currentTimestamp) => {
     if (!startedAt) return null;
@@ -84,17 +85,33 @@ function ActionTile({ icon: Icon, title, description, variant = 'default', disab
 export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) {
     const [processingAction, setProcessingAction] = useState(null);
     const [timerNow, setTimerNow] = useState(() => Date.now());
+    const [showEarlyModal, setShowEarlyModal] = useState(false);
 
     const hasOpenSession = !!attendance?.has_open_session;
     const isPaused = attendance?.current_state === 'paused';
+
+    const shiftEndTime = attendance?.shift_policy?.shift_end_time || '17:00';
+    const now = new Date(timerNow);
+    const [endH, endM] = shiftEndTime.split(':').map(Number);
+    const shiftEndDate = new Date(timerNow);
+    shiftEndDate.setHours(endH || 17, endM || 0, 0, 0);
+
+    const isEarly = now < shiftEndDate;
+    const undertimeMinutes = isEarly ? Math.floor((shiftEndDate.getTime() - now.getTime()) / 60000) : 0;
 
     useEffect(() => {
         const interval = window.setInterval(() => setTimerNow(Date.now()), 1000);
         return () => window.clearInterval(interval);
     }, []);
 
-    const submit = (action) => {
+    const submit = (action, earlyReason = null) => {
         if (processingAction) return;
+
+        if (action === 'clock_out' && isEarly && !earlyReason) {
+            setShowEarlyModal(true);
+            return;
+        }
+
         setProcessingAction(action);
 
         if (action === 'direct_logout') {
@@ -115,8 +132,14 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
             return;
         }
 
-        router.post(route('staff.logout'), { action }, {
-            onFinish: () => setProcessingAction(null),
+        router.post(route('staff.logout'), { 
+            action,
+            early_departure_reason: earlyReason,
+        }, {
+            onFinish: () => {
+                setProcessingAction(null);
+                setShowEarlyModal(false);
+            },
         });
     };
 
@@ -277,6 +300,15 @@ export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) 
                     </button>
                 </div>
             </div>
+
+            <EarlyClockOutModal
+                isOpen={showEarlyModal}
+                onClose={() => setShowEarlyModal(false)}
+                onConfirm={(reason) => submit('clock_out', reason)}
+                shiftEndTime={shiftEndTime}
+                undertimeMinutes={undertimeMinutes}
+                processing={processingAction === 'clock_out'}
+            />
         </div>
     );
 }

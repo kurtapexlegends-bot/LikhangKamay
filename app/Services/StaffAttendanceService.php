@@ -123,6 +123,37 @@ class StaffAttendanceService
             }
         }
 
+        $sellerOwner = User::find($staff->getEffectiveSellerId());
+
+        // Shift schedule late arrival evaluation
+        $isLate = false;
+        $lateMinutes = 0;
+        if ($sellerOwner && $sellerOwner->shift_start_time) {
+            try {
+                $shiftStart = Carbon::parse($now->toDateString() . ' ' . $sellerOwner->shift_start_time, config('app.timezone'));
+                $graceThreshold = $shiftStart->copy()->addMinutes((int) ($sellerOwner->grace_period_minutes ?? 15));
+                if ($now->gt($graceThreshold)) {
+                    $isLate = true;
+                    $lateMinutes = (int) $shiftStart->diffInMinutes($now);
+                }
+            } catch (\Throwable $e) {
+                // Ignore parsing errors and fallback
+            }
+        }
+
+        // Break duration evaluation if resuming from pause
+        $latestSession = $this->getLatestSession($staff);
+        $totalBreakMinutes = 0;
+        $isExtendedBreak = false;
+        if ($latestSession && $latestSession->close_mode === self::MODE_PAUSED && $latestSession->clock_out_at) {
+            $totalBreakMinutes = (int) $latestSession->clock_out_at->diffInMinutes($now);
+            if ($sellerOwner && $sellerOwner->break_allowance_minutes && $totalBreakMinutes > (int) $sellerOwner->break_allowance_minutes) {
+                $isExtendedBreak = true;
+            }
+        }
+
+        $livenessVerified = !empty($payload['liveness_verified']) || !empty($photoPath);
+
         $isFlagged = !$isWithinGeofence;
         $flagReason = $isFlagged ? "Off-Site Clock In ({$distanceMeters}m from assigned workplace)" : null;
         $approvalStatus = $isFlagged ? 'pending' : 'approved';
@@ -142,6 +173,11 @@ class StaffAttendanceService
             'seller_location_id' => $sellerLocationId,
             'distance_meters' => $distanceMeters,
             'is_within_geofence' => $isWithinGeofence,
+            'is_late' => $isLate,
+            'late_minutes' => $lateMinutes,
+            'total_break_minutes' => $totalBreakMinutes,
+            'is_extended_break' => $isExtendedBreak,
+            'liveness_verified' => $livenessVerified,
             'is_flagged' => $isFlagged,
             'flag_reason' => $flagReason,
             'approval_status' => $approvalStatus,
@@ -232,12 +268,35 @@ class StaffAttendanceService
         $workedMinutes = max(0, $openSession->clock_in_at->diffInMinutes($now));
         $resolvedReason = $reason ?: $this->defaultCloseReasonFor($mode);
 
+        $isEarlyDeparture = false;
+        $undertimeMinutes = 0;
+        $earlyDepartureReason = null;
+
+        if ($mode === self::MODE_CLOCKED_OUT) {
+            $sellerOwner = User::find($staff->getEffectiveSellerId());
+            if ($sellerOwner && $sellerOwner->shift_end_time) {
+                try {
+                    $shiftEnd = Carbon::parse($now->toDateString() . ' ' . $sellerOwner->shift_end_time, config('app.timezone'));
+                    if ($now->lt($shiftEnd)) {
+                        $isEarlyDeparture = true;
+                        $undertimeMinutes = (int) $now->diffInMinutes($shiftEnd);
+                        $earlyDepartureReason = $reason ?: 'Early Departure';
+                    }
+                } catch (\Throwable $e) {
+                    // Safe fallback
+                }
+            }
+        }
+
         $openSession->update([
             'clock_out_at' => $now,
             'last_heartbeat_at' => $openSession->last_heartbeat_at ?: $now,
             'close_mode' => $mode,
             'close_reason' => $resolvedReason,
             'worked_minutes' => $workedMinutes,
+            'is_early_departure' => $isEarlyDeparture,
+            'early_departure_reason' => $earlyDepartureReason,
+            'undertime_minutes' => $undertimeMinutes,
         ]);
 
         return $openSession->fresh();
@@ -440,10 +499,15 @@ class StaffAttendanceService
         $calendarDays = [];
         $cursor = $period->copy()->startOfMonth();
         $periodEnd = $period->copy()->endOfMonth();
+        $sessionsByDate = $employeeSessions->groupBy(fn (StaffAttendanceSession $session) => $session->attendance_date?->toDateString());
 
         while ($cursor->lte($periodEnd)) {
             $dateKey = $cursor->toDateString();
             $workedMinutes = (int) ($dailyMinutes->get($dateKey, 0) ?? 0);
+            $daySessions = $sessionsByDate->get($dateKey, collect());
+
+            $firstSession = $daySessions->first();
+            $lastSession = $daySessions->last();
 
             $calendarDays[] = [
                 'date' => $dateKey,
@@ -455,6 +519,17 @@ class StaffAttendanceService
                 'worked_hours_label' => $this->formatWorkedHoursLabel($workedMinutes),
                 'has_hours' => $workedMinutes > 0,
                 'is_today' => $dateKey === $today,
+                'is_late' => (bool) $daySessions->contains('is_late', true),
+                'late_minutes' => (int) $daySessions->sum('late_minutes'),
+                'is_early_departure' => (bool) $daySessions->contains('is_early_departure', true),
+                'early_departure_reason' => $daySessions->where('is_early_departure', true)->pluck('early_departure_reason')->first(),
+                'undertime_minutes' => (int) $daySessions->sum('undertime_minutes'),
+                'total_break_minutes' => (int) $daySessions->sum('total_break_minutes'),
+                'is_extended_break' => (bool) $daySessions->contains('is_extended_break', true),
+                'photo_url' => $daySessions->firstWhere('clock_in_photo_path', '!=', null)?->photo_url,
+                'clock_in_time' => $firstSession?->clock_in_at?->format('h:i A'),
+                'clock_out_time' => $lastSession?->clock_out_at?->format('h:i A'),
+                'sessions_count' => $daySessions->count(),
             ];
 
             $cursor->addDay();
@@ -532,6 +607,8 @@ class StaffAttendanceService
                 ->first();
         }
 
+        $sellerOwner = User::find($staff->getEffectiveSellerId());
+
         return [
             'has_open_session' => (bool) $openSession,
             'clock_in_at' => $openSession?->clock_in_at?->toIso8601String(),
@@ -547,6 +624,14 @@ class StaffAttendanceService
                 : null,
             'staff_email' => $staff->email,
             'masked_email' => $this->maskEmail((string) $staff->email),
+            'shift_policy' => [
+                'shift_start_time' => $sellerOwner->shift_start_time ?? '08:00',
+                'shift_end_time' => $sellerOwner->shift_end_time ?? '17:00',
+                'grace_period_minutes' => (int) ($sellerOwner->grace_period_minutes ?? 15),
+                'break_window_start' => $sellerOwner->break_window_start ?? '11:30',
+                'break_window_end' => $sellerOwner->break_window_end ?? '13:30',
+                'break_allowance_minutes' => (int) ($sellerOwner->break_allowance_minutes ?? 60),
+            ],
             'assigned_location' => $assignedLocation ? [
                 'id' => $assignedLocation->id,
                 'name' => $assignedLocation->name,

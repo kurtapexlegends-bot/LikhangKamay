@@ -59,13 +59,15 @@ class AuthenticatedSessionController extends Controller
 
         $validated = $request->validate([
             'action' => ['required', 'in:pause,clock_out'],
+            'early_departure_reason' => ['nullable', 'string', 'max:255'],
         ]);
 
         $attendanceService->closeOpenSession(
             $user,
             $validated['action'] === 'pause'
                 ? StaffAttendanceService::MODE_PAUSED
-                : StaffAttendanceService::MODE_CLOCKED_OUT
+                : StaffAttendanceService::MODE_CLOCKED_OUT,
+            $validated['early_departure_reason'] ?? null
         );
 
         return $this->performLogout($request);

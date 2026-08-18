@@ -174,6 +174,12 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'document_flags',
         'auto_reply_on_completion',
         'auto_reply_completion_message',
+        'shift_start_time',
+        'shift_end_time',
+        'grace_period_minutes',
+        'break_window_start',
+        'break_window_end',
+        'break_allowance_minutes',
     ];
 
     /**
@@ -207,6 +213,8 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'must_change_password' => \App\Casts\PostgresCompatibleBoolean::class,
             'staff_plan_suspended_at' => 'datetime',
             'last_seen_at' => 'datetime',
+            'grace_period_minutes' => 'integer',
+            'break_allowance_minutes' => 'integer',
             'document_flags' => 'array',
             'banned_at' => 'datetime',
             'auto_reply_on_completion' => \App\Casts\PostgresCompatibleBoolean::class,

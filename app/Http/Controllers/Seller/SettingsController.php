@@ -75,6 +75,12 @@ class SettingsController extends Controller
                 'holiday_ot_multiplier' => $sellerOwner->holiday_ot_multiplier ?? 2.60,
                 'payroll_working_days' => $sellerOwner->payroll_working_days ?? 26,
                 'standard_workday_hours' => $sellerOwner->standard_workday_hours ?? 8.00,
+                'shift_start_time' => $sellerOwner->shift_start_time ?? '08:00',
+                'shift_end_time' => $sellerOwner->shift_end_time ?? '17:00',
+                'grace_period_minutes' => $sellerOwner->grace_period_minutes ?? 15,
+                'break_window_start' => $sellerOwner->break_window_start ?? '11:30',
+                'break_window_end' => $sellerOwner->break_window_end ?? '13:30',
+                'break_allowance_minutes' => $sellerOwner->break_allowance_minutes ?? 60,
             ],
             'products' => $products,
             'stats' => [

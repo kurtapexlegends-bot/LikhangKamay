@@ -223,37 +223,61 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
                                                                             </div>
                                                                         </div>
 
-                                                                        {/* Middle Row: Geofence & Audit Badges */}
-                                                                        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-stone-200/50">
-                                                                            {session.distance_meters !== null && (
-                                                                                session.is_within_geofence ? (
+                                                                            {/* Middle Row: Geofence, Shift Policy & Audit Badges */}
+                                                                            <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-stone-200/50">
+                                                                                {session.liveness_verified && (
                                                                                     <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200/70 px-2 py-0.5 rounded-full">
-                                                                                        <MapPin size={10} /> Verified On-Site ({session.distance_meters}m)
+                                                                                        <CheckCircle2 size={10} /> 3D Liveness Verified
                                                                                     </span>
-                                                                                ) : (
-                                                                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-800 bg-rose-100/80 border border-rose-200 px-2 py-0.5 rounded-full">
-                                                                                        <ShieldAlert size={10} /> Off-Site Clock-In ({session.distance_meters}m)
-                                                                                    </span>
-                                                                                )
-                                                                            )}
+                                                                                )}
 
-                                                                            {/* Approval Badges */}
-                                                                            {isApproved && (
-                                                                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 bg-emerald-100/80 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                                                                    <CheckCircle2 size={10} /> Approved
-                                                                                </span>
-                                                                            )}
-                                                                            {isPending && !isRejected && (
-                                                                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800 bg-amber-100/90 border border-amber-200 px-2 py-0.5 rounded-full">
-                                                                                    <AlertCircle size={10} /> Pending Review
-                                                                                </span>
-                                                                            )}
-                                                                            {isRejected && (
-                                                                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-800 bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-full">
-                                                                                    <Ban size={10} /> Rejected
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
+                                                                                {session.is_late && (
+                                                                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800 bg-amber-100/80 border border-amber-200 px-2 py-0.5 rounded-full">
+                                                                                        <Clock size={10} /> Late (+{session.late_minutes}m)
+                                                                                    </span>
+                                                                                )}
+
+                                                                                {session.is_early_departure && (
+                                                                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-800 bg-rose-100/80 border border-rose-200 px-2 py-0.5 rounded-full" title={session.early_departure_reason}>
+                                                                                        <Clock size={10} /> Early Exit: {session.early_departure_reason || 'Undertime'}
+                                                                                    </span>
+                                                                                )}
+
+                                                                                {session.is_extended_break && (
+                                                                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800 bg-amber-100/80 border border-amber-200 px-2 py-0.5 rounded-full">
+                                                                                        <PauseCircle size={10} /> Extended Break ({session.total_break_minutes}m)
+                                                                                    </span>
+                                                                                )}
+
+                                                                                {session.distance_meters !== null && (
+                                                                                    session.is_within_geofence ? (
+                                                                                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200/70 px-2 py-0.5 rounded-full">
+                                                                                            <MapPin size={10} /> Verified On-Site ({session.distance_meters}m)
+                                                                                        </span>
+                                                                                    ) : (
+                                                                                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-800 bg-rose-100/80 border border-rose-200 px-2 py-0.5 rounded-full">
+                                                                                            <ShieldAlert size={10} /> Off-Site Clock-In ({session.distance_meters}m)
+                                                                                        </span>
+                                                                                    )
+                                                                                )}
+
+                                                                                {/* Approval Badges */}
+                                                                                {isApproved && (
+                                                                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 bg-emerald-100/80 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                                                                        <CheckCircle2 size={10} /> Approved
+                                                                                    </span>
+                                                                                )}
+                                                                                {isPending && !isRejected && (
+                                                                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800 bg-amber-100/90 border border-amber-200 px-2 py-0.5 rounded-full">
+                                                                                        <AlertCircle size={10} /> Pending Review
+                                                                                    </span>
+                                                                                )}
+                                                                                {isRejected && (
+                                                                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-800 bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-full">
+                                                                                        <Ban size={10} /> Rejected
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
 
                                                                         {/* Bottom Row: Manager Audit Control Actions */}
                                                                         {canEdit && (session.is_flagged || session.approval_status === 'pending') && !isRejected && (

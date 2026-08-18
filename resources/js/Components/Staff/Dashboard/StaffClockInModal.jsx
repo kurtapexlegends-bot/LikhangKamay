@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import { Camera, MapPin, RefreshCw, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, X, Loader2, Navigation, Mail, Send, Inbox } from 'lucide-react';
 import axios from 'axios';
 import Modal from '@/Components/Modal';
 import StaffGeofenceMap from './StaffGeofenceMap';
+import LivenessFaceScanner from './LivenessFaceScanner';
 
 const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
     if (lat1 === null || lon1 === null || lat2 === null || lon2 === null) return null;
@@ -359,107 +360,16 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                 </div>
                             </div>
                         ) : (
-                            <div className="relative overflow-hidden rounded-2xl bg-stone-950 aspect-square sm:aspect-4/3 md:aspect-auto flex-1 min-h-[240px] sm:min-h-[270px] md:min-h-[290px] flex items-center justify-center border border-stone-800 shadow-inner group">
-                                {capturedPhoto ? (
-                                    <div className="relative w-full h-full">
-                                        <img src={capturedPhoto} alt="Clock-in selfie preview" className="w-full h-full object-cover" />
-                                        {/* Photo Captured Overlay Badge */}
-                                        <div className="absolute top-3 left-3 bg-emerald-950/80 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-                                            <CheckCircle2 size={12} className="text-emerald-400" />
-                                            Snapshot Verified
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <video
-                                            ref={videoRef}
-                                            autoPlay
-                                            playsInline
-                                            muted
-                                            className="w-full h-full object-cover transform -scale-x-100"
-                                        />
-                                        <canvas ref={canvasRef} className="hidden" />
-
-                                        {/* Viewfinder Corner Ticks */}
-                                        <div className="pointer-events-none absolute inset-3.5 sm:inset-4">
-                                            <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-emerald-400/70 rounded-tl-lg" />
-                                            <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-emerald-400/70 rounded-tr-lg" />
-                                            <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-emerald-400/70 rounded-bl-lg" />
-                                            <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-emerald-400/70 rounded-br-lg" />
-                                        </div>
-
-                                        {/* Facial Oval Guide Silhouette */}
-                                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                                            <div className="w-32 h-44 sm:w-40 sm:h-52 border-2 border-dashed border-white/20 rounded-[50%] flex items-center justify-center">
-                                                <span className="text-[10px] font-medium text-white/40 tracking-widest uppercase">Position Face</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Live Stream Indicator Badge */}
-                                        <div className="absolute top-3 left-3 bg-stone-900/80 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                                            <span className="relative flex h-2 w-2">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                            </span>
-                                            LIVE STREAM
-                                        </div>
-                                    </>
-                                )}
-
-                                {cameraError && !capturedPhoto && (
-                                    <div className="absolute inset-0 bg-stone-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center z-20">
-                                        <AlertTriangle size={32} className="text-amber-400 mb-2" />
-                                        <p className="text-xs font-bold text-white max-w-xs leading-relaxed">{cameraError}</p>
-                                        <div className="mt-3 flex items-center gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={startCamera}
-                                                className="px-3.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-xs text-white font-bold transition border border-stone-700 flex items-center gap-1.5"
-                                            >
-                                                <RefreshCw size={12} />
-                                                Retry Stream
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setUseOtpFallback(true);
-                                                    handleRequestOtp();
-                                                }}
-                                                className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-xs text-white font-bold transition flex items-center gap-1.5"
-                                            >
-                                                <Mail size={12} />
-                                                Send Verification OTP
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Camera Controls Floating Overlay */}
-                                <div className="absolute bottom-3 inset-x-3 flex justify-between items-center bg-stone-950/75 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-white/10 z-10">
-                                    {capturedPhoto ? (
-                                        <button
-                                            type="button"
-                                            onClick={retakePhoto}
-                                            className="inline-flex items-center gap-1.5 text-xs font-bold text-white hover:text-amber-300 transition"
-                                        >
-                                            <RefreshCw size={14} />
-                                            Retake Photo
-                                        </button>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            onClick={capturePhoto}
-                                            disabled={!!cameraError}
-                                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition shadow-sm active:scale-95"
-                                        >
-                                            <Camera size={14} />
-                                            Snap Photo
-                                        </button>
-                                    )}
-                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-300">
-                                        {capturedPhoto ? 'Photo Captured' : 'Ready'}
-                                    </span>
-                                </div>
+                            <div className="flex flex-col items-center justify-center p-2 rounded-2xl bg-stone-50/70 border border-stone-200/80 min-h-[290px]">
+                                <LivenessFaceScanner
+                                    onVerified={({ photoData }) => {
+                                        setCapturedPhoto(photoData);
+                                        setActiveMobileTab('geofence');
+                                    }}
+                                    onError={(err) => {
+                                        setCameraError(err);
+                                    }}
+                                />
                             </div>
                         )}
 
@@ -468,15 +378,14 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                             onClick={() => {
                                 const nextVal = !useOtpFallback;
                                 setUseOtpFallback(nextVal);
-                                if (!nextVal) {
-                                    startCamera();
-                                } else if (!otpSent) {
+                                setCapturedPhoto(null);
+                                if (nextVal && !otpSent) {
                                     handleRequestOtp();
                                 }
                             }}
                             className="text-[10px] text-stone-500 hover:text-stone-800 font-bold underline text-center pt-0.5"
                         >
-                            {useOtpFallback ? 'Switch Back to Camera Selfie Stream' : 'Camera Broken or Unavailable? Use Email OTP Verification'}
+                            {useOtpFallback ? 'Switch Back to 3D Liveness Selfie Scan' : 'Camera Broken or Unavailable? Use Email OTP Verification'}
                         </button>
 
                         {/* Mobile-Only CTA to advance to Step 2 */}
