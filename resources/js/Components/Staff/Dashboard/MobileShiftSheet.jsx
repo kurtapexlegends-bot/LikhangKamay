@@ -43,9 +43,29 @@ export default function MobileShiftSheet({
                     </button>
                 </div>
 
-                <div className="space-y-5">
+                <div className="space-y-4">
                     <StaffAttendanceDock attendance={attendance} />
                     
+                    {/* Workshop Schedule & Lunch Break Policy */}
+                    {attendance?.shift_policy && (
+                        <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/70 space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900">
+                                    Workshop Schedule
+                                </span>
+                                <span className="text-[10px] font-bold text-amber-800 font-mono">
+                                    {attendance.shift_policy.shift_start_time || '08:00'} - {attendance.shift_policy.shift_end_time || '17:00'}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between text-[11px] text-stone-600 font-medium pt-1 border-t border-amber-200/60">
+                                <span>Lunch Break</span>
+                                <span className="font-bold text-stone-800 font-mono">
+                                    {attendance.shift_policy.break_window_start || '11:30'} - {attendance.shift_policy.break_window_end || '13:30'} ({attendance.shift_policy.break_allowance_minutes || 60}m)
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="rounded-2xl border border-stone-200 bg-stone-50/50 p-4">
                         <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 mb-2">
                             Session Privileges

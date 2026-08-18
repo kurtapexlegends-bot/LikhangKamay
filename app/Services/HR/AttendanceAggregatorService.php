@@ -86,9 +86,11 @@ class AttendanceAggregatorService
                 $totalUndertimeMinutes += ($standardMinutes - $dayMinutes);
             }
 
-            // Check if day was rest day (e.g. Sunday) or holiday
+            // Check if day was rest day based on employer work week policy (261 = Mon-Fri with Sat/Sun rest, 313/custom = Sun rest)
             $dateCarbon = Carbon::parse($dateStr);
-            if ($dateCarbon->isSunday()) {
+            $factorMethod = (string) ($seller->payroll_factor_method ?? 'custom');
+            $isRestDay = ($factorMethod === '261' && ($dateCarbon->isSaturday() || $dateCarbon->isSunday())) || $dateCarbon->isSunday();
+            if ($isRestDay) {
                 $restDayOtMinutes += $dayMinutes;
             }
         }
