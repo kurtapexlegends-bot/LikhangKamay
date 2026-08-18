@@ -7,8 +7,14 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
     const prevFrameRef = useRef(null);
     const streamRef = useRef(null);
     const animFrameRef = useRef(null);
-    const autoSnapTimerRef = useRef(null);
     const countdownTimerRef = useRef(null);
+    const isCompletedRef = useRef(false);
+
+    // Keep callbacks fresh in refs to avoid re-triggering effects
+    const onVerifiedRef = useRef(onVerified);
+    onVerifiedRef.current = onVerified;
+    const onErrorRef = useRef(onError);
+    onErrorRef.current = onError;
 
     const [cameraReady, setCameraReady] = useState(false);
     const [cameraError, setCameraError] = useState(null);
@@ -16,15 +22,11 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
     const [countdown, setCountdown] = useState(null);
     const [capturedPhoto, setCapturedPhoto] = useState(null);
 
-    // Stop all active camera tracks & timers
+    // Stop all active camera tracks & intervals
     const stopCamera = useCallback(() => {
         if (animFrameRef.current) {
             cancelAnimationFrame(animFrameRef.current);
             animFrameRef.current = null;
-        }
-        if (autoSnapTimerRef.current) {
-            clearTimeout(autoSnapTimerRef.current);
-            autoSnapTimerRef.current = null;
         }
         if (countdownTimerRef.current) {
             clearInterval(countdownTimerRef.current);
@@ -36,8 +38,11 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
         }
     }, []);
 
-    // Take High-Resolution Snapshot with Visual Watermark
+    // Take High-Resolution Snapshot with Visual Timestamp Watermark
     const executeCapture = useCallback(() => {
+        if (isCompletedRef.current) return;
+        isCompletedRef.current = true;
+
         const video = videoRef.current;
         if (!video || video.readyState < 2) return;
 
@@ -53,9 +58,9 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
             ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
             ctx.setTransform(1, 0, 0, 1, 0, 0); // reset transform
 
-            // Optional subtle timestamp watermark
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-            ctx.fillRect(10, captureCanvas.height - 35, 230, 25);
+            // Subtle official verification watermark
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+            ctx.fillRect(10, captureCanvas.height - 35, 240, 25);
             ctx.font = '12px sans-serif';
             ctx.fillStyle = '#FFFFFF';
             const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -67,8 +72,8 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
             setScanState('completed');
             stopCamera();
 
-            if (onVerified) {
-                onVerified({
+            if (onVerifiedRef.current) {
+                onVerifiedRef.current({
                     photoData,
                     livenessVerified: true,
                 });
@@ -76,10 +81,12 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
         } catch (err) {
             console.error('Snapshot capture error:', err);
         }
-    }, [onVerified, stopCamera]);
+    }, [stopCamera]);
 
     // Start user camera stream
     const startCamera = useCallback(async () => {
+        stopCamera();
+        isCompletedRef.current = false;
         setCameraError(null);
         setCameraReady(false);
         setScanState('aligning');
@@ -113,48 +120,53 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                 ? 'Camera access denied. Please enable camera permissions in your browser.'
                 : (err.message || 'Unable to access camera.');
             setCameraError(msg);
-            if (onError) onError(msg);
+            if (onErrorRef.current) onErrorRef.current(msg);
         }
-    }, [onError]);
+    }, [stopCamera]);
 
-    // Initialize camera on mount
+    // Mount camera strictly once on component mount
     useEffect(() => {
         startCamera();
         return () => {
             stopCamera();
         };
-    }, [startCamera, stopCamera]);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Robust Liveness Detection & Auto-Capture Loop
+    // Robust Auto-Countdown & Liveness Motion Detection
     useEffect(() => {
-        if (!cameraReady || scanState === 'completed') return;
+        if (!cameraReady || isCompletedRef.current) return;
 
-        // Auto-progress from 'aligning' to 'ready' after 1 second of stable feed
-        const readyTimer = setTimeout(() => {
+        // Transition from aligning to ready after 800ms
+        const alignTimer = setTimeout(() => {
+            if (isCompletedRef.current) return;
             setScanState('ready');
             setCountdown(2);
 
-            // 2-second countdown before automatic clean snapshot
-            let currentCount = 2;
+            let remaining = 2;
             countdownTimerRef.current = setInterval(() => {
-                currentCount -= 1;
-                if (currentCount > 0) {
-                    setCountdown(currentCount);
+                remaining -= 1;
+                if (remaining > 0) {
+                    setCountdown(remaining);
                 } else {
-                    clearInterval(countdownTimerRef.current);
+                    if (countdownTimerRef.current) {
+                        clearInterval(countdownTimerRef.current);
+                        countdownTimerRef.current = null;
+                    }
                     setCountdown(null);
                     executeCapture();
                 }
             }, 1000);
-        }, 1200);
+        }, 800);
 
-        // Background gentle motion analysis (fast-tracks capture on natural movement or blink)
+        // Fast-track snap if natural eye blink or micro head movement occurs
         let lastCheck = 0;
         const checkMotion = (timestamp) => {
+            if (isCompletedRef.current) return;
+
             const video = videoRef.current;
             const canvas = canvasRef.current;
 
-            if (video && canvas && video.readyState === 4 && timestamp - lastCheck > 120) {
+            if (video && canvas && video.readyState === 4 && timestamp - lastCheck > 100) {
                 lastCheck = timestamp;
 
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -174,9 +186,12 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                     }
                     const avg = diff / (currentData.length / 8);
 
-                    // If natural blink or gesture occurs while ready, snap immediately
-                    if (avg >= 3.0 && scanState === 'ready') {
-                        if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+                    // Natural blink / slight head movement fast-tracks immediate capture
+                    if (avg >= 3.5 && !isCompletedRef.current) {
+                        if (countdownTimerRef.current) {
+                            clearInterval(countdownTimerRef.current);
+                            countdownTimerRef.current = null;
+                        }
                         executeCapture();
                         return;
                     }
@@ -185,7 +200,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                 prevFrameRef.current = new Uint8ClampedArray(currentData);
             }
 
-            if (scanState !== 'completed') {
+            if (!isCompletedRef.current) {
                 animFrameRef.current = requestAnimationFrame(checkMotion);
             }
         };
@@ -193,11 +208,17 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
         animFrameRef.current = requestAnimationFrame(checkMotion);
 
         return () => {
-            clearTimeout(readyTimer);
-            if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
-            if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+            clearTimeout(alignTimer);
+            if (countdownTimerRef.current) {
+                clearInterval(countdownTimerRef.current);
+                countdownTimerRef.current = null;
+            }
+            if (animFrameRef.current) {
+                cancelAnimationFrame(animFrameRef.current);
+                animFrameRef.current = null;
+            }
         };
-    }, [cameraReady, scanState, executeCapture]);
+    }, [cameraReady, executeCapture]);
 
     const handleRestart = () => {
         startCamera();
@@ -243,14 +264,14 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                     >
                         {/* Countdown Badge overlay */}
                         {scanState === 'ready' && countdown !== null && (
-                            <div className="w-14 h-14 rounded-full bg-stone-900/80 backdrop-blur-xs text-white border-2 border-amber-400 flex items-center justify-center shadow-lg animate-scale-in">
+                            <div className="w-14 h-14 rounded-full bg-stone-900/80 backdrop-blur-xs text-white border-2 border-amber-400 flex items-center justify-center shadow-lg">
                                 <span className="text-xl font-black">{countdown}</span>
                             </div>
                         )}
 
                         {/* Verified Success Badge */}
                         {scanState === 'completed' && (
-                            <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg animate-scale-in">
+                            <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg">
                                 <Check size={28} strokeWidth={3} />
                             </div>
                         )}
