@@ -1,7 +1,6 @@
 import React from 'react';
 import Modal from '@/Components/Modal';
-import InputLabel from '@/Components/InputLabel';
-import { Banknote } from 'lucide-react';
+import { X, Banknote, ShoppingBag } from 'lucide-react';
 
 export default function RequestRestockModal({
     show,
@@ -13,51 +12,71 @@ export default function RequestRestockModal({
     onSubmit
 }) {
     return (
-        <Modal show={show} onClose={onClose} maxWidth="sm">
-            <div className="p-5">
-                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mb-3 text-amber-600 mx-auto">
-                    <Banknote size={20} />
-                </div>
-                <div className="text-center">
-                    <h2 className="text-lg font-bold text-gray-900 mb-1">Request Restock?</h2>
-                    <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                        This will create a purchase request for <strong>{supply?.name}</strong>.
-                        <br/>
-                        The request will be sent to <strong>Accounting</strong> for budget approval.
-                    </p>
-
-                    <div className="mb-4 text-left">
-                        <InputLabel value="Quantity to Request" />
-                        <div className="relative">
-                            <input 
-                                type="number" 
-                                disabled={!canEditStockRequests}
-                                className="w-full border-gray-300 rounded-lg text-xs py-2 focus:border-amber-500 focus:ring-amber-500 shadow-sm transition pr-12 font-bold min-h-[38px]" 
-                                value={requestQuantity} 
-                                onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
-                                onChange={e => setRequestQuantity(e.target.value.replace(/[-.]/g, ""))} 
-                                required 
-                                min="1"
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">{supply?.unit}</span>
+        <Modal show={show} onClose={onClose} maxWidth="md">
+            <div className="bg-white rounded-t-3xl sm:rounded-2xl overflow-hidden flex flex-col">
+                {/* Header */}
+                <div className="shrink-0 flex justify-between items-start px-6 py-5 border-b border-stone-100 bg-[#FDFBF9]">
+                    <div className="flex items-start gap-3.5">
+                        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700">
+                            <ShoppingBag size={18} strokeWidth={2.5} />
                         </div>
-                        <p className="text-[10px] text-gray-400 mt-1">Recommended: {supply ? supply.min_stock * 2 : 0} {supply?.unit}</p>
+                        <div>
+                            <h2 className="text-base font-bold text-stone-900 tracking-tight">Request Supply Purchase</h2>
+                            <p className="text-xs text-stone-500 mt-0.5 font-medium">
+                                Submit a stock purchase request for <strong className="text-stone-800 font-semibold">{supply?.name}</strong>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <button 
+                        type="button" 
+                        onClick={onClose} 
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-stone-200 text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px]"
+                        title="Close Modal"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="p-6 space-y-4">
+                    <div>
+                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">
+                            Quantity to Request ({supply?.unit || 'units'})
+                        </label>
+                        <input 
+                            type="number" 
+                            disabled={!canEditStockRequests}
+                            className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs font-bold text-stone-800 shadow-none transition focus:border-clay-500 focus:ring-clay-500 min-h-[44px]" 
+                            value={requestQuantity} 
+                            onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
+                            onChange={e => setRequestQuantity(e.target.value.replace(/[-.]/g, ""))} 
+                            required 
+                            min="1"
+                            autoFocus
+                        />
+                        <p className="text-[11px] text-stone-400 font-medium mt-1.5">
+                            Recommended Batch: <strong className="text-stone-700">{supply ? supply.min_stock * 2 : 0} {supply?.unit}</strong>
+                        </p>
                     </div>
                 </div>
 
-                <div className="flex justify-center gap-3 mt-6 pt-3 border-t border-gray-100">
+                {/* Footer */}
+                <div className="shrink-0 flex items-center justify-end gap-2.5 border-t border-stone-100 bg-[#FDFBF9] px-6 py-4">
                     <button 
+                        type="button" 
                         onClick={onClose} 
-                        className="px-4 py-2 text-xs text-gray-500 font-bold hover:bg-gray-50 rounded-lg transition min-h-[44px] flex items-center justify-center w-full sm:w-auto"
+                        className="px-5 py-2.5 text-xs text-stone-600 font-bold hover:bg-stone-100 rounded-xl transition min-h-[44px] sm:min-h-[38px]"
                     >
                         Cancel
                     </button>
                     <button 
+                        type="button"
                         disabled={!canEditStockRequests}
                         onClick={onSubmit} 
-                        className="px-4 py-2 text-xs bg-clay-600 text-white rounded-lg font-bold hover:bg-clay-700 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] flex items-center justify-center w-full sm:w-auto"
+                        className="px-6 py-2.5 text-xs bg-clay-600 hover:bg-clay-700 active:scale-95 text-white rounded-xl font-bold transition shadow-xs disabled:opacity-50 min-h-[44px] sm:min-h-[38px] flex items-center gap-2"
                     >
-                        Submit Request
+                        <Banknote size={14} /> Submit Purchase Request
                     </button>
                 </div>
             </div>

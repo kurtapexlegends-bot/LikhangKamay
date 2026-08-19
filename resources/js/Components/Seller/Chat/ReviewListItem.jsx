@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Star, Image as ImageIcon, ShieldAlert, Pin, PinOff, Edit2, Trash2, AlertCircle, Reply, Zap, Send } from 'lucide-react';
 import Dropdown from '@/Components/Dropdown';
 import UserAvatar from '@/Components/UserAvatar';
@@ -25,6 +25,32 @@ export default function ReviewListItem({
     quickReplies
 }) {
     const [isMobile, setIsMobile] = useState(false);
+    const [quickReplyOpen, setQuickReplyOpen] = useState(false);
+    const quickReplyRef = useRef(null);
+
+    useEffect(() => {
+        if (!quickReplyOpen) return;
+
+        const handleClickOutside = (e) => {
+            if (quickReplyRef.current && !quickReplyRef.current.contains(e.target)) {
+                setQuickReplyOpen(false);
+            }
+        };
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') setQuickReplyOpen(false);
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [quickReplyOpen]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -215,30 +241,45 @@ export default function ReviewListItem({
                             >
                                 <Reply size={13} className="text-stone-500" /> Reply
                             </button>
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <button
-                                        type="button"
-                                        disabled={!canEditReviews}
-                                        className="flex items-center justify-center gap-1 px-4 py-2 sm:px-3 sm:py-1.5 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-0"
-                                        title="Choose a quick reply"
-                                    >
-                                        <Zap size={13} className="text-amber-500 fill-amber-500" /> Quick Reply
-                                    </button>
-                                </Dropdown.Trigger>
-                                <Dropdown.Content align="top-left" width="custom" noStyle={true} contentClasses="sm:w-[350px] w-64 flex flex-col gap-1.5 pb-2">
-                                    {quickReplies.map((qs, idx) => (
-                                        <button
-                                            key={idx}
-                                            disabled={!canEditReviews}
-                                            onClick={() => onQuickReply(review.id, qs)}
-                                            className="px-3 py-2 bg-white border border-stone-200 rounded-lg shadow-sm text-xs text-left font-semibold text-stone-700 hover:bg-stone-50 hover:text-stone-900 transition-all leading-snug disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-0"
-                                        >
-                                            {qs}
-                                        </button>
-                                    ))}
-                                </Dropdown.Content>
-                            </Dropdown>
+                            <div className="relative" ref={quickReplyRef}>
+                                <button
+                                    type="button"
+                                    disabled={!canEditReviews}
+                                    onClick={() => setQuickReplyOpen((prev) => !prev)}
+                                    className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200/80 rounded-xl hover:bg-amber-100/80 active:scale-95 transition shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 min-h-[38px] sm:min-h-0"
+                                    title="Choose a quick reply preset"
+                                >
+                                    <Zap size={13} className="text-amber-500 fill-amber-500" /> Quick Reply
+                                </button>
+
+                                {quickReplyOpen && (
+                                    <div className="absolute bottom-full mb-2.5 left-0 z-50 w-[calc(100vw-3rem)] sm:w-[380px] max-w-[380px] rounded-2xl bg-white border border-stone-200/90 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                                        <div className="px-4 py-2.5 bg-[#FAF7F2] border-b border-stone-200/80 flex items-center justify-between">
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-stone-800">
+                                                <Zap size={13} className="text-amber-500 fill-amber-500" />
+                                                <span>Quick Reply Presets</span>
+                                            </div>
+                                            <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Instant Reply</span>
+                                        </div>
+                                        <div className="divide-y divide-stone-100 max-h-[240px] overflow-y-auto overscroll-contain p-1.5">
+                                            {quickReplies.map((qs, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    disabled={!canEditReviews}
+                                                    onClick={() => {
+                                                        setQuickReplyOpen(false);
+                                                        onQuickReply(review.id, qs);
+                                                    }}
+                                                    className="w-full p-2.5 rounded-xl text-xs text-left font-medium text-stone-700 hover:bg-stone-50 hover:text-stone-900 transition-colors leading-relaxed disabled:cursor-not-allowed disabled:opacity-50 group flex items-start gap-2.5"
+                                                >
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0 group-hover:scale-125 transition-transform" />
+                                                    <span className="flex-1">{qs}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 

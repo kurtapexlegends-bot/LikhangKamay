@@ -15,6 +15,7 @@ import ReviewsMetrics from '@/Components/Seller/Chat/ReviewsMetrics';
 import ReviewListItem from '@/Components/Seller/Chat/ReviewListItem';
 import ReviewDisputeModal from '@/Components/Seller/Chat/ReviewDisputeModal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
 
 export default function Reviews({ auth, reviews, stats, flash }) {
     const { addToast } = useToast();
@@ -211,9 +212,19 @@ export default function Reviews({ auth, reviews, stats, flash }) {
         });
     };
 
+    const reviewTabs = useMemo(() => [
+        { key: 'All', label: 'All Reviews', count: reviews.length },
+        { key: 'Hidden', label: 'Hidden', count: reviews.filter(r => r.is_hidden_from_marketplace).length },
+        { key: '5', label: '5 Star', count: stats?.stars?.[5] ?? reviews.filter(r => r.rating === 5).length },
+        { key: '4', label: '4 Star', count: stats?.stars?.[4] ?? reviews.filter(r => r.rating === 4).length },
+        { key: '3', label: '3 Star', count: stats?.stars?.[3] ?? reviews.filter(r => r.rating === 3).length },
+        { key: '2', label: '2 Star', count: stats?.stars?.[2] ?? reviews.filter(r => r.rating === 2).length },
+        { key: '1', label: '1 Star', count: stats?.stars?.[1] ?? reviews.filter(r => r.rating === 1).length },
+    ], [reviews, stats]);
+
     return (
         <>
-            <Head title="Shop Reviews" />
+            <Head title="Customer Reviews" />
 
             <SellerHeader 
                 title="Customer Ratings"
@@ -230,48 +241,20 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                     {/* Stats Overview */}
                     <ReviewsMetrics stats={stats} filter={filter} setFilter={setFilter} />
 
+                    {/* Standardized Filter Toolbar Header */}
+                    <FilterToolbarHeader
+                        tabs={reviewTabs}
+                        activeTab={filter}
+                        onTabChange={setFilter}
+                        searchQuery={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        searchPlaceholder="Search customer, item, or comment..."
+                        containerClassName="mt-4"
+                    />
+
                     {/* Reviews List */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-stone-200 mt-4 relative z-10">
-                        <div className="p-5 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="flex-1 max-w-sm">
-                                <h3 className="text-base font-bold text-stone-900">Recent Customer Reviews</h3>
-                                <div className="mt-2 relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Search reviews..." 
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-9 pr-10 py-1.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:ring-clay-500 focus:border-clay-500 transition-all"
-                                    />
-                                    {searchTerm && (
-                                        <button 
-                                            onClick={() => setSearchTerm('')}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="flex bg-stone-100 p-1 rounded-lg overflow-x-auto no-scrollbar flex-nowrap">
-                                {['All', 'Hidden', '5', '4', '3', '2', '1'].map((option) => (
-                                    <button
-                                        key={option}
-                                        onClick={() => setFilter(option)}
-                                        className={`px-4 py-1.5 whitespace-nowrap rounded-md text-xs font-bold transition-all ${filter === option
-                                            ? 'bg-white text-clay-900 shadow-sm'
-                                            : 'text-stone-500 hover:text-stone-700'
-                                            }`}
-                                    >
-                                        {option === 'All' ? 'All Reviews' : option === 'Hidden' ? 'Hidden' : `${option} Star`}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col divide-y divide-stone-50 md:grid md:grid-cols-2 md:gap-4 md:divide-y-0 md:p-4 lg:block lg:divide-y lg:divide-stone-50 lg:p-0">
+                    <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xs border border-stone-200/80 relative z-10">
+                        <div className="flex flex-col divide-y divide-stone-100 md:grid md:grid-cols-2 md:gap-4 md:divide-y-0 md:p-4 lg:block lg:divide-y lg:divide-stone-100 lg:p-0">
                             {paginatedReviews.length > 0 ? (
                                 paginatedReviews.map((review, index) => (
                                     <ReviewListItem

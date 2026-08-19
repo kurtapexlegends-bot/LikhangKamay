@@ -1,49 +1,80 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import { 
-    X, Package, Loader2, CheckCircle2, AlertTriangle, 
-    RefreshCw 
+    X, Pencil, Loader2, AlertTriangle 
 } from 'lucide-react';
 
 const modalFieldClass = 'w-full rounded-xl border-stone-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-stone-800 placeholder-stone-400 shadow-none transition focus:border-clay-500 focus:ring-clay-500 min-h-[44px]';
 const modalSelectClass = 'w-full rounded-xl border-stone-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-stone-800 shadow-none transition focus:border-clay-500 focus:ring-clay-500 min-h-[44px] cursor-pointer';
 
-export default function AddSupplyModal({
+export default function EditSupplyModal({
     show,
     onClose,
     canEditProcurement,
+    supply,
     categoriesList = [],
     unitsList = [],
-    data,
-    setData,
-    errors = {},
-    processing = false,
-    onSubmit,
-    skuValidation = {}
+    onSuccess,
 }) {
-    const handleRegenerateSKU = () => {
-        const newSKU = "LK-" + Math.floor(Math.random() * 0xffff).toString(16).toUpperCase().padStart(4, "0");
-        setData('sku', newSKU);
+    const { data, setData, post, processing, errors, reset } = useForm({
+        name: '',
+        category: '',
+        unit: 'pcs',
+        min_stock: 10,
+        max_stock: 500,
+        unit_cost: '',
+        supplier: '',
+        notes: '',
+    });
+
+    useEffect(() => {
+        if (supply && show) {
+            setData({
+                name: supply.name || '',
+                category: supply.category || categoriesList[0] || 'Finished Goods',
+                unit: supply.unit || 'pcs',
+                min_stock: supply.min_stock ?? 10,
+                max_stock: supply.max_stock ?? 500,
+                unit_cost: supply.unit_cost ?? '',
+                supplier: supply.supplier || '',
+                notes: supply.notes || '',
+            });
+        }
+    }, [supply, show]);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!supply || !canEditProcurement) return;
+
+        post(route('supplies.update', supply.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                onClose();
+                if (onSuccess) onSuccess();
+            },
+        });
     };
 
     return (
         <Modal show={show} onClose={onClose} maxWidth="2xl">
-            <form onSubmit={onSubmit} className="flex max-h-[85vh] flex-col bg-white rounded-t-3xl sm:rounded-2xl overflow-hidden">
+            <form onSubmit={handleSubmit} className="flex max-h-[85vh] flex-col bg-white rounded-t-3xl sm:rounded-2xl overflow-hidden">
                 {/* Header */}
                 <div className="shrink-0 flex justify-between items-start px-6 py-5 border-b border-stone-100 bg-[#FDFBF9]">
                     <div className="flex items-start gap-4">
                         <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-stone-50 text-stone-700">
-                            <Package size={18} strokeWidth={2.5} />
+                            <Pencil size={18} strokeWidth={2.5} />
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <h2 className="text-base font-bold text-stone-900 tracking-tight">Add New Supply Item</h2>
-                                <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-clay-50 text-clay-700 border border-clay-200">
-                                    Inventory
+                                <h2 className="text-base font-bold text-stone-900 tracking-tight">Update Supply Details</h2>
+                                <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-stone-100 text-stone-600 border border-stone-200">
+                                    {supply?.sku || 'Item'}
                                 </span>
                             </div>
                             <p className="text-xs text-stone-500 mt-0.5 font-medium">
-                                Register raw materials, craft supplies, and inventory items.
+                                Modify catalog specifications and inventory thresholds.
                             </p>
                         </div>
                     </div>
@@ -66,47 +97,16 @@ export default function AddSupplyModal({
                             Basic Supply Details
                         </h3>
                         <div className="grid gap-5 md:grid-cols-2">
-                            {/* SKU */}
+                            {/* SKU (Read Only) */}
                             <div>
-                                <div className="flex items-center justify-between mb-1.5">
-                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-500">Item SKU</label>
-                                    <button
-                                        type="button"
-                                        onClick={handleRegenerateSKU}
-                                        className="text-[10px] font-bold text-clay-600 hover:text-clay-800 flex items-center gap-1 uppercase tracking-tight"
-                                    >
-                                        <RefreshCw size={10} /> Auto-Generate
-                                    </button>
-                                </div>
-                                <div className="relative">
-                                    <input 
-                                        type="text" 
-                                        className={`${modalFieldClass} pr-11 font-mono uppercase font-bold ${
-                                            skuValidation?.isValid === false || errors.sku ? 'border-red-300 bg-red-50/10 focus:ring-red-500 focus:border-red-500' : ''
-                                        }`}
-                                        placeholder="LK-0001"
-                                        value={data.sku} 
-                                        onChange={e => setData('sku', e.target.value.toUpperCase())} 
-                                        required 
-                                    />
-                                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                                        {data.sku && (
-                                            skuValidation?.isValid === null ? (
-                                                <Loader2 size={16} className="animate-spin text-stone-400" />
-                                            ) : skuValidation?.isValid ? (
-                                                <CheckCircle2 size={16} className="text-emerald-500" />
-                                            ) : (
-                                                <AlertTriangle size={16} className="text-red-500" />
-                                            )
-                                        )}
-                                    </div>
-                                </div>
-                                {skuValidation?.isValid === false && (
-                                    <p className="mt-1 text-[10px] font-bold text-red-600 uppercase tracking-tight flex items-center gap-1">
-                                        {skuValidation.message}
-                                    </p>
-                                )}
-                                {errors.sku && <p className="mt-1 text-xs text-red-500 font-medium">{errors.sku}</p>}
+                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-400">Item SKU (Catalog Code)</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-xs font-mono font-bold text-stone-500 cursor-not-allowed min-h-[44px] shadow-none"
+                                    value={supply?.sku || 'N/A'} 
+                                    disabled
+                                    readOnly
+                                />
                             </div>
 
                             {/* Name */}
@@ -114,12 +114,12 @@ export default function AddSupplyModal({
                                 <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Item Name</label>
                                 <input 
                                     type="text" 
+                                    disabled={!canEditProcurement}
                                     className={`${modalFieldClass} ${errors.name ? 'border-red-300 bg-red-50/10 focus:ring-red-500 focus:border-red-500' : ''}`}
                                     placeholder="e.g. Red Terracotta Clay"
                                     value={data.name} 
                                     onChange={e => setData('name', e.target.value)} 
                                     required 
-                                    autoFocus
                                 />
                                 {errors.name && <p className="mt-1 text-xs text-red-500 font-medium">{errors.name}</p>}
                             </div>
@@ -157,23 +157,15 @@ export default function AddSupplyModal({
                     {/* Section 2: Stock Levels & Valuation */}
                     <div className="space-y-4">
                         <h3 className="text-xs font-black uppercase tracking-widest text-stone-400 border-b border-stone-100 pb-1.5">
-                            Stock Levels &amp; Valuation
+                            Stock Thresholds &amp; Valuation
                         </h3>
                         <div className="grid gap-5 md:grid-cols-3">
-                            {/* Quantity */}
+                            {/* Current Stock */}
                             <div>
-                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Initial Quantity</label>
-                                <input 
-                                    type="number" 
-                                    disabled={!canEditProcurement}
-                                    className={`${modalFieldClass} font-bold ${errors.quantity ? 'border-red-300 bg-red-50/10 focus:ring-red-500 focus:border-red-500' : ''}`}
-                                    value={data.quantity} 
-                                    onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
-                                    onChange={e => setData('quantity', e.target.value.replace(/[-.]/g, ""))} 
-                                    required 
-                                    min="0"
-                                />
-                                {errors.quantity && <p className="mt-1 text-xs text-red-500 font-medium">{errors.quantity}</p>}
+                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-400">Current Stock</label>
+                                <div className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-xs font-bold text-stone-700 min-h-[44px] flex items-center shadow-none">
+                                    {supply?.quantity ?? 0} {supply?.unit}
+                                </div>
                             </div>
 
                             {/* Min Stock */}
@@ -293,10 +285,10 @@ export default function AddSupplyModal({
                             {processing ? (
                                 <>
                                     <Loader2 size={14} className="animate-spin" />
-                                    <span>Adding Supply...</span>
+                                    <span>Saving Changes...</span>
                                 </>
                             ) : (
-                                <span>Add Supply Item</span>
+                                <span>Save Changes</span>
                             )}
                         </button>
                     </div>

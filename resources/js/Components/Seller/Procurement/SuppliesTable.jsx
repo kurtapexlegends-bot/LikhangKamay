@@ -19,6 +19,7 @@ export default function SuppliesTable({
     setFilterCategory,
     onQuickRestock,
     onRequestRestock,
+    onEdit,
     onDelete,
     onOpenAddSupply
 }) {
@@ -441,6 +442,14 @@ export default function SuppliesTable({
 
                             <div className="mt-3 flex items-center justify-end gap-2">
                                 <button
+                                    disabled={!canEditProcurement}
+                                    onClick={() => onEdit(supply)}
+                                    className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2.5 bg-clay-50 text-clay-700 rounded-lg hover:bg-clay-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                    title="Edit Supply"
+                                >
+                                    <Pencil size={16} />
+                                </button>
+                                <button
                                     disabled={!canEditStockRequests}
                                     onClick={() => onRequestRestock(supply)}
                                     className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2.5 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
@@ -470,50 +479,56 @@ export default function SuppliesTable({
                 )}
             </div>
 
-            {/* Desktop View Layout (Table) */}
-            <div className="hidden overflow-x-auto flex-1 sm:block">
-                <table className="w-full min-w-[900px] text-left">
-                    <thead className="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                        <tr>
-                            <th className="px-4 py-3">Item Name</th>
-                            <th className="px-4 py-3">Category</th>
-                            <th className="px-4 py-3">Stock</th>
-                            <th className="px-4 py-3">Unit Cost</th>
-                            <th className="px-4 py-3">Supplier</th>
-                            <th className="px-4 py-3">Status</th>
-                            <th className="px-4 py-3 text-right">Actions</th>
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="border-b border-stone-200/80 bg-stone-50/50 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                            <th className="px-4 py-3 font-semibold">SKU</th>
+                            <th className="px-4 py-3 font-semibold">Name</th>
+                            <th className="px-4 py-3 font-semibold">Category</th>
+                            <th className="px-4 py-3 font-semibold text-center">Stock</th>
+                            <th className="px-4 py-3 font-semibold">Unit Cost</th>
+                            <th className="px-4 py-3 font-semibold">Supplier</th>
+                            <th className="px-4 py-3 font-semibold">Status</th>
+                            <th className="px-4 py-3 font-semibold text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-stone-100 text-xs">
                         {isNavigating && filteredSupplies.length === 0 ? (
-                            <TableBodySkeleton rows={5} cols={7} />
+                            <TableBodySkeleton rows={5} cols={8} />
                         ) : filteredSupplies.length > 0 ? (
-                            <AnimatePresence initial={false}>
-                                {filteredSupplies.map((supply) => (
+                            <AnimatePresence mode="popLayout">
+                                {filteredSupplies.map(supply => (
                                     <motion.tr 
+                                        layout
                                         key={supply.id} 
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        className="hover:bg-gray-50/50 transition duration-150"
+                                        className="hover:bg-stone-50/80 transition-colors group"
                                     >
+                                        <td className="px-4 py-3 font-mono text-[11px] text-stone-400 font-bold">{supply.sku || '-'}</td>
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-xl bg-clay-100 flex items-center justify-center text-clay-700 overflow-hidden border border-clay-200">
+                                                <div className="w-8 h-8 rounded-xl bg-clay-100 flex items-center justify-center text-clay-700 overflow-hidden border border-clay-200 shrink-0">
                                                     {supply.product && supply.product.img ? (
                                                         <img src={supply.product.img} alt={supply.name} className="w-full h-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
+                                                    ) : supply.image ? (
+                                                        <img src={supply.image} alt={supply.name} className="w-full h-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
                                                     ) : (
                                                         <Package size={14} />
                                                     )}
                                                 </div>
-                                                <div>
-                                                    <p className="font-bold text-gray-900 text-xs">{supply.name}</p>
-                                                    {supply.notes && <p className="text-[10px] text-gray-500">{supply.notes}</p>}
+                                                <div className="min-w-0">
+                                                    <p className="font-bold text-stone-900 text-xs">{supply.name}</p>
+                                                    {supply.notes && <p className="text-[10px] text-stone-500 truncate max-w-[200px]">{supply.notes}</p>}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-[10px] text-gray-600">{supply.category}</td>
                                         <td className="px-4 py-3">
+                                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-200">
+                                                {supply.category}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
                                             <QuickRestock 
                                                 item={supply}
                                                 canEdit={canEditProcurement}
@@ -522,10 +537,10 @@ export default function SuppliesTable({
                                                 type="supply"
                                             />
                                         </td>
-                                        <td className="px-4 py-3 text-[10px] text-gray-600">
-                                            {supply.unit_cost ? `₱${parseFloat(supply.unit_cost).toLocaleString()}` : '-'}
+                                        <td className="px-4 py-3 font-semibold text-stone-700">
+                                            {supply.unit_cost ? `₱${parseFloat(supply.unit_cost).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '-'}
                                         </td>
-                                        <td className="px-4 py-3 text-[10px] text-gray-600">{supply.supplier || '-'}</td>
+                                        <td className="px-4 py-3 text-stone-600 font-medium">{supply.supplier || '-'}</td>
                                         <td className="px-4 py-3">
                                             {supply.quantity <= supply.min_stock ? (
                                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
@@ -548,8 +563,8 @@ export default function SuppliesTable({
                                                     <Pencil size={14} />
                                                 </button>
                                                 <button
-                                                    disabled={!canEditProcurement}
-                                                    onClick={() => onRestockRequest(supply)}
+                                                    disabled={!canEditStockRequests}
+                                                    onClick={() => onRequestRestock(supply)}
                                                     className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:cursor-not-allowed disabled:opacity-50"
                                                     title="Request Restock"
                                                 >
@@ -570,7 +585,7 @@ export default function SuppliesTable({
                             </AnimatePresence>
                         ) : (
                             <tr>
-                                <td colSpan="7" className="px-6 py-20 text-center">
+                                <td colSpan="8" className="px-6 py-20 text-center">
                                     <WorkspaceEmptyState
                                         icon={Package}
                                         title="No supplies found"

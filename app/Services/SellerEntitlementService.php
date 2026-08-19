@@ -24,7 +24,7 @@ class SellerEntitlementService
         $seller = $user->getEffectiveSeller();
 
         if (($user->isSellerOwner() || $user->isStaff()) && $seller?->isPremiumTier()) {
-            return ['team_messages'];
+            return ['team_messages', 'approvals'];
         }
 
         return [];

@@ -198,6 +198,12 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         // SETTINGS
         Route::get('/seller/settings', [\App\Http\Controllers\Seller\SettingsController::class, 'index'])->middleware('artisan')->name('seller.settings.index');
         Route::post('/settings/modules', [\App\Http\Controllers\Seller\SettingsController::class, 'updateModules'])->middleware('artisan')->name('settings.modules');
+
+        // EXECUTIVE APPROVALS & DELEGATION (PREMIUM & ELITE)
+        Route::get('/approvals', [\App\Http\Controllers\Seller\ApprovalController::class, 'index'])->middleware(['seller.workspace'])->name('seller.approvals.index');
+        Route::post('/approvals/{approval}/approve', [\App\Http\Controllers\Seller\ApprovalController::class, 'approve'])->middleware(['seller.workspace'])->name('seller.approvals.approve');
+        Route::post('/approvals/{approval}/reject', [\App\Http\Controllers\Seller\ApprovalController::class, 'reject'])->middleware(['seller.workspace'])->name('seller.approvals.reject');
+        Route::post('/approvals/batch-approve', [\App\Http\Controllers\Seller\ApprovalController::class, 'batchApprove'])->middleware(['seller.workspace'])->name('seller.approvals.batch-approve');
     });
 
     // CHAT SYSTEM & REVIEWS (CRM)

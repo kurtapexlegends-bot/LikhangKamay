@@ -244,8 +244,8 @@ export default function GlobalSearch() {
 
     return (
         <div ref={modalRef} className="relative">
-            {/* MOBILE: Search Trigger Icon (< sm screens) */}
-            <div className="sm:hidden flex items-center">
+            {/* MOBILE & TABLET: Search Trigger Icon (< md screens) */}
+            <div className="md:hidden flex items-center">
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
@@ -256,8 +256,8 @@ export default function GlobalSearch() {
                 </button>
             </div>
 
-            {/* DESKTOP: Search Input (>= sm screens) */}
-            <div className="hidden sm:block relative w-72 lg:w-96 group">
+            {/* DESKTOP: Search Input (>= md screens) */}
+            <div className="hidden md:block relative w-44 lg:w-60 xl:w-80 group">
                 <div className="relative flex items-center">
                     <Search 
                         className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-200 ${isOpen ? 'text-clay-600' : 'text-stone-400 group-hover:text-clay-500'}`} 
@@ -302,7 +302,7 @@ export default function GlobalSearch() {
                             <X size={13} />
                         </button>
                     ) : (
-                        <kbd className="absolute right-9 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 rounded bg-white px-1.5 py-0.5 font-mono text-[9px] font-bold text-stone-400 border border-stone-200 shadow-sm pointer-events-none">
+                        <kbd className="absolute right-9 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-0.5 rounded bg-white px-1.5 py-0.5 font-mono text-[9px] font-bold text-stone-400 border border-stone-200 shadow-sm pointer-events-none">
                             <Command size={9} /> K
                         </kbd>
                     )}
@@ -314,7 +314,7 @@ export default function GlobalSearch() {
 
                 {/* DESKTOP Dropdown Menu */}
                 {isOpen && (
-                    <div className="absolute top-full left-0 right-0 mt-2 z-[70] overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-stone-900/10 animate-in slide-in-from-top-2 fade-in duration-150">
+                    <div className="hidden md:block absolute top-full left-0 right-0 mt-2 z-[70] overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-stone-900/10 animate-in slide-in-from-top-2 fade-in duration-150">
                         <div ref={dropdownRef} className="max-h-[60vh] overflow-y-auto p-2">
                             {isLoading ? (
                                 <div className="p-2 space-y-2">
@@ -454,9 +454,9 @@ export default function GlobalSearch() {
                 )}
             </div>
 
-            {/* MOBILE Full Slide-down Search Overlay (< sm screens) */}
+            {/* MOBILE Full Slide-down Search Overlay (< md screens) */}
             {isOpen && (
-                <div className="sm:hidden fixed inset-x-0 top-0 z-[120] bg-white/98 backdrop-blur-xl border-b border-stone-200 p-3 shadow-2xl animate-in slide-in-from-top-2 duration-150">
+                <div className="md:hidden fixed inset-x-0 top-0 z-[120] bg-white/98 backdrop-blur-xl border-b border-stone-200 p-3 shadow-2xl animate-in slide-in-from-top-2 duration-150">
                     <div className="flex items-center gap-2 mb-2">
                         <div className="relative flex-1 flex items-center">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-clay-600" size={16} />

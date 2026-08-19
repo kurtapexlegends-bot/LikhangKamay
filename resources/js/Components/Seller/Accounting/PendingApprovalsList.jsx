@@ -109,15 +109,15 @@ export default function PendingApprovalsList({
                                 </div>
                             </div>
 
-                            <div className="mt-4 flex flex-col gap-3 sm:mt-0 sm:flex-row sm:items-center sm:justify-end lg:self-auto min-w-[200px]">
+                            <div className="mt-3.5 pt-3 border-t border-stone-100 sm:border-0 sm:pt-0 sm:mt-0 flex items-center justify-between sm:justify-end gap-3 sm:gap-4 shrink-0">
                                 <div className="text-left sm:text-right">
                                     <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Amount Due</p>
-                                    <p className="text-lg font-bold tracking-tight text-stone-900">{formatShortMoney(item.amount)}</p>
+                                    <p className="text-base sm:text-lg font-bold tracking-tight text-stone-900">{formatShortMoney(item.amount)}</p>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => onReview(item, 'pending')}
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-clay-600 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white hover:bg-clay-700 hover:scale-[1.02] active:scale-95 transition-all shadow-md shadow-clay-600/15 sm:w-auto min-h-[44px]"
+                                    className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white hover:bg-clay-700 active:scale-95 transition-all shadow-xs min-h-[40px] sm:min-h-[38px] shrink-0"
                                 >
                                     <Eye size={14} strokeWidth={2.5} /> Review
                                 </button>

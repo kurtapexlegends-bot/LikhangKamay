@@ -5,7 +5,7 @@ import StaffAttendanceMonitor from '@/Components/StaffAttendanceMonitor';
 import { 
     LayoutDashboard, Package, ShoppingBag, BarChart3, Box, 
     Users, MessageCircle, Settings, X, ChevronLeft,
-    ClipboardList, Warehouse, FileQuestion, Sliders, Banknote, Star, Award, Tag
+    ClipboardList, Warehouse, FileQuestion, Sliders, Banknote, Star, Award, Tag, ShieldCheck
 } from 'lucide-react';
 import SidebarSettingsPopover from '@/Components/Seller/Sidebar/SidebarSettingsPopover';
 import SidebarPlanPromo from '@/Components/Seller/Sidebar/SidebarPlanPromo';
@@ -19,7 +19,7 @@ const GROUPS_STORAGE_KEY = 'seller_sidebar_expanded_groups_v1';
 const GEAR_HINT_STORAGE_KEY = 'seller_sidebar_gear_hint_seen_v1';
 const resolveActiveGroup = (active) => {
     if (['staff-dashboard'].includes(active)) return 'workspace';
-    if (['overview', 'products', 'analytics', '3d'].includes(active)) return 'core';
+    if (['overview', 'products', 'analytics', '3d', 'approvals'].includes(active)) return 'core';
     if (['orders', 'chat', 'team-messages', 'reviews'].includes(active)) return 'crm';
     if (['settings'].includes(active)) return 'appearance';
     if (['sponsorships', 'discounts'].includes(active)) return 'marketing';
@@ -220,7 +220,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                 />
             )}
 
-            <aside className={`fixed inset-y-0 left-0 z-40 lg:z-30 ${isCollapsed ? 'w-16' : 'w-52'} bg-white/80 backdrop-blur-md border-r border-clay-100/50 flex flex-col transition-[width,transform] duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed inset-y-0 left-0 z-40 lg:z-50 ${isCollapsed ? 'w-16' : 'w-52'} bg-white/80 backdrop-blur-md border-r border-clay-100/50 flex flex-col transition-[width,transform] duration-300 lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 {/* Desktop Collapse Toggle Button */}
                 <button
                     onClick={() => onToggleCollapse(!isCollapsed)}
@@ -314,6 +314,9 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 )}
                                 {visibleModulesSet.has('3d') && (
                                     <NavItem href={route('3d.index')} icon={Box} active={active === '3d'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, '3D Manager')} onMouseLeave={handleTooltipLeave}>3D Manager</NavItem>
+                                )}
+                                {(!isStaffActor || visibleModulesSet.has('approvals')) && (user?.role === 'artisan' || user?.is_workspace_owner) && (
+                                    <NavItem href={route('seller.approvals.index')} icon={ShieldCheck} active={active === 'approvals'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Approvals')} onMouseLeave={handleTooltipLeave}>Approvals</NavItem>
                                 )}
                             </CategoryGroup>
                         </div>

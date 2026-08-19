@@ -55,8 +55,8 @@ export default function FilterToolbarHeader({
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 min-w-0">
                 {/* Segmented Tab Pill Track */}
                 {tabs && tabs.length > 0 && (
-                    <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5">
-                        <div className="p-1 bg-stone-100/70 rounded-2xl inline-flex items-center gap-1">
+                    <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1">
+                        <div className="p-1 bg-stone-100/70 rounded-2xl inline-flex items-center gap-1 snap-x">
                             {tabs.map((tab) => {
                                 const tabKey = typeof tab === "object" ? tab.key || tab.id || tab.label : tab;
                                 const tabLabel = typeof tab === "object" ? tab.label : tab;
@@ -68,7 +68,7 @@ export default function FilterToolbarHeader({
                                         key={tabKey}
                                         type="button"
                                         onClick={() => onTabChange && onTabChange(tabKey)}
-                                        className={`px-3 py-2 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 min-h-[38px] sm:min-h-0 ${
+                                        className={`px-3 py-2 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 snap-start min-h-[38px] sm:min-h-0 ${
                                             isActive
                                                 ? "bg-white text-clay-800 shadow-xs font-black"
                                                 : "text-stone-500 hover:text-stone-800 font-semibold"
@@ -92,17 +92,17 @@ export default function FilterToolbarHeader({
                 )}
 
                 {/* Search Input, Actions, and Filter Button */}
-                <div className="flex items-center gap-2 shrink-0 justify-end">
+                <div className="flex items-center gap-2 flex-1 md:flex-initial shrink-0 justify-end min-w-0">
                     {/* Search Input */}
                     {onSearchChange && (
-                        <div className="relative w-40 sm:w-56 md:w-64 lg:w-72 shrink-0">
+                        <div className="relative flex-1 md:flex-initial md:w-56 lg:w-64 min-w-0">
                             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => onSearchChange(e.target.value)}
                                 placeholder={searchPlaceholder}
-                                className="w-full pl-9 pr-8 py-2 text-xs font-medium rounded-xl border border-stone-200/80 outline-none focus:border-clay-500 focus:ring-1 focus:ring-clay-500 bg-white min-h-[44px] md:min-h-0"
+                                className="w-full pl-9 pr-8 py-2 text-xs font-medium rounded-xl border border-stone-200/80 outline-none focus:border-clay-500 focus:ring-1 focus:ring-clay-500 bg-white min-h-[42px] sm:min-h-[38px]"
                             />
                             {searchQuery && (
                                 <button
@@ -118,7 +118,11 @@ export default function FilterToolbarHeader({
                     )}
 
                     {/* Extra Right Actions (e.g. Select Page, Export, Reset) */}
-                    {extraActions}
+                    {extraActions && (
+                        <div className="shrink-0 flex items-center">
+                            {extraActions}
+                        </div>
+                    )}
 
                     {/* Desktop & Mobile Filter Button (if filter fields provided) */}
                     {filterPopoverFields && (
@@ -126,14 +130,14 @@ export default function FilterToolbarHeader({
                             <button
                                 type="button"
                                 onClick={handleOpenFilters}
-                                className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all shadow-2xs min-h-[44px] sm:min-h-[38px] active:scale-[0.98] ${
+                                className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 sm:px-3.5 py-2 text-xs font-bold transition-all shadow-2xs min-h-[42px] sm:min-h-[38px] active:scale-[0.98] ${
                                     activeFiltersCount > 0 || isPopoverOpen
                                         ? "bg-clay-700 text-white border-clay-700 shadow-clay-200"
                                         : "bg-white border-stone-200 text-stone-700 hover:bg-stone-50"
                                 }`}
                             >
                                 <SlidersHorizontal size={14} strokeWidth={2.2} />
-                                <span>Filter</span>
+                                <span className="hidden xs:inline sm:inline">Filter</span>
                                 {activeFiltersCount > 0 && (
                                     <span className="inline-flex items-center justify-center rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-black text-white">
                                         {activeFiltersCount}

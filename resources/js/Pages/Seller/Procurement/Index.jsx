@@ -13,6 +13,7 @@ import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabil
 import ProcurementMetrics from '@/Components/Seller/Procurement/ProcurementMetrics';
 import SuppliesTable from '@/Components/Seller/Procurement/SuppliesTable';
 import AddSupplyModal from '@/Components/Seller/Procurement/AddSupplyModal';
+import EditSupplyModal from '@/Components/Seller/Procurement/EditSupplyModal';
 import RestockSupplyModal from '@/Components/Seller/Procurement/RestockSupplyModal';
 import RequestRestockModal from '@/Components/Seller/Procurement/RequestRestockModal';
 import DeleteSupplyModal from '@/Components/Seller/Procurement/DeleteSupplyModal';
@@ -35,11 +36,13 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
     const { flash, filters = {} } = usePage().props;
 
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [showRestockModal, setShowRestockModal] = useState(false);
     const [showConfirmRequest, setShowConfirmRequest] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const [selectedSupply, setSelectedSupply] = useState(null);
+    const [supplyToEdit, setSupplyToEdit] = useState(null);
     const [supplyToDelete, setSupplyToDelete] = useState(null);
     const [supplyToRequest, setSupplyToRequest] = useState(null);
     
@@ -140,6 +143,12 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
                 addToast('Restock update failed.', 'error');
             },
         });
+    };
+
+    const handleEditClick = (supply) => {
+        if (!canEditProcurement) return;
+        setSupplyToEdit(supply);
+        setShowEditModal(true);
     };
 
     const handleDeleteClick = (supply) => {
@@ -252,6 +261,7 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
                         setFilterCategory={setFilterCategory}
                         onQuickRestock={handleQuickRestock}
                         onRequestRestock={handleRequestRestockClick}
+                        onEdit={handleEditClick}
                         onDelete={handleDeleteClick}
                         onOpenAddSupply={openAddModal}
                     />
@@ -271,6 +281,21 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
                 processing={processing}
                 onSubmit={handleAddSubmit}
                 skuValidation={skuValidation}
+            />
+
+            <EditSupplyModal 
+                show={showEditModal}
+                onClose={() => {
+                    setShowEditModal(false);
+                    setSupplyToEdit(null);
+                }}
+                canEditProcurement={canEditProcurement}
+                supply={supplyToEdit}
+                categoriesList={categoriesList}
+                unitsList={unitsList}
+                onSuccess={() => {
+                    addToast('Supply item updated successfully.', 'success');
+                }}
             />
 
             <RestockSupplyModal 

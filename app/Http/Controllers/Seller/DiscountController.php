@@ -7,7 +7,9 @@ use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Http\Requests\Seller\CreateDiscountRequest;
 use App\Models\Discount;
 use App\Models\Product;
+use App\Models\OwnerApproval;
 use App\Services\DiscountService;
+use App\Services\OwnerApprovalService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -16,10 +18,14 @@ class DiscountController extends Controller
     use InteractsWithSellerContext;
 
     protected DiscountService $discountService;
+    protected OwnerApprovalService $ownerApprovalService;
 
-    public function __construct(DiscountService $discountService)
-    {
+    public function __construct(
+        DiscountService $discountService,
+        OwnerApprovalService $ownerApprovalService
+    ) {
         $this->discountService = $discountService;
+        $this->ownerApprovalService = $ownerApprovalService;
     }
 
     /**
@@ -97,7 +103,33 @@ class DiscountController extends Controller
     public function store(CreateDiscountRequest $request)
     {
         $seller = $this->sellerOwner();
+        $actor = $request->user();
         $validated = $request->validated();
+        $isPrivileged = $actor->isSellerOwner() || $actor->isStaffManager();
+
+        if (!$isPrivileged) {
+            // Standard staff drafts discount as inactive and routes to Owner Approval Hub
+            $validated['is_active'] = false;
+            $createdDiscounts = $this->discountService->createDiscounts($seller, $validated);
+            $firstDiscount = $createdDiscounts[0] ?? null;
+
+            if ($firstDiscount) {
+                $productIds = $firstDiscount->products()->pluck('products.id')->all();
+                $payload = $this->ownerApprovalService->buildDiscountPayload($firstDiscount, $productIds);
+
+                $this->ownerApprovalService->submitRequest(
+                    seller: $seller,
+                    requester: $actor,
+                    domain: OwnerApproval::DOMAIN_DISCOUNT,
+                    title: 'Discount Campaign: ' . ($firstDiscount->name ?: 'Promotional Discount'),
+                    summary: "Staff submitted a {$payload['discount_display']} discount across {$payload['products_count']} product(s).",
+                    approvable: $firstDiscount,
+                    payload: $payload
+                );
+            }
+
+            return redirect()->back()->with('success', 'Discount campaign submitted to shop owner for review.');
+        }
 
         $this->discountService->createDiscounts(
             $seller,
