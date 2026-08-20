@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerHeader from '@/Layouts/SellerHeader';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
@@ -314,6 +314,35 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                             canEditAccounting={canEditAccounting}
                             onEditBaseFunds={() => setShowBaseFundsModal(true)}
                         />
+
+                        {/* Missing Payout Alert */}
+                        {auth.user?.role === 'artisan' && Number(finances.readyForPayout || 0) > 0 && !auth.user?.payout_account_number && (
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
+                                <div className="flex items-start sm:items-center gap-2.5">
+                                    <div className="p-1.5 rounded-lg bg-amber-100 text-amber-700 shrink-0">
+                                        <AlertCircle size={16} />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-amber-900">Add Your Payout Details</p>
+                                        <p className="text-amber-700 font-medium mt-0.5">
+                                            You have earnings ready for payout. Add your GCash or bank account in Shop Settings so the platform can send your weekly transfers.
+                                        </p>
+                                    </div>
+                                </div>
+                                <Link
+                                    href={route('seller.settings.index')}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 self-start sm:self-auto transition shadow-2xs"
+                                >
+                                    <span>Update Details</span>
+                                </Link>
+                            </div>
+                        )}
+
+                        {/* Payout Rhythm Note */}
+                        <div className="flex items-center justify-between text-[11px] text-stone-400 font-medium px-1">
+                            <span>Payout Rhythm: Transfers are processed weekly for completed orders.</span>
+                            <span>Direct to GCash &amp; Banks</span>
+                        </div>
 
                         {/* Standardized Filter Toolbar Header & Filter Panel */}
                         <AccountingFilterPanel

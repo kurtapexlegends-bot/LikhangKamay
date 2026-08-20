@@ -72,11 +72,13 @@ export default function TransactionLedgerTable({
                                             ? 'border-stone-200 bg-stone-50 text-stone-500'
                                             : item.type === 'sale'
                                             ? 'border-teal-200 bg-teal-50 text-teal-600'
+                                            : item.type === 'payout'
+                                            ? 'border-emerald-200 bg-emerald-50 text-emerald-600'
                                             : 'border-clay-200 bg-[#FCF7F2] text-clay-600'
                                     }`}>
                                         {item.type === 'payroll' ? (
                                             <Users size={18} strokeWidth={2.5} />
-                                        ) : item.type === 'sale' ? (
+                                        ) : item.type === 'sale' || item.type === 'payout' ? (
                                             <Banknote size={18} strokeWidth={2.5} />
                                         ) : (
                                             <FileText size={18} strokeWidth={2.5} />
@@ -85,34 +87,54 @@ export default function TransactionLedgerTable({
                                     <div className="min-w-0">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${typeTone(item.type)}`}>
-                                                {item.type === 'payroll' ? 'Finance Review' : item.type === 'sale' ? 'Sale Payout' : 'Inventory Ops'}
+                                                {item.type === 'payroll' ? 'Payroll Run' : item.type === 'sale' ? 'Sale Completed' : item.type === 'payout' ? 'Payout Sent' : 'Supply Request'}
                                             </span>
                                             <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
                                                 #{item.order_number || item.id} &bull; {formatDate(item.activity?.requested_at || item.created_at)}
                                             </span>
                                             <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${statusTone(item.status)}`}>
-                                                {String(item.status).replace(/_/g, ' ')}
+                                                {item.type === 'payout' ? 'Transferred' : String(item.status).replace(/_/g, ' ')}
                                             </span>
                                         </div>
                                         
                                         <h4 className="mt-1.5 text-[14px] font-bold leading-tight text-stone-900">
-                                            {item.type === 'payroll' ? `Payroll for ${item.month}` : item.type === 'sale' ? `Order Settlement` : item.supply?.name}
+                                            {item.type === 'payroll' 
+                                                ? `Payroll for ${item.month}` 
+                                                : item.type === 'sale' 
+                                                ? `Customer Order #${item.order_number || item.id}` 
+                                                : item.type === 'payout'
+                                                ? `Earnings Transfer (${item.detail_name || 'GCash'})`
+                                                : item.supply?.name}
                                         </h4>
                                         
                                         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-stone-500">
                                             <span>
-                                                {item.type === 'sale' ? 'Customer' : 'Requested by'}{' '}
-                                                <strong className="font-bold text-stone-700">{item.requester?.name || 'Unknown'}</strong>
+                                                {item.type === 'sale' 
+                                                    ? 'Customer' 
+                                                    : item.type === 'payout' 
+                                                    ? 'Reference No.' 
+                                                    : 'Requested by'}{' '}
+                                                <strong className="font-bold text-stone-700">
+                                                    {item.type === 'payout' 
+                                                        ? (item.detail_category || 'Direct Transfer') 
+                                                        : (item.requester?.name || 'Unknown')}
+                                                </strong>
                                             </span>
                                             <span className="h-1 w-1 rounded-full bg-stone-300" />
                                             <span>
-                                                {item.type === 'payroll' ? `${item.employee_count} Employees` : item.type === 'sale' ? `Sales Revenue` : `${item.quantity} ${item.supply?.unit || ''}`}
+                                                {item.type === 'payroll' 
+                                                    ? `${item.employee_count} Employees` 
+                                                    : item.type === 'sale' 
+                                                    ? `Sales Revenue` 
+                                                    : item.type === 'payout'
+                                                    ? `Sent to ${item.detail_name || 'Account'}`
+                                                    : `${item.quantity} ${item.supply?.unit || ''}`}
                                             </span>
                                             {item.activity?.last_reviewed_at && (
                                                 <>
                                                     <span className="h-1 w-1 rounded-full bg-stone-300" />
                                                     <span>
-                                                        {item.type === 'sale' ? 'Settled' : reviewLabel(item.status)} {formatDate(item.activity.last_reviewed_at)}
+                                                        {item.type === 'sale' ? 'Completed' : reviewLabel(item.status)} {formatDate(item.activity.last_reviewed_at)}
                                                     </span>
                                                 </>
                                             )}
@@ -127,10 +149,10 @@ export default function TransactionLedgerTable({
                                 <div className="mt-4 flex flex-col gap-3 sm:mt-0 sm:flex-row sm:items-center sm:justify-end lg:self-auto min-w-[200px]">
                                     <div className="text-left sm:text-right">
                                         <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
-                                            {item.type === 'sale' ? 'Net Payout' : 'Action Amount'}
+                                            {item.type === 'sale' ? 'Sales Revenue' : item.type === 'payout' ? 'Payout Amount' : 'Action Amount'}
                                         </p>
-                                        <p className={`text-lg font-bold tracking-tight ${item.type === 'sale' ? 'text-emerald-600' : 'text-stone-900'}`}>
-                                            {isApproved && item.type !== 'sale' ? '- ' : item.type === 'sale' ? '+ ' : ''}
+                                        <p className={`text-lg font-bold tracking-tight ${item.type === 'sale' ? 'text-emerald-600' : item.type === 'payout' ? 'text-emerald-700' : 'text-stone-900'}`}>
+                                            {isApproved && item.type !== 'sale' && item.type !== 'payout' ? '- ' : item.type === 'sale' ? '+ ' : ''}
                                             {formatShortMoney(item.amount)}
                                         </p>
                                     </div>

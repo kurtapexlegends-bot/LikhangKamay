@@ -57,7 +57,7 @@ export default function PaymentMethodSelector({ paymentMethod, setPaymentMethod,
                     <div>
                         <p className="font-bold text-stone-900 text-sm">GCash</p>
                         <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-                            {isPickUp ? 'Unavailable for Store Pick Up' : 'Secure instant mobile wallet payment.'}
+                            {isPickUp ? 'Unavailable for Store Pick Up' : 'Secure instant mobile payment.'}
                         </p>
                     </div>
                 </label>

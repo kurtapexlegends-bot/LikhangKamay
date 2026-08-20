@@ -94,12 +94,12 @@ export default function AccountingFilterPanel({
                         className="pr-8 text-xs py-2 w-full min-h-[40px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer appearance-none px-3"
                     >
                         <option value="all">All Transaction Types</option>
-                        <option value="sale">Sales Revenue & Settlements</option>
-                        <option value="payout">Bank & E-Wallet Transfers</option>
-                        <option value="payroll">People & Payroll Expenses</option>
-                        <option value="stock_request">Material Supplies & Restocks</option>
+                        <option value="sale">Sales Revenue &amp; Settlements</option>
+                        <option value="payout">GCash, Maya &amp; Bank Payouts</option>
+                        <option value="payroll">Staff &amp; Payroll Runs</option>
+                        <option value="stock_request">Material Supplies &amp; Restocks</option>
                         <option value="refund">Refund Deductions</option>
-                        <option value="subscription">Subscription & Platform Fees</option>
+                        <option value="subscription">Subscription &amp; Platform Fees</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />
                 </div>
@@ -108,7 +108,7 @@ export default function AccountingFilterPanel({
             {/* 3. Ledger Status Filter */}
             <div>
                 <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5">
-                    Ledger & Approval Status
+                    Ledger &amp; Approval Status
                 </label>
                 <div className="relative">
                     <select
@@ -118,7 +118,7 @@ export default function AccountingFilterPanel({
                     >
                         <option value="all">All Statuses (Pending, Settled, Failed)</option>
                         <option value="completed">Completed / Settled / Paid</option>
-                        <option value="pending">Pending Escrow / Approval</option>
+                        <option value="pending">Pending Review / Orders in Progress</option>
                         <option value="failed">Failed / Rejected / Cancelled</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />

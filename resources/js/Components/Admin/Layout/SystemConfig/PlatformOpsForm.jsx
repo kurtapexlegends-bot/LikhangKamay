@@ -103,7 +103,7 @@ export default function PlatformOpsForm({ data, setData }) {
                                     </div>
                                     <div className="min-w-0">
                                         <h4 className="text-xs font-bold text-stone-900 leading-tight">PayMongo Gateway</h4>
-                                        <p className="text-[10px] text-stone-500 font-medium mt-0.5">Process online checkouts via e-wallets & cards.</p>
+                                        <p className="text-[10px] text-stone-500 font-medium mt-0.5">Process online checkouts via GCash, Maya &amp; cards.</p>
                                     </div>
                                 </div>
 

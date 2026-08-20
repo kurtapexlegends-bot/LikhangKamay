@@ -82,7 +82,7 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                     },
                     {
                         name: 'Accounting & Fund Release Tracking',
-                        subtext: 'Escrow tracking, fund approval pipelines & financial ledgers',
+                        subtext: 'Shop earnings tracking, fund approval pipelines & financial ledgers',
                         free: { text: 'Locked', status: 'locked' },
                         premium: { text: 'Toggleable Module', status: 'partial' },
                         super_premium: { text: 'Unlocked by Default', status: 'unlocked' },
