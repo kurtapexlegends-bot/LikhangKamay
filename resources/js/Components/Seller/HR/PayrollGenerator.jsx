@@ -58,8 +58,10 @@ export default function PayrollGenerator({
         items: []
     });
 
+    const prevIsOpenRef = React.useRef(false);
+
     React.useEffect(() => {
-        if (isOpen) {
+        if (isOpen && !prevIsOpenRef.current) {
             const initialItems = staff.map(emp => ({
                 employee_id: emp.id,
                 name: emp.name,
@@ -75,14 +77,19 @@ export default function PayrollGenerator({
                 isSelected: true
             }));
             setData({
-                month: sellerSettings.attendance_month_label || new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+                month: sellerSettings?.attendance_month_label || new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
                 items: initialItems
             });
             setDryRunResults(null);
             setActiveStep(1);
-            setActiveInspectorId(null);
+            setActiveInspectorId(initialItems.find(i => i.isSelected)?.employee_id || null);
             setMobileTab('adjust');
+        } else if (!isOpen && prevIsOpenRef.current) {
+            setActiveStep(1);
+            setDryRunResults(null);
+            setActiveInspectorId(null);
         }
+        prevIsOpenRef.current = isOpen;
     }, [isOpen, staff, sellerSettings]);
 
     const updatePayrollItem = (index, field, value) => {
@@ -176,7 +183,9 @@ export default function PayrollGenerator({
         });
     };
 
-    const selectedStaffItems = data.items.filter(i => i.isSelected);
+    const selectedStaffItems = React.useMemo(() => {
+        return data.items.filter(i => i.isSelected);
+    }, [data.items]);
     
     // Auto-select first active inspector employee if none is selected
     React.useEffect(() => {
