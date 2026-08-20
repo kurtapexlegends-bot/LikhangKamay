@@ -18,7 +18,7 @@ class SettingsController extends Controller
      */
     public function index(Request $request)
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $request->user();
         abort_unless($user && ($user->isArtisan() || $user->isWorkspaceOwner()), 403, 'Only the shop owner can access workspace settings.');
 
@@ -83,6 +83,9 @@ class SettingsController extends Controller
                 'break_window_start' => $sellerOwner->break_window_start ?? '11:30',
                 'break_window_end' => $sellerOwner->break_window_end ?? '13:30',
                 'break_allowance_minutes' => $sellerOwner->break_allowance_minutes ?? 60,
+                'payout_method' => $sellerOwner->payout_method ?? 'GCash',
+                'payout_account_name' => $sellerOwner->payout_account_name ?? '',
+                'payout_account_number' => $sellerOwner->payout_account_number ?? '',
             ],
             'products' => $products,
             'stats' => [
@@ -101,6 +104,65 @@ class SettingsController extends Controller
     }
 
     /**
+     * Update the artisan's payout settlement account details.
+     */
+    public function updatePayout(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        abort_unless($user && ($user->isArtisan() || $user->isWorkspaceOwner()), 403, 'Only the shop owner can update payout settlement settings.');
+
+        $sellerOwner = $user->getEffectiveSeller() ?: $user;
+
+        $request->validate([
+            'disbursement_method' => ['required', 'string', 'in:gcash,maya,bank,GCash,Maya,Bank Transfer'],
+            'account_name' => ['required', 'string', 'min:2', 'max:100'],
+            'account_number' => ['required', 'string', 'max:30'],
+            'bank_name' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $methodInput = strtolower($request->input('disbursement_method'));
+        $rawNumber = (string) $request->input('account_number');
+
+        if (in_array($methodInput, ['gcash', 'maya'])) {
+            // Strip all non-numeric characters (spaces, dashes, parentheses, letters, symbols)
+            $digits = preg_replace('/[^0-9]/', '', $rawNumber);
+
+            // Normalize +63 / 63 prefix to 09
+            if (str_starts_with($digits, '639') && strlen($digits) === 12) {
+                $digits = '0' . substr($digits, 2);
+            } elseif (str_starts_with($digits, '9') && strlen($digits) === 10) {
+                $digits = '0' . $digits;
+            }
+
+            if (!preg_match('/^09[0-9]{9}$/', $digits)) {
+                return back()->withErrors([
+                    'account_number' => 'Please enter a valid 11-digit Philippine mobile number starting with 09 (e.g. 0917 123 4567).',
+                ]);
+            }
+
+            $sellerOwner->payout_method = $methodInput === 'gcash' ? 'GCash' : 'Maya';
+            $sellerOwner->payout_account_number = $digits;
+        } else {
+            // Bank transfer: strip non-digits, require 8-20 digits
+            $cleanNumber = preg_replace('/[^0-9]/', '', $rawNumber);
+            if (strlen($cleanNumber) < 8 || strlen($cleanNumber) > 20) {
+                return back()->withErrors([
+                    'account_number' => 'Please enter a valid bank account number (8 to 20 digits).',
+                ]);
+            }
+
+            $sellerOwner->payout_method = $request->input('bank_name') ?: 'Bank Transfer';
+            $sellerOwner->payout_account_number = $cleanNumber;
+        }
+
+        $sellerOwner->payout_account_name = trim($request->input('account_name'));
+        $sellerOwner->save();
+
+        return redirect()->back()->with('success', 'Payout settlement details updated successfully.');
+    }
+
+    /**
      * Update the user's enabled modules.
      */
     public function updateModules(Request $request)
@@ -111,7 +173,7 @@ class SettingsController extends Controller
             'procurement' => 'boolean',
         ]);
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = Auth::user();
 
         if (!$user->canManageSellerModuleSettings()) {

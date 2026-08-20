@@ -197,6 +197,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
         // SETTINGS
         Route::get('/seller/settings', [\App\Http\Controllers\Seller\SettingsController::class, 'index'])->middleware('artisan')->name('seller.settings.index');
+        Route::post('/seller/settings/payout', [\App\Http\Controllers\Seller\SettingsController::class, 'updatePayout'])->middleware('artisan')->name('seller.settings.payout');
         Route::post('/settings/modules', [\App\Http\Controllers\Seller\SettingsController::class, 'updateModules'])->middleware('artisan')->name('settings.modules');
 
         // EXECUTIVE APPROVALS & DELEGATION (PREMIUM & ELITE)
@@ -443,6 +444,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     // Payout Management
     Route::get('/payouts', [\App\Http\Controllers\Admin\PayoutController::class, 'index'])->name('admin.payouts.index');
     Route::post('/payouts', [\App\Http\Controllers\Admin\PayoutController::class, 'store'])->name('admin.payouts.store');
+    Route::get('/payouts/export', [\App\Http\Controllers\Admin\PayoutController::class, 'export'])->name('admin.payouts.export');
     
     Route::get('/compliance', [\App\Http\Controllers\Admin\ModerationController::class, 'compliance'])->name('admin.compliance');
     Route::get('/review-moderation', fn() => redirect()->route('admin.compliance', ['tab' => 'disputes']))->name('admin.review-moderation');

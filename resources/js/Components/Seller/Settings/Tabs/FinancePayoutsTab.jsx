@@ -1,39 +1,108 @@
 import React, { useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import { Banknote, ShieldCheck, CheckCircle2, Building2, Smartphone, Wallet } from 'lucide-react';
+import { Banknote, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
+import InputError from '@/Components/InputError';
 
-export default function FinancePayoutsTab({ sellerOwner, permissions }) {
+/**
+ * Format Philippine mobile number into standard 09XX XXX XXXX format
+ * automatically stripping non-digits, negatives, spaces, letters, and symbols.
+ */
+function formatPhilippineMobileNumber(val) {
+    if (!val) return '';
+    let digits = String(val).replace(/\D/g, '');
+    
+    // Normalize +63 / 63 prefix to 09
+    if (digits.startsWith('639')) {
+        digits = '0' + digits.slice(2);
+    } else if (digits.startsWith('9')) {
+        digits = '0' + digits;
+    }
+    
+    digits = digits.slice(0, 11);
+    
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 7) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+    return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 11)}`;
+}
+
+/**
+ * Clean and format bank account numbers (allow digits only, max 20)
+ */
+function formatBankAccountNumber(val) {
+    if (!val) return '';
+    return String(val).replace(/\D/g, '').slice(0, 20);
+}
+
+export default function FinancePayoutsTab({ sellerOwner = {}, permissions = {} }) {
     const { addToast } = useToast();
-    const canEdit = permissions?.can_edit_accounting;
+    const canEdit = permissions?.can_edit_shop_settings || permissions?.can_edit_accounting;
+
+    // Detect initial disbursement method
+    const existingMethod = (sellerOwner.payout_method || 'GCash').toLowerCase();
+    const isMaya = existingMethod.includes('maya');
+    const isGcash = existingMethod.includes('gcash');
+    const isBank = !isMaya && !isGcash && Boolean(sellerOwner.payout_method);
+
+    const initialMethod = isMaya ? 'maya' : isBank ? 'bank' : 'gcash';
+    const initialBankName = isBank ? sellerOwner.payout_method : 'BDO Unibank';
+    const rawAccountNumber = sellerOwner.payout_account_number || '';
+    const initialAccountNumber = initialMethod === 'bank'
+        ? rawAccountNumber
+        : formatPhilippineMobileNumber(rawAccountNumber);
 
     const [saved, setSaved] = useState(false);
 
     const form = useForm({
-        disbursement_method: 'gcash',
-        account_name: sellerOwner.name || '',
-        account_number: '',
-        bank_name: 'GCash',
+        disbursement_method: initialMethod,
+        account_name: sellerOwner.payout_account_name || sellerOwner.name || '',
+        account_number: initialAccountNumber,
+        bank_name: initialBankName,
     });
+
+    const handleNumberChange = (e) => {
+        const inputVal = e.target.value;
+        if (form.data.disbursement_method === 'bank') {
+            form.setData('account_number', formatBankAccountNumber(inputVal));
+        } else {
+            form.setData('account_number', formatPhilippineMobileNumber(inputVal));
+        }
+    };
+
+    const handleMethodChange = (val) => {
+        form.setData((d) => ({
+            ...d,
+            disbursement_method: val,
+            bank_name: val === 'gcash' ? 'GCash' : val === 'maya' ? 'Maya' : (d.bank_name || 'BDO Unibank'),
+            account_number: val === 'bank'
+                ? formatBankAccountNumber(d.account_number)
+                : formatPhilippineMobileNumber(d.account_number),
+        }));
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        setSaved(true);
-        if (addToast) {
-            addToast('Settlement account details updated successfully.', 'success');
-        }
-        setTimeout(() => setSaved(false), 4000);
+        form.post(route('seller.settings.payout'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setSaved(true);
+                if (addToast) {
+                    addToast('Settlement account details updated successfully.', 'success');
+                }
+                setTimeout(() => setSaved(false), 4000);
+            },
+        });
     };
 
     return (
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-2xs space-y-6">
             <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 shrink-0">
                     <Banknote size={20} />
                 </div>
                 <div>
-                    <h3 className="text-base font-bold text-stone-900">Finance & Payout Settlement</h3>
-                    <p className="text-xs text-stone-500">Configure bank accounts and e-wallet details for automated earnings disbursement.</p>
+                    <h3 className="text-base font-bold text-stone-900">Finance &amp; Payout Settlement</h3>
+                    <p className="text-xs text-stone-500">Configure bank accounts and GCash / Maya details for weekly earnings disbursements.</p>
                 </div>
             </div>
 
@@ -43,7 +112,7 @@ export default function FinancePayoutsTab({ sellerOwner, permissions }) {
                 <div>
                     <h4 className="text-xs font-bold text-emerald-900">Encrypted Settlement Gateway</h4>
                     <p className="text-xs text-emerald-800 mt-0.5 leading-relaxed">
-                        Earnings from completed customer orders are transferred to your designated account via Paymongo / InstaPay settlement.
+                        Earnings from completed customer orders are disbursed directly to your designated account by the platform every week.
                     </p>
                 </div>
             </div>
@@ -64,22 +133,16 @@ export default function FinancePayoutsTab({ sellerOwner, permissions }) {
                     <div className="relative">
                         <select
                             value={form.data.disbursement_method}
-                            onChange={(e) => {
-                                const val = e.target.value;
-                                form.setData((d) => ({
-                                    ...d,
-                                    disbursement_method: val,
-                                    bank_name: val === 'gcash' ? 'GCash' : val === 'maya' ? 'Maya' : 'BDO Unibank',
-                                }));
-                            }}
-                            disabled={!canEdit}
-                            className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500 disabled:bg-stone-50 min-h-[44px]"
+                            onChange={(e) => handleMethodChange(e.target.value)}
+                            disabled={!canEdit || form.processing}
+                            className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500 disabled:bg-stone-50 min-h-[44px] cursor-pointer"
                         >
-                            <option value="gcash">GCash E-Wallet</option>
-                            <option value="maya">Maya E-Wallet</option>
+                            <option value="gcash">GCash</option>
+                            <option value="maya">Maya</option>
                             <option value="bank">Bank Transfer (InstaPay / PESONet)</option>
                         </select>
                     </div>
+                    <InputError message={form.errors.disbursement_method} className="mt-1" />
                 </div>
 
                 {form.data.disbursement_method === 'bank' && (
@@ -90,8 +153,8 @@ export default function FinancePayoutsTab({ sellerOwner, permissions }) {
                         <select
                             value={form.data.bank_name}
                             onChange={(e) => form.setData('bank_name', e.target.value)}
-                            disabled={!canEdit}
-                            className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500 disabled:bg-stone-50 min-h-[44px]"
+                            disabled={!canEdit || form.processing}
+                            className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500 disabled:bg-stone-50 min-h-[44px] cursor-pointer"
                         >
                             <option value="BDO Unibank">BDO Unibank</option>
                             <option value="BPI">BPI (Bank of the Philippine Islands)</option>
@@ -99,7 +162,10 @@ export default function FinancePayoutsTab({ sellerOwner, permissions }) {
                             <option value="Metrobank">Metrobank</option>
                             <option value="Landbank">Landbank of the Philippines</option>
                             <option value="Security Bank">Security Bank</option>
+                            <option value="RCBC">RCBC (Rizal Commercial Banking Corp)</option>
+                            <option value="PNB">PNB (Philippine National Bank)</option>
                         </select>
+                        <InputError message={form.errors.bank_name} className="mt-1" />
                     </div>
                 )}
             </div>
@@ -113,26 +179,33 @@ export default function FinancePayoutsTab({ sellerOwner, permissions }) {
                         type="text"
                         value={form.data.account_name}
                         onChange={(e) => form.setData('account_name', e.target.value)}
-                        placeholder="Registered Account Name"
-                        disabled={!canEdit}
+                        placeholder="Registered Account Name (e.g. Juan Dela Cruz)"
+                        disabled={!canEdit || form.processing}
                         className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500 disabled:bg-stone-50 min-h-[44px]"
                         required
                     />
+                    <InputError message={form.errors.account_name} className="mt-1" />
                 </div>
 
                 <div>
                     <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-                        {form.data.disbursement_method === 'bank' ? 'Account Number' : 'Mobile Number (09XX XXX XXXX)'}
+                        {form.data.disbursement_method === 'bank' ? 'Bank Account Number' : 'Mobile Number (09XX XXX XXXX)'}
                     </label>
                     <input
                         type="text"
                         value={form.data.account_number}
-                        onChange={(e) => form.setData('account_number', e.target.value)}
-                        placeholder={form.data.disbursement_method === 'bank' ? 'e.g. 1092 3847 5612' : 'e.g. 0917 123 4567'}
-                        disabled={!canEdit}
-                        className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500 disabled:bg-stone-50 min-h-[44px]"
+                        onChange={handleNumberChange}
+                        placeholder={form.data.disbursement_method === 'bank' ? 'e.g. 109238475612' : '0917 123 4567'}
+                        disabled={!canEdit || form.processing}
+                        className="w-full rounded-xl border-stone-200 text-sm font-mono tracking-wider focus:border-clay-500 focus:ring-clay-500 disabled:bg-stone-50 min-h-[44px]"
                         required
                     />
+                    <InputError message={form.errors.account_number} className="mt-1" />
+                    <p className="text-[11px] text-stone-400 mt-1 font-sans">
+                        {form.data.disbursement_method === 'bank'
+                            ? 'Enter 8 to 20 digit bank account number.'
+                            : 'Accepts 09XX, +639, or spaces. Automatically formatted to 11 digits.'}
+                    </p>
                 </div>
             </div>
 
@@ -141,10 +214,14 @@ export default function FinancePayoutsTab({ sellerOwner, permissions }) {
                     <button
                         type="submit"
                         disabled={form.processing}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-clay-600 text-white text-xs font-bold hover:bg-clay-700 transition disabled:opacity-50 min-h-[40px]"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-clay-700 hover:bg-clay-800 text-white text-xs font-bold transition shadow-xs disabled:opacity-50 min-h-[40px] cursor-pointer"
                     >
-                        <CheckCircle2 size={15} />
-                        Save Settlement Details
+                        {form.processing ? (
+                            <Loader2 size={15} className="animate-spin" />
+                        ) : (
+                            <CheckCircle2 size={15} />
+                        )}
+                        <span>{form.processing ? 'Saving...' : 'Save Settlement Details'}</span>
                     </button>
                 </div>
             )}

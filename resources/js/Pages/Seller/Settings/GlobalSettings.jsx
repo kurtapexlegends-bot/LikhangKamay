@@ -18,7 +18,7 @@ export default function GlobalSettings({ auth, sellerOwner, stats, locations = [
         { id: 'storefront', label: 'Shop Storefront', show: Boolean(permissions.can_edit_shop_settings) },
         { id: 'locations', label: 'Workplace Locations', show: Boolean(permissions.can_edit_shop_settings && isPremiumOrElite) },
         { id: 'payroll', label: 'People & Payroll', show: Boolean(permissions.can_edit_hr_settings && isPremiumOrElite) },
-        { id: 'finance', label: 'Finance & Payouts', show: Boolean(permissions.can_edit_accounting && isPremiumOrElite) },
+        { id: 'finance', label: 'Finance & Payouts', show: Boolean(permissions.can_edit_shop_settings) },
     ].filter((t) => t.show);
 
     return (
