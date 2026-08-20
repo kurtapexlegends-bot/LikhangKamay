@@ -318,11 +318,11 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                                     <span className="bg-stone-100 px-1.5 py-0.5 rounded border border-stone-200">{user.previous_tier_label || 'Free'}</span>
                                                     <ChevronRight size={10} className="text-stone-300" />
                                                     <span className={`px-1.5 py-0.5 rounded border ${
-                                                        user.tier === 'super_premium' ? 'bg-stone-900 text-white border-stone-850' :
-                                                        user.tier === 'premium' ? 'bg-clay-50 text-clay-700 border-clay-200' :
+                                                        user.tier === 'super_premium' ? 'bg-violet-50 text-violet-700 border-violet-200 font-extrabold' :
+                                                        user.tier === 'premium' ? 'bg-amber-50 text-amber-700 border-amber-200 font-extrabold' :
                                                         'bg-stone-50 text-stone-600 border-stone-200'
                                                     }`}>
-                                                        {user.tier === 'super_premium' ? 'Premium+' : user.tier}
+                                                        {user.tier === 'super_premium' ? 'Elite' : user.tier === 'premium' ? 'Premium' : 'Standard'}
                                                     </span>
                                                 </div>
                                                 <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black border uppercase tracking-wider ${
@@ -389,11 +389,11 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                             <span className="bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded border border-stone-200">{user.previous_tier_label || 'Free'}</span>
                                             <ChevronRight size={10} className="text-stone-300" />
                                             <span className={`px-1.5 py-0.5 rounded border ${
-                                                user.tier === 'super_premium' ? 'bg-stone-900 text-white border-stone-850' :
-                                                user.tier === 'premium' ? 'bg-clay-50 text-clay-700 border-clay-200' :
+                                                user.tier === 'super_premium' ? 'bg-violet-50 text-violet-700 border-violet-200 font-extrabold' :
+                                                user.tier === 'premium' ? 'bg-amber-50 text-amber-700 border-amber-200 font-extrabold' :
                                                 'bg-stone-50 text-stone-600 border-stone-200'
                                             }`}>
-                                                {user.tier === 'super_premium' ? 'Premium+' : user.tier}
+                                                {user.tier === 'super_premium' ? 'Elite' : user.tier === 'premium' ? 'Premium' : 'Standard'}
                                             </span>
                                             <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black border uppercase tracking-wider ml-1 ${
                                                 user.change_direction === 'upgrade' 

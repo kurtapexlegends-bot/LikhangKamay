@@ -15,12 +15,14 @@ class AdminAnalyticsService
             $churn = $this->getChurnData();
             $categories = $this->getCategoryPerformanceData();
             $health = $this->getPlatformHealthData();
+            $topArtisans = $this->getTopArtisansData();
 
             return [
                 'transactions' => $transactions,
                 'churn' => $churn,
                 'categories' => $categories,
                 'health' => $health,
+                'topArtisans' => $topArtisans,
             ];
         });
     }
@@ -144,11 +146,12 @@ class AdminAnalyticsService
                 'id' => $u->id,
                 'name' => $u->name,
                 'email' => $u->email,
+                'role' => 'artisan',
                 'shop_name' => $u->shop_name,
                 'avatar' => $u->avatar,
                 'premium_tier' => $u->premium_tier,
-                'last_seen' => $u->last_seen_at?->diffForHumans() ?? 'Never',
-                'status' => ($u->last_seen_at && $u->last_seen_at >= $atRiskThreshold) ? 'At Risk' : 'Churned',
+                'last_seen' => $u->last_seen_at?->diffForHumans() ?? 'No recent activity',
+                'status' => ($u->last_seen_at && $u->last_seen_at >= $atRiskThreshold) ? 'Needs Check-in' : 'Inactive',
             ]);
 
         return [
@@ -201,5 +204,41 @@ class AdminAnalyticsService
             'reviewRate' => $reviewRate,
             'refundRate' => $refundRate,
         ];
+    }
+
+    protected function getTopArtisansData(): array
+    {
+        return User::where('role', 'artisan')
+            ->where('artisan_status', 'approved')
+            ->select('users.id', 'users.name', 'users.shop_name', 'users.avatar', 'users.premium_tier', 'users.shop_slug')
+            ->selectSub(function ($query) {
+                $query->selectRaw('COALESCE(SUM(total_amount), 0)')
+                    ->from('orders')
+                    ->whereColumn('orders.artisan_id', 'users.id')
+                    ->where('orders.status', '!=', 'cancelled');
+            }, 'total_gmv')
+            ->selectSub(function ($query) {
+                $query->selectRaw('COUNT(*)')
+                    ->from('orders')
+                    ->whereColumn('orders.artisan_id', 'users.id')
+                    ->where('orders.status', '!=', 'cancelled');
+            }, 'orders_count')
+            ->orderByDesc('total_gmv')
+            ->orderByDesc('orders_count')
+            ->limit(5)
+            ->get()
+            ->map(fn($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'role' => 'artisan',
+                'shop_name' => $u->shop_name ?? $u->name,
+                'shop_slug' => $u->shop_slug,
+                'avatar' => $u->avatar,
+                'premium_tier' => $u->premium_tier,
+                'total_gmv' => (float) ($u->total_gmv ?? 0),
+                'orders_count' => (int) ($u->orders_count ?? 0),
+            ])
+            ->values()
+            ->toArray();
     }
 }

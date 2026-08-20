@@ -433,6 +433,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/settings/email-templates/dispatch', [\App\Http\Controllers\Admin\EmailStudioController::class, 'dispatch'])->middleware('throttle:admin.heavy')->name('admin.email-templates.dispatch');
         Route::get('/monetization', fn() => redirect()->route('admin.settings.index', ['tab' => 'monetization']))->name('admin.monetization');
     Route::get('/insights', [\App\Http\Controllers\Admin\SuperAdminController::class, 'insights'])->name('admin.insights');
+    Route::post('/insights/reengage-artisan/{user:id}', [\App\Http\Controllers\Admin\SuperAdminController::class, 'reengageArtisan'])->middleware('throttle:admin.heavy')->name('admin.insights.reengage-artisan');
     Route::get('/insights/export', [\App\Http\Controllers\Admin\SuperAdminController::class, 'exportInsights'])->name('admin.insights.export');
     Route::get('/settings/monetization/export', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'exportMonetization'])->name('admin.settings.monetization.export');
     Route::get('/users-manager', [\App\Http\Controllers\Admin\SuperAdminController::class, 'userManager'])->name('admin.users.manager');

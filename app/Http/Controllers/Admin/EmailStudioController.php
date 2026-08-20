@@ -7,12 +7,14 @@ use App\Models\EmailTemplate;
 use App\Models\User;
 use App\Models\PlatformActivity;
 use App\Mail\CustomDynamicMail;
+use App\Notifications\SystemBroadcastNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
 class EmailStudioController extends Controller
@@ -153,23 +155,20 @@ class EmailStudioController extends Controller
             'is_test' => ['nullable', 'boolean'],
         ]);
 
-        $recipients = [];
+        $targetUsers = collect();
+        $customEmails = [];
         $recipientLabel = '';
 
         if ($validated['target_type'] === 'user') {
             $user = User::findOrFail($validated['target_user_id']);
-            $recipients[] = [
-                'email' => $user->email,
-                'name' => $user->name,
-                'shop_name' => $user->shop_name ?? 'N/A',
-            ];
+            $targetUsers->push($user);
             $recipientLabel = "User {$user->name} ({$user->email})";
         } elseif ($validated['target_type'] === 'email') {
-            $recipients[] = [
-                'email' => $validated['target_email'],
-                'name' => 'Recipient',
-                'shop_name' => 'N/A',
-            ];
+            $customEmails[] = $validated['target_email'];
+            $existingUser = User::where('email', $validated['target_email'])->first();
+            if ($existingUser) {
+                $targetUsers->push($existingUser);
+            }
             $recipientLabel = $validated['target_email'];
         } elseif ($validated['target_type'] === 'role') {
             $query = User::query();
@@ -195,14 +194,10 @@ class EmailStudioController extends Controller
                     $recipientLabel = 'Premium Sellers';
                     break;
             }
-            $recipients = $query->limit(200)->get(['email', 'name', 'shop_name'])->map(fn($u) => [
-                'email' => $u->email,
-                'name' => $u->name,
-                'shop_name' => $u->shop_name ?? 'N/A',
-            ])->toArray();
+            $targetUsers = $query->limit(200)->get();
         }
 
-        if (empty($recipients)) {
+        if ($targetUsers->isEmpty() && empty($customEmails)) {
             return response()->json([
                 'success' => false,
                 'message' => 'No valid target recipients found for the selected criteria.',
@@ -213,15 +208,49 @@ class EmailStudioController extends Controller
         $dispatchedCount = 0;
 
         try {
-            foreach ($recipients as $recipient) {
+            // 1. Send to registered users (Mail + In-Platform Notification)
+            foreach ($targetUsers as $user) {
                 $replacements = [
-                    '{user_name}' => $recipient['name'],
-                    '{shop_name}' => $recipient['shop_name'],
+                    '{user_name}' => $user->name,
+                    '{shop_name}' => $user->shop_name ?? 'N/A',
                     '{site_name}' => 'LikhangKamay',
                     '{action_url}' => $validated['button_url'] ?? url('/'),
                 ];
 
-                Mail::to($recipient['email'])->send(new CustomDynamicMail(
+                Mail::to($user->email)->send(new CustomDynamicMail(
+                    subjectText: $validated['subject'],
+                    headlineText: $validated['headline'] ?? null,
+                    bodyText: $validated['body'],
+                    buttonLabel: $validated['button_label'] ?? null,
+                    buttonUrl: $validated['button_url'] ?? null,
+                    replacements: $replacements
+                ));
+
+                Notification::send($user, new SystemBroadcastNotification(
+                    subjectText: $validated['subject'],
+                    bodyText: $validated['body'],
+                    headlineText: $validated['headline'] ?? null,
+                    buttonUrl: $validated['button_url'] ?? null,
+                    buttonLabel: $validated['button_label'] ?? null
+                ));
+
+                $dispatchedCount++;
+            }
+
+            // 2. Send to standalone custom emails without accounts
+            foreach ($customEmails as $email) {
+                if ($targetUsers->pluck('email')->contains($email)) {
+                    continue; // already sent above
+                }
+
+                $replacements = [
+                    '{user_name}' => 'Valued Member',
+                    '{shop_name}' => 'N/A',
+                    '{site_name}' => 'LikhangKamay',
+                    '{action_url}' => $validated['button_url'] ?? url('/'),
+                ];
+
+                Mail::to($email)->send(new CustomDynamicMail(
                     subjectText: $validated['subject'],
                     headlineText: $validated['headline'] ?? null,
                     bodyText: $validated['body'],
@@ -238,7 +267,7 @@ class EmailStudioController extends Controller
 
             PlatformActivity::log(
                 'EMAIL_DISPATCH',
-                "Dispatched template email \"{$validated['subject']}\" to {$dispatchedCount} recipient(s) ({$recipientLabel})"
+                "Dispatched template email & in-app broadcast \"{$validated['subject']}\" to {$dispatchedCount} recipient(s) ({$recipientLabel})"
             );
 
             return response()->json([

@@ -8,14 +8,11 @@ import Modal from '@/Components/Modal';
 import { 
     Mail, 
     Send, 
-    Key, 
     User, 
     CheckCircle2, 
     AlertCircle, 
-    Server, 
     FileText, 
     Eye,
-    EyeOff,
     Plus,
     Edit3,
     Trash2,
@@ -31,7 +28,7 @@ import FormSkeleton from './Partials/FormSkeleton';
 
 export default function EmailStudioForm({ data, setData, errors, processing }) {
     const { auth } = usePage().props;
-    const [subSection, setSubSection] = useState('templates'); // 'templates' | 'broadcast' | 'credentials'
+    const [subSection, setSubSection] = useState('templates'); // 'templates' | 'broadcast'
 
     // Template Studio State
     const [templates, setTemplates] = useState([]);
@@ -70,9 +67,6 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
     const [broadcastButtonUrl, setBroadcastButtonUrl] = useState('');
     const [isDispatching, setIsDispatching] = useState(false);
     const [dispatchResult, setDispatchResult] = useState(null);
-
-    // Credentials State
-    const [showApiKey, setShowApiKey] = useState(false);
 
     // Load templates on mount
     useEffect(() => {
@@ -307,16 +301,6 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                     >
                         <Send size={13} />
                         Audience Broadcast
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setSubSection('credentials')}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold transition-all shrink-0 snap-start active:scale-95 min-h-[38px] ${
-                            subSection === 'credentials' ? 'bg-white text-clay-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
-                        }`}
-                    >
-                        <Server size={13} />
-                        Mail Engine
                     </button>
                 </div>
             </div>
@@ -846,73 +830,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                 </div>
             )}
 
-            {/* --- SECTION 3: MAIL ENGINE CREDENTIALS --- */}
-            {subSection === 'credentials' && (
-                <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <InputLabel value="Active Mail Driver" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1.5" />
-                            <select
-                                value={data.mail_driver || 'resend'}
-                                onChange={(e) => setData('mail_driver', e.target.value)}
-                                className="block w-full rounded-xl border-stone-200 bg-stone-50/30 text-xs py-2 px-3 min-h-[44px] text-stone-800 font-medium focus:ring-clay-500/20 focus:border-clay-500"
-                            >
-                                <option value="resend">Resend API (Production Recommended)</option>
-                                <option value="smtp">SMTP Relay Server</option>
-                                <option value="log">Local File Log (Development Only)</option>
-                            </select>
-                        </div>
 
-                        <div>
-                            <InputLabel value="Resend API Key" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1.5" />
-                            <div className="relative">
-                                <Key className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
-                                <TextInput
-                                    type={showApiKey ? "text" : "password"}
-                                    className="block w-full pl-9 pr-9 bg-stone-50/30 text-xs py-2 min-h-[44px]"
-                                    placeholder="re_1234567890..."
-                                    value={data.resend_api_key || ''}
-                                    onChange={(e) => setData('resend_api_key', e.target.value)}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowApiKey(!showApiKey)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition"
-                                >
-                                    {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <InputLabel value="From Email Address" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1.5" />
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
-                                <TextInput
-                                    type="email"
-                                    className="block w-full pl-9 bg-stone-50/30 text-xs py-2 min-h-[44px]"
-                                    value={data.mail_from_address || 'noreply@likhangkamay.app'}
-                                    onChange={(e) => setData('mail_from_address', e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <InputLabel value="From Sender Name" className="text-[9px] font-bold text-stone-450 uppercase tracking-wider mb-1.5" />
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
-                                <TextInput
-                                    className="block w-full pl-9 bg-stone-50/30 text-xs py-2 min-h-[44px]"
-                                    value={data.mail_from_name || 'LikhangKamay'}
-                                    onChange={(e) => setData('mail_from_name', e.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* --- LIVE EMAIL PREVIEW MODAL --- */}
             <Modal show={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} maxWidth="2xl">

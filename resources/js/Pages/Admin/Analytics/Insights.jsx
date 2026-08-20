@@ -3,7 +3,8 @@ import { Head, Link } from '@inertiajs/react';
 import {
     TrendingUp, TrendingDown, Minus,
     AlertTriangle, Users, ShoppingBag, 
-    ClipboardCheck, ArrowRight, Printer, Download
+    ClipboardCheck, ArrowRight, Printer, Download,
+    Mail, Check, Loader2, Award, ExternalLink
 } from 'lucide-react';
 import {
     ResponsiveContainer,
@@ -16,6 +17,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import KPICard from '@/Components/KPICard';
 import ExportButton from '@/Components/ExportButton';
 import FloatingModuleActions from '@/Components/FloatingModuleActions';
+import { useToast } from '@/Components/ToastContext';
 
 // Earthy & Premium Palette
 const PIE_COLORS = ['#c07251', '#d97706', '#10b981', '#78716c', '#a8a29e', '#d6d3d1'];
@@ -70,10 +72,32 @@ export default function Insights({
     transactions = { currentGmv: 0, growthRate: 0, seven_days: [], monthly: [], yearly: [] }, 
     churn = { active: 0, atRisk: 0, churned: 0, atRiskList: [] }, 
     categories = [], 
-    health = { completionRate: 0, aov: 0, reviewRate: 0, refundRate: 0 } 
+    health = { completionRate: 0, aov: 0, reviewRate: 0, refundRate: 0 },
+    topArtisans = []
 }) {
+    const { addToast } = useToast();
     const [hoveredCategoryIndex, setHoveredCategoryIndex] = useState(null);
     const [chartFilter, setChartFilter] = useState('Monthly');
+    const [reengagingId, setReengagingId] = useState(null);
+    const [contactedIds, setContactedIds] = useState(new Set());
+
+    const handleReengageArtisan = async (artisan) => {
+        if (reengagingId) return;
+        setReengagingId(artisan.id);
+        try {
+            const res = await window.axios.post(route('admin.insights.reengage-artisan', artisan.id));
+            if (res.data?.success) {
+                addToast(res.data.message || `Re-engagement sent to ${artisan.name}`, 'success');
+                setContactedIds(prev => new Set(prev).add(artisan.id));
+            } else {
+                addToast(res.data?.message || 'Failed to send outreach.', 'error');
+            }
+        } catch (err) {
+            addToast(err.response?.data?.message || 'Failed to send re-engagement outreach.', 'error');
+        } finally {
+            setReengagingId(null);
+        }
+    };
 
     const totalCategoryGmv = categories.reduce((sum, category) => sum + Number(category.gmv || 0), 0);
 
@@ -198,7 +222,7 @@ export default function Insights({
                         icon={Users}
                         bg="bg-clay-50"
                         color="text-clay-600"
-                        subtitle={`${churn.atRisk} at risk of churn`}
+                        subtitle={`${churn.atRisk} needing check-in`}
                     />
                 </div>
                 <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
@@ -264,9 +288,8 @@ export default function Insights({
                         </div>
                     </div>
                     <div className="p-4 sm:p-6 flex-grow flex items-center">
-                        {/* Screen Chart */}
-                        <div className="print:hidden h-full w-full">
-                            <ResponsiveContainer width="100%" height={260}>
+                        <div className="h-[260px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={currentChartData} margin={{ top: 10, right: 10, bottom: 5, left: -20 }}>
                                     <defs>
                                         <linearGradient id="adminGmvFill" x1="0" y1="0" x2="0" y2="1">
@@ -275,119 +298,88 @@ export default function Insights({
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c', fontWeight: 600 }} dy={10} />
-                                    <YAxis width={45} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c', fontWeight: 600 }} tickFormatter={v => `₱${v}`} />
-                                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#c07251', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                                    <Area type="monotone" dataKey="gmv" name="GMV" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#adminGmvFill)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0, fill: '#c07251' }} animationDuration={1000} />
+                                    <XAxis dataKey="name" stroke="#a8a29e" fontSize={10} tickLine={false} axisLine={false} />
+                                    <YAxis 
+                                        stroke="#a8a29e" 
+                                        fontSize={10} 
+                                        tickLine={false} 
+                                        axisLine={false} 
+                                        tickFormatter={(v) => `₱${Number(v) >= 1000 ? (Number(v)/1000).toFixed(0) + 'k' : v}`} 
+                                    />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Area type="monotone" dataKey="gmv" stroke="#c07251" strokeWidth={2.5} fillOpacity={1} fill="url(#adminGmvFill)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
-                        {/* Print Chart (Fixed width to bypass ResponsiveContainer collapse) */}
-                        <div className="hidden print:flex print:justify-center w-full h-[230px]">
-                            <AreaChart width={445} height={220} data={currentChartData} margin={{ top: 10, right: 10, bottom: 5, left: -20 }}>
-                                <defs>
-                                    <linearGradient id="adminGmvFillPrint" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#c07251" stopOpacity={0.16} />
-                                        <stop offset="95%" stopColor="#c07251" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c', fontWeight: 600 }} dy={10} />
-                                <YAxis width={45} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c', fontWeight: 600 }} tickFormatter={v => `₱${v}`} />
-                                <Area type="monotone" dataKey="gmv" name="GMV" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#adminGmvFillPrint)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} isAnimationActive={false} />
-                            </AreaChart>
+                        {/* Print Fallback Table */}
+                        <div className="hidden print:block w-full">
+                            <table className="w-full text-xs text-left border border-stone-200">
+                                <thead>
+                                    <tr className="bg-stone-100 border-b border-stone-200">
+                                        <th className="p-2 font-bold text-stone-700">Period</th>
+                                        <th className="p-2 font-bold text-stone-700 text-right">Orders</th>
+                                        <th className="p-2 font-bold text-stone-700 text-right">GMV</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {currentChartData.map((d, i) => (
+                                        <tr key={i} className="border-b border-stone-100">
+                                            <td className="p-2 text-stone-800">{d.name}</td>
+                                            <td className="p-2 text-stone-800 text-right">{d.orders}</td>
+                                            <td className="p-2 text-stone-800 text-right">₱{Number(d.gmv || 0).toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                {/* Right 1 Column - Category Performance */}
-                <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col">
-                    <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/30">
-                        <div>
-                            <h3 className="font-bold text-stone-900 text-sm sm:text-base flex items-center gap-2">
-                                <ShoppingBag className="text-clay-600" size={16} />
-                                Categories by GMV
-                            </h3>
-                            <p className="text-xs font-medium text-stone-500 mt-0.5">Top categories driving sales</p>
-                        </div>
+                {/* Right 1 Column - Categories by GMV */}
+                <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col">
+                    <div className="px-5 py-4 border-b border-stone-100 bg-stone-50/30">
+                        <h3 className="font-bold text-stone-900 text-sm sm:text-base">
+                            Categories by GMV
+                        </h3>
+                        <p className="text-xs font-medium text-stone-500 mt-0.5">Top product categories driving sales</p>
                     </div>
-                    <div className="p-4 sm:p-6 flex-grow flex items-center">
-                        {categories.length > 0 ? (
-                            <div className="w-full">
-                                <div className="h-[180px] w-full flex items-center justify-center relative">
-                                    {/* Screen Pie Chart (Animated) */}
-                                    <div className="print:hidden">
-                                        <PieChart width={180} height={180}>
-                                            <Pie
-                                                data={pieData}
-                                                nameKey="category"
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={45}
-                                                outerRadius={75}
-                                                paddingAngle={pieData.length > 1 ? 4 : 0}
-                                                dataKey="gmv"
-                                                stroke="none"
-                                            >
-                                                {pieData.map((entry, index) => {
-                                                    const originalIndex = categories.findIndex(c => c.category === entry.category);
-                                                    const isHovered = hoveredCategoryIndex === originalIndex;
-                                                    const sliceColor = entry.isEmpty ? '#e7e5e4' : PIE_COLORS[originalIndex % PIE_COLORS.length];
-                                                    return (
-                                                        <Cell 
-                                                            key={`cell-${index}`} 
-                                                            fill={sliceColor}
-                                                            style={{
-                                                                transition: 'all 0.3s ease',
-                                                                transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-                                                                transformOrigin: '50% 50%',
-                                                                filter: isHovered ? 'drop-shadow(0px 4px 6px rgba(0,0,0,0.1))' : 'none'
-                                                            }}
-                                                        />
-                                                    );
-                                                })}
-                                            </Pie>
+                    <div className="p-4 sm:p-5 flex flex-col justify-center flex-grow">
+                        {pieData.length > 0 ? (
+                            <div className="space-y-4">
+                                <div className="h-44 w-full flex items-center justify-center">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
                                             <Tooltip content={<CategoryTooltip />} />
-                                        </PieChart>
-                                    </div>
-
-                                    {/* Print Pie Chart (Instant / Static) */}
-                                    <div className="hidden print:block">
-                                        <PieChart width={180} height={180}>
                                             <Pie
                                                 data={pieData}
-                                                nameKey="category"
                                                 cx="50%"
                                                 cy="50%"
-                                                innerRadius={45}
-                                                outerRadius={75}
-                                                paddingAngle={pieData.length > 1 ? 4 : 0}
+                                                innerRadius={48}
+                                                outerRadius={68}
+                                                paddingAngle={4}
                                                 dataKey="gmv"
-                                                stroke="none"
-                                                isAnimationActive={false}
+                                                onMouseEnter={(_, index) => setHoveredCategoryIndex(index)}
+                                                onMouseLeave={() => setHoveredCategoryIndex(null)}
                                             >
-                                                {pieData.map((entry, index) => {
-                                                    const originalIndex = categories.findIndex(c => c.category === entry.category);
-                                                    const sliceColor = entry.isEmpty ? '#e7e5e4' : PIE_COLORS[originalIndex % PIE_COLORS.length];
-                                                    return (
-                                                        <Cell 
-                                                            key={`cell-${index}`} 
-                                                            fill={sliceColor}
-                                                        />
-                                                    );
-                                                })}
+                                                {pieData.map((entry, index) => (
+                                                    <Cell 
+                                                        key={`cell-${index}`} 
+                                                        fill={entry.isEmpty ? '#e7e5e4' : PIE_COLORS[index % PIE_COLORS.length]} 
+                                                        opacity={hoveredCategoryIndex === null || hoveredCategoryIndex === index ? 1 : 0.4}
+                                                        className="transition-opacity duration-200 outline-hidden"
+                                                    />
+                                                ))}
                                             </Pie>
                                         </PieChart>
-                                    </div>
+                                    </ResponsiveContainer>
                                 </div>
-
-                                <div className="mt-2 space-y-1.5 pt-4 border-t border-stone-100">
-                                    {categories.slice(0, 4).map((item, index) => (
+                                <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                                    {categories.map((item, index) => (
                                         <div 
-                                            key={item.category || index} 
+                                            key={item.category} 
+                                            className="flex items-center justify-between text-xs py-1 px-1.5 rounded hover:bg-stone-50 transition"
                                             onMouseEnter={() => setHoveredCategoryIndex(index)}
                                             onMouseLeave={() => setHoveredCategoryIndex(null)}
-                                            className={`flex items-center justify-between text-[11px] group hover:bg-stone-50 p-1 -mx-1 rounded-md transition-colors ${hoveredCategoryIndex === index ? 'bg-stone-50/80 font-bold' : ''}`}
                                         >
                                             <div className="flex items-center gap-2 min-w-0">
                                                 <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} />
@@ -404,105 +396,188 @@ export default function Insights({
                                 </div>
                             </div>
                         ) : (
-                            <div className="w-full text-center py-10">
-                                <p className="text-sm font-bold text-stone-400">No category data available yet.</p>
-                            </div>
+                            <div className="text-center py-10 text-stone-400">No data available</div>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Inactive Artisan Monitor */}
-            <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col">
-                <div className="px-5 py-4 border-b border-stone-100 bg-stone-50/30">
-                    <h3 className="font-bold text-stone-900 text-sm sm:text-base flex items-center gap-2">
-                        <AlertTriangle className="text-amber-500" size={16} />
-                        Inactive Artisan Monitor
-                    </h3>
-                    <p className="text-xs font-medium text-stone-500 mt-0.5">Artisans flagged as at-risk or churned due to inactivity.</p>
-                </div>
-                <div className="px-5 py-3 bg-stone-50/50 border-b border-stone-100 flex items-center justify-around text-center text-xs">
-                    <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#10b981' }}></span>
-                        <span className="text-stone-500 text-[10px] uppercase font-bold tracking-wider">Active:</span>
-                        <span className="text-emerald-700 font-extrabold text-xs">{churn.active}</span>
-                    </div>
-                    <div className="border-l border-stone-200 h-3"></div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#d97706' }}></span>
-                        <span className="text-stone-500 text-[10px] uppercase font-bold tracking-wider">At Risk:</span>
-                        <span className="text-amber-700 font-extrabold text-xs">{churn.atRisk}</span>
-                    </div>
-                    <div className="border-l border-stone-200 h-3"></div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#ef4444' }}></span>
-                        <span className="text-stone-500 text-[10px] uppercase font-bold tracking-wider">Churned:</span>
-                        <span className="text-red-700 font-extrabold text-xs">{churn.churned}</span>
-                    </div>
-                </div>
-                <div className="overflow-x-auto">
-                    {churn.atRiskList?.length > 0 ? (
-                        <table className="w-full text-left min-w-[600px] border-collapse">
-                            <thead className="bg-stone-50 border-b border-stone-100">
-                                <tr>
-                                    <th className="px-6 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Artisan</th>
-                                    <th className="px-6 py-3 text-center text-[9px] font-bold text-stone-400 uppercase tracking-widest">Tier</th>
-                                    <th className="px-6 py-3 text-left text-[9px] font-bold text-stone-400 uppercase tracking-widest">Status / Activity</th>
-                                    <th className="px-6 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Contact</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-stone-100">
-                                {churn.atRiskList.map(artisan => (
-                                    <tr key={artisan.id} className="hover:bg-[#FCF7F2]/20 transition duration-150">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <UserAvatar user={artisan} className="w-8 h-8 border border-stone-200 shadow-sm" />
-                                                <div>
-                                                    <p className="font-bold text-stone-900 text-xs tracking-tight">{artisan.name}</p>
-                                                    <p className="text-[10px] font-medium text-stone-500">{artisan.shop_name}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            {artisan.premium_tier === 'super_premium' && <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-stone-900 text-white shadow-sm border border-stone-850">Premium+</span>}
-                                            {artisan.premium_tier === 'premium' && <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-clay-50 text-clay-700 border border-clay-200">Premium</span>}
-                                            {artisan.premium_tier !== 'premium' && artisan.premium_tier !== 'super_premium' && <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-stone-100 text-stone-600 border border-stone-200">Free</span>}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
-                                                    artisan.status === 'At Risk' 
-                                                        ? 'bg-amber-50 text-amber-700 border border-amber-200' 
-                                                        : 'bg-rose-50 text-rose-700 border border-rose-200'
-                                                }`}>
-                                                    {artisan.status}
-                                                </span>
-                                                <span className="text-[10px] text-stone-400 font-medium">
-                                                    last active {artisan.last_seen === 'Never' ? 'Never' : artisan.last_seen}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <a
-                                                href={`mailto:${artisan.email || 'support@likhangkamay.app'}`}
-                                                className="inline-flex items-center gap-1 rounded-xl bg-stone-150 hover:bg-stone-200 px-3 py-1.5 text-[9px] font-bold text-stone-600 transition border border-stone-200 shadow-sm min-h-[30px]"
-                                            >
-                                                Contact
-                                            </a>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center p-12 text-center">
-                            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full flex items-center justify-center mb-4 shadow-sm">
-                                <ClipboardCheck size={24} />
-                            </div>
-                            <p className="text-sm font-bold text-stone-900">No Inactive Artisans</p>
-                            <p className="text-[11px] font-medium text-stone-500 mt-1 max-w-[260px]">All approved artisans have been active on their storefronts recently.</p>
+            {/* BOTTOM SECTION: TOP PERFORMING ARTISANS & SELLER ACTIVITY OUTREACH */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* Top Performing Artisans Leaderboard */}
+                <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col">
+                    <div className="px-5 py-4 border-b border-stone-100 bg-stone-50/30 flex items-center justify-between">
+                        <div>
+                            <h3 className="font-bold text-stone-900 text-sm sm:text-base flex items-center gap-2">
+                                <Award className="text-amber-500" size={16} />
+                                Top Performing Artisans
+                            </h3>
+                            <p className="text-xs font-medium text-stone-500 mt-0.5">Leading shops driving marketplace sales and orders.</p>
                         </div>
-                    )}
+                    </div>
+                    <div className="overflow-x-auto flex-1">
+                        {topArtisans?.length > 0 ? (
+                            <table className="w-full text-left min-w-[420px] border-collapse">
+                                <thead className="bg-stone-50 border-b border-stone-100">
+                                    <tr>
+                                        <th className="px-5 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Rank &amp; Artisan</th>
+                                        <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Sales &amp; Orders</th>
+                                        <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Storefront</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-stone-100">
+                                    {topArtisans.map((artisan, index) => (
+                                        <tr key={artisan.id} className="hover:bg-[#FCF7F2]/20 transition duration-150">
+                                            <td className="px-5 py-3.5">
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold shrink-0 ${
+                                                        index === 0 ? 'bg-amber-100 text-amber-800' :
+                                                        index === 1 ? 'bg-stone-200 text-stone-700' :
+                                                        index === 2 ? 'bg-orange-100 text-orange-800' :
+                                                        'bg-stone-100 text-stone-500'
+                                                    }`}>
+                                                        {index + 1}
+                                                    </span>
+                                                    <UserAvatar user={artisan} className="w-8 h-8 shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-stone-900 text-xs tracking-tight truncate">{artisan.name}</p>
+                                                        <p className="text-[10px] font-medium text-stone-500 truncate">{artisan.shop_name}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-3.5 text-right">
+                                                <p className="font-extrabold text-stone-900 text-xs">₱{Number(artisan.total_gmv).toLocaleString()}</p>
+                                                <p className="text-[10px] text-stone-400 font-medium">{artisan.orders_count} {artisan.orders_count === 1 ? 'order' : 'orders'}</p>
+                                            </td>
+                                            <td className="px-5 py-3.5 text-right">
+                                                <a
+                                                    href={artisan.shop_slug ? route('shop.seller', artisan.shop_slug) : '#'}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1 rounded-lg bg-stone-50 hover:bg-stone-100 px-2.5 py-1 text-[10px] font-bold text-stone-700 transition border border-stone-200 shadow-sm"
+                                                    title="View Public Storefront"
+                                                >
+                                                    <span>View</span>
+                                                    <ExternalLink size={10} />
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center p-12 text-center">
+                                <p className="text-sm font-bold text-stone-400">No sales recorded yet.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Seller Activity & Outreach */}
+                <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col">
+                    <div className="px-5 py-4 border-b border-stone-100 bg-stone-50/30">
+                        <h3 className="font-bold text-stone-900 text-sm sm:text-base flex items-center gap-2">
+                            <AlertTriangle className="text-amber-500" size={16} />
+                            Seller Activity &amp; Outreach
+                        </h3>
+                        <p className="text-xs font-medium text-stone-500 mt-0.5">Artisans needing check-in due to storefront inactivity.</p>
+                    </div>
+                    <div className="px-5 py-3 bg-stone-50/50 border-b border-stone-100 flex items-center justify-around text-center text-xs">
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#10b981' }}></span>
+                            <span className="text-stone-500 text-[10px] uppercase font-bold tracking-wider">Active Recently:</span>
+                            <span className="text-emerald-700 font-extrabold text-xs">{churn.active}</span>
+                        </div>
+                        <div className="border-l border-stone-200 h-3"></div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#d97706' }}></span>
+                            <span className="text-stone-500 text-[10px] uppercase font-bold tracking-wider">Needs Check-in:</span>
+                            <span className="text-amber-700 font-extrabold text-xs">{churn.atRisk}</span>
+                        </div>
+                        <div className="border-l border-stone-200 h-3"></div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#78716c' }}></span>
+                            <span className="text-stone-500 text-[10px] uppercase font-bold tracking-wider">Inactive:</span>
+                            <span className="text-stone-700 font-extrabold text-xs">{churn.churned}</span>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto flex-1">
+                        {churn.atRiskList?.length > 0 ? (
+                            <table className="w-full text-left min-w-[420px] border-collapse">
+                                <thead className="bg-stone-50 border-b border-stone-100">
+                                    <tr>
+                                        <th className="px-5 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Artisan</th>
+                                        <th className="px-4 py-3 text-left text-[9px] font-bold text-stone-400 uppercase tracking-widest">Activity Status</th>
+                                        <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Outreach</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-stone-100">
+                                    {churn.atRiskList.map(artisan => (
+                                        <tr key={artisan.id} className="hover:bg-[#FCF7F2]/20 transition duration-150">
+                                            <td className="px-5 py-3.5">
+                                                <div className="flex items-center gap-3">
+                                                    <UserAvatar user={artisan} className="w-8 h-8 shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-stone-900 text-xs tracking-tight truncate">{artisan.name}</p>
+                                                        <p className="text-[10px] font-medium text-stone-500 truncate">{artisan.shop_name}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3.5">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className={`inline-flex self-start px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
+                                                        artisan.status === 'Needs Check-in' || artisan.status === 'At Risk'
+                                                            ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                                                            : 'bg-stone-100 text-stone-600 border border-stone-200'
+                                                    }`}>
+                                                        {artisan.status === 'At Risk' ? 'Needs Check-in' : (artisan.status || 'Inactive')}
+                                                    </span>
+                                                    <span className="text-[10px] text-stone-450 font-medium">
+                                                        {artisan.last_seen === 'Never' ? 'No recent activity' : artisan.last_seen}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-3.5 text-right">
+                                                <button
+                                                    type="button"
+                                                    disabled={reengagingId === artisan.id}
+                                                    onClick={() => handleReengageArtisan(artisan)}
+                                                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[10px] font-bold transition border shadow-sm min-h-[30px] active:scale-95 disabled:opacity-60 ${
+                                                        contactedIds.has(artisan.id)
+                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                                            : 'bg-stone-150 hover:bg-stone-200 text-stone-700 border-stone-200'
+                                                    }`}
+                                                    title={`Send friendly check-in reminder to ${artisan.email || artisan.name}`}
+                                                >
+                                                    {reengagingId === artisan.id ? (
+                                                        <>
+                                                            <Loader2 size={11} className="animate-spin text-stone-500" />
+                                                            <span>Sending...</span>
+                                                        </>
+                                                    ) : contactedIds.has(artisan.id) ? (
+                                                        <>
+                                                            <Check size={12} className="text-emerald-600" />
+                                                            <span>Reminded</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Mail size={12} className="text-stone-500" />
+                                                            <span>Send Reminder</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center p-12 text-center">
+                                <p className="text-sm font-bold text-stone-400">All sellers active.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

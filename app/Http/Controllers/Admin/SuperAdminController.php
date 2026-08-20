@@ -15,11 +15,15 @@ use App\Services\Admin\AdminAnalyticsService;
 use App\Actions\Admin\Users\ApproveArtisan;
 use App\Actions\Admin\Users\RejectArtisan;
 use App\Actions\Admin\Users\BulkApproveArtisans;
+use App\Mail\CustomDynamicMail;
+use App\Notifications\ArtisanReengagementNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -303,6 +307,48 @@ class SuperAdminController extends Controller
         return Inertia::render('Admin/Analytics/Insights', $this->analytics->getInsightsData());
     }
 
+    public function reengageArtisan(Request $request, User $user)
+    {
+        Gate::authorize('admin-action');
+
+        if (!$user->isArtisan()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Target user is not an artisan.',
+            ], 422);
+        }
+
+        $replacements = [
+            '{user_name}' => $user->name,
+            '{shop_name}' => $user->shop_name ?? 'your storefront',
+            '{site_name}' => 'LikhangKamay',
+            '{action_url}' => route('dashboard'),
+        ];
+
+        // 1. Send branded re-engagement transactional email
+        Mail::to($user->email)->send(new CustomDynamicMail(
+            subjectText: 'We miss your craft on LikhangKamay!',
+            headlineText: 'Your artisan shop has been quiet lately',
+            bodyText: "Hello {user_name},\n\nWe noticed your shop ({shop_name}) has been inactive recently. Handcrafted lovers and buyers are looking for unique Filipino creations every day on LikhangKamay.\n\nLog in now to restock your listings, post new craft updates, and discover what shoppers are searching for.",
+            buttonLabel: 'Open Seller Dashboard',
+            buttonUrl: route('dashboard'),
+            replacements: $replacements
+        ));
+
+        // 2. Send database in-app notification
+        Notification::send($user, new ArtisanReengagementNotification());
+
+        PlatformActivity::log(
+            'ARTISAN_REENGAGED',
+            "Sent 1-click re-engagement email and platform notification to artisan {$user->name} ({$user->email})"
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "Re-engagement email & in-app alert sent to {$user->name}.",
+        ]);
+    }
+
     public function exportInsights()
     {
         Gate::authorize('admin-action');
@@ -354,6 +400,21 @@ class SuperAdminController extends Controller
                     $cat['category'] ?? $cat['name'] ?? 'Unknown',
                     $cat['value'] ?? $cat['quantity'] ?? 0,
                     'PHP ' . number_format($cat['gmv'] ?? 0, 2)
+                ]);
+            }
+            fputcsv($file, []);
+
+            // SECTION 4: Top Performing Artisans
+            fputcsv($file, ['TOP PERFORMING ARTISANS']);
+            fputcsv($file, ['Rank', 'Artisan Name', 'Shop Name', 'Tier', 'Orders Count', 'Total GMV']);
+            foreach ($data['topArtisans'] ?? [] as $idx => $artisan) {
+                fputcsv($file, [
+                    '#' . ($idx + 1),
+                    $artisan['name'],
+                    $artisan['shop_name'],
+                    $artisan['premium_tier'] ?? 'free',
+                    $artisan['orders_count'] ?? 0,
+                    'PHP ' . number_format($artisan['total_gmv'] ?? 0, 2)
                 ]);
             }
 
