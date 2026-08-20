@@ -740,7 +740,7 @@ class StrictOrderLifecycleFlowE2ETest extends TestCase
     }
 
     /**
-     * TEST 12: PayMongo minimum amount guard (< PHP 100)
+     * TEST 12: PayMongo minimum amount guard (< PHP 20)
      */
     public function test_paymongo_online_payment_minimum_amount_guard(): void
     {
@@ -751,7 +751,7 @@ class StrictOrderLifecycleFlowE2ETest extends TestCase
             'sku' => 'STK-001',
             'category' => 'Art',
             'status' => 'Active',
-            'price' => 50.00,
+            'price' => 15.00,
             'stock' => 10,
         ]);
 
@@ -759,12 +759,12 @@ class StrictOrderLifecycleFlowE2ETest extends TestCase
             'items' => [['id' => $cheapProduct->id, 'qty' => 1, 'variant' => 'Standard']],
             'shipping_method' => 'Pick Up',
             'payment_method' => 'GCash',
-            'total' => 50.00,
+            'total' => 15.00,
         ]);
 
         $order = Order::where('user_id', $this->buyer->id)->first();
 
-        // Attempting to initiate PayMongo payment for < 100 PHP should be blocked
+        // Attempting to initiate PayMongo payment for < 20 PHP should be blocked
         $payResponse = $this->actingAs($this->buyer)->get(route('payment.pay', $order->order_number));
         $payResponse->assertRedirect();
         $payResponse->assertSessionHas('error');

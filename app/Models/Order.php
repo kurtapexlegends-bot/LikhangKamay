@@ -6,6 +6,40 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property int $artisan_id
+ * @property int $user_id
+ * @property string $order_number
+ * @property string $customer_name
+ * @property float $merchandise_subtotal
+ * @property float $convenience_fee_amount
+ * @property float $shipping_fee_amount
+ * @property float $platform_commission_amount
+ * @property float $seller_net_amount
+ * @property float $total_amount
+ * @property string $status
+ * @property string $payment_method
+ * @property string $payment_status
+ * @property string|null $paymongo_session_id
+ * @property bool $review_reminder_sent
+ * @property bool $shipment_reminder_sent
+ * @property string|null $shipping_address
+ * @property string|null $tracking_number
+ * @property \Illuminate\Support\Carbon|null $received_at
+ * @property \Illuminate\Support\Carbon|null $accepted_at
+ * @property \Illuminate\Support\Carbon|null $shipped_at
+ * @property \Illuminate\Support\Carbon|null $delivered_at
+ * @property \Illuminate\Support\Carbon|null $cancelled_at
+ * @property string|null $cancellation_reason
+ * @property string|null $return_reason
+ * @property string|null $return_proof_image
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\OrderItem[] $items
+ * @property-read \App\Models\User $user
+ * @property-read \App\Models\User $artisan
+ */
 class Order extends Model
 {
     use HasFactory, SoftDeletes;

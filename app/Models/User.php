@@ -61,8 +61,8 @@ use App\Models\Traits\HasWorkspaceNotifications;
  * @property array|null $document_flags
  * @property int|null $employee_id
  * @property string|null $staff_role_preset_key
- * @property-read string|null $avatar_url
- * @property-read \App\Models\User|null $sellerOwner
+ * @property-read bool $can_edit_hr_records
+ * @property-read bool $can_access_accounting
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  */

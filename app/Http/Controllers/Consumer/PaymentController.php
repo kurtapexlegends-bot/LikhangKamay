@@ -41,8 +41,8 @@ class PaymentController extends Controller
             return redirect()->route('my-orders.index')->with('error', 'This order is not eligible for online payment.');
         }
 
-        if ($order->total_amount < 100) {
-            return redirect()->back()->with('error', 'Payment failed: Minimum amount for online payment is PHP 100.00.');
+        if ($order->total_amount < 20) {
+            return redirect()->back()->with('error', 'Payment failed: Minimum amount for online payment is PHP 20.00.');
         }
 
         $lineItems = [];

@@ -45,6 +45,8 @@ class PayoutManagementTest extends TestCase
 
     public function test_super_admin_can_record_manual_payout_for_approved_artisan(): void
     {
+        \Illuminate\Support\Facades\Notification::fake();
+
         $admin = User::factory()->superAdmin()->create();
         $artisan = User::factory()->create([
             'role' => 'artisan',
@@ -76,6 +78,15 @@ class PayoutManagementTest extends TestCase
             'reference_number' => 'REF998877',
             'status' => 'Completed',
         ]);
+
+        \Illuminate\Support\Facades\Notification::assertSentTo(
+            $artisan,
+            \App\Notifications\PayoutDisbursedNotification::class,
+            function ($notification) {
+                return (float) $notification->payout->amount === 500.00 &&
+                       $notification->payout->reference_number === 'REF998877';
+            }
+        );
     }
 
     public function test_payout_subtracts_from_ledger_balance(): void
@@ -148,7 +159,40 @@ class PayoutManagementTest extends TestCase
         // Assert the unpaid balance is 0.00 (since revenue is 0 and payouts are 0, excluding the 20,000 base_funds)
         $response->assertInertia(fn ($page) => $page
             ->where('artisans.0.balance', 0)
-            ->where('artisans.0.ledger_balance', 20000)
+            ->where('artisans.0.ready_for_payout', 0)
+            ->where('artisans.0.gross_sales', 0)
         );
+    }
+
+    public function test_super_admin_can_export_payouts_csv(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $artisan = User::factory()->create([
+            'role' => 'artisan',
+            'artisan_status' => 'approved',
+            'shop_name' => 'Kultura Craft Shop',
+        ]);
+
+        Payout::create([
+            'user_id' => $artisan->id,
+            'amount' => 1500.00,
+            'payout_method' => 'GCash',
+            'payout_account_name' => 'Maria Santos',
+            'payout_account_number' => '09171234567',
+            'reference_number' => 'GCASH987654',
+            'status' => 'Completed',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.payouts.export'));
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'text/csv; charset=utf-8');
+        
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('Disbursement ID', $content);
+        $this->assertStringContainsString('Kultura Craft Shop', $content);
+        $this->assertStringContainsString('GCASH987654', $content);
+        $this->assertStringContainsString('1500.00', $content);
     }
 }
