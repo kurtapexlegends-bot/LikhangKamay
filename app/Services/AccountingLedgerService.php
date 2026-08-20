@@ -54,6 +54,10 @@ class AccountingLedgerService
                 'revenue' => $financials['revenue'],
                 'expenses' => $financials['expenses'],
                 'balance' => $financials['balance'],
+                'payouts' => $financials['payouts'],
+                'readyForPayout' => $financials['ready_for_payout'],
+                'ordersInProgress' => $financials['orders_in_progress'],
+                'heldForDispute' => $financials['held_for_dispute'],
             ],
         ];
     }
@@ -62,8 +66,25 @@ class AccountingLedgerService
     {
         $userId = $seller->id;
 
-        $totalRevenue = Order::where('artisan_id', $userId)
+        $totalRevenue = (float) Order::where('artisan_id', $userId)
             ->where('status', 'Completed')
+            ->sum('seller_net_amount');
+
+        $ordersInProgress = (float) Order::where('artisan_id', $userId)
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->sum('seller_net_amount');
+
+        $heldForDispute = (float) Order::where('artisan_id', $userId)
+            ->where('status', 'Completed')
+            ->where(function ($query) {
+                $query->whereHas('dispute', function ($q) {
+                    $q->whereIn('status', ['open', 'escalated', 'under_review']);
+                })->orWhere(function ($q) {
+                    $q->whereNotNull('return_reason')
+                      ->whereNull('replacement_resolved_at')
+                      ->where('status', '!=', 'Refunded');
+                });
+            })
             ->sum('seller_net_amount');
 
         $stockExpenses = StockRequest::where('user_id', $userId)
@@ -80,21 +101,25 @@ class AccountingLedgerService
             ->where('status', 'Paid')
             ->sum('total_amount');
 
-        $totalPayouts = DB::table('payouts')
+        $totalPayouts = (float) DB::table('payouts')
             ->where('user_id', $userId)
             ->where('status', 'Completed')
             ->sum('amount');
 
         $baseFunds = (float) ($seller->base_funds ?? 0);
         $totalExpenses = (float) $stockExpenses + (float) $payrollExpenses;
-        $currentBalance = $baseFunds + (float) $totalRevenue - $totalExpenses - (float) $totalPayouts;
+        $currentBalance = $baseFunds + $totalRevenue - $totalExpenses - $totalPayouts;
+        $readyForPayout = max(0.00, $totalRevenue - $totalPayouts - $heldForDispute);
 
         return [
             'base_funds' => $baseFunds,
-            'revenue' => (float) $totalRevenue,
+            'revenue' => $totalRevenue,
             'expenses' => $totalExpenses,
             'balance' => $currentBalance,
-            'payouts' => (float) $totalPayouts,
+            'payouts' => $totalPayouts,
+            'ready_for_payout' => $readyForPayout,
+            'orders_in_progress' => $ordersInProgress,
+            'held_for_dispute' => $heldForDispute,
         ];
     }
 
