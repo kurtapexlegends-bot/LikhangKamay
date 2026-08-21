@@ -34,7 +34,7 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Gate::policy(\App\Models\StockRequest::class, \App\Policies\StockRequestPolicy::class);
         \Illuminate\Support\Facades\Gate::policy(\App\Models\Product::class, \App\Policies\ProductPolicy::class);
 
-        // Dynamically override SMTP config and app name from database settings
+        // Dynamically override Mail & Platform settings from database / config
         try {
             $settings = app('system.settings');
             
@@ -42,6 +42,23 @@ class AppServiceProvider extends ServiceProvider
             if ($platformName) {
                 config(['app.name' => $platformName]);
             }
+
+            $mailDriver = $settings->get('mail_driver');
+            if ($mailDriver) {
+                config(['mail.default' => $mailDriver]);
+            }
+
+            $resendApiKey = $settings->get('resend_api_key');
+            if ($resendApiKey) {
+                config(['services.resend.key' => $resendApiKey]);
+            }
+
+            $fromAddress = $settings->get('mail_from_address') ?: env('MAIL_FROM_ADDRESS', 'noreply@likhangkamay.app');
+            $fromName = $settings->get('mail_from_name') ?: env('MAIL_FROM_NAME', 'LikhangKamay');
+            config([
+                'mail.from.address' => $fromAddress,
+                'mail.from.name' => $fromName,
+            ]);
 
             $mailHost = $settings->get('mail_host');
             if ($mailHost) {
@@ -51,8 +68,6 @@ class AppServiceProvider extends ServiceProvider
                     'mail.mailers.smtp.encryption' => $settings->get('mail_encryption', 'tls'),
                     'mail.mailers.smtp.username' => $settings->get('mail_username'),
                     'mail.mailers.smtp.password' => $settings->get('mail_password'),
-                    'mail.from.address' => $settings->get('mail_from_address', 'noreply@likhangkamay.app'),
-                    'mail.from.name' => $settings->get('mail_from_name', 'LikhangKamay'),
                 ]);
             }
         } catch (\Throwable $e) {
