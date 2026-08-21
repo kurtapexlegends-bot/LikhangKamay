@@ -2,6 +2,7 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import PasswordStrengthIndicator from '@/Components/PasswordStrengthIndicator';
 import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { useRef } from 'react';
@@ -123,23 +124,8 @@ export default function UpdatePasswordForm({ className = '' }) {
                         <motion.div 
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="mt-1.5 px-1 space-y-1.5"
                         >
-                            <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-wider">
-                                <span className="text-stone-400">Strength</span>
-                                <span className={
-                                    data.password.length < 12 ? 'text-rose-500' : 
-                                    data.password.length < 15 ? 'text-amber-500' : 'text-emerald-500'
-                                }>
-                                    {data.password.length < 12 ? 'Weak' : data.password.length < 15 ? 'Fair' : 'Strong'}
-                                </span>
-                            </div>
-                            <div className="h-1 w-full bg-stone-100 rounded-full overflow-hidden flex gap-0.5">
-                                <div className={`h-full transition-all duration-500 ${data.password.length >= 6 ? (data.password.length < 12 ? 'bg-rose-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                                <div className={`h-full transition-all duration-500 ${data.password.length >= 12 ? (data.password.length < 15 ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                                <div className={`h-full transition-all duration-500 ${data.password.length >= 15 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                                <div className={`h-full transition-all duration-500 ${/[!@#$%^&*(),.?":{}|<>]/.test(data.password) && /\d/.test(data.password) && data.password.length >= 12 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                            </div>
+                            <PasswordStrengthIndicator password={data.password} />
                         </motion.div>
                     )}
 

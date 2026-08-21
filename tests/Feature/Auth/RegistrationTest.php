@@ -179,4 +179,59 @@ class RegistrationTest extends TestCase
         $response->assertSessionHasErrors('terms');
         $this->assertDatabaseMissing('users', ['email' => 'artisan-social@example.com']);
     }
+
+    public function test_unverified_user_can_retry_registration_with_same_email(): void
+    {
+        Notification::fake();
+
+        // Create an unverified user
+        \App\Models\User::factory()->create([
+            'email' => 'unverified@example.com',
+            'email_verified_at' => null,
+            'role' => 'artisan',
+            'shop_name' => 'Old Shop',
+        ]);
+
+        $response = $this->post('/register', [
+            'first_name' => 'Updated',
+            'last_name' => 'Seller',
+            'shop_name' => 'Updated Shop',
+            'email' => 'unverified@example.com',
+            'password' => 'newpassword123',
+            'password_confirmation' => 'newpassword123',
+            'terms' => true,
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('verification.notice', absolute: false));
+        Notification::assertSentTo(auth()->user(), VerifyEmailNotification::class);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'unverified@example.com',
+            'shop_name' => 'Updated Shop',
+            'name' => 'Updated Seller',
+        ]);
+    }
+
+    public function test_verified_user_cannot_register_with_same_email(): void
+    {
+        Notification::fake();
+
+        // Create a verified user
+        \App\Models\User::factory()->create([
+            'email' => 'verified@example.com',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->post('/register', [
+            'first_name' => 'Another',
+            'last_name' => 'Person',
+            'email' => 'verified@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'terms' => true,
+        ]);
+
+        $response->assertSessionHasErrors('email');
+    }
 }

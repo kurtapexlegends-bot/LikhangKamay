@@ -22,7 +22,7 @@ export default function GlobalSettings({ auth, sellerOwner, stats, locations = [
     ].filter((t) => t.show);
 
     return (
-        <SellerWorkspaceLayout active="settings">
+        <>
             <Head title="Shop Settings | LikhangKamay" />
 
             <SellerHeader
@@ -55,6 +55,8 @@ export default function GlobalSettings({ auth, sellerOwner, stats, locations = [
                     {activeTab === 'finance' && <FinancePayoutsTab sellerOwner={sellerOwner} permissions={permissions} />}
                 </div>
             </main>
-        </SellerWorkspaceLayout>
+        </>
     );
 }
+
+GlobalSettings.layout = (page) => <SellerWorkspaceLayout active="settings">{page}</SellerWorkspaceLayout>;

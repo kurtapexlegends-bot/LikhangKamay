@@ -54,11 +54,19 @@ class ValidationController extends Controller
         if ($userId) {
             $query->where('id', '!=', $userId);
         }
-        $exists = $query->exists();
+        $existing = $query->first();
+
+        // If email exists and is already verified by someone else, block it
+        if ($existing && !is_null($existing->email_verified_at)) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'This email is already registered.'
+            ]);
+        }
 
         return response()->json([
-            'valid' => !$exists,
-            'message' => $exists ? 'This email is already registered.' : 'Email is available.'
+            'valid' => true,
+            'message' => 'Email is available.'
         ]);
     }
 

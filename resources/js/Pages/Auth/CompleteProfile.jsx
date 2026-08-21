@@ -7,6 +7,7 @@ import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
 import LegalModal from '@/Components/LegalModal';
 import SellerTermsModal from '@/Components/SellerTermsModal';
+import PasswordStrengthIndicator from '@/Components/PasswordStrengthIndicator';
 import { Head, useForm } from '@inertiajs/react';
 import { Eye, EyeOff, Loader2, CheckCircle, Store, Mail, Lock, User, Briefcase, XCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -430,25 +431,8 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
 
                     {/* Password Strength Indicator */}
                     {data.password && (
-                        <motion.div 
-                            variants={itemVariants}
-                            className="mt-1.5 px-1 space-y-1.5 animate-in fade-in duration-300"
-                        >
-                            <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-wider">
-                                <span className="text-stone-400">Strength</span>
-                                <span className={
-                                    data.password.length < 12 ? 'text-rose-500' : 
-                                    data.password.length < 15 ? 'text-amber-500' : 'text-emerald-500'
-                                }>
-                                    {data.password.length < 12 ? 'Weak' : data.password.length < 15 ? 'Fair' : 'Strong'}
-                                </span>
-                            </div>
-                            <div className="h-1 w-full bg-stone-100 rounded-full overflow-hidden flex gap-0.5">
-                                <div className={`h-full transition-all duration-500 ${data.password.length >= 6 ? (data.password.length < 12 ? 'bg-rose-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                                <div className={`h-full transition-all duration-500 ${data.password.length >= 12 ? (data.password.length < 15 ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                                <div className={`h-full transition-all duration-500 ${data.password.length >= 15 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                                <div className={`h-full transition-all duration-500 ${/[!@#$%^&*(),.?":{}|<>]/.test(data.password) && /\d/.test(data.password) && data.password.length >= 12 ? 'bg-emerald-500' : 'bg-stone-200'}`} style={{ width: '25%' }}></div>
-                            </div>
+                        <motion.div variants={itemVariants}>
+                            <PasswordStrengthIndicator password={data.password} />
                         </motion.div>
                     )}
 

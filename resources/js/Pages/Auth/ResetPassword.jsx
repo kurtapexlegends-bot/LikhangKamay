@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import PasswordStrengthIndicator from '@/Components/PasswordStrengthIndicator';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { KeyRound, Mail, Eye, EyeOff, Loader2, Lock } from 'lucide-react';
@@ -149,6 +150,13 @@ export default function ResetPassword({ token, email }) {
                     </motion.div>
                     <InputError message={errors.password} className="mt-2" />
                     <InputError message={errors.password_confirmation} className="mt-2" />
+
+                    {/* Password Strength Indicator */}
+                    {data.password && (
+                        <motion.div variants={itemVariants}>
+                            <PasswordStrengthIndicator password={data.password} />
+                        </motion.div>
+                    )}
 
                     {/* Submit Button */}
                     <motion.div variants={itemVariants}>

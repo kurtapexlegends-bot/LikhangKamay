@@ -27,17 +27,24 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
     // Gesture-based sidebar reveal (Swipe from left edge)
     React.useEffect(() => {
         let touchStartX = 0;
+        let touchStartY = 0;
         const edgeThreshold = 40; // Sensitivity area from left edge
-        const swipeThreshold = 60; // Minimum distance to trigger open
+        const swipeThreshold = 50; // Minimum distance to trigger open
 
         const handleTouchStart = (e) => {
+            if (!e.touches || e.touches.length === 0) return;
             touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
         };
 
         const handleTouchEnd = (e) => {
+            if (!e.changedTouches || e.changedTouches.length === 0) return;
             const touchEndX = e.changedTouches[0].clientX;
-            // Only trigger if starting from the far left edge and swiping right
-            if (touchStartX < edgeThreshold && touchEndX - touchStartX > swipeThreshold) {
+            const touchEndY = e.changedTouches[0].clientY;
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = Math.abs(touchEndY - touchStartY);
+            // Only trigger if horizontal swipe starting from far left edge and not vertical scrolling
+            if (touchStartX < edgeThreshold && deltaX > swipeThreshold && deltaX > deltaY) {
                 setSidebarOpen(true);
             }
         };
@@ -71,10 +78,10 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
         <SellerWorkspaceShellContext.Provider value={shell}>
             <ImpersonationBanner />
             <div className="h-screen overflow-hidden bg-[#FDFBF9] flex font-sans text-gray-800 relative">
-                {/* Subtle Gradient Mesh Background */}
-                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-40">
-                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-clay-100 blur-[120px] animate-pulse" />
-                    <div className="absolute bottom-[-5%] right-[-5%] w-[30%] h-[30%] rounded-full bg-amber-50 blur-[100px] animate-pulse" style={{ animationDelay: '2s' }} />
+                {/* Clean Subtle Background (No infinite heavy GPU blur repaints) */}
+                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-30">
+                    <div className="absolute top-[-5%] left-[-5%] w-[35%] h-[35%] rounded-full bg-clay-100/60 blur-[60px]" />
+                    <div className="absolute bottom-[-5%] right-[-5%] w-[25%] h-[25%] rounded-full bg-amber-50/60 blur-[40px]" />
                 </div>
 
                 <SellerSidebar
@@ -88,7 +95,7 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
 
                 <div 
                     scroll-region="true" 
-                    className={`flex min-w-0 flex-1 flex-col overscroll-contain transition-all duration-300 ${
+                    className={`flex min-w-0 flex-1 flex-col overscroll-contain transition-[margin] duration-200 ease-out ${
                         overflowHidden ? 'overflow-hidden' : 'overflow-y-auto'
                     } ${
                         isCollapsed ? 'lg:ml-16' : 'lg:ml-52'
