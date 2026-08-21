@@ -439,6 +439,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/settings/monetization/export', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'exportMonetization'])->name('admin.settings.monetization.export');
     Route::get('/users-manager', [\App\Http\Controllers\Admin\SuperAdminController::class, 'userManager'])->name('admin.users.manager');
     Route::post('/users-manager/{user:id}/toggle-status', [\App\Http\Controllers\Admin\SuperAdminController::class, 'toggleUserStatus'])->name('admin.users.toggle-status');
+    Route::post('/users-manager/{user:id}/discipline', [\App\Http\Controllers\Admin\SuperAdminController::class, 'disciplineUser'])->name('admin.users.discipline');
     Route::get('/users', fn() => redirect()->route('admin.users.manager', ['tab' => 'directory']))->name('admin.users');
 
     // Payout Management

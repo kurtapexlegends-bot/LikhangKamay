@@ -45,9 +45,9 @@ export default function SellerTermsModal({ show, onClose, onAccept }) {
                     </section>
 
                     <section>
-                        <h4 className="font-bold text-stone-900 mb-2">4. Commission & Payments</h4>
-                        <p>4.1. Creating a shop is free. LikhangKamay charges a <strong>5% Commission Fee</strong> on the final sale price of every completed transaction to cover platform maintenance.</p>
-                        <p>4.2. Payouts are processed weekly via GCash or Bank Transfer upon customer confirmation of receipt.</p>
+                        <h4 className="font-bold text-stone-900 mb-2">4. Commission, Subscriptions & Payouts</h4>
+                        <p>4.1. LikhangKamay charges <strong>0% Platform Sales Commission</strong> on merchandise sales, allowing artisans to keep 100% of their merchandise earnings. Platform operations and promotional services are supported through optional monthly artisan subscription tiers (Standard, Premium, Elite).</p>
+                        <p>4.2. Payouts are processed weekly via GCash, Maya, or Bank Transfer upon customer confirmation of receipt or delivery warranty clearance.</p>
                     </section>
 
                     <section>
@@ -64,13 +64,14 @@ export default function SellerTermsModal({ show, onClose, onAccept }) {
 
                     <section>
                         <h4 className="font-bold text-stone-900 mb-2">7. Return & Refund Policy</h4>
-                        <p>7.1. Customers have the right to request a refund for broken/damaged items upon arrival, provided video proof of unboxing is submitted within 24 hours.</p>
-                        <p>7.2. You agree to shoulder the cost of refund for items proven to be damaged due to poor packaging.</p>
+                        <p>7.1. Customers have the right to request a refund for broken/damaged items upon arrival, provided photo or video proof of unboxing is submitted within 24 hours of delivery.</p>
+                        <p>7.2. You agree to shoulder the cost of refund or replacement for items proven to be damaged due to inadequate packaging.</p>
                     </section>
 
                     <section>
-                        <h4 className="font-bold text-stone-900 mb-2">8. Termination</h4>
-                        <p>LikhangKamay reserves the right to suspend or terminate shops that violate these terms, engage in fraudulent activity, or receive consistently poor ratings (below 2.0 stars).</p>
+                        <h4 className="font-bold text-stone-900 mb-2">8. Disciplinary Policy & Termination</h4>
+                        <p>8.1. LikhangKamay enforces a <strong>3-Step Disciplinary System</strong>: <em>Strike 1: Formal Warning</em> with policy advisory; <em>Strike 2: Temporary Studio Suspension (3 to 30 days)</em> where storefront listings are paused while existing customer orders must still be fulfilled; <em>Strike 3: Permanent Account Deactivation</em>.</p>
+                        <p>8.2. Zero-tolerance violations (such as mass fraud, counterfeit items, or harassment) bypass progressive strikes and trigger immediate permanent bans.</p>
                     </section>
                 </div>
 

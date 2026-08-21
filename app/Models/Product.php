@@ -347,6 +347,10 @@ class Product extends Model
             ->whereHas('user', function ($q) {
                 $q->whereNull('banned_at')
                     ->where(function ($sub) {
+                        $sub->whereNull('suspended_until')
+                            ->orWhere('suspended_until', '<=', now());
+                    })
+                    ->where(function ($sub) {
                         $sub->where('last_seen_at', '>=', now()->subDays(60))
                             ->orWhereNull('last_seen_at');
                     });

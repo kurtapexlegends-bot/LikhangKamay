@@ -554,7 +554,77 @@ class SuperAdminController extends Controller
             'matched_staff_count' => $matchedStaffCount,
             'staff_members' => $staffMembers->map(fn($s) => $this->mapAdminStaffMember($s))->values(),
             'banned_at' => $user->banned_at ? $user->banned_at->toIso8601String() : null,
+            'ban_reason' => $user->ban_reason,
+            'warning_count' => (int)($user->warning_count ?? 0),
+            'warning_reason' => $user->warning_reason,
+            'warned_at' => $user->warned_at ? $user->warned_at->toIso8601String() : null,
+            'suspended_until' => $user->suspended_until ? $user->suspended_until->toIso8601String() : null,
+            'suspension_reason' => $user->suspension_reason,
+            'suspended_at' => $user->suspended_at ? $user->suspended_at->toIso8601String() : null,
+            'is_suspended' => $user->isSuspended(),
+            'is_warned' => $user->isWarned(),
+            'is_banned' => $user->isBanned(),
+            'days_remaining_suspension' => $user->daysRemainingSuspension(),
+            'disciplinary_logs' => $user->disciplinaryLogs()->with('admin:id,name')->take(10)->get()->map(fn($log) => [
+                'id' => $log->id,
+                'action_type' => $log->action_type,
+                'reason' => $log->reason,
+                'duration_days' => $log->duration_days,
+                'suspended_until' => $log->suspended_until?->format('M d, Y'),
+                'created_at' => $log->created_at?->format('M d, Y h:i A'),
+                'admin_name' => $log->admin?->name ?? 'System Admin',
+            ]),
         ];
+    }
+
+    public function disciplineUser(Request $request, User $user, \App\Services\Compliance\UserDisciplinaryService $disciplinaryService)
+    {
+        Gate::authorize('admin-action');
+
+        if ($user->isAdmin()) {
+            return back()->withErrors(['error' => 'You cannot discipline an administrator account.']);
+        }
+
+        $validated = $request->validate([
+            'action' => 'required|string|in:warning,suspension,ban,lift_suspension,unban',
+            'reason' => 'required|string|max:1000',
+            'duration_days' => 'required_if:action,suspension|nullable|integer|in:3,7,14,30',
+        ]);
+
+        $admin = Auth::user();
+        assert($admin instanceof User);
+
+        match ($validated['action']) {
+            'warning' => $disciplinaryService->issueWarning($admin, $user, $validated['reason']),
+            'suspension' => $disciplinaryService->applySuspension($admin, $user, (int)$validated['duration_days'], $validated['reason']),
+            'ban' => $disciplinaryService->applyBan($admin, $user, $validated['reason']),
+            'lift_suspension' => $disciplinaryService->liftSuspension($admin, $user, $validated['reason']),
+            'unban' => $disciplinaryService->liftBan($admin, $user, $validated['reason']),
+        };
+
+        if ($user->isArtisan()) {
+            Cache::forget('shop_catalog_default_page_1');
+            Cache::forget("seller_{$user->id}_products");
+            Cache::forget("seller_{$user->id}_best_sellers");
+            Cache::forget("seller_{$user->id}_stats");
+            Cache::forget('catalog_materials');
+            Cache::forget('catalog_locations');
+            Cache::forget('catalog_categories');
+            Cache::forget('home_sponsored_products');
+            Cache::forget('home_featured_products_pool');
+            Cache::forget('home_top_sellers');
+        }
+
+        $actionLabel = match ($validated['action']) {
+            'warning' => 'Formal warning issued successfully.',
+            'suspension' => "User suspended for {$validated['duration_days']} days.",
+            'ban' => 'Account permanently deactivated.',
+            'lift_suspension' => 'Suspension lifted successfully.',
+            'unban' => 'Account access reinstated successfully.',
+            default => 'Disciplinary action executed.',
+        };
+
+        return back()->with('success', $actionLabel);
     }
 
     public function toggleUserStatus(Request $request, User $user)

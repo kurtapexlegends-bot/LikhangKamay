@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { router } from '@inertiajs/react';
-import { ChevronDown, Briefcase, Store, Users, Shield, VenetianMask, Search, UserX, UserCheck } from 'lucide-react';
+import { ChevronDown, Briefcase, Store, Users, Shield, VenetianMask, Search, UserX, UserCheck, ShieldAlert } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import CompactPagination from '@/Components/CompactPagination';
@@ -85,6 +85,7 @@ export default function UserTable({
     setDrawerArtisan,
     handleImpersonate,
     handleToggleStatus,
+    handleDiscipline,
     unlinkedStaffGroup,
     users,
     search,
@@ -126,9 +127,23 @@ export default function UserTable({
                                             {user.role === 'buyer' && <Users size={11} />}
                                             {user.role_label}
                                         </span>
-                                        <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
-                                            {user.account_state}
-                                        </span>
+                                        {user.is_banned ? (
+                                            <span className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-wider">
+                                                Banned
+                                            </span>
+                                        ) : user.is_suspended ? (
+                                            <span className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-wider">
+                                                Suspended ({user.days_remaining_suspension || 1}d)
+                                            </span>
+                                        ) : user.warning_count > 0 ? (
+                                            <span className="inline-flex items-center gap-1 rounded-lg border border-amber-200/80 bg-amber-50/60 text-amber-800 px-2.5 py-1 text-[9.5px] font-semibold">
+                                                {user.warning_count} Warning{user.warning_count === 1 ? '' : 's'}
+                                            </span>
+                                        ) : (
+                                            <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
+                                                {user.account_state}
+                                            </span>
+                                        )}
                                         {user.role === 'artisan' && user.shop_name && (
                                             <span className="inline-flex items-center rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-[9.5px] font-bold text-stone-600 uppercase tracking-wider truncate max-w-[140px]">
                                                 {user.shop_name}
@@ -165,15 +180,11 @@ export default function UserTable({
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => handleToggleStatus(user)}
-                                                className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border shadow-2xs active:scale-95 transition-all shrink-0 ${
-                                                    user.banned_at
-                                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
-                                                        : 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100'
-                                                }`}
-                                                title={user.banned_at ? `Reactivate ${user.name}` : `Suspend ${user.name}`}
+                                                onClick={() => handleDiscipline(user)}
+                                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700 shadow-2xs active:scale-95 transition-all hover:bg-amber-100 shrink-0"
+                                                title={`Discipline ${user.name}`}
                                             >
-                                                {user.banned_at ? <UserCheck size={15} /> : <UserX size={15} />}
+                                                <ShieldAlert size={14} />
                                             </button>
                                         </>
                                     )}
@@ -293,9 +304,23 @@ export default function UserTable({
 
                                          <td className="px-5 py-4 text-center">
                                              <div className="flex flex-col items-center gap-1">
-                                                 <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
-                                                     {user.account_state}
-                                                 </span>
+                                                 {user.is_banned ? (
+                                                     <span className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 text-rose-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                                                         Banned
+                                                     </span>
+                                                 ) : user.is_suspended ? (
+                                                     <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 text-amber-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                                                         Suspended ({user.days_remaining_suspension || 1}d)
+                                                     </span>
+                                                 ) : user.warning_count > 0 ? (
+                                                     <span className="inline-flex items-center gap-1 rounded-md border border-amber-200/80 bg-amber-50/60 text-amber-800 px-2.5 py-0.5 text-[10px] font-semibold">
+                                                         {user.warning_count} Warning{user.warning_count === 1 ? '' : 's'}
+                                                     </span>
+                                                 ) : (
+                                                     <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
+                                                         {user.account_state}
+                                                     </span>
+                                                 )}
                                              </div>
                                          </td>
 
@@ -318,15 +343,11 @@ export default function UserTable({
                                                   {user.role !== 'super_admin' && (
                                                       <button
                                                           type="button"
-                                                          onClick={(e) => { e.stopPropagation(); handleToggleStatus(user); }}
-                                                          className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-[10px] font-bold shadow-sm transition hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 min-h-[40px] ${
-                                                              user.banned_at
-                                                                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 focus:ring-emerald-500/20'
-                                                                  : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100 focus:ring-red-500/20'
-                                                          }`}
-                                                          title={user.banned_at ? `Reactivate ${user.name}` : `Suspend ${user.name}`}
+                                                          onClick={(e) => { e.stopPropagation(); handleDiscipline(user); }}
+                                                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-900 px-3 py-2 text-[10px] font-bold shadow-2xs transition hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-500/20 min-h-[40px]"
+                                                          title="Manage Disciplinary Strikes (Warning / Suspension / Ban)"
                                                       >
-                                                          {user.banned_at ? 'Reactivate' : 'Suspend'}
+                                                          <ShieldAlert size={12} className="text-amber-700" /> Discipline
                                                       </button>
                                                   )}
                                               </div>

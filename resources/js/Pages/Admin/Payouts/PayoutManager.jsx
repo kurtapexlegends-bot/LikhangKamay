@@ -30,6 +30,24 @@ import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import ExportButton from '@/Components/ExportButton';
 import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
 
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+    }).format(amount || 0);
+};
+
+const formatDisplayAccount = (method, number) => {
+    if (!number) return '—';
+    const clean = String(number).replace(/\D/g, '');
+    const isEWallet = (method || '').toLowerCase().includes('gcash') || (method || '').toLowerCase().includes('maya');
+    if (isEWallet && clean.length === 11 && clean.startsWith('09')) {
+        return `${clean.slice(0, 4)} ${clean.slice(4, 7)} ${clean.slice(7, 11)}`;
+    }
+    return number;
+};
+
 export default function PayoutManager({ artisans = [], payoutHistory = { data: [] }, metrics = {} }) {
     const [activeTab, setActiveTab] = useState('balances');
     const [searchQuery, setSearchQuery] = useState('');
@@ -37,24 +55,6 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
     const [disbursingArtisan, setDisbursingArtisan] = useState(null);
     const [viewingStatementArtisan, setViewingStatementArtisan] = useState(null);
     const [copiedKey, setCopiedKey] = useState(null);
-
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-PH', {
-            style: 'currency',
-            currency: 'PHP',
-            minimumFractionDigits: 2,
-        }).format(amount || 0);
-    };
-
-    const formatDisplayAccount = (method, number) => {
-        if (!number) return '—';
-        const clean = String(number).replace(/\D/g, '');
-        const isEWallet = (method || '').toLowerCase().includes('gcash') || (method || '').toLowerCase().includes('maya');
-        if (isEWallet && clean.length === 11 && clean.startsWith('09')) {
-            return `${clean.slice(0, 4)} ${clean.slice(4, 7)} ${clean.slice(7, 11)}`;
-        }
-        return number;
-    };
 
     const handleCopy = (text, key) => {
         if (!text) return;
@@ -151,18 +151,6 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
                     </div>
                 </div>
 
-                {/* Weekly Payout Schedule Banner - Clean LikhangKamay card */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-stone-200/80 shadow-2xs">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-clay-50 border border-clay-100 flex items-center justify-center text-clay-700 shrink-0">
-                            <Info size={16} />
-                        </div>
-                        <div>
-                            <h4 className="text-xs font-bold text-stone-900">Weekly Payout Rhythm</h4>
-                            <p className="text-[11px] text-stone-500 font-medium mt-0.5">Disbursements are processed weekly for completed customer orders. Direct transfers are sent to artisans via GCash, Maya, or bank transfer.</p>
-                        </div>
-                    </div>
-                </div>
 
                 {/* Standardized FilterToolbarHeader */}
                 <FilterToolbarHeader

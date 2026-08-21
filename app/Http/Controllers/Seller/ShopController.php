@@ -32,7 +32,7 @@ class ShopController extends Controller
             ->where('document_type', 'seller_terms')
             ->exists();
 
-        if ($seller->role !== 'artisan' || $seller->artisan_status !== 'approved' || !$hasAccepted || $seller->banned_at !== null) {
+        if ($seller->role !== 'artisan' || $seller->artisan_status !== 'approved' || !$hasAccepted || $seller->banned_at !== null || $seller->isSuspended()) {
             abort(404);
         }
 

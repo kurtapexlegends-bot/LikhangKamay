@@ -191,16 +191,15 @@ export default function AdminLayout({ title, children }) {
                     current: isTabActive('admin.users.manager', 'approvals'),
                     badge: null
                 },
-                { name: 'Product Moderation', href: route('admin.catalog.index', { tab: 'moderation' }), icon: ShoppingBag, current: isTabActive('admin.catalog.index', 'moderation') },
+                { name: 'Product Approvals', href: route('admin.catalog.index', { tab: 'moderation' }), icon: ShoppingBag, current: isTabActive('admin.catalog.index', 'moderation') },
                 { name: 'Sponsorships', href: route('admin.catalog.index', { tab: 'sponsorships' }), icon: Star, current: isTabActive('admin.catalog.index', 'sponsorships') },
             ]
         },
         {
             title: 'Safety & Compliance',
             items: [
-                { name: 'Moderation Queue', href: route('admin.compliance', { tab: 'flags' }), icon: ShieldAlert, current: isTabActive('admin.compliance', 'flags') },
-                { name: 'Review Disputes', href: route('admin.compliance', { tab: 'disputes' }), icon: MessageSquare, current: isTabActive('admin.compliance', 'disputes') },
-                { name: 'Escalated Disputes', href: route('admin.disputes.index'), icon: RotateCcw, current: isTabActive('admin.disputes.index') },
+                { name: 'Content Safety', href: route('admin.compliance'), icon: ShieldAlert, current: route().current('admin.compliance*') },
+                { name: 'Order Disputes', href: route('admin.disputes.index'), icon: RotateCcw, current: route().current('admin.disputes.*') },
             ]
         },
         {
@@ -333,15 +332,15 @@ export default function AdminLayout({ title, children }) {
                                     'Overview': "Monitor platform metrics and performance.",
                                     'Insights': "View revenue forecasts and platform analytics.",
                                     'Monetization': "View platform subscriptions, sponsorships, and financial performance.",
+                                    'Payouts': "Review seller earnings and disburse weekly payouts to artisans.",
                                     'Activity History': "Track background jobs, logs, and system SLAs.",
-                                    'User Directory': "Manage platform users, staff profiles, and onboarding applications.",
+                                    'User Directory': "Manage platform users, staff profiles, and disciplinary actions.",
                                     'Artisan Applications': "Approve or reject artisan registration applications.",
-                                    'Product Moderation': "Review, approve, and moderate artisan product listings.",
+                                    'Product Approvals': "Review and approve new handmade product submissions before they go live.",
                                     'Category Manager': "Manage product categories, tags, and taxonomy.",
                                     'Sponsorships': "Manage sponsored product campaigns.",
-                                    'Moderation Queue': "Review flagged listings, reviews, and user content.",
-                                    'Review Disputes': "Moderate customer review disputes.",
-                                    'Escalated Disputes': "Moderate and resolve escalated customer disputes.",
+                                    'Content Safety': "Review user-reported flags, safety queues, and disputed reviews.",
+                                    'Order Disputes': "Arbitrate return and refund claims between customers and artisans.",
                                     'Restoration Center': "Restore or permanently delete removed database records.",
                                     'System Config': "Configure platform settings, payment gateways, and fees."
                                 }[resolvedTitle] || ""}

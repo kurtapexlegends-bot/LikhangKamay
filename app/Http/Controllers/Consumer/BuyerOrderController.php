@@ -34,6 +34,12 @@ class BuyerOrderController extends Controller
             abort(403, 'Administrators are not permitted to make purchases.');
         }
 
+        if (Auth::check() && Auth::user()->isSuspended()) {
+            $days = Auth::user()->daysRemainingSuspension();
+            $reason = Auth::user()->suspension_reason ?: 'Policy violation';
+            abort(403, "Your account is temporarily suspended for {$days} day(s) until " . Auth::user()->suspended_until->format('M d, Y') . ". Reason: {$reason}. You cannot place new orders at this time.");
+        }
+
         $items = $prepareCheckout->execute($request);
 
         if (empty($items)) {
@@ -76,6 +82,12 @@ class BuyerOrderController extends Controller
     {
         if (Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
             abort(403, 'Administrators are not permitted to make purchases.');
+        }
+
+        if (Auth::check() && Auth::user()->isSuspended()) {
+            $days = Auth::user()->daysRemainingSuspension();
+            $reason = Auth::user()->suspension_reason ?: 'Policy violation';
+            abort(403, "Your account is temporarily suspended for {$days} day(s) until " . Auth::user()->suspended_until->format('M d, Y') . ". Reason: {$reason}. You cannot place new orders at this time.");
         }
 
         try {

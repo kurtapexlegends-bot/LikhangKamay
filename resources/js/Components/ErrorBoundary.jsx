@@ -1,10 +1,10 @@
 import React from 'react';
-import { AlertCircle, RefreshCw, Home, Terminal, ChevronDown } from 'lucide-react';
+import { AlertCircle, RefreshCw, Home, Terminal, Copy, Check } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { hasError: false, error: null, errorInfo: null };
+        this.state = { hasError: false, error: null, errorInfo: null, copied: false };
     }
 
     static getDerivedStateFromError(error) {
@@ -15,6 +15,22 @@ class ErrorBoundary extends React.Component {
         console.error("Platform Error Boundary caught an error:", error, errorInfo);
         this.setState({ errorInfo });
     }
+
+    handleCopy = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const payload = [
+            `Error: ${this.state.error?.toString() || 'Unknown'}`,
+            this.state.error?.stack ? `\nStack Trace:\n${this.state.error.stack}` : '',
+            this.state.errorInfo?.componentStack ? `\nComponent Hierarchy:\n${this.state.errorInfo.componentStack}` : ''
+        ].filter(Boolean).join('\n');
+
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(payload);
+            this.setState({ copied: true });
+            setTimeout(() => this.setState({ copied: false }), 2000);
+        }
+    };
 
     render() {
         if (this.state.hasError) {
@@ -70,9 +86,29 @@ class ErrorBoundary extends React.Component {
                                     <Terminal size={14} className="text-amber-600" />
                                     <span>Developer Diagnostics</span>
                                 </span>
-                                <span className="text-[11px] font-mono text-stone-400 font-normal">
-                                    {isLocalOrDev ? 'Local/Dev Mode' : 'Click to inspect'}
-                                </span>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={this.handleCopy}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 hover:border-stone-300 shadow-2xs transition active:scale-95 cursor-pointer"
+                                        title="Copy error message and stack trace"
+                                    >
+                                        {this.state.copied ? (
+                                            <>
+                                                <Check size={12} className="text-emerald-600" />
+                                                <span className="text-emerald-600">Copied!</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Copy size={12} className="text-stone-500" />
+                                                <span>Copy Diagnostics</span>
+                                            </>
+                                        )}
+                                    </button>
+                                    <span className="text-[11px] font-mono text-stone-400 font-normal">
+                                        {isLocalOrDev ? 'Local/Dev Mode' : 'Click to inspect'}
+                                    </span>
+                                </div>
                             </summary>
 
                             <div className="p-4 space-y-3 bg-[#FAF8F5]">

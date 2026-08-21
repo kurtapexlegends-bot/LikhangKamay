@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import MobileDock from '@/Layouts/MobileDock';
+import DisciplinaryStatusBanner from '@/Components/DisciplinaryStatusBanner';
 import { syncSignalsWithServer } from '@/utils/buyerSignals';
 
 export default function BuyerNavbar({ hideMobileDock = false }) {
@@ -171,6 +172,7 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
 
     return (
         <>
+        <DisciplinaryStatusBanner />
         <nav className={`bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-md py-1' : 'shadow-sm/50 py-3'}`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 

@@ -122,6 +122,13 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'current_session_id',
         'current_device_uuid',
         'banned_at',
+        'ban_reason',
+        'warning_count',
+        'warning_reason',
+        'warned_at',
+        'suspended_until',
+        'suspension_reason',
+        'suspended_at',
         'employee_id',
         'shop_name',
         'bio',
@@ -221,8 +228,56 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'break_allowance_minutes' => 'integer',
             'document_flags' => 'array',
             'banned_at' => 'datetime',
+            'warning_count' => 'integer',
+            'warned_at' => 'datetime',
+            'suspended_until' => 'datetime',
+            'suspended_at' => 'datetime',
             'auto_reply_on_completion' => \App\Casts\PostgresCompatibleBoolean::class,
         ];
+    }
+
+    /**
+     * Disciplinary action audit logs relationship.
+     */
+    public function disciplinaryLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\UserDisciplinaryLog::class, 'user_id')->latest('created_at');
+    }
+
+    /**
+     * Check if user is currently banned.
+     */
+    public function isBanned(): bool
+    {
+        return !is_null($this->banned_at);
+    }
+
+    /**
+     * Check if user is currently under temporary suspension.
+     */
+    public function isSuspended(): bool
+    {
+        return !is_null($this->suspended_until) && $this->suspended_until->isFuture();
+    }
+
+    /**
+     * Check if user has active warning notices.
+     */
+    public function isWarned(): bool
+    {
+        return ($this->warning_count ?? 0) > 0;
+    }
+
+    /**
+     * Calculate days remaining in active temporary suspension.
+     */
+    public function daysRemainingSuspension(): int
+    {
+        if (!$this->isSuspended()) {
+            return 0;
+        }
+
+        return max(1, (int) ceil(now()->floatDiffInDays($this->suspended_until, false)));
     }
 
     /**

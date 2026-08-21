@@ -13,6 +13,7 @@ import { useToast } from '@/Components/ToastContext';
 import UserManagerFilters from '@/Components/Admin/Users/UserManagerFilters';
 import UserTable from '@/Components/Admin/Users/UserTable';
 import ArtisanApprovalsTab from '@/Components/Admin/Users/ArtisanApprovalsTab';
+import DisciplinaryActionModal from '@/Components/Admin/DisciplinaryActionModal';
 import { getAutoExpandedRows } from '@/utils/userManagerHelpers';
 
 export default function UserManager({ users, filters, unlinkedStaffGroup = null, artisans }) {
@@ -32,6 +33,7 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
     const [quickView, setQuickView] = useState('all');
     const [impersonateTarget, setImpersonateTarget] = useState(null);
     const [statusToggleTarget, setStatusToggleTarget] = useState(null);
+    const [disciplinaryTarget, setDisciplinaryTarget] = useState(null);
     const [drawerArtisan, setDrawerArtisan] = useState(null);
     const [expandedRows, setExpandedRows] = useState(() =>
         filters.search ? getAutoExpandedRows(users.data || []) : {}
@@ -241,6 +243,7 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                                     setDrawerArtisan={setDrawerArtisan}
                                     handleImpersonate={handleImpersonate}
                                     handleToggleStatus={setStatusToggleTarget}
+                                    handleDiscipline={setDisciplinaryTarget}
                                     unlinkedStaffGroup={unlinkedStaffGroup}
                                     users={users}
                                     search={search}
@@ -329,6 +332,16 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                     </div>
                 )}
             </SlideOverDrawer>
+
+            {/* Disciplinary Action Modal */}
+            <DisciplinaryActionModal
+                user={disciplinaryTarget}
+                onClose={() => setDisciplinaryTarget(null)}
+                onSuccess={() => {
+                    setDisciplinaryTarget(null);
+                    addToast('Disciplinary action applied successfully.', 'success');
+                }}
+            />
         </>
     );
 }

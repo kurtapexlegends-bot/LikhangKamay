@@ -60,9 +60,9 @@ export default function SellerAgreement() {
             content: "Sellers may not: sell counterfeit or mass-produced items, manipulate reviews, create fake transactions, circumvent platform fees with off-platform deals, share customer information, or engage in fraudulent or illegal activities."
         },
         {
-            title: "Account Suspension & Termination",
+            title: "Disciplinary Framework & Termination",
             icon: AlertTriangle,
-            content: "LikhangKamay may suspend or terminate accounts for: Agreement violations, ratings below 3.5 stars, failure to fulfill orders, fraudulent activities, or inactivity exceeding 6 months. Pending payouts released after resolving disputes."
+            content: "LikhangKamay enforces a progressive 3-step disciplinary system: (1) Strike 1: Formal Warning with advisory notice, (2) Strike 2: Temporary Studio Suspension (3 to 30 days) during which storefront discovery is paused while existing customer orders must be fulfilled, and (3) Strike 3: Permanent Account Deactivation. Zero-tolerance violations (e.g., selling counterfeit/mass-produced items, intentional fraud, harassment) bypass progressive strikes and result in immediate permanent termination. Pending payouts are released upon resolving open disputes."
         },
         {
             title: "Intellectual Property",

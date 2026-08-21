@@ -30,7 +30,7 @@ export default function TermsOfService() {
         {
             title: "Purchases and Payments",
             icon: CreditCard,
-            content: "All prices are displayed in Philippine Peso (₱) and are inclusive of applicable taxes unless otherwise stated. We accept various payment methods including cash on delivery and online payment options. All purchases are subject to product availability. Once an order is confirmed, it constitutes a binding agreement between the buyer and seller."
+            content: "All prices are displayed in Philippine Peso (₱) and are inclusive of applicable taxes unless otherwise stated. We accept secure payment methods including Cash on Delivery (COD) and digital payments (GCash, Maya, cards via PayMongo). A transparent platform convenience fee applies to checkout orders to cover secure payment gateway processing and infrastructure. Once an order is confirmed, it constitutes a binding agreement between buyer and artisan."
         },
         {
             title: "Shipping and Delivery",
@@ -40,7 +40,7 @@ export default function TermsOfService() {
         {
             title: "Returns and Refunds",
             icon: RefreshCw,
-            content: "Returns are accepted for items that arrive damaged, defective, or significantly different from their description. Buyers must report issues within 1 day of delivery with photographic evidence. Refunds will be processed within 1 business day of approval. Custom or personalized items may not be eligible for returns unless defective."
+            content: "Returns are accepted for items that arrive damaged, defective, or significantly different from their description. Buyers must report issues within 1 day (24 hours) of delivery with photo or video evidence. Refunds and dispute resolutions are processed through our internal dispute resolution center. Custom or personalized items may not be eligible for returns unless defective."
         },
         {
             title: "Subscriptions and Billing",
@@ -48,9 +48,9 @@ export default function TermsOfService() {
             content: "Sellers may subscribe to Premium or Elite membership plans. All subscription fees are billed in advance on a monthly basis, processed securely via PayMongo, and are strictly non-refundable once processed. Tier entitlements include active product limits (3 for Standard, 10 for Premium, 50 for Elite), automated thank-you messages on order completion (Premium & Elite), and the Discounts & Campaign Engine (Elite) alongside Sponsorship credits. Upgrades are applied immediately upon payment. Cancellations prevent future auto-renewals while paid plan benefits remain 100% active until billing cycle completion; past payments will not be refunded. Downgrades take effect upon period completion and enforce standard listing caps and suspend staff access."
         },
         {
-            title: "User Conduct",
+            title: "User Conduct & Disciplinary Action",
             icon: AlertOctagon,
-            content: "Users agree not to: post false, misleading, or fraudulent information; harass, abuse, or threaten other users; manipulate reviews, ratings, or feedback; circumvent fees by conducting transactions outside the Platform; use the Platform for any illegal purposes; or attempt to gain unauthorized access to other accounts or systems."
+            content: "Users agree not to post fraudulent information, harass others, manipulate reviews, or conduct off-platform fee circumvention. LikhangKamay enforces a 3-step disciplinary model: (1) Formal Warning with educational notice, (2) Temporary Suspension (3–30 days) pausing checkout, review submissions, or storefront discovery, and (3) Permanent Ban. Zero-tolerance offenses (payment fraud, severe harassment, counterfeit goods) bypass progressive strikes and result in immediate permanent termination."
         },
         {
             title: "Intellectual Property",

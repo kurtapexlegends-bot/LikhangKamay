@@ -42,6 +42,11 @@ class ReviewController extends Controller
 
     public function store(Request $request)
     {
+        if (Auth::check() && Auth::user()->isSuspended()) {
+            $days = Auth::user()->daysRemainingSuspension();
+            abort(403, "Your account is temporarily suspended for {$days} day(s). You cannot post reviews at this time.");
+        }
+
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'rating' => 'required|integer|min:1|max:5',

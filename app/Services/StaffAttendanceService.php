@@ -31,6 +31,12 @@ class StaffAttendanceService
             return null;
         }
 
+        if ($staff->isSuspended()) {
+            throw ValidationException::withMessages([
+                'attendance' => "Your staff access is temporarily paused until " . $staff->suspended_until->format('M d, Y') . " due to: " . ($staff->suspension_reason ?: 'Policy review') . ".",
+            ]);
+        }
+
         $openSession = $this->getOpenSession($staff);
 
         if ($openSession) {
