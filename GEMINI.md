@@ -40,4 +40,4 @@
 ## 5. Workflow Directives
 - **Trade-offs & Diffs:** Briefly state pros/cons of major architectural decisions before coding. Provide targeted diffs.
 - **Knowledge Graph Cadence:** Batch `graphify update` and Obsidian exports to every 5 prompts or when explicitly requested.
-- **Proactive Diagnostics:** If an issue cannot be confirmed with 100% certainty from code, ask the user for exact console/network logs rather than guessing.
+- **Fast Diagnostic Escalation:** If an issue cannot be confirmed with 100% certainty or is not resolved within 1-2 attempts (especially on production or third-party integrations), immediately halt speculation and ask the user for the exact server runtime logs, browser console errors, or network payloads needed to pinpoint it directly.
