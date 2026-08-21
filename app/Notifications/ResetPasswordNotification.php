@@ -27,9 +27,10 @@ class ResetPasswordNotification extends Notification
             'email' => $notifiable->getEmailForPasswordReset(),
         ], false));
 
-        $template = EmailTemplate::where('slug', 'reset_password')->where('is_active', true)->first();
-        
-        $subject = $template 
+        $template = rescue(fn () => EmailTemplate::where('slug', 'reset_password')->first(), null, false);
+        $isActive = $template && (bool) $template->is_active;
+
+        $subject = ($template && $isActive && !empty($template->subject))
             ? strtr($template->subject, ['{site_name}' => 'LikhangKamay']) 
             : 'Reset Your Password - LikhangKamay';
 

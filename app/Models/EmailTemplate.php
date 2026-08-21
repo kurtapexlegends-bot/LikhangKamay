@@ -24,7 +24,7 @@ class EmailTemplate extends Model
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'is_active' => \App\Casts\PostgresCompatibleBoolean::class,
     ];
 
     public function creator(): BelongsTo

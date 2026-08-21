@@ -28,9 +28,10 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
 
     public function toMail($notifiable): MailMessage
     {
-        $template = EmailTemplate::where('slug', 'verify_email')->where('is_active', true)->first();
-        
-        $subject = $template 
+        $template = rescue(fn () => EmailTemplate::where('slug', 'verify_email')->first(), null, false);
+        $isActive = $template && (bool) $template->is_active;
+
+        $subject = ($template && $isActive && !empty($template->subject))
             ? strtr($template->subject, ['{verification_code}' => $this->code, '{site_name}' => 'LikhangKamay']) 
             : 'Verify Your Email - LikhangKamay';
 
