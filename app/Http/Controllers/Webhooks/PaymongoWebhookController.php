@@ -83,14 +83,20 @@ class PaymongoWebhookController extends Controller
             $status = $sessionData['attributes']['payment_status'] ?? ($sessionData['attributes']['status'] ?? null);
 
             if ($sessionId && $status === 'paid') {
-                // Check if it's an Order
-                $order = Order::where('paymongo_session_id', $sessionId)->first();
-                if ($order && $order->payment_status !== 'paid') {
-                    $order->update([
-                        'payment_status' => 'paid',
-                        'paymongo_session_id' => null, // Clear session ID
-                    ]);
-                    Log::info('Order marked as paid via Webhook', ['order_id' => $order->id]);
+                // Check if it's one or more Orders
+                $orders = Order::where('paymongo_session_id', $sessionId)->get();
+                if ($orders->isNotEmpty()) {
+                    \Illuminate\Support\Facades\DB::transaction(function () use ($orders) {
+                        foreach ($orders as $order) {
+                            if ($order->payment_status !== 'paid') {
+                                $order->update([
+                                    'payment_status' => 'paid',
+                                    'paymongo_session_id' => null, // Clear session ID
+                                ]);
+                                Log::info('Order marked as paid via Webhook', ['order_id' => $order->id, 'order_number' => $order->order_number]);
+                            }
+                        }
+                    });
                     return response()->json(['status' => 'success']);
                 }
 

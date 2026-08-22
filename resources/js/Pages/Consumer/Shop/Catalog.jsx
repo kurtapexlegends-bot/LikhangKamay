@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
-import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import {
     ChevronDown, SlidersHorizontal, MapPin, Search, X, ArrowUpDown, Store, Loader2
 } from 'lucide-react';
@@ -268,7 +267,6 @@ export default function Catalog(props) {
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800 flex flex-col">
             <Head title="Shop Collection" />
-            <ImpersonationBanner />
             <BuyerNavbar />
 
             <main className="w-full max-w-7xl mx-auto px-4 lg:px-8 py-6 min-w-0 flex-1">

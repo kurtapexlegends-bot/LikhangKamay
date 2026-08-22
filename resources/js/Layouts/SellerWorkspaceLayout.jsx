@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import SellerSidebar from '@/Layouts/SellerSidebar';
-import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import DisciplinaryStatusBanner from '@/Components/DisciplinaryStatusBanner';
 import SellerTermsModal from '@/Components/SellerTermsModal';
 
@@ -77,7 +76,6 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
 
     return (
         <SellerWorkspaceShellContext.Provider value={shell}>
-            <ImpersonationBanner />
             <DisciplinaryStatusBanner />
             <div className="h-screen overflow-hidden bg-[#FDFBF9] flex font-sans text-gray-800 relative">
                 {/* Clean Subtle Background (No infinite heavy GPU blur repaints) */}

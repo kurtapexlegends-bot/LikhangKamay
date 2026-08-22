@@ -79,8 +79,6 @@ class HandleInertiaRequests extends Middleware
             // Cart count from session - lightweight but still good to keep accessible
             'cartCount' => fn () => (int) array_sum(array_column(Session::get('cart', []), 'qty')),
             
-            'isImpersonating' => fn () => Session::has('impersonator_id'),
-            
             // LAZY LOADED: Notifications list (only loaded when requested/dropdown is opened)
             'notifications' => Inertia::lazy(fn () => $user ? rescue(fn () => $user->getNotificationsQuery()->latest()->take(10)->get()->map(fn ($n) => NotificationPresenter::present($n, $user)), [], false) : []),
             
@@ -99,8 +97,8 @@ class HandleInertiaRequests extends Middleware
             // Platform branding via Settings Facade (Cached)
             'platform' => [
                 'name' => \App\Facades\Settings::get('platform_name', 'LikhangKamay'),
-                'logo' => \App\Facades\Settings::get('platform_logo', '/images/logo.png'),
-                'favicon' => \App\Facades\Settings::get('favicon', '/favicon.ico'),
+                'logo' => \App\Services\StorageUrl::url(\App\Facades\Settings::get('platform_logo'), '/images/logo.png'),
+                'favicon' => \App\Services\StorageUrl::url(\App\Facades\Settings::get('favicon'), '/favicon.ico'),
                 'primaryColor' => \App\Facades\Settings::get('primary_color', '#8B4513'),
                 'seo' => \App\Facades\Settings::get('seo_metadata', [
                     'title' => 'LikhangKamay | Artisan Marketplace',

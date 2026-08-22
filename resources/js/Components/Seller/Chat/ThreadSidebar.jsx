@@ -99,7 +99,7 @@ export default function ThreadSidebar({
                             {parent.attachment_path && parent.attachment_type === 'image' && (
                                 <div className="mb-2 overflow-hidden rounded-lg border border-stone-200 bg-white">
                                     <img
-                                        src={`/storage/${parent.attachment_path}`}
+                                        src={parent.attachment_url || (parent.attachment_path.startsWith('http') || parent.attachment_path.startsWith('/storage') ? parent.attachment_path : `/storage/${parent.attachment_path}`)}
                                         alt="Thread parent attachment"
                                         className="max-h-24 w-full object-cover"
                                     />
@@ -229,7 +229,7 @@ export default function ThreadSidebar({
                                         {reply.attachment_path && reply.attachment_type === 'image' && (
                                             <div className="mb-1.5 overflow-hidden rounded-lg bg-white/10">
                                                 <img
-                                                    src={`/storage/${reply.attachment_path}`}
+                                                    src={reply.attachment_url || (reply.attachment_path.startsWith('http') || reply.attachment_path.startsWith('/storage') ? reply.attachment_path : `/storage/${reply.attachment_path}`)}
                                                     alt="Thread reply attachment"
                                                     className="max-h-36 w-full object-contain"
                                                 />
@@ -238,7 +238,7 @@ export default function ThreadSidebar({
 
                                         {reply.attachment_path && reply.attachment_type === 'document' && (
                                             <a
-                                                href={`/storage/${reply.attachment_path}`}
+                                                href={reply.attachment_url || (reply.attachment_path.startsWith('http') || reply.attachment_path.startsWith('/storage') ? reply.attachment_path : `/storage/${reply.attachment_path}`)}
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 className={`mb-1.5 flex items-center gap-2 rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition ${

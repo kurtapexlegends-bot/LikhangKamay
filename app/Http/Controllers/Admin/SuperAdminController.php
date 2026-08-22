@@ -230,9 +230,6 @@ class SuperAdminController extends Controller
      */
     private function getPendingArtisansList()
     {
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $storage */
-        $storage = \Illuminate\Support\Facades\Storage::disk('public');
-
         return User::where('role', 'artisan')
             ->where('artisan_status', 'pending')
             ->whereNotNull('setup_completed_at')
@@ -247,10 +244,10 @@ class SuperAdminController extends Controller
                 'shop_name' => $user->shop_name,
                 'phone_number' => $user->phone_number,
                 'address' => StructuredAddress::formatPhilippineAddress(['street_address' => $user->street_address, 'barangay' => $user->barangay, 'city' => $user->city, 'region' => $user->region, 'postal_code' => $user->zip_code]),
-                'business_permit' => $user->business_permit ? $storage->url($user->business_permit) : null,
-                'dti_registration' => $user->dti_registration ? $storage->url($user->dti_registration) : null,
-                'valid_id' => $user->valid_id ? $storage->url($user->valid_id) : null,
-                'tin_id' => $user->tin_id ? $storage->url($user->tin_id) : null,
+                'business_permit' => \App\Services\StorageUrl::url($user->business_permit),
+                'dti_registration' => \App\Services\StorageUrl::url($user->dti_registration),
+                'valid_id' => \App\Services\StorageUrl::url($user->valid_id),
+                'tin_id' => \App\Services\StorageUrl::url($user->tin_id),
                 'payout_method' => $user->payout_method,
                 'payout_account_name' => $user->payout_account_name,
                 'payout_account_number' => $user->payout_account_number,

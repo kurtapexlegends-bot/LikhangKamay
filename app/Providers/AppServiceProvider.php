@@ -53,8 +53,8 @@ class AppServiceProvider extends ServiceProvider
                 config(['services.resend.key' => $resendApiKey]);
             }
 
-            $fromAddress = $settings->get('mail_from_address') ?: env('MAIL_FROM_ADDRESS', 'noreply@likhangkamay.app');
-            $fromName = $settings->get('mail_from_name') ?: env('MAIL_FROM_NAME', 'LikhangKamay');
+            $fromAddress = $settings->get('mail_from_address') ?: config('mail.from.address', 'noreply@likhangkamay.app');
+            $fromName = $settings->get('mail_from_name') ?: config('mail.from.name', 'LikhangKamay');
             config([
                 'mail.from.address' => $fromAddress,
                 'mail.from.name' => $fromName,

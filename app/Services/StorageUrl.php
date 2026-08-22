@@ -32,7 +32,9 @@ class StorageUrl
         // Strip any accidental leading '/storage/' or 'storage/' prefix
         $cleanPath = preg_replace('#^/?storage/#', '', $path);
 
-        $disk = env('FILESYSTEM_DISK') === 's3' || env('PUBLIC_DISK_DRIVER') === 's3' ? 's3' : 'public';
+        $defaultDisk = (string) config('filesystems.default', 'public');
+        $publicDriver = (string) config('filesystems.disks.public.driver', 'local');
+        $disk = ($defaultDisk === 's3' || $publicDriver === 's3') ? 's3' : 'public';
 
         /** @var \Illuminate\Filesystem\FilesystemAdapter $adapter */
         $adapter = Storage::disk($disk);

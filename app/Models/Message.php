@@ -15,6 +15,13 @@ class Message extends Model
         'is_read' => \App\Casts\PostgresCompatibleBoolean::class,
     ];
 
+    protected $appends = ['attachment_url'];
+
+    public function getAttachmentUrlAttribute(): ?string
+    {
+        return $this->attachment_path ? \App\Services\StorageUrl::url($this->attachment_path) : null;
+    }
+
     public function sender() {
         return $this->belongsTo(User::class, 'sender_id');
     }

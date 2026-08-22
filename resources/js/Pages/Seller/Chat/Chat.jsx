@@ -346,7 +346,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     const galleryImages = useMemo(() => displayedMessages
         .filter(msg => msg.attachment_path && msg.attachment_type === 'image')
         .map(msg => ({
-            url: msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') ? msg.attachment_path : `/storage/${msg.attachment_path}`,
+            url: msg.attachment_url || (msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') || msg.attachment_path.startsWith('http') || msg.attachment_path.startsWith('/storage') ? msg.attachment_path : `/storage/${msg.attachment_path}`),
             type: 'image',
             id: msg.id
         })), [displayedMessages]);

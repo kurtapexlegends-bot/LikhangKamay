@@ -170,8 +170,8 @@ class SystemSettingsController extends Controller
     {
         return [
             'platform_name' => $this->settings->get('platform_name', 'LikhangKamay'),
-            'platform_logo' => $this->settings->get('platform_logo'),
-            'favicon' => $this->settings->get('favicon'),
+            'platform_logo' => \App\Services\StorageUrl::url($this->settings->get('platform_logo')),
+            'favicon' => \App\Services\StorageUrl::url($this->settings->get('favicon')),
             'primary_color' => $this->settings->get('primary_color', '#8B4513'),
             'seo_metadata' => $this->settings->get('seo_metadata', [
                 'title' => 'LikhangKamay | Artisan Marketplace',
@@ -258,14 +258,14 @@ class SystemSettingsController extends Controller
             'trend' => $sponsorshipGrowth > 0 ? 'up' : ($sponsorshipGrowth < 0 ? 'down' : 'neutral')
         ];
 
-        $totalCommission = Order::where('status', '!=', 'cancelled')->sum('platform_commission_amount');
-        $totalConvenience = Order::where('status', '!=', 'cancelled')->sum('convenience_fee_amount');
+        $totalCommission = Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->sum('platform_commission_amount');
+        $totalConvenience = Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->sum('convenience_fee_amount');
         $totalPlatformFees = (float) $totalCommission + (float) $totalConvenience;
 
-        $previousCommission = Order::where('status', '!=', 'cancelled')
+        $previousCommission = Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])
             ->where('created_at', '<', now()->subDays(30))
             ->sum('platform_commission_amount');
-        $previousConvenience = Order::where('status', '!=', 'cancelled')
+        $previousConvenience = Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])
             ->where('created_at', '<', now()->subDays(30))
             ->sum('convenience_fee_amount');
         $previousPlatformFees = (float) $previousCommission + (float) $previousConvenience;
@@ -518,12 +518,12 @@ class SystemSettingsController extends Controller
 
         if ($request->hasFile('platform_logo')) {
             $path = $request->file('platform_logo')->store('platform', 'public');
-            $this->settings->set('platform_logo', Storage::url($path));
+            $this->settings->set('platform_logo', $path);
         }
 
         if ($request->hasFile('favicon')) {
             $path = $request->file('favicon')->store('platform', 'public');
-            $this->settings->set('favicon', Storage::url($path));
+            $this->settings->set('favicon', $path);
         }
 
         return back()->with('success', 'System settings synchronized successfully.');

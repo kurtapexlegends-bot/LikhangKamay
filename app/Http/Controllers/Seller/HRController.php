@@ -534,9 +534,16 @@ class HRController extends Controller
 
         abort_unless($employee->user_id === $seller->id, 403, 'Unauthorized employee attendance access.');
 
-        $month = $request->input('month', now()->format('Y-m'));
-        $start = \Carbon\Carbon::parse($month)->startOfMonth();
-        $end = \Carbon\Carbon::parse($month)->endOfMonth();
+        $rawMonth = (string) $request->input('month', now()->format('Y-m'));
+        try {
+            $parsedDate = \Carbon\Carbon::parse($rawMonth);
+            $month = $parsedDate->format('Y-m');
+        } catch (\Throwable) {
+            $parsedDate = now();
+            $month = $parsedDate->format('Y-m');
+        }
+        $start = $parsedDate->copy()->startOfMonth();
+        $end = $parsedDate->copy()->endOfMonth();
 
         $summary = $aggregator->aggregateForPeriod($employee, $start, $end, $seller);
         $canEdit = HRWorkflowHelper::canEditHrRecords($actor);

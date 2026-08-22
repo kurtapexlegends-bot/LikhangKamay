@@ -29,82 +29,120 @@ class PayoutController extends Controller
         Gate::authorize('admin-action');
 
         // 1. Fetch approved artisans
-        $artisans = User::where('role', 'artisan')
+        $artisanUsers = User::where('role', 'artisan')
             ->where('artisan_status', 'approved')
             ->orderBy('shop_name', 'asc')
+            ->get();
+
+        $artisanIds = $artisanUsers->pluck('id')->all();
+
+        // 1a. Pre-aggregate completed sales metrics
+        $completedSalesAggregates = Order::whereIn('artisan_id', $artisanIds)
+            ->where('status', 'Completed')
+            ->selectRaw('artisan_id, SUM(merchandise_subtotal) as gross_sales, SUM(platform_commission_amount) as platform_fees, SUM(seller_net_amount) as net_sales')
+            ->groupBy('artisan_id')
             ->get()
-            ->map(function ($user) {
-                // Marketplace completed orders calculations
-                $grossSales = (float) Order::where('artisan_id', $user->id)->where('status', 'Completed')->sum('merchandise_subtotal');
-                $platformFees = (float) Order::where('artisan_id', $user->id)->where('status', 'Completed')->sum('platform_commission_amount');
-                $netSales = (float) Order::where('artisan_id', $user->id)->where('status', 'Completed')->sum('seller_net_amount');
+            ->keyBy('artisan_id');
 
-                $payouts = (float) DB::table('payouts')
-                    ->where('user_id', $user->id)
-                    ->where('status', 'Completed')
-                    ->sum('amount');
+        // 1b. Pre-aggregate completed payouts
+        $payoutAggregates = DB::table('payouts')
+            ->whereIn('user_id', $artisanIds)
+            ->where('status', 'Completed')
+            ->selectRaw('user_id, SUM(amount) as total_payouts')
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
 
-                $heldForDispute = (float) Order::where('artisan_id', $user->id)
-                    ->where('status', 'Completed')
-                    ->where(function ($query) {
-                        $query->whereHas('dispute', function ($q) {
-                            $q->whereIn('status', ['open', 'escalated', 'under_review']);
-                        })->orWhere(function ($q) {
-                            $q->whereNotNull('return_reason')
-                              ->whereNull('replacement_resolved_at')
-                              ->where('status', '!=', 'Refunded');
-                        });
-                    })
-                    ->sum('seller_net_amount');
+        // 1c. Pre-aggregate dispute holds
+        $disputeHoldAggregates = Order::whereIn('artisan_id', $artisanIds)
+            ->where('status', 'Completed')
+            ->where(function ($query) {
+                $query->whereHas('dispute', function ($q) {
+                    $q->whereIn('status', ['open', 'escalated', 'under_review']);
+                })->orWhere(function ($q) {
+                    $q->whereNotNull('return_reason')
+                      ->whereNull('replacement_resolved_at')
+                      ->where('status', '!=', 'Refunded');
+                });
+            })
+            ->selectRaw('artisan_id, SUM(seller_net_amount) as total_held')
+            ->groupBy('artisan_id')
+            ->get()
+            ->keyBy('artisan_id');
 
-                $ordersInProgress = (float) Order::where('artisan_id', $user->id)
-                    ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
-                    ->sum('seller_net_amount');
+        // 1d. Pre-aggregate orders in progress
+        $ordersInProgressAggregates = Order::whereIn('artisan_id', $artisanIds)
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->selectRaw('artisan_id, SUM(seller_net_amount) as total_in_progress')
+            ->groupBy('artisan_id')
+            ->get()
+            ->keyBy('artisan_id');
 
-                $unpaidBalance = max(0.00, $netSales - $payouts - $heldForDispute);
+        // 1e. Pre-fetch recent completed orders
+        $recentOrdersGrouped = Order::whereIn('artisan_id', $artisanIds)
+            ->where('status', 'Completed')
+            ->select('id', 'artisan_id', 'order_number', 'customer_name', 'merchandise_subtotal', 'platform_commission_amount', 'seller_net_amount', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('artisan_id');
 
-                $recentOrders = Order::where('artisan_id', $user->id)
-                    ->where('status', 'Completed')
-                    ->select('id', 'order_number', 'customer_name', 'merchandise_subtotal', 'platform_commission_amount', 'seller_net_amount', 'created_at')
-                    ->orderBy('created_at', 'desc')
-                    ->take(10)
-                    ->get()
-                    ->map(fn($o) => [
-                        'id' => $o->id,
-                        'order_number' => $o->order_number,
-                        'customer_name' => $o->customer_name,
-                        'gross' => (float) $o->merchandise_subtotal,
-                        'fee' => (float) $o->platform_commission_amount,
-                        'net' => (float) $o->seller_net_amount,
-                        'date' => $o->created_at?->format('M d, Y') ?? 'N/A',
-                    ]);
+        $artisans = $artisanUsers->map(function ($user) use (
+            $completedSalesAggregates,
+            $payoutAggregates,
+            $disputeHoldAggregates,
+            $ordersInProgressAggregates,
+            $recentOrdersGrouped
+        ) {
+            $sales = $completedSalesAggregates->get($user->id);
+            $grossSales = (float) ($sales->gross_sales ?? 0);
+            $platformFees = (float) ($sales->platform_fees ?? 0);
+            $netSales = (float) ($sales->net_sales ?? 0);
 
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                    'premium_tier' => $user->premium_tier,
-                    'avatar' => $user->avatar,
-                    'avatar_url' => $user->avatar_url,
-                    'updated_at' => $user->updated_at?->toIso8601String(),
-                    'shop_name' => $user->shop_name,
-                    'shop_slug' => $user->shop_slug,
-                    'payout_method' => $user->payout_method ?? 'GCash',
-                    'payout_account_name' => $user->payout_account_name ?? '',
-                    'payout_account_number' => $user->payout_account_number ?? '',
-                    'has_payout_account' => !empty($user->payout_account_number),
-                    'balance' => $unpaidBalance,
-                    'ready_for_payout' => $unpaidBalance,
-                    'gross_sales' => $grossSales,
-                    'platform_fees' => $platformFees,
-                    'net_sales' => $netSales,
-                    'payouts' => $payouts,
-                    'orders_in_progress' => $ordersInProgress,
-                    'held_for_dispute' => $heldForDispute,
-                    'recent_orders' => $recentOrders,
-                ];
-            });
+            $payouts = (float) ($payoutAggregates->get($user->id)->total_payouts ?? 0);
+            $heldForDispute = (float) ($disputeHoldAggregates->get($user->id)->total_held ?? 0);
+            $ordersInProgress = (float) ($ordersInProgressAggregates->get($user->id)->total_in_progress ?? 0);
+
+            $unpaidBalance = max(0.00, $netSales - $payouts - $heldForDispute);
+
+            $recentOrders = ($recentOrdersGrouped->get($user->id) ?? collect())
+                ->take(10)
+                ->map(fn($o) => [
+                    'id' => $o->id,
+                    'order_number' => $o->order_number,
+                    'customer_name' => $o->customer_name,
+                    'gross' => (float) $o->merchandise_subtotal,
+                    'fee' => (float) $o->platform_commission_amount,
+                    'net' => (float) $o->seller_net_amount,
+                    'date' => $o->created_at?->format('M d, Y') ?? 'N/A',
+                ])
+                ->values();
+
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'premium_tier' => $user->premium_tier,
+                'avatar' => $user->avatar,
+                'avatar_url' => $user->avatar_url,
+                'updated_at' => $user->updated_at?->toIso8601String(),
+                'shop_name' => $user->shop_name,
+                'shop_slug' => $user->shop_slug,
+                'payout_method' => $user->payout_method ?? 'GCash',
+                'payout_account_name' => $user->payout_account_name ?? '',
+                'payout_account_number' => $user->payout_account_number ?? '',
+                'has_payout_account' => !empty($user->payout_account_number),
+                'balance' => $unpaidBalance,
+                'ready_for_payout' => $unpaidBalance,
+                'gross_sales' => $grossSales,
+                'platform_fees' => $platformFees,
+                'net_sales' => $netSales,
+                'payouts' => $payouts,
+                'orders_in_progress' => $ordersInProgress,
+                'held_for_dispute' => $heldForDispute,
+                'recent_orders' => $recentOrders,
+            ];
+        });
 
         // 2. Fetch payout history
         $payoutHistory = Payout::with('user:id,shop_name,shop_slug,name,role,premium_tier,avatar,updated_at')
@@ -172,6 +210,14 @@ class PayoutController extends Controller
         // Ensure artisan is approved
         if ($artisan->artisan_status !== 'approved') {
             return back()->with('error', 'Cannot disburse payout to an unapproved artisan.');
+        }
+
+        // Validate that disbursement amount does not exceed available unpaid balance
+        $snapshot = $this->ledgerService->buildFinancialSnapshot($artisan);
+        $availableBalance = max(0.00, round((float) ($snapshot['ready_for_payout'] > 0 ? $snapshot['ready_for_payout'] : $snapshot['balance']), 2));
+
+        if ((float) $validated['amount'] > $availableBalance) {
+            return back()->with('error', "Disbursement amount (PHP " . number_format($validated['amount'], 2) . ") exceeds the artisan's available balance of PHP " . number_format($availableBalance, 2) . ".");
         }
 
         $payout = DB::transaction(function () use ($validated, $artisan) {

@@ -2,7 +2,6 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
-import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import Footer from '@/Layouts/Footer';
 import {
     MapPin, Calendar, Star, Package, Trophy, Crown, Flame, Sparkles,
@@ -100,7 +99,6 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800 animate-in fade-in duration-500">
-            <ImpersonationBanner />
             <Head title={`${seller.name} - LikhangKamay Store`} />
             <BuyerNavbar hideMobileDock={true} />
 

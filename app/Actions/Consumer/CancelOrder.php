@@ -37,6 +37,17 @@ class CancelOrder
                     if ($product->track_as_supply && $product->supply) {
                         $product->supply->update(['quantity' => $product->stock]);
                     }
+
+                    if ($product->has_discount && $product->discount_info) {
+                        $activeDiscountId = $product->discount_info['id'] ?? null;
+                        $maxLimit = $product->discount_info['max_purchase_limit'] ?? null;
+                        $promoCount = ($maxLimit !== null && $maxLimit > 0) ? min($item->quantity, $maxLimit) : $item->quantity;
+                        if ($activeDiscountId && $promoCount > 0) {
+                            \App\Models\Discount::where('id', $activeDiscountId)
+                                ->where('promo_sold', '>=', $promoCount)
+                                ->decrement('promo_sold', $promoCount);
+                        }
+                    }
                 }
             }
             

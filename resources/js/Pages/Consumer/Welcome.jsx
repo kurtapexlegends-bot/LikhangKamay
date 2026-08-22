@@ -1,7 +1,6 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
-import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import Footer from '@/Layouts/Footer';
 import { Award, ArrowRight, Package, Store } from 'lucide-react';
 import { useSponsoredImpressionTracking } from '@/utils/sponsorshipTracking';
@@ -24,7 +23,6 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">
             <Head title="LikhangKamay - Artisan Marketplace" />
 
-            <ImpersonationBanner />
             <BuyerNavbar />
 
             {/* --- MAIN CONTENT --- */}

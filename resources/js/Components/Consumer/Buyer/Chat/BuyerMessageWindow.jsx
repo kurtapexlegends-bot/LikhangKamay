@@ -113,7 +113,7 @@ export default function BuyerMessageWindow({
                                                     {msg.attachment_path && msg.attachment_type === 'image' && (
                                                         <div className="mb-2 rounded-xl overflow-hidden bg-white/10 group-hover:shadow-md transition-shadow">
                                                             <img 
-                                                                src={msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') ? msg.attachment_path : `/storage/${msg.attachment_path}`} 
+                                                                src={msg.attachment_url || (msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') || msg.attachment_path.startsWith('http') || msg.attachment_path.startsWith('/storage') ? msg.attachment_path : `/storage/${msg.attachment_path}`)} 
                                                                 alt="Attachment" 
                                                                 className="max-h-48 md:max-h-64 object-contain w-full cursor-zoom-in hover:scale-105 transition-transform duration-300"
                                                                 onClick={() => {
@@ -128,7 +128,7 @@ export default function BuyerMessageWindow({
                                                     )}
                                                     {msg.attachment_path && msg.attachment_type === 'document' && (
                                                         <a 
-                                                            href={msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') ? msg.attachment_path : `/storage/${msg.attachment_path}`} 
+                                                            href={msg.attachment_url || (msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') || msg.attachment_path.startsWith('http') || msg.attachment_path.startsWith('/storage') ? msg.attachment_path : `/storage/${msg.attachment_path}`)} 
                                                             target="_blank" 
                                                             rel="noreferrer"
                                                             className={`flex items-center gap-2 p-2.5 md:p-3 rounded-xl mb-2 transition-colors ${

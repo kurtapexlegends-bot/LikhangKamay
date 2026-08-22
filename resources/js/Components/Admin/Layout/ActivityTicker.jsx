@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserPlus, Package, Store, AlertTriangle, ShieldAlert, CheckCircle, CreditCard, Box, Clock, VenetianMask, XCircle } from 'lucide-react';
+import { UserPlus, Package, Store, AlertTriangle, ShieldAlert, CheckCircle, CreditCard, Box, Clock, XCircle } from 'lucide-react';
 import { formatChatRelative } from '@/lib/chatTime';
 
 export default function ActivityTicker({ activities }) {
@@ -14,7 +14,6 @@ export default function ActivityTicker({ activities }) {
             case 'payout_processed': return { color: 'bg-green-100 text-green-600', icon: CreditCard };
             case 'artisan_approved': return { color: 'bg-emerald-100 text-emerald-600', icon: CheckCircle };
             case 'artisan_rejected': return { color: 'bg-rose-100 text-rose-600', icon: XCircle };
-            case 'user_impersonation': return { color: 'bg-stone-900 text-white', icon: VenetianMask };
             case 'COMMISSION_UPDATE':
             case 'BRANDING_UPDATE': return { color: 'bg-amber-100 text-amber-600', icon: ShieldAlert };
             default: return { color: 'bg-stone-100 text-stone-500', icon: CheckCircle };

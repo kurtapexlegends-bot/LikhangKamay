@@ -69,6 +69,8 @@ class PlaceOrder
         $shippingCity = $shippingContext['shipping_city'];
         $shippingRegion = $shippingContext['shipping_region'];
         $shippingPostalCode = $shippingContext['shipping_postal_code'];
+        $shippingLatitude = $shippingContext['shipping_latitude'] ?? null;
+        $shippingLongitude = $shippingContext['shipping_longitude'] ?? null;
 
         $paymentMethod = $request->shipping_method === 'Pick Up' ? 'COD' : $request->payment_method;
 
@@ -86,6 +88,8 @@ class PlaceOrder
                 'city' => $shippingCity,
                 'region' => $shippingRegion,
                 'postal_code' => $shippingPostalCode,
+                'latitude' => $shippingLatitude,
+                'longitude' => $shippingLongitude,
                 'is_default' => DB::raw('true'),
             ]);
 
@@ -119,13 +123,35 @@ class PlaceOrder
                 $pickupCandidates = $seller->getCourierPickupAddressCandidates();
                 $normalizedDropoff = \App\Support\StructuredAddress::normalizeForComparison($shippingAddress);
 
+                $isSameLocation = false;
                 foreach ($pickupCandidates as $pickupCandidate) {
                     if (\App\Support\StructuredAddress::normalizeForComparison($pickupCandidate) === $normalizedDropoff && $normalizedDropoff !== '') {
-                        $shopName = $seller->shop_name ?: $seller->name;
-                        throw \Illuminate\Validation\ValidationException::withMessages([
-                            'shipping_address' => "The delivery address is identical to {$shopName}'s studio pickup location. Please select 'Pick Up' or provide a different delivery address.",
-                        ]);
+                        $isSameLocation = true;
+                        break;
                     }
+                }
+
+                $sellerDefaultAddress = $seller->getDefaultAddress();
+                $sellerLat = $sellerDefaultAddress?->latitude ?? ($seller->latitude ?? null);
+                $sellerLng = $sellerDefaultAddress?->longitude ?? ($seller->longitude ?? null);
+
+                if (!$isSameLocation && !empty($sellerLat) && !empty($sellerLng) && !empty($shippingLatitude) && !empty($shippingLongitude)) {
+                    $distMeters = \App\Support\CourierAddressResolver::distanceBetweenCoordinates(
+                        (float) $sellerLat,
+                        (float) $sellerLng,
+                        (float) $shippingLatitude,
+                        (float) $shippingLongitude
+                    );
+                    if ($distMeters !== null && $distMeters <= 100) {
+                        $isSameLocation = true;
+                    }
+                }
+
+                if ($isSameLocation) {
+                    $shopName = $seller->shop_name ?: $seller->name;
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'shipping_address' => "The delivery address is identical to {$shopName}'s studio pickup location. Please select 'Pick Up' or provide a different delivery address.",
+                    ]);
                 }
             }
 
@@ -140,6 +166,10 @@ class PlaceOrder
                     'shipping_city' => $shippingCity,
                     'shipping_region' => $shippingRegion,
                     'shipping_postal_code' => $shippingPostalCode,
+                    'shipping_latitude' => $shippingLatitude,
+                    'shipping_longitude' => $shippingLongitude,
+                    'latitude' => $shippingLatitude,
+                    'longitude' => $shippingLongitude,
                 ]);
 
                 $shippingFee = (float) ($shippingQuote['amount'] ?? 0);
@@ -166,6 +196,8 @@ class PlaceOrder
             $shippingCity,
             $shippingRegion,
             $shippingPostalCode,
+            $shippingLatitude,
+            $shippingLongitude,
             $paymentMethod,
             $financeBySeller,
             $supportsWasSponsored,
@@ -195,6 +227,8 @@ class PlaceOrder
                     'shipping_city' => $shippingCity,
                     'shipping_region' => $shippingRegion,
                     'shipping_postal_code' => $shippingPostalCode,
+                    'shipping_latitude' => $shippingLatitude,
+                    'shipping_longitude' => $shippingLongitude,
                     'shipping_recipient_name' => $shippingRecipientName,
                     'shipping_contact_phone' => $shippingContactPhone,
                     'shipping_notes' => $request->shipping_notes,

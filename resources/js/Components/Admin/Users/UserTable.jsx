@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { router } from '@inertiajs/react';
-import { ChevronDown, Briefcase, Store, Users, Shield, VenetianMask, Search, UserX, UserCheck, ShieldAlert } from 'lucide-react';
+import { ChevronDown, Briefcase, Store, Users, Shield, Search, UserX, UserCheck, ShieldAlert } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import CompactPagination from '@/Components/CompactPagination';
@@ -83,7 +83,6 @@ export default function UserTable({
     toggleExpandedRow,
     handleRowKeyDown,
     setDrawerArtisan,
-    handleImpersonate,
     handleToggleStatus,
     handleDiscipline,
     unlinkedStaffGroup,
@@ -169,24 +168,14 @@ export default function UserTable({
                                         </button>
                                     )}
                                     {user.role !== 'super_admin' && (
-                                        <>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleImpersonate(user.id)}
-                                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-stone-900 text-white shadow-xs active:scale-95 transition-all hover:bg-stone-800 shrink-0"
-                                                title={`Impersonate ${user.name}`}
-                                            >
-                                                <VenetianMask size={14} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDiscipline(user)}
-                                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700 shadow-2xs active:scale-95 transition-all hover:bg-amber-100 shrink-0"
-                                                title={`Discipline ${user.name}`}
-                                            >
-                                                <ShieldAlert size={14} />
-                                            </button>
-                                        </>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDiscipline(user)}
+                                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700 shadow-2xs active:scale-95 transition-all hover:bg-amber-100 shrink-0"
+                                            title={`Discipline ${user.name}`}
+                                        >
+                                            <ShieldAlert size={14} />
+                                        </button>
                                     )}
                                 </div>
                             </div>
@@ -330,16 +319,6 @@ export default function UserTable({
                                          
                                           <td className="px-5 py-4 text-right whitespace-nowrap">
                                               <div className="flex justify-end items-center gap-2">
-                                                  {user.role !== 'super_admin' && (
-                                                      <button
-                                                          type="button"
-                                                          onClick={(e) => { e.stopPropagation(); handleImpersonate(user.id); }}
-                                                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-stone-900 border border-stone-850 px-3 py-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-black hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-stone-900/20 min-h-[40px]"
-                                                          title={`Impersonate ${user.name}`}
-                                                      >
-                                                          <VenetianMask size={12} /> Login As
-                                                      </button>
-                                                  )}
                                                   {user.role !== 'super_admin' && (
                                                       <button
                                                           type="button"

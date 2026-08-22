@@ -49,6 +49,7 @@ class Order extends Model
         'merchandise_subtotal', 'convenience_fee_amount', 'shipping_fee_amount', 'platform_commission_amount', 'seller_net_amount',
         'total_amount', 'status', 'payment_method', 'payment_status', 'paymongo_session_id', 'review_reminder_sent', 'shipment_reminder_sent', 'shipping_address', 'shipping_address_type',
         'shipping_street_address', 'shipping_barangay', 'shipping_city', 'shipping_region', 'shipping_postal_code',
+        'shipping_latitude', 'shipping_longitude',
         'shipping_recipient_name', 'shipping_contact_phone', 'shipping_notes', 'tracking_number', 'received_at', 'warranty_expires_at',
         'accepted_at', 'shipped_at', 'delivered_at', 'cancelled_at', 'cancellation_reason', 'shipping_method', 'proof_of_delivery',
         'return_reason', 'return_proof_image',
@@ -66,11 +67,15 @@ class Order extends Model
         'cancelled_at' => 'datetime',
         'replacement_started_at' => 'datetime',
         'replacement_resolved_at' => 'datetime',
+        'shipping_latitude' => 'float',
+        'shipping_longitude' => 'float',
         'merchandise_subtotal' => 'decimal:2',
         'convenience_fee_amount' => 'decimal:2',
         'shipping_fee_amount' => 'decimal:2',
         'platform_commission_amount' => 'decimal:2',
         'seller_net_amount' => 'decimal:2',
+        'review_reminder_sent' => \App\Casts\PostgresCompatibleBoolean::class,
+        'shipment_reminder_sent' => \App\Casts\PostgresCompatibleBoolean::class,
     ];
 
     // Relationship: Order has many Items

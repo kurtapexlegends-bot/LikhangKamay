@@ -29,6 +29,15 @@ class Review extends Model
         'hidden_at' => 'datetime',
     ];
 
+    protected $appends = ['photo_urls'];
+
+    public function getPhotoUrlsAttribute(): array
+    {
+        return collect($this->photos ?? [])->map(function ($photo) {
+            return \App\Services\StorageUrl::url($photo);
+        })->all();
+    }
+
     protected $with = ['user']; // Eager load user by default
 
     public function user()

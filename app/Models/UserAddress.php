@@ -36,11 +36,15 @@ class UserAddress extends Model
         'barangay',
         'postal_code',
         'full_address',
+        'latitude',
+        'longitude',
         'is_default',
     ];
 
     protected $casts = [
         'is_default' => \App\Casts\PostgresCompatibleBoolean::class,
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function user()

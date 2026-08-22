@@ -93,6 +93,8 @@ class UserAddressController extends Controller
             'city' => 'nullable|string|max:255',
             'region' => 'nullable|string|max:255',
             'postal_code' => 'nullable|string|max:20',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'full_address' => 'nullable|string',
         ]);
     }
@@ -159,6 +161,8 @@ class UserAddressController extends Controller
         $validated['region'] = $region;
         $validated['postal_code'] = $postalCode;
         $validated['full_address'] = $structuredAddress;
+        $validated['latitude'] = isset($validated['latitude']) && is_numeric($validated['latitude']) ? (float) $validated['latitude'] : null;
+        $validated['longitude'] = isset($validated['longitude']) && is_numeric($validated['longitude']) ? (float) $validated['longitude'] : null;
 
         return $validated;
     }

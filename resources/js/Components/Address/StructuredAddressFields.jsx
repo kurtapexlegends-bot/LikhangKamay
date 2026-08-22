@@ -3,6 +3,7 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import AddressSelect from '@/Components/Address/AddressSelect';
+import AddressLocationPicker from '@/Components/Address/AddressLocationPicker';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
 import {
     CAVITE_CITY_OPTIONS,
@@ -159,6 +160,18 @@ export default function StructuredAddressFields({
                     <InputError className="mt-2" message={errors[field('postal_code')]} />
                 </div>
             </div>
+
+            <AddressLocationPicker
+                latitude={rawValue('latitude')}
+                longitude={rawValue('longitude')}
+                city={matchedCity || rawValue('city')}
+                barangay={rawValue('barangay')}
+                onLocationSelect={({ latitude, longitude }) => {
+                    updateField('latitude', latitude);
+                    updateField('longitude', longitude);
+                }}
+                readOnly={readOnly}
+            />
 
             {showPreview && (
                 <div className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">

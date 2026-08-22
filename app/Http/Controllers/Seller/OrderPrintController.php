@@ -34,9 +34,9 @@ class OrderPrintController extends Controller
             abort(404, 'No orders found to print.');
         }
 
-        $fontDir = storage_path('fonts');
+        $fontDir = is_writable(storage_path()) ? storage_path('fonts') : sys_get_temp_dir() . '/dompdf_fonts';
         if (!file_exists($fontDir)) {
-            mkdir($fontDir, 0755, true);
+            @mkdir($fontDir, 0755, true);
         }
 
         $pdf = Pdf::loadView('pdf.packing-slips', compact('orders', 'artisan'))
@@ -45,6 +45,9 @@ class OrderPrintController extends Controller
                       'defaultFont' => 'DejaVu Sans',
                       'isHtml5ParserEnabled' => true,
                       'isRemoteEnabled' => true,
+                      'fontDir' => $fontDir,
+                      'fontCache' => $fontDir,
+                      'tempDir' => sys_get_temp_dir(),
                   ]);
 
         return $pdf->download('Packing_Slips_' . now()->format('Ymd_His') . '.pdf');

@@ -31,7 +31,6 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
     // =========================================================================
     const [search, setSearch] = useState(filters.search || '');
     const [quickView, setQuickView] = useState('all');
-    const [impersonateTarget, setImpersonateTarget] = useState(null);
     const [statusToggleTarget, setStatusToggleTarget] = useState(null);
     const [disciplinaryTarget, setDisciplinaryTarget] = useState(null);
     const [drawerArtisan, setDrawerArtisan] = useState(null);
@@ -140,22 +139,6 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
         );
     };
 
-    const handleImpersonate = (userId) => {
-        setImpersonateTarget(userId);
-    };
-
-    const confirmImpersonation = () => {
-        if (impersonateTarget) {
-            window.dispatchEvent(new CustomEvent('start-impersonation-loading'));
-            router.post(`/admin/users/${impersonateTarget}/impersonate`, {}, {
-                onStart: () => setImpersonateTarget(null),
-                onError: () => {
-                    window.location.reload();
-                },
-            });
-        }
-    };
-    
     const confirmToggleStatus = () => {
         if (statusToggleTarget) {
             router.post(route('admin.users.toggle-status', statusToggleTarget.id), {}, {
@@ -241,7 +224,6 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                                     toggleExpandedRow={toggleExpandedRow}
                                     handleRowKeyDown={handleRowKeyDown}
                                     setDrawerArtisan={setDrawerArtisan}
-                                    handleImpersonate={handleImpersonate}
                                     handleToggleStatus={setStatusToggleTarget}
                                     handleDiscipline={setDisciplinaryTarget}
                                     unlinkedStaffGroup={unlinkedStaffGroup}
@@ -264,20 +246,6 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                     </motion.div>
                 </AnimatePresence>
             </div>
-
-            {/* Impersonation Modal */}
-            <ConfirmationModal
-                isOpen={!!impersonateTarget}
-                onClose={() => setImpersonateTarget(null)}
-                onConfirm={confirmImpersonation}
-                title="Support Mode (View as User)"
-                message="Are you sure you want to securely log in as this user to assist them? You will temporarily view the platform from their perspective."
-                icon={Users}
-                iconBg="bg-stone-100 text-stone-600"
-                confirmText="Login As User"
-                confirmColor="bg-stone-900 hover:bg-black focus-visible:ring-stone-900/30"
-                isHighRisk={true}
-            />
 
             <ConfirmationModal
                 isOpen={!!statusToggleTarget}
@@ -322,7 +290,6 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                                 toggleExpandedRow={() => {}}
                                 handleRowKeyDown={() => {}}
                                 setDrawerArtisan={() => {}}
-                                handleImpersonate={handleImpersonate}
                                 unlinkedStaffGroup={null}
                                 users={{ last_page: 1 }}
                                 search=""

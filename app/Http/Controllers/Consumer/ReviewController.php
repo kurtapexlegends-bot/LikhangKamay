@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Review;
 use App\Notifications\NewReviewNotification;
 use App\Services\StorageUrl;
+use App\Support\RichTextSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -87,7 +88,7 @@ class ReviewController extends Controller
             'user_id' => Auth::id(),
             'product_id' => $request->product_id,
             'rating' => $request->rating,
-            'comment' => $request->comment,
+            'comment' => $request->comment ? RichTextSanitizer::sanitize($request->comment) : null,
             'photos' => $photoPaths,
         ]);
 
@@ -130,7 +131,7 @@ class ReviewController extends Controller
 
         $review->update([
             'rating' => $request->rating,
-            'comment' => $request->comment,
+            'comment' => $request->comment ? RichTextSanitizer::sanitize($request->comment) : null,
             'photos' => $photoPaths,
         ]);
 

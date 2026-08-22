@@ -64,7 +64,10 @@ class ProductDetailResource extends JsonResource
             'image' => $this->img,
             'gallery_urls' => $this->gallery_urls,
             'reviews' => $this->reviews->map(function ($review) {
+                $photoUrls = collect($review->photos ?? [])->map(fn($p) => \App\Services\StorageUrl::url($p))->all();
                 return array_merge($review->toArray(), [
+                    'photos' => $photoUrls,
+                    'photo_urls' => $photoUrls,
                     'seller_reply' => RichTextSanitizer::sanitize($review->seller_reply),
                     'user' => $review->user ? $review->user->toArray() : null,
                 ]);

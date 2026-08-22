@@ -53,7 +53,7 @@ class ProfileUpdateRequest extends FormRequest
                 },
             ],
             'zip_code' => ['nullable', 'string', 'max:20'],
-            'avatar' => ['nullable', 'image', 'max:10240'], // Max 10MB
+            'avatar' => ['nullable', 'image', 'max:4096'], // Max 4MB (Vercel serverless limit)
         ];
     }
 }

@@ -39,6 +39,8 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
         region: '',
         city: '',
         postal_code: '',
+        latitude: null,
+        longitude: null,
     });
 
     const labelRef = useRef(null);
@@ -62,6 +64,8 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
             region: '',
             city: '',
             postal_code: '',
+            latitude: null,
+            longitude: null,
         });
         setIsAdding(false);
         setEditingAddressId(null);
@@ -83,6 +87,8 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
             region: address.region || '',
             city: address.city || '',
             postal_code: address.postal_code || '',
+            latitude: address.latitude ?? null,
+            longitude: address.longitude ?? null,
         });
         setEditingAddressId(address.id);
         setIsAdding(false);

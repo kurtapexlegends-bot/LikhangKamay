@@ -90,6 +90,8 @@ class OrderWorkflowHelper
             $shippingContactPhone = $request->filled('phone_number')
                 ? $request->input('phone_number')
                 : ($selectedAddress->phone_number ?: $buyer->phone_number);
+            $shippingLatitude = $selectedAddress->latitude !== null ? (float) $selectedAddress->latitude : null;
+            $shippingLongitude = $selectedAddress->longitude !== null ? (float) $selectedAddress->longitude : null;
         } else {
             $hasStructuredShippingInput = collect([
                 $request->input('shipping_street_address'),
@@ -150,6 +152,8 @@ class OrderWorkflowHelper
             $shippingContactPhone = $request->filled('phone_number')
                 ? $request->input('phone_number')
                 : $buyer->phone_number;
+            $shippingLatitude = $request->filled('shipping_latitude') ? (float) $request->input('shipping_latitude') : ($request->filled('latitude') ? (float) $request->input('latitude') : null);
+            $shippingLongitude = $request->filled('shipping_longitude') ? (float) $request->input('shipping_longitude') : ($request->filled('longitude') ? (float) $request->input('longitude') : null);
         }
 
         if ($requireContactDetails && (blank($shippingRecipientName) || blank($shippingContactPhone))) {
@@ -169,6 +173,8 @@ class OrderWorkflowHelper
             'shipping_city' => $shippingCity,
             'shipping_region' => $shippingRegion,
             'shipping_postal_code' => $shippingPostalCode,
+            'shipping_latitude' => $shippingLatitude,
+            'shipping_longitude' => $shippingLongitude,
         ];
     }
 

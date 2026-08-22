@@ -1,8 +1,11 @@
-import React from "react";
-import { MapPin, Hash, PackageCheck, DollarSign } from "lucide-react";
+import React, { useState } from "react";
+import { MapPin, Hash, PackageCheck, DollarSign, Route } from "lucide-react";
 import { sellerProofLabel } from "@/utils/orderHelpers";
+import OrderRoutePreview from "@/Components/Seller/Orders/OrderRoutePreview";
 
 export default function OrderLogistics({ order, canEditOrders, markAsPaidAction }) {
+    const [showRouteModal, setShowRouteModal] = useState(false);
+
     return (
         <div className="space-y-1 min-w-0">
             <span className="text-[9px] font-bold text-stone-400 uppercase tracking-widest block">
@@ -20,6 +23,17 @@ export default function OrderLogistics({ order, canEditOrders, markAsPaidAction 
                 <span className="inline-flex rounded-md border border-stone-200 bg-white px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-stone-600 tracking-tight shadow-2xs">
                     {order.shipping_method}
                 </span>
+
+                {order.shipping_method === "Delivery" && (
+                    <button
+                        type="button"
+                        onClick={() => setShowRouteModal(true)}
+                        className="inline-flex items-center gap-1 bg-stone-50 border border-stone-200 hover:border-clay-300 hover:bg-clay-50/40 rounded-md px-1.5 py-0.5 text-[9px] font-bold text-stone-700 hover:text-clay-800 transition shadow-2xs cursor-pointer"
+                    >
+                        <Route size={10} className="text-clay-600" /> Route Map
+                    </button>
+                )}
+
                 {order.tracking_number && (
                     <span className="inline-flex items-center gap-0.5 bg-sky-50 border border-sky-100 rounded-md px-1.5 py-0.5 text-[9px] font-extrabold text-sky-700 tracking-tight shadow-2xs">
                         <Hash size={9} /> {order.tracking_number}
@@ -48,6 +62,19 @@ export default function OrderLogistics({ order, canEditOrders, markAsPaidAction 
                         </button>
                     )}
             </div>
+
+            {showRouteModal && (
+                <OrderRoutePreview
+                    isOpen={showRouteModal}
+                    onClose={() => setShowRouteModal(false)}
+                    order={order}
+                    sellerCoordinates={{
+                        lat: order.artisan?.latitude,
+                        lng: order.artisan?.longitude,
+                    }}
+                    sellerAddress={order.artisan?.address || order.artisan?.city || "Artisan Studio"}
+                />
+            )}
         </div>
     );
 }

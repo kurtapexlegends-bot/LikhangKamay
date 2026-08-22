@@ -4,7 +4,6 @@ import { Search, ShoppingBag, CheckCircle, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
-import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import RatingModal from '@/Components/Consumer/RatingModal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
@@ -179,7 +178,6 @@ export default function MyOrders({ auth, orders }) {
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-stone-800 flex flex-col">
             <Head title="My Purchases" />
-            <ImpersonationBanner />
             <BuyerNavbar />
 
             <main className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 min-w-0 flex-1">

@@ -67,8 +67,30 @@ class OrderLogisticsService
             ? $dropoffAddressCandidates[0]
             : $dropoffAddressCandidates;
 
-        $pickupCoordinates = $this->geocodingService->geocode($pickupAddressCandidates, 'seller pickup');
-        $dropoffCoordinates = $this->geocodingService->geocode($dropoffGeocodeQuery, 'buyer drop-off');
+        $sellerDefaultAddress = $seller->getDefaultAddress();
+        $sellerLat = $sellerDefaultAddress?->latitude ?? ($seller->latitude ?? null);
+        $sellerLng = $sellerDefaultAddress?->longitude ?? ($seller->longitude ?? null);
+
+        if (!empty($sellerLat) && !empty($sellerLng)) {
+            $pickupCoordinates = [
+                'lat' => (string) $sellerLat,
+                'lng' => (string) $sellerLng,
+                'matched_query' => $preferredPickupAddress,
+            ];
+        } else {
+            $pickupCoordinates = $this->geocodingService->geocode($pickupAddressCandidates, 'seller pickup');
+        }
+
+        if (!empty($order->shipping_latitude) && !empty($order->shipping_longitude)) {
+            $dropoffCoordinates = [
+                'lat' => (string) $order->shipping_latitude,
+                'lng' => (string) $order->shipping_longitude,
+                'matched_query' => $preferredDropoffAddress,
+            ];
+        } else {
+            $dropoffCoordinates = $this->geocodingService->geocode($dropoffGeocodeQuery, 'buyer drop-off');
+        }
+
         $pickupAddress = CourierAddressResolver::resolveCourierStopAddress($preferredPickupAddress, $pickupCoordinates, $pickupAddressCandidates);
         $dropoffAddress = CourierAddressResolver::resolveCourierStopAddress($preferredDropoffAddress, $dropoffCoordinates, $dropoffAddressCandidates);
 
@@ -178,8 +200,30 @@ class OrderLogisticsService
             ? $dropoffAddressCandidates[0]
             : $dropoffAddressCandidates;
 
-        $pickupCoordinates = $this->geocodingService->geocode($pickupAddressCandidates, 'seller pickup');
-        $dropoffCoordinates = $this->geocodingService->geocode($dropoffGeocodeQuery, 'buyer drop-off');
+        $sellerDefaultAddress = $seller->getDefaultAddress();
+        $sellerLat = $sellerDefaultAddress?->latitude ?? ($seller->latitude ?? null);
+        $sellerLng = $sellerDefaultAddress?->longitude ?? ($seller->longitude ?? null);
+
+        if (!empty($sellerLat) && !empty($sellerLng)) {
+            $pickupCoordinates = [
+                'lat' => (string) $sellerLat,
+                'lng' => (string) $sellerLng,
+                'matched_query' => $preferredPickupAddress,
+            ];
+        } else {
+            $pickupCoordinates = $this->geocodingService->geocode($pickupAddressCandidates, 'seller pickup');
+        }
+
+        if (!empty($order->shipping_latitude) && !empty($order->shipping_longitude)) {
+            $dropoffCoordinates = [
+                'lat' => (string) $order->shipping_latitude,
+                'lng' => (string) $order->shipping_longitude,
+                'matched_query' => $preferredDropoffAddress,
+            ];
+        } else {
+            $dropoffCoordinates = $this->geocodingService->geocode($dropoffGeocodeQuery, 'buyer drop-off');
+        }
+
         $pickupAddress = CourierAddressResolver::resolveCourierStopAddress($preferredPickupAddress, $pickupCoordinates, $pickupAddressCandidates);
         $dropoffAddress = CourierAddressResolver::resolveCourierStopAddress($preferredDropoffAddress, $dropoffCoordinates, $dropoffAddressCandidates);
 
@@ -330,6 +374,17 @@ class OrderLogisticsService
                     $product->refresh();
                     if ($product->track_as_supply && $product->supply) {
                         $product->supply->update(['quantity' => $product->stock]);
+                    }
+
+                    if ($product->has_discount && $product->discount_info) {
+                        $activeDiscountId = $product->discount_info['id'] ?? null;
+                        $maxLimit = $product->discount_info['max_purchase_limit'] ?? null;
+                        $promoCount = ($maxLimit !== null && $maxLimit > 0) ? min($item->quantity, $maxLimit) : $item->quantity;
+                        if ($activeDiscountId && $promoCount > 0) {
+                            \App\Models\Discount::where('id', $activeDiscountId)
+                                ->where('promo_sold', '>=', $promoCount)
+                                ->decrement('promo_sold', $promoCount);
+                        }
                     }
                 }
             }

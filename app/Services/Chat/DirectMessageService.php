@@ -120,6 +120,7 @@ class DirectMessageService
                         'id' => $m->id,
                         'text' => $m->message,
                         'attachment_path' => $m->attachment_path,
+                        'attachment_url' => $m->attachment_url ?? ($m->attachment_path ? \App\Services\StorageUrl::url($m->attachment_path) : null),
                         'attachment_type' => $m->attachment_type,
                         'sender' => $m->sender_id === $userId ? 'me' : 'other',
                         'created_at' => $m->created_at?->toIso8601String(),

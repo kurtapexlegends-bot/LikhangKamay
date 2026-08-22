@@ -111,6 +111,6 @@ class StaffAttendanceSession extends Model
 
     public function getPhotoUrlAttribute(): ?string
     {
-        return $this->clock_in_photo_path ? \Illuminate\Support\Facades\Storage::url($this->clock_in_photo_path) : null;
+        return $this->clock_in_photo_path ? \App\Services\StorageUrl::url($this->clock_in_photo_path) : null;
     }
 }

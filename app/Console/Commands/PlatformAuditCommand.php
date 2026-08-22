@@ -114,20 +114,21 @@ class PlatformAuditCommand extends Command
         $this->warn("\n[3/3] Auditing Critical Environment Variables...");
 
         $critical = [
-            'LALAMOVE_API_KEY',
-            'LALAMOVE_SECRET_KEY',
-            'PAYMONGO_SECRET_KEY',
-            'PAYMONGO_PUBLIC_KEY',
-            'RESEND_API_KEY',
-            'SUPABASE_URL',
-            'SUPABASE_ANON_KEY',
-            'VITE_SENTRY_DSN_PUBLIC'
+            'LALAMOVE_API_KEY' => config('services.lalamove.api_key'),
+            'LALAMOVE_SECRET_KEY' => config('services.lalamove.secret_key'),
+            'PAYMONGO_SECRET_KEY' => config('services.paymongo.secret_key'),
+            'PAYMONGO_PUBLIC_KEY' => config('services.paymongo.public_key'),
+            'RESEND_API_KEY' => config('services.resend.key'),
+            'SUPABASE_URL' => config('services.supabase.url'),
+            'SUPABASE_ANON_KEY' => config('services.supabase.anon_key'),
+            'VITE_SENTRY_DSN_PUBLIC' => $_ENV['VITE_SENTRY_DSN_PUBLIC'] ?? $_SERVER['VITE_SENTRY_DSN_PUBLIC'] ?? getenv('VITE_SENTRY_DSN_PUBLIC') ?? config('sentry.dsn'),
         ];
 
         $missing = [];
 
-        foreach ($critical as $key) {
-            if (empty(env($key))) {
+        foreach ($critical as $key => $val) {
+            $resolvedVal = $val ?: ($_ENV[$key] ?? $_SERVER[$key] ?? getenv($key) ?? env($key));
+            if (empty($resolvedVal)) {
                 $missing[] = $key;
             }
         }

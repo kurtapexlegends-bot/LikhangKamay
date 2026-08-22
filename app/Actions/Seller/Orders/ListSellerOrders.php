@@ -31,7 +31,7 @@ class ListSellerOrders
         $seller?->loadMissing('addresses');
 
         $query = Order::where('artisan_id', $sellerId)
-            ->with(['items.product.recipes.supply', 'user', 'delivery.events', 'dispute']);
+            ->with(['items.product.recipes.supply', 'user', 'delivery.events', 'dispute', 'artisan']);
 
         $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
 

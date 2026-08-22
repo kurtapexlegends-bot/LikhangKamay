@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
-import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
 import { formatChatDateLabel } from '@/lib/chatTime';
 import useEchoConnection from '@/hooks/useEchoConnection';
@@ -202,14 +201,13 @@ export default function BuyerChat({ auth, conversations, activeMessages, current
     const galleryImages = useMemo(() => displayedMessages
         .filter(msg => msg.attachment_path && msg.attachment_type === 'image')
         .map(msg => ({
-            url: msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') ? msg.attachment_path : `/storage/${msg.attachment_path}`,
+            url: msg.attachment_url || (msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') || msg.attachment_path.startsWith('http') || msg.attachment_path.startsWith('/storage') ? msg.attachment_path : `/storage/${msg.attachment_path}`),
             type: 'image',
             id: msg.id
         })), [displayedMessages]);
 
     return (
         <div className="h-screen overflow-hidden bg-[#FDFBF9] font-sans text-gray-800 flex flex-col" style={{ scrollbarGutter: 'stable' }}>
-            <ImpersonationBanner />
             <Head title="My Messages" />
 
             {/* Navbar (Hidden on mobile when in conversation) */}

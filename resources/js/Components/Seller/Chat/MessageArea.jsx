@@ -47,7 +47,7 @@ export default function MessageArea({
         .filter((message) => message.attachment_path && message.attachment_type === 'image')
         .map((message) => ({
             id: message.id,
-            url: `/storage/${message.attachment_path}`,
+            url: message.attachment_url || (message.attachment_path.startsWith('blob:') || message.attachment_path.startsWith('data:') || message.attachment_path.startsWith('http') || message.attachment_path.startsWith('/storage') ? message.attachment_path : `/storage/${message.attachment_path}`),
             type: 'image',
         })), [activeMessages]);
 
@@ -148,7 +148,7 @@ export default function MessageArea({
                                                         </div>
                                                     ) : (
                                                         <img
-                                                            src={message.attachment_path.startsWith('blob:') || message.attachment_path.startsWith('data:') ? message.attachment_path : `/storage/${message.attachment_path}`}
+                                                            src={message.attachment_url || (message.attachment_path.startsWith('blob:') || message.attachment_path.startsWith('data:') || message.attachment_path.startsWith('http') || message.attachment_path.startsWith('/storage') ? message.attachment_path : `/storage/${message.attachment_path}`)}
                                                             alt="Team attachment"
                                                             className="max-h-56 w-full cursor-zoom-in object-contain transition hover:scale-[1.02]"
                                                             onClick={() => {
@@ -167,7 +167,7 @@ export default function MessageArea({
 
                                             {message.attachment_path && message.attachment_type === 'document' && (
                                                 <a
-                                                    href={message.attachment_path.startsWith('blob:') || message.attachment_path.startsWith('data:') ? message.attachment_path : `/storage/${message.attachment_path}`}
+                                                    href={message.attachment_url || (message.attachment_path.startsWith('blob:') || message.attachment_path.startsWith('data:') || message.attachment_path.startsWith('http') || message.attachment_path.startsWith('/storage') ? message.attachment_path : `/storage/${message.attachment_path}`)}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     className={`mb-2 flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${

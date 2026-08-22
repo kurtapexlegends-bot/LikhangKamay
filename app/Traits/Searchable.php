@@ -28,8 +28,11 @@ trait Searchable
         if ($driver === 'pgsql') {
             // High-performance PostgreSQL Full-Text Search with prefix matching & ILIKE fallback
             $columnsString = implode(", ' ', ", array_map(fn($col) => "COALESCE($col, '')", $columns));
-            $terms = array_filter(explode(' ', $search));
-            $prefixQuery = implode(' & ', array_map(fn($t) => preg_replace('/[^a-zA-Z0-9]/', '', $t) . ':*', $terms));
+            $terms = array_values(array_filter(
+                array_map(fn($t) => preg_replace('/[^a-zA-Z0-9]/', '', $t), explode(' ', $search)),
+                fn($t) => $t !== ''
+            ));
+            $prefixQuery = !empty($terms) ? implode(' & ', array_map(fn($t) => $t . ':*', $terms)) : null;
 
             return $query->where(function ($q) use ($columns, $search, $columnsString, $prefixQuery) {
                 if (!empty($prefixQuery)) {

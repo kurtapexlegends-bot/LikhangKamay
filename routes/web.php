@@ -492,9 +492,6 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/trash', fn() => redirect()->route('admin.compliance', ['tab' => 'trash']))->name('admin.trash');
     Route::post('/trash/restore', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'restoreItem'])->name('admin.trash.restore');
     Route::post('/trash/permanent-delete', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'permanentDeleteItem'])->name('admin.trash.permanent-delete');
-    
-    // Support Impersonation
-    Route::post('/users/{user:id}/impersonate', [\App\Http\Controllers\Admin\ImpersonationController::class, 'impersonate'])->name('admin.impersonate');
 
     // Global Taxonomy Engine
     Route::get('/taxonomy', fn() => redirect()->route('admin.settings.index', ['tab' => 'taxonomy']))->name('admin.taxonomy.index');
@@ -550,10 +547,5 @@ Route::get('/categories-debug', function() {
         'all_database_categories' => \App\Models\Category::all()->toArray()
     ]);
 });
-
-// Stop Impersonation Route (Protected by standard auth)
-Route::post('/impersonation/leave', [\App\Http\Controllers\Admin\ImpersonationController::class, 'leave'])
-    ->middleware(['auth'])
-    ->name('impersonation.leave');
 
 require __DIR__.'/auth.php';

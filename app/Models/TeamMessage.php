@@ -28,6 +28,13 @@ class TeamMessage extends Model
         ];
     }
 
+    protected $appends = ['attachment_url'];
+
+    public function getAttachmentUrlAttribute(): ?string
+    {
+        return $this->attachment_path ? \App\Services\StorageUrl::url($this->attachment_path) : null;
+    }
+
     public function sellerOwner()
     {
         return $this->belongsTo(User::class, 'seller_owner_id');

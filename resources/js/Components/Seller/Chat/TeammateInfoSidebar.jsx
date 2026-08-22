@@ -18,7 +18,7 @@ export default function TeammateInfoSidebar({
             .map((msg) => ({
                 id: msg.id,
                 name: msg.attachment_path.split('/').pop() || 'Attachment',
-                path: `/storage/${msg.attachment_path}`,
+                path: msg.attachment_url || (msg.attachment_path.startsWith('http') || msg.attachment_path.startsWith('/storage') ? msg.attachment_path : `/storage/${msg.attachment_path}`),
                 type: msg.attachment_type || 'document',
                 time: msg.time
             }))

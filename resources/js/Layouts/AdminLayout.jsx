@@ -37,7 +37,6 @@ import {
     MessageSquare,
     Trash2
 } from 'lucide-react';
-import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 
 const MotionLink = motion(Link);
 
@@ -111,7 +110,6 @@ export default function AdminLayout({ title, children }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState(() => getInitialExpandedGroups());
-    const [isImpersonating, setIsImpersonating] = useState(false);
 
     const [isCollapsed, setIsCollapsed] = useState(() => {
         if (typeof window === 'undefined') return false;
@@ -151,12 +149,6 @@ export default function AdminLayout({ title, children }) {
     useEffect(() => {
         setActiveTooltip(null);
     }, [isCollapsed]);
-
-    useEffect(() => {
-        const handleStartImpersonation = () => setIsImpersonating(true);
-        window.addEventListener('start-impersonation-loading', handleStartImpersonation);
-        return () => window.removeEventListener('start-impersonation-loading', handleStartImpersonation);
-    }, []);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -220,7 +212,6 @@ export default function AdminLayout({ title, children }) {
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans flex flex-col text-stone-800">
-            <ImpersonationBanner />
             <div className="flex-1 flex">
                 <Head title={resolvedTitle ? `${resolvedTitle} - Admin` : 'Admin Panel'} />
 
@@ -395,23 +386,6 @@ export default function AdminLayout({ title, children }) {
                 </main>
             </div>
             </div>
-
-            {/* GLOBAL IMPERSONATION OVERLAY (TRULY FULL SCREEN) */}
-            {isImpersonating && (
-                <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-stone-900/60 backdrop-blur-xl animate-in fade-in duration-700">
-                    <div className="relative">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <Lock size={24} className="text-stone-400 animate-pulse" />
-                        </div>
-                        <Loader2 className="h-24 w-24 animate-spin text-stone-400/20" strokeWidth={1.5} />
-                    </div>
-                    
-                    <div className="mt-8 text-center">
-                        <h3 className="text-xl font-black tracking-[0.2em] text-white uppercase italic">Securing Session</h3>
-                        <p className="mt-2 text-[10px] font-bold text-stone-400/60 uppercase tracking-[0.3em]">Synchronizing marketplace identity...</p>
-                    </div>
-                </div>
-            )}
 
             {/* Self-contained CSS Keyframes for smooth tooltip fade-in/slide-in */}
             <style>{`

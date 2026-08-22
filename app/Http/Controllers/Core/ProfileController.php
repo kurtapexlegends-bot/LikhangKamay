@@ -139,8 +139,7 @@ class ProfileController extends Controller
 
             if ($request->hasFile('platform_logo')) {
                 $logoPath = $request->file('platform_logo')->store('branding', 'public');
-                $logoUrl = \App\Services\StorageUrl::url($logoPath);
-                Settings::set('platform_logo', $logoUrl);
+                Settings::set('platform_logo', $logoPath);
             }
         }
 

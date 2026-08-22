@@ -54,6 +54,7 @@ class PayoutManagementTest extends TestCase
             'payout_method' => 'GCash',
             'payout_account_name' => 'Jane Doe',
             'payout_account_number' => '09123456789',
+            'base_funds' => 1000.00,
         ]);
 
         $response = $this->actingAs($admin)
@@ -87,6 +88,35 @@ class PayoutManagementTest extends TestCase
                        $notification->payout->reference_number === 'REF998877';
             }
         );
+    }
+
+    public function test_cannot_record_payout_exceeding_artisan_balance(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $artisan = User::factory()->create([
+            'role' => 'artisan',
+            'artisan_status' => 'approved',
+            'payout_method' => 'GCash',
+            'payout_account_name' => 'Jane Doe',
+            'payout_account_number' => '09123456789',
+            'base_funds' => 200.00,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->post(route('admin.payouts.store'), [
+                'user_id' => $artisan->id,
+                'amount' => 500.00,
+                'payout_method' => 'GCash',
+                'payout_account_name' => 'Jane Doe',
+                'payout_account_number' => '09123456789',
+                'reference_number' => 'REF998877',
+            ]);
+
+        $response->assertSessionHas('error');
+        $this->assertDatabaseMissing('payouts', [
+            'user_id' => $artisan->id,
+            'amount' => 500.00,
+        ]);
     }
 
     public function test_payout_subtracts_from_ledger_balance(): void

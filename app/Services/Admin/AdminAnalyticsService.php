@@ -46,7 +46,7 @@ class AdminAnalyticsService
             });
 
             $orderCount = $dayOrders->count();
-            $gmv = $dayOrders->where('status', '!=', 'cancelled')->sum('total_amount');
+            $gmv = $dayOrders->whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->sum('total_amount');
 
             $sevenDaysData[] = [
                 'name' => $dayLabel,
@@ -67,7 +67,7 @@ class AdminAnalyticsService
             });
 
             $orderCount = $monthOrders->count();
-            $gmv = $monthOrders->where('status', '!=', 'cancelled')->sum('total_amount');
+            $gmv = $monthOrders->whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->sum('total_amount');
 
             $monthlyData[] = [
                 'name' => $monthLabel,
@@ -88,7 +88,7 @@ class AdminAnalyticsService
             });
 
             $orderCount = $yearOrders->count();
-            $gmv = $yearOrders->where('status', '!=', 'cancelled')->sum('total_amount');
+            $gmv = $yearOrders->whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->sum('total_amount');
 
             $yearlyData[] = [
                 'name' => $yearLabel,
@@ -99,10 +99,10 @@ class AdminAnalyticsService
 
         // Growth rate: last 30 days vs previous 30 days
         $current30Orders = $orders->filter(fn($o) => $o->created_at >= now()->subDays(30));
-        $current30Gmv = $current30Orders->where('status', '!=', 'cancelled')->sum('total_amount');
+        $current30Gmv = $current30Orders->whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->sum('total_amount');
 
         $previous30Orders = $orders->filter(fn($o) => $o->created_at >= now()->subDays(60) && $o->created_at < now()->subDays(30));
-        $previous30Gmv = $previous30Orders->where('status', '!=', 'cancelled')->sum('total_amount');
+        $previous30Gmv = $previous30Orders->whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->sum('total_amount');
 
         $growthRate = 0;
         if ($previous30Gmv > 0) {
@@ -171,7 +171,7 @@ class AdminAnalyticsService
                     ->join('products', 'order_items.product_id', '=', 'products.id')
                     ->join('orders', 'order_items.order_id', '=', 'orders.id')
                     ->whereColumn('products.category', 'categories.name')
-                    ->where('orders.status', '!=', 'cancelled');
+                    ->whereNotIn('orders.status', ['Cancelled', 'Refunded', 'Rejected']);
             }, 'gmv')
             ->orderByDesc('gmv')
             ->limit(6)
@@ -187,15 +187,15 @@ class AdminAnalyticsService
     protected function getPlatformHealthData(): array
     {
         $totalOrders = \App\Models\Order::count();
-        $completedOrders = \App\Models\Order::where('status', 'delivered')->count();
+        $completedOrders = \App\Models\Order::whereIn('status', ['Delivered', 'Completed'])->count();
         $completionRate = $totalOrders > 0 ? round(($completedOrders / $totalOrders) * 100, 1) : 0;
 
-        $aov = \App\Models\Order::where('status', '!=', 'cancelled')->avg('total_amount') ?? 0;
+        $aov = \App\Models\Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->avg('total_amount') ?? 0;
 
         $totalReviews = \App\Models\Review::count();
         $reviewRate = $totalOrders > 0 ? round(($totalReviews / $totalOrders) * 100, 1) : 0;
 
-        $refundedOrders = \App\Models\Order::where('status', 'refunded')->count();
+        $refundedOrders = \App\Models\Order::where('status', 'Refunded')->count();
         $refundRate = $totalOrders > 0 ? round(($refundedOrders / $totalOrders) * 100, 1) : 0;
 
         return [
@@ -215,13 +215,13 @@ class AdminAnalyticsService
                 $query->selectRaw('COALESCE(SUM(total_amount), 0)')
                     ->from('orders')
                     ->whereColumn('orders.artisan_id', 'users.id')
-                    ->where('orders.status', '!=', 'cancelled');
+                    ->whereNotIn('orders.status', ['Cancelled', 'Refunded', 'Rejected']);
             }, 'total_gmv')
             ->selectSub(function ($query) {
                 $query->selectRaw('COUNT(*)')
                     ->from('orders')
                     ->whereColumn('orders.artisan_id', 'users.id')
-                    ->where('orders.status', '!=', 'cancelled');
+                    ->whereNotIn('orders.status', ['Cancelled', 'Refunded', 'Rejected']);
             }, 'orders_count')
             ->orderByDesc('total_gmv')
             ->orderByDesc('orders_count')

@@ -62,11 +62,35 @@ class CheckoutShippingService
             $dropoffCoordinates = null;
 
             try {
-                $pickupCoordinates = $this->geocodingService()->geocode($pickupCandidates, 'seller pickup');
-                $dropoffCoordinates = $this->geocodingService()->geocode(
-                    count($dropoffCandidates) === 1 ? $dropoffCandidates[0] : $dropoffCandidates,
-                    'buyer drop-off'
-                );
+                $sellerDefaultAddress = $seller->getDefaultAddress();
+                $sellerLat = $sellerDefaultAddress?->latitude ?? ($seller->latitude ?? null);
+                $sellerLng = $sellerDefaultAddress?->longitude ?? ($seller->longitude ?? null);
+
+                if (!empty($sellerLat) && !empty($sellerLng)) {
+                    $pickupCoordinates = [
+                        'lat' => (string) $sellerLat,
+                        'lng' => (string) $sellerLng,
+                        'matched_query' => $preferredPickupAddress,
+                    ];
+                } else {
+                    $pickupCoordinates = $this->geocodingService()->geocode($pickupCandidates, 'seller pickup');
+                }
+
+                $destLat = $destination['shipping_latitude'] ?? ($destination['latitude'] ?? null);
+                $destLng = $destination['shipping_longitude'] ?? ($destination['longitude'] ?? null);
+
+                if (!empty($destLat) && !empty($destLng)) {
+                    $dropoffCoordinates = [
+                        'lat' => (string) $destLat,
+                        'lng' => (string) $destLng,
+                        'matched_query' => $structuredDropoffAddress !== '' ? $structuredDropoffAddress : ($dropoffCandidates[0] ?? ''),
+                    ];
+                } else {
+                    $dropoffCoordinates = $this->geocodingService()->geocode(
+                        count($dropoffCandidates) === 1 ? $dropoffCandidates[0] : $dropoffCandidates,
+                        'buyer drop-off'
+                    );
+                }
 
                 $pickupAddress = $this->resolveCourierStopAddress($preferredPickupAddress, $pickupCoordinates, $pickupCandidates);
                 $dropoffAddress = $this->resolveCourierStopAddress(
@@ -74,6 +98,14 @@ class CheckoutShippingService
                     $dropoffCoordinates,
                     $dropoffCandidates
                 );
+
+                if (\App\Support\CourierAddressResolver::isSameCourierLocation($pickupAddress, $dropoffAddress, $pickupCoordinates, $dropoffCoordinates)) {
+                    return [
+                        'amount' => 0.0,
+                        'currency' => $currency,
+                        'source' => 'pickup',
+                    ];
+                }
 
                 $quotation = $this->lalamoveService()->createQuotation([
                     'serviceType' => (string) config('services.lalamove.service_type', 'MOTORCYCLE'),

@@ -68,7 +68,7 @@ class PayrollCalculatorService
             $workingDaysCount = (float) $workingDays;
         }
 
-        $standardWorkdayHours = (float) ($seller->standard_workday_hours ?? 8.0);
+        $standardWorkdayHours = max((float) ($seller->standard_workday_hours ?? 8.0), 1.0);
         $hourlyRate = $dailyRate / $standardWorkdayHours;
 
         // Tiered Overtime Pay

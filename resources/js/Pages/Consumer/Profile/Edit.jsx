@@ -1,5 +1,4 @@
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
-import ImpersonationBanner from '@/Layouts/ImpersonationBanner';
 import { Head } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import DeleteUserForm from './Partials/DeleteUserForm';
@@ -36,7 +35,6 @@ export default function Edit({ mustVerifyEmail, status, addresses }) {
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-stone-800">
-            <ImpersonationBanner />
             <Head title="My Profile" />
             <BuyerNavbar />
 
