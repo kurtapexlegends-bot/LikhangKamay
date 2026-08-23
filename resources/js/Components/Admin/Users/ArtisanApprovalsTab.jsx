@@ -8,6 +8,7 @@ import CompactPagination from '@/Components/CompactPagination';
 import { TableSkeleton } from '@/Components/Skeleton';
 import ArtisanVerificationDrawer from '@/Components/Admin/Users/ArtisanVerificationDrawer';
 import ArtisanApprovalRow from '@/Components/Admin/Users/Partials/ArtisanApprovalRow';
+import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
 import {
     ARTISAN_DOCUMENTS,
     buildViewedDocumentMap
@@ -125,6 +126,30 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
     const submittedDocumentsCount = viewingArtisan?.submitted_document_count ?? currentDocuments.filter((doc) => !!doc.url).length;
     const allSubmittedDocumentsViewed = submittedDocumentsCount > 0 && viewedDocumentsCount >= submittedDocumentsCount;
 
+    const readyCount = useMemo(() => {
+        return localArtisans.filter((artisan) => {
+            if (artisan.documents_ready_for_approval) return true;
+            const viewed = viewedDocumentsByArtisan[artisan.id] ?? [];
+            const submittedCount = ARTISAN_DOCUMENTS.filter(doc => !!artisan[doc.key]).length;
+            return submittedCount > 0 && viewed.length >= submittedCount;
+        }).length;
+    }, [localArtisans, viewedDocumentsByArtisan]);
+
+    const needsPreviewCount = useMemo(() => {
+        return localArtisans.filter((artisan) => {
+            if (artisan.documents_ready_for_approval) return false;
+            const viewed = viewedDocumentsByArtisan[artisan.id] ?? [];
+            const submittedCount = ARTISAN_DOCUMENTS.filter(doc => !!artisan[doc.key]).length;
+            return submittedCount === 0 || viewed.length < submittedCount;
+        }).length;
+    }, [localArtisans, viewedDocumentsByArtisan]);
+
+    const tabs = useMemo(() => [
+        { key: 'all', label: 'All Queue', count: localArtisans.length },
+        { key: 'ready', label: 'Ready to Approve', count: readyCount },
+        { key: 'needs_preview', label: 'Needs Preview', count: needsPreviewCount },
+    ], [localArtisans.length, readyCount, needsPreviewCount]);
+
     const confirmApprove = () => {
         if (!viewingArtisan) return;
 
@@ -172,76 +197,34 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
     };
 
     return (
-        <div className="space-y-6">
-            {/* Approvals tab filters and search bar */}
-            <div className="flex flex-col gap-3 border-b border-stone-100 bg-[#FDFBF9] px-4 py-3 sm:px-6 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-stone-200">
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 flex-nowrap no-scrollbar">
-                    <button
-                        type="button"
-                        onClick={() => setReviewFilter('all')}
-                        className={`whitespace-nowrap rounded-full border px-4 py-2 text-[11px] font-bold transition-colors min-h-[44px] flex items-center justify-center ${
-                            reviewFilter === 'all'
-                                ? 'border-clay-200 bg-clay-50 text-clay-700'
-                                : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-                        }`}
-                    >
-                        All queue
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setReviewFilter('ready')}
-                        className={`whitespace-nowrap rounded-full border px-4 py-2 text-[11px] font-bold transition-colors min-h-[44px] flex items-center justify-center ${
-                            reviewFilter === 'ready'
-                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-                        }`}
-                    >
-                        Ready to approve
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setReviewFilter('needs_preview')}
-                        className={`whitespace-nowrap rounded-full border px-4 py-2 text-[11px] font-bold transition-colors min-h-[44px] flex items-center justify-center ${
-                            reviewFilter === 'needs_preview'
-                                ? 'border-amber-200 bg-amber-50 text-amber-700'
-                                : 'border-stone-200 bg-white text-stone-500 hover:bg-stone-50'
-                        }`}
-                    >
-                        Needs preview
-                    </button>
-                </div>
-                <div className="relative w-full sm:w-72">
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(event) => setSearchQuery(event.target.value)}
-                        placeholder="Search shop, owner name, phone, or region..."
-                        className="w-full rounded-full border border-stone-200 bg-white py-3 pl-3 pr-10 text-sm font-medium text-stone-900 placeholder-stone-400 transition-all focus:border-clay-300 focus:ring-2 focus:ring-clay-500/20 min-h-[44px]"
-                    />
-                    {searchQuery && (
-                        <button
-                            type="button"
-                            onClick={() => setSearchQuery('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-stone-400 transition-colors hover:text-stone-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                            aria-label="Clear artisan search"
-                        >
-                            <XCircle size={16} />
-                        </button>
-                    )}
-                </div>
-            </div>
+        <div className="space-y-4">
+            {/* Standardized FilterToolbarHeader */}
+            <FilterToolbarHeader
+                tabs={tabs}
+                activeTab={reviewFilter}
+                onTabChange={setReviewFilter}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                searchPlaceholder="Search shop, owner name, phone, or region..."
+                onResetFilters={() => {
+                    setReviewFilter('all');
+                    setSearchQuery('');
+                }}
+            />
 
-            <div className="mt-6 space-y-6">
+            <div className="space-y-4">
                 {localArtisans.length === 0 ? (
-                    <WorkspaceEmptyState
-                        icon={CheckCircle}
-                        title="Queue is Empty"
-                        description="There are no pending artisan applications at the moment."
-                    />
+                    <div className="bg-white rounded-2xl border border-stone-200/80 p-8 sm:p-12 shadow-2xs">
+                        <WorkspaceEmptyState
+                            icon={CheckCircle}
+                            title="Queue is Empty"
+                            description="There are no pending artisan applications at the moment."
+                        />
+                    </div>
                 ) : (
-                    <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+                    <div className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-2xs">
                         {/* Header Row */}
-                        <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-2.5 bg-stone-50 border-b border-stone-100/80 text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                        <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-[#FDFBF9] border-b border-stone-200/80 text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
                             <div className="col-span-4">
                                 <span>Artisan Shop</span>
                             </div>
@@ -251,7 +234,7 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                             <div className="col-span-1 text-right">Action</div>
                         </div>
 
-                        <div className="divide-y divide-stone-100/80">
+                        <div className="divide-y divide-stone-100">
                             {searchQuery !== deferredSearchQuery ? (
                                 <TableSkeleton rows={ITEMS_PER_PAGE} />
                             ) : filteredArtisans.length === 0 ? (

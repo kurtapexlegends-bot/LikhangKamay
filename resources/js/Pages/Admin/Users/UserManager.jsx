@@ -236,12 +236,10 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
 
                         {/* APPROVALS VIEW TAB */}
                         {activeTab === 'approvals' && (
-                            <div className="mt-6">
-                                <ArtisanApprovalsTab
-                                    artisans={artisans}
-                                    addToast={addToast}
-                                />
-                            </div>
+                            <ArtisanApprovalsTab
+                                artisans={artisans}
+                                addToast={addToast}
+                            />
                         )}
                     </motion.div>
                 </AnimatePresence>
