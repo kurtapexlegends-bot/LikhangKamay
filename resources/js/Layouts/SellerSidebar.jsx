@@ -5,7 +5,7 @@ import StaffAttendanceMonitor from '@/Components/StaffAttendanceMonitor';
 import { 
     LayoutDashboard, Package, ShoppingBag, BarChart3, Box, 
     Users, MessageCircle, Settings, X, ChevronLeft,
-    ClipboardList, Warehouse, FileQuestion, Sliders, Banknote, Star, Award, Tag, ShieldCheck
+    ClipboardList, Warehouse, FileQuestion, Sliders, Banknote, Star, Award, Tag, ShieldCheck, Truck
 } from 'lucide-react';
 import SidebarSettingsPopover from '@/Components/Seller/Sidebar/SidebarSettingsPopover';
 import SidebarPlanPromo from '@/Components/Seller/Sidebar/SidebarPlanPromo';
@@ -23,7 +23,7 @@ const resolveActiveGroup = (active) => {
     if (['orders', 'chat', 'team-messages', 'reviews'].includes(active)) return 'crm';
     if (['settings'].includes(active)) return 'appearance';
     if (['sponsorships', 'discounts'].includes(active)) return 'marketing';
-    if (['hr', 'accounting', 'procurement', 'stock-requests', 'audit-log'].includes(active)) return 'advanced';
+    if (['hr', 'accounting', 'procurement', 'stock-requests', 'supply-hub', 'audit-log'].includes(active)) return 'advanced';
 
     return null;
 };
@@ -405,6 +405,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                             {visibleModulesSet.has('stock_requests') && (
                                                 <NavItem href={route('stock-requests.index')} icon={FileQuestion} active={active === 'stock-requests'} compact onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Restock Requests')} onMouseLeave={handleTooltipLeave}>Restock Requests</NavItem>
                                             )}
+                                            <NavItem href={route('seller.supply-hub.index')} icon={Truck} active={active === 'supply-hub'} compact onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Supply Hub')} onMouseLeave={handleTooltipLeave}>Supply Hub</NavItem>
                                         </div>
                                     </div>
                                 )}
