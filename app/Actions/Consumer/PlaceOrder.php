@@ -113,7 +113,11 @@ class PlaceOrder
             foreach ($items as $item) {
                 $product = Product::with('discounts')->find($item['id']);
                 if ($product) {
-                    $merchandiseSubtotal += $product->calculateTotalPriceForQuantity($item['qty']);
+                    if ($product->is_b2b_supply) {
+                        $merchandiseSubtotal += ($product->getEffectiveB2BPrice($item['qty']) * $item['qty']);
+                    } else {
+                        $merchandiseSubtotal += $product->calculateTotalPriceForQuantity($item['qty']);
+                    }
                 }
             }
 
@@ -170,7 +174,7 @@ class PlaceOrder
                     'shipping_longitude' => $shippingLongitude,
                     'latitude' => $shippingLatitude,
                     'longitude' => $shippingLongitude,
-                ]);
+                ], $items);
 
                 $shippingFee = (float) ($shippingQuote['amount'] ?? 0);
             }
@@ -251,8 +255,12 @@ class PlaceOrder
                         $product->supply->update(['quantity' => $product->stock]);
                     }
 
-                    $itemTotalPrice = $product->calculateTotalPriceForQuantity($item['qty']);
-                    $itemUnitPrice = $item['qty'] > 0 ? round($itemTotalPrice / $item['qty'], 2) : $product->effective_price;
+                    if ($product->is_b2b_supply) {
+                        $itemUnitPrice = $product->getEffectiveB2BPrice($item['qty']);
+                    } else {
+                        $itemTotalPrice = $product->calculateTotalPriceForQuantity($item['qty']);
+                        $itemUnitPrice = $item['qty'] > 0 ? round($itemTotalPrice / $item['qty'], 2) : $product->effective_price;
+                    }
 
                     if ($product->has_discount && $product->discount_info) {
                         $activeDiscountId = $product->discount_info['id'] ?? null;
@@ -278,6 +286,8 @@ class PlaceOrder
                         'cost' => $product->cost_price ?? 0,
                         'quantity' => $item['qty'],
                         'product_img' => $product->cover_photo_path,
+                        'is_b2b_supply' => (bool) $product->is_b2b_supply,
+                        'supply_unit' => $product->supply_unit ?: 'pcs',
                     ];
 
                     if ($supportsWasSponsored || $supportsSponsorshipRequestId || $supportsSponsoredAtCheckout) {

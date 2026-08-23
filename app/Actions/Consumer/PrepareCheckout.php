@@ -25,6 +25,7 @@ class PrepareCheckout
             $variant = trim((string) $request->input('variant', 'Standard')) ?: 'Standard';
 
             if ($product) {
+                $qty = max(1, (int) $request->input('quantity', $product->is_b2b_supply ? ($product->moq ?: 1) : 1));
                 $items[] = [
                     'id' => $product->id,
                     'cart_key' => null,
@@ -32,10 +33,13 @@ class PrepareCheckout
                     'shop_name' => $product->user->shop_name ?? 'Shop',
                     'name' => $product->name,
                     'variant' => $variant,
-                    'price' => $product->effective_price,
+                    'price' => $product->is_b2b_supply ? $product->getEffectiveB2BPrice($qty) : $product->effective_price,
                     'original_price' => (float) $product->price,
                     'discount_info' => $product->discount_info,
-                    'qty' => $request->input('quantity', 1),
+                    'is_b2b_supply' => (bool) $product->is_b2b_supply,
+                    'moq' => (int) ($product->moq ?: 1),
+                    'supply_unit' => $product->supply_unit ?: 'pcs',
+                    'qty' => $qty,
                     'img' => $product->img
                 ];
             }
@@ -68,9 +72,13 @@ class PrepareCheckout
             foreach ($items as &$item) {
                 $live = $liveProducts->get($item['id']);
                 if ($live) {
-                    $item['price'] = $live->effective_price;
+                    $itemQty = max(1, (int) ($item['qty'] ?? 1));
+                    $item['price'] = $live->is_b2b_supply ? $live->getEffectiveB2BPrice($itemQty) : $live->effective_price;
                     $item['original_price'] = (float) $live->price;
                     $item['discount_info'] = $live->discount_info;
+                    $item['is_b2b_supply'] = (bool) $live->is_b2b_supply;
+                    $item['moq'] = (int) ($live->moq ?: 1);
+                    $item['supply_unit'] = $live->supply_unit ?: 'pcs';
                     $item['artisan_id'] = $live->artisan_id ?? $live->user_id;
                     $item['shop_name'] = $live->user->shop_name ?? 'Shop';
                 }

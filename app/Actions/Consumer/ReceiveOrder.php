@@ -70,6 +70,9 @@ class ReceiveOrder
 
             $this->orderFinanceService->settleCompletedOrder($order);
 
+            // Auto-restock purchasing artisan's studio supply inventory for B2B materials
+            app(\App\Actions\Seller\Procurement\SyncDeliveredB2BSupplies::class)->execute($order, $buyer);
+
             $order->load('items');
             if ($buyer->email) {
                 $this->sendMailSilently(

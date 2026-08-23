@@ -314,6 +314,11 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
         // Procurement Completion
         Route::post('/procurement/requests/{stockRequest}/receive', [\App\Http\Controllers\Seller\ProcurementController::class, 'receiveOrder'])->middleware('seller.module:procurement')->name('procurement.receive');
+
+        // B2B SUPPLY HUB (Artisan Material Sourcing & Wholesale)
+        Route::get('/supply-hub', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'index'])->name('seller.supply-hub.index');
+        Route::get('/supply-hub/my-listings', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'myListings'])->name('seller.supply-hub.my-listings');
+        Route::post('/supply-hub/toggle/{product}', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'toggle'])->name('seller.supply-hub.toggle');
     });
     
     // BUYER: SHOPPING & ORDERS
