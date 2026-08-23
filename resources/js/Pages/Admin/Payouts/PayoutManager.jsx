@@ -102,17 +102,16 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
         <AdminLayout title="Payouts">
             <Head title="Seller Payouts" />
 
-            <div className="space-y-6 pb-28">
-                
-                {/* Floating Module Actions */}
-                <FloatingModuleActions
-                    actions={
-                        <ExportButton href={route('admin.payouts.export')} icon={Download} variant="secondary">
-                            Export CSV
-                        </ExportButton>
-                    }
-                />
+            {/* Floating Module Actions */}
+            <FloatingModuleActions
+                actions={
+                    <ExportButton href={route('admin.payouts.export')} icon={Download} variant="secondary">
+                        Export CSV
+                    </ExportButton>
+                }
+            />
 
+            <div className="space-y-6 pb-28">
                 {/* KPI STAT CARDS - Preserved to match system */}
                 <div className="flex overflow-x-auto gap-4 sm:gap-5 pb-2.5 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-3 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
                     <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">

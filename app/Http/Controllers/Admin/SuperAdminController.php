@@ -123,7 +123,7 @@ class SuperAdminController extends Controller
                 'recentUsers' => (function() {
                     return User::with('sellerOwner:id,name,shop_name')
                         ->orderBy('created_at', 'desc')
-                        ->limit(10)
+                        ->limit(15)
                         ->get(['id', 'name', 'email', 'role', 'artisan_status', 'created_at', 'shop_name', 'avatar', 'premium_tier', 'seller_owner_id', 'email_verified_at', 'must_change_password', 'staff_module_permissions', 'staff_plan_suspended_at'])
                         ->map(function (User $user) {
                             [$accountState, $accountStateTone] = $this->resolveAdminAccountState($user);
@@ -148,7 +148,7 @@ class SuperAdminController extends Controller
                         ->values();
                 })(),
                 'activities' => (function() {
-                    return PlatformActivity::with('user:id,name,shop_name')->latest()->take(20)->get();
+                    return PlatformActivity::with('user:id,name,shop_name')->latest()->take(10)->get();
                 })(),
             ]);
         } catch (\Throwable $e) {

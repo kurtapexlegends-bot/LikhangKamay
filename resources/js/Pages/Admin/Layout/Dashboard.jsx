@@ -12,6 +12,7 @@ import {
     AlertTriangle,
     ChevronRight,
     Minus,
+    Sparkles,
 } from "lucide-react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import UserAvatar from "@/Components/UserAvatar";
@@ -115,8 +116,21 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
     const filteredUsers = useMemo(() => {
         if (!recentUsers) return [];
         if (roleFilter === "all") return recentUsers;
+        if (roleFilter === "pending") {
+            return recentUsers.filter((u) => u.role === "artisan" && u.artisan_status === "pending");
+        }
         return recentUsers.filter((u) => u.role === roleFilter);
     }, [recentUsers, roleFilter]);
+
+    const viewAllHref = useMemo(() => {
+        if (roleFilter === "pending") {
+            return route("admin.users.manager", { tab: "approvals" });
+        }
+        if (roleFilter === "artisan" || roleFilter === "buyer" || roleFilter === "staff") {
+            return route("admin.users", { role: roleFilter });
+        }
+        return route("admin.users");
+    }, [roleFilter]);
 
     const pendingCount = !isLoadingStats ? (typeof stats.pendingArtisans === "object" ? stats.pendingArtisans.value : stats.pendingArtisans) : 0;
 
@@ -184,19 +198,20 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                 )}
             </div>
 
-            {!isLoadingStats && pendingCount > 0 && (
-                <div className="mb-8 overflow-hidden rounded-2xl border border-amber-200 bg-amber-50/50 shadow-sm transition hover:shadow-md animate-in fade-in slide-in-from-top-4 duration-500">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4">
+            {/* Quick action banner for pending artisan applications */}
+            {pendingCount > 0 && (
+                <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 border border-amber-200">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
                                 <AlertTriangle size={20} />
                             </div>
                             <div>
-                                <h3 className="text-sm font-bold text-amber-900">
-                                    Action Required
-                                </h3>
-                                <p className="mt-0.5 text-xs font-medium text-amber-700">
-                                    <span className="font-bold">{pendingCount}</span> new artisan application{pendingCount > 1 ? "s" : ""} require your verification.
+                                <h4 className="text-sm font-bold text-amber-950">
+                                    {pendingCount} Artisan Application{pendingCount > 1 ? "s" : ""} Awaiting Review
+                                </h4>
+                                <p className="text-xs text-amber-800/80">
+                                    Newly registered artisan shops require document verification before publishing products.
                                 </p>
                             </div>
                         </div>
@@ -212,26 +227,27 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 {/* Recent Registrations Table */}
-                <div className="lg:col-span-2 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm flex flex-col">
+                <div className="lg:col-span-2 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm flex flex-col h-[500px]">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-50 px-4 sm:px-6 py-4 shrink-0 gap-4">
                         <div className="flex items-center justify-between w-full sm:w-auto">
-                            <h3 className="text-sm sm:text-lg font-bold text-gray-900">
+                            <h3 className="text-sm sm:text-base font-bold text-gray-900">
                                 Recent Registrations
                             </h3>
                             <Link
-                                href={route("admin.users")}
+                                href={viewAllHref}
                                 className="sm:hidden flex items-center gap-1 text-[11px] font-bold text-clay-600 transition hover:text-clay-800"
                             >
                                 View All <ChevronRight size={14} />
                             </Link>
                         </div>
-                        <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                                 {[
                                     { id: 'all', label: 'All' },
                                     { id: 'artisan', label: 'Artisans' },
                                     { id: 'buyer', label: 'Buyers' },
-                                    { id: 'staff', label: 'Staff' }
+                                    { id: 'staff', label: 'Staff' },
+                                    { id: 'pending', label: 'Pending' }
                                 ].map(tab => (
                                     <button
                                         key={tab.id}
@@ -248,16 +264,16 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                 ))}
                             </div>
                             <Link
-                                href={route("admin.users")}
+                                href={viewAllHref}
                                 className="hidden sm:flex items-center gap-1 text-[11px] font-bold text-clay-600 transition hover:text-clay-800 whitespace-nowrap"
                             >
                                 View All <ChevronRight size={14} />
                             </Link>
                         </div>
                     </div>
-                    <div className="overflow-x-auto flex-1">
-                        <table className="w-full text-left sm:min-w-[760px]">
-                        <thead className="hidden sm:table-header-group bg-stone-50">
+                    <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 scrollbar-thin">
+                        <table className="w-full text-left sm:min-w-[760px] relative">
+                        <thead className="hidden sm:table-header-group bg-stone-50 sticky top-0 z-10 border-b border-gray-100 shadow-2xs">
                             <tr>
                                 <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400">
                                     User
