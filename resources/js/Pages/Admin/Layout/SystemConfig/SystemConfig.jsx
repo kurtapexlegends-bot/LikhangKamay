@@ -159,9 +159,9 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         return (
             <>
                 <Head title="Monetization" />
-                <div className="max-w-6xl mx-auto space-y-6 pb-24 lg:pb-6">
+                <div className="pb-24 lg:pb-6">
                     {flash?.success || flash?.error ? (
-                        <div className={`rounded-xl border px-4 py-3 text-xs font-medium ${
+                        <div className={`mb-6 rounded-xl border px-4 py-3 text-xs font-medium ${
                             flash?.success
                                 ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                                 : 'border-red-200 bg-red-50 text-red-700'
