@@ -95,8 +95,9 @@ class StaffAttendanceService
                 );
                 $allowedRadius = (int) ($sellerLocation->radius_meters ?: 200);
                 $isWithinGeofence = ($distanceMeters <= $allowedRadius);
+                $isRemoteWorker = (bool) ($staff->employee?->allow_remote_clock_in ?? false);
 
-                if (!$isWithinGeofence && $sellerLocation->enforce_strict_geofence) {
+                if (!$isWithinGeofence && !$isRemoteWorker && $sellerLocation->enforce_strict_geofence) {
                     throw ValidationException::withMessages([
                         'location' => [
                             "Clock-in blocked: You are {$distanceMeters}m away from {$sellerLocation->name}. Strict geofence enforcement requires you to be within {$allowedRadius}m."
@@ -130,7 +131,20 @@ class StaffAttendanceService
             }
         }
 
+        $staff->loadMissing('employee');
         $sellerOwner = User::find($staff->getEffectiveSellerId());
+        $employee = $staff->employee;
+        $shiftPolicy = $employee 
+            ? $employee->getEffectiveShiftPolicy($sellerOwner) 
+            : [
+                'shift_start_time' => $sellerOwner?->shift_start_time ?? '08:00',
+                'shift_end_time' => $sellerOwner?->shift_end_time ?? '17:00',
+                'grace_period_minutes' => (int) ($sellerOwner?->grace_period_minutes ?? 15),
+                'earliest_clock_in_minutes' => (int) ($sellerOwner?->earliest_clock_in_minutes ?? 30),
+                'enforce_strict_shift_window' => (bool) ($sellerOwner?->enforce_strict_shift_window ?? true),
+                'break_allowance_minutes' => (int) ($sellerOwner?->break_allowance_minutes ?? 60),
+                'working_days' => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
+            ];
 
         // Shift schedule & Operating window evaluation
         $isLate = false;
@@ -138,22 +152,24 @@ class StaffAttendanceService
         $isOutOfShiftWindow = false;
         $outOfShiftReason = null;
 
-        if ($sellerOwner && $sellerOwner->shift_start_time) {
-            try {
-                $shiftStart = Carbon::parse($now->toDateString() . ' ' . $sellerOwner->shift_start_time, config('app.timezone'));
-                $earliestBuffer = (int) ($sellerOwner->earliest_clock_in_minutes ?? 30);
-                $earliestAllowed = $shiftStart->copy()->subMinutes($earliestBuffer);
-                $graceThreshold = $shiftStart->copy()->addMinutes((int) ($sellerOwner->grace_period_minutes ?? 15));
+        $isRestDay = $employee ? $employee->isRestDay($now, $sellerOwner) : false;
 
-                $shiftEnd = $sellerOwner->shift_end_time 
-                    ? Carbon::parse($now->toDateString() . ' ' . $sellerOwner->shift_end_time, config('app.timezone'))
+        if (!empty($shiftPolicy['shift_start_time'])) {
+            try {
+                $shiftStart = Carbon::parse($now->toDateString() . ' ' . $shiftPolicy['shift_start_time'], config('app.timezone'));
+                $earliestBuffer = (int) ($shiftPolicy['earliest_clock_in_minutes'] ?? 30);
+                $earliestAllowed = $shiftStart->copy()->subMinutes($earliestBuffer);
+                $graceThreshold = $shiftStart->copy()->addMinutes((int) ($shiftPolicy['grace_period_minutes'] ?? 15));
+
+                $shiftEnd = !empty($shiftPolicy['shift_end_time'])
+                    ? Carbon::parse($now->toDateString() . ' ' . $shiftPolicy['shift_end_time'], config('app.timezone'))
                     : $shiftStart->copy()->addHours(9);
                 $latestAllowed = $shiftEnd->copy()->addMinutes(60);
 
                 // 1. Check if too early (e.g. attempting to clock in before earliest allowed entry)
                 if ($now->lt($earliestAllowed)) {
                     $minutesEarly = (int) $now->diffInMinutes($shiftStart);
-                    if ($sellerOwner->enforce_strict_shift_window ?? true) {
+                    if ($shiftPolicy['enforce_strict_shift_window'] ?? true) {
                         $earliestFormatted = $earliestAllowed->format('h:i A');
                         $shiftStartFormatted = $shiftStart->format('h:i A');
                         throw ValidationException::withMessages([
@@ -167,7 +183,7 @@ class StaffAttendanceService
                 // 2. Check if too late after closing hours
                 elseif ($now->gt($latestAllowed)) {
                     $minutesAfter = (int) $shiftEnd->diffInMinutes($now);
-                    if ($sellerOwner->enforce_strict_shift_window ?? true) {
+                    if ($shiftPolicy['enforce_strict_shift_window'] ?? true) {
                         $shiftEndFormatted = $shiftEnd->format('h:i A');
                         throw ValidationException::withMessages([
                             'shift' => ["Workshop is closed. Shift ended at {$shiftEndFormatted}."],
@@ -182,6 +198,12 @@ class StaffAttendanceService
                     $isLate = true;
                     $lateMinutes = (int) $shiftStart->diffInMinutes($now);
                 }
+
+                // 4. Rest day flag (if employee is working on their scheduled rest day, flag for manager review)
+                if ($isRestDay && !$isOutOfShiftWindow) {
+                    $isOutOfShiftWindow = true;
+                    $outOfShiftReason = "Rest Day Clock In";
+                }
             } catch (ValidationException $valEx) {
                 throw $valEx;
             } catch (\Throwable $e) {
@@ -195,16 +217,20 @@ class StaffAttendanceService
         $isExtendedBreak = false;
         if ($latestSession && $latestSession->close_mode === self::MODE_PAUSED && $latestSession->clock_out_at) {
             $totalBreakMinutes = (int) $latestSession->clock_out_at->diffInMinutes($now);
-            if ($sellerOwner && $sellerOwner->break_allowance_minutes && $totalBreakMinutes > (int) $sellerOwner->break_allowance_minutes) {
+            $breakAllowance = (int) ($shiftPolicy['break_allowance_minutes'] ?? ($sellerOwner?->break_allowance_minutes ?? 60));
+            if ($breakAllowance > 0 && $totalBreakMinutes > $breakAllowance) {
                 $isExtendedBreak = true;
             }
         }
 
         $livenessVerified = !empty($payload['liveness_verified']) || !empty($photoPath);
 
-        $isFlagged = !$isWithinGeofence || $isOutOfShiftWindow;
+        $isRemoteWorker = (bool) ($staff->employee?->allow_remote_clock_in ?? false);
+        $isGeofenceViolation = !$isWithinGeofence && !$isRemoteWorker;
+
+        $isFlagged = $isGeofenceViolation || $isOutOfShiftWindow;
         $flagReasons = [];
-        if (!$isWithinGeofence) {
+        if ($isGeofenceViolation) {
             $flagReasons[] = "Off-Site Clock In ({$distanceMeters}m from assigned workplace)";
         }
         if ($isOutOfShiftWindow && $outOfShiftReason) {
@@ -328,12 +354,20 @@ class StaffAttendanceService
         $earlyDepartureReason = null;
 
         if ($mode === self::MODE_CLOCKED_OUT) {
+            $staff->loadMissing('employee');
             $sellerOwner = User::find($staff->getEffectiveSellerId());
-            if ($sellerOwner && $sellerOwner->shift_end_time && $openSession->clock_in_at) {
+            $shiftPolicy = $staff->employee 
+                ? $staff->employee->getEffectiveShiftPolicy($sellerOwner) 
+                : [
+                    'shift_start_time' => $sellerOwner?->shift_start_time ?? '08:00',
+                    'shift_end_time' => $sellerOwner?->shift_end_time ?? '17:00',
+                ];
+
+            if (!empty($shiftPolicy['shift_end_time']) && $openSession->clock_in_at) {
                 try {
                     $shiftDateStr = $openSession->clock_in_at->toDateString();
-                    $shiftStart = Carbon::parse($shiftDateStr . ' ' . ($sellerOwner->shift_start_time ?? '08:00'), config('app.timezone'));
-                    $shiftEnd = Carbon::parse($shiftDateStr . ' ' . $sellerOwner->shift_end_time, config('app.timezone'));
+                    $shiftStart = Carbon::parse($shiftDateStr . ' ' . ($shiftPolicy['shift_start_time'] ?? '08:00'), config('app.timezone'));
+                    $shiftEnd = Carbon::parse($shiftDateStr . ' ' . $shiftPolicy['shift_end_time'], config('app.timezone'));
 
                     // Only count as early departure if leaving before shift end during the workday
                     if ($now->gte($shiftStart->copy()->subHours(2)) && $now->lt($shiftEnd)) {
@@ -544,7 +578,7 @@ class StaffAttendanceService
             });
 
         $daysWorked = $dailyMinutes->filter(fn ($minutes) => $minutes > 0)->count();
-        $standardWorkdayMinutes = (int) ((float) ($seller->standard_workday_hours ?? 8.0) * 60);
+        $standardWorkdayMinutes = (int) ((float) $employee->getEffectiveWorkdayHours($seller) * 60);
 
         $undertimeMinutes = $dailyMinutes
             ->filter(fn ($minutes) => $minutes > 0)
@@ -578,6 +612,8 @@ class StaffAttendanceService
                 'worked_hours_label' => $this->formatWorkedHoursLabel($workedMinutes),
                 'has_hours' => $workedMinutes > 0,
                 'is_today' => $dateKey === $today,
+                'is_scheduled_workday' => $employee->isScheduledWorkingDay($cursor, $seller),
+                'is_rest_day' => $employee->isRestDay($cursor, $seller),
                 'is_late' => (bool) $daySessions->contains('is_late', true),
                 'late_minutes' => (int) $daySessions->sum('late_minutes'),
                 'is_early_departure' => (bool) $daySessions->contains('is_early_departure', true),
@@ -628,6 +664,9 @@ class StaffAttendanceService
             'open_session' => $latestSession && !$latestSession->clock_out_at,
             'month_label' => $period->format('F Y'),
             'calendar_days' => $calendarDays,
+            'effective_shift_policy' => $employee->getEffectiveShiftPolicy($seller),
+            'schedule_type' => $employee->schedule_type ?: 'default',
+            'working_days' => $employee->getEffectiveWorkingDays($seller),
         ];
     }
 
@@ -667,6 +706,26 @@ class StaffAttendanceService
         }
 
         $sellerOwner = User::find($staff->getEffectiveSellerId());
+        $employee = $staff->employee;
+        $shiftPolicy = $employee 
+            ? $employee->getEffectiveShiftPolicy($sellerOwner) 
+            : [
+                'schedule_type' => 'default',
+                'is_custom' => false,
+                'working_days' => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
+                'shift_start_time' => $sellerOwner->shift_start_time ?? '08:00',
+                'shift_end_time' => $sellerOwner->shift_end_time ?? '17:00',
+                'grace_period_minutes' => (int) ($sellerOwner->grace_period_minutes ?? 15),
+                'earliest_clock_in_minutes' => (int) ($sellerOwner->earliest_clock_in_minutes ?? 30),
+                'enforce_strict_shift_window' => (bool) ($sellerOwner->enforce_strict_shift_window ?? true),
+                'break_window_start' => $sellerOwner->break_window_start ?? '11:30',
+                'break_window_end' => $sellerOwner->break_window_end ?? '13:30',
+                'break_allowance_minutes' => (int) ($sellerOwner->break_allowance_minutes ?? 60),
+                'standard_workday_hours' => (float) ($sellerOwner->standard_workday_hours ?? 8.0),
+            ];
+
+        $shiftPolicy['is_today_scheduled_workday'] = $employee ? $employee->isScheduledWorkingDay($this->now(), $sellerOwner) : true;
+        $shiftPolicy['is_today_rest_day'] = $employee ? $employee->isRestDay($this->now(), $sellerOwner) : false;
 
         return [
             'has_open_session' => (bool) $openSession,
@@ -683,16 +742,7 @@ class StaffAttendanceService
                 : null,
             'staff_email' => $staff->email,
             'masked_email' => $this->maskEmail((string) $staff->email),
-            'shift_policy' => [
-                'shift_start_time' => $sellerOwner->shift_start_time ?? '08:00',
-                'shift_end_time' => $sellerOwner->shift_end_time ?? '17:00',
-                'grace_period_minutes' => (int) ($sellerOwner->grace_period_minutes ?? 15),
-                'earliest_clock_in_minutes' => (int) ($sellerOwner->earliest_clock_in_minutes ?? 30),
-                'enforce_strict_shift_window' => (bool) ($sellerOwner->enforce_strict_shift_window ?? true),
-                'break_window_start' => $sellerOwner->break_window_start ?? '11:30',
-                'break_window_end' => $sellerOwner->break_window_end ?? '13:30',
-                'break_allowance_minutes' => (int) ($sellerOwner->break_allowance_minutes ?? 60),
-            ],
+            'shift_policy' => $shiftPolicy,
             'server_time' => $this->now()->toIso8601String(),
             'server_timestamp' => $this->now()->timestamp,
             'assigned_location' => $assignedLocation ? [

@@ -190,6 +190,18 @@ class HRStaffProvisioner
             'salary' => ['required', 'numeric', 'min:0'],
             'assigned_location_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('seller_locations', 'id')->where('user_id', $seller->id)],
             'allow_remote_clock_in' => ['nullable', 'boolean'],
+            'schedule_type' => ['nullable', 'string', \Illuminate\Validation\Rule::in(['default', 'custom'])],
+            'working_days' => ['nullable', 'array'],
+            'working_days.*' => ['string', \Illuminate\Validation\Rule::in(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])],
+            'shift_start_time' => ['nullable', 'string', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d$/'],
+            'shift_end_time' => ['nullable', 'string', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d$/'],
+            'break_window_start' => ['nullable', 'string', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d$/'],
+            'break_window_end' => ['nullable', 'string', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d$/'],
+            'break_allowance_minutes' => ['nullable', 'integer', 'min:0', 'max:240'],
+            'grace_period_minutes' => ['nullable', 'integer', 'min:0', 'max:120'],
+            'earliest_clock_in_minutes' => ['nullable', 'integer', 'min:0', 'max:180'],
+            'standard_workday_hours' => ['nullable', 'numeric', 'min:1', 'max:24'],
+            'enforce_strict_shift_window' => ['nullable', 'boolean'],
             'create_login_account' => ['nullable', 'boolean'],
         ];
 

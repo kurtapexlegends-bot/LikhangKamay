@@ -1,11 +1,21 @@
 import React from 'react';
-import { Loader2, CheckCircle2, AlertTriangle, User, Banknote, MapPin } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertTriangle, User, Banknote, MapPin, Clock, Calendar, Briefcase } from 'lucide-react';
 import {
     EMPLOYEE_ROLE_OPTIONS,
     modalFieldClass,
     modalFieldWithIconClass,
     modalSelectClass
 } from '@/utils/hrHelpers';
+
+const DAYS = [
+    { key: 'mon', label: 'Mon', full: 'Monday' },
+    { key: 'tue', label: 'Tue', full: 'Tuesday' },
+    { key: 'wed', label: 'Wed', full: 'Wednesday' },
+    { key: 'thu', label: 'Thu', full: 'Thursday' },
+    { key: 'fri', label: 'Fri', full: 'Friday' },
+    { key: 'sat', label: 'Sat', full: 'Saturday' },
+    { key: 'sun', label: 'Sun', full: 'Sunday' },
+];
 
 export default function BasicEmployeeInfoSection({
     data,
@@ -16,8 +26,44 @@ export default function BasicEmployeeInfoSection({
     handleManualRoleChange,
     employeeIdValidation,
     isEmployeeIdSaved,
-    sellerLocations = []
+    sellerLocations = [],
+    sellerSettings = {},
 }) {
+    const isCustomSchedule = data.schedule_type === 'custom';
+    const activeWorkingDays = Array.isArray(data.working_days) ? data.working_days : [];
+
+    const defaultShiftStart = sellerSettings.shift_start_time || '08:00';
+    const defaultShiftEnd = sellerSettings.shift_end_time || '17:00';
+    const defaultHours = sellerSettings.standard_workday_hours || 8.0;
+    const factorMethod = sellerSettings.payroll_factor_method || 'custom';
+    const workingDaysCount = sellerSettings.payroll_working_days ?? 22;
+
+    const defaultScheduleLabel = factorMethod === '261'
+        ? 'Mon–Fri (5 days/wk)'
+        : factorMethod === '313'
+        ? 'Mon–Sat (6 days/wk)'
+        : `${workingDaysCount} days/mo (Custom Schedule)`;
+
+    const toggleDay = (dayKey) => {
+        if (activeWorkingDays.includes(dayKey)) {
+            setData('working_days', activeWorkingDays.filter(d => d !== dayKey));
+        } else {
+            setData('working_days', [...activeWorkingDays, dayKey]);
+        }
+    };
+
+    const applyPresetDays = (preset) => {
+        if (preset === 'mon-fri') {
+            setData('working_days', ['mon', 'tue', 'wed', 'thu', 'fri']);
+        } else if (preset === 'mon-sat') {
+            setData('working_days', ['mon', 'tue', 'wed', 'thu', 'fri', 'sat']);
+        } else if (preset === 'weekends') {
+            setData('working_days', ['sat', 'sun']);
+        } else if (preset === 'all') {
+            setData('working_days', ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
+        }
+    };
+
     return (
         <div className="space-y-4">
             {/* Primary Details Card (Identity, Role, Salary) */}
@@ -139,6 +185,161 @@ export default function BasicEmployeeInfoSection({
                         {errors.salary && <p className="mt-1 text-xs text-red-500 font-medium">{errors.salary}</p>}
                     </div>
                 </div>
+            </div>
+
+            {/* Work Schedule & Shift Policy Card */}
+            <div className="rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-stone-800 font-bold text-xs uppercase tracking-wider">
+                        <Clock size={14} className="text-clay-600" />
+                        <span>Work Schedule &amp; Shift Policy</span>
+                    </div>
+
+                    {/* Schedule Type Segmented Toggle */}
+                    <div className="inline-flex rounded-xl border border-stone-200 bg-stone-50 p-0.5 text-[11px] font-bold">
+                        <button
+                            type="button"
+                            onClick={() => setData('schedule_type', 'default')}
+                            className={`rounded-lg px-2.5 py-1 transition ${
+                                !isCustomSchedule
+                                    ? 'bg-white text-stone-900 shadow-xs'
+                                    : 'text-stone-500 hover:text-stone-800'
+                            }`}
+                        >
+                            Shop Default
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setData('schedule_type', 'custom')}
+                            className={`rounded-lg px-2.5 py-1 transition ${
+                                isCustomSchedule
+                                    ? 'bg-clay-600 text-white shadow-xs'
+                                    : 'text-stone-500 hover:text-stone-800'
+                            }`}
+                        >
+                            Custom Shift
+                        </button>
+                    </div>
+                </div>
+
+                {!isCustomSchedule ? (
+                    <div className="rounded-xl border border-stone-100 bg-[#FDFBF9] p-3.5 flex items-center justify-between text-xs text-stone-600">
+                        <div className="space-y-0.5">
+                            <span className="font-semibold text-stone-800 block">Inheriting Workshop Default Policy</span>
+                            <span className="text-[11px] text-stone-500 block">
+                                Shift: {defaultShiftStart} – {defaultShiftEnd} • {Number(defaultHours).toFixed(2)} hrs/day • {defaultScheduleLabel}
+                            </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                            Automatic
+                        </span>
+                    </div>
+                ) : (
+                    <div className="space-y-3.5 pt-1">
+                        {/* Working Days Selector */}
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-[11px] font-bold text-stone-700 block">
+                                    Assigned Working Days <span className="text-rose-500">*</span>
+                                </label>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => applyPresetDays('mon-fri')}
+                                        className="text-[10px] font-bold text-clay-700 hover:text-clay-800 bg-clay-50 hover:bg-clay-100 px-1.5 py-0.5 rounded border border-clay-200/60 transition"
+                                    >
+                                        Mon–Fri
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => applyPresetDays('mon-sat')}
+                                        className="text-[10px] font-bold text-clay-700 hover:text-clay-800 bg-clay-50 hover:bg-clay-100 px-1.5 py-0.5 rounded border border-clay-200/60 transition"
+                                    >
+                                        Mon–Sat
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => applyPresetDays('weekends')}
+                                        className="text-[10px] font-bold text-clay-700 hover:text-clay-800 bg-clay-50 hover:bg-clay-100 px-1.5 py-0.5 rounded border border-clay-200/60 transition"
+                                    >
+                                        Weekends
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-1.5">
+                                {DAYS.map(day => {
+                                    const isSelected = activeWorkingDays.includes(day.key);
+                                    return (
+                                        <button
+                                            key={day.key}
+                                            type="button"
+                                            onClick={() => toggleDay(day.key)}
+                                            className={`rounded-xl py-2 text-xs font-bold transition flex flex-col items-center justify-center border ${
+                                                isSelected
+                                                    ? 'border-clay-600 bg-clay-600 text-white shadow-xs'
+                                                    : 'border-stone-200 bg-stone-50/60 text-stone-600 hover:bg-stone-100'
+                                            }`}
+                                        >
+                                            <span>{day.label}</span>
+                                            <span className={`text-[9px] font-medium ${isSelected ? 'text-clay-100' : 'text-stone-400'}`}>
+                                                {isSelected ? 'Work' : 'Rest'}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            {activeWorkingDays.length === 0 && (
+                                <p className="mt-1.5 text-[11px] text-amber-700 font-medium">
+                                    Please select at least 1 working day for this custom schedule.
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Shift Times & Standard Daily Hours */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label className="mb-1 block text-[11px] font-bold text-stone-700">
+                                    Shift Start Time
+                                </label>
+                                <input
+                                    type="time"
+                                    className={`${modalFieldClass} h-9.5 text-xs font-medium`}
+                                    value={data.shift_start_time || defaultShiftStart}
+                                    onChange={e => setData('shift_start_time', e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-[11px] font-bold text-stone-700">
+                                    Shift End Time
+                                </label>
+                                <input
+                                    type="time"
+                                    className={`${modalFieldClass} h-9.5 text-xs font-medium`}
+                                    value={data.shift_end_time || defaultShiftEnd}
+                                    onChange={e => setData('shift_end_time', e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-[11px] font-bold text-stone-700">
+                                    Daily Standard Hours
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="24"
+                                    step="0.5"
+                                    className={`${modalFieldClass} h-9.5 text-xs font-medium`}
+                                    placeholder={`${defaultHours}`}
+                                    value={data.standard_workday_hours || ''}
+                                    onChange={e => setData('standard_workday_hours', e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Attendance & Location Card */}

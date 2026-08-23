@@ -274,6 +274,24 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
         avatar_url: employee.avatar_url,
     };
 
+    const isSuspended = String(employee?.status || '').trim().toLowerCase() === 'suspended';
+    const hasOpenSession = Boolean(summary?.open_session || employee?.attendance?.open_session || employee?.login_account?.current_state === 'clocked_in');
+    const isPaused = Boolean(employee?.attendance?.current_state === 'paused' || employee?.login_account?.current_state === 'paused');
+
+    let statusDotColor = 'bg-stone-300';
+    let statusTitle = 'Off Duty (Clocked Out)';
+
+    if (isSuspended) {
+        statusDotColor = 'bg-rose-500';
+        statusTitle = 'Account Suspended';
+    } else if (hasOpenSession) {
+        statusDotColor = 'bg-emerald-500 animate-pulse';
+        statusTitle = 'Active Shift (Clocked In)';
+    } else if (isPaused) {
+        statusDotColor = 'bg-amber-500';
+        statusTitle = 'On Break (Paused)';
+    }
+
     // Format human date label
     const formatSessionDate = (dateStr) => {
         if (!dateStr) return 'N/A';
@@ -324,7 +342,7 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                     <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
                         <div className="relative shrink-0">
                             <UserAvatar user={avatarUser} className="w-12 h-12 sm:w-13 sm:h-13 text-base sm:text-lg rounded-2xl" />
-                            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white" title="Active Staff" />
+                            <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full ${statusDotColor} border-2 border-white`} title={statusTitle} />
                         </div>
                         <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">

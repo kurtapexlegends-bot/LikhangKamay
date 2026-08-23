@@ -46,17 +46,22 @@ export default function MobileShiftSheet({
                 <div className="space-y-4">
                     <StaffAttendanceDock attendance={attendance} />
                     
-                    {/* Workshop Schedule & Lunch Break Policy */}
+                    {/* Workshop / Shift Schedule & Lunch Break Policy */}
                     {attendance?.shift_policy && (
                         <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/70 space-y-2">
                             <div className="flex items-center justify-between">
                                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900">
-                                    Workshop Schedule
+                                    {attendance.shift_policy.is_custom ? 'Personal Shift' : 'Workshop Schedule'}
                                 </span>
                                 <span className="text-[10px] font-bold text-amber-800 font-mono">
                                     {attendance.shift_policy.shift_start_time || '08:00'} - {attendance.shift_policy.shift_end_time || '17:00'}
                                 </span>
                             </div>
+                            {attendance.shift_policy.is_today_rest_day && (
+                                <div className="text-[10px] font-bold text-amber-800 bg-amber-100/70 py-1 px-2 rounded-lg text-center">
+                                    Scheduled Rest Day Today
+                                </div>
+                            )}
                             <div className="flex items-center justify-between text-[11px] text-stone-600 font-medium pt-1 border-t border-amber-200/60">
                                 <span>Earliest Entry</span>
                                 <span className="font-bold text-stone-800 font-mono">

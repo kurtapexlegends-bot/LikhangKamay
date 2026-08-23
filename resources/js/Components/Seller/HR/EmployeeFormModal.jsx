@@ -28,12 +28,14 @@ export default function EmployeeFormModal({
     requiresStaffSchemaUpdate,
     canEditHrRecords,
     sellerLocations = [],
+    sellerSettings = {},
     onDelete = null,
 }) {
     const { addToast } = useToast();
     const [showPassword, setShowPassword] = useState(false);
     
     const initialPresetKey = rolePresets[0]?.key || 'hr';
+    const defaultWorkingDays = ['mon', 'tue', 'wed', 'thu', 'fri'];
     
     const { data, setData, post, patch, processing, errors } = useForm({
         employee_id: '',
@@ -42,6 +44,13 @@ export default function EmployeeFormModal({
         salary: '',
         assigned_location_id: null,
         allow_remote_clock_in: false,
+        schedule_type: 'default',
+        working_days: defaultWorkingDays,
+        shift_start_time: '',
+        shift_end_time: '',
+        standard_workday_hours: '',
+        grace_period_minutes: '',
+        break_allowance_minutes: '',
         create_login_account: false,
         email: '',
         default_password: '',
@@ -65,6 +74,13 @@ export default function EmployeeFormModal({
                     salary: '',
                     assigned_location_id: null,
                     allow_remote_clock_in: false,
+                    schedule_type: 'default',
+                    working_days: defaultWorkingDays,
+                    shift_start_time: '',
+                    shift_end_time: '',
+                    standard_workday_hours: '',
+                    grace_period_minutes: '',
+                    break_allowance_minutes: '',
                     create_login_account: false,
                     email: '',
                     default_password: '',
@@ -82,6 +98,10 @@ export default function EmployeeFormModal({
                 const activeRole = hasLoginAccount ? (rolePresets.find(p => p.key === presetKey)?.label || 'Custom') : (employee.role || DEFAULT_EMPLOYEE_ROLE);
                 setManualEmployeeRole(activeRole);
                 
+                const empWorkingDays = Array.isArray(employee.working_days) && employee.working_days.length > 0
+                    ? employee.working_days.map(d => d.toLowerCase())
+                    : (employee.schedule_type === 'custom' ? [] : defaultWorkingDays);
+
                 setData({
                     employee_id: employee.employee_id || generateRandomEmployeeId(),
                     name: employee.name || '',
@@ -89,6 +109,13 @@ export default function EmployeeFormModal({
                     salary: employee.salary ?? '',
                     assigned_location_id: employee.assigned_location_id || null,
                     allow_remote_clock_in: !!employee.allow_remote_clock_in,
+                    schedule_type: employee.schedule_type || 'default',
+                    working_days: empWorkingDays,
+                    shift_start_time: employee.shift_start_time || '',
+                    shift_end_time: employee.shift_end_time || '',
+                    standard_workday_hours: employee.standard_workday_hours ?? '',
+                    grace_period_minutes: employee.grace_period_minutes ?? '',
+                    break_allowance_minutes: employee.break_allowance_minutes ?? '',
                     create_login_account: hasLoginAccount ? workspaceAccessEnabled : false,
                     email: employee.login_account?.email || '',
                     default_password: '',
@@ -269,7 +296,7 @@ export default function EmployeeFormModal({
 
                 {/* Form Body */}
                 <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-[#FDFBF9]">
-                    {/* Basic Info (1. Staff Profile, 2. Compensation, 3. Location & Biometrics) */}
+                    {/* Basic Info (1. Staff Profile, 2. Compensation, 3. Location & Biometrics, 4. Work Schedule & Shifts) */}
                     <BasicEmployeeInfoSection
                         data={data}
                         setData={setData}
@@ -280,6 +307,7 @@ export default function EmployeeFormModal({
                         employeeIdValidation={employeeIdValidation}
                         isEmployeeIdSaved={isEmployeeIdSaved}
                         sellerLocations={sellerLocations}
+                        sellerSettings={sellerSettings}
                     />
 
                     {/* Section 4: Seller Portal Access & Permissions */}

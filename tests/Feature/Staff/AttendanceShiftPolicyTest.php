@@ -28,7 +28,7 @@ class AttendanceShiftPolicyTest extends TestCase
         );
 
         // Staff clocks in at 8:35 AM (past 8:15 AM grace threshold)
-        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(8, 35));
+        Carbon::setTestNow(Carbon::parse('2026-08-24', config('app.timezone'))->startOfDay()->setTime(8, 35));
 
         $service = app(StaffAttendanceService::class);
         $session = $service->ensureClockedIn($staff, [
@@ -49,7 +49,7 @@ class AttendanceShiftPolicyTest extends TestCase
         );
 
         // Staff clocks in at 8:10 AM (within 8:15 AM grace threshold)
-        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(8, 10));
+        Carbon::setTestNow(Carbon::parse('2026-08-24', config('app.timezone'))->startOfDay()->setTime(8, 10));
 
         $service = app(StaffAttendanceService::class);
         $session = $service->ensureClockedIn($staff, [
@@ -68,12 +68,12 @@ class AttendanceShiftPolicyTest extends TestCase
         );
 
         // Clock in at 8:00 AM
-        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(8, 0));
+        Carbon::setTestNow(Carbon::parse('2026-08-24', config('app.timezone'))->startOfDay()->setTime(8, 0));
         $service = app(StaffAttendanceService::class);
         $session = $service->ensureClockedIn($staff);
 
         // Clock out early at 3:30 PM (15:30) with reason
-        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(15, 30));
+        Carbon::setTestNow(Carbon::parse('2026-08-24', config('app.timezone'))->startOfDay()->setTime(15, 30));
 
         $this->actingAs($staff)->post(route('staff.logout'), [
             'action' => 'clock_out',
@@ -93,16 +93,16 @@ class AttendanceShiftPolicyTest extends TestCase
         );
 
         // Clock in at 8:00 AM
-        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(8, 0));
+        Carbon::setTestNow(Carbon::parse('2026-08-24', config('app.timezone'))->startOfDay()->setTime(8, 0));
         $service = app(StaffAttendanceService::class);
         $session1 = $service->ensureClockedIn($staff);
 
         // Take break at 12:00 PM
-        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(12, 0));
+        Carbon::setTestNow(Carbon::parse('2026-08-24', config('app.timezone'))->startOfDay()->setTime(12, 0));
         $service->closeOpenSession($staff, StaffAttendanceService::MODE_PAUSED);
 
         // Resume break at 1:30 PM (90 mins later, exceeding 60m allowance)
-        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(13, 30));
+        Carbon::setTestNow(Carbon::parse('2026-08-24', config('app.timezone'))->startOfDay()->setTime(13, 30));
         $session2 = $service->ensureClockedIn($staff);
 
         $this->assertTrue($session2->is_extended_break);
@@ -118,7 +118,7 @@ class AttendanceShiftPolicyTest extends TestCase
         );
 
         // Staff attempts to clock in at 1:52 AM (hours before 7:30 AM earliest entry)
-        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(1, 52));
+        Carbon::setTestNow(Carbon::parse('2026-08-24', config('app.timezone'))->startOfDay()->setTime(1, 52));
 
         $this->expectException(\Illuminate\Validation\ValidationException::class);
         $service = app(StaffAttendanceService::class);
@@ -134,7 +134,7 @@ class AttendanceShiftPolicyTest extends TestCase
         );
 
         // Staff clocks in at 1:52 AM (allowed but flagged for manager review)
-        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(1, 52));
+        Carbon::setTestNow(Carbon::parse('2026-08-24', config('app.timezone'))->startOfDay()->setTime(1, 52));
 
         $service = app(StaffAttendanceService::class);
         $session = $service->ensureClockedIn($staff);
@@ -153,7 +153,7 @@ class AttendanceShiftPolicyTest extends TestCase
         );
 
         // Staff clocks in at 7:45 AM (within 7:30 AM - 8:00 AM window)
-        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(7, 45));
+        Carbon::setTestNow(Carbon::parse('2026-08-24', config('app.timezone'))->startOfDay()->setTime(7, 45));
 
         $service = app(StaffAttendanceService::class);
         $session = $service->ensureClockedIn($staff);
@@ -172,7 +172,7 @@ class AttendanceShiftPolicyTest extends TestCase
         );
 
         // Staff attempts to clock in at 11:00 PM (23:00) after closing
-        Carbon::setTestNow(now(config('app.timezone'))->startOfDay()->setTime(23, 0));
+        Carbon::setTestNow(Carbon::parse('2026-08-24', config('app.timezone'))->startOfDay()->setTime(23, 0));
 
         $this->expectException(\Illuminate\Validation\ValidationException::class);
         $service = app(StaffAttendanceService::class);

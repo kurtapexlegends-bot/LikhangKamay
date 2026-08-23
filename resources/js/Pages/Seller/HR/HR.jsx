@@ -217,6 +217,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 requiresStaffSchemaUpdate={requiresStaffSchemaUpdate}
                 canEditHrRecords={canEditHrRecords}
                 sellerLocations={locations}
+                sellerSettings={sellerSettings}
             />
 
             {editingEmployee && (
@@ -233,6 +234,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     requiresStaffSchemaUpdate={requiresStaffSchemaUpdate}
                     canEditHrRecords={canEditHrRecords}
                     sellerLocations={locations}
+                    sellerSettings={sellerSettings}
                     onDelete={deleteEmployee}
                 />
             )}

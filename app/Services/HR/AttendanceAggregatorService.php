@@ -25,7 +25,7 @@ class AttendanceAggregatorService
 
         $start = Carbon::parse($startDate)->startOfDay();
         $end = Carbon::parse($endDate)->endOfDay();
-        $standardHours = (float) ($seller->standard_workday_hours ?? 8.0);
+        $standardHours = (float) $employee->getEffectiveWorkdayHours($seller);
         $standardMinutes = $standardHours * 60;
 
         // Locate staff user linked to employee record (or match via employee_id / email)
@@ -78,20 +78,19 @@ class AttendanceAggregatorService
         foreach ($groupedByDate as $dateStr => $daySessions) {
             $dayMinutes = $daySessions->sum('worked_minutes');
             $totalWorkedMinutes += $dayMinutes;
-
-            // Compute overtime/undertime per workday
-            if ($dayMinutes > $standardMinutes) {
-                $totalOvertimeMinutes += ($dayMinutes - $standardMinutes);
-            } elseif ($dayMinutes < $standardMinutes && $dayMinutes > 0) {
-                $totalUndertimeMinutes += ($standardMinutes - $dayMinutes);
-            }
-
-            // Check if day was rest day based on employer work week policy (261 = Mon-Fri with Sat/Sun rest, 313/custom = Sun rest)
             $dateCarbon = Carbon::parse($dateStr);
-            $factorMethod = (string) ($seller->payroll_factor_method ?? 'custom');
-            $isRestDay = ($factorMethod === '261' && ($dateCarbon->isSaturday() || $dateCarbon->isSunday())) || $dateCarbon->isSunday();
+            $isRestDay = $employee->isRestDay($dateCarbon, $seller);
+
             if ($isRestDay) {
+                // All hours worked on employee's scheduled rest day qualify for Rest Day OT
                 $restDayOtMinutes += $dayMinutes;
+            } else {
+                // Compute overtime/undertime per scheduled workday
+                if ($dayMinutes > $standardMinutes) {
+                    $totalOvertimeMinutes += ($dayMinutes - $standardMinutes);
+                } elseif ($dayMinutes < $standardMinutes && $dayMinutes > 0) {
+                    $totalUndertimeMinutes += ($standardMinutes - $dayMinutes);
+                }
             }
         }
 
