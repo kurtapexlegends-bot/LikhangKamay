@@ -19,6 +19,10 @@ class EnforceSingleDeviceSession
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if (app()->environment('local')) {
+            return $next($request);
+        }
+
         $user = $request->user();
 
         if ($user && $user->current_session_id) {

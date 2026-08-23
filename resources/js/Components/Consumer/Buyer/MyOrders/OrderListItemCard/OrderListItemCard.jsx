@@ -14,6 +14,7 @@ export default function OrderListItemCard({
     onContactSeller,
     onBuyAgain,
     onOpenModal,
+    onOpenCancelModal,
     onOpenReturnModal,
     onOpenEscalateModal,
     onOpenRatingModal,
@@ -219,6 +220,7 @@ export default function OrderListItemCard({
                 onContactSeller={onContactSeller}
                 onBuyAgain={onBuyAgain}
                 onOpenModal={onOpenModal}
+                onOpenCancelModal={onOpenCancelModal}
                 onOpenReturnModal={onOpenReturnModal}
                 onOpenEscalateModal={onOpenEscalateModal}
                 onOpenRatingModal={onOpenRatingModal}

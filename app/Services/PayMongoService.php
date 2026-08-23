@@ -57,4 +57,46 @@ class PayMongoService
 
         return $response->json('data');
     }
+
+    /**
+     * Create a Refund for a Payment
+     * https://developers.paymongo.com/docs/refunds
+     */
+    public function createRefund(string $paymentId, int $amountInCents, string $reason = 'requested_by_customer', ?string $notes = null): ?array
+    {
+        if (empty($this->secretKey) || empty($paymentId)) {
+            return null;
+        }
+
+        $payload = [
+            'amount' => $amountInCents,
+            'payment_id' => $paymentId,
+            'reason' => $reason,
+        ];
+
+        if ($notes) {
+            $payload['notes'] = $notes;
+        }
+
+        /** @var \Illuminate\Http\Client\Response $response */
+        $response = Http::withHeaders([
+            'Authorization' => 'Basic ' . base64_encode($this->secretKey),
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+        ])->post("{$this->baseUrl}/refunds", [
+            'data' => [
+                'attributes' => $payload
+            ]
+        ]);
+
+        if ($response->failed()) {
+            \Illuminate\Support\Facades\Log::warning('PayMongo Refund Error: ' . $response->body(), [
+                'payment_id' => $paymentId,
+                'amount' => $amountInCents,
+            ]);
+            return null;
+        }
+
+        return $response->json('data');
+    }
 }

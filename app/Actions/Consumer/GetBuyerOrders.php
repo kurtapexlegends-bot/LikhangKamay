@@ -191,7 +191,10 @@ class GetBuyerOrders
                 ];
             }),
             'can_return' => $canReturn,
-            'can_cancel' => $order->status === 'Pending'
+            'can_cancel' => $order->status === 'Pending' || ($order->status === 'Accepted' && $order->accepted_at && $order->accepted_at->greaterThanOrEqualTo(now()->subMinutes(15))),
+            'cancellation_grace_expires_at' => ($order->status === 'Accepted' && $order->accepted_at)
+                ? $order->accepted_at->copy()->addMinutes(15)->toIso8601String()
+                : null,
         ];
     }
 }

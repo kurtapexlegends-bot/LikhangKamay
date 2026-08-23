@@ -40,4 +40,7 @@
 ## 5. Workflow Directives
 - **Trade-offs & Diffs:** Briefly state pros/cons of major architectural decisions before coding. Provide targeted diffs.
 - **Knowledge Graph Cadence:** Batch `graphify update` and Obsidian exports to every 5 prompts or when explicitly requested.
+- **Remote Mode Protocol (`/remote-y`, `/remote-n`):**
+  - When `/remote-y` is active (mobile/remote), automatically capture and embed real high-resolution screenshots covering all pictures and states of the changes (complete end-to-end flow) from the running local instance after compiling changes. Never hallucinate visual descriptions.
+  - When `/remote-n` is active (laptop/desktop workstation), skip headless screenshots and deliver fast, concise diffs for direct local testing. State persists until toggled.
 - **Fast Diagnostic Escalation:** If an issue cannot be confirmed with 100% certainty or is not resolved within 1-2 attempts (especially on production or third-party integrations), immediately halt speculation and ask the user for the exact server runtime logs, browser console errors, or network payloads needed to pinpoint it directly.

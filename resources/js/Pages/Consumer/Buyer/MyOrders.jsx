@@ -14,6 +14,7 @@ import CompactPagination from '@/Components/CompactPagination';
 import OrderListItemCard from '@/Components/Consumer/Buyer/MyOrders/OrderListItemCard/OrderListItemCard';
 import ReturnRequestModal from '@/Components/Consumer/Buyer/MyOrders/ReturnRequestModal';
 import EscalateDisputeModal from '@/Components/Consumer/Buyer/MyOrders/EscalateDisputeModal';
+import CancelOrderModal from '@/Components/Consumer/Buyer/MyOrders/CancelOrderModal';
 
 export default function MyOrders({ auth, orders }) {
     const [activeTab, setActiveTab] = useState('All');
@@ -23,11 +24,12 @@ export default function MyOrders({ auth, orders }) {
     const [ratingModal, setRatingModal] = useState({ isOpen: false, order: null });
     const [returnModalState, setReturnModalState] = useState({ isOpen: false, order: null });
     const [escalateModalState, setEscalateModalState] = useState({ isOpen: false, disputeId: null });
+    const [cancelModalState, setCancelModalState] = useState({ isOpen: false, order: null });
 
     // Modal state
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
-        type: null, // 'receive', 'return', 'cancel'
+        type: null, // 'receive', 'return'
         orderId: null
     });
 
@@ -332,6 +334,7 @@ export default function MyOrders({ auth, orders }) {
                                         onContactSeller={contactSeller}
                                         onBuyAgain={buyAgain}
                                         onOpenModal={openModal}
+                                        onOpenCancelModal={(ord) => setCancelModalState({ isOpen: true, order: ord })}
                                         onOpenReturnModal={(ord) => setReturnModalState({ isOpen: true, order: ord })}
                                         onOpenEscalateModal={(dispId) => setEscalateModalState({ isOpen: true, disputeId: dispId })}
                                         onOpenRatingModal={(ord) => setRatingModal({ isOpen: true, order: ord })}
@@ -374,6 +377,13 @@ export default function MyOrders({ auth, orders }) {
                 </div>
 
             </main>
+
+            {/* --- CANCEL ORDER MODAL --- */}
+            <CancelOrderModal
+                isOpen={cancelModalState.isOpen}
+                onClose={() => setCancelModalState({ isOpen: false, order: null })}
+                order={cancelModalState.order}
+            />
 
             {/* --- RATING MODAL --- */}
             <RatingModal 

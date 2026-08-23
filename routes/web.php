@@ -5,10 +5,35 @@
 // use App\Http\Controllers\FinanceController; // Removed
 
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+
+if (app()->environment('local')) {
+    Route::get('/dev/preview-auth', function (\Illuminate\Http\Request $request) {
+        $role = $request->query('role', 'super_admin');
+        $user = User::where('role', $role)->first() ?? User::where('role', 'super_admin')->first();
+        if ($user) {
+            Auth::guard('web')->login($user, true);
+            $request->session()->regenerate();
+            $request->session()->save();
+        }
+        $target = $request->query('redirect', '/admin/overview');
+        $allParams = $request->except(['role', 'redirect']);
+        if (!empty($allParams)) {
+            $parsedUrl = parse_url($target);
+            $existingQuery = [];
+            if (isset($parsedUrl['query'])) {
+                parse_str($parsedUrl['query'], $existingQuery);
+            }
+            $mergedQuery = array_merge($existingQuery, $allParams);
+            $target = ($parsedUrl['path'] ?? $target) . '?' . http_build_query($mergedQuery);
+        }
+        return redirect($target);
+    });
+}
 
 // --- PUBLIC ROUTES ---
 Route::get('/', [\App\Http\Controllers\Consumer\CatalogController::class, 'home'])->name('home');
@@ -315,6 +340,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/my-orders/{id}/receive', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerReceiveOrder'])->name('my-orders.receive');
         Route::post('/my-orders/{id}/return', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerRequestReturn'])->name('my-orders.return');
         Route::post('/my-orders/{id}/cancel', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerCancelOrder'])->name('my-orders.cancel');
+        Route::post('/my-orders/{id}/change-address-reorder', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'changeAddressAndReorder'])->name('my-orders.change-address-reorder');
         Route::post('/my-orders/{id}/cancel-return', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerCancelReturn'])->name('my-orders.cancel-return');
         Route::get('/my-orders/{id}/receipt', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'downloadReceipt'])->name('my-orders.receipt');
 

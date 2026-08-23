@@ -157,13 +157,86 @@ class BuyerOrderController extends Controller
     }
 
     /**
-     * BUYER: Cancel pending order
+     * BUYER: Cancel pending/accepted order
      */
-    public function buyerCancelOrder(string $id, CancelOrder $cancelOrder)
+    public function buyerCancelOrder(Request $request, string $id, CancelOrder $cancelOrder)
     {
+        $validated = $request->validate([
+            'reason' => 'nullable|string|max:100',
+            'details' => 'nullable|string|max:500',
+        ]);
+
         try {
-            $cancelOrder->execute($id, Auth::user());
+            $reason = $validated['reason'] ?? 'buyer_cancelled';
+            $details = $validated['details'] ?? null;
+            $cancelOrder->execute($id, Auth::user(), $reason, $details);
             return redirect()->back()->with('success', 'Order cancelled successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * BUYER: 1-Click Change Address & Re-Order
+     */
+    public function changeAddressAndReorder(string $id, CancelOrder $cancelOrder)
+    {
+        /** @var \App\Models\User $buyer */
+        $buyer = Auth::user();
+
+        $order = Order::with('items')->where('id', $id)
+            ->where('user_id', $buyer->id)
+            ->firstOrFail();
+
+        $isPending = $order->status === 'Pending';
+        $isWithinGracePeriod = $order->status === 'Accepted'
+            && $order->accepted_at !== null
+            && $order->accepted_at->greaterThanOrEqualTo(now()->subMinutes(15));
+
+        if (!$isPending && !$isWithinGracePeriod) {
+            return redirect()->back()->with('error', 'Orders can only be modified while pending or within 15 minutes of acceptance before processing begins.');
+        }
+
+        try {
+            // 1. Atomically cancel previous order and restore stock / refund
+            $cancelOrder->execute($id, $buyer, 'change_delivery_address', 'Buyer initiated 1-click address change re-order');
+
+            // 2. Repopulate session cart with exact items & quantities
+            $productIds = $order->items->pluck('product_id')->filter()->unique()->all();
+            $products = \App\Models\Product::with('user')->whereIn('id', $productIds)->get()->keyBy('id');
+
+            $cart = [];
+            foreach ($order->items as $item) {
+                $product = $products->get($item->product_id);
+                if (!$product) {
+                    continue;
+                }
+
+                $variant = trim((string) ($item->variant ?? 'Standard')) ?: 'Standard';
+                $cartKey = $product->id . ':' . md5(strtolower($variant));
+
+                $cart[$cartKey] = [
+                    'id' => $product->id,
+                    'cart_key' => $cartKey,
+                    'artisan_id' => $product->artisan_id ?? $product->user_id,
+                    'name' => $product->name,
+                    'variant' => $variant,
+                    'sku' => $product->sku,
+                    'slug' => $product->slug,
+                    'price' => $product->effective_price,
+                    'original_price' => (float) $product->price,
+                    'discount_info' => $product->discount_info,
+                    'qty' => $item->quantity,
+                    'img' => $product->img,
+                    'seller' => $product->user->shop_name ?? $product->user->name ?? 'Shop',
+                    'shop_name' => $product->user->shop_name ?? $product->user->name ?? 'Shop',
+                    'location' => $product->user->city ?? 'Cavite',
+                ];
+            }
+
+            \Illuminate\Support\Facades\Session::put('cart', $cart);
+
+            return redirect()->route('checkout.create')->with('info', 'Previous order was cancelled. Please select or add your new delivery address below.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }

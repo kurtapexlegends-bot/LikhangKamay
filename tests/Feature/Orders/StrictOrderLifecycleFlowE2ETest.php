@@ -711,8 +711,9 @@ class StrictOrderLifecycleFlowE2ETest extends TestCase
 
         $order = Order::where('user_id', $this->buyer->id)->first();
         $this->actingAs($this->sellerA)->post(route('orders.update', $order->order_number), ['status' => 'Accepted']);
+        $order->update(['accepted_at' => now()->subMinutes(20)]);
 
-        // Buyer tries to cancel accepted order
+        // Buyer tries to cancel accepted order after grace period
         $cancelResponse = $this->actingAs($this->buyer)->post(route('my-orders.cancel', $order->id));
         $cancelResponse->assertRedirect();
         $cancelResponse->assertSessionHas('error');

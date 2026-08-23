@@ -11,6 +11,7 @@ export default function OrderCardActions({
     onContactSeller,
     onBuyAgain,
     onOpenModal,
+    onOpenCancelModal,
     onOpenReturnModal,
     onOpenEscalateModal,
     onOpenRatingModal,
@@ -55,7 +56,7 @@ export default function OrderCardActions({
             actions.push({
                 label: 'Cancel Order',
                 icon: XCircle,
-                onClick: () => onOpenModal('cancel', order.id),
+                onClick: () => onOpenCancelModal ? onOpenCancelModal(order) : onOpenModal('cancel', order.id),
                 type: 'button',
                 danger: true
             });
@@ -141,10 +142,10 @@ export default function OrderCardActions({
                     </a>
                 )}
 
-                {/* PENDING: Cancel */}
+                {/* PENDING / GRACE PERIOD: Cancel */}
                 {order.can_cancel && (
                     <button 
-                        onClick={() => onOpenModal('cancel', order.id)}
+                        onClick={() => onOpenCancelModal ? onOpenCancelModal(order) : onOpenModal('cancel', order.id)}
                         className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-red-200 bg-red-50 rounded-lg text-[12px] font-bold text-red-600 hover:bg-red-100 transition min-h-[38px]"
                     >
                         <XCircle size={15} /> Cancel

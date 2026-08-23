@@ -21,10 +21,11 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
     const { pendingArtisanCount, url } = usePage().props;
 
     const activeTab = useMemo(() => {
+        if (filters?.tab) return filters.tab;
         if (typeof window === 'undefined') return 'directory';
         const params = new URL(url || window.location.href, window.location.origin).searchParams;
         return params.get('tab') || 'directory';
-    }, [url]);
+    }, [url, filters?.tab]);
 
     // =========================================================================
     // STATE & LOGIC: USER DIRECTORY

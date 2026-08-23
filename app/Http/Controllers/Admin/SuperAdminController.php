@@ -243,7 +243,10 @@ class SuperAdminController extends Controller
                 'avatar_url' => $user->avatar_url,
                 'shop_name' => $user->shop_name,
                 'phone_number' => $user->phone_number,
+                'city' => $user->city,
+                'barangay' => $user->barangay,
                 'address' => StructuredAddress::formatPhilippineAddress(['street_address' => $user->street_address, 'barangay' => $user->barangay, 'city' => $user->city, 'region' => $user->region, 'postal_code' => $user->zip_code]),
+                'region' => $user->region,
                 'business_permit' => \App\Services\StorageUrl::url($user->business_permit),
                 'dti_registration' => \App\Services\StorageUrl::url($user->dti_registration),
                 'valid_id' => \App\Services\StorageUrl::url($user->valid_id),
@@ -252,6 +255,7 @@ class SuperAdminController extends Controller
                 'payout_account_name' => $user->payout_account_name,
                 'payout_account_number' => $user->payout_account_number,
                 'submitted_at' => $user->setup_completed_at->format('M d, Y h:i A'),
+                'raw_submitted_at' => $user->setup_completed_at->toIso8601String(),
                 'viewed_documents' => $this->getViewedArtisanDocumentKeys($user->id),
                 'viewed_document_keys' => $this->getViewedArtisanDocumentKeys($user->id),
             ]);
