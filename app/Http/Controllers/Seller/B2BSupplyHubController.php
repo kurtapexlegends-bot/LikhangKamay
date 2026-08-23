@@ -110,9 +110,17 @@ class B2BSupplyHubController extends Controller
             ];
         });
 
+        $stats = [
+            'total_materials' => Product::b2bSupplies()->where('user_id', '!=', $actor->id)->count(),
+            'active_suppliers' => Product::b2bSupplies()->where('user_id', '!=', $actor->id)->distinct('user_id')->count('user_id'),
+            'wholesale_deals' => Product::b2bSupplies()->where('user_id', '!=', $actor->id)->whereNotNull('wholesale_price')->count(),
+            'my_published_count' => Product::where('user_id', $actor->id)->where('is_b2b_supply', true)->count(),
+        ];
+
         return Inertia::render('Seller/SupplyHub/Index', [
             'supplies' => $supplies,
             'categories' => self::SUPPLY_CATEGORIES,
+            'stats' => $stats,
             'filters' => [
                 'search' => $request->input('search', ''),
                 'category' => $request->input('category', 'All'),
