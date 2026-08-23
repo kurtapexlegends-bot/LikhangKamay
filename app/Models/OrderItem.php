@@ -13,10 +13,12 @@ class OrderItem extends Model
         'order_id', 'product_id', 'product_name', 
         'variant', 'price', 'cost', 'quantity', 'product_img',
         'was_sponsored', 'sponsorship_request_id', 'sponsored_at_checkout',
+        'is_b2b_supply', 'supply_unit',
     ];
 
     protected $casts = [
         'was_sponsored' => \App\Casts\PostgresCompatibleBoolean::class,
+        'is_b2b_supply' => \App\Casts\PostgresCompatibleBoolean::class,
         'sponsored_at_checkout' => 'datetime',
     ];
 

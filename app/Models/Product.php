@@ -54,14 +54,19 @@ class Product extends Model
         'price', 'cost_price', 'stock', 'lead_time', 'sold',
         'cover_photo_path', 'gallery_paths', 'model_3d_path', 'slug',
         'track_as_supply', 'is_sponsored', 'sponsored_until', 'production_method',
-        'rejection_reason'
+        'rejection_reason',
+        'is_b2b_supply', 'moq', 'wholesale_price', 'wholesale_min_qty', 'supply_unit'
     ];
 
     protected $casts = [
         'food_safe' => \App\Casts\PostgresCompatibleBoolean::class,
         'track_as_supply' => \App\Casts\PostgresCompatibleBoolean::class,
+        'is_b2b_supply' => \App\Casts\PostgresCompatibleBoolean::class,
         'is_sponsored' => \App\Casts\PostgresCompatibleBoolean::class,
         'sponsored_until' => 'datetime',
+        'moq' => 'integer',
+        'wholesale_min_qty' => 'integer',
+        'wholesale_price' => 'decimal:2',
         'colors' => 'array',        // Automatically converts JSON to Array
         'gallery_paths' => 'array', // Automatically converts JSON to Array
         'has3D' => 'boolean',       // Computed accessor (logic below)
@@ -453,6 +458,28 @@ class Product extends Model
                 ];
             })
             ->values();
+    }
+
+    /**
+     * Scope query to active B2B supply listings.
+     */
+    public function scopeB2BSupplies($query)
+    {
+        return $query->where('is_b2b_supply', true)
+            ->where('status', 'Active')
+            ->where('stock', '>', 0);
+    }
+
+    /**
+     * Get effective unit price based on ordered wholesale quantity.
+     */
+    public function getEffectiveB2BPrice(int $qty): float
+    {
+        if ($this->wholesale_price !== null && $this->wholesale_min_qty !== null && $qty >= (int) $this->wholesale_min_qty) {
+            return (float) $this->wholesale_price;
+        }
+
+        return (float) $this->effective_price;
     }
 }
 
