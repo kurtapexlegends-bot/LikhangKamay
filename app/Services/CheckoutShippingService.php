@@ -10,28 +10,35 @@ class CheckoutShippingService
 {
     /**
      * @param  array<string, mixed>  $destination
-     * @return array{amount: float, currency: string, source: string}
+     * @param  array<int, mixed>|\Illuminate\Support\Collection  $items
+     * @return array{amount: float, currency: string, source: string, vehicle_info: array<string, mixed>}
      */
-    public function estimateForSeller(User $seller, array $destination): array
+    public function estimateForSeller(User $seller, array $destination, array|\Illuminate\Support\Collection $items = []): array
     {
         $currency = 'PHP';
+        $itemsArray = $items instanceof \Illuminate\Support\Collection ? $items->values()->all() : array_values($items);
+        $vehicleInfo = $this->vehicleTypeResolver()->resolveForItems($itemsArray);
 
         if (($destination['shipping_method'] ?? 'Delivery') !== 'Delivery') {
             return [
                 'amount' => 0.0,
                 'currency' => $currency,
                 'source' => 'pickup',
+                'vehicle_info' => $vehicleInfo,
             ];
         }
 
-        $cacheKey = 'shipping_estimate:' . $seller->id . ':' . md5(serialize($destination));
+        $cacheKey = 'shipping_estimate:' . $seller->id . ':' . md5(serialize($destination) . serialize($itemsArray));
 
-        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($seller, $destination, $currency) {
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($seller, $destination, $currency, $vehicleInfo) {
+            $serviceType = $vehicleInfo['service_type'];
+
             if ($this->shouldUseFlatFallback()) {
                 return [
-                    'amount' => $this->flatFallbackAmount(),
+                    'amount' => $this->flatFallbackAmount($serviceType),
                     'currency' => $currency,
                     'source' => 'fallback_flat',
+                    'vehicle_info' => $vehicleInfo,
                 ];
             }
 
@@ -108,7 +115,7 @@ class CheckoutShippingService
                 }
 
                 $quotation = $this->lalamoveService()->createQuotation([
-                    'serviceType' => (string) config('services.lalamove.service_type', 'MOTORCYCLE'),
+                    'serviceType' => $serviceType,
                     'language' => 'en_PH',
                     'stops' => [
                         [
@@ -135,6 +142,7 @@ class CheckoutShippingService
                         'amount' => $quotedTotal,
                         'currency' => (string) (data_get($quotation, 'priceBreakdown.currency', $currency) ?: $currency),
                         'source' => 'lalamove_quote',
+                        'vehicle_info' => $vehicleInfo,
                     ];
                 }
             } catch (\Throwable) {
@@ -153,15 +161,17 @@ class CheckoutShippingService
                 }
 
                 return [
-                    'amount' => $this->distanceFallbackAmount($pickupCoordinates, $dropoffCoordinates),
+                    'amount' => $this->distanceFallbackAmount($pickupCoordinates, $dropoffCoordinates, $serviceType),
                     'currency' => $currency,
                     'source' => 'fallback_distance',
+                    'vehicle_info' => $vehicleInfo,
                 ];
             } catch (\Throwable) {
                 return [
-                    'amount' => $this->flatFallbackAmount(),
+                    'amount' => $this->flatFallbackAmount($serviceType),
                     'currency' => $currency,
                     'source' => 'fallback_flat',
+                    'vehicle_info' => $vehicleInfo,
                 ];
             }
         });
@@ -174,16 +184,23 @@ class CheckoutShippingService
             || blank(config('services.lalamove.api_secret'));
     }
 
-    private function flatFallbackAmount(): float
+    private function flatFallbackAmount(string $serviceType = 'MOTORCYCLE'): float
     {
-        return round((float) config('services.checkout_shipping.fallback_flat_fee', 69), 2);
+        $base = (float) config('services.checkout_shipping.fallback_flat_fee', 69);
+
+        return match ($serviceType) {
+            'SEDAN' => round($base * 2.3, 2),
+            'MPV_300' => round($base * 4.0, 2),
+            'VAN_1000' => round($base * 6.5, 2),
+            default => round($base, 2),
+        };
     }
 
     /**
      * @param  array<string, mixed>  $pickupCoordinates
      * @param  array<string, mixed>  $dropoffCoordinates
      */
-    private function distanceFallbackAmount(array $pickupCoordinates, array $dropoffCoordinates): float
+    private function distanceFallbackAmount(array $pickupCoordinates, array $dropoffCoordinates, string $serviceType = 'MOTORCYCLE'): float
     {
         $distanceMeters = $this->distanceBetweenCoordinates(
             (float) ($pickupCoordinates['lat'] ?? 0),
@@ -192,17 +209,28 @@ class CheckoutShippingService
             (float) ($dropoffCoordinates['lng'] ?? 0),
         );
 
+        $flatFallback = $this->flatFallbackAmount($serviceType);
+
         if ($distanceMeters === null) {
-            return $this->flatFallbackAmount();
+            return $flatFallback;
         }
 
         $distanceKm = $distanceMeters / 1000;
-        $baseFee = (float) config('services.checkout_shipping.fallback_base_fee', 69);
-        $includedKm = max(0.0, (float) config('services.checkout_shipping.fallback_included_km', 3));
-        $perKm = max(0.0, (float) config('services.checkout_shipping.fallback_per_km', 10));
+        
+        [$baseFee, $includedKm, $perKm] = match ($serviceType) {
+            'SEDAN' => [160.0, 5.0, 20.0],
+            'MPV_300' => [280.0, 5.0, 30.0],
+            'VAN_1000' => [450.0, 5.0, 45.0],
+            default => [
+                (float) config('services.checkout_shipping.fallback_base_fee', 69),
+                max(0.0, (float) config('services.checkout_shipping.fallback_included_km', 3)),
+                max(0.0, (float) config('services.checkout_shipping.fallback_per_km', 10)),
+            ],
+        };
+
         $extraKm = max(0.0, ceil(max(0.0, $distanceKm - $includedKm)));
 
-        return round(max($this->flatFallbackAmount(), $baseFee + ($extraKm * $perKm)), 2);
+        return round(max($flatFallback, $baseFee + ($extraKm * $perKm)), 2);
     }
 
     /**
@@ -240,6 +268,11 @@ class CheckoutShippingService
         $arc = 2 * atan2(sqrt($haversine), sqrt(1 - $haversine));
 
         return $earthRadius * $arc;
+    }
+
+    private function vehicleTypeResolver(): VehicleTypeResolver
+    {
+        return app(VehicleTypeResolver::class);
     }
 
     private function geocodingService(): AddressGeocodingService

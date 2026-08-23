@@ -83,7 +83,7 @@ class QuoteCheckoutShipping
             $quote = $this->checkoutShippingService->estimateForSeller($seller, [
                 ...$shippingContext,
                 'shipping_method' => $request->shipping_method,
-            ]);
+            ], $items);
 
             $shippingFee = round((float) ($quote['amount'] ?? 0), 2);
             $totalShippingFee += $shippingFee;
@@ -93,6 +93,7 @@ class QuoteCheckoutShipping
                 'shipping_fee_amount' => $shippingFee,
                 'currency' => $quote['currency'] ?? 'PHP',
                 'source' => $quote['source'] ?? 'fallback_flat',
+                'vehicle_info' => $quote['vehicle_info'] ?? null,
             ];
         }
 

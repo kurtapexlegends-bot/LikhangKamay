@@ -18,11 +18,15 @@ use App\Mail\OrderShipped;
 
 class OrderLogisticsService
 {
+    private readonly VehicleTypeResolver $vehicleTypeResolver;
+
     public function __construct(
         private readonly AddressGeocodingService $geocodingService,
         private readonly LalamoveService $lalamoveService,
         private readonly OrderFinanceService $orderFinanceService,
+        ?VehicleTypeResolver $vehicleTypeResolver = null,
     ) {
+        $this->vehicleTypeResolver = $vehicleTypeResolver ?? app(VehicleTypeResolver::class);
     }
 
     public function bookLalamoveDelivery(Order $order, User $seller): OrderDelivery
@@ -98,8 +102,12 @@ class OrderLogisticsService
             throw new \RuntimeException('Seller pickup and buyer drop-off cannot be the same location for courier booking.');
         }
 
+        $order->loadMissing('items');
+        $vehicleInfo = $this->vehicleTypeResolver->resolveForItems($order->items);
+        $serviceType = $vehicleInfo['service_type'];
+
         $quotation = $this->lalamoveService->createQuotation([
-            'serviceType' => (string) config('services.lalamove.service_type', 'MOTORCYCLE'),
+            'serviceType' => $serviceType,
             'language' => 'en_PH',
             'stops' => [
                 [
@@ -231,8 +239,12 @@ class OrderLogisticsService
             throw new \RuntimeException('Seller pickup and buyer drop-off cannot be the same location for courier booking.');
         }
 
+        $order->loadMissing('items');
+        $vehicleInfo = $this->vehicleTypeResolver->resolveForItems($order->items);
+        $serviceType = $vehicleInfo['service_type'];
+
         $quotation = $this->lalamoveService->createQuotation([
-            'serviceType' => (string) config('services.lalamove.service_type', 'MOTORCYCLE'),
+            'serviceType' => $serviceType,
             'language' => 'en_PH',
             'stops' => [
                 [
