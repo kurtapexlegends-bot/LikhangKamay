@@ -1,5 +1,5 @@
 import React from 'react';
-import { Store, Package, AlertTriangle, ShieldCheck, MessageCircle } from 'lucide-react';
+import { Store, Package, AlertTriangle, ShieldCheck, MessageCircle, Truck, Car, Bike, Info } from 'lucide-react';
 
 const peso = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -89,6 +89,34 @@ export default function OrderPricingSummary({
                                                     </span>
                                                 )}
                                             </span>
+                                        </div>
+                                    )}
+                                    {shippingMethod === 'Delivery' && group.vehicleInfo && (
+                                        <div className={`mt-2.5 rounded-xl p-2.5 text-xs flex items-start gap-2 border ${
+                                            group.vehicleInfo.is_upgraded
+                                                ? 'bg-amber-50/70 border-amber-200 text-amber-950'
+                                                : 'bg-stone-100/70 border-stone-200 text-stone-700'
+                                        }`}>
+                                            <div className="shrink-0 mt-0.5">
+                                                {group.vehicleInfo.icon === 'car' ? (
+                                                    <Car className="w-3.5 h-3.5 text-amber-700" />
+                                                ) : group.vehicleInfo.icon === 'truck' ? (
+                                                    <Truck className="w-3.5 h-3.5 text-amber-700" />
+                                                ) : (
+                                                    <Bike className="w-3.5 h-3.5 text-stone-600" />
+                                                )}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center justify-between font-bold">
+                                                    <span>{group.vehicleInfo.label}</span>
+                                                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-white/80 border border-stone-200/60 text-stone-800">
+                                                        {group.vehicleInfo.total_weight_kg} kg
+                                                    </span>
+                                                </div>
+                                                <p className="mt-1 text-[11px] leading-relaxed opacity-90">
+                                                    {group.vehicleInfo.reason}
+                                                </p>
+                                            </div>
                                         </div>
                                     )}
                                 </>

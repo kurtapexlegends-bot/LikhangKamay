@@ -162,12 +162,20 @@ export default function Checkout({ auth, pricing }) {
                     return map;
                 }, {});
 
+                const vehiclesBySellerId = (response.data.groups || []).reduce((map, group) => {
+                    if (group.vehicle_info) {
+                        map[String(group.seller_id)] = group.vehicle_info;
+                    }
+                    return map;
+                }, {});
+
                 if (quoteRequestRef.current !== requestId) return;
 
                 setShippingQuote({
                     status: 'ready',
                     totalShippingFee: Number(response.data.total_shipping_fee || 0),
                     groups: groupsBySellerId,
+                    vehicles: vehiclesBySellerId,
                 });
             } catch {
                 if (quoteRequestRef.current !== requestId) return;
@@ -176,6 +184,7 @@ export default function Checkout({ auth, pricing }) {
                     status: 'error',
                     totalShippingFee: 0,
                     groups: {},
+                    vehicles: {},
                 });
             }
         }, 350);
@@ -216,6 +225,9 @@ export default function Checkout({ auth, pricing }) {
                 shippingFee: data.shipping_method === 'Delivery'
                     ? Number(shippingQuote.groups[String(group.sellerId)] || 0)
                     : 0,
+                vehicleInfo: data.shipping_method === 'Delivery'
+                    ? (shippingQuote.vehicles?.[String(group.sellerId)] || null)
+                    : null,
                 total: Number((
                     data.shipping_method === 'Delivery'
                         ? group.subtotal
@@ -225,7 +237,7 @@ export default function Checkout({ auth, pricing }) {
                 ).toFixed(2)),
             })),
         };
-    }, [convenienceFeeRate, data.shipping_method, sellerGroups, shippingQuote.groups, shippingQuote.totalShippingFee]);
+    }, [convenienceFeeRate, data.shipping_method, sellerGroups, shippingQuote.groups, shippingQuote.totalShippingFee, shippingQuote.vehicles]);
 
     const showAggregateBreakdown = totalSellers > 1;
 
