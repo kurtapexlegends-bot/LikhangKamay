@@ -79,13 +79,13 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                 }
             />
 
-            <div className="space-y-6 animate-in fade-in duration-200">
-                {/* Print Header */}
-                <div className="hidden print:block border-b border-stone-200 pb-4 mb-6">
-                    <h1 className="text-xl font-bold text-stone-900">LikhangKamay Platform Monetization Report</h1>
-                    <p className="text-xs text-stone-500 mt-1">Generated: {new Date().toLocaleString()}</p>
-                </div>
+            {/* Print Header */}
+            <div className="hidden print:block border-b border-stone-200 pb-4 mb-6">
+                <h1 className="text-xl font-bold text-stone-900">LikhangKamay Platform Monetization Report</h1>
+                <p className="text-xs text-stone-500 mt-1">Generated: {new Date().toLocaleString()}</p>
+            </div>
 
+            <div className="space-y-6 animate-in fade-in duration-200">
                 {/* SECTION 1: KEY METRICS ROW */}
                 <div className="flex overflow-x-auto gap-4 pb-2.5 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-5 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
                 {isLoadingMetrics ? (

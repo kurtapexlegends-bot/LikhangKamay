@@ -205,15 +205,15 @@ export default function Insights({
                 }
             />
 
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                {/* Print-Only Document Header */}
-                <div className="hidden print:block border-b-2 border-stone-200 pb-4 mb-6">
-                    <h1 className="text-2xl font-bold text-stone-900">LikhangKamay Platform Insights Report</h1>
-                    <p className="text-xs text-stone-500 mt-1">
-                        Generated on: {new Date().toLocaleString()}
-                    </p>
-                </div>
+            {/* Print-Only Document Header */}
+            <div className="hidden print:block border-b-2 border-stone-200 pb-4 mb-6">
+                <h1 className="text-2xl font-bold text-stone-900">LikhangKamay Platform Insights Report</h1>
+                <p className="text-xs text-stone-500 mt-1">
+                    Generated on: {new Date().toLocaleString()}
+                </p>
+            </div>
 
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {/* SECTION 1: TOP STAT CARDS */}
                 <div className="flex overflow-x-auto gap-4 pb-2.5 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-4 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
                     <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
