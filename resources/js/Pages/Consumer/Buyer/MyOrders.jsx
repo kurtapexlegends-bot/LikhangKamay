@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
-import { Search, ShoppingBag, CheckCircle, XCircle } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Search, ShoppingBag, CheckCircle, XCircle, Store, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
@@ -193,11 +193,39 @@ export default function MyOrders({ auth, orders }) {
                 )}
                 {flash?.error && (
                     <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm flex items-start gap-2.5 animate-in fade-in duration-200">
-                        <XCircle className="h-5 w-5 text-red-655 shrink-0 mt-0.5" />
+                        <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                         <span className="text-sm font-medium">{flash.error}</span>
                     </div>
                 )}
-                
+
+                {/* Artisan Studio Procurement Purchases Banner */}
+                {auth?.user?.role === 'artisan' && (
+                    <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-4 text-xs text-stone-700 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                            <Store size={18} className="text-clay-600 shrink-0" />
+                            <div>
+                                <span className="font-bold text-stone-900 block">Artisan Workshop Procurement & Purchases</span>
+                                <span className="text-stone-500">Confirming delivery receipt of raw materials will automatically restock your Studio Materials Inventory.</span>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Link
+                                href={route('seller.supply-hub.index')}
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-3.5 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-stone-800 shrink-0 transition-colors"
+                            >
+                                <span>Supply Hub</span>
+                                <ArrowRight size={13} />
+                            </Link>
+                            <Link
+                                href={route('procurement.index')}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-50 shrink-0 transition-colors"
+                            >
+                                <span>Studio Inventory</span>
+                            </Link>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex flex-col lg:flex-row gap-8 items-start">
                     {/* Left Column: Account Profile & Navigation (Desktop sidebar, hidden on mobile) */}
                     <aside className="hidden lg:flex flex-col w-full lg:w-64 shrink-0 lg:sticky lg:top-24 self-start bg-white border border-stone-200 rounded-2xl shadow-sm divide-y divide-stone-100">

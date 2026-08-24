@@ -27,6 +27,7 @@ const resolveAddressDisplay = (address) => address?.full_address || formatStruct
 export default function Checkout({ auth, pricing }) {
     const { flash, items: incomingItems = [] } = usePage().props;
     const { addToast } = useToast();
+    const isArtisan = auth?.user?.role === 'artisan';
     const isPendingArtisan = auth?.user?.role === 'artisan' && auth?.user?.artisan_status === 'pending';
     const isAdmin = auth?.user?.role === 'super_admin' || auth?.user?.role === 'admin';
 
@@ -320,14 +321,31 @@ export default function Checkout({ auth, pricing }) {
                 </div>
 
                 <div className="mb-8 flex items-center justify-between border-b border-stone-200/60 pb-6">
-                    <Link href="/" className="group flex items-center gap-3">
+                    <Link href={isArtisan ? route('seller.supply-hub.index') : '/'} className="group flex items-center gap-3">
                         <img src="/images/logo.png" alt="Logo" className="h-9 w-9 object-contain transition group-hover:scale-105" />
                         <div>
-                            <h1 className="font-serif text-xl font-bold text-stone-900 sm:text-2xl tracking-tight">Checkout</h1>
-                            <p className="text-xs text-stone-500 mt-0.5">LikhangKamay Artisan Marketplace</p>
+                            <h1 className="font-serif text-xl font-bold text-stone-900 sm:text-2xl tracking-tight">
+                                {isArtisan ? 'Procurement Checkout' : 'Checkout'}
+                            </h1>
+                            <p className="text-xs text-stone-500 mt-0.5">
+                                {isArtisan ? 'Artisan Workshop Sourcing & Raw Materials' : 'LikhangKamay Artisan Marketplace'}
+                            </p>
                         </div>
                     </Link>
                 </div>
+
+                {/* Artisan Procurement Guarantee Callout */}
+                {isArtisan && (
+                    <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-4 text-xs text-stone-700 shadow-2xs flex items-start gap-3">
+                        <Store size={18} className="text-clay-600 shrink-0 mt-0.5" />
+                        <div className="space-y-0.5">
+                            <span className="font-bold text-stone-900 block">Artisan Workshop Procurement</span>
+                            <p className="text-stone-500">
+                                You are procuring supplies from peer artisan studios. Confirming delivery receipt will automatically record these items into your <strong className="text-stone-700 font-semibold">Studio Materials Inventory</strong>.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8 lg:gap-10">
                     <div className="space-y-6 md:col-span-2">
