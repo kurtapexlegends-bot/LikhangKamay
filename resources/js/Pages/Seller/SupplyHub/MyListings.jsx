@@ -76,28 +76,37 @@ export default function MyListings({ products = [], availableCategories = [], av
             />
 
             <div className="p-4 sm:p-6 lg:p-8 space-y-6 pb-12">
-                {/* Header Action Bar */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                {/* Studio Workspace Tab Navigation */}
+                <div className="flex items-center justify-between border-b border-stone-200 pb-3">
                     <div className="flex items-center gap-2">
                         <Link
                             href={route('seller.supply-hub.index')}
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-600 hover:text-stone-900 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs"
                         >
-                            <ArrowLeft size={14} />
-                            <span>Return to Sourcing Hub</span>
+                            <Store size={13} className="text-clay-600" />
+                            <span>Browse Peer Supplies</span>
+                        </Link>
+                        <Link
+                            href={route('seller.supply-hub.my-listings')}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-3.5 py-2 text-xs font-bold text-white shadow-2xs"
+                        >
+                            <Layers size={13} />
+                            <span>My Wholesale Listings</span>
+                            {publishedCount > 0 && (
+                                <span className="rounded-full bg-stone-700 text-stone-200 px-1.5 py-0.2 text-[10px] font-extrabold">
+                                    {publishedCount}
+                                </span>
+                            )}
                         </Link>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <div className="rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 shadow-2xs">
-                            Published to B2B Hub: <span className="font-bold text-clay-600 ml-1">{publishedCount} / {products.length}</span>
-                        </div>
+                    <div className="flex items-center gap-2.5">
                         <Link
                             href={route('products.index')}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-clay-600 px-4 py-2.5 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-clay-600 px-3.5 py-2 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-colors"
                         >
-                            <Plus size={14} />
-                            <span>Add New Material / Product</span>
+                            <Plus size={13} />
+                            <span>Create Material / Product</span>
                         </Link>
                     </div>
                 </div>
