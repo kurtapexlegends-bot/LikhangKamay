@@ -5,7 +5,7 @@ import SellerHeader from '@/Layouts/SellerHeader';
 import { useToast } from '@/Components/ToastContext';
 import { 
     Layers, Plus, Check, Edit3, ArrowLeft,
-    Package, Sparkles, Tag, ShieldCheck 
+    Package, Sparkles, Tag, ShieldCheck, Store
 } from 'lucide-react';
 import ConfigureWholesaleModal from '@/Components/Seller/SupplyHub/ConfigureWholesaleModal';
 
