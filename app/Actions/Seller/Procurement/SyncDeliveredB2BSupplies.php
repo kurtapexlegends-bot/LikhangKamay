@@ -22,7 +22,8 @@ class SyncDeliveredB2BSupplies
         }
 
         $order->loadMissing(['items.product', 'user']);
-        $seller = User::find($order->seller_id);
+        $sellerId = $order->artisan_id ?: ($order->seller_id ?: null);
+        $seller = $sellerId ? User::find($sellerId) : null;
         $supplierName = $seller?->shop_name ?: ($seller?->name ?: 'Artisan Supplier');
 
         foreach ($order->items as $item) {
@@ -52,11 +53,16 @@ class SyncDeliveredB2BSupplies
                 ->first();
 
             if ($existingSupply) {
+                $totalOldCost = ((float) $existingSupply->quantity) * ((float) $existingSupply->unit_cost);
+                $totalNewCost = $quantity * $unitCost;
+                $newTotalQty = $existingSupply->quantity + $quantity;
+                $weightedUnitCost = $newTotalQty > 0 ? round(($totalOldCost + $totalNewCost) / $newTotalQty, 2) : $unitCost;
+
                 $existingSupply->increment('quantity', $quantity);
                 $existingSupply->update([
-                    'unit_cost' => $unitCost,
+                    'unit_cost' => $weightedUnitCost,
                     'supplier' => $supplierName,
-                    'notes' => trim(($existingSupply->notes ? $existingSupply->notes . "\n" : '') . "Restocked +{$quantity} {$unit} via B2B Order #{$order->order_number} on " . now()->format('M d, Y')),
+                    'notes' => trim(($existingSupply->notes ? $existingSupply->notes . "\n" : '') . "Restocked +{$quantity} {$unit} (Cost: ₱{$unitCost}) via B2B Order #{$order->order_number} on " . now()->format('M d, Y')),
                 ]);
             } else {
                 Supply::create([

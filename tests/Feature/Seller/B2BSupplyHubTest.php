@@ -228,9 +228,9 @@ class B2BSupplyHubTest extends TestCase
         $receiveOrderAction = app(ReceiveOrder::class);
         $receiveOrderAction->execute((string) $order->id, $this->buyerArtisan);
 
-        // Verify stock is now 5 + 20 = 25
+        // Verify stock is now 5 + 20 = 25 and weighted average cost is (5*350 + 20*295)/25 = 306.00
         $existingSupply->refresh();
         $this->assertEquals(25, $existingSupply->quantity);
-        $this->assertEquals(295.00, (float) $existingSupply->unit_cost);
+        $this->assertEquals(306.00, (float) $existingSupply->unit_cost);
     }
 }

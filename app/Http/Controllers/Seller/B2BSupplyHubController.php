@@ -101,6 +101,21 @@ class B2BSupplyHubController extends Controller
             $query->whereNotNull('wholesale_price');
         }
 
+        // MOQ Tier Filter
+        if ($request->filled('moq_tier') && $request->moq_tier !== 'all') {
+            switch ($request->moq_tier) {
+                case 'low':
+                    $query->where('moq', '<=', 5);
+                    break;
+                case 'mid':
+                    $query->whereBetween('moq', [6, 15]);
+                    break;
+                case 'high':
+                    $query->where('moq', '>=', 16);
+                    break;
+            }
+        }
+
         // Sorting
         $sort = $request->input('sort', 'newest');
         switch ($sort) {
@@ -112,6 +127,9 @@ class B2BSupplyHubController extends Controller
                 break;
             case 'moq_low':
                 $query->orderBy('moq', 'asc');
+                break;
+            case 'weight_low':
+                $query->orderBy('weight', 'asc');
                 break;
             default:
                 $query->latest();
@@ -187,6 +205,7 @@ class B2BSupplyHubController extends Controller
                 'price_max' => $request->input('price_max', ''),
                 'locations' => $request->input('locations', ''),
                 'has_wholesale' => $request->boolean('has_wholesale'),
+                'moq_tier' => $request->input('moq_tier', 'all'),
                 'sort' => $sort,
             ],
         ]);

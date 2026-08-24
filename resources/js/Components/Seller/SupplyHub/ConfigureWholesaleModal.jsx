@@ -1,6 +1,6 @@
 import React from 'react';
 import Modal from '@/Components/Modal';
-import { X, Layers, AlertCircle, ShieldCheck } from 'lucide-react';
+import { X, Layers, AlertCircle, ShieldCheck, Info } from 'lucide-react';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -16,6 +16,14 @@ export default function ConfigureWholesaleModal({
     availableUnits = {},
 }) {
     if (!product) return null;
+
+    const basePrice = Number(product.price || 0);
+    const enteredWholesalePrice = Number(data.wholesale_price || 0);
+    const moqVal = Number(data.moq || 1);
+    const wholesaleMinVal = Number(data.wholesale_min_qty || 0);
+
+    const isPriceHigherThanBase = enteredWholesalePrice > 0 && enteredWholesalePrice >= basePrice;
+    const isThresholdBelowMoq = wholesaleMinVal > 0 && wholesaleMinVal < moqVal;
 
     return (
         <Modal show={show} onClose={onClose} maxWidth="lg">
@@ -97,8 +105,10 @@ export default function ConfigureWholesaleModal({
                                         min="0"
                                         value={data.wholesale_price}
                                         onChange={(e) => setData('wholesale_price', e.target.value)}
-                                        className="w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs text-stone-900 focus:border-clay-500 focus:ring-1 focus:ring-clay-500 shadow-2xs"
-                                        placeholder={`Base: ${formatCurrency(product.price)}`}
+                                        className={`w-full rounded-xl border p-2.5 text-xs text-stone-900 focus:border-clay-500 focus:ring-1 focus:ring-clay-500 shadow-2xs ${
+                                            isPriceHigherThanBase ? 'border-amber-400 bg-amber-50/40' : 'border-stone-200 bg-white'
+                                        }`}
+                                        placeholder={`Standard: ${formatCurrency(product.price)}`}
                                     />
                                     {errors.wholesale_price && <p className="text-red-600 text-[10px] mt-0.5">{errors.wholesale_price}</p>}
                                 </div>
@@ -110,15 +120,35 @@ export default function ConfigureWholesaleModal({
                                         min="2"
                                         value={data.wholesale_min_qty}
                                         onChange={(e) => setData('wholesale_min_qty', e.target.value)}
-                                        className="w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs text-stone-900 focus:border-clay-500 focus:ring-1 focus:ring-clay-500 shadow-2xs"
+                                        className={`w-full rounded-xl border p-2.5 text-xs text-stone-900 focus:border-clay-500 focus:ring-1 focus:ring-clay-500 shadow-2xs ${
+                                            isThresholdBelowMoq ? 'border-amber-400 bg-amber-50/40' : 'border-stone-200 bg-white'
+                                        }`}
                                         placeholder="e.g. 10"
                                     />
                                     {errors.wholesale_min_qty && <p className="text-red-600 text-[10px] mt-0.5">{errors.wholesale_min_qty}</p>}
                                 </div>
                             </div>
 
-                            <p className="text-[11px] text-stone-500 italic bg-stone-50 p-2 rounded-lg border border-stone-200/60">
-                                When a peer artisan orders {data.wholesale_min_qty || 'X'}+ units, the price drops automatically to {data.wholesale_price ? formatCurrency(data.wholesale_price) : 'wholesale rate'}.
+                            {/* Validation Warnings */}
+                            {isPriceHigherThanBase && (
+                                <div className="flex items-center gap-1.5 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                                    <AlertCircle size={13} className="shrink-0" />
+                                    <span>Wholesale unit price is higher than standard rate ({formatCurrency(basePrice)}). Bulk rates should typically offer a discount.</span>
+                                </div>
+                            )}
+
+                            {isThresholdBelowMoq && (
+                                <div className="flex items-center gap-1.5 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                                    <AlertCircle size={13} className="shrink-0" />
+                                    <span>Wholesale threshold quantity ({wholesaleMinVal}) is lower than MOQ ({moqVal}). Consider increasing threshold.</span>
+                                </div>
+                            )}
+
+                            <p className="text-[11px] text-stone-500 bg-stone-50 p-2.5 rounded-xl border border-stone-200/60 leading-relaxed flex items-start gap-1.5">
+                                <Info size={13} className="text-stone-400 shrink-0 mt-0.5" />
+                                <span>
+                                    When peer artisans order {data.wholesale_min_qty || 'X'}+ units, the price drops automatically from {formatCurrency(basePrice)} to {data.wholesale_price ? formatCurrency(data.wholesale_price) : 'wholesale rate'}.
+                                </span>
                             </p>
                         </div>
                     )}

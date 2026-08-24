@@ -34,6 +34,7 @@ export default function SupplyHubIndex({
     const [minPrice, setMinPrice] = useState(filters.price_min || '');
     const [maxPrice, setMaxPrice] = useState(filters.price_max || '');
     const [hasWholesale, setHasWholesale] = useState(Boolean(filters.has_wholesale));
+    const [moqTier, setMoqTier] = useState(filters.moq_tier || 'all');
     const [sortBy, setSortBy] = useState(filters.sort || 'newest');
     const initialLocations = filters.locations ? String(filters.locations).split(',') : [];
     const [selectedLocations, setSelectedLocations] = useState(initialLocations);
@@ -68,6 +69,7 @@ export default function SupplyHubIndex({
         Boolean(minPrice || maxPrice),
         selectedLocations.length > 0,
         hasWholesale,
+        moqTier !== 'all',
         Boolean(searchTerm),
     ].filter(Boolean).length;
 
@@ -80,12 +82,13 @@ export default function SupplyHubIndex({
             price_max: overrides.price_max !== undefined ? overrides.price_max : maxPrice,
             locations: overrides.locations !== undefined ? overrides.locations.join(',') : selectedLocations.join(','),
             has_wholesale: overrides.has_wholesale !== undefined ? (overrides.has_wholesale ? 1 : undefined) : (hasWholesale ? 1 : undefined),
+            moq_tier: overrides.moq_tier !== undefined ? overrides.moq_tier : moqTier,
             sort: overrides.sort !== undefined ? overrides.sort : sortBy,
         };
 
         // Remove undefined / empty keys
         Object.keys(queryParams).forEach(k => {
-            if (queryParams[k] === '' || queryParams[k] === undefined || (k === 'category' && queryParams[k] === 'All')) {
+            if (queryParams[k] === '' || queryParams[k] === undefined || (k === 'category' && queryParams[k] === 'All') || (k === 'moq_tier' && queryParams[k] === 'all')) {
                 delete queryParams[k];
             }
         });
@@ -95,6 +98,12 @@ export default function SupplyHubIndex({
             preserveScroll: true,
             replace: true,
         });
+    };
+
+    // MOQ Tier toggle
+    const handleMoqTierChange = (tier) => {
+        setMoqTier(tier);
+        applyFilters({ moq_tier: tier });
     };
 
     // Category Click
@@ -292,11 +301,13 @@ export default function SupplyHubIndex({
                             maxPrice={maxPrice}
                             selectedLocations={selectedLocations}
                             hasWholesale={hasWholesale}
+                            moqTier={moqTier}
                             onCategoryClick={handleCategoryClick}
                             onPriceChange={(type, val) => type === 'min' ? setMinPrice(val) : setMaxPrice(val)}
                             onApplyPrice={handleApplyPrice}
                             onLocationChange={handleLocationChange}
                             onWholesaleToggle={handleWholesaleToggle}
+                            onMoqTierChange={handleMoqTierChange}
                             onClearAll={handleClearAll}
                             activeFilterCount={activeFilterCount}
                         />
@@ -397,6 +408,14 @@ export default function SupplyHubIndex({
                                         <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-emerald-800">
                                             <span>Bulk Tier Only</span>
                                             <button type="button" onClick={handleWholesaleToggle} className="text-emerald-500 hover:text-emerald-800">
+                                                <X size={11} />
+                                            </button>
+                                        </span>
+                                    )}
+                                    {moqTier !== 'all' && (
+                                        <span className="inline-flex items-center gap-1 bg-stone-100 border border-stone-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-stone-800">
+                                            <span>MOQ: {moqTier === 'low' ? '1–5 units' : moqTier === 'mid' ? '6–15 units' : '16+ units'}</span>
+                                            <button type="button" onClick={() => handleMoqTierChange('all')} className="text-stone-400 hover:text-stone-700">
                                                 <X size={11} />
                                             </button>
                                         </span>
@@ -536,6 +555,7 @@ export default function SupplyHubIndex({
                             maxPrice={maxPrice}
                             selectedLocations={selectedLocations}
                             hasWholesale={hasWholesale}
+                            moqTier={moqTier}
                             onCategoryClick={(cat) => {
                                 handleCategoryClick(cat);
                                 setIsMobileFilterOpen(false);
@@ -547,6 +567,10 @@ export default function SupplyHubIndex({
                             }}
                             onLocationChange={handleLocationChange}
                             onWholesaleToggle={handleWholesaleToggle}
+                            onMoqTierChange={(tier) => {
+                                handleMoqTierChange(tier);
+                                setIsMobileFilterOpen(false);
+                            }}
                             onClearAll={handleClearAll}
                             activeFilterCount={activeFilterCount}
                         />

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
     SlidersHorizontal, Check, MapPin, ChevronDown, 
-    Search, Tag, Package, X, RotateCcw 
+    Search, Tag, Package, X, RotateCcw, Boxes 
 } from 'lucide-react';
 
 export default function B2BFilterSidebar({
@@ -14,17 +14,20 @@ export default function B2BFilterSidebar({
     maxPrice = '',
     selectedLocations = [],
     hasWholesale = false,
+    moqTier = 'all',
     onCategoryClick,
     onPriceChange,
     onApplyPrice,
     onLocationChange,
     onWholesaleToggle,
+    onMoqTierChange,
     onClearAll,
     activeFilterCount = 0,
     className = '',
 }) {
     const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
     const [isPriceExpanded, setIsPriceExpanded] = useState(true);
+    const [isMoqExpanded, setIsMoqExpanded] = useState(true);
     const [isLocationExpanded, setIsLocationExpanded] = useState(true);
     const [isWholesaleExpanded, setIsWholesaleExpanded] = useState(true);
     const [locationSearch, setLocationSearch] = useState('');
@@ -32,6 +35,13 @@ export default function B2BFilterSidebar({
     const filteredLocations = availableLocations.filter(loc =>
         loc.toLowerCase().includes(locationSearch.toLowerCase())
     );
+
+    const moqOptions = [
+        { value: 'all', label: 'All Minimum Quantities' },
+        { value: 'low', label: 'Sample / Low MOQ (1 – 5 units)' },
+        { value: 'mid', label: 'Standard Batch (6 – 15 units)' },
+        { value: 'high', label: 'Heavy Bulk Sacks (16+ units)' },
+    ];
 
     return (
         <aside className={`space-y-4 ${className}`}>
@@ -100,7 +110,41 @@ export default function B2BFilterSidebar({
                     )}
                 </div>
 
-                {/* 2. Price Range (₱) Accordion */}
+                {/* 2. Minimum Order Quantity (MOQ) Accordion */}
+                <div className="p-4 space-y-3">
+                    <button
+                        type="button"
+                        onClick={() => setIsMoqExpanded(!isMoqExpanded)}
+                        className="w-full flex items-center justify-between font-bold text-stone-900 text-left uppercase tracking-wider text-[11px]"
+                    >
+                        <span>Order MOQ Range</span>
+                        <ChevronDown size={14} className={`text-stone-400 transition-transform ${isMoqExpanded ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isMoqExpanded && (
+                        <div className="space-y-1 pt-1">
+                            {moqOptions.map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => onMoqTierChange(opt.value)}
+                                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl font-medium transition-colors text-left ${
+                                        moqTier === opt.value
+                                            ? 'bg-stone-900 text-white font-bold'
+                                            : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
+                                    }`}
+                                >
+                                    <span className="truncate">{opt.label}</span>
+                                    {moqTier === opt.value && (
+                                        <Check size={12} className="text-white shrink-0 ml-1" />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* 3. Price Range (₱) Accordion */}
                 <div className="p-4 space-y-3">
                     <button
                         type="button"
@@ -119,6 +163,7 @@ export default function B2BFilterSidebar({
                                     min="0"
                                     value={minPrice}
                                     onChange={(e) => onPriceChange('min', e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && onApplyPrice()}
                                     placeholder="Min"
                                     className="w-full rounded-xl border border-stone-200 bg-stone-50/50 px-2.5 py-1.5 text-xs text-stone-900 focus:border-clay-500 focus:ring-1 focus:ring-clay-500"
                                 />
@@ -128,6 +173,7 @@ export default function B2BFilterSidebar({
                                     min="0"
                                     value={maxPrice}
                                     onChange={(e) => onPriceChange('max', e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && onApplyPrice()}
                                     placeholder="Max"
                                     className="w-full rounded-xl border border-stone-200 bg-stone-50/50 px-2.5 py-1.5 text-xs text-stone-900 focus:border-clay-500 focus:ring-1 focus:ring-clay-500"
                                 />
@@ -143,7 +189,7 @@ export default function B2BFilterSidebar({
                     )}
                 </div>
 
-                {/* 3. Supplier Studio Location Accordion */}
+                {/* 4. Supplier Studio Location Accordion */}
                 {availableLocations.length > 0 && (
                     <div className="p-4 space-y-3">
                         <button
@@ -198,7 +244,7 @@ export default function B2BFilterSidebar({
                     </div>
                 )}
 
-                {/* 4. Wholesale Volume Discounts Accordion */}
+                {/* 5. Wholesale Volume Discounts Accordion */}
                 <div className="p-4 space-y-3">
                     <button
                         type="button"
