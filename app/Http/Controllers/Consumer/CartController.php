@@ -138,8 +138,12 @@ class CartController extends Controller
             }
         }
 
+        if (request()->wantsJson() && !request()->header('X-Inertia')) {
+            return response()->json(['cart' => $cart]);
+        }
+
         return Inertia::render('Consumer/Shop/Cart', [
-            'cart' => $cart
+            'cart' => $cart,
         ]);
     }
 

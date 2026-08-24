@@ -132,6 +132,26 @@ export default function Cart({ cart }) {
                     <span className="text-gray-600">Shopping Cart</span>
                 </nav>
 
+                {/* Artisan Studio Procurement Banner */}
+                {auth?.user?.role === 'artisan' && (
+                    <div className="mb-5 rounded-2xl border border-stone-200 bg-white p-4 text-xs text-stone-700 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                            <Store size={18} className="text-clay-600 shrink-0" />
+                            <div>
+                                <span className="font-bold text-stone-900 block">Artisan Studio Procurement Mode</span>
+                                <span className="text-stone-500">You are logged into your artisan studio account. Sourcing peer materials will auto-sync to your Studio Materials Inventory.</span>
+                            </div>
+                        </div>
+                        <Link
+                            href={route('seller.supply-hub.index')}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-3.5 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-stone-800 shrink-0 transition-colors"
+                        >
+                            <span>Return to Supply Hub</span>
+                            <ArrowRight size={13} />
+                        </Link>
+                    </div>
+                )}
+
                 {cartItems.length > 0 ? (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                         

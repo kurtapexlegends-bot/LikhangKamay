@@ -14,6 +14,7 @@ import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import B2BFilterSidebar from '@/Components/Seller/SupplyHub/B2BFilterSidebar';
 import B2BSupplyCard from '@/Components/Seller/SupplyHub/B2BSupplyCard';
 import MaterialDetailModal from '@/Components/Seller/SupplyHub/MaterialDetailModal';
+import ProcurementCartDrawer from '@/Components/Seller/SupplyHub/ProcurementCartDrawer';
 
 export default function SupplyHubIndex({
     supplies,
@@ -22,6 +23,7 @@ export default function SupplyHubIndex({
     availableLocations = [],
     locationCounts = {},
     myPublishedCount = 0,
+    cart = {},
     filters = {},
 }) {
     const { addToast } = useToast();
@@ -40,6 +42,7 @@ export default function SupplyHubIndex({
     const [selectedLocations, setSelectedLocations] = useState(initialLocations);
 
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+    const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
     const [quantities, setQuantities] = useState({});
     const [cartCount, setCartCount] = useState(globalCartCount || 0);
     const [selectedDetailItem, setSelectedDetailItem] = useState(null);
@@ -251,9 +254,10 @@ export default function SupplyHubIndex({
                             <Truck size={13} />
                         </Link>
 
-                        <Link
-                            href={route('cart.index')}
-                            className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-all active:scale-95"
+                        <button
+                            type="button"
+                            onClick={() => setIsCartDrawerOpen(true)}
+                            className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-all active:scale-95 cursor-pointer"
                         >
                             <ShoppingCart size={14} />
                             <span>Procurement Cart</span>
@@ -262,7 +266,7 @@ export default function SupplyHubIndex({
                                     {cartCount}
                                 </span>
                             )}
-                        </Link>
+                        </button>
                     </div>
                 </div>
 
@@ -510,6 +514,13 @@ export default function SupplyHubIndex({
                     onQuantityChange={handleQuantityChange}
                     onAddToCart={handleAddToCart}
                     onQuickOrder={handleQuickOrder}
+                />
+
+                {/* Procurement Cart Drawer */}
+                <ProcurementCartDrawer
+                    show={isCartDrawerOpen}
+                    onClose={() => setIsCartDrawerOpen(false)}
+                    initialCart={cart}
                 />
 
                 {/* Mobile Filter SlideOverDrawer */}

@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\VehicleTypeResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -198,6 +199,7 @@ class B2BSupplyHubController extends Controller
             'availableLocations' => array_keys($supplierCities),
             'locationCounts' => $supplierCities,
             'myPublishedCount' => $myPublishedCount,
+            'cart' => (array) Session::get('cart', []),
             'filters' => [
                 'search' => $request->input('search', ''),
                 'category' => $request->input('category', 'All'),

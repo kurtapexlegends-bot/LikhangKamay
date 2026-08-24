@@ -12,13 +12,27 @@ export function ToastProvider({ children }) {
     const [toasts, setToasts] = useState([]);
     const nextToastId = useRef(0);
 
-    const addToast = useCallback((message, type = 'success', duration = 3500, onAction = null, actionLabel = 'Undo') => {
+    const addToast = useCallback((messageOrConfig, type = 'success', duration = 3500, onAction = null, actionLabel = 'Undo') => {
+        let finalMessage = messageOrConfig;
+        let finalType = type;
+        let finalDuration = duration;
+        let finalOnAction = onAction;
+        let finalActionLabel = actionLabel;
+
+        if (typeof messageOrConfig === 'object' && messageOrConfig !== null) {
+            finalMessage = messageOrConfig.message || '';
+            finalType = messageOrConfig.type || type || 'success';
+            finalDuration = messageOrConfig.duration || duration || 3500;
+            finalOnAction = messageOrConfig.onAction || onAction || null;
+            finalActionLabel = messageOrConfig.actionLabel || actionLabel || 'Undo';
+        }
+
         nextToastId.current += 1;
         const id = `toast-${nextToastId.current}`;
         setToasts(prev => {
             // Filter out any active toast with the exact same message to prevent duplicate stacking
-            const filtered = prev.filter(t => t.message !== message);
-            const next = [...filtered, { id, message, type, duration, onAction, actionLabel }];
+            const filtered = prev.filter(t => t.message !== finalMessage);
+            const next = [...filtered, { id, message: finalMessage, type: finalType, duration: finalDuration, onAction: finalOnAction, actionLabel: finalActionLabel }];
             // Keep at most 3 active toasts
             return next.slice(-3);
         });
