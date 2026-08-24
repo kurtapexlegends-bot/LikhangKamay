@@ -52,10 +52,13 @@ class B2BSupplyHubController extends Controller
             abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
         }
 
-        $query = Product::b2bSupplies()
+        $baseQuery = Product::b2bSupplies()
             ->with(['user', 'discounts'])
             ->where('user_id', '!=', $actor->id); // Exclude own products from peer sourcing view
 
+        $query = (clone $baseQuery);
+
+        // Search Filter
         if ($request->filled('search')) {
             $search = trim((string) $request->search);
             $query->where(function ($q) use ($search) {
@@ -70,11 +73,52 @@ class B2BSupplyHubController extends Controller
             });
         }
 
+        // Category Filter
         if ($request->filled('category') && $request->category !== 'All') {
             $query->where('category', $request->category);
         }
 
-        $supplies = $query->latest()->paginate(16)->withQueryString();
+        // Price Min/Max Filters
+        if ($request->filled('price_min') && is_numeric($request->price_min)) {
+            $query->where('price', '>=', (float) $request->price_min);
+        }
+        if ($request->filled('price_max') && is_numeric($request->price_max)) {
+            $query->where('price', '<=', (float) $request->price_max);
+        }
+
+        // Location Filter
+        if ($request->filled('locations')) {
+            $locations = array_filter(explode(',', (string) $request->locations));
+            if (!empty($locations)) {
+                $query->whereHas('user', function ($uq) use ($locations) {
+                    $uq->whereIn('city', $locations);
+                });
+            }
+        }
+
+        // Bulk Tier Wholesale Discount Filter
+        if ($request->boolean('has_wholesale')) {
+            $query->whereNotNull('wholesale_price');
+        }
+
+        // Sorting
+        $sort = $request->input('sort', 'newest');
+        switch ($sort) {
+            case 'price_low':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_high':
+                $query->orderBy('price', 'desc');
+                break;
+            case 'moq_low':
+                $query->orderBy('moq', 'asc');
+                break;
+            default:
+                $query->latest();
+                break;
+        }
+
+        $supplies = $query->paginate(12)->withQueryString();
 
         // Transform collection to include vehicle estimate metadata
         $supplies->getCollection()->transform(function (Product $product) {
@@ -110,20 +154,40 @@ class B2BSupplyHubController extends Controller
             ];
         });
 
-        $stats = [
-            'total_materials' => Product::b2bSupplies()->where('user_id', '!=', $actor->id)->count(),
-            'active_suppliers' => Product::b2bSupplies()->where('user_id', '!=', $actor->id)->distinct('user_id')->count('user_id'),
-            'wholesale_deals' => Product::b2bSupplies()->where('user_id', '!=', $actor->id)->whereNotNull('wholesale_price')->count(),
-            'my_published_count' => Product::where('user_id', $actor->id)->where('is_b2b_supply', true)->count(),
-        ];
+        // Facet Aggregations
+        $categoryCounts = [];
+        foreach (self::SUPPLY_CATEGORIES as $cat) {
+            if ($cat === 'All') continue;
+            $categoryCounts[$cat] = (clone $baseQuery)->where('category', $cat)->count();
+        }
+
+        $supplierCities = (clone $baseQuery)
+            ->join('users', 'products.user_id', '=', 'users.id')
+            ->whereNotNull('users.city')
+            ->selectRaw('users.city, count(*) as count')
+            ->groupBy('users.city')
+            ->pluck('count', 'city')
+            ->toArray();
+
+        $myPublishedCount = Product::where('user_id', $actor->id)
+            ->where('is_b2b_supply', true)
+            ->count();
 
         return Inertia::render('Seller/SupplyHub/Index', [
             'supplies' => $supplies,
             'categories' => self::SUPPLY_CATEGORIES,
-            'stats' => $stats,
+            'categoryCounts' => $categoryCounts,
+            'availableLocations' => array_keys($supplierCities),
+            'locationCounts' => $supplierCities,
+            'myPublishedCount' => $myPublishedCount,
             'filters' => [
                 'search' => $request->input('search', ''),
                 'category' => $request->input('category', 'All'),
+                'price_min' => $request->input('price_min', ''),
+                'price_max' => $request->input('price_max', ''),
+                'locations' => $request->input('locations', ''),
+                'has_wholesale' => $request->boolean('has_wholesale'),
+                'sort' => $sort,
             ],
         ]);
     }
