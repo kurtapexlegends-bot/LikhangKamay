@@ -5,13 +5,13 @@ import SellerHeader from '@/Layouts/SellerHeader';
 import { useToast } from '@/Components/ToastContext';
 import { 
     Layers, Plus, Check, Edit3, ArrowLeft,
-    Package, Sparkles, Tag, ShieldCheck, Store, Search, X, RotateCcw
+    Package, Sparkles, Tag, ShieldCheck, Store, Search, X, RotateCcw, Truck
 } from 'lucide-react';
 import ConfigureWholesaleModal from '@/Components/Seller/SupplyHub/ConfigureWholesaleModal';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export default function MyListings({ products = [], availableCategories = [], availableUnits = {} }) {
+export default function MyListings({ products = [], availableCategories = [], availableUnits = {}, activeOrdersCount = 0 }) {
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
     const [editingProduct, setEditingProduct] = useState(null);
@@ -121,13 +121,25 @@ export default function MyListings({ products = [], availableCategories = [], av
                         </Link>
                         <Link
                             href={route('seller.supply-hub.my-listings')}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-3.5 py-2 text-xs font-bold text-white shadow-2xs"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-3.5 py-2 text-xs font-bold text-white shadow-2xs shrink-0"
                         >
                             <Layers size={13} />
                             <span>My Wholesale Listings</span>
                             {publishedCount > 0 && (
                                 <span className="rounded-full bg-stone-700 text-stone-200 px-1.5 py-0.2 text-[10px] font-extrabold">
                                     {publishedCount}
+                                </span>
+                            )}
+                        </Link>
+                        <Link
+                            href={route('seller.supply-hub.orders')}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
+                        >
+                            <Truck size={13} className="text-clay-600" />
+                            <span>Inbound Material Orders</span>
+                            {activeOrdersCount > 0 && (
+                                <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
+                                    {activeOrdersCount}
                                 </span>
                             )}
                         </Link>

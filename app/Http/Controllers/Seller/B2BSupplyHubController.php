@@ -5,9 +5,15 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use App\Http\Requests\CheckoutRequest;
+use App\Services\OrderFinanceService;
 use App\Services\VehicleTypeResolver;
+use App\Actions\Consumer\PrepareCheckout;
+use App\Actions\Consumer\PlaceOrder;
+use App\Actions\Consumer\ReceiveOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -192,6 +198,10 @@ class B2BSupplyHubController extends Controller
             ->where('is_b2b_supply', true)
             ->count();
 
+        $activeOrdersCount = Order::where('user_id', $actor->id)
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->count();
+
         return Inertia::render('Seller/SupplyHub/Index', [
             'supplies' => $supplies,
             'categories' => self::SUPPLY_CATEGORIES,
@@ -199,6 +209,7 @@ class B2BSupplyHubController extends Controller
             'availableLocations' => array_keys($supplierCities),
             'locationCounts' => $supplierCities,
             'myPublishedCount' => $myPublishedCount,
+            'activeOrdersCount' => $activeOrdersCount,
             'cart' => (array) Session::get('cart', []),
             'filters' => [
                 'search' => $request->input('search', ''),
@@ -224,6 +235,10 @@ class B2BSupplyHubController extends Controller
         if (!$actor || !$actor->isArtisan()) {
             abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
         }
+
+        $activeOrdersCount = Order::where('user_id', $actor->id)
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->count();
 
         $products = Product::where('user_id', $actor->id)
             ->orderByDesc('is_b2b_supply')
@@ -251,6 +266,7 @@ class B2BSupplyHubController extends Controller
             'products' => $products,
             'availableCategories' => self::SUPPLY_CATEGORIES,
             'availableUnits' => self::SUPPLY_UNITS,
+            'activeOrdersCount' => $activeOrdersCount,
         ]);
     }
 
@@ -287,5 +303,148 @@ class B2BSupplyHubController extends Controller
             : "Unpublished \"{$product->name}\" from the B2B Supply Hub.";
 
         return redirect()->back()->with('success', $msg);
+    }
+
+    /**
+     * B2B Procurement Checkout (Within Seller Workspace Shell).
+     */
+    public function checkout(Request $request, PrepareCheckout $prepareCheckout): Response|\Illuminate\Http\RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = Auth::user();
+
+        if (!$actor || !$actor->isArtisan()) {
+            abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
+        }
+
+        $items = $prepareCheckout->execute($request);
+
+        if (empty($items)) {
+            return redirect()->route('seller.supply-hub.index')->with('error', 'Your procurement cart is empty.');
+        }
+
+        $myPublishedCount = Product::where('user_id', $actor->id)
+            ->where('is_b2b_supply', true)
+            ->count();
+
+        $activeOrdersCount = Order::where('user_id', $actor->id)
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->count();
+
+        return Inertia::render('Seller/SupplyHub/ProcurementCheckout', [
+            'items' => $items,
+            'pricing' => OrderFinanceService::getPricingData(),
+            'myPublishedCount' => $myPublishedCount,
+            'activeOrdersCount' => $activeOrdersCount,
+            'userAddresses' => $actor->addresses,
+        ]);
+    }
+
+    /**
+     * Place B2B Procurement Order.
+     */
+    public function storeOrder(CheckoutRequest $request, PlaceOrder $placeOrder)
+    {
+        /** @var User $actor */
+        $actor = Auth::user();
+
+        if (!$actor || !$actor->isArtisan()) {
+            abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
+        }
+
+        try {
+            $placeOrder->execute($request, $actor);
+            return redirect()->route('seller.supply-hub.orders')->with('success', 'Procurement order placed successfully! You can track inbound material shipments here.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Inbound Material Orders Tracker (Within Seller Workspace Shell).
+     */
+    public function sourcingOrders(Request $request): Response
+    {
+        /** @var User $actor */
+        $actor = Auth::user();
+
+        if (!$actor || !$actor->isArtisan()) {
+            abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
+        }
+
+        $statusFilter = $request->input('status', 'all');
+        $search = $request->input('search', '');
+
+        $query = Order::with(['items.product', 'seller', 'delivery'])
+            ->where('user_id', $actor->id)
+            ->latest();
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                  ->orWhereHas('items', function ($iq) use ($search) {
+                      $iq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($statusFilter !== 'all') {
+            if ($statusFilter === 'active') {
+                $query->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup']);
+            } elseif ($statusFilter === 'delivered') {
+                $query->where('status', 'Delivered');
+            } elseif ($statusFilter === 'completed') {
+                $query->where('status', 'Completed');
+            } elseif ($statusFilter === 'cancelled') {
+                $query->whereIn('status', ['Cancelled', 'Refunded']);
+            }
+        }
+
+        $orders = $query->paginate(8)->withQueryString();
+
+        $activeOrdersCount = Order::where('user_id', $actor->id)
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->count();
+
+        $deliveredOrdersCount = Order::where('user_id', $actor->id)
+            ->where('status', 'Delivered')
+            ->count();
+
+        $myPublishedCount = Product::where('user_id', $actor->id)
+            ->where('is_b2b_supply', true)
+            ->count();
+
+        return Inertia::render('Seller/SupplyHub/SourcingOrders', [
+            'orders' => $orders,
+            'activeOrdersCount' => $activeOrdersCount,
+            'deliveredOrdersCount' => $deliveredOrdersCount,
+            'myPublishedCount' => $myPublishedCount,
+            'filters' => [
+                'search' => $search,
+                'status' => $statusFilter,
+            ],
+        ]);
+    }
+
+    /**
+     * Confirm delivery receipt on a B2B procurement order and auto-restock workshop inventory.
+     */
+    public function confirmDelivery(int $id, ReceiveOrder $receiveOrder)
+    {
+        /** @var User $actor */
+        $actor = Auth::user();
+
+        if (!$actor || !$actor->isArtisan()) {
+            abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
+        }
+
+        try {
+            $msg = $receiveOrder->execute((string) $id, $actor);
+            return redirect()->back()->with('success', $msg . ' Studio Materials Inventory was automatically restocked with weighted-average unit cost.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 }

@@ -233,4 +233,107 @@ class B2BSupplyHubTest extends TestCase
         $this->assertEquals(25, $existingSupply->quantity);
         $this->assertEquals(306.00, (float) $existingSupply->unit_cost);
     }
+
+    public function test_artisan_can_access_workspace_procurement_checkout(): void
+    {
+        $response = $this->actingAs($this->buyerArtisan)
+            ->withSession([
+                'cart' => [
+                    $this->b2bClaySack->id => [
+                        'id' => $this->b2bClaySack->id,
+                        'name' => $this->b2bClaySack->name,
+                        'price' => 350.00,
+                        'qty' => 4,
+                        'variant' => 'Standard',
+                        'seller_id' => $this->supplierArtisan->id,
+                        'is_b2b_supply' => true,
+                    ]
+                ]
+            ])
+            ->get(route('seller.supply-hub.checkout'));
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/ProcurementCheckout')
+            ->has('items', 1)
+        );
+    }
+
+    public function test_artisan_can_view_inbound_sourcing_orders(): void
+    {
+        $order = Order::create([
+            'order_number' => 'ORD-B2B-1003',
+            'user_id' => $this->buyerArtisan->id,
+            'seller_id' => $this->supplierArtisan->id,
+            'artisan_id' => $this->supplierArtisan->id,
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'merchandise_subtotal' => 1400.00,
+            'total_amount' => 1400.00,
+            'status' => 'Delivered',
+            'payment_status' => 'paid',
+            'payment_method' => 'GCash',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => $this->b2bClaySack->name,
+            'price' => 350.00,
+            'quantity' => 4,
+            'is_b2b_supply' => true,
+        ]);
+
+        $response = $this->actingAs($this->buyerArtisan)->get(route('seller.supply-hub.orders'));
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/SourcingOrders')
+            ->has('orders.data', 1)
+            ->where('orders.data.0.order_number', 'ORD-B2B-1003')
+        );
+    }
+
+    public function test_artisan_can_confirm_material_delivery_from_workspace_orders(): void
+    {
+        $order = Order::create([
+            'order_number' => 'ORD-B2B-1004',
+            'user_id' => $this->buyerArtisan->id,
+            'seller_id' => $this->supplierArtisan->id,
+            'artisan_id' => $this->supplierArtisan->id,
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'merchandise_subtotal' => 1400.00,
+            'total_amount' => 1400.00,
+            'status' => 'Delivered',
+            'payment_status' => 'paid',
+            'payment_method' => 'GCash',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => $this->b2bClaySack->name,
+            'price' => 350.00,
+            'quantity' => 4,
+            'is_b2b_supply' => true,
+            'supply_unit' => 'bag',
+        ]);
+
+        $response = $this->actingAs($this->buyerArtisan)
+            ->post(route('seller.supply-hub.orders.confirm', $order->id));
+
+        $response->assertRedirect();
+        
+        $order->refresh();
+        $this->assertEquals('Completed', $order->status);
+
+        $this->assertDatabaseHas('supplies', [
+            'user_id' => $this->buyerArtisan->id,
+            'product_id' => $this->b2bClaySack->id,
+            'quantity' => 4,
+            'unit_cost' => 350.00,
+        ]);
+    }
 }

@@ -319,6 +319,10 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::get('/supply-hub', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'index'])->name('seller.supply-hub.index');
         Route::get('/supply-hub/my-listings', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'myListings'])->name('seller.supply-hub.my-listings');
         Route::post('/supply-hub/toggle/{product}', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'toggle'])->name('seller.supply-hub.toggle');
+        Route::get('/supply-hub/checkout', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'checkout'])->name('seller.supply-hub.checkout');
+        Route::post('/supply-hub/checkout', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'storeOrder'])->name('seller.supply-hub.checkout.store');
+        Route::get('/supply-hub/orders', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'sourcingOrders'])->name('seller.supply-hub.orders');
+        Route::post('/supply-hub/orders/{id}/confirm-delivery', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'confirmDelivery'])->name('seller.supply-hub.orders.confirm');
     });
     
     // BUYER: SHOPPING & ORDERS

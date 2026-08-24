@@ -95,6 +95,11 @@ class Order extends Model
         return $this->belongsTo(User::class, 'artisan_id');
     }
 
+    public function seller()
+    {
+        return $this->artisan();
+    }
+
     public function delivery()
     {
         return $this->hasOne(OrderDelivery::class);

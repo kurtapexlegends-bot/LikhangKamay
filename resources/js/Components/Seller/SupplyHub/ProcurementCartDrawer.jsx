@@ -147,9 +147,9 @@ export default function ProcurementCartDrawer({
                             type="button"
                             onClick={() => {
                                 onClose();
-                                router.visit(route('checkout.create'));
+                                router.visit(route('seller.supply-hub.checkout'));
                             }}
-                            className="w-full rounded-xl bg-clay-600 py-3 text-xs font-bold text-white shadow-md hover:bg-clay-700 transition-colors flex items-center justify-center gap-2"
+                            className="w-full rounded-xl bg-clay-600 py-3 text-xs font-bold text-white shadow-md hover:bg-clay-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                         >
                             <span>Proceed to Sourcing Checkout</span>
                             <ArrowRight size={14} />

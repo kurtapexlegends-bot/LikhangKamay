@@ -15,41 +15,31 @@ async function capture() {
 
     const page = await browser.newPage();
 
-    // 1. Session auth as artisan & navigate to Supply Hub
+    // 1. Session auth as artisan & add item to cart
     await page.goto('http://127.0.0.1:8000/dev/preview-auth?role=artisan&redirect=/supply-hub', { waitUntil: 'networkidle2' });
-    await new Promise(r => setTimeout(r, 1500));
+    await new Promise(r => setTimeout(r, 1000));
 
-    const shot1 = path.join(outDir, 'flow_b2b_1_supply_hub_catalog.png');
-    await page.screenshot({ path: shot1, fullPage: false });
-    console.log('[Captured] Shot 1: B2B Sourcing Hub -> ' + shot1);
-
-    // 2. Navigate to My Wholesale Listings
-    await page.goto('http://127.0.0.1:8000/supply-hub/my-listings', { waitUntil: 'networkidle2' });
-    await new Promise(r => setTimeout(r, 1500));
-
-    // Open configure modal on the first product
     await page.evaluate(() => {
-        const configBtns = document.querySelectorAll('button');
-        for (const btn of configBtns) {
-            if (btn.innerText.includes('Configure B2B')) {
-                btn.click();
-                break;
-            }
-        }
+        const addBtn = document.querySelector('button[title="Add to Procurement Cart"]');
+        if (addBtn) addBtn.click();
     });
-    await new Promise(r => setTimeout(r, 800));
+    await new Promise(r => setTimeout(r, 1000));
 
-    const shot2 = path.join(outDir, 'flow_b2b_2_my_wholesale_listings.png');
-    await page.screenshot({ path: shot2, fullPage: false });
-    console.log('[Captured] Shot 2: My Wholesale Listings & Modal -> ' + shot2);
+    // 2. Navigate to /supply-hub/checkout (Workspace Checkout)
+    await page.goto('http://127.0.0.1:8000/supply-hub/checkout', { waitUntil: 'networkidle2' });
+    await new Promise(r => setTimeout(r, 2000));
 
-    // 3. Navigate to Studio Inventory / Procurement
-    await page.goto('http://127.0.0.1:8000/procurement', { waitUntil: 'networkidle2' });
+    const shot1 = path.join(outDir, 'b2b_8_workspace_procurement_checkout.png');
+    await page.screenshot({ path: shot1, fullPage: false });
+    console.log('[Captured] Shot 8: Workspace Procurement Checkout -> ' + shot1);
+
+    // 3. Navigate to /supply-hub/orders (Inbound Orders Tracker)
+    await page.goto('http://127.0.0.1:8000/supply-hub/orders', { waitUntil: 'networkidle2' });
     await new Promise(r => setTimeout(r, 1500));
 
-    const shot3 = path.join(outDir, 'flow_b2b_3_studio_inventory_synced.png');
-    await page.screenshot({ path: shot3, fullPage: false });
-    console.log('[Captured] Shot 3: Studio Materials Inventory -> ' + shot3);
+    const shot2 = path.join(outDir, 'b2b_9_workspace_sourcing_orders.png');
+    await page.screenshot({ path: shot2, fullPage: false });
+    console.log('[Captured] Shot 9: Workspace Inbound Orders -> ' + shot2);
 
     await browser.close();
 }

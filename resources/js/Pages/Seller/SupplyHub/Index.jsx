@@ -23,6 +23,7 @@ export default function SupplyHubIndex({
     availableLocations = [],
     locationCounts = {},
     myPublishedCount = 0,
+    activeOrdersCount = 0,
     cart = {},
     filters = {},
 }) {
@@ -200,7 +201,7 @@ export default function SupplyHubIndex({
 
     // 1-Click Buy Now
     const handleQuickOrder = (item, qty) => {
-        router.visit(route('checkout.create', {
+        router.visit(route('seller.supply-hub.checkout', {
             product_id: item.id,
             quantity: qty,
         }));
@@ -222,23 +223,35 @@ export default function SupplyHubIndex({
             <div className="p-4 sm:p-6 lg:p-8 space-y-6 pb-16">
                 {/* Top Workspace Tab Bar with Procurement Cart */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
                         <Link
                             href={route('seller.supply-hub.index')}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-bold text-white shadow-2xs"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-bold text-white shadow-2xs shrink-0"
                         >
                             <Store size={13} />
                             <span>Browse Peer Supplies</span>
                         </Link>
                         <Link
                             href={route('seller.supply-hub.my-listings')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
                         >
                             <Layers size={13} className="text-clay-600" />
                             <span>My Wholesale Listings</span>
                             {myPublishedCount > 0 && (
                                 <span className="rounded-full bg-clay-100 text-clay-700 px-1.5 py-0.2 text-[10px] font-extrabold">
                                     {myPublishedCount}
+                                </span>
+                            )}
+                        </Link>
+                        <Link
+                            href={route('seller.supply-hub.orders')}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
+                        >
+                            <Truck size={13} className="text-clay-600" />
+                            <span>Inbound Material Orders</span>
+                            {activeOrdersCount > 0 && (
+                                <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
+                                    {activeOrdersCount}
                                 </span>
                             )}
                         </Link>
