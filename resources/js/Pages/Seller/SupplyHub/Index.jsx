@@ -5,13 +5,15 @@ import SellerHeader from '@/Layouts/SellerHeader';
 import { useToast } from '@/Components/ToastContext';
 import { 
     Store, Layers, ShoppingCart, SlidersHorizontal, Search, 
-    X, ArrowUpDown, ChevronDown, CheckCircle2, Package, RotateCcw
+    X, ArrowUpDown, ChevronDown, CheckCircle2, Package, RotateCcw,
+    Truck, ShieldCheck 
 } from 'lucide-react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 
 // Subcomponents
 import B2BFilterSidebar from '@/Components/Seller/SupplyHub/B2BFilterSidebar';
 import B2BSupplyCard from '@/Components/Seller/SupplyHub/B2BSupplyCard';
+import MaterialDetailModal from '@/Components/Seller/SupplyHub/MaterialDetailModal';
 
 export default function SupplyHubIndex({
     supplies,
@@ -39,6 +41,20 @@ export default function SupplyHubIndex({
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [quantities, setQuantities] = useState({});
     const [cartCount, setCartCount] = useState(globalCartCount || 0);
+    const [selectedDetailItem, setSelectedDetailItem] = useState(null);
+
+    // Dismissible sync notice state
+    const [showSyncNotice, setShowSyncNotice] = useState(() => {
+        if (typeof window === 'undefined') return true;
+        return localStorage.getItem('lk_dismiss_b2b_sync_notice') !== 'true';
+    });
+
+    const handleDismissNotice = () => {
+        setShowSyncNotice(false);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('lk_dismiss_b2b_sync_notice', 'true');
+        }
+    };
 
     useEffect(() => {
         if (typeof globalCartCount === 'number') {
@@ -144,8 +160,6 @@ export default function SupplyHubIndex({
         setQuantities(prev => ({ ...prev, [item.id]: clamped }));
     };
 
-    const getItemQty = (item) => quantities[item.id] || item.moq || 1;
-
     // Add to cart
     const handleAddToCart = async (item, qty) => {
         try {
@@ -154,10 +168,15 @@ export default function SupplyHubIndex({
                 quantity: qty,
                 variant: 'Standard',
             });
-            setCartCount(prev => prev + 1);
+            const newCount = cartCount + 1;
+            setCartCount(newCount);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('lk_cart_count', newCount);
+                window.dispatchEvent(new Event('cart-updated'));
+            }
             addToast({
                 type: 'success',
-                message: `Added ${qty} ${item.supply_unit || 'units'} of "${item.name}" to your procurement cart.`,
+                message: `Added ${qty} ${item.supply_unit || 'units'} of "${item.name}" to procurement cart.`,
             });
         } catch {
             addToast({
@@ -213,8 +232,16 @@ export default function SupplyHubIndex({
                         </Link>
                     </div>
 
-                    {/* Procurement Cart Action Pill */}
-                    <div className="flex items-center gap-3">
+                    {/* Procurement Cart & Studio Inventory Shortcuts */}
+                    <div className="flex items-center gap-2.5">
+                        <Link
+                            href={route('procurement.index')}
+                            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-stone-500 hover:text-stone-900 transition-colors mr-1"
+                        >
+                            <span>Studio Inventory</span>
+                            <Truck size={13} />
+                        </Link>
+
                         <Link
                             href={route('cart.index')}
                             className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-all active:scale-95"
@@ -230,16 +257,26 @@ export default function SupplyHubIndex({
                     </div>
                 </div>
 
-                {/* Auto-Restock Closed-Loop Guarantee Card */}
-                <div className="rounded-2xl border border-stone-200 bg-white p-4 text-xs text-stone-700 flex items-start gap-3 shadow-2xs">
-                    <CheckCircle2 size={16} className="shrink-0 text-emerald-600 mt-0.5" />
-                    <div className="flex-1 space-y-0.5">
-                        <span className="font-bold text-stone-900">Automated Closed-Loop Inventory Sync:</span>
-                        <p className="text-stone-500 leading-relaxed">
-                            When you confirm delivery of peer studio materials, LikhangKamay automatically adds the purchased units and unit costs into your Studio Materials inventory.
-                        </p>
+                {/* Dismissible Auto-Restock Closed-Loop Guarantee Card */}
+                {showSyncNotice && (
+                    <div className="rounded-2xl border border-stone-200 bg-white p-4 text-xs text-stone-700 flex items-start gap-3 shadow-2xs relative">
+                        <CheckCircle2 size={16} className="shrink-0 text-emerald-600 mt-0.5" />
+                        <div className="flex-1 space-y-0.5 pr-6">
+                            <span className="font-bold text-stone-900">Automated Closed-Loop Inventory Sync:</span>
+                            <p className="text-stone-500 leading-relaxed">
+                                When you confirm delivery of peer studio materials, LikhangKamay automatically adds the purchased units and unit costs into your Studio Materials inventory.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleDismissNotice}
+                            className="absolute top-3 right-3 text-stone-400 hover:text-stone-700 p-1 rounded-lg hover:bg-stone-100 transition-colors"
+                            aria-label="Dismiss notice"
+                        >
+                            <X size={14} />
+                        </button>
                     </div>
-                </div>
+                )}
 
                 {/* Main 2-Column Catalog Sourcing Layout */}
                 <div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -415,6 +452,7 @@ export default function SupplyHubIndex({
                                         onQuantityChange={handleQuantityChange}
                                         onAddToCart={handleAddToCart}
                                         onQuickOrder={handleQuickOrder}
+                                        onOpenDetail={(detailItem) => setSelectedDetailItem(detailItem)}
                                     />
                                 ))}
                             </div>
@@ -443,6 +481,17 @@ export default function SupplyHubIndex({
                         )}
                     </div>
                 </div>
+
+                {/* Material Detail Quick-View Modal */}
+                <MaterialDetailModal
+                    show={Boolean(selectedDetailItem)}
+                    onClose={() => setSelectedDetailItem(null)}
+                    item={selectedDetailItem}
+                    quantity={selectedDetailItem ? quantities[selectedDetailItem.id] : undefined}
+                    onQuantityChange={handleQuantityChange}
+                    onAddToCart={handleAddToCart}
+                    onQuickOrder={handleQuickOrder}
+                />
 
                 {/* Mobile Filter SlideOverDrawer */}
                 <SlideOverDrawer
