@@ -6,8 +6,8 @@
 - **Backend Separation:** Controllers are strictly slim orchestrators (<50 lines/method). Delegate all database queries, aggregations, and business logic to dedicated `App\Services` or `App\Actions`.
 - **Requests & Audits:** Mandate Form Requests (`App\Http\Requests`) for write/update validation. Ban manual activity logging arrays in controllers; use model observers or background jobs.
 - **Frontend Modularity:** Enforce modular componentization (<500 lines/file) grouped by functional domain under `resources/js/Components/` and `Pages/`. Use absolute aliases (`@/types`, `@/lib`). Split complex forms into localized child components.
-- **Security & Authorization:** Mandate Laravel Policies/Gates (`Gate::authorize`). Forbid inline role checks (`$user->role === 'admin'`). Strictly dual-gate subscription tier features on backend (aborts) and frontend (prop/UI omission). Sanitize rich text with `RichTextSanitizer`.
 - **Code Standards & Testing:** DRY, SOLID, defensive guard clauses with early returns. Ensure Inertia `useForm` keys match backend request/Eloquent columns with `onError` handlers. Pest/PHPUnit test coverage for backend services/actions; Vitest for frontend components.
+- **Strict Verification & Zero Broken References:** Never report `npm run build` or tests as passing without strictly executing and validating terminal outputs. Strictly verify all React imports, variable declarations, and state hooks (`useState`) to prevent `ReferenceError` runtime crashes. Run `eslint` or targeted AST checks on modified JS/JSX files alongside `npm run build` and `php artisan test`.
 
 ## 2. Database, DevOps & Parity
 - **NEVER DESTROY DATA:** `migrate:fresh`, `migrate:reset`, and `db:wipe` are PERMANENTLY BANNED. Use additive version-controlled migrations only.

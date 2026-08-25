@@ -195,25 +195,27 @@ class DirectMessageService
             }
         }
 
-        if ($sellerPerspective) {
-            if (!$this->isSellerWorkspaceChatActor($actor)) {
-                return false;
-            }
-
-            // In seller context, getEffectiveSeller() is used
-            $sellerOwner = $actor->getEffectiveSeller();
-            $sellerUserId = $sellerOwner ? $sellerOwner->id : $actor->id;
-
-            return $this->hasOrderRelationship($sellerUserId, $counterpart->id)
-                || $this->hasExistingConversation($sellerUserId, $counterpart->id);
-        }
-
-        if (!$counterpart->isArtisan()) {
+        if ($actor->id === $counterpart->id) {
             return false;
         }
 
-        return $this->hasOrderRelationship($counterpart->id, $actor->id)
-            || $this->hasExistingConversation($actor->id, $counterpart->id);
+        if ($sellerPerspective) {
+            $sellerOwner = $actor->getEffectiveSeller();
+            $sellerUserId = $sellerOwner ? $sellerOwner->id : $actor->id;
+
+            return $counterpart->isArtisan()
+                || $this->hasOrderRelationship($sellerUserId, $counterpart->id)
+                || $this->hasExistingConversation($sellerUserId, $counterpart->id);
+        }
+
+        // Buyer / Consumer Perspective
+        if ($actor->isArtisan() && $counterpart->isArtisan()) {
+            return true;
+        }
+
+        return $counterpart->isArtisan()
+            && ($this->hasOrderRelationship($actor->id, $counterpart->id)
+                || $this->hasExistingConversation($actor->id, $counterpart->id));
     }
 
     public function isSellerWorkspaceChatActor(?User $actor): bool
@@ -265,20 +267,42 @@ class DirectMessageService
             ->exists();
     }
 
-    public function hasOrderRelationship(int $sellerId, int $buyerId): bool
+    public function hasOrderRelationship(int $firstUserId, int $secondUserId): bool
     {
         return Order::query()
-            ->where('artisan_id', $sellerId)
-            ->where('user_id', $buyerId)
+            ->where(function ($query) use ($firstUserId, $secondUserId) {
+                $query->where(function ($q) use ($firstUserId, $secondUserId) {
+                    $q->where(function ($sq) use ($firstUserId) {
+                        $sq->where('artisan_id', $firstUserId)
+                           ->orWhere('seller_id', $firstUserId);
+                    })->where('user_id', $secondUserId);
+                })->orWhere(function ($q) use ($firstUserId, $secondUserId) {
+                    $q->where(function ($sq) use ($secondUserId) {
+                        $sq->where('artisan_id', $secondUserId)
+                           ->orWhere('seller_id', $secondUserId);
+                    })->where('user_id', $firstUserId);
+                });
+            })
             ->exists();
     }
 
-    public function hasActiveOrderRelationship(int $sellerId, int $buyerId): bool
+    public function hasActiveOrderRelationship(int $firstUserId, int $secondUserId): bool
     {
         return Order::query()
-            ->where('artisan_id', $sellerId)
-            ->where('user_id', $buyerId)
-            ->whereIn('status', ['Pending', 'Accepted', 'Shipped', 'Delivered'])
+            ->where(function ($query) use ($firstUserId, $secondUserId) {
+                $query->where(function ($q) use ($firstUserId, $secondUserId) {
+                    $q->where(function ($sq) use ($firstUserId) {
+                        $sq->where('artisan_id', $firstUserId)
+                           ->orWhere('seller_id', $firstUserId);
+                    })->where('user_id', $secondUserId);
+                })->orWhere(function ($q) use ($firstUserId, $secondUserId) {
+                    $q->where(function ($sq) use ($secondUserId) {
+                        $sq->where('artisan_id', $secondUserId)
+                           ->orWhere('seller_id', $secondUserId);
+                    })->where('user_id', $firstUserId);
+                });
+            })
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
             ->exists();
     }
 }
