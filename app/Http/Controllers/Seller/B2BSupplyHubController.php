@@ -299,14 +299,44 @@ class B2BSupplyHubController extends Controller
         ]);
 
         $msg = $validated['is_b2b_supply']
-            ? "Published \"{$product->name}\" to the B2B Supply Hub."
-            : "Unpublished \"{$product->name}\" from the B2B Supply Hub.";
+            ? "Published \"{$product->name}\" to peer studio supplies."
+            : "Unpublished \"{$product->name}\" from peer studio supplies.";
 
         return redirect()->back()->with('success', $msg);
     }
 
     /**
-     * B2B Procurement Checkout (Within Seller Workspace Shell).
+     * Dedicated Material Sourcing Cart Page (Within Seller Workspace Shell).
+     */
+    public function cart(Request $request): Response
+    {
+        /** @var User $actor */
+        $actor = Auth::user();
+
+        if (!$actor || !$actor->isArtisan()) {
+            abort(403, 'The Supply Hub is strictly reserved for verified artisans.');
+        }
+
+        $myPublishedCount = Product::where('user_id', $actor->id)
+            ->where('is_b2b_supply', true)
+            ->count();
+
+        $activeOrdersCount = Order::where('user_id', $actor->id)
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->count();
+
+        $cart = (array) Session::get('cart', []);
+
+        return Inertia::render('Seller/SupplyHub/Cart', [
+            'cart' => $cart,
+            'myPublishedCount' => $myPublishedCount,
+            'activeOrdersCount' => $activeOrdersCount,
+            'pricing' => OrderFinanceService::getPricingData(),
+        ]);
+    }
+
+    /**
+     * B2B Material Checkout (Within Seller Workspace Shell).
      */
     public function checkout(Request $request, PrepareCheckout $prepareCheckout): Response|\Illuminate\Http\RedirectResponse
     {

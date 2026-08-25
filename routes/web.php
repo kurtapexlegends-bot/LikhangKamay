@@ -318,6 +318,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         // B2B SUPPLY HUB (Artisan Material Sourcing & Wholesale)
         Route::get('/supply-hub', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'index'])->name('seller.supply-hub.index');
         Route::get('/supply-hub/my-listings', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'myListings'])->name('seller.supply-hub.my-listings');
+        Route::get('/supply-hub/cart', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'cart'])->name('seller.supply-hub.cart');
         Route::post('/supply-hub/toggle/{product}', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'toggle'])->name('seller.supply-hub.toggle');
         Route::get('/supply-hub/checkout', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'checkout'])->name('seller.supply-hub.checkout');
         Route::post('/supply-hub/checkout', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'storeOrder'])->name('seller.supply-hub.checkout.store');
