@@ -111,17 +111,18 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
     const [modules, setModules] = useState(enabledToggles);
     const [showModulePanel, setShowModulePanel] = useState(false);
     const [showGearHint, setShowGearHint] = useState(false);
-
     const [expandedGroups, setExpandedGroups] = useState(() => getInitialExpandedGroups(active));
-
     const [activeTooltip, setActiveTooltip] = useState(null);
 
-    const handleTooltipShow = useCallback((e, text, subtext = null) => {
+    const navRef = React.useRef(null);
+    const isRestoringScrollRef = React.useRef(false);
+    const { url } = usePage();
+
+    const handleTooltipShow = useCallback((e, label) => {
         if (!isCollapsed) return;
         const rect = e.currentTarget.getBoundingClientRect();
         setActiveTooltip({
-            text,
-            subtext,
+            label,
             y: rect.top + rect.height / 2,
             x: rect.right + 12
         });
@@ -132,10 +133,36 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
     }, []);
 
     const handleNavScroll = useCallback(() => {
+        if (isRestoringScrollRef.current) return;
+        if (navRef.current && typeof window !== 'undefined') {
+            const top = navRef.current.scrollTop;
+            window.sessionStorage.setItem('seller_sidebar_scroll_top', String(top));
+        }
         if (activeTooltip) {
             setActiveTooltip(null);
         }
     }, [activeTooltip]);
+
+    // Restore scroll position on initial mount and across all Inertia URL / active changes
+    React.useLayoutEffect(() => {
+        if (typeof window === 'undefined' || !navRef.current) return;
+        const savedScroll = window.sessionStorage.getItem('seller_sidebar_scroll_top');
+        if (savedScroll !== null) {
+            const targetScroll = Number(savedScroll);
+            isRestoringScrollRef.current = true;
+            navRef.current.scrollTop = targetScroll;
+
+            const rafId = requestAnimationFrame(() => {
+                if (navRef.current) {
+                    navRef.current.scrollTop = targetScroll;
+                }
+                setTimeout(() => {
+                    isRestoringScrollRef.current = false;
+                }, 100);
+            });
+            return () => cancelAnimationFrame(rafId);
+        }
+    }, [url, active]);
 
     useEffect(() => {
         setActiveTooltip(null);
@@ -283,7 +310,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     handleTooltipLeave={handleTooltipLeave}
                 />
 
-                <nav scroll-region="true" onScroll={handleNavScroll} className={`flex-1 overflow-y-auto ${isCollapsed ? 'no-scrollbar px-1.5' : 'px-3'} py-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent`}>
+                <nav ref={navRef} onScroll={handleNavScroll} className={`flex-1 overflow-y-auto ${isCollapsed ? 'no-scrollbar px-1.5' : 'px-3'} py-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent`}>
                     {isStaffActor && (
                         <CategoryGroup
                             title="Workspace"
