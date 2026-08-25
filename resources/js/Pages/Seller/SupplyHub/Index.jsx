@@ -255,9 +255,21 @@ export default function SupplyHubIndex({
                                 </span>
                             )}
                         </Link>
+                        <Link
+                            href={route('seller.supply-hub.cart')}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
+                        >
+                            <ShoppingCart size={13} className="text-clay-600" />
+                            <span>Sourcing Cart</span>
+                            {cartCount > 0 && (
+                                <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
+                                    {cartCount}
+                                </span>
+                            )}
+                        </Link>
                     </div>
 
-                    {/* Procurement Cart & Studio Inventory Shortcuts */}
+                    {/* Sourcing Cart & Studio Inventory Shortcuts */}
                     <div className="flex items-center gap-2.5">
                         <Link
                             href={route('procurement.index')}
@@ -267,19 +279,18 @@ export default function SupplyHubIndex({
                             <Truck size={13} />
                         </Link>
 
-                        <button
-                            type="button"
-                            onClick={() => setIsCartDrawerOpen(true)}
+                        <Link
+                            href={route('seller.supply-hub.cart')}
                             className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-all active:scale-95 cursor-pointer"
                         >
                             <ShoppingCart size={14} />
-                            <span>Procurement Cart</span>
+                            <span>View Cart</span>
                             {cartCount > 0 && (
                                 <span className="rounded-full bg-white text-clay-800 px-1.5 py-0.2 text-[10px] font-black">
                                     {cartCount}
                                 </span>
                             )}
-                        </button>
+                        </Link>
                     </div>
                 </div>
 

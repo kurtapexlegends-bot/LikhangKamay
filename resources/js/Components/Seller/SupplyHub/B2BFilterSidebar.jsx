@@ -244,14 +244,14 @@ export default function B2BFilterSidebar({
                     </div>
                 )}
 
-                {/* 5. Wholesale Volume Discounts Accordion */}
+                {/* 5. Bulk Volume Discounts Accordion */}
                 <div className="p-4 space-y-3">
                     <button
                         type="button"
                         onClick={() => setIsWholesaleExpanded(!isWholesaleExpanded)}
                         className="w-full flex items-center justify-between font-bold text-stone-900 text-left uppercase tracking-wider text-[11px]"
                     >
-                        <span>Wholesale Tiers</span>
+                        <span>Bulk Discounts</span>
                         <ChevronDown size={14} className={`text-stone-400 transition-transform ${isWholesaleExpanded ? 'rotate-180' : ''}`} />
                     </button>
 

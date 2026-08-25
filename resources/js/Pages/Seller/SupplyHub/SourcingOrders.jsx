@@ -4,7 +4,8 @@ import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/Seller
 import SellerHeader from '@/Layouts/SellerHeader';
 import { 
     Store, Truck, Package, CheckCircle2, Clock, 
-    Search, ArrowRight, Check, AlertCircle, MapPin, Calendar, ExternalLink
+    Search, ArrowRight, Check, AlertCircle, MapPin, Calendar, ExternalLink,
+    MessageSquare, ShoppingBag
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
@@ -19,7 +20,7 @@ export default function SourcingOrders({
     myPublishedCount = 0,
     filters = {},
 }) {
-    const { auth, flash } = usePage().props;
+    const { auth, flash, cartCount = 0 } = usePage().props;
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
     useFlashToast(flash, addToast);
@@ -61,20 +62,16 @@ export default function SourcingOrders({
         <>
             <Head title="Inbound Material Orders - Artisan Supply Hub" />
             <SellerHeader
-                title="Inbound Sourcing Orders"
+                title="Inbound Material Orders"
                 user={auth?.user}
                 onMenuClick={openSidebar}
-                breadcrumbs={[
-                    { label: 'Supply Hub', href: route('seller.supply-hub.index') },
-                    { label: 'Inbound Orders' }
-                ]}
             />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+            <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
                 
                 {/* Top Action Tabs */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-stone-200 pb-4">
-                    <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
                         <Link
                             href={route('seller.supply-hub.index')}
                             className="inline-flex items-center gap-2 rounded-xl bg-stone-100 px-4 py-2 text-xs font-bold text-stone-700 hover:bg-stone-200 transition-colors shrink-0"
@@ -105,6 +102,19 @@ export default function SourcingOrders({
                             {activeOrdersCount > 0 && (
                                 <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
                                     {activeOrdersCount}
+                                </span>
+                            )}
+                        </Link>
+
+                        <Link
+                            href={route('seller.supply-hub.cart')}
+                            className="inline-flex items-center gap-2 rounded-xl bg-stone-100 px-4 py-2 text-xs font-bold text-stone-700 hover:bg-stone-200 transition-colors shrink-0"
+                        >
+                            <ShoppingBag size={14} className="text-stone-500" />
+                            <span>Sourcing Cart</span>
+                            {cartCount > 0 && (
+                                <span className="rounded-full bg-stone-200 text-stone-700 px-1.5 py-0.2 text-[10px]">
+                                    {cartCount}
                                 </span>
                             )}
                         </Link>
@@ -210,8 +220,19 @@ export default function SourcingOrders({
                                             </span>
                                         </div>
 
-                                        {/* Status Pill */}
+                                        {/* Status Pill & Message Action */}
                                         <div className="flex items-center gap-2">
+                                            {(order.seller_id || order.artisan_id) && (
+                                                <Link
+                                                    href={route('chat.index', { user_id: order.seller_id || order.artisan_id })}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-stone-100 hover:bg-stone-200 border border-stone-200 rounded-xl text-[11px] font-bold text-stone-700 transition-colors shadow-2xs"
+                                                    title="Message Supplier Studio"
+                                                >
+                                                    <MessageSquare size={13} className="text-stone-500" />
+                                                    <span>Message Studio</span>
+                                                </Link>
+                                            )}
+
                                             <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
                                                 isDelivered 
                                                     ? 'bg-amber-100 text-amber-900 border border-amber-300'

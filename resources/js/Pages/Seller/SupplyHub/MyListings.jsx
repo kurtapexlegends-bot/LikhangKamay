@@ -5,13 +5,13 @@ import SellerHeader from '@/Layouts/SellerHeader';
 import { useToast } from '@/Components/ToastContext';
 import { 
     Layers, Plus, Check, Edit3, ArrowLeft,
-    Package, Sparkles, Tag, ShieldCheck, Store, Search, X, RotateCcw, Truck
+    Package, Sparkles, Tag, ShieldCheck, Store, Search, X, RotateCcw, Truck, ShoppingBag
 } from 'lucide-react';
 import ConfigureWholesaleModal from '@/Components/Seller/SupplyHub/ConfigureWholesaleModal';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export default function MyListings({ products = [], availableCategories = [], availableUnits = {}, activeOrdersCount = 0 }) {
+export default function MyListings({ products = [], availableCategories = [], availableUnits = {}, activeOrdersCount = 0, cartCount = 0 }) {
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
     const [editingProduct, setEditingProduct] = useState(null);
@@ -101,20 +101,16 @@ export default function MyListings({ products = [], availableCategories = [], av
                 title="Wholesale Supply Listings"
                 subtitle="Offer surplus raw materials, processed clay sacks, glazes, or unfinished blanks to peer artisan studios."
                 onMenuClick={openSidebar}
-                breadcrumbs={[
-                    { label: 'Supply Hub', href: route('seller.supply-hub.index') },
-                    { label: 'My Listings' }
-                ]}
-                badge={{ label: 'Wholesale B2B', iconColor: 'text-clay-500' }}
+                badge={{ label: 'Studio Supplies', iconColor: 'text-clay-500' }}
             />
 
             <div className="p-4 sm:p-6 lg:p-8 space-y-6 pb-12">
                 {/* Studio Workspace Tab Navigation */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
                         <Link
                             href={route('seller.supply-hub.index')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
                         >
                             <Store size={13} className="text-clay-600" />
                             <span>Browse Peer Supplies</span>
@@ -140,6 +136,18 @@ export default function MyListings({ products = [], availableCategories = [], av
                             {activeOrdersCount > 0 && (
                                 <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
                                     {activeOrdersCount}
+                                </span>
+                            )}
+                        </Link>
+                        <Link
+                            href={route('seller.supply-hub.cart')}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
+                        >
+                            <ShoppingBag size={13} className="text-clay-600" />
+                            <span>Sourcing Cart</span>
+                            {cartCount > 0 && (
+                                <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
+                                    {cartCount}
                                 </span>
                             )}
                         </Link>
@@ -182,7 +190,7 @@ export default function MyListings({ products = [], availableCategories = [], av
                                 }`}
                             >
                                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                <span>Listed in B2B ({publishedCount})</span>
+                                <span>Listed for Peer Studios ({publishedCount})</span>
                             </button>
                             <button
                                 type="button"
@@ -244,9 +252,9 @@ export default function MyListings({ products = [], availableCategories = [], av
                                     <th className="px-5 py-3.5">Material / Item</th>
                                     <th className="px-4 py-3.5">Category</th>
                                     <th className="px-4 py-3.5">Standard Price</th>
-                                    <th className="px-4 py-3.5">B2B Status</th>
-                                    <th className="px-4 py-3.5">MOQ</th>
-                                    <th className="px-4 py-3.5">Wholesale Tier</th>
+                                    <th className="px-4 py-3.5">Supply Status</th>
+                                    <th className="px-4 py-3.5">Min. Order</th>
+                                    <th className="px-4 py-3.5">Bulk Discount</th>
                                     <th className="px-4 py-3.5">Stock</th>
                                     <th className="px-5 py-3.5 text-right">Actions</th>
                                 </tr>

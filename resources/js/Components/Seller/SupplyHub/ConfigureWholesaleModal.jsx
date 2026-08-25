@@ -31,7 +31,7 @@ export default function ConfigureWholesaleModal({
                 {/* Modal Header */}
                 <div className="flex items-center justify-between border-b border-stone-150 pb-3">
                     <div className="space-y-0.5">
-                        <h3 className="text-base font-bold text-stone-900 tracking-tight">Configure B2B Wholesale Listing</h3>
+                        <h3 className="text-base font-bold text-stone-900 tracking-tight">Configure Peer Studio Supply Listing</h3>
                         <p className="text-xs text-stone-500 truncate max-w-sm">{product.name}</p>
                     </div>
                     <button
@@ -49,7 +49,7 @@ export default function ConfigureWholesaleModal({
                     <div className="flex items-center justify-between rounded-xl border border-stone-200 p-3.5 bg-stone-50/70">
                         <div className="space-y-0.5">
                             <label htmlFor="publish-toggle" className="font-bold text-stone-900 cursor-pointer">
-                                Publish in B2B Supply Hub
+                                Publish to Peer Studios
                             </label>
                             <p className="text-[11px] text-stone-500">
                                 Make this material visible for peer artisans to purchase in bulk.
@@ -82,7 +82,7 @@ export default function ConfigureWholesaleModal({
                                 </div>
 
                                 <div>
-                                    <label className="block font-bold text-stone-700 mb-1">Minimum Order Qty (MOQ)</label>
+                                    <label className="block font-bold text-stone-700 mb-1">Minimum Order Quantity</label>
                                     <input
                                         type="number"
                                         min="1"
@@ -98,7 +98,7 @@ export default function ConfigureWholesaleModal({
                             {/* Tiered Wholesale Price */}
                             <div className="grid grid-cols-2 gap-3 pt-1">
                                 <div>
-                                    <label className="block font-bold text-stone-700 mb-1">Wholesale Unit Price (₱)</label>
+                                    <label className="block font-bold text-stone-700 mb-1">Bulk Discount Price (₱)</label>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -114,7 +114,7 @@ export default function ConfigureWholesaleModal({
                                 </div>
 
                                 <div>
-                                    <label className="block font-bold text-stone-700 mb-1">Wholesale Threshold Qty</label>
+                                    <label className="block font-bold text-stone-700 mb-1">Bulk Discount Minimum Qty</label>
                                     <input
                                         type="number"
                                         min="2"
