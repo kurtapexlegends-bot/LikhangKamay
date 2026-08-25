@@ -57,6 +57,18 @@ export default defineConfig({
                     if (id.includes('node_modules/@sentry')) {
                         return 'vendor-sentry';
                     }
+                    if (id.includes('node_modules/@vladmandic/face-api')) {
+                        return 'vendor-face-api';
+                    }
+                    if (id.includes('node_modules/leaflet')) {
+                        return 'vendor-leaflet';
+                    }
+                    if (id.includes('node_modules/axios')) {
+                        return 'vendor-axios';
+                    }
+                    if (id.includes('node_modules/laravel-echo') || id.includes('node_modules/pusher-js')) {
+                        return 'vendor-echo';
+                    }
                     if (id.includes('node_modules/emoji-picker-react')) {
                         return 'vendor-emoji';
                     }

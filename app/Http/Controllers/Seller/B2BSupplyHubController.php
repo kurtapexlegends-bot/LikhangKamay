@@ -179,11 +179,17 @@ class B2BSupplyHubController extends Controller
             ];
         });
 
-        // Facet Aggregations
+        // Facet Aggregations - Single Group By Query instead of N queries
+        $rawCategoryCounts = (clone $baseQuery)
+            ->selectRaw('category, count(*) as count')
+            ->groupBy('category')
+            ->pluck('count', 'category')
+            ->toArray();
+
         $categoryCounts = [];
         foreach (self::SUPPLY_CATEGORIES as $cat) {
             if ($cat === 'All') continue;
-            $categoryCounts[$cat] = (clone $baseQuery)->where('category', $cat)->count();
+            $categoryCounts[$cat] = (int) ($rawCategoryCounts[$cat] ?? 0);
         }
 
         $supplierCities = (clone $baseQuery)
@@ -434,13 +440,15 @@ class B2BSupplyHubController extends Controller
 
         $orders = $query->paginate(8)->withQueryString();
 
-        $activeOrdersCount = Order::where('user_id', $actor->id)
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
-            ->count();
+        $statusCounts = Order::where('user_id', $actor->id)
+            ->selectRaw("
+                SUM(CASE WHEN status IN ('Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup') THEN 1 ELSE 0 END) as active_count,
+                SUM(CASE WHEN status = 'Delivered' THEN 1 ELSE 0 END) as delivered_count
+            ")
+            ->first();
 
-        $deliveredOrdersCount = Order::where('user_id', $actor->id)
-            ->where('status', 'Delivered')
-            ->count();
+        $activeOrdersCount = (int) ($statusCounts->active_count ?? 0);
+        $deliveredOrdersCount = (int) ($statusCounts->delivered_count ?? 0);
 
         $myPublishedCount = Product::where('user_id', $actor->id)
             ->where('is_b2b_supply', true)
