@@ -6,7 +6,7 @@ import { useToast } from '@/Components/ToastContext';
 import { 
     Store, Layers, ShoppingCart, SlidersHorizontal, Search, 
     X, ArrowUpDown, ChevronDown, CheckCircle2, Package, RotateCcw,
-    Truck, ShieldCheck 
+    Truck, ShieldCheck, Boxes
 } from 'lucide-react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 
@@ -221,9 +221,9 @@ export default function SupplyHubIndex({
             />
 
             <div className="p-4 sm:p-6 lg:p-8 space-y-6 pb-16">
-                {/* Top Workspace Tab Bar with Procurement Cart */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-3">
-                    <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                {/* Top Workspace Tab Bar with Quick Actions */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-3">
+                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
                         <Link
                             href={route('seller.supply-hub.index')}
                             className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-bold text-white shadow-2xs shrink-0"
@@ -255,38 +255,28 @@ export default function SupplyHubIndex({
                                 </span>
                             )}
                         </Link>
-                        <Link
-                            href={route('seller.supply-hub.cart')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
-                        >
-                            <ShoppingCart size={13} className="text-clay-600" />
-                            <span>Sourcing Cart</span>
-                            {cartCount > 0 && (
-                                <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
-                                    {cartCount}
-                                </span>
-                            )}
-                        </Link>
                     </div>
 
-                    {/* Sourcing Cart & Studio Inventory Shortcuts */}
-                    <div className="flex items-center gap-2.5">
+                    {/* Sourcing Cart & Studio Inventory Icon Shortcuts */}
+                    <div className="flex items-center gap-2 shrink-0">
                         <Link
                             href={route('procurement.index')}
-                            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-stone-500 hover:text-stone-900 transition-colors mr-1"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs"
+                            title="Studio Inventory"
                         >
-                            <span>Studio Inventory</span>
-                            <Truck size={13} />
+                            <Boxes size={14} className="text-stone-500" />
+                            <span className="hidden md:inline">Studio Inventory</span>
                         </Link>
 
                         <Link
                             href={route('seller.supply-hub.cart')}
-                            className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-4 py-2 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-all active:scale-95 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-800 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs"
+                            title="View Sourcing Cart"
                         >
-                            <ShoppingCart size={14} />
-                            <span>View Cart</span>
+                            <ShoppingCart size={14} className="text-clay-600" />
+                            <span className="hidden md:inline">View Cart</span>
                             {cartCount > 0 && (
-                                <span className="rounded-full bg-white text-clay-800 px-1.5 py-0.2 text-[10px] font-black">
+                                <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
                                     {cartCount}
                                 </span>
                             )}
@@ -316,9 +306,9 @@ export default function SupplyHubIndex({
                 )}
 
                 {/* Main 2-Column Catalog Sourcing Layout */}
-                <div className="flex flex-col lg:flex-row gap-6 items-start">
+                <div className="flex flex-col lg:flex-row gap-5 items-start">
                     {/* Left Column: Filter Sidebar (Desktop) */}
-                    <div className="hidden lg:block w-64 xl:w-72 shrink-0 sticky top-20">
+                    <div className="hidden lg:block w-56 shrink-0 sticky top-20">
                         <B2BFilterSidebar
                             categories={categories}
                             categoryCounts={categoryCounts}
@@ -450,7 +440,7 @@ export default function SupplyHubIndex({
                                     )}
                                     {searchTerm && (
                                         <span className="inline-flex items-center gap-1 bg-stone-100 border border-stone-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-stone-800">
-                                            <span>Search: "{searchTerm}"</span>
+                                            <span>Search: &ldquo;{searchTerm}&rdquo;</span>
                                             <button type="button" onClick={() => { setSearchTerm(''); applyFilters({ search: '' }); }} className="text-stone-400 hover:text-stone-700">
                                                 <X size={11} />
                                             </button>

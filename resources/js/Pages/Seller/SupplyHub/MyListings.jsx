@@ -5,9 +5,10 @@ import SellerHeader from '@/Layouts/SellerHeader';
 import { useToast } from '@/Components/ToastContext';
 import { 
     Layers, Plus, Check, Edit3, ArrowLeft,
-    Package, Sparkles, Tag, ShieldCheck, Store, Search, X, RotateCcw, Truck, ShoppingBag
+    Package, Sparkles, Tag, ShieldCheck, Store, Search, X, RotateCcw, Truck, ShoppingCart, Boxes
 } from 'lucide-react';
 import ConfigureWholesaleModal from '@/Components/Seller/SupplyHub/ConfigureWholesaleModal';
+import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -96,12 +97,11 @@ export default function MyListings({ products = [], availableCategories = [], av
     return (
         <>
             <Head title="My Wholesale Supply Listings" />
-
             <SellerHeader
-                title="Wholesale Supply Listings"
-                subtitle="Offer surplus raw materials, processed clay sacks, glazes, or unfinished blanks to peer artisan studios."
+                title="Supply Hub"
+                subtitle="Source bulk raw materials, clay sacks, timber, and glazes directly from verified peer studios."
                 onMenuClick={openSidebar}
-                badge={{ label: 'Studio Supplies', iconColor: 'text-clay-500' }}
+                badge={{ label: 'Wholesale Sourcing', iconColor: 'text-clay-500' }}
             />
 
             <div className="p-4 sm:p-6 lg:p-8 space-y-6 pb-12">
@@ -139,12 +139,34 @@ export default function MyListings({ products = [], availableCategories = [], av
                                 </span>
                             )}
                         </Link>
+                    </div>
+
+                    {/* Sourcing Cart & Studio Inventory Icon Shortcuts */}
+                    <div className="flex items-center gap-2 shrink-0">
+                        <Link
+                            href={route('products.index')}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-clay-600 px-3.5 py-2 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-colors"
+                        >
+                            <Plus size={13} />
+                            <span>Create Product</span>
+                        </Link>
+
+                        <Link
+                            href={route('procurement.index')}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs"
+                            title="Studio Inventory"
+                        >
+                            <Boxes size={14} className="text-stone-500" />
+                            <span className="hidden md:inline">Studio Inventory</span>
+                        </Link>
+
                         <Link
                             href={route('seller.supply-hub.cart')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-800 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs"
+                            title="View Sourcing Cart"
                         >
-                            <ShoppingBag size={13} className="text-clay-600" />
-                            <span>Sourcing Cart</span>
+                            <ShoppingCart size={14} className="text-clay-600" />
+                            <span className="hidden md:inline">View Cart</span>
                             {cartCount > 0 && (
                                 <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
                                     {cartCount}
@@ -152,96 +174,52 @@ export default function MyListings({ products = [], availableCategories = [], av
                             )}
                         </Link>
                     </div>
-
-                    <div className="flex items-center gap-2.5">
-                        <Link
-                            href={route('products.index')}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-clay-600 px-3.5 py-2 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-colors"
-                        >
-                            <Plus size={13} />
-                            <span>Create Material / Product</span>
-                        </Link>
-                    </div>
                 </div>
 
-                {/* Filter & Search Toolbar */}
-                <div className="bg-white rounded-2xl border border-stone-200 p-3 sm:p-4 shadow-2xs space-y-3">
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                        {/* Status Pills */}
-                        <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl text-xs font-bold">
-                            <button
-                                type="button"
-                                onClick={() => setStatusFilter('all')}
-                                className={`px-3 py-1.5 rounded-lg transition-colors ${
-                                    statusFilter === 'all'
-                                        ? 'bg-white text-stone-900 shadow-2xs font-extrabold'
-                                        : 'text-stone-600 hover:text-stone-900'
-                                }`}
-                            >
-                                All Items ({products.length})
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setStatusFilter('b2b')}
-                                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
-                                    statusFilter === 'b2b'
-                                        ? 'bg-white text-emerald-800 shadow-2xs font-extrabold'
-                                        : 'text-stone-600 hover:text-stone-900'
-                                }`}
-                            >
-                                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                <span>Listed for Peer Studios ({publishedCount})</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setStatusFilter('retail')}
-                                className={`px-3 py-1.5 rounded-lg transition-colors ${
-                                    statusFilter === 'retail'
-                                        ? 'bg-white text-stone-900 shadow-2xs font-extrabold'
-                                        : 'text-stone-600 hover:text-stone-900'
-                                }`}
-                            >
-                                Retail Only ({retailCount})
-                            </button>
-                        </div>
-
-                        {/* Search & Category Select */}
-                        <div className="flex items-center gap-2.5">
-                            {distinctCategories.length > 0 && (
+                {/* Filter & Search Toolbar using Standard FilterToolbarHeader */}
+                <FilterToolbarHeader
+                    tabs={[
+                        { key: 'all', label: 'All Items', count: products.length },
+                        { key: 'b2b', label: 'Listed for Peer Studios', count: publishedCount },
+                        { key: 'retail', label: 'Retail Only', count: retailCount },
+                    ]}
+                    activeTab={statusFilter}
+                    onTabChange={setStatusFilter}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    searchPlaceholder="Search products or SKU..."
+                    activeFiltersCount={categoryFilter !== 'all' ? 1 : 0}
+                    activeFilterTags={categoryFilter !== 'all' ? [{
+                        key: 'category',
+                        label: `Category: ${categoryFilter}`,
+                        onRemove: () => setCategoryFilter('all')
+                    }] : []}
+                    filterPopoverTitle="Filter Listings"
+                    filterPopoverFields={
+                        <div className="space-y-3">
+                            <div>
+                                <label className="text-[11px] font-bold uppercase tracking-wider text-stone-500 block mb-1.5">
+                                    Product Category
+                                </label>
                                 <select
                                     value={categoryFilter}
                                     onChange={(e) => setCategoryFilter(e.target.value)}
-                                    className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-medium text-stone-700 focus:border-clay-500 focus:ring-1 focus:ring-clay-500 shadow-2xs"
+                                    className="w-full rounded-xl border border-stone-200 bg-stone-50/50 px-3 py-2 text-xs text-stone-800 focus:border-clay-500 focus:ring-1 focus:ring-clay-500"
                                 >
                                     <option value="all">All Categories</option>
-                                    {distinctCategories.map((cat) => (
-                                        <option key={cat} value={cat}>{cat}</option>
+                                    {distinctCategories.map((c) => (
+                                        <option key={c} value={c}>{c}</option>
                                     ))}
                                 </select>
-                            )}
-
-                            <div className="relative flex-1 md:w-64">
-                                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search products or SKU..."
-                                    className="w-full rounded-xl border border-stone-200 bg-stone-50/60 pl-8 pr-7 py-2 text-xs text-stone-900 placeholder:text-stone-400 focus:border-clay-500 focus:ring-1 focus:ring-clay-500"
-                                />
-                                {searchQuery && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSearchQuery('')}
-                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
-                                    >
-                                        <X size={12} />
-                                    </button>
-                                )}
                             </div>
                         </div>
-                    </div>
-                </div>
+                    }
+                    onResetFilters={() => {
+                        setCategoryFilter('all');
+                        setSearchQuery('');
+                        setStatusFilter('all');
+                    }}
+                />
 
                 {/* Table of Listings */}
                 <div className="rounded-2xl border border-stone-200 bg-white shadow-2xs overflow-hidden">
