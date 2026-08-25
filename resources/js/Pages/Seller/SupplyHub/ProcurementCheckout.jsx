@@ -123,11 +123,12 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
 
     return (
         <>
-            <Head title="Material Sourcing Checkout - Artisan Supply Hub" />
+            <Head title="Material Sourcing Checkout - Supply Hub" />
             <SellerHeader
-                title="Material Sourcing Checkout"
-                user={auth?.user}
+                title="Supply Hub"
+                subtitle="Source bulk raw materials, clay sacks, timber, and glazes directly from verified peer studios."
                 onMenuClick={openSidebar}
+                badge={{ label: 'Wholesale Sourcing', iconColor: 'text-clay-500' }}
             />
 
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
