@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { Link } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import { 
     X, Store, ShieldCheck, MapPin, Plus, Minus, 
-    ShoppingCart, ArrowUpRight, Bike, Car, Truck, Tag, Percent, Package, CheckCircle2 
+    ShoppingCart, ArrowUpRight, Bike, Car, Truck, Tag, Percent, Package, CheckCircle2, MessageSquare
 } from 'lucide-react';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -75,7 +76,7 @@ export default function MaterialDetailModal({
                         </div>
 
                         {/* Supplier Workshop Card */}
-                        <div className="rounded-xl border border-stone-200 bg-stone-50/70 p-3.5 space-y-1.5">
+                        <div className="rounded-xl border border-stone-200 bg-stone-50/70 p-3.5 space-y-2">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Supplier Studio:</span>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1.5 font-bold text-stone-900">
@@ -90,9 +91,14 @@ export default function MaterialDetailModal({
                                     {item.seller.city}
                                 </span>
                             </div>
-                            <p className="text-[11px] text-stone-500 leading-relaxed pt-1">
-                                Verified local artisan producer. Fast dispatch via calibrated heavy courier delivery.
-                            </p>
+                            
+                            <Link
+                                href={route('chat.index', { user_id: item.seller?.id || item.user_id })}
+                                className="inline-flex items-center justify-center gap-1.5 w-full bg-white hover:bg-stone-100 border border-stone-200 rounded-xl py-2 text-[11px] font-bold text-stone-700 transition-colors shadow-2xs"
+                            >
+                                <MessageSquare size={13} className="text-stone-500" />
+                                <span>Message Supplier Studio</span>
+                            </Link>
                         </div>
                     </div>
 

@@ -48,10 +48,10 @@ export default function B2BSupplyCard({
                     onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
                 />
 
-                {/* Top Left Badges: MOQ & Unit Weight */}
+                {/* Top Left Badges: Minimum Order & Unit Weight */}
                 <div className="absolute top-2.5 left-2.5 z-10 flex flex-wrap gap-1.5 pointer-events-none">
                     <span className="bg-stone-900/85 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-2xs uppercase tracking-wider">
-                        MOQ: {item.moq} {item.supply_unit}
+                        Min. Order: {item.moq} {item.supply_unit}
                     </span>
                     <span className="bg-white/90 backdrop-blur-xs text-stone-800 text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-2xs border border-stone-200/60">
                         {item.weight} kg/{item.supply_unit}
@@ -68,7 +68,7 @@ export default function B2BSupplyCard({
                 {/* Quick View Hover Pill */}
                 <div className="absolute inset-0 bg-stone-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                     <span className="bg-white/95 text-stone-900 text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-md flex items-center gap-1.5">
-                        <Eye size={13} className="text-clay-600" /> View Specs
+                        <Eye size={13} className="text-clay-600" /> View Details
                     </span>
                 </div>
             </div>
