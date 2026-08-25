@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
     Store, ShieldCheck, MapPin, Plus, Minus, 
-    ShoppingCart, ArrowUpRight, Bike, Car, Truck, Tag, Percent, Eye 
+    ShoppingCart, ArrowUpRight, Bike, Car, Truck, Percent, Eye 
 } from 'lucide-react';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -17,7 +17,6 @@ export default function B2BSupplyCard({
     const qty = quantity || item.moq || 1;
     const hasDiscount = item.wholesale_price && item.wholesale_min_qty && qty >= item.wholesale_min_qty;
     const unitPrice = hasDiscount ? item.wholesale_price : item.effective_price;
-    const subtotal = unitPrice * qty;
     const totalWeight = Math.round((qty * (item.weight || 1.0) * 1.10) * 10) / 10;
 
     const discountPercentage = (item.wholesale_price && item.effective_price)
@@ -26,15 +25,15 @@ export default function B2BSupplyCard({
 
     // Real-time dynamic vehicle calculation based on active quantity
     const vehicleLabel = totalWeight > 300
-        ? 'Large Van 1000kg'
+        ? 'Large Van'
         : totalWeight > 200
-            ? 'MPV 300kg'
+            ? 'MPV'
             : totalWeight > 20
-                ? '4-Wheel Sedan'
+                ? 'Sedan'
                 : 'Motorcycle';
 
     return (
-        <div className="group bg-white rounded-2xl border border-stone-200 shadow-2xs hover:shadow-md hover:border-stone-300 transition-all duration-200 flex flex-col overflow-hidden">
+        <div className="group bg-white rounded-2xl border border-stone-200/90 shadow-2xs hover:shadow-md hover:border-stone-300 transition-all duration-200 flex flex-col overflow-hidden">
             {/* Image Container with Hover Zoom & Click to View */}
             <div 
                 onClick={() => onOpenDetail && onOpenDetail(item)}
@@ -48,22 +47,18 @@ export default function B2BSupplyCard({
                     onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
                 />
 
-                {/* Top Left Badges: Minimum Order & Unit Weight */}
-                <div className="absolute top-2.5 left-2.5 z-10 flex flex-wrap gap-1.5 pointer-events-none">
-                    <span className="bg-stone-900/85 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-2xs uppercase tracking-wider">
-                        Min. Order: {item.moq} {item.supply_unit}
+                {/* Top Badges */}
+                <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between pointer-events-none gap-1">
+                    <span className="bg-stone-900/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-2xs">
+                        Min. {item.moq} {item.supply_unit}
                     </span>
-                    <span className="bg-white/90 backdrop-blur-xs text-stone-800 text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-2xs border border-stone-200/60">
-                        {item.weight} kg/{item.supply_unit}
-                    </span>
-                </div>
 
-                {/* Top Right Badges: Bulk Savings */}
-                {discountPercentage && discountPercentage > 0 && (
-                    <span className="absolute top-2.5 right-2.5 z-10 bg-emerald-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow-2xs uppercase tracking-wider flex items-center gap-1 pointer-events-none">
-                        <Percent size={10} /> -{discountPercentage}% Bulk
-                    </span>
-                )}
+                    {discountPercentage && discountPercentage > 0 && (
+                        <span className="bg-emerald-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shadow-2xs flex items-center gap-0.5">
+                            <Percent size={9} /> -{discountPercentage}% Bulk
+                        </span>
+                    )}
+                </div>
 
                 {/* Quick View Hover Pill */}
                 <div className="absolute inset-0 bg-stone-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
@@ -74,10 +69,10 @@ export default function B2BSupplyCard({
             </div>
 
             {/* Body */}
-            <div className="p-4 flex flex-col flex-1 justify-between space-y-3">
+            <div className="p-3 sm:p-3.5 flex flex-col flex-1 justify-between space-y-2.5">
                 <div className="space-y-1.5">
-                    {/* Studio Attribution */}
-                    <div className="flex items-center justify-between gap-1.5 text-[11px] text-stone-500">
+                    {/* Studio Attribution & City */}
+                    <div className="flex items-center justify-between gap-1 text-[11px] text-stone-500">
                         <div className="flex items-center gap-1 min-w-0 font-medium">
                             <Store size={11} className="text-clay-600 shrink-0" />
                             <span className="truncate font-semibold text-stone-800">{item.seller.shop_name}</span>
@@ -85,8 +80,8 @@ export default function B2BSupplyCard({
                                 <ShieldCheck size={11} className="text-blue-600 shrink-0" />
                             )}
                         </div>
-                        <span className="flex items-center gap-0.5 text-stone-400 shrink-0">
-                            <MapPin size={10} />
+                        <span className="flex items-center gap-0.5 text-stone-400 shrink-0 text-[10px]">
+                            <MapPin size={9} />
                             {item.seller.city}
                         </span>
                     </div>
@@ -99,13 +94,13 @@ export default function B2BSupplyCard({
                         >
                             {item.name}
                         </h3>
-                        <span className="inline-flex items-center rounded-md bg-stone-100 px-1.5 py-0.5 text-[10px] font-semibold text-stone-500 mt-1">
+                        <span className="inline-block rounded bg-stone-100 px-1.5 py-0.2 text-[9px] font-semibold text-stone-500 mt-0.5">
                             {item.category}
                         </span>
                     </div>
 
                     {/* Pricing Block */}
-                    <div className="pt-1.5 flex items-baseline justify-between">
+                    <div className="pt-0.5 flex items-baseline justify-between">
                         <div>
                             <span className="text-sm font-extrabold text-stone-900">
                                 {formatCurrency(item.effective_price)}
@@ -113,7 +108,7 @@ export default function B2BSupplyCard({
                             <span className="text-[10px] text-stone-400 ml-0.5">/{item.supply_unit}</span>
                         </div>
                         {item.wholesale_price && item.wholesale_min_qty && (
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                            <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
                                 hasDiscount ? 'bg-emerald-100 text-emerald-800 font-extrabold' : 'bg-stone-100 text-stone-600'
                             }`}>
                                 {formatCurrency(item.wholesale_price)} ({item.wholesale_min_qty}+)
@@ -121,68 +116,66 @@ export default function B2BSupplyCard({
                         )}
                     </div>
 
-                    {/* Dynamic Courier Estimation Pill (Live reactive to quantity changes) */}
-                    <div className="rounded-lg bg-stone-50 border border-stone-150 px-2.5 py-1 text-[10px] text-stone-600 flex items-center justify-between">
-                        <span className="flex items-center gap-1.5 font-medium">
+                    {/* Dynamic Courier Estimation Pill */}
+                    <div className="rounded-lg bg-stone-50 border border-stone-150 px-2 py-0.5 text-[10px] text-stone-600 flex items-center justify-between">
+                        <span className="flex items-center gap-1 font-medium text-[10px]">
                             {totalWeight > 200 ? (
-                                <Truck size={12} className="text-clay-600" />
+                                <Truck size={11} className="text-clay-600" />
                             ) : totalWeight > 20 ? (
-                                <Car size={12} className="text-amber-600" />
+                                <Car size={11} className="text-amber-600" />
                             ) : (
-                                <Bike size={12} className="text-stone-500" />
+                                <Bike size={11} className="text-stone-500" />
                             )}
                             <span>{vehicleLabel}</span>
                         </span>
-                        <span className="font-bold text-stone-700">{totalWeight} kg</span>
+                        <span className="font-semibold text-stone-600 text-[10px]">{totalWeight} kg</span>
                     </div>
                 </div>
 
-                {/* Stepper & Action Buttons */}
-                <div className="pt-2 border-t border-stone-150 space-y-2">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[11px] text-stone-500 font-medium">Order Qty:</span>
-                        <div className="flex items-center rounded-lg border border-stone-200 bg-white">
-                            <button
-                                type="button"
-                                onClick={() => onQuantityChange(item, qty - 1)}
-                                disabled={qty <= (item.moq || 1)}
-                                className="px-2 py-1 text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed"
-                                aria-label="Decrease quantity"
-                            >
-                                <Minus size={11} />
-                            </button>
-                            <span className="px-2 text-xs font-bold text-stone-900 w-7 text-center">{qty}</span>
-                            <button
-                                type="button"
-                                onClick={() => onQuantityChange(item, qty + 1)}
-                                disabled={qty >= item.stock}
-                                className="px-2 py-1 text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed"
-                                aria-label="Increase quantity"
-                            >
-                                <Plus size={11} />
-                            </button>
-                        </div>
+                {/* Streamlined Single-Row Action Controls */}
+                <div className="pt-2 border-t border-stone-150 flex items-center gap-1.5">
+                    {/* Stepper */}
+                    <div className="flex items-center rounded-lg border border-stone-200 bg-stone-50/50 shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => onQuantityChange(item, qty - 1)}
+                            disabled={qty <= (item.moq || 1)}
+                            className="px-1.5 py-1 text-stone-600 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                            aria-label="Decrease quantity"
+                        >
+                            <Minus size={10} />
+                        </button>
+                        <span className="px-1 text-[11px] font-bold text-stone-900 w-5 text-center">{qty}</span>
+                        <button
+                            type="button"
+                            onClick={() => onQuantityChange(item, qty + 1)}
+                            disabled={qty >= item.stock}
+                            className="px-1.5 py-1 text-stone-600 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                            aria-label="Increase quantity"
+                        >
+                            <Plus size={10} />
+                        </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-                        <button
-                            type="button"
-                            onClick={() => onAddToCart(item, qty)}
-                            className="flex items-center justify-center gap-1 rounded-xl border border-stone-200 bg-stone-50 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 hover:border-stone-300 transition-colors shadow-2xs"
-                            title="Add to Procurement Cart"
-                        >
-                            <ShoppingCart size={13} />
-                            <span>Cart</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => onQuickOrder(item, qty)}
-                            className="flex items-center justify-center gap-1 rounded-xl bg-clay-600 py-2 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-colors"
-                        >
-                            <span>Buy</span>
-                            <ArrowUpRight size={13} />
-                        </button>
-                    </div>
+                    {/* Cart Button */}
+                    <button
+                        type="button"
+                        onClick={() => onAddToCart(item, qty)}
+                        className="p-1.5 rounded-lg border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
+                        title="Add to Sourcing Cart"
+                    >
+                        <ShoppingCart size={13} />
+                    </button>
+
+                    {/* Buy Button */}
+                    <button
+                        type="button"
+                        onClick={() => onQuickOrder(item, qty)}
+                        className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-clay-600 py-1.5 text-[11px] font-bold text-white shadow-2xs hover:bg-clay-700 transition-colors min-w-0"
+                    >
+                        <span>Buy Now</span>
+                        <ArrowUpRight size={12} />
+                    </button>
                 </div>
             </div>
         </div>
