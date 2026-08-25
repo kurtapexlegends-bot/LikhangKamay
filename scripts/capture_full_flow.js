@@ -15,73 +15,53 @@ async function capture() {
 
     const page = await browser.newPage();
 
-    // 1. Session auth as buyer
-    await page.goto('http://127.0.0.1:8000/dev/preview-auth?role=buyer&redirect=/my-orders', { waitUntil: 'networkidle2' });
+    // 1. Step 1: Supplier Studio Wholesale Listings (/supply-hub/my-listings)
+    await page.goto('http://127.0.0.1:8000/dev/preview-auth?role=artisan&redirect=/supply-hub/my-listings', { waitUntil: 'networkidle2' });
+    await new Promise(r => setTimeout(r, 1200));
+    const shot1 = path.join(outDir, 'flow_1_wholesale_listings.png');
+    await page.screenshot({ path: shot1, fullPage: false });
+    console.log('[1/6] Wholesale Listings captured');
 
-    // ----------------------------------------------------
-    // SHOT 1: My Orders Base Page
-    // ----------------------------------------------------
-    await page.goto('http://127.0.0.1:8000/my-orders', { waitUntil: 'networkidle2' });
-    await new Promise(r => setTimeout(r, 1500));
-    const path1 = path.join(outDir, 'flow_1_my_orders_page.png');
-    await page.screenshot({ path: path1, fullPage: false });
-    console.log('[Captured] Shot 1: My Purchases Overview -> ' + path1);
+    // 2. Step 2: Studio Inventory (/procurement)
+    await page.goto('http://127.0.0.1:8000/procurement', { waitUntil: 'networkidle2' });
+    await new Promise(r => setTimeout(r, 1200));
+    const shot2 = path.join(outDir, 'flow_2_studio_inventory.png');
+    await page.screenshot({ path: shot2, fullPage: false });
+    console.log('[2/6] Studio Inventory captured');
 
-    // ----------------------------------------------------
-    // SHOT 2: Cancel Order Modal with "Need to change delivery address"
-    // ----------------------------------------------------
-    const cancelButtons = await page.$$('button');
-    for (const b of cancelButtons) {
-        const text = await page.evaluate(el => el.textContent, b);
-        if (text.trim() === 'Cancel' || text.includes('Cancel Order')) {
-            await b.click();
-            break;
-        }
-    }
+    // 3. Step 3: Stock Requests (/procurement/stock-requests)
+    await page.goto('http://127.0.0.1:8000/procurement/stock-requests', { waitUntil: 'networkidle2' });
+    await new Promise(r => setTimeout(r, 1200));
+    const shot3 = path.join(outDir, 'flow_3_stock_requests.png');
+    await page.screenshot({ path: shot3, fullPage: false });
+    console.log('[3/6] Stock Requests captured');
+
+    // 4. Step 4: Supply Hub Browse Catalog (/supply-hub)
+    await page.goto('http://127.0.0.1:8000/supply-hub', { waitUntil: 'networkidle2' });
+    await new Promise(r => setTimeout(r, 1200));
+    const shot4 = path.join(outDir, 'flow_4_supply_hub_catalog.png');
+    await page.screenshot({ path: shot4, fullPage: false });
+    console.log('[4/6] Supply Hub Catalog captured');
+
+    // 5. Step 5: Add item to Cart & Proceed to Workspace Checkout
+    await page.evaluate(() => {
+        const addBtn = document.querySelector('button[title="Add to Procurement Cart"]');
+        if (addBtn) addBtn.click();
+    });
     await new Promise(r => setTimeout(r, 1000));
-    const path2 = path.join(outDir, 'flow_2_modal_change_address.png');
-    await page.screenshot({ path: path2, fullPage: false });
-    console.log('[Captured] Shot 2: Modal Change Address -> ' + path2);
 
-    // ----------------------------------------------------
-    // SHOT 3: Cancel Order Modal with "Other reason" selected
-    // ----------------------------------------------------
-    const reasonButtons = await page.$$('button');
-    for (const b of reasonButtons) {
-        const text = await page.evaluate(el => el.textContent, b);
-        if (text.includes('Other reason')) {
-            await b.click();
-            break;
-        }
-    }
-    await new Promise(r => setTimeout(r, 600));
-    const path3 = path.join(outDir, 'flow_3_modal_standard_cancellation.png');
-    await page.screenshot({ path: path3, fullPage: false });
-    console.log('[Captured] Shot 3: Modal Standard Cancellation -> ' + path3);
+    await page.goto('http://127.0.0.1:8000/supply-hub/checkout', { waitUntil: 'networkidle2' });
+    await new Promise(r => setTimeout(r, 1500));
+    const shot5 = path.join(outDir, 'flow_5_procurement_checkout.png');
+    await page.screenshot({ path: shot5, fullPage: false });
+    console.log('[5/6] Procurement Checkout captured');
 
-    // ----------------------------------------------------
-    // SHOT 4: Seamless Redirection to Checkout Screen
-    // ----------------------------------------------------
-    // Select "Need to change delivery address" again and click proceed
-    for (const b of reasonButtons) {
-        const text = await page.evaluate(el => el.textContent, b);
-        if (text.includes('Need to change delivery address')) {
-            await b.click();
-            break;
-        }
-    }
-    await new Promise(r => setTimeout(r, 500));
-
-    const submitButtons = await page.$$('button[type="submit"]');
-    if (submitButtons.length > 0) {
-        await submitButtons[0].click();
-    }
-    await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 15000 }).catch(() => {});
-    await new Promise(r => setTimeout(r, 2000));
-
-    const path4 = path.join(outDir, 'flow_4_checkout_address_selection.png');
-    await page.screenshot({ path: path4, fullPage: false });
-    console.log('[Captured] Shot 4: Checkout Re-Order Screen -> ' + path4);
+    // 6. Step 6: Inbound Sourcing Orders Tracker (/supply-hub/orders)
+    await page.goto('http://127.0.0.1:8000/supply-hub/orders', { waitUntil: 'networkidle2' });
+    await new Promise(r => setTimeout(r, 1200));
+    const shot6 = path.join(outDir, 'flow_6_inbound_sourcing_orders.png');
+    await page.screenshot({ path: shot6, fullPage: false });
+    console.log('[6/6] Inbound Orders Tracker captured');
 
     await browser.close();
 }
