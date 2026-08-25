@@ -1,7 +1,7 @@
 import React, { useDeferredValue, useState, useEffect } from 'react';
 import { Head, usePage, router, Link } from '@inertiajs/react';
 import SellerHeader from '@/Layouts/SellerHeader';
-import { Search, AlertTriangle, ShoppingBag } from 'lucide-react';
+import { Search, AlertTriangle, ShoppingBag, Store } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
@@ -149,15 +149,26 @@ export default function StockRequestIndex({ auth, requests }) {
         });
     };
 
-    const headerActions = canEditStockRequests ? (
-        <Link 
-            href={route('procurement.index')} 
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-clay-600 text-white text-[11px] font-bold rounded-lg hover:bg-clay-700 transition-all min-h-[44px] sm:min-h-[36px]"
-        >
-            <ShoppingBag size={13} />
-            REQUEST STOCK
-        </Link>
-    ) : null;
+    const headerActions = (
+        <div className="flex items-center gap-2">
+            <Link
+                href={route('seller.supply-hub.index')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 text-white text-[11px] font-bold rounded-lg hover:bg-stone-800 transition-all min-h-[44px] sm:min-h-[36px] shadow-2xs"
+            >
+                <Store size={13} />
+                <span>Browse Supply Hub</span>
+            </Link>
+            {canEditStockRequests && (
+                <Link 
+                    href={route('procurement.index')} 
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-clay-600 text-white text-[11px] font-bold rounded-lg hover:bg-clay-700 transition-all min-h-[44px] sm:min-h-[36px]"
+                >
+                    <ShoppingBag size={13} />
+                    <span>Request Stock</span>
+                </Link>
+            )}
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">

@@ -1,5 +1,6 @@
 import React from 'react';
-import { AlertTriangle, Truck, Package, ArrowRight, Inbox } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { AlertTriangle, Truck, Package, ArrowRight, Inbox, Store } from 'lucide-react';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import StatusBadge from './StatusBadge';
 import RequestDetailsCard from './RequestDetailsCard';
@@ -75,14 +76,23 @@ export default function StockRequestsTable({
 
                         <div className="mt-3 flex items-center justify-end gap-2 flex-wrap">
                             {req.status === 'accounting_approved' && (
-                                <button 
-                                    disabled={!canEdit || processingId === `ordered-${req.id}`}
-                                    onClick={() => onMarkOrdered(req)} 
-                                    className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 bg-clay-600 text-white text-[11px] font-bold rounded-lg hover:bg-clay-700 transition-all disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    <Truck size={13} /> 
-                                    {processingId === `ordered-${req.id}` ? 'Updating...' : 'Mark Ordered'}
-                                </button>
+                                <>
+                                    <Link
+                                        href={route('seller.supply-hub.index', { search: req.supply?.name })}
+                                        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 bg-stone-900 text-white text-[11px] font-bold rounded-lg hover:bg-stone-800 transition-all shadow-2xs"
+                                    >
+                                        <Store size={13} />
+                                        <span>Source on Supply Hub</span>
+                                    </Link>
+                                    <button 
+                                        disabled={!canEdit || processingId === `ordered-${req.id}`}
+                                        onClick={() => onMarkOrdered(req)} 
+                                        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 bg-stone-100 text-stone-700 text-[11px] font-bold rounded-lg hover:bg-stone-200 transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        <Truck size={13} /> 
+                                        {processingId === `ordered-${req.id}` ? 'Updating...' : 'Mark Ordered'}
+                                    </button>
+                                </>
                             )}
                             {(req.status === 'ordered' || req.status === 'partially_received' || req.status === 'received') && (
                                 <button 
@@ -167,14 +177,25 @@ export default function StockRequestsTable({
                                 <td className="px-4 py-3 text-right">
                                     <div className="flex items-center justify-end gap-2">
                                         {req.status === 'accounting_approved' && (
-                                            <button 
-                                                disabled={!canEdit || processingId === `ordered-${req.id}`}
-                                                onClick={() => onMarkOrdered(req)} 
-                                                className="inline-flex items-center gap-1.5 px-2 py-1 bg-clay-600 text-white text-[10px] font-bold rounded-lg hover:bg-clay-700 transition-all active:scale-95 shadow-sm shadow-clay-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
-                                            >
-                                                <Truck size={13} /> 
-                                                {processingId === `ordered-${req.id}` ? 'Updating...' : 'Mark Ordered'}
-                                            </button>
+                                            <>
+                                                <Link
+                                                    href={route('seller.supply-hub.index', { search: req.supply?.name })}
+                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-stone-900 text-white text-[10px] font-bold rounded-lg hover:bg-stone-800 transition-all active:scale-95 shadow-2xs"
+                                                    title="Source on Supply Hub"
+                                                >
+                                                    <Store size={12} /> 
+                                                    <span>Source on Supply Hub</span>
+                                                </Link>
+                                                <button 
+                                                    disabled={!canEdit || processingId === `ordered-${req.id}`}
+                                                    onClick={() => onMarkOrdered(req)} 
+                                                    className="inline-flex items-center gap-1.5 px-2 py-1 bg-stone-100 text-stone-700 text-[10px] font-bold rounded-lg hover:bg-stone-200 transition-all active:scale-95 shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
+                                                    title="Mark as Ordered Offline"
+                                                >
+                                                    <Truck size={12} /> 
+                                                    {processingId === `ordered-${req.id}` ? 'Updating...' : 'Mark Ordered'}
+                                                </button>
+                                            </>
                                         )}
                                         {(req.status === 'ordered' || req.status === 'partially_received' || req.status === 'received') && (
                                             <button 

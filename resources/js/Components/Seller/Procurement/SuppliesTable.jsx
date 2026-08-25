@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Link } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, AlertTriangle, Search, X, Banknote, Trash2, Pencil, SlidersHorizontal, ChevronDown, RotateCcw, Filter } from 'lucide-react';
+import { Package, AlertTriangle, Search, X, Banknote, Trash2, Pencil, SlidersHorizontal, ChevronDown, RotateCcw, Filter, Store } from 'lucide-react';
 import QuickRestock from '@/Components/Seller/Shared/QuickRestock';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
@@ -441,6 +442,13 @@ export default function SuppliesTable({
                             </div>
 
                             <div className="mt-3 flex items-center justify-end gap-2">
+                                <Link
+                                    href={route('seller.supply-hub.index', { search: supply.name })}
+                                    className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2.5 bg-stone-900 text-white rounded-lg hover:bg-clay-600 transition-colors"
+                                    title="Source on Supply Hub"
+                                >
+                                    <Store size={16} />
+                                </Link>
                                 <button
                                     disabled={!canEditProcurement}
                                     onClick={() => onEdit(supply)}
@@ -554,6 +562,13 @@ export default function SuppliesTable({
                                         </td>
                                         <td className="px-4 py-3 text-right">
                                             <div className="flex items-center justify-end gap-1">
+                                                <Link
+                                                    href={route('seller.supply-hub.index', { search: supply.name })}
+                                                    className="p-2 text-stone-700 hover:text-white hover:bg-stone-900 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs"
+                                                    title="Source on Supply Hub"
+                                                >
+                                                    <Store size={14} />
+                                                </Link>
                                                 <button
                                                     disabled={!canEditProcurement}
                                                     onClick={() => onEdit(supply)}

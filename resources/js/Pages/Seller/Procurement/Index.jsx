@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Head, useForm, router, usePage } from '@inertiajs/react';
-import { Plus, AlertCircle } from 'lucide-react';
+import { Head, useForm, router, usePage, Link } from '@inertiajs/react';
+import { Plus, AlertCircle, Store, ArrowRight, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import SellerHeader from '@/Layouts/SellerHeader';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
@@ -220,13 +220,21 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
                     onMenuClick={openSidebar}
                     badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
                     actions={(
-                        <button 
-                            onClick={() => canEditProcurement && openAddModal()} 
-                            disabled={!canEditProcurement}
-                            className="flex items-center gap-1.5 bg-clay-600 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-clay-500 active:scale-95 transition-all shadow-lg shadow-clay-600/20 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0"
-                        >
-                            <Plus size={14} strokeWidth={3} /> Add Supply
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <Link
+                                href={route('seller.supply-hub.index')}
+                                className="flex items-center gap-1.5 bg-stone-900 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-stone-800 active:scale-95 transition-all shadow-2xs whitespace-nowrap min-h-[44px] sm:min-h-0"
+                            >
+                                <Store size={14} /> Browse Supply Hub
+                            </Link>
+                            <button 
+                                onClick={() => canEditProcurement && openAddModal()} 
+                                disabled={!canEditProcurement}
+                                className="flex items-center gap-1.5 bg-clay-600 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-clay-500 active:scale-95 transition-all shadow-lg shadow-clay-600/20 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0 cursor-pointer"
+                            >
+                                <Plus size={14} strokeWidth={3} /> Add Supply
+                            </button>
+                        </div>
                     )}
                 />
 
@@ -239,6 +247,32 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
                         <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-700">
                             <AlertCircle size={13} />
                             {actionNotice}
+                        </div>
+                    )}
+
+                    {lowStockItems > 0 && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-900 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="rounded-xl bg-amber-100 p-2 text-amber-700 shrink-0">
+                                    <AlertTriangle size={18} />
+                                </div>
+                                <div>
+                                    <span className="font-bold block text-sm text-stone-900">
+                                        {lowStockItems} {lowStockItems === 1 ? 'material is' : 'materials are'} running low
+                                    </span>
+                                    <p className="text-stone-500 text-xs">
+                                        Stock levels have dropped below your workshop minimum thresholds.
+                                    </p>
+                                </div>
+                            </div>
+                            <Link
+                                href={route('seller.supply-hub.index')}
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-clay-600 px-3.5 py-2 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-colors shrink-0"
+                            >
+                                <Store size={14} />
+                                <span>Source on Supply Hub</span>
+                                <ArrowRight size={13} />
+                            </Link>
                         </div>
                     )}
                     
