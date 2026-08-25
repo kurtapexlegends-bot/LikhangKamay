@@ -336,4 +336,94 @@ class B2BSupplyHubTest extends TestCase
             'unit_cost' => 350.00,
         ]);
     }
+
+    public function test_receiving_b2b_order_auto_completes_open_stock_requests(): void
+    {
+        $existingSupply = Supply::create([
+            'user_id' => $this->buyerArtisan->id,
+            'product_id' => $this->b2bClaySack->id,
+            'sku' => 'B2B-STON-123',
+            'name' => 'Stoneware Moist Clay 25kg Sack',
+            'category' => 'Other',
+            'quantity' => 2,
+            'unit' => 'bag',
+            'min_stock' => 5,
+            'unit_cost' => 350.00,
+        ]);
+
+        $stockRequest = \App\Models\StockRequest::create([
+            'user_id' => $this->buyerArtisan->id,
+            'requested_by_user_id' => $this->buyerArtisan->id,
+            'supply_id' => $existingSupply->id,
+            'quantity' => 10,
+            'total_cost' => 3500.00,
+            'status' => \App\Models\StockRequest::STATUS_ACCOUNTING_APPROVED,
+        ]);
+
+        $order = Order::create([
+            'order_number' => 'ORD-B2B-1005',
+            'user_id' => $this->buyerArtisan->id,
+            'seller_id' => $this->supplierArtisan->id,
+            'artisan_id' => $this->supplierArtisan->id,
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'merchandise_subtotal' => 2950.00,
+            'total_amount' => 2950.00,
+            'status' => 'Delivered',
+            'payment_status' => 'paid',
+            'payment_method' => 'GCash',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => $this->b2bClaySack->name,
+            'price' => 295.00,
+            'quantity' => 10,
+            'is_b2b_supply' => true,
+            'supply_unit' => 'bag',
+        ]);
+
+        $response = $this->actingAs($this->buyerArtisan)
+            ->post(route('seller.supply-hub.orders.confirm', $order->id));
+
+        $response->assertRedirect();
+
+        // Verify supply quantity is updated (2 + 10 = 12)
+        $existingSupply->refresh();
+        $this->assertEquals(12, $existingSupply->quantity);
+
+        // Verify stock request was automatically completed
+        $stockRequest->refresh();
+        $this->assertEquals(\App\Models\StockRequest::STATUS_COMPLETED, $stockRequest->status);
+        $this->assertEquals(10, $stockRequest->received_quantity);
+    }
+
+    public function test_artisan_can_access_workspace_sourcing_cart(): void
+    {
+        $response = $this->actingAs($this->buyerArtisan)
+            ->withSession([
+                'cart' => [
+                    $this->b2bClaySack->id => [
+                        'id' => $this->b2bClaySack->id,
+                        'name' => $this->b2bClaySack->name,
+                        'price' => 350.00,
+                        'qty' => 4,
+                        'variant' => 'Standard',
+                        'seller_id' => $this->supplierArtisan->id,
+                        'is_b2b_supply' => true,
+                    ]
+                ]
+            ])
+            ->get(route('seller.supply-hub.cart'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/Cart')
+            ->has('cart')
+            ->has('pricing')
+        );
+    }
 }
+

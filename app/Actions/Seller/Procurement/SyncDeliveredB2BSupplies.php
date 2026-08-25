@@ -64,8 +64,9 @@ class SyncDeliveredB2BSupplies
                     'supplier' => $supplierName,
                     'notes' => trim(($existingSupply->notes ? $existingSupply->notes . "\n" : '') . "Restocked +{$quantity} {$unit} (Cost: ₱{$unitCost}) via B2B Order #{$order->order_number} on " . now()->format('M d, Y')),
                 ]);
+                $targetSupply = $existingSupply;
             } else {
-                Supply::create([
+                $targetSupply = Supply::create([
                     'user_id' => $buyer->id,
                     'product_id' => $product?->id,
                     'sku' => 'B2B-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $materialName), 0, 4)) . '-' . rand(100, 999),
@@ -78,6 +79,41 @@ class SyncDeliveredB2BSupplies
                     'supplier' => $supplierName,
                     'notes' => "Auto-restocked from B2B Order #{$order->order_number} from {$supplierName} on " . now()->format('M d, Y'),
                 ]);
+            }
+
+            // Automatically resolve matching open Stock Requests for this artisan and material
+            if ($targetSupply) {
+                $openStockRequests = \App\Models\StockRequest::where('user_id', $buyer->id)
+                    ->where('supply_id', $targetSupply->id)
+                    ->whereIn('status', [
+                        \App\Models\StockRequest::STATUS_PENDING,
+                        \App\Models\StockRequest::STATUS_ACCOUNTING_APPROVED,
+                        \App\Models\StockRequest::STATUS_ORDERED,
+                        \App\Models\StockRequest::STATUS_PARTIALLY_RECEIVED,
+                    ])
+                    ->oldest()
+                    ->get();
+
+                $remainingDelivered = $quantity;
+                foreach ($openStockRequests as $stockReq) {
+                    if ($remainingDelivered <= 0) {
+                        break;
+                    }
+                    $needed = max(1, (int) ($stockReq->quantity - ($stockReq->received_quantity ?? 0)));
+                    if ($remainingDelivered >= $needed) {
+                        $stockReq->update([
+                            'status' => \App\Models\StockRequest::STATUS_COMPLETED,
+                            'received_quantity' => $stockReq->quantity,
+                        ]);
+                        $remainingDelivered -= $needed;
+                    } else {
+                        $stockReq->update([
+                            'status' => \App\Models\StockRequest::STATUS_PARTIALLY_RECEIVED,
+                            'received_quantity' => ($stockReq->received_quantity ?? 0) + $remainingDelivered,
+                        ]);
+                        $remainingDelivered = 0;
+                    }
+                }
             }
         }
     }
