@@ -52,11 +52,11 @@ export default function FilterToolbarHeader({
 
     return (
         <div className={`bg-white rounded-2xl sm:rounded-3xl border border-stone-200/80 p-3 sm:p-4 shadow-xs space-y-3 ${containerClassName}`}>
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 min-w-0">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 min-w-0">
                 {/* Segmented Tab Pill Track */}
                 {tabs && tabs.length > 0 && (
-                    <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1">
-                        <div className="p-1 bg-stone-100/70 rounded-2xl inline-flex items-center gap-1 snap-x">
+                    <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none flex items-center py-0.5">
+                        <div className="h-[38px] p-1 bg-stone-100/80 rounded-xl inline-flex items-center gap-1 shrink-0 snap-x border border-stone-200/60">
                             {tabs.map((tab) => {
                                 const tabKey = typeof tab === "object" ? tab.key || tab.id || tab.label : tab;
                                 const tabLabel = typeof tab === "object" ? tab.label : tab;
@@ -68,9 +68,9 @@ export default function FilterToolbarHeader({
                                         key={tabKey}
                                         type="button"
                                         onClick={() => onTabChange && onTabChange(tabKey)}
-                                        className={`px-3 py-2 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 snap-start min-h-[38px] sm:min-h-0 ${
+                                        className={`px-3 h-[30px] rounded-lg text-xs font-bold transition inline-flex items-center justify-center gap-1.5 shrink-0 snap-start select-none ${
                                             isActive
-                                                ? "bg-white text-clay-800 shadow-xs font-black"
+                                                ? "bg-white text-clay-800 shadow-2xs font-black"
                                                 : "text-stone-500 hover:text-stone-800 font-semibold"
                                         }`}
                                     >
@@ -102,7 +102,7 @@ export default function FilterToolbarHeader({
                                 value={searchQuery}
                                 onChange={(e) => onSearchChange(e.target.value)}
                                 placeholder={searchPlaceholder}
-                                className="w-full pl-9 pr-8 py-2 text-xs font-medium rounded-xl border border-stone-200/80 outline-none focus:border-clay-500 focus:ring-1 focus:ring-clay-500 bg-white min-h-[42px] sm:min-h-[38px]"
+                                className="w-full pl-9 pr-8 py-2 text-xs font-medium rounded-xl border border-stone-200/80 outline-none focus:border-clay-500 focus:ring-1 focus:ring-clay-500 bg-white h-[38px] min-h-[38px]"
                             />
                             {searchQuery && (
                                 <button
@@ -130,7 +130,7 @@ export default function FilterToolbarHeader({
                             <button
                                 type="button"
                                 onClick={handleOpenFilters}
-                                className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 sm:px-3.5 py-2 text-xs font-bold transition-all shadow-2xs min-h-[42px] sm:min-h-[38px] active:scale-[0.98] ${
+                                className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 sm:px-3.5 h-[38px] min-h-[38px] text-xs font-bold transition-all shadow-2xs active:scale-[0.98] ${
                                     activeFiltersCount > 0 || isPopoverOpen
                                         ? "bg-clay-700 text-white border-clay-700 shadow-clay-200"
                                         : "bg-white border-stone-200 text-stone-700 hover:bg-stone-50"
