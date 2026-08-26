@@ -123,12 +123,12 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
 
     return (
         <>
-            <Head title="Material Sourcing Checkout - Supply Hub" />
+            <Head title="Material Checkout | LikhangKamay" />
             <SellerHeader
                 title="Supply Hub"
-                subtitle="Source bulk raw materials, clay sacks, timber, and glazes directly from verified peer studios."
+                subtitle="Review your delivery address, courier allocation, and order total."
                 onMenuClick={openSidebar}
-                badge={{ label: 'Wholesale Sourcing', iconColor: 'text-clay-500' }}
+                badge={{ label: 'Wholesale Supplies', iconColor: 'text-clay-500' }}
             />
 
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -136,13 +136,13 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
                 {/* Header Navigation & Workshop Guarantee */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <Link
-                        href={route('seller.supply-hub.index')}
+                        href={route('seller.supply-hub.cart')}
                         className="inline-flex items-center gap-2 text-xs font-bold text-stone-600 hover:text-clay-600 transition-colors"
                     >
                         <div className="rounded-xl border border-stone-200 bg-white p-2 shadow-2xs">
                             <ArrowLeft size={14} />
                         </div>
-                        <span>Return to Supply Hub</span>
+                        <span>Return to Cart</span>
                     </Link>
 
                     <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1 text-emerald-800 text-xs font-bold shadow-2xs">
@@ -155,9 +155,9 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
                 <div className="rounded-2xl border border-stone-200 bg-white p-4 text-xs text-stone-700 shadow-2xs flex items-start gap-3">
                     <Store size={18} className="text-clay-600 shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                        <span className="font-bold text-stone-900 block">Direct Workshop Restock</span>
+                        <span className="font-bold text-stone-900 block">Direct Workshop Delivery & Inventory Sync</span>
                         <p className="text-stone-500 leading-relaxed">
-                            Purchased raw materials will be fulfilled by peer artisan studios. When delivery is marked received, LikhangKamay automatically records the items into your Studio Materials Inventory with weighted-average unit costing.
+                            Purchased raw materials are delivered directly from peer artisan workshops. When you confirm delivery receipt, LikhangKamay automatically records the items into your Studio Inventory.
                         </p>
                     </div>
                 </div>
@@ -266,7 +266,7 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full rounded-xl bg-clay-600 py-3.5 text-xs font-bold text-white shadow-md hover:bg-clay-700 disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                                className="hidden lg:flex w-full rounded-xl bg-clay-600 py-3.5 text-xs font-bold text-white shadow-md hover:bg-clay-700 disabled:opacity-50 transition-all active:scale-95 items-center justify-center gap-2 cursor-pointer"
                             >
                                 <span>Place Material Order</span>
                                 <ArrowRight size={14} />
@@ -274,6 +274,30 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
                         </div>
                     </div>
                 </form>
+
+                {/* Mobile Sticky Order Placement Bar */}
+                <div className="block lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 p-3.5 shadow-lg">
+                    <div className="flex items-center justify-between gap-3 max-w-lg mx-auto">
+                        <div className="space-y-0.5">
+                            <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider block">
+                                Total Due
+                            </span>
+                            <span className="text-base font-black text-clay-700 block leading-none">
+                                {formatCurrency(grandTotal)}
+                            </span>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={handleSubmit}
+                            disabled={processing || !selectedAddressId}
+                            className="flex-1 max-w-[210px] flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-clay-600 hover:bg-clay-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs shadow-md shadow-clay-200 transition-all active:scale-95 cursor-pointer"
+                        >
+                            <span>Confirm & Order</span>
+                            <ArrowRight size={14} />
+                        </button>
+                    </div>
+                </div>
             </div>
         </>
     );

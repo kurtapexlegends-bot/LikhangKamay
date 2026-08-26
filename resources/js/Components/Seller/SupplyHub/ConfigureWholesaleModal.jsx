@@ -27,17 +27,17 @@ export default function ConfigureWholesaleModal({
 
     return (
         <Modal show={show} onClose={onClose} maxWidth="lg">
-            <div className="bg-white rounded-2xl p-6 space-y-5">
+            <div className="bg-white rounded-2xl p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 {/* Modal Header */}
                 <div className="flex items-center justify-between border-b border-stone-150 pb-3">
                     <div className="space-y-0.5">
-                        <h3 className="text-base font-bold text-stone-900 tracking-tight">Configure Peer Studio Supply Listing</h3>
+                        <h3 className="text-base font-bold text-stone-900 tracking-tight">Configure Wholesale Supply</h3>
                         <p className="text-xs text-stone-500 truncate max-w-sm">{product.name}</p>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition-colors"
+                        className="rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition-colors cursor-pointer"
                         aria-label="Close dialog"
                     >
                         <X size={18} />
@@ -49,10 +49,10 @@ export default function ConfigureWholesaleModal({
                     <div className="flex items-center justify-between rounded-xl border border-stone-200 p-3.5 bg-stone-50/70">
                         <div className="space-y-0.5">
                             <label htmlFor="publish-toggle" className="font-bold text-stone-900 cursor-pointer">
-                                Publish to Peer Studios
+                                Publish as Wholesale Supply
                             </label>
                             <p className="text-[11px] text-stone-500">
-                                Make this material visible for peer artisans to purchase in bulk.
+                                Make this material visible for other workshops to purchase in bulk.
                             </p>
                         </div>
                         <input
@@ -140,7 +140,7 @@ export default function ConfigureWholesaleModal({
                             {isThresholdBelowMoq && (
                                 <div className="flex items-center gap-1.5 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
                                     <AlertCircle size={13} className="shrink-0" />
-                                    <span>Wholesale threshold quantity ({wholesaleMinVal}) is lower than MOQ ({moqVal}). Consider increasing threshold.</span>
+                                    <span>Wholesale threshold quantity ({wholesaleMinVal}) is lower than minimum order ({moqVal}). Consider increasing threshold.</span>
                                 </div>
                             )}
 

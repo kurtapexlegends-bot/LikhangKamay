@@ -45,8 +45,8 @@ export function ToastProvider({ children }) {
     return (
         <ToastContext.Provider value={{ addToast }}>
             {children}
-            {/* Top-Right Container */}
-            <div className="pointer-events-none fixed top-5 right-5 sm:top-6 sm:right-6 z-[300] flex max-w-[calc(100vw-2.5rem)] sm:max-w-md flex-col gap-3">
+            {/* Toast Container */}
+            <div className="pointer-events-none fixed top-3 inset-x-3 sm:inset-x-auto sm:top-6 sm:right-6 z-[300] flex max-w-full sm:max-w-md flex-col gap-2">
                 <AnimatePresence>
                     {toasts.map(toast => (
                         <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
@@ -80,28 +80,28 @@ function ToastItem({ toast, onRemove }) {
     const statusConfig = {
         success: {
             iconBg: 'bg-emerald-50 text-emerald-600 border border-emerald-200/80 shadow-xs',
-            icon: <Check size={20} strokeWidth={3} />,
+            icon: <Check size={16} strokeWidth={2.5} />,
             progressBg: 'bg-emerald-500',
             badgeText: 'Success',
             badgeClass: 'bg-emerald-100/60 text-emerald-800 border-emerald-200',
         },
         error: {
             iconBg: 'bg-rose-50 text-rose-600 border border-rose-200/80 shadow-xs',
-            icon: <X size={20} strokeWidth={3} />,
+            icon: <X size={16} strokeWidth={2.5} />,
             progressBg: 'bg-rose-500',
             badgeText: 'Notice',
             badgeClass: 'bg-rose-100/60 text-rose-800 border-rose-200',
         },
         info: {
             iconBg: 'bg-blue-50 text-blue-600 border border-blue-200/80 shadow-xs',
-            icon: <Info size={20} strokeWidth={3} />,
+            icon: <Info size={16} strokeWidth={2.5} />,
             progressBg: 'bg-blue-500',
             badgeText: 'Info',
             badgeClass: 'bg-blue-100/60 text-blue-800 border-blue-200',
         },
         warning: {
             iconBg: 'bg-amber-50 text-amber-600 border border-amber-200/80 shadow-xs',
-            icon: <AlertTriangle size={20} strokeWidth={3} />,
+            icon: <AlertTriangle size={16} strokeWidth={2.5} />,
             progressBg: 'bg-amber-500',
             badgeText: 'Warning',
             badgeClass: 'bg-amber-100/60 text-amber-800 border-amber-200',
@@ -113,23 +113,23 @@ function ToastItem({ toast, onRemove }) {
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, y: -20, x: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -15, scale: 0.92, transition: { duration: 0.18 } }}
+            initial={{ opacity: 0, y: -15, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.94, transition: { duration: 0.15 } }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="pointer-events-auto relative flex items-start gap-3.5 rounded-2xl p-4 sm:px-5 sm:py-4 bg-white/98 border border-stone-200/90 text-stone-900 shadow-2xl shadow-stone-900/10 backdrop-blur-xl ring-1 ring-black/5 overflow-hidden w-full sm:min-w-[340px]"
+            className="pointer-events-auto relative flex items-center gap-2.5 sm:gap-3 rounded-xl sm:rounded-2xl p-2.5 sm:px-4 sm:py-3 bg-white/98 border border-stone-200/90 text-stone-900 shadow-xl shadow-stone-900/10 backdrop-blur-xl ring-1 ring-black/5 overflow-hidden w-full sm:min-w-[320px]"
         >
-            <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${config.iconBg}`}>
+            <div className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center ${config.iconBg}`}>
                 {config.icon}
             </div>
 
             <div className="flex-1 min-w-0 pr-1">
-                <div className="flex items-center gap-2 mb-0.5">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${config.badgeClass}`}>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className={`inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider border ${config.badgeClass}`}>
                         {config.badgeText}
                     </span>
                 </div>
-                <p className="text-sm font-bold tracking-tight text-stone-900 leading-snug break-words">
+                <p className="text-xs sm:text-sm font-semibold text-stone-900 leading-snug break-words">
                     {toast.message}
                 </p>
             </div>
@@ -137,7 +137,7 @@ function ToastItem({ toast, onRemove }) {
             {toast.onAction && (
                 <button
                     onClick={handleAction}
-                    className="shrink-0 px-3 py-1.5 bg-clay-700 text-white rounded-xl text-xs font-bold hover:bg-clay-800 active:scale-95 transition-all shadow-md shadow-clay-200"
+                    className="shrink-0 px-2.5 py-1 bg-clay-700 text-white rounded-lg text-xs font-bold hover:bg-clay-800 active:scale-95 transition shadow-2xs"
                 >
                     {toast.actionLabel}
                 </button>
@@ -145,13 +145,13 @@ function ToastItem({ toast, onRemove }) {
 
             <button
                 onClick={() => onRemove(toast.id)}
-                className="shrink-0 text-stone-400 hover:text-stone-700 transition-colors p-1 rounded-lg hover:bg-stone-100"
+                className="shrink-0 text-stone-400 hover:text-stone-700 transition p-1 rounded-lg hover:bg-stone-100"
                 aria-label="Close notification"
             >
-                <X size={16} strokeWidth={2.5} />
+                <X size={14} strokeWidth={2} />
             </button>
 
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-stone-100">
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-stone-100">
                 <div
                     className={`h-full ${config.progressBg} animate-toast-shrink origin-left`}
                     style={{ animationDuration: `${toast.duration}ms` }}

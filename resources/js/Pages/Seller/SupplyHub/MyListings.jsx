@@ -96,79 +96,73 @@ export default function MyListings({ products = [], availableCategories = [], av
 
     return (
         <>
-            <Head title="My Wholesale Supply Listings" />
+            <Head title="My Supplies | LikhangKamay" />
             <SellerHeader
                 title="Supply Hub"
-                subtitle="Source bulk raw materials, clay sacks, timber, and glazes directly from verified peer studios."
+                subtitle="Manage your bulk raw materials, clay sacks, timber, and workshop glazes for peer artisans."
                 onMenuClick={openSidebar}
-                badge={{ label: 'Wholesale Sourcing', iconColor: 'text-clay-500' }}
+                badge={{ label: 'Wholesale Supplies', iconColor: 'text-clay-500' }}
             />
 
-            <div className="p-4 sm:p-6 lg:p-8 space-y-6 pb-12">
+            <div className="p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 pb-12">
                 {/* Studio Workspace Tab Navigation */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-3">
-                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
-                        <Link
-                            href={route('seller.supply-hub.index')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
-                        >
-                            <Store size={13} className="text-clay-600" />
-                            <span>Browse Peer Supplies</span>
-                        </Link>
-                        <Link
-                            href={route('seller.supply-hub.my-listings')}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-3.5 py-2 text-xs font-bold text-white shadow-2xs shrink-0"
-                        >
-                            <Layers size={13} />
-                            <span>My Wholesale Listings</span>
-                            {publishedCount > 0 && (
-                                <span className="rounded-full bg-stone-700 text-stone-200 px-1.5 py-0.2 text-[10px] font-extrabold">
-                                    {publishedCount}
-                                </span>
-                            )}
-                        </Link>
-                        <Link
-                            href={route('seller.supply-hub.orders')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
-                        >
-                            <Truck size={13} className="text-clay-600" />
-                            <span>Inbound Material Orders</span>
-                            {activeOrdersCount > 0 && (
-                                <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
-                                    {activeOrdersCount}
-                                </span>
-                            )}
-                        </Link>
+                <div className="flex items-center justify-between gap-2 border-b border-stone-200/80 pb-2.5 sm:pb-3">
+                    <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1">
+                        <div className="p-1 bg-stone-100/70 rounded-2xl inline-flex items-center gap-1">
+                            <Link
+                                href={route('seller.supply-hub.index')}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
+                            >
+                                <span>Browse Supplies</span>
+                            </Link>
+
+                            <Link
+                                href={route('seller.supply-hub.my-listings')}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 bg-white text-clay-800 shadow-xs font-black"
+                            >
+                                <span>My Supplies</span>
+                                {publishedCount > 0 && (
+                                    <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-clay-100 text-clay-800">
+                                        {publishedCount}
+                                    </span>
+                                )}
+                            </Link>
+
+                            <Link
+                                href={route('seller.supply-hub.orders')}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
+                            >
+                                <span>Material Orders</span>
+                                {activeOrdersCount > 0 && (
+                                    <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-stone-200 text-stone-600">
+                                        {activeOrdersCount}
+                                    </span>
+                                )}
+                            </Link>
+                        </div>
                     </div>
 
-                    {/* Sourcing Cart & Studio Inventory Icon Shortcuts */}
-                    <div className="flex items-center gap-2 shrink-0">
-                        <Link
-                            href={route('products.index')}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-clay-600 px-3.5 py-2 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-colors"
-                        >
-                            <Plus size={13} />
-                            <span>Create Product</span>
-                        </Link>
-
+                    {/* Right Actions */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         <Link
                             href={route('procurement.index')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs"
+                            className="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition shadow-2xs"
                             title="Studio Inventory"
                         >
                             <Boxes size={14} className="text-stone-500" />
-                            <span className="hidden md:inline">Studio Inventory</span>
+                            <span>Studio Inventory</span>
                         </Link>
 
                         <Link
                             href={route('seller.supply-hub.cart')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-800 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs"
-                            title="View Sourcing Cart"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-800 text-xs font-bold transition shadow-2xs cursor-pointer"
+                            title="View Cart"
                         >
                             <ShoppingCart size={14} className="text-clay-600" />
-                            <span className="hidden md:inline">View Cart</span>
+                            <span className="hidden sm:inline">View Cart</span>
+                            <span className="inline sm:hidden">Cart</span>
                             {cartCount > 0 && (
-                                <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
+                                <span className="flex h-4 min-w-[18px] items-center justify-center rounded-full bg-clay-600 text-white px-1 text-[10px] font-black">
                                     {cartCount}
                                 </span>
                             )}
@@ -180,7 +174,7 @@ export default function MyListings({ products = [], availableCategories = [], av
                 <FilterToolbarHeader
                     tabs={[
                         { key: 'all', label: 'All Items', count: products.length },
-                        { key: 'b2b', label: 'Listed for Peer Studios', count: publishedCount },
+                        { key: 'b2b', label: 'Wholesale Active', count: publishedCount },
                         { key: 'retail', label: 'Retail Only', count: retailCount },
                     ]}
                     activeTab={statusFilter}
@@ -188,6 +182,17 @@ export default function MyListings({ products = [], availableCategories = [], av
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
                     searchPlaceholder="Search products or SKU..."
+                    extraActions={
+                        <Link
+                            href={route('products.index')}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-clay-600 px-3 py-2 sm:py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition min-h-[42px] sm:min-h-[38px] active:scale-95"
+                            title="Create new product or raw material"
+                        >
+                            <Plus size={13} />
+                            <span className="hidden sm:inline">Create Product</span>
+                            <span className="inline sm:hidden">Create</span>
+                        </Link>
+                    }
                     activeFiltersCount={categoryFilter !== 'all' ? 1 : 0}
                     activeFilterTags={categoryFilter !== 'all' ? [{
                         key: 'category',
@@ -221,8 +226,8 @@ export default function MyListings({ products = [], availableCategories = [], av
                     }}
                 />
 
-                {/* Table of Listings */}
-                <div className="rounded-2xl border border-stone-200 bg-white shadow-2xs overflow-hidden">
+                {/* Desktop Table of Listings */}
+                <div className="hidden md:block rounded-2xl border border-stone-200 bg-white shadow-2xs overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs text-stone-600">
                             <thead className="border-b border-stone-200 bg-stone-50/80 font-bold uppercase tracking-wider text-stone-500 text-[10px]">
@@ -273,7 +278,7 @@ export default function MyListings({ products = [], availableCategories = [], av
                                                 {product.is_b2b_supply ? (
                                                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
                                                         <Check size={10} />
-                                                        Listed in B2B
+                                                        Wholesale Active
                                                     </span>
                                                 ) : (
                                                     <span className="inline-flex items-center rounded-full bg-stone-100 border border-stone-200 px-2 py-0.5 text-[10px] font-semibold text-stone-500">
@@ -301,10 +306,10 @@ export default function MyListings({ products = [], availableCategories = [], av
                                                 <button
                                                     type="button"
                                                     onClick={() => openEditModal(product)}
-                                                    className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-clay-300 transition-colors shadow-2xs"
+                                                    className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-clay-300 transition-colors shadow-2xs cursor-pointer"
                                                 >
                                                     <Edit3 size={12} />
-                                                    <span>Configure B2B</span>
+                                                    <span>Configure Wholesale</span>
                                                 </button>
                                             </td>
                                         </tr>
@@ -313,6 +318,81 @@ export default function MyListings({ products = [], availableCategories = [], av
                             </tbody>
                         </table>
                     </div>
+                </div>
+
+                {/* Mobile Card List View for Handset Screens */}
+                <div className="block md:hidden space-y-3">
+                    {filteredProducts.length === 0 ? (
+                        <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-2xs">
+                            <Package size={28} className="mx-auto text-stone-300 mb-2" />
+                            <p className="font-bold text-stone-800 text-sm">No products found</p>
+                            <p className="text-xs text-stone-400 mt-1">No items match your active filters.</p>
+                        </div>
+                    ) : (
+                        filteredProducts.map((product) => (
+                            <div key={product.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-2xs space-y-3">
+                                <div className="flex items-start gap-3">
+                                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-stone-100">
+                                        <img
+                                            src={product.img || '/images/placeholder.svg'}
+                                            alt={product.name}
+                                            className="h-full w-full object-cover"
+                                            onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
+                                        />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between gap-1">
+                                            <span className="inline-block rounded bg-stone-100 px-1.5 py-0.5 text-[9px] font-bold text-stone-600">
+                                                {product.category}
+                                            </span>
+                                            {product.is_b2b_supply ? (
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                                                    <Check size={9} /> Wholesale Active
+                                                </span>
+                                            ) : (
+                                                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-medium text-stone-500">
+                                                    Retail Only
+                                                </span>
+                                            )}
+                                        </div>
+                                        <h4 className="font-bold text-stone-900 text-xs mt-1 line-clamp-1">{product.name}</h4>
+                                        <p className="text-[10px] text-stone-400 font-mono">SKU: {product.sku || 'N/A'}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-stone-150">
+                                    <div className="bg-stone-50 p-2 rounded-xl">
+                                        <span className="text-[10px] text-stone-400 block font-medium">Standard Price</span>
+                                        <span className="font-bold text-stone-900">{formatCurrency(product.price)}</span>
+                                    </div>
+                                    <div className="bg-stone-50 p-2 rounded-xl">
+                                        <span className="text-[10px] text-stone-400 block font-medium">Available Stock</span>
+                                        <span className="font-bold text-stone-900">{product.stock} {product.supply_unit || 'pcs'}</span>
+                                    </div>
+                                </div>
+
+                                {product.is_b2b_supply && (
+                                    <div className="rounded-xl bg-amber-50/70 border border-amber-200/80 p-2.5 text-xs text-amber-900 space-y-0.5">
+                                        <div className="flex items-center justify-between font-bold text-[11px]">
+                                            <span>Min. Order: {product.moq} {product.supply_unit}</span>
+                                            {product.wholesale_price && (
+                                                <span>Wholesale: {formatCurrency(product.wholesale_price)}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={() => openEditModal(product)}
+                                    className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-800 text-xs font-bold transition shadow-2xs cursor-pointer active:scale-95"
+                                >
+                                    <Edit3 size={13} className="text-clay-600" />
+                                    <span>Configure Wholesale</span>
+                                </button>
+                            </div>
+                        ))
+                    )}
                 </div>
 
                 {/* Configure Wholesale Modal */}

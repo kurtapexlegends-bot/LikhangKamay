@@ -73,71 +73,71 @@ export default function SourcingOrders({
             <Head title="Inbound Material Orders - Supply Hub" />
             <SellerHeader
                 title="Supply Hub"
-                subtitle="Source bulk raw materials, clay sacks, timber, and glazes directly from verified peer studios."
+                subtitle="Track and manage inbound material shipments and verify delivery from peer workshops."
                 onMenuClick={openSidebar}
-                badge={{ label: 'Wholesale Sourcing', iconColor: 'text-clay-500' }}
+                badge={{ label: 'Wholesale Supplies', iconColor: 'text-clay-500' }}
             />
 
-            <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-16">
+            <div className="p-3 sm:p-6 lg:p-8 space-y-3 sm:space-y-4 lg:space-y-6 pb-12">
                 
-                {/* Top Action Tabs & Quick Icons */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-stone-200 pb-3">
-                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
-                        <Link
-                            href={route('seller.supply-hub.index')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
-                        >
-                            <Store size={13} className="text-clay-600" />
-                            <span>Browse Peer Supplies</span>
-                        </Link>
+                {/* Top Sub-Navigation Pill Tabs & Cart Row */}
+                <div className="flex items-center justify-between gap-2 border-b border-stone-200/80 pb-2.5 sm:pb-3">
+                    <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1">
+                        <div className="p-1 bg-stone-100/70 rounded-2xl inline-flex items-center gap-1">
+                            <Link
+                                href={route('seller.supply-hub.index')}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
+                            >
+                                <span>Browse Supplies</span>
+                            </Link>
 
-                        <Link
-                            href={route('seller.supply-hub.my-listings')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
-                        >
-                            <Layers size={13} className="text-clay-600" />
-                            <span>My Wholesale Listings</span>
-                            {myPublishedCount > 0 && (
-                                <span className="rounded-full bg-clay-100 text-clay-700 px-1.5 py-0.2 text-[10px] font-extrabold">
-                                    {myPublishedCount}
-                                </span>
-                            )}
-                        </Link>
+                            <Link
+                                href={route('seller.supply-hub.my-listings')}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
+                            >
+                                <span>My Supplies</span>
+                                {myPublishedCount > 0 && (
+                                    <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-stone-200 text-stone-600">
+                                        {myPublishedCount}
+                                    </span>
+                                )}
+                            </Link>
 
-                        <Link
-                            href={route('seller.supply-hub.orders')}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-bold text-white shadow-2xs shrink-0"
-                        >
-                            <Truck size={13} />
-                            <span>Inbound Material Orders</span>
-                            {activeOrdersCount > 0 && (
-                                <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
-                                    {activeOrdersCount}
-                                </span>
-                            )}
-                        </Link>
+                            <Link
+                                href={route('seller.supply-hub.orders')}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 bg-white text-clay-800 shadow-xs font-black"
+                            >
+                                <span>Material Orders</span>
+                                {activeOrdersCount > 0 && (
+                                    <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-clay-100 text-clay-800">
+                                        {activeOrdersCount}
+                                    </span>
+                                )}
+                            </Link>
+                        </div>
                     </div>
 
-                    {/* Quick Icon Shortcuts */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    {/* Right Cart Shortcut */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         <Link
                             href={route('procurement.index')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs"
+                            className="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition shadow-2xs"
                             title="Studio Inventory"
                         >
                             <Boxes size={14} className="text-stone-500" />
-                            <span className="hidden md:inline">Studio Inventory</span>
+                            <span>Studio Inventory</span>
                         </Link>
 
                         <Link
                             href={route('seller.supply-hub.cart')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-800 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs"
-                            title="View Sourcing Cart"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-800 text-xs font-bold transition shadow-2xs cursor-pointer"
+                            title="View Cart"
                         >
                             <ShoppingCart size={14} className="text-clay-600" />
-                            <span className="hidden md:inline">View Cart</span>
+                            <span className="hidden sm:inline">View Cart</span>
+                            <span className="inline sm:hidden">Cart</span>
                             {cartCount > 0 && (
-                                <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
+                                <span className="flex h-4 min-w-[18px] items-center justify-center rounded-full bg-clay-600 text-white px-1 text-[10px] font-black">
                                     {cartCount}
                                 </span>
                             )}
@@ -390,7 +390,7 @@ export default function SourcingOrders({
                                                         orderNumber: order.order_number || String(order.id),
                                                     })}
                                                     disabled={confirmingId === order.id}
-                                                    className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-2xs hover:bg-emerald-700 transition-all active:scale-95 cursor-pointer"
+                                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-2xs hover:bg-emerald-700 transition-all active:scale-95 cursor-pointer min-h-[40px]"
                                                 >
                                                     <CheckCircle2 size={14} />
                                                     <span>Confirm Delivery & Restock Inventory</span>

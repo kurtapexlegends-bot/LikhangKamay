@@ -1,22 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
-import { useToast } from '@/Components/ToastContext';
-import { 
-    Store, Layers, ShoppingCart, SlidersHorizontal, Search, 
-    X, ArrowUpDown, ChevronDown, CheckCircle2, Package, RotateCcw,
-    Truck, ShieldCheck, Boxes
-} from 'lucide-react';
-import SlideOverDrawer from '@/Components/SlideOverDrawer';
-
-// Subcomponents
-import B2BFilterSidebar from '@/Components/Seller/SupplyHub/B2BFilterSidebar';
 import B2BSupplyCard from '@/Components/Seller/SupplyHub/B2BSupplyCard';
+import B2BFilterSidebar from '@/Components/Seller/SupplyHub/B2BFilterSidebar';
+import SourcingCatalogToolbar from '@/Components/Seller/SupplyHub/SourcingCatalogToolbar';
+import SourcingNoticeBanner from '@/Components/Seller/SupplyHub/SourcingNoticeBanner';
 import MaterialDetailModal from '@/Components/Seller/SupplyHub/MaterialDetailModal';
 import ProcurementCartDrawer from '@/Components/Seller/SupplyHub/ProcurementCartDrawer';
+import SlideOverDrawer from '@/Components/SlideOverDrawer';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import CompactPagination from '@/Components/CompactPagination';
+import { 
+    Store, Package, ShoppingCart, 
+    ListOrdered, RotateCcw, Boxes
+} from 'lucide-react';
+import { useToast } from '@/Components/ToastContext';
 
-export default function SupplyHubIndex({
+export default function Index({
     supplies,
     categories = [],
     categoryCounts = {},
@@ -24,259 +25,174 @@ export default function SupplyHubIndex({
     locationCounts = {},
     myPublishedCount = 0,
     activeOrdersCount = 0,
-    cart = {},
+    cart: initialCart = {},
     filters = {},
 }) {
-    const { addToast } = useToast();
+    const { addToast } = useToast() || { addToast: () => {} };
     const { openSidebar } = useSellerWorkspaceShell();
-    const { cartCount: globalCartCount } = usePage().props;
 
-    // Filter states
-    const [searchTerm, setSearchTerm] = useState(filters.search || '');
-    const [activeCategory, setActiveCategory] = useState(filters.category || 'All');
-    const [minPrice, setMinPrice] = useState(filters.price_min || '');
-    const [maxPrice, setMaxPrice] = useState(filters.price_max || '');
-    const [hasWholesale, setHasWholesale] = useState(Boolean(filters.has_wholesale));
-    const [moqTier, setMoqTier] = useState(filters.moq_tier || 'all');
-    const [sortBy, setSortBy] = useState(filters.sort || 'newest');
-    const initialLocations = filters.locations ? String(filters.locations).split(',') : [];
-    const [selectedLocations, setSelectedLocations] = useState(initialLocations);
-
-    const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+    // Search input state
+    const [searchInput, setSearchInput] = useState(filters.search || '');
+    const [selectedSupplyForDetail, setSelectedSupplyForDetail] = useState(null);
     const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
-    const [quantities, setQuantities] = useState({});
-    const [cartCount, setCartCount] = useState(globalCartCount || 0);
-    const [selectedDetailItem, setSelectedDetailItem] = useState(null);
-
-    // Dismissible sync notice state
-    const [showSyncNotice, setShowSyncNotice] = useState(() => {
-        if (typeof window === 'undefined') return true;
-        return localStorage.getItem('lk_dismiss_b2b_sync_notice') !== 'true';
-    });
-
-    const handleDismissNotice = () => {
-        setShowSyncNotice(false);
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('lk_dismiss_b2b_sync_notice', 'true');
-        }
-    };
+    const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+    const [cart, setCart] = useState(initialCart);
 
     useEffect(() => {
-        if (typeof globalCartCount === 'number') {
-            setCartCount(globalCartCount);
-        }
-    }, [globalCartCount]);
+        setCart(initialCart);
+    }, [initialCart]);
 
-    // Active filter count
-    const activeFilterCount = [
-        activeCategory !== 'All',
-        Boolean(minPrice || maxPrice),
-        selectedLocations.length > 0,
-        hasWholesale,
-        moqTier !== 'all',
-        Boolean(searchTerm),
-    ].filter(Boolean).length;
+    const activeFiltersCount = useMemo(() => {
+        let count = 0;
+        if (filters.search) count++;
+        if (filters.category && filters.category !== 'All') count++;
+        if (filters.price_min || filters.price_max) count++;
+        if (filters.locations) count++;
+        if (filters.has_wholesale) count++;
+        if (filters.moq_tier && filters.moq_tier !== 'all') count++;
+        return count;
+    }, [filters]);
 
-    // Apply Filter Helper
-    const applyFilters = (overrides = {}) => {
-        const queryParams = {
-            search: overrides.search !== undefined ? overrides.search : searchTerm,
-            category: overrides.category !== undefined ? overrides.category : activeCategory,
-            price_min: overrides.price_min !== undefined ? overrides.price_min : minPrice,
-            price_max: overrides.price_max !== undefined ? overrides.price_max : maxPrice,
-            locations: overrides.locations !== undefined ? overrides.locations.join(',') : selectedLocations.join(','),
-            has_wholesale: overrides.has_wholesale !== undefined ? (overrides.has_wholesale ? 1 : undefined) : (hasWholesale ? 1 : undefined),
-            moq_tier: overrides.moq_tier !== undefined ? overrides.moq_tier : moqTier,
-            sort: overrides.sort !== undefined ? overrides.sort : sortBy,
-        };
+    const cartCount = useMemo(() => {
+        return Object.values(cart).reduce((sum, item) => sum + (parseInt(item?.qty) || 1), 0);
+    }, [cart]);
 
-        // Remove undefined / empty keys
-        Object.keys(queryParams).forEach(k => {
-            if (queryParams[k] === '' || queryParams[k] === undefined || (k === 'category' && queryParams[k] === 'All') || (k === 'moq_tier' && queryParams[k] === 'all')) {
-                delete queryParams[k];
-            }
-        });
-
-        router.get(route('seller.supply-hub.index'), queryParams, {
+    const handleFilterChange = (key, value) => {
+        const updated = { ...filters, [key]: value, page: 1 };
+        router.get(route('seller.supply-hub.index'), updated, {
             preserveState: true,
             preserveScroll: true,
-            replace: true,
         });
     };
 
-    // MOQ Tier toggle
-    const handleMoqTierChange = (tier) => {
-        setMoqTier(tier);
-        applyFilters({ moq_tier: tier });
-    };
-
-    // Category Click
-    const handleCategoryClick = (cat) => {
-        setActiveCategory(cat);
-        applyFilters({ category: cat });
-    };
-
-    // Location toggle
-    const handleLocationChange = (loc) => {
-        const next = selectedLocations.includes(loc)
-            ? selectedLocations.filter(l => l !== loc)
-            : [...selectedLocations, loc];
-        setSelectedLocations(next);
-        applyFilters({ locations: next });
-    };
-
-    // Wholesale toggle
-    const handleWholesaleToggle = () => {
-        const next = !hasWholesale;
-        setHasWholesale(next);
-        applyFilters({ has_wholesale: next });
-    };
-
-    // Price submit
-    const handleApplyPrice = () => {
-        applyFilters();
-    };
-
-    // Sort change
-    const handleSortChange = (newSort) => {
-        setSortBy(newSort);
-        applyFilters({ sort: newSort });
-    };
-
-    // Search submit
     const handleSearchSubmit = (e) => {
         e.preventDefault();
-        applyFilters();
+        handleFilterChange('search', searchInput);
     };
 
-    // Clear all filters
-    const handleClearAll = () => {
-        setSearchTerm('');
-        setActiveCategory('All');
-        setMinPrice('');
-        setMaxPrice('');
-        setSelectedLocations([]);
-        setHasWholesale(false);
-        setSortBy('newest');
-        router.get(route('seller.supply-hub.index'), {}, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
+    const handleClearSearch = () => {
+        setSearchInput('');
+        handleFilterChange('search', '');
     };
 
-    // Quantity stepper
-    const handleQuantityChange = (item, newQty) => {
-        const min = item.moq || 1;
-        const max = item.stock || 9999;
-        const clamped = Math.max(min, Math.min(max, newQty));
-        setQuantities(prev => ({ ...prev, [item.id]: clamped }));
-    };
-
-    // Add to cart
-    const handleAddToCart = async (item, qty) => {
-        try {
-            await window.axios.post(route('cart.store'), {
-                product_id: item.id,
-                quantity: qty,
-                variant: 'Standard',
-            });
-            const newCount = cartCount + 1;
-            setCartCount(newCount);
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('lk_cart_count', newCount);
-                window.dispatchEvent(new Event('cart-updated'));
-            }
-            addToast({
-                type: 'success',
-                message: `Added ${qty} ${item.supply_unit || 'units'} of "${item.name}" to procurement cart.`,
-            });
-        } catch {
-            addToast({
-                type: 'error',
-                message: 'Failed to add material to cart. Please try again.',
-            });
+    const handleRemoveFilter = (filterKey) => {
+        if (filterKey === 'price') {
+            const updated = { ...filters, price_min: '', price_max: '', page: 1 };
+            router.get(route('seller.supply-hub.index'), updated, { preserveState: true, preserveScroll: true });
+        } else if (filterKey === 'search') {
+            setSearchInput('');
+            handleFilterChange('search', '');
+        } else {
+            handleFilterChange(filterKey, filterKey === 'category' ? 'All' : filterKey === 'moq_tier' ? 'all' : '');
         }
     };
 
-    // 1-Click Buy Now
-    const handleQuickOrder = (item, qty) => {
-        router.visit(route('seller.supply-hub.checkout', {
-            product_id: item.id,
-            quantity: qty,
-        }));
+    const handleResetAllFilters = () => {
+        setSearchInput('');
+        router.get(route('seller.supply-hub.index'), {}, { preserveState: false });
+        setIsMobileFiltersOpen(false);
     };
 
-    const productList = supplies?.data || [];
+    const handleAddToCart = async (supply, quantity) => {
+        const qtyToAdd = Math.max(supply.moq || 1, parseInt(quantity) || supply.moq || 1);
+        try {
+            const endpoint = typeof route === 'function' && route().has('cart.store') ? route('cart.store') : '/cart/add';
+            const res = await window.axios.post(endpoint, {
+                product_id: supply.id,
+                quantity: qtyToAdd,
+            });
+            if (res.data?.success || res.status === 200) {
+                addToast({
+                    type: 'success',
+                    title: 'Added to Cart',
+                    message: `Added ${qtyToAdd} ${supply.supply_unit || 'units'} of ${supply.name} to cart.`,
+                });
+                if (res.data?.cart) {
+                    setCart(res.data.cart);
+                } else {
+                    router.reload({ only: ['cart'] });
+                }
+            }
+        } catch (err) {
+            addToast({
+                type: 'error',
+                title: 'Cart Error',
+                message: err.response?.data?.message || 'Could not add item to cart. Please check minimum order requirements.',
+            });
+        }
+    };
 
     return (
         <>
-            <Head title="Artisan Wholesale Sourcing Catalog" />
+            <Head title="Supply Hub | LikhangKamay" />
 
             <SellerHeader
                 title="Supply Hub"
-                subtitle="Source bulk raw materials, clay sacks, timber, and glazes directly from verified peer studios."
+                subtitle="Source pottery clay, timber, glazes, and packaging directly from verified peer workshops."
                 onMenuClick={openSidebar}
-                badge={{ label: 'Wholesale Sourcing', iconColor: 'text-clay-500' }}
+                badge={{ label: 'Wholesale Supplies', iconColor: 'text-clay-500' }}
             />
 
-            <div className="p-4 sm:p-6 lg:p-8 space-y-6 pb-16">
-                {/* Top Workspace Tab Bar with Quick Actions */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-3">
-                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
-                        <Link
-                            href={route('seller.supply-hub.index')}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-bold text-white shadow-2xs shrink-0"
-                        >
-                            <Store size={13} />
-                            <span>Browse Peer Supplies</span>
-                        </Link>
-                        <Link
-                            href={route('seller.supply-hub.my-listings')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
-                        >
-                            <Layers size={13} className="text-clay-600" />
-                            <span>My Wholesale Listings</span>
-                            {myPublishedCount > 0 && (
-                                <span className="rounded-full bg-clay-100 text-clay-700 px-1.5 py-0.2 text-[10px] font-extrabold">
-                                    {myPublishedCount}
-                                </span>
-                            )}
-                        </Link>
-                        <Link
-                            href={route('seller.supply-hub.orders')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs shrink-0"
-                        >
-                            <Truck size={13} className="text-clay-600" />
-                            <span>Inbound Material Orders</span>
-                            {activeOrdersCount > 0 && (
-                                <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
-                                    {activeOrdersCount}
-                                </span>
-                            )}
-                        </Link>
+            <div className="p-3 sm:p-6 lg:p-8 space-y-3 sm:space-y-4 lg:space-y-6 pb-12">
+
+                {/* Sub-Navigation Pill Tabs & Cart Row */}
+                <div className="flex items-center justify-between gap-2 border-b border-stone-200/80 pb-2.5 sm:pb-3">
+                    <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1">
+                        <div className="p-1 bg-stone-100/70 rounded-2xl inline-flex items-center gap-1">
+                            <Link
+                                href={route('seller.supply-hub.index')}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 bg-white text-clay-800 shadow-xs font-black"
+                            >
+                                <span>Browse Supplies</span>
+                            </Link>
+
+                            <Link
+                                href={route('seller.supply-hub.my-listings')}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
+                            >
+                                <span>My Supplies</span>
+                                {myPublishedCount > 0 && (
+                                    <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-stone-200 text-stone-600">
+                                        {myPublishedCount}
+                                    </span>
+                                )}
+                            </Link>
+
+                            <Link
+                                href={route('seller.supply-hub.orders')}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
+                            >
+                                <span>Material Orders</span>
+                                {activeOrdersCount > 0 && (
+                                    <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-stone-200 text-stone-600">
+                                        {activeOrdersCount}
+                                    </span>
+                                )}
+                            </Link>
+                        </div>
                     </div>
 
-                    {/* Sourcing Cart & Studio Inventory Icon Shortcuts */}
+                    {/* Right Cart Shortcut */}
                     <div className="flex items-center gap-2 shrink-0">
                         <Link
                             href={route('procurement.index')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs"
+                            className="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition shadow-2xs"
                             title="Studio Inventory"
                         >
                             <Boxes size={14} className="text-stone-500" />
-                            <span className="hidden md:inline">Studio Inventory</span>
+                            <span>Studio Inventory</span>
                         </Link>
 
                         <Link
                             href={route('seller.supply-hub.cart')}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-800 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-2xs"
-                            title="View Sourcing Cart"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-800 text-xs font-bold transition shadow-2xs cursor-pointer"
+                            title="View Cart"
                         >
                             <ShoppingCart size={14} className="text-clay-600" />
-                            <span className="hidden md:inline">View Cart</span>
+                            <span className="hidden sm:inline">View Cart</span>
+                            <span className="inline sm:hidden">Cart</span>
                             {cartCount > 0 && (
-                                <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
+                                <span className="flex h-4 min-w-[18px] items-center justify-center rounded-full bg-clay-600 text-white px-1 text-[10px] font-black">
                                     {cartCount}
                                 </span>
                             )}
@@ -284,326 +200,139 @@ export default function SupplyHubIndex({
                     </div>
                 </div>
 
-                {/* Dismissible Auto-Restock Closed-Loop Guarantee Card */}
-                {showSyncNotice && (
-                    <div className="rounded-2xl border border-stone-200 bg-white p-4 text-xs text-stone-700 flex items-start gap-3 shadow-2xs relative">
-                        <CheckCircle2 size={16} className="shrink-0 text-emerald-600 mt-0.5" />
-                        <div className="flex-1 space-y-0.5 pr-6">
-                            <span className="font-bold text-stone-900">Automated Closed-Loop Inventory Sync:</span>
-                            <p className="text-stone-500 leading-relaxed">
-                                When you confirm delivery of peer studio materials, LikhangKamay automatically adds the purchased units and unit costs into your Studio Materials inventory.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handleDismissNotice}
-                            className="absolute top-3 right-3 text-stone-400 hover:text-stone-700 p-1 rounded-lg hover:bg-stone-100 transition-colors"
-                            aria-label="Dismiss notice"
-                        >
-                            <X size={14} />
-                        </button>
-                    </div>
-                )}
+                {/* Direct Delivery Notice Banner */}
+                <SourcingNoticeBanner />
 
-                {/* Main 2-Column Catalog Sourcing Layout */}
-                <div className="flex flex-col lg:flex-row gap-5 items-start">
-                    {/* Left Column: Filter Sidebar (Desktop) */}
-                    <div className="hidden lg:block w-56 shrink-0 sticky top-20">
+                {/* Main 2-Column Desktop Layout: Sidebar + Catalog */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+                    {/* Left Sticky Filter Sidebar for Desktop */}
+                    <div className="hidden lg:block lg:col-span-1 sticky top-6">
                         <B2BFilterSidebar
                             categories={categories}
                             categoryCounts={categoryCounts}
                             availableLocations={availableLocations}
                             locationCounts={locationCounts}
-                            activeCategory={activeCategory}
-                            minPrice={minPrice}
-                            maxPrice={maxPrice}
-                            selectedLocations={selectedLocations}
-                            hasWholesale={hasWholesale}
-                            moqTier={moqTier}
-                            onCategoryClick={handleCategoryClick}
-                            onPriceChange={(type, val) => type === 'min' ? setMinPrice(val) : setMaxPrice(val)}
-                            onApplyPrice={handleApplyPrice}
-                            onLocationChange={handleLocationChange}
-                            onWholesaleToggle={handleWholesaleToggle}
-                            onMoqTierChange={handleMoqTierChange}
-                            onClearAll={handleClearAll}
-                            activeFilterCount={activeFilterCount}
+                            filters={filters}
+                            onFilterChange={handleFilterChange}
+                            onReset={handleResetAllFilters}
                         />
                     </div>
 
-                    {/* Right Column: Catalog Grid & Toolbar */}
-                    <div className="flex-1 min-w-0 space-y-4 w-full">
-                        {/* Toolbar: Search + Sort + Mobile Filter Trigger */}
-                        <div className="bg-white rounded-2xl border border-stone-200 p-3 sm:p-4 shadow-2xs space-y-3">
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                                {/* Search Bar */}
-                                <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
-                                    <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
-                                    <input
-                                        type="text"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        placeholder="Search materials, clay types, timber, or supplier studios..."
-                                        className="w-full rounded-xl border border-stone-200 bg-stone-50/60 pl-9 pr-8 py-2 text-xs text-stone-900 placeholder:text-stone-400 focus:border-clay-500 focus:ring-1 focus:ring-clay-500"
-                                    />
-                                    {searchTerm && (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setSearchTerm('');
-                                                applyFilters({ search: '' });
-                                            }}
-                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
-                                        >
-                                            <X size={13} />
-                                        </button>
-                                    )}
-                                </form>
+                    {/* Catalog Content Area */}
+                    <div className="lg:col-span-3 space-y-3 sm:space-y-4 w-full min-w-0">
+                        {/* Toolbar */}
+                        <SourcingCatalogToolbar
+                            searchInput={searchInput}
+                            setSearchInput={setSearchInput}
+                            onSearchSubmit={handleSearchSubmit}
+                            onClearSearch={handleClearSearch}
+                            sort={filters.sort || 'newest'}
+                            onSortChange={(val) => handleFilterChange('sort', val)}
+                            activeFiltersCount={activeFiltersCount}
+                            onOpenMobileFilters={() => setIsMobileFiltersOpen(true)}
+                            filters={filters}
+                            onRemoveFilter={handleRemoveFilter}
+                            onResetAllFilters={handleResetAllFilters}
+                        />
 
-                                {/* Sort & Mobile Filter Trigger */}
-                                <div className="flex items-center gap-2.5 justify-between sm:justify-end">
-                                    {/* Mobile Filter Drawer Button */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsMobileFilterOpen(true)}
-                                        className="lg:hidden inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 shadow-2xs"
-                                    >
-                                        <SlidersHorizontal size={13} className="text-clay-600" />
-                                        <span>Filters</span>
-                                        {activeFilterCount > 0 && (
-                                            <span className="rounded-full bg-clay-600 text-white px-1.5 py-0.2 text-[10px] font-black">
-                                                {activeFilterCount}
-                                            </span>
-                                        )}
-                                    </button>
-
-                                    {/* Sort Dropdown */}
-                                    <div className="relative">
-                                        <select
-                                            value={sortBy}
-                                            onChange={(e) => handleSortChange(e.target.value)}
-                                            className="appearance-none rounded-xl border border-stone-200 bg-white pl-3.5 pr-8 py-2 text-xs font-bold text-stone-700 hover:border-stone-300 focus:border-clay-500 focus:ring-1 focus:ring-clay-500 shadow-2xs cursor-pointer"
-                                        >
-                                            <option value="newest">Newest Sourcing Items</option>
-                                            <option value="price_low">Price: Low to High</option>
-                                            <option value="price_high">Price: High to Low</option>
-                                            <option value="moq_low">Lowest MOQ First</option>
-                                        </select>
-                                        <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Active Filter Tags */}
-                            {activeFilterCount > 0 && (
-                                <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-stone-150 text-xs">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mr-1">Active:</span>
-                                    {activeCategory !== 'All' && (
-                                        <span className="inline-flex items-center gap-1 bg-stone-100 border border-stone-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-stone-800">
-                                            <span>Category: {activeCategory}</span>
-                                            <button type="button" onClick={() => handleCategoryClick('All')} className="text-stone-400 hover:text-stone-700">
-                                                <X size={11} />
-                                            </button>
-                                        </span>
-                                    )}
-                                    {(minPrice || maxPrice) && (
-                                        <span className="inline-flex items-center gap-1 bg-stone-100 border border-stone-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-stone-800">
-                                            <span>Price: ₱{minPrice || 0} – ₱{maxPrice || '∞'}</span>
-                                            <button type="button" onClick={() => { setMinPrice(''); setMaxPrice(''); applyFilters({ price_min: '', price_max: '' }); }} className="text-stone-400 hover:text-stone-700">
-                                                <X size={11} />
-                                            </button>
-                                        </span>
-                                    )}
-                                    {selectedLocations.map(loc => (
-                                        <span key={loc} className="inline-flex items-center gap-1 bg-stone-100 border border-stone-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-stone-800">
-                                            <span>Location: {loc}</span>
-                                            <button type="button" onClick={() => handleLocationChange(loc)} className="text-stone-400 hover:text-stone-700">
-                                                <X size={11} />
-                                            </button>
-                                        </span>
+                        {/* Product Grid */}
+                        {supplies.data && supplies.data.length > 0 ? (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-4">
+                                    {supplies.data.map((supply) => (
+                                        <B2BSupplyCard
+                                            key={supply.id}
+                                            supply={supply}
+                                            onAddToCart={handleAddToCart}
+                                            onViewDetail={setSelectedSupplyForDetail}
+                                        />
                                     ))}
-                                    {hasWholesale && (
-                                        <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-emerald-800">
-                                            <span>Bulk Tier Only</span>
-                                            <button type="button" onClick={handleWholesaleToggle} className="text-emerald-500 hover:text-emerald-800">
-                                                <X size={11} />
-                                            </button>
-                                        </span>
-                                    )}
-                                    {moqTier !== 'all' && (
-                                        <span className="inline-flex items-center gap-1 bg-stone-100 border border-stone-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-stone-800">
-                                            <span>MOQ: {moqTier === 'low' ? '1–5 units' : moqTier === 'mid' ? '6–15 units' : '16+ units'}</span>
-                                            <button type="button" onClick={() => handleMoqTierChange('all')} className="text-stone-400 hover:text-stone-700">
-                                                <X size={11} />
-                                            </button>
-                                        </span>
-                                    )}
-                                    {searchTerm && (
-                                        <span className="inline-flex items-center gap-1 bg-stone-100 border border-stone-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-stone-800">
-                                            <span>Search: &ldquo;{searchTerm}&rdquo;</span>
-                                            <button type="button" onClick={() => { setSearchTerm(''); applyFilters({ search: '' }); }} className="text-stone-400 hover:text-stone-700">
-                                                <X size={11} />
-                                            </button>
-                                        </span>
-                                    )}
-                                    <button
-                                        type="button"
-                                        onClick={handleClearAll}
-                                        className="text-[11px] font-bold text-clay-700 hover:underline ml-1"
-                                    >
-                                        Clear All
-                                    </button>
                                 </div>
-                            )}
 
-                            {/* Total Results Summary */}
-                            <div className="text-[11px] text-stone-500 font-medium pt-1">
-                                Showing <span className="font-bold text-stone-900">{supplies?.total || productList.length}</span> wholesale supplies from verified peer artisan studios.
-                            </div>
-                        </div>
-
-                        {/* Product Cards Grid */}
-                        {productList.length === 0 ? (
-                            <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-16 text-center space-y-3 shadow-2xs">
-                                <Package size={40} className="mx-auto text-stone-300" />
-                                <h3 className="text-base font-bold text-stone-800">No Wholesale Materials Found</h3>
-                                <p className="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
-                                    No raw materials or blanks match your filter criteria. Try adjusting your category or clearing filters.
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={handleClearAll}
-                                    className="inline-flex items-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-bold text-white shadow-2xs hover:bg-stone-800 transition-colors"
-                                >
-                                    <RotateCcw size={13} />
-                                    <span>Reset All Filters</span>
-                                </button>
+                                {supplies.last_page > 1 && (
+                                    <div className="pt-4">
+                                        <CompactPagination
+                                            currentPage={supplies.current_page}
+                                            totalPages={supplies.last_page}
+                                            totalItems={supplies.total}
+                                            itemsPerPage={supplies.per_page}
+                                            onPageChange={(page) => handleFilterChange('page', page)}
+                                            itemLabel="material supplies"
+                                            className="rounded-2xl border border-stone-200"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                                {productList.map((item) => (
-                                    <B2BSupplyCard
-                                        key={item.id}
-                                        item={item}
-                                        quantity={quantities[item.id]}
-                                        onQuantityChange={handleQuantityChange}
-                                        onAddToCart={handleAddToCart}
-                                        onQuickOrder={handleQuickOrder}
-                                        onOpenDetail={(detailItem) => setSelectedDetailItem(detailItem)}
-                                    />
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Pagination */}
-                        {supplies?.links && supplies.links.length > 3 && (
-                            <div className="flex items-center justify-center gap-1.5 pt-6">
-                                {supplies.links.map((link, idx) => (
-                                    <Link
-                                        key={idx}
-                                        href={link.url || '#'}
-                                        preserveScroll
-                                        preserveState
-                                        className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-colors ${
-                                            link.active
-                                                ? 'bg-clay-600 text-white shadow-2xs'
-                                                : link.url
-                                                    ? 'border border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
-                                                    : 'text-stone-300 cursor-not-allowed'
-                                        }`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                    />
-                                ))}
+                            <div className="bg-white rounded-2xl border border-stone-200 p-12 text-center shadow-2xs">
+                                <WorkspaceEmptyState
+                                    icon={Store}
+                                    title="No material supplies match your criteria"
+                                    description="Try clearing some search terms, removing location filters, or resetting category selections."
+                                    actionLabel="Reset All Filters"
+                                    onAction={handleResetAllFilters}
+                                />
                             </div>
                         )}
                     </div>
                 </div>
-
-                {/* Material Detail Quick-View Modal */}
-                <MaterialDetailModal
-                    show={Boolean(selectedDetailItem)}
-                    onClose={() => setSelectedDetailItem(null)}
-                    item={selectedDetailItem}
-                    quantity={selectedDetailItem ? quantities[selectedDetailItem.id] : undefined}
-                    onQuantityChange={handleQuantityChange}
-                    onAddToCart={handleAddToCart}
-                    onQuickOrder={handleQuickOrder}
-                />
-
-                {/* Procurement Cart Drawer */}
-                <ProcurementCartDrawer
-                    show={isCartDrawerOpen}
-                    onClose={() => setIsCartDrawerOpen(false)}
-                    initialCart={cart}
-                />
-
-                {/* Mobile Filter SlideOverDrawer */}
-                <SlideOverDrawer
-                    show={isMobileFilterOpen}
-                    onClose={() => setIsMobileFilterOpen(false)}
-                    title="Filter Wholesale Materials"
-                    position="bottom"
-                    widthClass="max-w-md"
-                    footer={
-                        <div className="flex items-center gap-3">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    handleClearAll();
-                                    setIsMobileFilterOpen(false);
-                                }}
-                                className="flex-1 rounded-xl border border-stone-200 bg-white py-2.5 text-xs font-bold text-stone-700 min-h-[44px]"
-                            >
-                                Reset All
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    applyFilters();
-                                    setIsMobileFilterOpen(false);
-                                }}
-                                className="flex-1 rounded-xl bg-clay-600 py-2.5 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 min-h-[44px]"
-                            >
-                                Apply Filters
-                            </button>
-                        </div>
-                    }
-                >
-                    <div className="py-2">
-                        <B2BFilterSidebar
-                            categories={categories}
-                            categoryCounts={categoryCounts}
-                            availableLocations={availableLocations}
-                            locationCounts={locationCounts}
-                            activeCategory={activeCategory}
-                            minPrice={minPrice}
-                            maxPrice={maxPrice}
-                            selectedLocations={selectedLocations}
-                            hasWholesale={hasWholesale}
-                            moqTier={moqTier}
-                            onCategoryClick={(cat) => {
-                                handleCategoryClick(cat);
-                                setIsMobileFilterOpen(false);
-                            }}
-                            onPriceChange={(type, val) => type === 'min' ? setMinPrice(val) : setMaxPrice(val)}
-                            onApplyPrice={() => {
-                                handleApplyPrice();
-                                setIsMobileFilterOpen(false);
-                            }}
-                            onLocationChange={handleLocationChange}
-                            onWholesaleToggle={handleWholesaleToggle}
-                            onMoqTierChange={(tier) => {
-                                handleMoqTierChange(tier);
-                                setIsMobileFilterOpen(false);
-                            }}
-                            onClearAll={handleClearAll}
-                            activeFilterCount={activeFilterCount}
-                        />
-                    </div>
-                </SlideOverDrawer>
             </div>
+
+            {/* Quick View Detail Modal */}
+            <MaterialDetailModal
+                supply={selectedSupplyForDetail}
+                onClose={() => setSelectedSupplyForDetail(null)}
+                onAddToCart={handleAddToCart}
+            />
+
+            {/* Cart Slide-Over Drawer */}
+            <ProcurementCartDrawer
+                isOpen={isCartDrawerOpen}
+                onClose={() => setIsCartDrawerOpen(false)}
+                cart={cart}
+                onCartUpdated={(newCart) => setCart(newCart)}
+            />
+
+            {/* Mobile Filters Slide-Over Drawer */}
+            <SlideOverDrawer
+                show={isMobileFiltersOpen}
+                onClose={() => setIsMobileFiltersOpen(false)}
+                title="Filter Peer Supplies"
+                subtitle="Narrow down material listings by type, budget, and hub location."
+                footer={
+                    <div className="flex items-center justify-between w-full">
+                        <button
+                            type="button"
+                            onClick={handleResetAllFilters}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-stone-500 hover:text-stone-800"
+                        >
+                            <RotateCcw size={13} />
+                            <span>Reset</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsMobileFiltersOpen(false)}
+                            className="px-6 py-2.5 bg-clay-700 text-white rounded-xl text-xs font-bold shadow-md shadow-clay-200"
+                        >
+                            Show Results
+                        </button>
+                    </div>
+                }
+            >
+                <div className="py-2">
+                    <B2BFilterSidebar
+                        categories={categories}
+                        categoryCounts={categoryCounts}
+                        availableLocations={availableLocations}
+                        locationCounts={locationCounts}
+                        filters={filters}
+                        onFilterChange={handleFilterChange}
+                        onReset={handleResetAllFilters}
+                    />
+                </div>
+            </SlideOverDrawer>
         </>
     );
 }
 
-SupplyHubIndex.layout = (page) => <SellerWorkspaceLayout active="supply-hub">{page}</SellerWorkspaceLayout>;
+Index.layout = (page) => <SellerWorkspaceLayout active="supply-hub">{page}</SellerWorkspaceLayout>;

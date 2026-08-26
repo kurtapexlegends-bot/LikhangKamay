@@ -10,20 +10,25 @@ import { useToast } from '@/Components/ToastContext';
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function ProcurementCartDrawer({
-    show = false,
+    show,
+    isOpen,
     onClose,
     initialCart = {},
+    cart: propCart,
+    onCartUpdated,
 }) {
+    const isDrawerOpen = show !== undefined ? show : (isOpen !== undefined ? isOpen : false);
+    const activeCart = propCart || initialCart || {};
     const { addToast } = useToast();
-    const [cartItems, setCartItems] = useState(Object.values(initialCart || {}));
+    const [cartItems, setCartItems] = useState(Object.values(activeCart));
     const [loading, setLoading] = useState(false);
     const [updatingKey, setUpdatingKey] = useState(null);
 
     useEffect(() => {
-        if (initialCart) {
-            setCartItems(Object.values(initialCart));
+        if (activeCart) {
+            setCartItems(Object.values(activeCart));
         }
-    }, [initialCart]);
+    }, [activeCart]);
 
     const fetchCart = async () => {
         setLoading(true);
@@ -33,6 +38,7 @@ export default function ProcurementCartDrawer({
             });
             if (res.data && res.data.cart) {
                 setCartItems(Object.values(res.data.cart));
+                if (onCartUpdated) onCartUpdated(res.data.cart);
             }
         } catch {
             // Fallback
@@ -42,10 +48,10 @@ export default function ProcurementCartDrawer({
     };
 
     useEffect(() => {
-        if (show) {
+        if (isDrawerOpen) {
             fetchCart();
         }
-    }, [show]);
+    }, [isDrawerOpen]);
 
     const handleUpdateQty = async (item, newQty) => {
         const key = item.cart_key || String(item.id);
@@ -119,9 +125,9 @@ export default function ProcurementCartDrawer({
 
     return (
         <SlideOverDrawer
-            show={show}
+            show={isDrawerOpen}
             onClose={onClose}
-            title="Procurement Cart (B2B Sourcing)"
+            title="View Cart"
             position="right"
             widthClass="max-w-lg"
             footer={
@@ -137,7 +143,7 @@ export default function ProcurementCartDrawer({
                                 </span>
                             </div>
                             <div className="flex justify-between items-baseline pt-1 border-t border-stone-200">
-                                <span className="font-bold text-stone-900 text-sm">Merchandise Total:</span>
+                                <span className="font-bold text-stone-900 text-sm">Materials Total:</span>
                                 <span className="font-black text-clay-700 text-base">{formatCurrency(totalAmount)}</span>
                             </div>
                         </div>
@@ -151,7 +157,7 @@ export default function ProcurementCartDrawer({
                             }}
                             className="w-full rounded-xl bg-clay-600 py-3 text-xs font-bold text-white shadow-md hover:bg-clay-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                         >
-                            <span>Proceed to Sourcing Checkout</span>
+                            <span>Proceed to Checkout</span>
                             <ArrowRight size={14} />
                         </button>
                     </div>
@@ -162,7 +168,7 @@ export default function ProcurementCartDrawer({
                 {cartItems.length === 0 ? (
                     <div className="py-16 text-center space-y-3">
                         <Package size={36} className="mx-auto text-stone-300" />
-                        <h4 className="font-bold text-stone-800 text-sm">Your Procurement Cart is Empty</h4>
+                        <h4 className="font-bold text-stone-800 text-sm">Your Cart is Empty</h4>
                         <p className="text-xs text-stone-500 max-w-xs mx-auto">
                             Browse peer artisan supplies and add raw materials, timber, or clay sacks to your cart.
                         </p>

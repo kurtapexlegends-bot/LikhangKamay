@@ -96,7 +96,7 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
                 <div 
                     scroll-region="true" 
                     className={`flex min-w-0 flex-1 flex-col overscroll-contain transition-[margin] duration-200 ease-out ${
-                        overflowHidden ? 'overflow-hidden' : 'overflow-y-auto'
+                        overflowHidden ? 'overflow-hidden' : 'overflow-y-auto [scrollbar-gutter:stable]'
                     } ${
                         isCollapsed ? 'lg:ml-16' : 'lg:ml-52'
                     }`}
