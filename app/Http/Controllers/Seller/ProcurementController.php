@@ -15,11 +15,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
+use App\Services\AccountingLedgerService;
 use Carbon\Carbon;
 
 class ProcurementController extends Controller
 {
     use InteractsWithSellerContext;
+
+    public function __construct(
+        private readonly AccountingLedgerService $accountingLedgerService
+    ) {}
 
     /**
      * Display inventory/supplies list
@@ -44,7 +49,7 @@ class ProcurementController extends Controller
             ->latest()
             ->get();
 
-        $finances = $this->getProcurementFinances($sellerId, $actor);
+        $finances = $this->accountingLedgerService->getProcurementFinancialSummary($sellerId, $actor);
 
         return Inertia::render('Seller/Procurement/Index', [
             'supplies' => $supplies,
@@ -58,76 +63,6 @@ class ProcurementController extends Controller
             'availableUnits' => Supply::UNITS,
             'initTab' => request('tab', 'inventory'),
         ]);
-    }
-
-    private function getProcurementFinances(int $sellerId, $actor): array
-    {
-        $currentMonth = Carbon::now()->format('F Y');
-        $canViewPayrollData = $actor->canViewSellerPayrollData();
-
-        $revenue = Order::where('artisan_id', $sellerId)
-            ->where('status', 'Completed')
-            ->sum('total_amount');
-
-        $payrollExpenses = $canViewPayrollData
-            ? Payroll::where('user_id', $sellerId)->where('status', 'Paid')->sum('total_amount')
-            : 0;
-
-        $payrollExists = $canViewPayrollData
-            ? Payroll::where('user_id', $sellerId)
-                ->where('month', $currentMonth)
-                ->exists()
-            : false;
-
-        $monthlyPayroll = $canViewPayrollData
-            ? Employee::where('user_id', $sellerId)
-                ->where('status', 'Active')
-                ->sum('salary')
-            : 0;
-
-        $recentPayrolls = $canViewPayrollData
-            ? Payroll::where('user_id', $sellerId)
-                ->latest()
-                ->take(10)
-                ->get()
-                ->map(fn ($p) => [
-                    'id' => $p->id,
-                    'description' => 'Staff Payroll - ' . $p->month,
-                    'category' => 'Payroll',
-                    'date' => $p->created_at->format('M d, Y'),
-                    'amount' => $p->total_amount,
-                    'type' => 'expense'
-                ])
-            : collect();
-
-        $pendingRequests = StockRequest::with('supply')
-            ->where('user_id', $sellerId)
-            ->where('status', 'pending') 
-            ->latest()
-            ->get();
-
-        $stockExpenses = StockRequest::where('user_id', $sellerId)
-            ->whereIn('status', [
-                StockRequest::STATUS_ACCOUNTING_APPROVED,
-                StockRequest::STATUS_ORDERED,
-                StockRequest::STATUS_RECEIVED,
-                StockRequest::STATUS_COMPLETED
-            ])
-            ->sum('total_cost');
-
-        $expenses = $stockExpenses + $payrollExpenses;
-
-        return [
-            'balance' => $revenue - $expenses,
-            'revenue' => $revenue,
-            'expenses' => $expenses,
-            'net_income' => $revenue - $expenses,
-            'payroll_due' => $canViewPayrollData && !$payrollExists ? $monthlyPayroll : null,
-            'is_paid' => $payrollExists,
-            'month' => $currentMonth,
-            'transactions' => $recentPayrolls->values()->all(),
-            'requests' => $pendingRequests
-        ];
     }
 
     /**

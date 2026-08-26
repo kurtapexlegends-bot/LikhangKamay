@@ -4,11 +4,23 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Supply extends Model
 {
-    public const CATEGORIES = ['Finished Goods', 'Tools', 'Packaging', 'Glazes', 'Other'];
-    public const UNITS = ['pcs', 'kg', 'liters', 'bags', 'boxes', 'sets'];
+    use SoftDeletes;
+
+    public const CATEGORIES = [
+        'Raw Clay & Slips',
+        'Glazes & Oxides',
+        'Kiln-Dried Wood',
+        'Unfinished Blanks',
+        'Packaging & Crates',
+        'Tools & Workshop',
+        'Finished Goods',
+        'Other',
+    ];
+    public const UNITS = ['pcs', 'kg', 'liters', 'bags', 'boxes', 'sets', 'bundle'];
 
     protected $fillable = [
         'user_id',

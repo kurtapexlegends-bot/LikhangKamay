@@ -123,21 +123,35 @@ class SyncDeliveredB2BSupplies
      */
     private function mapSupplyCategory(?string $rawCategory): string
     {
+        if (!$rawCategory) {
+            return 'Other';
+        }
+
+        if (in_array($rawCategory, Supply::CATEGORIES, true)) {
+            return $rawCategory;
+        }
+
         $cat = strtolower(trim((string) $rawCategory));
 
         if (str_contains($cat, 'clay') || str_contains($cat, 'pottery') || str_contains($cat, 'slip') || str_contains($cat, 'ceramic')) {
-            return 'Other'; // Or Glazes / Other depending on enum
+            return 'Raw Clay & Slips';
         }
         if (str_contains($cat, 'glaze') || str_contains($cat, 'oxide') || str_contains($cat, 'pigment')) {
-            return 'Glazes';
+            return 'Glazes & Oxides';
+        }
+        if (str_contains($cat, 'wood') || str_contains($cat, 'timber') || str_contains($cat, 'lumber')) {
+            return 'Kiln-Dried Wood';
+        }
+        if (str_contains($cat, 'blank') || str_contains($cat, 'unfinished') || str_contains($cat, 'bisque')) {
+            return 'Unfinished Blanks';
         }
         if (str_contains($cat, 'box') || str_contains($cat, 'pack') || str_contains($cat, 'crate')) {
-            return 'Packaging';
+            return 'Packaging & Crates';
         }
-        if (str_contains($cat, 'tool') || str_contains($cat, 'brush') || str_contains($cat, 'rib') || str_contains($cat, 'sponge')) {
-            return 'Tools';
+        if (str_contains($cat, 'tool') || str_contains($cat, 'brush') || str_contains($cat, 'rib') || str_contains($cat, 'sponge') || str_contains($cat, 'workshop')) {
+            return 'Tools & Workshop';
         }
 
-        return in_array($rawCategory, Supply::CATEGORIES, true) ? $rawCategory : 'Other';
+        return 'Other';
     }
 }

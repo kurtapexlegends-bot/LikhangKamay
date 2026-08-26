@@ -588,4 +588,77 @@ class AccountingLedgerService
             'payrollHistory' => $payrollHistory,
         ];
     }
+
+    /**
+     * Build financial overview for procurement & inventory module.
+     */
+    public function getProcurementFinancialSummary(int $sellerId, $actor): array
+    {
+        $currentMonth = \Carbon\Carbon::now()->format('F Y');
+        $canViewPayrollData = method_exists($actor, 'canViewSellerPayrollData') ? $actor->canViewSellerPayrollData() : true;
+
+        $revenue = (float) Order::where('artisan_id', $sellerId)
+            ->where('status', 'Completed')
+            ->sum('total_amount');
+
+        $payrollExpenses = $canViewPayrollData
+            ? (float) Payroll::where('user_id', $sellerId)->where('status', 'Paid')->sum('total_amount')
+            : 0.0;
+
+        $payrollExists = $canViewPayrollData
+            ? Payroll::where('user_id', $sellerId)
+                ->where('month', $currentMonth)
+                ->exists()
+            : false;
+
+        $monthlyPayroll = $canViewPayrollData
+            ? (float) \App\Models\Employee::where('user_id', $sellerId)
+                ->where('status', 'Active')
+                ->sum('salary')
+            : 0.0;
+
+        $recentPayrolls = $canViewPayrollData
+            ? Payroll::where('user_id', $sellerId)
+                ->latest()
+                ->take(10)
+                ->get()
+                ->map(fn ($p) => [
+                    'id' => $p->id,
+                    'description' => 'Staff Payroll - ' . $p->month,
+                    'category' => 'Payroll',
+                    'date' => $p->created_at->format('M d, Y'),
+                    'amount' => $p->total_amount,
+                    'type' => 'expense'
+                ])
+            : collect();
+
+        $pendingRequests = StockRequest::with('supply')
+            ->where('user_id', $sellerId)
+            ->where('status', StockRequest::STATUS_PENDING) 
+            ->latest()
+            ->get();
+
+        $stockExpenses = (float) StockRequest::where('user_id', $sellerId)
+            ->whereIn('status', [
+                StockRequest::STATUS_ACCOUNTING_APPROVED,
+                StockRequest::STATUS_ORDERED,
+                StockRequest::STATUS_RECEIVED,
+                StockRequest::STATUS_COMPLETED
+            ])
+            ->sum('total_cost');
+
+        $expenses = $stockExpenses + $payrollExpenses;
+
+        return [
+            'balance' => $revenue - $expenses,
+            'revenue' => $revenue,
+            'expenses' => $expenses,
+            'net_income' => $revenue - $expenses,
+            'payroll_due' => $canViewPayrollData && !$payrollExists ? $monthlyPayroll : null,
+            'is_paid' => $payrollExists,
+            'month' => $currentMonth,
+            'transactions' => $recentPayrolls->values()->all(),
+            'requests' => $pendingRequests
+        ];
+    }
 }

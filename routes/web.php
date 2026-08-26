@@ -363,6 +363,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/cart/add', [\App\Http\Controllers\Consumer\CartController::class, 'store'])->middleware('throttle:60,1')->name('cart.store');
         Route::patch('/cart/update', [\App\Http\Controllers\Consumer\CartController::class, 'update'])->middleware('throttle:60,1')->name('cart.update');
         Route::delete('/cart/remove', [\App\Http\Controllers\Consumer\CartController::class, 'destroy'])->name('cart.destroy');
+        Route::match(['post', 'delete'], '/cart/clear', [\App\Http\Controllers\Consumer\CartController::class, 'clear'])->name('cart.clear');
         Route::post('/cart/buy-again/{id}', [\App\Http\Controllers\Consumer\CartController::class, 'buyAgain'])->name('cart.buy-again'); // New
 
         // NOTIFICATIONS

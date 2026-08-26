@@ -151,6 +151,9 @@ class CartController extends Controller
     public function store(Request $request)
     {
         if (Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Administrators are not permitted to make purchases.'], 403);
+            }
             return redirect()->back()->with('error', 'Administrators are not permitted to make purchases.');
         }
 
@@ -160,10 +163,13 @@ class CartController extends Controller
             'variant' => 'nullable|string|max:120',
         ]);
 
-        $product = Product::select(['id', 'user_id', 'sku', 'name', 'slug', 'price', 'stock', 'cover_photo_path'])
+        $product = Product::select([
+            'id', 'user_id', 'sku', 'name', 'slug', 'price', 'stock', 'cover_photo_path',
+            'moq', 'supply_unit', 'wholesale_price', 'wholesale_min_qty', 'is_b2b_supply', 'weight'
+        ])
             ->with('user:id,name,shop_name,city')
             ->findOrFail($validated['product_id']);
-        $requestedQty = (int) ($validated['quantity'] ?? 1);
+        $requestedQty = (int) ($validated['quantity'] ?? ($product->moq ?? 1));
         $variant = trim((string) ($validated['variant'] ?? 'Standard')) ?: 'Standard';
         $cartKey = $this->makeCartKey($product->id, $variant);
 
@@ -173,31 +179,59 @@ class CartController extends Controller
             $cart[$cartKey]['sku'] = $product->sku;
             $cart[$cartKey]['slug'] = $product->slug;
             if ($cart[$cartKey]['qty'] + $requestedQty > $product->stock) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Not enough stock available.'], 422);
+                }
                 return redirect()->back()->with('error', 'Not enough stock available.');
             }
             $cart[$cartKey]['qty'] += $requestedQty;
         } else {
             if ($product->stock < $requestedQty) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Product is out of stock.'], 422);
+                }
                 return redirect()->back()->with('error', 'Product is out of stock.');
             }
+            $photo = $product->cover_photo_path ?: $product->img;
+            $sellerName = $product->user->shop_name ?? $product->user->name ?? 'Shop';
             $cart[$cartKey] = [
                 'id' => $product->id,
                 'cart_key' => $cartKey,
                 'artisan_id' => $product->user_id, // Seller ID for grouping
+                'seller_id' => $product->user_id,
                 'name' => $product->name,
                 'variant' => $variant,
                 'sku' => $product->sku,
                 'slug' => $product->slug,
                 'price' => $product->price,
                 'qty' => $requestedQty,
-                'img' => $product->img,
-                'seller' => $product->user->shop_name ?? $product->user->name ?? 'Shop',
-                'shop_name' => $product->user->shop_name ?? $product->user->name ?? 'Shop',
-                'location' => $product->user->city ?? 'Cavite'
+                'img' => $photo,
+                'image' => $photo,
+                'cover_photo_path' => $photo,
+                'seller' => $sellerName,
+                'shop_name' => $sellerName,
+                'seller_name' => $sellerName,
+                'seller_city' => $product->user->city ?? 'Cavite',
+                'location' => $product->user->city ?? 'Cavite',
+                'moq' => $product->moq ?? 1,
+                'supply_unit' => $product->supply_unit ?? 'pcs',
+                'wholesale_price' => $product->wholesale_price,
+                'wholesale_min_qty' => $product->wholesale_min_qty,
+                'is_b2b_supply' => $product->is_b2b_supply,
+                'weight' => $product->weight ?? 1.0,
             ];
         }
 
         Session::put('cart', $cart);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Added to cart!',
+                'cart' => $cart,
+                'cart_count' => collect($cart)->sum('qty'),
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Added to cart!');
     }
@@ -205,40 +239,88 @@ class CartController extends Controller
     // 3. Update Quantity
     public function update(Request $request)
     {
-        $validated = $request->validate([
-            'id' => 'required|string',
-            'qty' => 'required|integer|min:1',
-        ]);
+        $id = $request->input('id') ?? $request->input('cart_key');
+        $qty = (int) ($request->input('qty') ?? $request->input('quantity') ?? 1);
+
+        if (!$id) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Cart item identifier is required.'], 422);
+            }
+            return redirect()->back()->with('error', 'Cart item identifier is required.');
+        }
 
         $cart = $this->normalizeCart(Session::get('cart', []));
         
-        if (isset($cart[$validated['id']])) {
-            $product = Product::find($cart[$validated['id']]['id']);
-            if ($product && $validated['qty'] > $product->stock) {
-                return redirect()->back()->with('error', 'Only ' . $product->stock . ' items available.');
+        if (isset($cart[$id])) {
+            $product = Product::find($cart[$id]['id']);
+            if ($product && $qty > $product->stock) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Only ' . $product->stock . ' items available in stock.'], 422);
+                }
+                return redirect()->back()->with('error', 'Only ' . $product->stock . ' items available in stock.');
             }
-            $cart[$validated['id']]['qty'] = $validated['qty'];
+            $cart[$id]['qty'] = max(1, $qty);
             Session::put('cart', $cart);
         }
 
-        return redirect()->back();
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cart updated.',
+                'cart' => $cart,
+                'cart_count' => collect($cart)->sum('qty'),
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Cart updated.');
     }
 
     // 4. Remove Item
     public function destroy(Request $request)
     {
-        $validated = $request->validate([
-            'id' => 'required|string',
-        ]);
+        $id = $request->input('id') ?? $request->input('cart_key');
+
+        if (!$id) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Cart item identifier is required.'], 422);
+            }
+            return redirect()->back()->with('error', 'Cart item identifier is required.');
+        }
 
         $cart = $this->normalizeCart(Session::get('cart', []));
         
-        if (isset($cart[$validated['id']])) {
-            unset($cart[$validated['id']]);
+        if (isset($cart[$id])) {
+            unset($cart[$id]);
             Session::put('cart', $cart);
         }
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Item removed.',
+                'cart' => $cart,
+                'cart_count' => collect($cart)->sum('qty'),
+            ]);
+        }
+
         return redirect()->back()->with('success', 'Item removed.');
+    }
+
+    // 5. Clear Entire Cart
+    public function clear(Request $request)
+    {
+        Session::forget('cart');
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cart cleared.',
+                'cart' => [],
+                'cart_count' => 0,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Cart cleared.');
     }
 
     public function buyAgain(int|string $orderId)
