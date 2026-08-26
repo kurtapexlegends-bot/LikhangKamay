@@ -1,33 +1,65 @@
 import React from 'react';
-import { ClipboardList, Timer, Truck, CheckCircle } from 'lucide-react';
+import { ClipboardList, Clock, Truck, CheckCircle2 } from 'lucide-react';
 
-export default function StockRequestMetrics({ requests }) {
+export default function StockRequestMetrics({ requests = [] }) {
     const getCount = (status) => {
         if (status === 'all') return requests.length;
         if (status === 'pending') return requests.filter(r => r.status === 'pending').length;
+        if (status === 'in_process') {
+            return requests.filter(r => ['accounting_approved', 'ordered', 'partially_received'].includes(r.status)).length;
+        }
+        if (status === 'completed') return requests.filter(r => r.status === 'completed').length;
         return requests.filter(r => r.status === status).length;
     };
 
     const kpiCards = [
-        { label: 'Total Requests', value: requests.length, icon: ClipboardList, color: 'text-stone-600', bg: 'bg-stone-50' },
-        { label: 'Pending', value: getCount('pending'), icon: Timer, color: 'text-amber-500', bg: 'bg-amber-50' },
-        { label: 'In Process', value: getCount('ordered') + getCount('partially_received'), icon: Truck, color: 'text-[#C8A08A]', bg: 'bg-[#FBF1E8]' },
-        { label: 'Completed', value: getCount('completed'), icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+        { 
+            label: 'Total Requests', 
+            value: requests.length, 
+            icon: ClipboardList, 
+            color: 'text-stone-700', 
+            bg: 'bg-stone-100/80',
+            border: 'border-stone-200/80'
+        },
+        { 
+            label: 'Pending Approval', 
+            value: getCount('pending'), 
+            icon: Clock, 
+            color: 'text-amber-700', 
+            bg: 'bg-amber-50',
+            border: 'border-amber-200/80'
+        },
+        { 
+            label: 'In Process', 
+            value: getCount('in_process'), 
+            icon: Truck, 
+            color: 'text-clay-700', 
+            bg: 'bg-clay-50',
+            border: 'border-clay-200/80'
+        },
+        { 
+            label: 'Completed', 
+            value: getCount('completed'), 
+            icon: CheckCircle2, 
+            color: 'text-emerald-700', 
+            bg: 'bg-emerald-50',
+            border: 'border-emerald-200/80'
+        },
     ];
 
     return (
-        <div className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-4 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
             {kpiCards.map((card, i) => (
                 <div 
                     key={i} 
-                    className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto sm:max-w-none sm:shrink snap-align-none bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow"
+                    className="bg-white p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl border border-stone-200/80 shadow-2xs flex items-center justify-between gap-3 hover:shadow-xs transition-shadow"
                 >
-                    <div>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{card.label}</p>
-                        <h3 className="text-2xl font-bold text-gray-900 mt-1.5">{card.value}</h3>
+                    <div className="min-w-0 flex-1">
+                        <p className="text-[10px] sm:text-[11px] font-bold text-stone-400 uppercase tracking-wider truncate">{card.label}</p>
+                        <h3 className="text-xl sm:text-2xl font-black text-stone-900 mt-1">{card.value}</h3>
                     </div>
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${card.bg} ${card.color}`}>
-                        <card.icon size={22} strokeWidth={2.5} />
+                    <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 border ${card.bg} ${card.color} ${card.border}`}>
+                        <card.icon size={18} className="sm:w-5 sm:h-5" strokeWidth={2.2} />
                     </div>
                 </div>
             ))}

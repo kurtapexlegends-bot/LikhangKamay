@@ -149,131 +149,130 @@ export default function StockRequestIndex({ auth, requests }) {
         });
     };
 
-    const headerActions = (
-        <div className="flex items-center gap-2">
-            <Link
-                href={route('seller.supply-hub.index')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 text-white text-[11px] font-bold rounded-lg hover:bg-stone-800 transition-all min-h-[44px] sm:min-h-[36px] shadow-2xs"
-            >
-                <Store size={13} />
-                <span>Browse Supply Hub</span>
-            </Link>
-            {canEditStockRequests && (
-                <Link 
-                    href={route('procurement.index')} 
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-clay-600 text-white text-[11px] font-bold rounded-lg hover:bg-clay-700 transition-all min-h-[44px] sm:min-h-[36px]"
-                >
-                    <ShoppingBag size={13} />
-                    <span>Request Stock</span>
-                </Link>
-            )}
-        </div>
-    );
-
     return (
-        <div className="min-h-screen bg-[#FDFBF9] flex font-sans text-gray-800">
-            <Head title="Restock Requests" />
+        <>
+            <Head title="Restock Requests | LikhangKamay" />
 
-            <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
-                <SellerHeader 
-                    title="Restock Requests"
-                    subtitle="Track stock purchase orders and inventory intake."
-                    auth={auth}
-                    onMenuClick={openSidebar}
-                    badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
-                    actions={headerActions}
-                />
+            <SellerHeader 
+                title="Restock Requests"
+                subtitle="Track stock purchase orders and material intake from suppliers and peer workshops."
+                auth={auth}
+                onMenuClick={openSidebar}
+                badge={{ label: 'Inventory Intake', iconColor: 'text-clay-500' }}
+            />
 
-                <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-4">
-                    {isStockRequestsReadOnly && (
-                        <ReadOnlyCapabilityNotice label="Restock requests are read only for your account. Ordering, receiving, and transfer actions are disabled." />
-                    )}
-                    {actionNotice && (
-                        <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-700">
-                            <AlertTriangle size={13} />
-                            {actionNotice}
+            <div className="p-3 sm:p-6 lg:p-8 space-y-3 sm:space-y-4 lg:space-y-6 pb-12">
+                {isStockRequestsReadOnly && (
+                    <ReadOnlyCapabilityNotice label="Restock requests are read only for your account. Ordering, receiving, and transfer actions are disabled." />
+                )}
+                {actionNotice && (
+                    <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1.5 text-xs font-semibold text-amber-800">
+                        <AlertTriangle size={14} className="text-amber-600" />
+                        <span>{actionNotice}</span>
+                    </div>
+                )}
+
+                {/* KPI Summary Cards */}
+                <StockRequestMetrics requests={requests} />
+
+                {/* Restock Requests Table Container with Integrated Toolbar */}
+                <div className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200/80 shadow-xs overflow-hidden">
+                    <FilterToolbarHeader
+                        tabs={STATUS_TABS.map(tab => ({
+                            key: tab.id,
+                            label: tab.label,
+                            count: getCount(tab.id)
+                        }))}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                        searchQuery={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        searchPlaceholder="Search item, supplier, requester, or ID..."
+                        extraActions={
+                            <div className="flex items-center gap-2">
+                                <Link
+                                    href={route('seller.supply-hub.index')}
+                                    className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 sm:py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition shadow-2xs min-h-[42px] sm:min-h-[38px]"
+                                    title="Browse Wholesale Supply Hub"
+                                >
+                                    <Store size={14} className="text-clay-600" />
+                                    <span>Supply Hub</span>
+                                </Link>
+                                {canEditStockRequests && (
+                                    <Link 
+                                        href={route('procurement.index')} 
+                                        className="inline-flex items-center gap-1.5 rounded-xl bg-clay-600 px-3 py-2 sm:py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition min-h-[42px] sm:min-h-[38px] active:scale-95"
+                                        title="Request stock from inventory"
+                                    >
+                                        <ShoppingBag size={13} />
+                                        <span className="hidden sm:inline">Request Stock</span>
+                                        <span className="inline sm:hidden">Request</span>
+                                    </Link>
+                                )}
+                            </div>
+                        }
+                        onResetFilters={() => {
+                            setActiveTab('all');
+                            setSearchTerm('');
+                        }}
+                        containerClassName="rounded-none border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
+                    />
+
+                    <StockRequestsTable 
+                        filteredRequests={filteredRequests}
+                        activeTab={activeTab} 
+                        canEdit={canEditStockRequests}
+                        processingId={processingId}
+                        onMarkOrdered={(req) => { setSelectedRequest(req); setShowOrderModal(true); }}
+                        onReceiveClick={openReceiveModal}
+                        onTransferClick={openTransferModal}
+                    />
+
+                    {/* Footer showing count */}
+                    {filteredRequests.length > 0 && (
+                        <div className="px-4 sm:px-6 py-3 border-t border-stone-100 bg-stone-50/40 flex items-center justify-between text-xs text-stone-400 font-medium">
+                            <span>
+                                Showing <strong className="text-stone-700 font-bold">{filteredRequests.length}</strong> of <strong className="text-stone-700 font-bold">{requests.length}</strong> requests
+                            </span>
                         </div>
                     )}
-
-                    {/* KPI SUMMARY CARDS */}
-                    <StockRequestMetrics requests={requests} />
-
-                    {/* RESTOCK REQUESTS TABLE CONTAINER WITH INTEGRATED TOOLBAR */}
-                    <div className="bg-white rounded-3xl border border-stone-200/80 shadow-xs overflow-hidden">
-                        <FilterToolbarHeader
-                            tabs={STATUS_TABS.map(tab => ({
-                                key: tab.id,
-                                label: tab.label,
-                                count: getCount(tab.id)
-                            }))}
-                            activeTab={activeTab}
-                            onTabChange={setActiveTab}
-                            searchQuery={searchTerm}
-                            onSearchChange={setSearchTerm}
-                            searchPlaceholder="Search item, supplier, requester, or ID..."
-                            onResetFilters={() => {
-                                setActiveTab('all');
-                                setSearchTerm('');
-                            }}
-                            containerClassName="rounded-none border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
-                        />
-
-                        <StockRequestsTable 
-                            filteredRequests={filteredRequests}
-                            activeTab={activeTab} 
-                            canEdit={canEditStockRequests}
-                            processingId={processingId}
-                            onMarkOrdered={(req) => { setSelectedRequest(req); setShowOrderModal(true); }}
-                            onReceiveClick={openReceiveModal}
-                            onTransferClick={openTransferModal}
-                        />
-
-                        {/* Footer (if matching requests are found) */}
-                        {filteredRequests.length > 0 && (
-                            <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between">
-                                <p className="text-xs text-gray-400">
-                                    Showing <span className="font-bold text-gray-600">{filteredRequests.length}</span> of <span className="font-bold text-gray-600">{requests.length}</span> requests
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </main>
-
-                {/* MODALS */}
-                <ReceiveRequestModal 
-                    isOpen={receiveModal.open}
-                    onClose={() => setReceiveModal({ open: false, max: null })}
-                    max={receiveModal.max}
-                    value={qtyInput}
-                    onChange={(e) => setQtyInput(e.target.value)}
-                    onSubmit={submitReceive}
-                    processing={processingId === `receive-${selectedRequest?.id}`}
-                    canEdit={canEditStockRequests}
-                    supplyName={selectedRequest?.supply?.name}
-                />
-
-                <TransferRequestModal 
-                    isOpen={transferModal.open}
-                    onClose={() => setTransferModal({ open: false, max: null })}
-                    max={transferModal.max}
-                    value={qtyInput}
-                    onChange={(e) => setQtyInput(e.target.value)}
-                    onSubmit={submitTransfer}
-                    processing={processingId === `transfer-${selectedRequest?.id}`}
-                    canEdit={canEditStockRequests}
-                    supplyName={selectedRequest?.supply?.name}
-                />
-
-                <ConfirmOrderModal 
-                    show={showOrderModal}
-                    onClose={() => setShowOrderModal(false)}
-                    request={selectedRequest}
-                    onConfirm={handleMarkAsOrdered}
-                    processing={processingId === `ordered-${selectedRequest?.id}`}
-                    canEdit={canEditStockRequests}
-                />
+                </div>
             </div>
-        </div>
+
+            {/* MODALS */}
+            <ReceiveRequestModal 
+                isOpen={receiveModal.open}
+                onClose={() => setReceiveModal({ open: false, max: null })}
+                max={receiveModal.max}
+                value={qtyInput}
+                onChange={(e) => setQtyInput(e.target.value)}
+                onSubmit={submitReceive}
+                processing={processingId === `receive-${selectedRequest?.id}`}
+                canEdit={canEditStockRequests}
+                supplyName={selectedRequest?.supply?.name}
+            />
+
+            <TransferRequestModal 
+                isOpen={transferModal.open}
+                onClose={() => setTransferModal({ open: false, max: null })}
+                max={transferModal.max}
+                value={qtyInput}
+                onChange={(e) => setQtyInput(e.target.value)}
+                onSubmit={submitTransfer}
+                processing={processingId === `transfer-${selectedRequest?.id}`}
+                canEdit={canEditStockRequests}
+                supplyName={selectedRequest?.supply?.name}
+            />
+
+            <ConfirmOrderModal 
+                show={showOrderModal}
+                onClose={() => setShowOrderModal(false)}
+                request={selectedRequest}
+                onConfirm={handleMarkAsOrdered}
+                processing={processingId === `ordered-${selectedRequest?.id}`}
+                canEdit={canEditStockRequests}
+            />
+        </>
     );
 }
 
