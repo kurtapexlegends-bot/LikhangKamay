@@ -55,8 +55,8 @@ export default function FilterToolbarHeader({
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 min-w-0">
                 {/* Segmented Tab Pill Track */}
                 {tabs && tabs.length > 0 && (
-                    <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none flex items-center py-0.5">
-                        <div className="h-[38px] p-1 bg-stone-100/80 rounded-xl inline-flex items-center gap-1 shrink-0 snap-x border border-stone-200/60">
+                    <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar scrollbar-hide flex items-center h-[38px]">
+                        <div className="h-[38px] p-1 bg-stone-100/80 rounded-xl inline-flex items-center gap-1 shrink-0 snap-x border border-stone-200/60 box-border">
                             {tabs.map((tab) => {
                                 const tabKey = typeof tab === "object" ? tab.key || tab.id || tab.label : tab;
                                 const tabLabel = typeof tab === "object" ? tab.label : tab;
@@ -68,7 +68,7 @@ export default function FilterToolbarHeader({
                                         key={tabKey}
                                         type="button"
                                         onClick={() => onTabChange && onTabChange(tabKey)}
-                                        className={`px-3 h-[30px] rounded-lg text-xs font-bold transition inline-flex items-center justify-center gap-1.5 shrink-0 snap-start select-none ${
+                                        className={`px-3 h-[28px] rounded-lg text-xs font-bold transition inline-flex items-center justify-center gap-1.5 shrink-0 snap-start select-none ${
                                             isActive
                                                 ? "bg-white text-clay-800 shadow-2xs font-black"
                                                 : "text-stone-500 hover:text-stone-800 font-semibold"
@@ -92,7 +92,7 @@ export default function FilterToolbarHeader({
                 )}
 
                 {/* Search Input, Actions, and Filter Button */}
-                <div className="flex items-center gap-2 flex-1 md:flex-initial shrink-0 justify-end min-w-0">
+                <div className="flex items-center gap-2 flex-1 md:flex-initial shrink-0 justify-end min-w-0 h-[38px]">
                     {/* Search Input */}
                     {onSearchChange && (
                         <div className="relative flex-1 md:flex-initial md:w-56 lg:w-64 min-w-0">
