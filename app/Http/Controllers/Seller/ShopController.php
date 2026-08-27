@@ -166,7 +166,7 @@ class ShopController extends Controller
             if ($user->banner_image) {
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($user->banner_image);
             }
-            $bannerPath = $request->file('banner_image')->store('shop_banners', 'public');
+            $bannerPath = \App\Services\ImageOptimizer::storeOptimized($request->file('banner_image'), 'shop_banners', 1600);
             $user->banner_image = $bannerPath;
         }
 
@@ -174,7 +174,7 @@ class ShopController extends Controller
             if ($user->avatar) {
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
             }
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $avatarPath = \App\Services\ImageOptimizer::storeAvatar($request->file('avatar'));
             $user->avatar = $avatarPath;
         }
 

@@ -17,7 +17,8 @@ import {
     X,
     FileText,
     AlertCircle,
-    Info
+    Info,
+    TrendingUp
 } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Modal from '@/Components/Modal';
@@ -520,16 +521,16 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
 }
 
 function DisbursePayoutModal({ artisan, onClose, formatCurrency, handleCopy, copiedKey }) {
-    if (!artisan) return null;
-
     const { data, setData, post, processing, errors, reset } = useForm({
-        user_id: artisan.id,
-        amount: artisan.balance,
-        payout_method: artisan.payout_method || 'GCash',
-        payout_account_name: artisan.payout_account_name || '',
-        payout_account_number: artisan.payout_account_number || '',
+        user_id: artisan?.id || '',
+        amount: artisan?.balance || 0,
+        payout_method: artisan?.payout_method || 'GCash',
+        payout_account_name: artisan?.payout_account_name || '',
+        payout_account_number: artisan?.payout_account_number || '',
         reference_number: '',
     });
+
+    if (!artisan) return null;
 
     const isCopied = copiedKey === `modal-acc-${artisan.id}`;
 
@@ -547,7 +548,7 @@ function DisbursePayoutModal({ artisan, onClose, formatCurrency, handleCopy, cop
         <Modal show={true} onClose={onClose} maxWidth="md">
             <form onSubmit={handleSubmit} className="p-6 bg-[#FCFBF9]">
                 <h3 className="text-base font-bold text-stone-900 mb-1">Transfer Earnings to Artisan</h3>
-                <p className="text-xs font-semibold text-stone-500 mb-5">Record a payout disbursement to the artisan's account.</p>
+                <p className="text-xs font-semibold text-stone-500 mb-5">Record a payout disbursement to the artisan&apos;s account.</p>
 
                 <div className="rounded-2xl bg-stone-50 border border-stone-200/80 p-4 mb-5 space-y-3">
                     <div className="flex justify-between items-center text-xs">
@@ -660,7 +661,7 @@ function DisbursePayoutModal({ artisan, onClose, formatCurrency, handleCopy, cop
                             required
                         />
                         <InputError message={errors.reference_number} className="mt-1" />
-                        <p className="text-[10px] text-stone-400 mt-1">This will be attached to the artisan's email receipt and ledger statement.</p>
+                        <p className="text-[10px] text-stone-400 mt-1">This will be attached to the artisan&apos;s email receipt and ledger statement.</p>
                     </div>
                 </div>
 

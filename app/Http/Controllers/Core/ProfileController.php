@@ -108,7 +108,7 @@ class ProfileController extends Controller
                     \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
                 }
 
-                $path = $request->file('avatar')->store('avatars', 'public');
+                $path = \App\Services\ImageOptimizer::storeAvatar($request->file('avatar'));
                 $data['avatar'] = $path;
             } catch (\Exception $e) {
                 Log::error('Profile avatar upload failed: ' . $e->getMessage());

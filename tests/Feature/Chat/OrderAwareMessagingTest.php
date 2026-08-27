@@ -386,6 +386,124 @@ class OrderAwareMessagingTest extends TestCase
         $this->assertEquals(1, $seller->getUnreadNotificationsQuery()->count());
     }
 
+    public function test_seller_can_open_chat_index_with_existing_buyer_conversation_and_orders(): void
+    {
+        $seller = User::factory()->artisanApproved()->create();
+        $buyer = User::factory()->create();
+
+        $this->createOrder($seller, $buyer, [
+            'status' => 'Pending',
+        ]);
+
+        \App\Models\Message::create([
+            'sender_id' => $buyer->id,
+            'receiver_id' => $seller->id,
+            'message' => 'Hello seller!',
+        ]);
+
+        $response = $this->actingAs($seller)->get(route('chat.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Seller/Chat/Chat')
+            ->has('conversations', 1)
+            ->where('conversations.0.id', $buyer->id)
+        );
+    }
+
+    public function test_chat_limits_messages_to_fifty_and_returns_has_more(): void
+    {
+        $seller = User::factory()->artisanApproved()->create();
+        $buyer = User::factory()->create();
+
+        $this->createOrder($seller, $buyer, [
+            'status' => 'Pending',
+        ]);
+
+        for ($i = 1; $i <= 55; $i++) {
+            \App\Models\Message::create([
+                'sender_id' => $buyer->id,
+                'receiver_id' => $seller->id,
+                'message' => "Message {$i}",
+                'created_at' => now()->addMinutes($i),
+            ]);
+        }
+
+        $response = $this->actingAs($seller)->get(route('chat.index', ['user_id' => $buyer->id]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Seller/Chat/Chat')
+            ->has('activeMessages', 50)
+            ->where('hasMore', true)
+            ->where('activeMessages.0.text', 'Message 6')
+            ->where('activeMessages.49.text', 'Message 55')
+        );
+    }
+
+    public function test_can_fetch_older_messages_via_cursor_endpoint(): void
+    {
+        $seller = User::factory()->artisanApproved()->create();
+        $buyer = User::factory()->create();
+
+        $this->createOrder($seller, $buyer, [
+            'status' => 'Pending',
+        ]);
+
+        $createdMessages = [];
+        for ($i = 1; $i <= 55; $i++) {
+            $createdMessages[] = \App\Models\Message::create([
+                'sender_id' => $buyer->id,
+                'receiver_id' => $seller->id,
+                'message' => "Message {$i}",
+                'created_at' => now()->addMinutes($i),
+            ]);
+        }
+
+        // Message 6 was the first (oldest) of the initial 50
+        $oldestDisplayed = $createdMessages[5]; // 0-indexed is Message 6
+
+        $response = $this->actingAs($seller)->get(route('chat.older-messages', [
+            'user' => $buyer->id,
+            'before_id' => $oldestDisplayed->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'hasMore' => false,
+        ]);
+        $response->assertJsonCount(5, 'messages');
+        $this->assertEquals('Message 1', $response->json('messages.0.text'));
+        $this->assertEquals('Message 5', $response->json('messages.4.text'));
+    }
+
+    public function test_chat_store_returns_fast_json_payload_when_requested_asynchronously(): void
+    {
+        $seller = User::factory()->artisanApproved()->create();
+        $buyer = User::factory()->create();
+        $this->createOrder($seller, $buyer);
+
+        $response = $this->actingAs($buyer)->postJson(route('chat.store'), [
+            'receiver_id' => $seller->id,
+            'message' => 'Fast async test message',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'message' => [
+                'text' => 'Fast async test message',
+                'sender' => 'me',
+            ],
+        ]);
+        $this->assertDatabaseHas('messages', [
+            'sender_id' => $buyer->id,
+            'receiver_id' => $seller->id,
+            'message' => 'Fast async test message',
+        ]);
+    }
+
     private function createOrder(User $seller, User $buyer, array $overrides = []): Order
     {
         $createdAt = $overrides['created_at'] ?? null;

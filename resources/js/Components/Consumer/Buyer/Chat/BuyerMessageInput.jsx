@@ -65,27 +65,33 @@ export default function BuyerMessageInput({ currentChatUser, form, userOrders = 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const [isSending, setIsSending] = useState(false);
+
     const revokeAttachmentPreview = () => {
         if (attachmentPreview?.url?.startsWith('blob:')) {
             URL.revokeObjectURL(attachmentPreview.url);
         }
     };
 
-    const handleSendMessage = (e) => {
-        e.preventDefault();
-        if (!data.message.trim() && !data.attachment) return;
+    const handleSendMessage = async (e) => {
+        if (e) e.preventDefault();
+        const trimmed = (data.message || '').trim();
+        const currentAttachment = attachment || data.attachment;
+        if (!trimmed && !currentAttachment) return;
+        if (isSending) return;
 
-        const messageText = data.message;
+        const messageText = trimmed;
         const tempId = `temp-${Date.now()}`;
+        const currentPreview = attachmentPreview;
 
         const optimisticMsg = {
             id: tempId,
             text: messageText,
-            attachment_path: attachmentPreview ? attachmentPreview.url : null,
-            attachment_type: attachmentPreview ? attachmentPreview.type : null,
+            attachment_path: currentPreview ? currentPreview.url : null,
+            attachment_type: currentPreview ? currentPreview.type : null,
             sender: 'me',
             created_at: new Date().toISOString(),
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
             is_read: false,
             status: 'sending'
         };
@@ -99,22 +105,45 @@ export default function BuyerMessageInput({ currentChatUser, form, userOrders = 
             inputRef.current.style.height = 'auto';
         }
 
-        post(route('chat.store'), {
-            showProgress: false,
-            preserveScroll: true,
-            onSuccess: () => {
-                reset('attachment');
-                revokeAttachmentPreview();
-                setAttachment(null);
-                setAttachmentPreview(null);
-                setShowEmojiPicker(false);
-                if (onSendFinished) onSendFinished(tempId, true);
-            },
-            onError: () => {
-                setData('message', messageText);
+        const formData = new FormData();
+        formData.append('receiver_id', currentChatUser.id);
+        if (messageText) {
+            formData.append('message', messageText);
+        }
+        if (currentAttachment) {
+            formData.append('attachment', currentAttachment);
+        }
+
+        reset('attachment');
+        revokeAttachmentPreview();
+        setAttachment(null);
+        setAttachmentPreview(null);
+        setShowEmojiPicker(false);
+        setIsSending(true);
+
+        try {
+            const res = await window.axios.post(route('chat.store'), formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Accept': 'application/json',
+                }
+            });
+
+            if (res.data?.success && res.data.message) {
+                if (onSendFinished) onSendFinished(tempId, true, res.data.message);
+            } else {
                 if (onSendFinished) onSendFinished(tempId, false);
             }
-        });
+        } catch (err) {
+            console.error('Failed to send message:', err);
+            setData('message', messageText);
+            if (onSendFinished) onSendFinished(tempId, false);
+        } finally {
+            setIsSending(false);
+            if (inputRef.current) {
+                inputRef.current.focus();
+            }
+        }
     };
 
     const handleFileChange = async (e) => {
@@ -306,7 +335,7 @@ export default function BuyerMessageInput({ currentChatUser, form, userOrders = 
                         </div>
                         <button 
                             type="submit" 
-                            disabled={processing || (!data.message.trim() && !data.attachment)}
+                            disabled={isSending || processing || (!data.message.trim() && !attachment && !data.attachment)}
                             className="h-12 w-12 rounded-2xl flex items-center justify-center transition-all shrink-0 disabled:opacity-50 disabled:hover:shadow-none disabled:cursor-not-allowed bg-clay-600 text-white hover:bg-clay-700 hover:shadow-lg"
                         >
                             <Send size={20} />

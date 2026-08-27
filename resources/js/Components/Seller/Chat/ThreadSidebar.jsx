@@ -28,7 +28,7 @@ export default function ThreadSidebar({
     }, []);
 
     useEffect(() => {
-        repliesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        repliesEndRef.current?.scrollIntoView({ behavior: 'instant' });
     }, [replies]);
 
     if (!parent) return null;

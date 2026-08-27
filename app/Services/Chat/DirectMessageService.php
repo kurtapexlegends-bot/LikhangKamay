@@ -11,73 +11,85 @@ use Illuminate\Support\Facades\DB;
 
 class DirectMessageService
 {
-    public function getChatData(User $actor, int $userId, ?int $activeChatId, bool $sellerPerspective): array
-    {
+    public function getChatData(
+        User $actor,
+        int $userId,
+        ?int $activeChatId,
+        bool $sellerPerspective,
+        ?int $beforeId = null,
+        int $limit = 50,
+        bool $includeConversations = true
+    ): array {
         // A. GET CONVERSATION LIST
-        $contactIds = Message::where('sender_id', $userId)
-            ->orWhere('receiver_id', $userId)
-            ->selectRaw('CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END as contact_id', [$userId])
-            ->distinct()
-            ->pluck('contact_id');
+        $conversations = collect();
 
-        $contacts = User::whereIn('id', $contactIds)
-            ->get()
-            ->filter(fn (User $user) => $this->canAccessConversationForPerspective($actor, $user, $sellerPerspective))
-            ->values();
+        if ($includeConversations) {
+            $contactIds = Message::where('sender_id', $userId)
+                ->orWhere('receiver_id', $userId)
+                ->selectRaw('CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END as contact_id', [$userId])
+                ->distinct()
+                ->pluck('contact_id');
 
-        $contactIds = $contacts->pluck('id');
+            $contacts = User::whereIn('id', $contactIds)
+                ->get()
+                ->filter(fn (User $user) => $this->canAccessConversationForPerspective($actor, $user, $sellerPerspective))
+                ->values();
 
-        if ($contactIds->isEmpty()) {
-            $latestMessagesQuery = collect();
-            $unreadCounts = collect();
-        } else {
-            // Pre-fetch only the latest message for each contact to avoid loading the entire message history
-            $latestMessagesSubquery = Message::query()
-                ->selectRaw('MAX(id) as max_id')
-                ->where(function($q) use ($userId, $contactIds) {
-                    $q->where('sender_id', $userId)->whereIn('receiver_id', $contactIds);
-                })->orWhere(function($q) use ($userId, $contactIds) {
-                    $q->whereIn('sender_id', $contactIds)->where('receiver_id', $userId);
-                })
-                ->groupBy(DB::raw('CASE WHEN sender_id = ' . (int)$userId . ' THEN receiver_id ELSE sender_id END'));
+            $contactIds = $contacts->pluck('id');
 
-            $latestMessagesQuery = Message::whereIn('id', $latestMessagesSubquery)->get();
+            if ($contactIds->isEmpty()) {
+                $latestMessagesQuery = collect();
+                $unreadCounts = collect();
+            } else {
+                // Pre-fetch only the latest message for each contact to avoid loading the entire message history
+                $latestMessagesSubquery = Message::query()
+                    ->selectRaw('MAX(id) as max_id')
+                    ->where(function($q) use ($userId, $contactIds) {
+                        $q->where('sender_id', $userId)->whereIn('receiver_id', $contactIds);
+                    })->orWhere(function($q) use ($userId, $contactIds) {
+                        $q->whereIn('sender_id', $contactIds)->where('receiver_id', $userId);
+                    })
+                    ->groupBy(DB::raw('CASE WHEN sender_id = ' . (int)$userId . ' THEN receiver_id ELSE sender_id END'));
 
-            // Also pre-fetch unread counts
-            $unreadCounts = Message::whereIn('sender_id', $contactIds)
-                ->where('receiver_id', $userId)
-                ->where('is_read', \App\Casts\PostgresCompatibleBoolean::dbVal(false))
-                ->selectRaw('sender_id, count(*) as count')
-                ->groupBy('sender_id')
-                ->pluck('count', 'sender_id');
+                $latestMessagesQuery = Message::whereIn('id', $latestMessagesSubquery)->get();
+
+                // Also pre-fetch unread counts
+                $unreadCounts = Message::whereIn('sender_id', $contactIds)
+                    ->where('receiver_id', $userId)
+                    ->where('is_read', \App\Casts\PostgresCompatibleBoolean::dbVal(false))
+                    ->selectRaw('sender_id, count(*) as count')
+                    ->groupBy('sender_id')
+                    ->pluck('count', 'sender_id');
+            }
+
+            $conversations = $contacts->map(function($user) use ($userId, $latestMessagesQuery, $unreadCounts) {
+                $lastMsg = $latestMessagesQuery->first(function($msg) use ($userId, $user) {
+                    return ($msg->sender_id == $userId && $msg->receiver_id == $user->id) ||
+                           ($msg->sender_id == $user->id && $msg->receiver_id == $userId);
+                });
+
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'avatar' => $user->avatar,
+                    'avatar_url' => StorageUrl::url($user->avatar),
+                    'initial' => substr($user->shop_name ?: $user->name, 0, 1),
+                    'premium_tier' => $user->premium_tier,
+                    'role' => $user->role,
+                    'lastMsg' => $lastMsg 
+                        ? ($lastMsg->message ?: ($lastMsg->attachment_type === 'image' ? 'Sent an image' : 'Sent an attachment')) 
+                        : 'Start chatting',
+                    'last_message_at' => $lastMsg?->created_at?->toIso8601String(),
+                    'time' => $lastMsg ? $lastMsg->created_at->shortAbsoluteDiffForHumans() : '',
+                    'unread' => $unreadCounts[$user->id] ?? 0,
+                    'is_online' => Cache::has('user-is-online-' . $user->id),
+                ];
+            });
         }
 
-        $conversations = $contacts->map(function($user) use ($userId, $latestMessagesQuery, $unreadCounts) {
-            $lastMsg = $latestMessagesQuery->first(function($msg) use ($userId, $user) {
-                return ($msg->sender_id == $userId && $msg->receiver_id == $user->id) ||
-                       ($msg->sender_id == $user->id && $msg->receiver_id == $userId);
-            });
-
-            return [
-                'id' => $user->id,
-                'name' => $user->name,
-                'avatar' => $user->avatar,
-                'avatar_url' => StorageUrl::url($user->avatar),
-                'initial' => substr($user->shop_name ?: $user->name, 0, 1),
-                'premium_tier' => $user->premium_tier,
-                'role' => $user->role,
-                'lastMsg' => $lastMsg 
-                    ? ($lastMsg->message ?: ($lastMsg->attachment_type === 'image' ? 'Sent an image' : 'Sent an attachment')) 
-                    : 'Start chatting',
-                'last_message_at' => $lastMsg?->created_at?->toIso8601String(),
-                'time' => $lastMsg ? $lastMsg->created_at->shortAbsoluteDiffForHumans() : '',
-                'unread' => $unreadCounts[$user->id] ?? 0,
-                'is_online' => Cache::has('user-is-online-' . $user->id),
-            ];
-        });
-
-        // B. GET ACTIVE MESSAGES
+        // B. GET ACTIVE MESSAGES (Paged with limit)
         $messages = [];
+        $hasMore = false;
         $activeUser = null;
 
         if ($activeChatId) {
@@ -110,23 +122,21 @@ class DirectMessageService
                 // Check if this specific user is typing TO the current user
                 $activeUser->is_typing = Cache::has("typing-{$activeChatId}-to-{$userId}");
 
-                // Fetch history
-                $messages = Message::where(function($q) use ($userId, $activeChatId) {
+                // Fetch history with cursor pagination (LIMIT 50)
+                $query = Message::where(function($q) use ($userId, $activeChatId) {
                     $q->where('sender_id', $userId)->where('receiver_id', $activeChatId);
                 })->orWhere(function($q) use ($userId, $activeChatId) {
                     $q->where('sender_id', $activeChatId)->where('receiver_id', $userId);
-                })->orderBy('created_at', 'asc')->get()->map(function($m) use ($userId) {
-                    return [
-                        'id' => $m->id,
-                        'text' => $m->message,
-                        'attachment_path' => $m->attachment_path,
-                        'attachment_url' => $m->attachment_url ?? ($m->attachment_path ? \App\Services\StorageUrl::url($m->attachment_path) : null),
-                        'attachment_type' => $m->attachment_type,
-                        'sender' => $m->sender_id === $userId ? 'me' : 'other',
-                        'created_at' => $m->created_at?->toIso8601String(),
-                        'time' => $m->created_at->format('g:i A'),
-                        'is_read' => $m->is_read
-                    ];
+                });
+
+                if ($beforeId) {
+                    $query->where('id', '<', $beforeId);
+                }
+
+                $rawMessages = $query->orderBy('id', 'desc')->limit($limit + 1)->get();
+                $hasMore = $rawMessages->count() > $limit;
+                $messages = $rawMessages->take($limit)->reverse()->values()->map(function($m) use ($userId) {
+                    return $this->formatMessageItem($m, $userId);
                 });
             }
         }
@@ -134,7 +144,46 @@ class DirectMessageService
         return [
             'conversations' => $conversations,
             'activeMessages' => $messages,
+            'hasMore' => $hasMore,
             'currentChatUser' => $activeUser,
+        ];
+    }
+
+    public function formatMessageItem(Message $m, int $userId): array
+    {
+        return [
+            'id' => $m->id,
+            'text' => $m->message,
+            'attachment_path' => $m->attachment_path,
+            'attachment_url' => $m->attachment_url ?? ($m->attachment_path ? StorageUrl::url($m->attachment_path) : null),
+            'attachment_type' => $m->attachment_type,
+            'sender' => $m->sender_id === $userId ? 'me' : 'other',
+            'created_at' => $m->created_at?->toIso8601String(),
+            'time' => $m->created_at ? $m->created_at->format('g:i A') : '',
+            'is_read' => $m->is_read
+        ];
+    }
+
+    public function loadOlderMessages(User $actor, int $userId, int $activeChatId, bool $sellerPerspective, int $beforeId, int $limit = 50): array
+    {
+        $activeUser = User::findOrFail($activeChatId);
+        $this->authorizeConversationCounterpart($actor, $activeUser, $sellerPerspective);
+
+        $query = Message::where(function($q) use ($userId, $activeChatId) {
+            $q->where('sender_id', $userId)->where('receiver_id', $activeChatId);
+        })->orWhere(function($q) use ($userId, $activeChatId) {
+            $q->where('sender_id', $activeChatId)->where('receiver_id', $userId);
+        })->where('id', '<', $beforeId);
+
+        $rawMessages = $query->orderBy('id', 'desc')->limit($limit + 1)->get();
+        $hasMore = $rawMessages->count() > $limit;
+        $messages = $rawMessages->take($limit)->reverse()->values()->map(function($m) use ($userId) {
+            return $this->formatMessageItem($m, $userId);
+        });
+
+        return [
+            'messages' => $messages,
+            'hasMore' => $hasMore,
         ];
     }
 
@@ -272,15 +321,11 @@ class DirectMessageService
         return Order::query()
             ->where(function ($query) use ($firstUserId, $secondUserId) {
                 $query->where(function ($q) use ($firstUserId, $secondUserId) {
-                    $q->where(function ($sq) use ($firstUserId) {
-                        $sq->where('artisan_id', $firstUserId)
-                           ->orWhere('seller_id', $firstUserId);
-                    })->where('user_id', $secondUserId);
+                    $q->where('artisan_id', $firstUserId)
+                      ->where('user_id', $secondUserId);
                 })->orWhere(function ($q) use ($firstUserId, $secondUserId) {
-                    $q->where(function ($sq) use ($secondUserId) {
-                        $sq->where('artisan_id', $secondUserId)
-                           ->orWhere('seller_id', $secondUserId);
-                    })->where('user_id', $firstUserId);
+                    $q->where('artisan_id', $secondUserId)
+                      ->where('user_id', $firstUserId);
                 });
             })
             ->exists();
@@ -291,15 +336,11 @@ class DirectMessageService
         return Order::query()
             ->where(function ($query) use ($firstUserId, $secondUserId) {
                 $query->where(function ($q) use ($firstUserId, $secondUserId) {
-                    $q->where(function ($sq) use ($firstUserId) {
-                        $sq->where('artisan_id', $firstUserId)
-                           ->orWhere('seller_id', $firstUserId);
-                    })->where('user_id', $secondUserId);
+                    $q->where('artisan_id', $firstUserId)
+                      ->where('user_id', $secondUserId);
                 })->orWhere(function ($q) use ($firstUserId, $secondUserId) {
-                    $q->where(function ($sq) use ($secondUserId) {
-                        $sq->where('artisan_id', $secondUserId)
-                           ->orWhere('seller_id', $secondUserId);
-                    })->where('user_id', $firstUserId);
+                    $q->where('artisan_id', $secondUserId)
+                      ->where('user_id', $firstUserId);
                 });
             })
             ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])

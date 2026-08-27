@@ -38,7 +38,7 @@ export default function MessageArea({
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
     }, [activeMessages]);
 
     const groupedMessages = useMemo(() => groupMessagesByDate(activeMessages), [activeMessages]);

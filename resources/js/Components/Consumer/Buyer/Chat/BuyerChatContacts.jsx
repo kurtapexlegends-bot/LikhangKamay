@@ -12,6 +12,7 @@ export default function BuyerChatContacts({
     setSearchTerm,
     timeNow,
     showMobileList,
+    onSelectConversation,
 }) {
     const filteredContacts = conversations.filter(c => 
         c.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -46,9 +47,14 @@ export default function BuyerChatContacts({
             <div className="flex-1 overflow-y-auto">
                 {filteredContacts.length > 0 ? (
                     filteredContacts.map((contact) => (
-                        <Link 
+                        <button 
                             key={contact.id} 
-                            href={route('buyer.chat', { user_id: contact.id })}
+                            type="button"
+                            onClick={() => {
+                                if (onSelectConversation) {
+                                    onSelectConversation(contact);
+                                }
+                            }}
                             className={`w-full p-3 flex gap-3 transition-all text-left border-l-4 group ${
                                 currentChatUser?.id === contact.id 
                                 ? 'bg-clay-50 border-clay-600 shadow-sm' 
@@ -79,7 +85,7 @@ export default function BuyerChatContacts({
                                     {contact.lastMsg}
                                 </p>
                             </div>
-                        </Link>
+                        </button>
                     ))
                 ) : (
                     <div className="p-4">

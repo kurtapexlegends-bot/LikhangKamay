@@ -12,7 +12,7 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
     const avatarBaseSrc = user.avatar_url || (user.avatar
         ? (user.avatar.startsWith('http') || user.avatar.startsWith('/') || user.avatar.startsWith('data:') ? user.avatar : `/storage/${user.avatar}`)
         : null);
-    const avatarVersion = user.updated_at || user.avatar_updated_at || null;
+    const avatarVersion = user.avatar_updated_at || null;
     const avatarSrc = avatarBaseSrc && avatarVersion
         ? `${avatarBaseSrc}${avatarBaseSrc.includes('?') ? '&' : '?'}v=${encodeURIComponent(avatarVersion)}`
         : avatarBaseSrc;
@@ -41,6 +41,7 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
                         alt={user.shop_name || user.name} 
                         className="w-full h-full object-cover"
                         loading="lazy"
+                        decoding="async"
                     />
                 ) : (
                     (user.shop_name || user.name || 'A').charAt(0)

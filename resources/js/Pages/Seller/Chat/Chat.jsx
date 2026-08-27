@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { MessageCircle } from 'lucide-react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
@@ -20,7 +20,7 @@ import ChatAutomationModal from '@/Components/Seller/Chat/ChatAutomationModal';
 
 const MediaViewer = lazy(() => import('@/Components/Chat/MediaViewer'));
 
-export default function Chat({ auth, conversations, activeMessages, currentChatUser, currentOrderContext = null, userOrders = [], chatTemplates = [], autoReplySettings = null }) {
+export default function Chat({ auth, conversations = [], activeMessages = [], hasMore = false, currentChatUser = null, currentOrderContext = null, userOrders = [], chatTemplates = [], autoReplySettings = null }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const isEchoConnected = useEchoConnection();
     const [searchTerm, setSearchTerm] = useState('');
@@ -33,10 +33,71 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     const [activeMedia, setActiveMedia] = useState(null);
     const [attachment, setAttachment] = useState(null);
     const [attachmentPreview, setAttachmentPreview] = useState(null);
-    const [timeNow, setTimeNow] = useState(Date.now());
-    const [isCounterpartTyping, setIsCounterpartTyping] = useState(false);
+    const [timeNow, setTimeNow] = useState(() => Date.now());
+    const [typingUserId, setTypingUserId] = useState(null);
     const [pendingMessages, setPendingMessages] = useState([]);
     const typingTimeoutRef = useRef(null);
+
+    // Thread Cache & Cursor Pagination
+    const [activeContactList, setActiveContactList] = useState(conversations || []);
+    const [selectedUser, setSelectedUser] = useState(currentChatUser);
+    const [messages, setMessages] = useState(activeMessages || []);
+    const [hasMoreMessages, setHasMoreMessages] = useState(hasMore);
+    const [activeOrderCtx, setActiveOrderCtx] = useState(currentOrderContext);
+    const [activeUserOrdersList, setActiveUserOrdersList] = useState(userOrders);
+    const [loadingOlder, setLoadingOlder] = useState(false);
+    const [isLoadingThread, setIsLoadingThread] = useState(false);
+
+    const scrollContainerRef = useRef(null);
+    const threadCache = useRef(new Map());
+
+    // Adjust state during render on prop changes (React recommended pattern)
+    const [prevConversations, setPrevConversations] = useState(conversations);
+    if (conversations !== prevConversations) {
+        setPrevConversations(conversations);
+        setActiveContactList(conversations || []);
+    }
+
+    const [prevChatUserId, setPrevChatUserId] = useState(currentChatUser?.id);
+    if (currentChatUser?.id !== prevChatUserId) {
+        setPrevChatUserId(currentChatUser?.id);
+        setSelectedUser(currentChatUser);
+        setMessages(activeMessages || []);
+        setHasMoreMessages(hasMore);
+        setActiveOrderCtx(currentOrderContext);
+        setActiveUserOrdersList(userOrders);
+        setIsLoadingThread(false);
+    }
+
+    const [prevActiveMessages, setPrevActiveMessages] = useState(activeMessages);
+    if (activeMessages !== prevActiveMessages) {
+        setPrevActiveMessages(activeMessages);
+        setMessages(activeMessages || []);
+        setHasMoreMessages(hasMore);
+    }
+
+    useEffect(() => {
+        if (currentChatUser) {
+            threadCache.current.set(currentChatUser.id, {
+                messages: activeMessages || [],
+                hasMore,
+                currentOrderContext,
+                userOrders,
+                currentChatUser,
+            });
+        }
+    }, [currentChatUser, activeMessages, hasMore, currentOrderContext, userOrders]);
+
+    const [prevSelectedId, setPrevSelectedId] = useState(selectedUser?.id);
+    if (selectedUser?.id !== prevSelectedId) {
+        setPrevSelectedId(selectedUser?.id);
+        setPendingMessages([]);
+        if (selectedUser) {
+            setShowMobileList(false);
+        }
+    }
+
+    const isCounterpartTyping = Boolean(selectedUser?.is_typing || (typingUserId && selectedUser?.id === typingUserId));
 
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
@@ -49,11 +110,11 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     const { canEdit: canEditMessages, isReadOnly: isMessagesReadOnly } = useSellerModuleAccess('messages');
 
     const currentChatUserAddress = formatStructuredAddress({
-        street_address: currentChatUser?.street_address,
-        barangay: currentChatUser?.barangay,
-        city: currentChatUser?.city,
-        region: currentChatUser?.region,
-        postal_code: currentChatUser?.zip_code,
+        street_address: selectedUser?.street_address,
+        barangay: selectedUser?.barangay,
+        city: selectedUser?.city,
+        region: selectedUser?.region,
+        postal_code: selectedUser?.zip_code,
     });
 
     const revokeAttachmentPreview = () => {
@@ -113,18 +174,22 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
         return () => clearInterval(interval);
     }, []);
 
-    useEffect(() => {
-        setIsCounterpartTyping(!!currentChatUser?.is_typing);
-    }, [currentChatUser?.id, currentChatUser?.is_typing]);
-
     // Fallback polling when Echo is disconnected or offline
     useEffect(() => {
         if (isEchoConnected) return undefined;
 
+        let tick = 0;
         const pollData = () => {
-            const reloadKeys = currentChatUser
-                ? ['activeMessages', 'conversations', 'currentOrderContext']
-                : ['conversations'];
+            tick += 1;
+            // On active chat: poll activeMessages every 3s, reload conversations every 4th tick (~12s)
+            let reloadKeys;
+            if (selectedUser) {
+                reloadKeys = (tick % 4 === 0) 
+                    ? ['activeMessages', 'conversations', 'currentOrderContext'] 
+                    : ['activeMessages'];
+            } else {
+                reloadKeys = ['conversations'];
+            }
 
             router.reload({
                 only: reloadKeys,
@@ -134,7 +199,7 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
             });
         };
 
-        const interval = setInterval(pollData, currentChatUser ? 2500 : 4000);
+        const interval = setInterval(pollData, selectedUser ? 3000 : 5000);
 
         const handleVisibility = () => {
             if (!document.hidden) {
@@ -150,7 +215,12 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
             document.removeEventListener('visibilitychange', handleVisibility);
             window.removeEventListener('focus', handleVisibility);
         };
-    }, [isEchoConnected, currentChatUser?.id]);
+    }, [isEchoConnected, selectedUser?.id]);
+
+    const markAsRead = useCallback((senderId) => {
+        if (!senderId) return;
+        window.axios.post(route('chat.seen'), { sender_id: senderId });
+    }, []);
 
     // Real-time WebSockets via Echo
     useEffect(() => {
@@ -164,27 +234,64 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
             const myId = Number(auth.effectiveSellerId || auth.user.id);
             if (senderId === myId) return;
 
-            if (currentChatUser && senderId === Number(currentChatUser.id)) {
-                router.reload({ only: ['activeMessages', 'conversations', 'currentOrderContext'] });
+            if (selectedUser && senderId === Number(selectedUser.id)) {
+                const newMsg = {
+                    id: e.message.id,
+                    text: e.message.message,
+                    attachment_path: e.message.attachment_path,
+                    attachment_url: e.message.attachment_url,
+                    attachment_type: e.message.attachment_type,
+                    sender: 'other',
+                    created_at: e.message.created_at,
+                    time: new Date(e.message.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+                    is_read: true,
+                };
+                setMessages(prev => {
+                    if (prev.some(m => m.id === newMsg.id)) return prev;
+                    const next = [...prev, newMsg];
+                    threadCache.current.set(selectedUser.id, {
+                        messages: next,
+                        hasMore: hasMoreMessages,
+                        currentOrderContext: activeOrderCtx,
+                        userOrders: activeUserOrdersList,
+                        currentChatUser: selectedUser,
+                    });
+                    return next;
+                });
+                markAsRead(selectedUser.id);
             } else {
-                router.reload({ only: ['conversations'] });
+                setActiveContactList(prev => prev.map(c => {
+                    if (c.id === senderId) {
+                        return { ...c, unread: (c.unread || 0) + 1, lastMsg: e.message.message || 'Sent an attachment' };
+                    }
+                    return c;
+                }));
+                if (threadCache.current.has(senderId)) {
+                    const cached = threadCache.current.get(senderId);
+                    cached.messages.push({
+                        id: e.message.id,
+                        text: e.message.message,
+                        sender: 'other',
+                        created_at: e.message.created_at,
+                    });
+                }
             }
         });
 
         channel.listen('.message.seen', (e) => {
             const sender = e.senderId ?? e.sender_id;
-            if (currentChatUser && Number(sender) === Number(currentChatUser.id)) {
+            if (selectedUser && Number(sender) === Number(selectedUser.id)) {
                 router.reload({ only: ['activeMessages'] });
             }
         });
 
         channel.listen('.user.typing', (e) => {
-            const sender = e.senderId ?? e.sender_id;
-            if (currentChatUser && Number(sender) === Number(currentChatUser.id)) {
-                setIsCounterpartTyping(true);
+            const sender = Number(e.senderId ?? e.sender_id);
+            if (selectedUser && sender === Number(selectedUser.id)) {
+                setTypingUserId(sender);
                 if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
                 typingTimeoutRef.current = setTimeout(() => {
-                    setIsCounterpartTyping(false);
+                    setTypingUserId(null);
                 }, 4000);
             }
         });
@@ -194,34 +301,39 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
             channel.stopListening('.message.seen');
             channel.stopListening('.user.typing');
         };
-    }, [auth.user.id, currentChatUser?.id]);
+    }, [auth.user.id, selectedUser?.id, hasMoreMessages, activeOrderCtx, activeUserOrdersList, markAsRead]);
 
-    // Auto-scroll on new messages
+    const scrollToLatest = useCallback(() => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        } else if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'instant' });
+        }
+    }, []);
+
+    // Instantly pin to latest message without scrolling animation
+    useLayoutEffect(() => {
+        if (!loadingOlder) {
+            scrollToLatest();
+            const rafId = requestAnimationFrame(scrollToLatest);
+            return () => cancelAnimationFrame(rafId);
+        }
+    }, [selectedUser?.id, messages.length, pendingMessages.length, loadingOlder, scrollToLatest]);
+
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [activeMessages]);
-
-    const markAsRead = (senderId) => {
-        if (!senderId) return;
-        window.axios.post(route('chat.seen'), { sender_id: senderId });
-    };
-
-    useEffect(() => {
-        setData('receiver_id', currentChatUser?.id || '');
-        setPendingMessages([]);
-        if (currentChatUser) {
-            setShowMobileList(false);
-            if (activeMessages.length === 0 || currentChatUser.id !== data.receiver_id) {
+        setData('receiver_id', selectedUser?.id || '');
+        if (selectedUser) {
+            if (messages.length === 0 || selectedUser.id !== data.receiver_id) {
                 inputRef.current?.focus();
             }
-            markAsRead(currentChatUser.id);
+            markAsRead(selectedUser.id);
         }
-    }, [currentChatUser, activeMessages.length]);
+    }, [selectedUser?.id, markAsRead]);
 
     useEffect(() => {
         const handleActivity = () => {
-            if (currentChatUser && (!document.hidden || document.hasFocus())) {
-                markAsRead(currentChatUser.id);
+            if (selectedUser && (!document.hidden || document.hasFocus())) {
+                markAsRead(selectedUser.id);
             }
         };
         window.addEventListener('focus', handleActivity);
@@ -230,7 +342,115 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
             window.removeEventListener('focus', handleActivity);
             document.removeEventListener('visibilitychange', handleActivity);
         };
-    }, [currentChatUser]);
+    }, [selectedUser, markAsRead]);
+
+    // 0ms Optimistic Conversation Selection
+    const onSelectConversation = useCallback((contact) => {
+        if (!contact) return;
+        setShowMobileList(false);
+        if (selectedUser?.id === contact.id) return;
+
+        setSelectedUser(contact);
+        setData('receiver_id', contact.id);
+
+        // Check cache for instant 0ms swap
+        const cached = threadCache.current.get(contact.id);
+        if (cached) {
+            setMessages(cached.messages);
+            setHasMoreMessages(cached.hasMore);
+            setActiveOrderCtx(cached.currentOrderContext);
+            setActiveUserOrdersList(cached.userOrders);
+            setIsLoadingThread(false);
+        } else {
+            setMessages([]);
+            setHasMoreMessages(false);
+            setActiveOrderCtx(null);
+            setActiveUserOrdersList([]);
+            setIsLoadingThread(true);
+        }
+
+        // Instantly pin scroll to bottom for newly selected thread
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+
+        // Optimistically clear unread badge in contact list
+        setActiveContactList(prev => prev.map(c => c.id === contact.id ? { ...c, unread: 0 } : c));
+
+        // Mark as read immediately
+        markAsRead(contact.id);
+
+        // Inertia partial reload (only active chat details)
+        router.visit(route('chat.index', { user_id: contact.id }), {
+            only: ['activeMessages', 'hasMore', 'currentChatUser', 'currentOrderContext', 'userOrders'],
+            preserveState: true,
+            preserveScroll: true,
+            showProgress: false,
+            onSuccess: (page) => {
+                const fresh = page.props;
+                if (fresh.currentChatUser?.id === contact.id) {
+                    setMessages(fresh.activeMessages || []);
+                    setHasMoreMessages(!!fresh.hasMore);
+                    setActiveOrderCtx(fresh.currentOrderContext || null);
+                    setActiveUserOrdersList(fresh.userOrders || []);
+                    threadCache.current.set(contact.id, {
+                        messages: fresh.activeMessages || [],
+                        hasMore: !!fresh.hasMore,
+                        currentOrderContext: fresh.currentOrderContext || null,
+                        userOrders: fresh.userOrders || [],
+                        currentChatUser: fresh.currentChatUser,
+                    });
+                }
+            },
+            onFinish: () => {
+                setIsLoadingThread(false);
+            },
+        });
+    }, [selectedUser?.id, markAsRead, setData]);
+
+    // Reverse Cursor Pagination: Load Older Messages on Scroll-Up
+    const handleLoadOlder = useCallback(() => {
+        if (!selectedUser || loadingOlder || !hasMoreMessages || messages.length === 0) return;
+        const oldestId = messages[0]?.id;
+        if (!oldestId) return;
+
+        setLoadingOlder(true);
+        const container = scrollContainerRef.current;
+        const prevScrollHeight = container ? container.scrollHeight : 0;
+        const prevScrollTop = container ? container.scrollTop : 0;
+
+        window.axios.get(route('chat.older-messages', selectedUser.id), {
+            params: { before_id: oldestId }
+        }).then(res => {
+            if (res.data?.success && Array.isArray(res.data.messages)) {
+                const older = res.data.messages;
+                const nextHasMore = !!res.data.hasMore;
+                setMessages(prev => {
+                    const combined = [...older, ...prev];
+                    threadCache.current.set(selectedUser.id, {
+                        messages: combined,
+                        hasMore: nextHasMore,
+                        currentOrderContext: activeOrderCtx,
+                        userOrders: activeUserOrdersList,
+                        currentChatUser: selectedUser,
+                    });
+                    return combined;
+                });
+                setHasMoreMessages(nextHasMore);
+
+                if (container) {
+                    requestAnimationFrame(() => {
+                        const newScrollHeight = container.scrollHeight;
+                        container.scrollTop = prevScrollTop + (newScrollHeight - prevScrollHeight);
+                    });
+                }
+            }
+        }).catch(err => {
+            console.error('Failed to load older messages', err);
+        }).finally(() => {
+            setLoadingOlder(false);
+        });
+    }, [selectedUser, loadingOlder, hasMoreMessages, messages, activeOrderCtx, activeUserOrdersList]);
 
     const signalTyping = () => {
         if (!currentChatUser || isMessagesReadOnly) return;
@@ -339,8 +559,8 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
     };
 
     const displayedMessages = useMemo(() => {
-        return [...activeMessages, ...pendingMessages];
-    }, [activeMessages, pendingMessages]);
+        return [...messages, ...pendingMessages];
+    }, [messages, pendingMessages]);
 
     // Extract images for gallery
     const galleryImages = useMemo(() => displayedMessages
@@ -366,9 +586,9 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                 title={
                     <div className="flex items-center gap-3">
                         <span>Messages</span>
-                        {conversations.length > 0 && (
+                        {activeContactList.length > 0 && (
                             <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">
-                                {conversations.length}
+                                {activeContactList.length}
                             </span>
                         )}
                     </div>
@@ -380,27 +600,28 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
 
                 <div className="flex-1 flex overflow-hidden">
                     <ChatSidebar
-                        conversations={conversations}
-                        currentChatUser={currentChatUser}
+                        conversations={activeContactList}
+                        currentChatUser={selectedUser}
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
                         timeNow={timeNow}
                         showMobileList={showMobileList}
                         setShowMobileList={setShowMobileList}
                         onOpenAutomationModal={() => setShowAutomationModal(true)}
+                        onSelectConversation={onSelectConversation}
                     />
 
                     {/* CONVERSATION AREA */}
                     <div className={`flex-1 flex flex-col min-h-0 overflow-hidden bg-[#FDFBF9] ${!showMobileList ? 'flex' : 'hidden sm:flex'}`}>
-                        {currentChatUser ? (
+                        {selectedUser ? (
                             <>
                                 <MessageWindow
                                     currentChatUser={{
-                                        ...currentChatUser,
+                                        ...selectedUser,
                                         is_typing: isCounterpartTyping
                                     }}
-                                    currentOrderContext={currentOrderContext}
-                                    userOrders={userOrders}
+                                    currentOrderContext={activeOrderCtx}
+                                    userOrders={activeUserOrdersList}
                                     groupedMessages={groupedMessages}
                                     galleryImages={galleryImages}
                                     setActiveMedia={setActiveMedia}
@@ -409,12 +630,17 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                     setShowMobileList={setShowMobileList}
                                     timeNow={timeNow}
                                     messagesEndRef={messagesEndRef}
+                                    hasMore={hasMoreMessages}
+                                    loadingOlder={loadingOlder}
+                                    isLoadingThread={isLoadingThread}
+                                    onLoadOlder={handleLoadOlder}
+                                    scrollContainerRef={scrollContainerRef}
                                 />
 
                                 <MessageInput
-                                    currentChatUser={currentChatUser}
-                                    currentOrderContext={currentOrderContext}
-                                    userOrders={userOrders}
+                                    currentChatUser={selectedUser}
+                                    currentOrderContext={activeOrderCtx}
+                                    userOrders={activeUserOrdersList}
                                     data={data}
                                     setData={setData}
                                     post={post}
@@ -441,9 +667,34 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
                                     onEmojiClick={onEmojiClick}
                                     injectTemplate={injectTemplate}
                                     onSendStart={(tempMsg) => setPendingMessages(prev => [...prev, tempMsg])}
-                                    onSendFinished={(tempId, success) => {
-                                        if (success) {
+                                    onSendFinished={(tempId, success, serverMsg) => {
+                                        if (success && serverMsg) {
                                             setPendingMessages(prev => prev.filter(m => m.id !== tempId));
+                                            setMessages(prev => {
+                                                if (prev.some(m => m.id === serverMsg.id)) return prev;
+                                                const next = [...prev, serverMsg];
+                                                if (selectedUser) {
+                                                    threadCache.current.set(selectedUser.id, {
+                                                        messages: next,
+                                                        hasMore: hasMoreMessages,
+                                                        currentOrderContext: activeOrderCtx,
+                                                        userOrders: activeUserOrdersList,
+                                                        currentChatUser: selectedUser,
+                                                    });
+                                                }
+                                                return next;
+                                            });
+                                            setActiveContactList(prev => prev.map(c => {
+                                                if (Number(c.id) === Number(selectedUser?.id)) {
+                                                    return {
+                                                        ...c,
+                                                        lastMsg: serverMsg.text || 'Sent an attachment',
+                                                        last_message_at: serverMsg.created_at,
+                                                        time: 'Just now',
+                                                    };
+                                                }
+                                                return c;
+                                            }));
                                         } else {
                                             setPendingMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m));
                                         }
@@ -465,10 +716,10 @@ export default function Chat({ auth, conversations, activeMessages, currentChatU
 
                     {showInfoPanel && (
                         <OrderContextSidebar
-                            currentChatUser={currentChatUser}
+                            currentChatUser={selectedUser}
                             setShowInfoPanel={setShowInfoPanel}
                             currentChatUserAddress={currentChatUserAddress}
-                            activeMessages={activeMessages}
+                            activeMessages={messages}
                         />
                     )}
                 </div>

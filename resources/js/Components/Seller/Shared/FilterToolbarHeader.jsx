@@ -117,13 +117,6 @@ export default function FilterToolbarHeader({
                         </div>
                     )}
 
-                    {/* Extra Right Actions (e.g. Select Page, Export, Reset) */}
-                    {extraActions && (
-                        <div className="shrink-0 flex items-center">
-                            {extraActions}
-                        </div>
-                    )}
-
                     {/* Desktop & Mobile Filter Button (if filter fields provided) */}
                     {filterPopoverFields && (
                         <div className="relative shrink-0" ref={popoverRef}>
@@ -212,6 +205,13 @@ export default function FilterToolbarHeader({
                             <RotateCcw size={13} />
                             <span className="hidden sm:inline">Reset</span>
                         </button>
+                    )}
+
+                    {/* Extra Right Actions (e.g. Navigation Links, Primary CTA) */}
+                    {extraActions && (
+                        <div className="shrink-0 flex items-center">
+                            {extraActions}
+                        </div>
                     )}
                 </div>
             </div>

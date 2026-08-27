@@ -32,6 +32,8 @@ export default function ProductCard({
                 <img
                     src={product.image || '/images/no-image.png'}
                     alt={product.name}
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     onError={(event) => {
                         event.target.src = '/images/no-image.png';

@@ -71,6 +71,7 @@ export default function MessageInput({
 
     // 2. Resolve states (internal states as fallback for Team Inbox)
     const [internalShowEmojiPicker, internalSetShowEmojiPicker] = useState(false);
+    const [isSending, setIsSending] = useState(false);
     const showEmojiPicker = form ? internalShowEmojiPicker : propShowEmojiPicker;
     const setShowEmojiPicker = form ? internalSetShowEmojiPicker : propSetShowEmojiPicker;
 
@@ -215,6 +216,7 @@ export default function MessageInput({
         event.preventDefault();
 
         if (!data.message.trim() && !data.attachment) return;
+        if (isSending) return;
 
         const messageText = data.message;
         const tempId = `temp-${Date.now()}`;
@@ -265,23 +267,40 @@ export default function MessageInput({
             });
         } else {
             // Seller-Buyer Chat submission
-            post(route('chat.store'), {
-                showProgress: false,
-                preserveScroll: true,
-                forceFormData: true,
-                onSuccess: () => {
-                    reset('attachment');
-                    if (propRemoveAttachment) propRemoveAttachment();
-                    setShowEmojiPicker(false);
-                    if (inputRef.current) {
-                        inputRef.current.focus();
-                    }
-                    if (onSendFinished) onSendFinished(tempId, true);
-                },
-                onError: () => {
-                    setData('message', messageText);
+            const formData = new FormData();
+            formData.append('receiver_id', currentChatUser.id);
+            if (messageText) {
+                formData.append('message', messageText);
+            }
+            if (data.attachment) {
+                formData.append('attachment', data.attachment);
+            }
+
+            reset('attachment');
+            if (propRemoveAttachment) propRemoveAttachment();
+            setShowEmojiPicker(false);
+            if (inputRef.current) {
+                inputRef.current.focus();
+            }
+            setIsSending(true);
+
+            window.axios.post(route('chat.store'), formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Accept': 'application/json',
+                }
+            }).then(res => {
+                if (res.data?.success && res.data.message) {
+                    if (onSendFinished) onSendFinished(tempId, true, res.data.message);
+                } else {
                     if (onSendFinished) onSendFinished(tempId, false);
                 }
+            }).catch(err => {
+                console.error('Failed to send message:', err);
+                setData('message', messageText);
+                if (onSendFinished) onSendFinished(tempId, false);
+            }).finally(() => {
+                setIsSending(false);
             });
         }
     };
@@ -554,7 +573,7 @@ export default function MessageInput({
 
                     <button
                         type="submit"
-                        disabled={processing || isMessagesReadOnly || (!data.message.trim() && !data.attachment)}
+                        disabled={isSending || processing || isMessagesReadOnly || (!data.message.trim() && !data.attachment)}
                         className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-clay-600 text-white transition-all hover:bg-clay-700 hover:shadow-lg disabled:opacity-50 disabled:hover:shadow-none disabled:cursor-not-allowed"
                     >
                         <Send size={20} />

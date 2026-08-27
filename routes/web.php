@@ -246,6 +246,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::delete('/chat/templates/{id}', [\App\Http\Controllers\Chat\ChatController::class, 'deleteTemplate'])->name('chat.templates.destroy');
         Route::post('/chat/auto-reply-settings', [\App\Http\Controllers\Chat\ChatController::class, 'updateAutoReplySettings'])->name('chat.auto-reply.update');
 
+        Route::get('/chat/{user:id}/older-messages', [\App\Http\Controllers\Chat\ChatController::class, 'olderMessages'])->name('chat.older-messages');
         Route::get('/buyer/chat', [\App\Http\Controllers\Chat\ChatController::class, 'buyerIndex'])->name('buyer.chat');
     });
 

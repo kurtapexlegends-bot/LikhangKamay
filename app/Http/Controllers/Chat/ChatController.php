@@ -112,6 +112,13 @@ class ChatController extends Controller
             report($e);
         }
 
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $this->directMessageService->formatMessageItem($msg, $senderId),
+            ]);
+        }
+
         if ($sellerPerspective) {
             return redirect()->route('chat.index', ['user_id' => $request->receiver_id]);
         } else {
@@ -279,6 +286,35 @@ class ChatController extends Controller
         return back()->with('success', 'Order completion auto-reply settings updated successfully.');
     }
 
+    public function olderMessages(Request $request, User $user)
+    {
+        $actor = $request->user();
+        $sellerPerspective = $this->directMessageService->isSellerWorkspaceChatActor($actor);
+        $this->directMessageService->authorizeChatActor($actor, $sellerPerspective);
+
+        $userId = $this->directMessageService->resolveConversationUserId($actor, $sellerPerspective);
+        $beforeId = (int) $request->query('before_id');
+
+        if (!$beforeId) {
+            return response()->json(['error' => 'before_id is required'], 422);
+        }
+
+        $result = $this->directMessageService->loadOlderMessages(
+            $actor,
+            $userId,
+            $user->id,
+            $sellerPerspective,
+            $beforeId,
+            50
+        );
+
+        return response()->json([
+            'success' => true,
+            'messages' => $result['messages'],
+            'hasMore' => $result['hasMore'],
+        ]);
+    }
+
     // --- SHARED DATA LOADING ---
     private function getChatData(Request $request, string $viewName, bool $sellerPerspective)
     {
@@ -288,7 +324,19 @@ class ChatController extends Controller
         $userId = $this->directMessageService->resolveConversationUserId($actor, $sellerPerspective);
         $activeChatId = $request->query('user_id') ? (int) $request->query('user_id') : null;
 
-        $chatPayload = $this->directMessageService->getChatData($actor, $userId, $activeChatId, $sellerPerspective);
+        $isPartial = $request->header('X-Inertia-Partial-Component') === $viewName;
+        $partialData = explode(',', (string) $request->header('X-Inertia-Partial-Data', ''));
+        $includeConversations = !$isPartial || in_array('conversations', $partialData);
+
+        $chatPayload = $this->directMessageService->getChatData(
+            $actor,
+            $userId,
+            $activeChatId,
+            $sellerPerspective,
+            null,
+            50,
+            $includeConversations
+        );
 
         $currentOrderContext = null;
         $userOrders = [];
@@ -333,6 +381,7 @@ class ChatController extends Controller
         return Inertia::render($viewName, [
             'conversations' => fn () => $chatPayload['conversations'],
             'activeMessages' => fn () => $chatPayload['activeMessages'],
+            'hasMore' => fn () => (bool) ($chatPayload['hasMore'] ?? false),
             'currentChatUser' => fn () => $chatPayload['currentChatUser'],
             'currentOrderContext' => fn () => $currentOrderContext,
             'userOrders' => fn () => $userOrders,

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
     Search, Filter, Plus, Store, 
-    X, RotateCcw, ChevronDown
+    X, RotateCcw, ChevronDown, SlidersHorizontal
 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
@@ -150,14 +150,6 @@ export default function SuppliesTable({
 
                 {/* Actions & Filters */}
                 <div className="flex items-center gap-2.5 w-full md:w-auto justify-end">
-                    <Link
-                        href={route('seller.supply-hub.index')}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold transition shadow-2xs shrink-0"
-                    >
-                        <Store size={14} className="text-clay-600" />
-                        <span className="hidden sm:inline">Supply Hub</span>
-                    </Link>
-
                     {/* Filter Trigger */}
                     <div className="relative" ref={filterContainerRef}>
                         <button
@@ -169,19 +161,24 @@ export default function SuppliesTable({
                                     openDesktopPopover();
                                 }
                             }}
-                            className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-xs font-bold transition shadow-2xs shrink-0 cursor-pointer ${
+                            className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-xs font-bold transition shadow-2xs shrink-0 cursor-pointer ${
                                 activeFiltersCount > 0
                                     ? 'border-clay-300 bg-clay-50/50 text-clay-900'
                                     : 'border-stone-200 bg-white hover:bg-stone-50 text-stone-700'
                             }`}
                         >
-                            <Filter size={14} className={activeFiltersCount > 0 ? 'text-clay-700' : 'text-stone-500'} />
-                            <span>Filters</span>
+                            <SlidersHorizontal size={14} className={activeFiltersCount > 0 ? 'text-clay-700' : 'text-stone-500'} strokeWidth={2.2} />
+                            <span>Filter</span>
                             {activeFiltersCount > 0 && (
                                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-clay-700 text-[10px] font-bold text-white">
                                     {activeFiltersCount}
                                 </span>
                             )}
+                            <ChevronDown
+                                size={14}
+                                strokeWidth={2.5}
+                                className={`transition-transform duration-200 ${isFilterOpen ? 'rotate-180' : ''}`}
+                            />
                         </button>
 
                         {/* Desktop Popover */}
@@ -201,6 +198,14 @@ export default function SuppliesTable({
                             onReset={handleResetFilters}
                         />
                     </div>
+
+                    <Link
+                        href={route('seller.supply-hub.index')}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold transition shadow-2xs shrink-0"
+                    >
+                        <Store size={14} className="text-clay-600" />
+                        <span className="hidden sm:inline">Supply Hub</span>
+                    </Link>
 
                     {/* Add Supply Action */}
                     {canEditProcurement && (

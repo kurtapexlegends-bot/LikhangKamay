@@ -20,6 +20,11 @@ export default function BuyerMessageWindow({
     showInfoPanel,
     setShowInfoPanel,
     timeNow,
+    hasMore = false,
+    loadingOlder = false,
+    isLoadingThread = false,
+    onLoadOlder,
+    scrollContainerRef,
 }) {
     if (!currentChatUser) {
         return (
@@ -40,6 +45,12 @@ export default function BuyerMessageWindow({
             </div>
         );
     }
+
+    const handleScroll = (e) => {
+        if (e.currentTarget.scrollTop < 60 && hasMore && !loadingOlder && onLoadOlder) {
+            onLoadOlder();
+        }
+    };
 
     return (
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white">
@@ -88,9 +99,36 @@ export default function BuyerMessageWindow({
             <OrderContextCard order={currentOrderContext} viewer="buyer" />
 
             {/* MESSAGES AREA */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#FDFBF9] scroll-smooth">
+            <div 
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+                className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#FDFBF9]"
+            >
                 <div className="max-w-3xl mx-auto space-y-4">
-                    {Object.keys(groupedMessages).length > 0 ? (
+                    {loadingOlder && (
+                        <div className="flex items-center justify-center py-2">
+                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100/90 text-stone-500 text-xs font-semibold">
+                                <div className="w-3 h-3 border-2 border-clay-500 border-t-transparent rounded-full animate-spin" />
+                                <span>Loading older messages...</span>
+                            </div>
+                        </div>
+                    )}
+                    {isLoadingThread ? (
+                        <div className="space-y-4 p-2 animate-pulse">
+                            <div className="flex justify-start">
+                                <div className="h-10 w-48 bg-stone-200/60 rounded-2xl rounded-bl-md" />
+                            </div>
+                            <div className="flex justify-end">
+                                <div className="h-14 w-60 bg-clay-200/40 rounded-2xl rounded-br-md" />
+                            </div>
+                            <div className="flex justify-start">
+                                <div className="h-10 w-40 bg-stone-200/60 rounded-2xl rounded-bl-md" />
+                            </div>
+                            <div className="flex justify-end">
+                                <div className="h-12 w-52 bg-clay-200/40 rounded-2xl rounded-br-md" />
+                            </div>
+                        </div>
+                    ) : Object.keys(groupedMessages).length > 0 ? (
                         Object.entries(groupedMessages).map(([date, messages]) => (
                             <div key={date}>
                                 {/* Date Divider */}

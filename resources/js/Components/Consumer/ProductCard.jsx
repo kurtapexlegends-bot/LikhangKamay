@@ -13,6 +13,7 @@ export default React.memo(function ProductCard({ image, title, price, category, 
                     src={image} 
                     alt={title} 
                     loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-in-out"
                 />
 

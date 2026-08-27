@@ -13,7 +13,8 @@ export default function ChatSidebar({
     timeNow,
     showMobileList,
     setShowMobileList,
-    onOpenAutomationModal
+    onOpenAutomationModal,
+    onSelectConversation
 }) {
     const filteredContacts = conversations.filter(c => 
         c.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -48,10 +49,15 @@ export default function ChatSidebar({
             <div className="flex-1 overflow-y-auto">
                 {filteredContacts.length > 0 ? (
                     filteredContacts.map((contact) => (
-                        <Link 
+                        <button 
                             key={contact.id} 
-                            href={route('chat.index', { user_id: contact.id })}
-                            onClick={() => setShowMobileList(false)}
+                            type="button"
+                            onClick={() => {
+                                setShowMobileList(false);
+                                if (onSelectConversation) {
+                                    onSelectConversation(contact);
+                                }
+                            }}
                             className={`w-full p-3 flex gap-3 transition-colors duration-150 text-left border-l-4 group min-h-[44px] ${
                                 currentChatUser?.id === contact.id 
                                 ? 'bg-clay-50 border-clay-600 shadow-sm' 
@@ -81,7 +87,7 @@ export default function ChatSidebar({
                                     {contact.lastMsg}
                                 </p>
                             </div>
-                        </Link>
+                        </button>
                     ))
                 ) : (
                     <div className="p-4">

@@ -39,6 +39,7 @@ export default function ProductCard({ product, sponsoredPlacement, previewOnly =
             <div className="aspect-square relative overflow-hidden bg-stone-100">
                 <img
                     loading="lazy"
+                    decoding="async"
                     src={
                         !product.image
                             ? '/images/no-image.png'
