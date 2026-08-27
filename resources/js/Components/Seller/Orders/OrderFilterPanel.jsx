@@ -12,9 +12,11 @@ import {
     SlidersHorizontal,
     ChevronDown,
     Filter,
-    LoaderCircle
+    LoaderCircle,
+    Printer,
 } from "lucide-react";
 import SlideOverDrawer from "@/Components/SlideOverDrawer";
+import ExportButton from "@/Components/ExportButton";
 
 const Tab = ({ label, count, active, onClick }) => (
     <button
@@ -447,6 +449,16 @@ export default function OrderFilterPanel({
                         </button>
                         <span>{selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0 ? "Deselect Page" : "Select Page"}</span>
                     </label>
+
+                    {/* Export Button */}
+                    <ExportButton
+                        href={route("orders.export")}
+                        icon={Printer}
+                        variant="secondary"
+                        className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs"
+                    >
+                        <span className="hidden sm:inline">Export</span>
+                    </ExportButton>
 
                     {/* Standardized Filter Button on the Right */}
                     <div className="relative inline-block text-left" ref={popoverRef}>

@@ -164,22 +164,6 @@ export default function ApprovalManager({
                 subtitle="Review staff requests, salary rate updates, purchase orders, and payroll."
                 auth={auth}
                 onMenuClick={openSidebar}
-                actions={
-                    isElite && activeTab === 'pending' && approvalList.length > 0 ? (
-                        <button
-                            type="button"
-                            onClick={handleOpenBatchModal}
-                            disabled={isBatchProcessing}
-                            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-[40px] shrink-0"
-                        >
-                            <CheckCheck size={16} />
-                            <span className="hidden sm:inline">
-                                {isBatchProcessing ? 'APPROVING ALL...' : `APPROVE ALL (${approvalList.length})`}
-                            </span>
-                            <span className="sm:hidden">Approve All</span>
-                        </button>
-                    ) : null
-                }
             />
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6 pb-28 sm:pb-20">
@@ -289,10 +273,11 @@ export default function ApprovalManager({
                                     type="button"
                                     onClick={handleOpenBatchModal}
                                     disabled={isBatchProcessing}
-                                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold hover:bg-emerald-100 transition active:scale-95 disabled:opacity-50"
+                                    className="inline-flex items-center justify-center gap-1.5 px-3.5 h-[38px] min-h-[38px] rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 shadow-2xs transition active:scale-95 disabled:opacity-50 shrink-0"
                                 >
                                     <Zap size={14} />
-                                    <span>Batch Approve ({approvalList.length})</span>
+                                    <span className="hidden sm:inline">Batch Approve ({approvalList.length})</span>
+                                    <span className="sm:hidden">Approve All</span>
                                 </button>
                             ) : null
                         }

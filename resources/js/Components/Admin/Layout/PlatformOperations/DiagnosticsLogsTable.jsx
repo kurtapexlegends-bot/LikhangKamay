@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { Search, X, Clock, Calendar, Shield, SlidersHorizontal, ChevronDown, RotateCcw, Filter, User } from 'lucide-react';
+import { Search, X, Clock, Calendar, Shield, SlidersHorizontal, ChevronDown, RotateCcw, Filter, User, Download } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
+import ExportButton from '@/Components/ExportButton';
 import { getActionIcon, getActionColor } from '@/utils/platformOperationsHelpers';
 
-export default function DiagnosticsLogsTable({ activities, filters = {}, availableActions = [], admins = [] }) {
+export default function DiagnosticsLogsTable({ activities, filters = {}, availableActions = [], admins = [], exportUrl = null }) {
     const [search, setSearch] = useState(filters.search || '');
     const [actionType, setActionType] = useState(filters.action_type || '');
     const [adminId, setAdminId] = useState(filters.admin_id || '');
@@ -216,6 +217,18 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
                 </div>
                 
                 <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 justify-between sm:justify-end">
+                    {exportUrl && (
+                        <ExportButton
+                            href={exportUrl}
+                            icon={Download}
+                            variant="primary"
+                            className="h-[42px] min-h-[42px] px-4 rounded-xl shadow-2xs font-bold text-xs"
+                        >
+                            <span className="hidden sm:inline">Export CSV</span>
+                            <span className="sm:hidden">Export</span>
+                        </ExportButton>
+                    )}
+
                     {/* Unified Popover Trigger Button */}
                     <div className="relative inline-block text-left" ref={popoverRef}>
                         <button

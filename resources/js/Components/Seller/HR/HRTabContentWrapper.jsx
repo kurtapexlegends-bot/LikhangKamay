@@ -21,6 +21,7 @@ export default function HRTabContentWrapper({
     presetLabelByKey,
     monthLabel,
     openAddModal,
+    openPayrollModal,
     payrolls,
     deletePayroll,
     staffAccessAudits
@@ -59,6 +60,7 @@ export default function HRTabContentWrapper({
                 payrolls={payrolls}
                 canEditHrRecords={canEditHrRecords}
                 deletePayroll={deletePayroll}
+                openPayrollModal={openPayrollModal}
             />
         );
     }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, RotateCcw, X, ChevronDown, Calendar, Search } from 'lucide-react';
+import { Filter, RotateCcw, X, ChevronDown, Calendar, Search, Download } from 'lucide-react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
+import ExportButton from '@/Components/ExportButton';
 
 export default function AccountingFilterPanel({
     tabs = [],
@@ -181,9 +182,16 @@ export default function AccountingFilterPanel({
             activeFilterTags={activeFilterTags}
             containerClassName="mb-6"
             extraActions={
-                <span className="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-600 shadow-2xs shrink-0 min-h-[38px] sm:min-h-0">
-                    {visibleCount} visible
-                </span>
+                <div className="flex items-center gap-2">
+                    <ExportButton
+                        href={route('accounting.export')}
+                        icon={Download}
+                        variant="secondary"
+                        className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs"
+                    >
+                        <span className="hidden sm:inline">Export</span>
+                    </ExportButton>
+                </div>
             }
         />
     );

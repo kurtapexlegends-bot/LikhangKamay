@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, X, RefreshCw, Check, CheckCircle, RotateCcw, Archive } from "lucide-react";
+import { Search, X, RefreshCw, Check, CheckCircle, RotateCcw, Archive, Plus } from "lucide-react";
 import Checkbox from "@/Components/Checkbox";
 import FilterToolbarHeader from "@/Components/Seller/Shared/FilterToolbarHeader";
 
@@ -20,6 +20,7 @@ export default function CatalogFilters({
     toggleVisibleSelection,
     canEditProducts,
     runBulkStatusUpdate,
+    openAddModal,
 }) {
     return (
         <div className="flex flex-col">
@@ -43,16 +44,30 @@ export default function CatalogFilters({
                 onResetFilters={resetSavedView}
                 containerClassName="rounded-none border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
                 extraActions={
-                    visibleProductIds.length > 0 && selectedProductIds.length === 0 ? (
-                        <button
-                            type="button"
-                            onClick={selectVisibleProducts}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 transition-colors hover:bg-stone-50 min-h-[44px] sm:min-h-[38px] shrink-0 active:scale-[0.98]"
-                        >
-                            <Check size={13} />
-                            <span className="hidden sm:inline">Select Page</span>
-                        </button>
-                    ) : null
+                    <div className="flex items-center gap-2">
+                        {visibleProductIds.length > 0 && selectedProductIds.length === 0 && (
+                            <button
+                                type="button"
+                                onClick={selectVisibleProducts}
+                                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 h-[38px] min-h-[38px] text-xs font-bold text-stone-700 transition-colors hover:bg-stone-50 shrink-0 active:scale-[0.98] shadow-2xs"
+                            >
+                                <Check size={13} />
+                                <span className="hidden sm:inline">Select Page</span>
+                            </button>
+                        )}
+                        {openAddModal && (
+                            <button
+                                type="button"
+                                onClick={openAddModal}
+                                disabled={!canEditProducts}
+                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 h-[38px] min-h-[38px] text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 shrink-0"
+                            >
+                                <Plus size={14} />
+                                <span className="hidden sm:inline">Add Product</span>
+                                <span className="sm:hidden">Add</span>
+                            </button>
+                        )}
+                    </div>
                 }
             />
 

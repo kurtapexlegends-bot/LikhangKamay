@@ -16,7 +16,8 @@ export default function PayrollHistoryTable({
     staffCount = 0,
     payrolls = [],
     canEditHrRecords,
-    deletePayroll
+    deletePayroll,
+    openPayrollModal,
 }) {
     const rawPayrolls = useMemo(() => {
         return Array.isArray(payrolls) ? payrolls : (payrolls?.data || []);
@@ -83,6 +84,21 @@ export default function PayrollHistoryTable({
                               },
                           ]
                         : []
+                }
+                extraActions={
+                    <div className="flex items-center gap-2">
+                        {canEditHrRecords && openPayrollModal && (
+                            <button
+                                type="button"
+                                onClick={openPayrollModal}
+                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 h-[38px] min-h-[38px] text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 active:scale-95 shrink-0"
+                            >
+                                <Banknote size={14} />
+                                <span className="hidden sm:inline">Run Payroll</span>
+                                <span className="sm:hidden">Run</span>
+                            </button>
+                        )}
+                    </div>
                 }
                 containerClassName="rounded-t-3xl border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
             />

@@ -10,7 +10,6 @@ import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/Seller
 import useFlashToast from '@/hooks/useFlashToast';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import SellerHeader from '@/Layouts/SellerHeader';
-import FloatingModuleActions from '@/Components/FloatingModuleActions';
 
 export default function Sponsorships({ auth, creditsAvailable, activeProducts, requests }) {
     const { addToast } = useToast();

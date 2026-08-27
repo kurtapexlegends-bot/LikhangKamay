@@ -343,28 +343,6 @@ export default function AuditLog({ auth, auditLog }) {
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Workspace Oversight', iconColor: 'text-stone-400' }}
-                actions={
-                    <>
-                        <ExportButton onClick={() => setTimeout(() => window.print(), 150)} icon={Printer}>
-                            Print
-                        </ExportButton>
-                        <ExportButton
-                            href={route('audit-log.export', {
-                                category: selectedCategory,
-                                module: selectedModule,
-                                status: selectedStatus,
-                                severity: selectedSeverity,
-                                actor_type: selectedActor,
-                                start_date: startDate,
-                                end_date: endDate,
-                                search: searchTerm,
-                            })}
-                            variant="primary"
-                        >
-                            Export
-                        </ExportButton>
-                    </>
-                }
             />
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
@@ -406,8 +384,6 @@ export default function AuditLog({ auth, auditLog }) {
                         </div>
                     </div>
 
-
-
                     {/* Unified Filters Component */}
                     <AuditLogFilters
                         searchTerm={searchTerm}
@@ -436,6 +412,17 @@ export default function AuditLog({ auth, auditLog }) {
                         actorTypeLabel={actorTypeLabel}
                         formatStatusLabel={formatStatusLabel}
                         filteredCount={filteredEntries.length}
+                        onPrint={() => setTimeout(() => window.print(), 150)}
+                        exportUrl={route('audit-log.export', {
+                            category: selectedCategory,
+                            module: selectedModule,
+                            status: selectedStatus,
+                            severity: selectedSeverity,
+                            actor_type: selectedActor,
+                            start_date: startDate,
+                            end_date: endDate,
+                            search: searchTerm,
+                        })}
                     />
 
                     {/* Grouped Logs Timeline List */}

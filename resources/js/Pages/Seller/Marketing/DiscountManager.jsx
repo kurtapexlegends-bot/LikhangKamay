@@ -104,17 +104,6 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                 subtitle="Manage promotional pricing campaigns, scheduled discounts, and seller flash sales."
                 auth={auth}
                 onMenuClick={openSidebar}
-                actions={
-                    <button
-                        type="button"
-                        onClick={handleOpenCreate}
-                        className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3.5 py-2 text-xs font-bold text-white shadow-lg shadow-clay-500/20 transition hover:bg-clay-700 min-h-[44px] sm:min-h-[40px] shrink-0"
-                    >
-                        <Plus size={16} />
-                        <span className="hidden sm:inline">CREATE CAMPAIGN</span>
-                        <span className="sm:hidden">Create</span>
-                    </button>
-                }
             />
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6 pb-28 sm:pb-20">
@@ -201,6 +190,17 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                             setSearchQuery("");
                             setTypeFilter("all");
                         }}
+                        extraActions={
+                            <button
+                                type="button"
+                                onClick={handleOpenCreate}
+                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 h-[38px] min-h-[38px] text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 active:scale-95 shrink-0"
+                            >
+                                <Plus size={14} />
+                                <span className="hidden sm:inline">Create Campaign</span>
+                                <span className="sm:hidden">Create</span>
+                            </button>
+                        }
                         activeFilterTags={
                             typeFilter !== "all"
                                 ? [

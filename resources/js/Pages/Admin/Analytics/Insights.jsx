@@ -16,7 +16,6 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import UserAvatar from '@/Components/UserAvatar';
 import KPICard from '@/Components/KPICard';
 import ExportButton from '@/Components/ExportButton';
-import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import { useToast } from '@/Components/ToastContext';
 
 // Earthy & Premium Palette
@@ -184,26 +183,30 @@ export default function Insights({
                 }
             `}} />
 
-            {/* Floating Module Actions */}
-            <FloatingModuleActions
-                actions={
-                    <div className="flex items-center gap-2">
-                        <ExportButton onClick={() => setTimeout(() => window.print(), 150)} icon={Printer} variant="secondary">
-                            Print
-                        </ExportButton>
-                        <ExportButton href={route('admin.insights.export')} icon={Download} variant="secondary">
-                            Download
-                        </ExportButton>
-                        <Link 
-                            href={route('admin.settings.index', { tab: 'monetization' })} 
-                            className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl border border-transparent bg-clay-600 text-white hover:bg-clay-700 shadow-md shadow-clay-200/50 px-4 py-2 text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ease-out active:scale-[0.98]"
-                        >
-                            <span>Monetization</span>
-                            <ArrowRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-0.5" />
-                        </Link>
-                    </div>
-                }
-            />
+            {/* Analytics Header & Actions */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/80 shadow-2xs print:hidden mb-6">
+                <div>
+                    <h2 className="text-sm font-bold text-stone-900">Platform Analytics & Insights</h2>
+                    <p className="text-xs text-stone-500 font-medium">Real-time GMV volume, conversions, and ecosystem health.</p>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <ExportButton onClick={() => setTimeout(() => window.print(), 150)} icon={Printer} variant="secondary" className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
+                        <span className="hidden sm:inline">Print Report</span>
+                        <span className="sm:hidden">Print</span>
+                    </ExportButton>
+                    <ExportButton href={route('admin.insights.export')} icon={Download} variant="secondary" className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
+                        <span className="hidden sm:inline">Export CSV</span>
+                        <span className="sm:hidden">Export</span>
+                    </ExportButton>
+                    <Link 
+                        href={route('admin.settings.index', { tab: 'monetization' })} 
+                        className="inline-flex items-center justify-center gap-1.5 h-[38px] min-h-[38px] rounded-xl bg-clay-600 hover:bg-clay-700 text-white px-3.5 text-xs font-bold shadow-2xs transition active:scale-95 shrink-0"
+                    >
+                        <span>Monetization</span>
+                        <ArrowRight size={13} strokeWidth={2.5} />
+                    </Link>
+                </div>
+            </div>
 
             {/* Print-Only Document Header */}
             <div className="hidden print:block border-b-2 border-stone-200 pb-4 mb-6">

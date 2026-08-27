@@ -16,7 +16,6 @@ import AttendanceCalendarModal from '@/Components/Seller/HR/AttendanceCalendarMo
 import EmployeeFormModal from '@/Components/Seller/HR/EmployeeFormModal';
 import PayrollGenerator from '@/Components/Seller/HR/PayrollGenerator';
 import HRSettingsModal from '@/Components/Seller/HR/HRSettingsModal';
-import HRHeaderActions from '@/Components/Seller/HR/HRHeaderActions';
 import HRTabs from '@/Components/Seller/HR/HRTabs';
 import HRTabContentWrapper from '@/Components/Seller/HR/HRTabContentWrapper';
 import EmployeeAttendanceDrawer from '@/Components/Seller/HR/EmployeeAttendanceDrawer';
@@ -163,15 +162,6 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-clay-400' }}
-                actions={
-                    <HRHeaderActions
-                        canEditHrRecords={canEditHrRecords}
-                        activeTab={activeTab}
-                        onSettingsClick={() => router.visit(route('seller.settings.index'))}
-                        onPayrollClick={openPayrollModal}
-                        onAddClick={openAddModal}
-                    />
-                }
             />
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-6">
@@ -199,6 +189,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     presetLabelByKey={presetLabelByKey}
                     monthLabel={sellerSettings.attendance_month_label || 'Current Month'}
                     openAddModal={openAddModal}
+                    openPayrollModal={openPayrollModal}
                     payrolls={payrolls}
                     deletePayroll={deletePayroll}
                     staffAccessAudits={staffAccessAudits}

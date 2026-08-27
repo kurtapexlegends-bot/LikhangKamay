@@ -87,30 +87,37 @@ export default function Analytics({
                 subtitle="View shop sales, active orders, and category performance."
                 auth={auth}
                 onMenuClick={openSidebar}
-                actions={
-                    <div className="flex items-center gap-2">
-                        <ExportButton onClick={() => setTimeout(() => window.print(), 150)} icon={Printer} variant="secondary">
-                            Print
+            />
+
+            <main className="flex-1 w-full p-4 sm:p-6 lg:p-8 overflow-y-auto space-y-6">
+                {/* Header Action Strip */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/80 shadow-2xs print:hidden">
+                    <div>
+                        <h2 className="text-sm font-bold text-stone-900">Performance Report</h2>
+                        <p className="text-xs text-stone-500 font-medium">Real-time store traffic, conversions, and revenue insights.</p>
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                        <ExportButton onClick={() => setTimeout(() => window.print(), 150)} icon={Printer} variant="secondary" className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
+                            <span className="hidden sm:inline">Print Report</span>
+                            <span className="sm:hidden">Print</span>
                         </ExportButton>
                         {financials_masked ? (
-                            <ExportButton icon={Download} disabled>
-                                Revenue View Required
+                            <ExportButton icon={Download} disabled className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
+                                Revenue Masked
                             </ExportButton>
                         ) : sellerSubscription?.canExportAnalytics ? (
-                            <ExportButton href={route('analytics.export')} icon={Download} variant="primary">
-                                Download
+                            <ExportButton href={route('analytics.export')} icon={Download} variant="primary" className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
+                                <span className="hidden sm:inline">Export CSV</span>
+                                <span className="sm:hidden">Export</span>
                             </ExportButton>
                         ) : (
-                            <ExportButton icon={DollarSign} disabled>
+                            <ExportButton icon={DollarSign} disabled className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
                                 Premium Export
                             </ExportButton>
                         )}
                     </div>
-                }
-            />
+                </div>
 
-            <main className="flex-1 w-full p-4 sm:p-6 lg:p-8 overflow-y-auto">
-                
                 {/* Single Page Layout */}
                 <motion.div 
                     initial="hidden"

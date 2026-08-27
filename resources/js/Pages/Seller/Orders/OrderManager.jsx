@@ -467,9 +467,6 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
                 subtitle="Manage order fulfillment, delivery tracking, and returns."
                 auth={auth}
                 onMenuClick={openSidebar}
-                actions={selectedOrderIds.length > 0 ? null : (
-                    <ExportButton href={route("orders.export")} icon={Printer} variant="primary">Export</ExportButton>
-                )}
             />
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6">

@@ -51,17 +51,6 @@ export default function ProductManager({
                 subtitle="Manage product listings, inventory levels, and prices."
                 auth={auth}
                 onMenuClick={openSidebar}
-                actions={
-                    <button
-                        onClick={state.openAddModal}
-                        disabled={!state.canEditProducts}
-                        className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-clay-500/20 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-[40px]"
-                    >
-                        <Plus size={16} />
-                        <span className="hidden sm:inline">ADD PRODUCT</span>
-                        <span className="sm:hidden">Add</span>
-                    </button>
-                }
             />
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6 pb-28 sm:pb-20">
@@ -104,6 +93,7 @@ export default function ProductManager({
                         canEditProducts={state.canEditProducts}
                         runBulkStatusUpdate={state.runBulkStatusUpdate}
                         openDiscountModal={state.openDiscountModal}
+                        openAddModal={state.openAddModal}
                     />
 
                     <div className="overflow-x-auto hidden md:block">

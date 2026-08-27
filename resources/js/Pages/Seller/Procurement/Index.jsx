@@ -219,23 +219,6 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
                     auth={auth}
                     onMenuClick={openSidebar}
                     badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
-                    actions={(
-                        <div className="flex items-center gap-2">
-                            <Link
-                                href={route('seller.supply-hub.index')}
-                                className="flex items-center gap-1.5 bg-stone-900 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-stone-800 active:scale-95 transition-all shadow-2xs whitespace-nowrap min-h-[44px] sm:min-h-0"
-                            >
-                                <Store size={14} /> Browse Supply Hub
-                            </Link>
-                            <button 
-                                onClick={() => canEditProcurement && openAddModal()} 
-                                disabled={!canEditProcurement}
-                                className="flex items-center gap-1.5 bg-clay-600 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-clay-500 active:scale-95 transition-all shadow-lg shadow-clay-600/20 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0 cursor-pointer"
-                            >
-                                <Plus size={14} strokeWidth={3} /> Add Supply
-                            </button>
-                        </div>
-                    )}
                 />
 
                 <main className="p-4 sm:p-6 space-y-6">

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { Search, X, Pencil, Trash2, UserX, UserCheck, CalendarDays, Users, SlidersHorizontal, Filter, RotateCcw, ChevronDown, Calendar, Clock3 } from 'lucide-react';
+import { Search, X, Pencil, Trash2, UserX, UserCheck, UserPlus, CalendarDays, Users, SlidersHorizontal, Filter, RotateCcw, ChevronDown, Calendar, Clock3 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
@@ -405,9 +405,19 @@ export default function StaffTable({
                 activeFilterTags={activeFilterTags}
                 containerClassName="rounded-t-3xl border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
                 extraActions={
-                    <span className="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-600 shadow-2xs shrink-0 min-h-[38px] sm:min-h-0">
-                        {filteredStaff.length} visible
-                    </span>
+                    <div className="flex items-center gap-2">
+                        {canEditHrRecords && onAddClick && (
+                            <button
+                                type="button"
+                                onClick={onAddClick}
+                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 h-[38px] min-h-[38px] text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 active:scale-95 shrink-0"
+                            >
+                                <UserPlus size={14} />
+                                <span className="hidden sm:inline">Add Employee</span>
+                                <span className="sm:hidden">Add</span>
+                            </button>
+                        )}
+                    </div>
                 }
             />
 

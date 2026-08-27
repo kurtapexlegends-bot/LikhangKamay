@@ -16,7 +16,6 @@ import {
     Download
 } from 'lucide-react';
 import ExportButton from '@/Components/ExportButton';
-import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import KPICard from '@/Components/KPICard';
@@ -65,19 +64,23 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                 }
             `}} />
 
-            {/* Floating Quick Actions */}
-            <FloatingModuleActions
-                actions={
-                    <div className="flex items-center gap-2">
-                        <ExportButton onClick={() => setTimeout(() => window.print(), 150)} icon={Printer} variant="secondary">
-                            Print
-                        </ExportButton>
-                        <ExportButton href={route('admin.settings.monetization.export')} icon={Download} variant="primary">
-                            Export CSV
-                        </ExportButton>
-                    </div>
-                }
-            />
+            {/* Monetization Header & Actions */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/80 shadow-2xs print:hidden mb-6">
+                <div>
+                    <h2 className="text-sm font-bold text-stone-900">Platform Monetization</h2>
+                    <p className="text-xs text-stone-500 font-medium">Commissions, subscriptions, and platform revenue metrics.</p>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <ExportButton onClick={() => setTimeout(() => window.print(), 150)} icon={Printer} variant="secondary" className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
+                        <span className="hidden sm:inline">Print Report</span>
+                        <span className="sm:hidden">Print</span>
+                    </ExportButton>
+                    <ExportButton href={route('admin.settings.monetization.export')} icon={Download} variant="primary" className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
+                        <span className="hidden sm:inline">Export CSV</span>
+                        <span className="sm:hidden">Export</span>
+                    </ExportButton>
+                </div>
+            </div>
 
             {/* Print Header */}
             <div className="hidden print:block border-b border-stone-200 pb-4 mb-6">

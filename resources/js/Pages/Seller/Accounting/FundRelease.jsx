@@ -260,13 +260,6 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
-                actions={
-                    reviewModal.item ? null : (
-                        <ExportButton href={route('accounting.export')} variant="primary">
-                            EXPORT
-                        </ExportButton>
-                    )
-                }
             />
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-6 pb-8">

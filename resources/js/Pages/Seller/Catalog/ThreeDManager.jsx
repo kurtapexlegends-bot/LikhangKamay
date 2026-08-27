@@ -76,16 +76,6 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                 subtitle="Manage 3D models and augmented reality assets."
                 auth={auth}
                 onMenuClick={openSidebar}
-                actions={(
-                    <button
-                        onClick={() => canEditThreeD && setShowUploadModal(true)}
-                        disabled={!canEditThreeD}
-                        className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-clay-700 shadow-sm transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        <UploadCloud size={15} />
-                        ADD 3D MODEL
-                    </button>
-                )}
             />
 
             <main className="flex-1 p-5 overflow-hidden flex flex-col gap-4">
@@ -142,7 +132,15 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                         </div>
 
                         <div className="flex-1 bg-white rounded-2xl border border-stone-100 shadow-sm flex flex-col overflow-hidden">
-                            <div className="p-3 border-b border-stone-50 bg-stone-50/50">
+                            <div className="p-3 border-b border-stone-50 bg-stone-50/50 space-y-2.5">
+                                <button
+                                    onClick={() => canEditThreeD && setShowUploadModal(true)}
+                                    disabled={!canEditThreeD}
+                                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-clay-600 px-3.5 h-[38px] min-h-[38px] text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95"
+                                >
+                                    <UploadCloud size={15} />
+                                    <span>Upload 3D Model</span>
+                                </button>
                                 <div className="relative">
                                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                                     <input
@@ -150,7 +148,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                         placeholder="Search assets..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-9 pr-3 py-2 bg-white border border-stone-200 rounded-xl text-[10px] font-bold focus:ring-2 focus:ring-clay-100 focus:border-clay-300 transition-all shadow-sm placeholder:text-stone-300"
+                                        className="w-full pl-9 pr-3 py-2 bg-white border border-stone-200 rounded-xl text-xs font-medium focus:ring-1 focus:ring-clay-500 focus:border-clay-500 transition-all shadow-2xs placeholder:text-stone-300 h-[38px] min-h-[38px]"
                                     />
                                 </div>
                             </div>

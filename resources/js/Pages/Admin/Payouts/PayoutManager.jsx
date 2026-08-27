@@ -26,7 +26,6 @@ import InputError from '@/Components/InputError';
 import CompactPagination from '@/Components/CompactPagination';
 import UserAvatar from '@/Components/UserAvatar';
 import KPICard from '@/Components/KPICard';
-import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import ExportButton from '@/Components/ExportButton';
 import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
 
@@ -102,15 +101,6 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
         <AdminLayout title="Payouts">
             <Head title="Seller Payouts" />
 
-            {/* Floating Module Actions */}
-            <FloatingModuleActions
-                actions={
-                    <ExportButton href={route('admin.payouts.export')} icon={Download} variant="secondary">
-                        Export CSV
-                    </ExportButton>
-                }
-            />
-
             <div className="space-y-6 pb-28">
                 {/* KPI STAT CARDS - Preserved to match system */}
                 <div className="flex overflow-x-auto gap-4 sm:gap-5 pb-2.5 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-3 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -128,24 +118,25 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
 
                     <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
                         <KPICard
-                            title="Total Sent to Sellers"
-                            value={Number(metrics.total_paid || 0)}
+                            title="Total Transferred"
+                            value={Number(metrics.total_settled || 0)}
                             icon={CheckCircle2}
                             bg="bg-emerald-50"
                             color="text-emerald-600"
                             formatter={(v) => formatCurrency(v)}
-                            subtitle="Completed platform transfers"
+                            subtitle="All-time processed payouts"
                         />
                     </div>
 
                     <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto">
                         <KPICard
-                            title="Approved Sellers"
-                            value={metrics.total_artisans_count || artisans.length}
-                            icon={Store}
+                            title="Platform Commission"
+                            value={Number(metrics.total_platform_fees_collected || 0)}
+                            icon={TrendingUp}
                             bg="bg-clay-50"
                             color="text-clay-600"
-                            subtitle={`${(metrics.total_artisans_count || artisans.length) - (metrics.artisans_owed_count || 0)} fully settled`}
+                            formatter={(v) => formatCurrency(v)}
+                            subtitle="All-time retained earnings"
                         />
                     </div>
                 </div>
@@ -184,6 +175,17 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
                                 </div>
                             </div>
                         ) : null
+                    }
+                    extraActions={
+                        <ExportButton
+                            href={route('admin.payouts.export')}
+                            icon={Download}
+                            variant="secondary"
+                            className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs"
+                        >
+                            <span className="hidden sm:inline">Export CSV</span>
+                            <span className="sm:hidden">Export</span>
+                        </ExportButton>
                     }
                     onResetFilters={() => setStatusFilter('all')}
                     activeFilterTags={

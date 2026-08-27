@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, ChevronDown, Filter, X, Calendar, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { Search, ChevronDown, Filter, X, Calendar, RotateCcw, SlidersHorizontal, Printer, Download } from 'lucide-react';
 import StickyActionBar from '@/Components/StickyActionBar';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
+import ExportButton from '@/Components/ExportButton';
 
 export default function AuditLogFilters({
     searchTerm,
@@ -30,6 +31,8 @@ export default function AuditLogFilters({
     actorTypeLabel,
     formatStatusLabel,
     filteredCount,
+    onPrint,
+    exportUrl,
 }) {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -294,7 +297,18 @@ export default function AuditLogFilters({
                 </label>
 
                 {/* Filter Controls Row */}
-                <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0 justify-between md:justify-end">
+                <div className="flex items-center gap-2 w-full md:w-auto shrink-0 justify-between md:justify-end">
+                    {onPrint && (
+                        <ExportButton onClick={onPrint} icon={Printer} variant="secondary" className="h-[44px] min-h-[44px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
+                            <span className="hidden sm:inline">Print</span>
+                        </ExportButton>
+                    )}
+                    {exportUrl && (
+                        <ExportButton href={exportUrl} icon={Download} variant="primary" className="h-[44px] min-h-[44px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
+                            <span className="hidden sm:inline">Export</span>
+                        </ExportButton>
+                    )}
+
                     {/* Unified Popover Trigger Button (Desktop & Tablet) */}
                     <div className="relative inline-block text-left" ref={popoverRef}>
                         <button

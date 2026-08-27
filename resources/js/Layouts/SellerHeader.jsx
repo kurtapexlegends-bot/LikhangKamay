@@ -7,7 +7,6 @@ import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Breadcrumbs from '@/Components/Breadcrumbs';
 import { Menu, ChevronDown, User, LogOut, Building2, Clock, Sliders } from 'lucide-react';
 
-import FloatingModuleActions from '@/Components/FloatingModuleActions';
 import GlobalSearch from '@/Components/Consumer/GlobalSearch';
 import { useRealtime } from '@/hooks/useRealtime';
 
@@ -27,9 +26,7 @@ export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuCl
     const auth = propAuth || pageAuth;
 
     return (
-        <>
-            {actions && <FloatingModuleActions actions={actions} />}
-            <header className="bg-white border-b border-stone-200/80 flex items-center justify-between px-3.5 py-2.5 sm:px-6 lg:px-8 sticky top-0 z-30 shadow-xs gap-2 sm:gap-4 min-w-0">
+        <header className="bg-white border-b border-stone-200/80 flex items-center justify-between px-3.5 py-2.5 sm:px-6 lg:px-8 sticky top-0 z-30 shadow-xs gap-2 sm:gap-4 min-w-0">
                 {/* Left: Menu & Title */}
                 <div className="flex min-w-0 items-center gap-2 sm:gap-3 flex-1">
                     <button
@@ -113,6 +110,5 @@ export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuCl
                     </div>
                 </div>
             </header>
-        </>
     );
 }
