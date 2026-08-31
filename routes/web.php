@@ -527,7 +527,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
 
 
     // Restoration Center (Trash)
-    Route::get('/trash', fn() => redirect()->route('admin.compliance', ['tab' => 'trash']))->name('admin.trash');
+    Route::get('/trash', fn() => redirect()->route('admin.settings.index', ['tab' => 'trash']))->name('admin.trash');
     Route::post('/trash/restore', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'restoreItem'])->name('admin.trash.restore');
     Route::post('/trash/permanent-delete', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'permanentDeleteItem'])->name('admin.trash.permanent-delete');
 

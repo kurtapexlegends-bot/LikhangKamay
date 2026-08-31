@@ -8,8 +8,6 @@ use App\Models\ReviewDispute;
 use App\Models\FlaggedContent;
 use App\Models\User;
 use App\Models\Product;
-use App\Models\Category;
-use App\Models\Order;
 use App\Notifications\ReviewModerationStatusNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,14 +25,11 @@ class ModerationController extends Controller
         Gate::authorize('admin-action');
         $flags = $this->getPendingFlags();
         $disputes = $this->getReviewDisputes();
-        $trashData = $this->getTrashQueueAndStats();
 
         return Inertia::render('Admin/Compliance/ContentSafety', [
             'flags' => $flags,
             'disputes' => $disputes,
-            'trashQueue' => $trashData['queue'],
-            'trashStats' => $trashData['stats'],
-            'defaultTab' => $request->input('tab', 'flags'),
+            'defaultFilter' => $request->input('filter', 'all'),
         ]);
     }
 
@@ -83,93 +78,6 @@ class ModerationController extends Controller
                 ];
             })
             ->values();
-    }
-
-    /**
-     * Get deleted/trash items queue and stats
-     */
-    private function getTrashQueueAndStats()
-    {
-        $deletedProducts = $this->getDeletedProducts();
-        $deletedCategories = $this->getDeletedCategories();
-        $deletedOrders = $this->getDeletedOrders();
-
-        $queue = collect([])
-            ->concat($deletedProducts)
-            ->concat($deletedCategories)
-            ->concat($deletedOrders)
-            ->sortByDesc('deleted_at')
-            ->values();
-
-        $stats = [
-            'totalItems' => $queue->count(),
-            'products' => count($deletedProducts),
-            'categories' => count($deletedCategories),
-            'orders' => count($deletedOrders),
-        ];
-
-        return [
-            'queue' => $queue,
-            'stats' => $stats,
-        ];
-    }
-
-    /**
-     * Get deleted products
-     */
-    private function getDeletedProducts()
-    {
-        return Product::onlyTrashed()
-            ->with('user:id,name,shop_name')
-            ->orderBy('deleted_at', 'desc')
-            ->limit(100)
-            ->get()
-            ->map(fn($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'type' => 'Product',
-                'context' => $p->user?->shop_name ?? $p->user?->name ?? 'Unknown Shop',
-                'deleted_at' => $p->deleted_at->toIso8601String(),
-                'expires_at' => $p->deleted_at->addDays(30)->toIso8601String(),
-            ]);
-    }
-
-    /**
-     * Get deleted categories
-     */
-    private function getDeletedCategories()
-    {
-        return Category::onlyTrashed()
-            ->orderBy('deleted_at', 'desc')
-            ->get()
-            ->map(fn($c) => [
-                'id' => $c->id,
-                'name' => $c->name,
-                'type' => 'Category',
-                'context' => 'Global Taxonomy',
-                'deleted_at' => $c->deleted_at->toIso8601String(),
-                'expires_at' => $c->deleted_at->addDays(30)->toIso8601String(),
-            ]);
-    }
-
-    /**
-     * Get deleted orders
-     */
-    private function getDeletedOrders()
-    {
-        return Order::onlyTrashed()
-            ->with('user:id,name')
-            ->orderBy('deleted_at', 'desc')
-            ->limit(100)
-            ->get()
-            ->map(fn($o) => [
-                'id' => $o->id,
-                'name' => "Order #{$o->order_number}",
-                'type' => 'Order',
-                'context' => $o->user?->name ?? 'Unknown Customer',
-                'deleted_at' => $o->deleted_at->toIso8601String(),
-                'expires_at' => $o->deleted_at->addDays(30)->toIso8601String(),
-            ]);
     }
 
     /**
