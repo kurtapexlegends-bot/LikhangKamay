@@ -107,7 +107,7 @@ class DisputeController extends Controller
         $search = $request->input('search');
         $like = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
 
-        $disputes = Dispute::with(['order.user', 'order.artisan'])
+        $disputes = Dispute::with(['order.user', 'order.artisan', 'order.items.product'])
             ->where('status', 'escalated')
             ->when($search, function ($q) use ($search, $like) {
                 $q->where(function ($sq) use ($search, $like) {

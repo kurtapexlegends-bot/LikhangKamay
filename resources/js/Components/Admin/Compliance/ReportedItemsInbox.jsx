@@ -1,5 +1,5 @@
 /* global route */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { ShieldAlert, Loader2, CheckCircle2, Check, X, Search, Package, User, MessageSquare, Star, Clock, AlertTriangle, ShieldCheck } from 'lucide-react';
@@ -16,6 +16,22 @@ export default function ReportedItemsInbox({
 }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('active');
+    const pillsScrollRef = useRef(null);
+
+    useEffect(() => {
+        const el = pillsScrollRef.current;
+        if (!el) return;
+
+        const handleWheel = (e) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                el.scrollLeft += e.deltaY;
+            }
+        };
+
+        el.addEventListener('wheel', handleWheel, { passive: false });
+        return () => el.removeEventListener('wheel', handleWheel);
+    }, []);
 
     const categoryCounts = useMemo(() => {
         let active = 0;
@@ -150,12 +166,8 @@ export default function ReportedItemsInbox({
 
                 {/* Filter Pills with Badge Numbers */}
                 <div 
-                    onWheel={(e) => {
-                        if (e.deltaY !== 0) {
-                            e.currentTarget.scrollLeft += e.deltaY;
-                        }
-                    }}
-                    className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pt-0.5 scroll-smooth touch-pan-x"
+                    ref={pillsScrollRef}
+                    className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pt-0.5 scroll-smooth touch-pan-x overscroll-contain"
                 >
                     {[
                         { key: 'active', label: 'Active', count: categoryCounts.active },

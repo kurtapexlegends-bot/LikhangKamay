@@ -1,39 +1,85 @@
-import React, { useState } from 'react';
+/* global route */
+import React, { useState, useMemo } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
-import UserAvatar from '@/Components/UserAvatar';
 import { useToast } from '@/Components/ToastContext';
+import DisputeInspectorContent from '@/Components/Admin/Disputes/DisputeInspectorContent';
+import DisputeLightboxModal from '@/Components/Admin/Disputes/DisputeLightboxModal';
+import ArbitrationConfirmModal from '@/Components/Admin/Disputes/ArbitrationConfirmModal';
 import {
-    RotateCcw, ShieldAlert, Clock, User, Store, FileText, Camera,
-    Check, X, ExternalLink, ChevronRight, Info, CheckCircle2,
-    XCircle, AlertTriangle, Loader2, ArrowLeft
+    ShieldAlert, 
+    CheckCircle2, 
+    Search, 
+    X, 
+    Camera
 } from 'lucide-react';
 
 export default function DisputeEscalationDashboard({ disputes = [] }) {
     const { addToast } = useToast();
+    const [searchQuery, setSearchQuery] = useState('');
     const [selectedId, setSelectedId] = useState(disputes.length > 0 ? disputes[0].id : null);
     const [notes, setNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [showMobileDetail, setShowMobileDetail] = useState(false);
 
-    const selectedDispute = disputes.find(d => d.id === selectedId);
+    // Lightbox Modal State
+    const [lightboxState, setLightboxState] = useState({ open: false, photos: [], currentIndex: 0 });
+
+    // Arbitration Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState({ open: false, decision: null });
+
+    // Filtered Disputes
+    const filteredDisputes = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+        if (!query) return disputes;
+
+        return disputes.filter(d => {
+            const orderNum = String(d.order?.order_number || d.order_id || '').toLowerCase();
+            const buyerName = String(d.order?.user?.name || d.order?.customer_name || '').toLowerCase();
+            const shopName = String(d.order?.artisan?.shop_name || d.order?.artisan?.name || '').toLowerCase();
+            const reason = String(d.reason || '').toLowerCase();
+            const escalationReason = String(d.escalation_reason || '').toLowerCase();
+            const disputeId = String(d.id || '');
+
+            return (
+                orderNum.includes(query) ||
+                buyerName.includes(query) ||
+                shopName.includes(query) ||
+                reason.includes(query) ||
+                escalationReason.includes(query) ||
+                disputeId.includes(query)
+            );
+        });
+    }, [disputes, searchQuery]);
+
+    // Active Dispute
+    const selectedDispute = useMemo(() => {
+        if (!selectedId) return filteredDisputes[0] || null;
+        return disputes.find(d => d.id === selectedId) || filteredDisputes[0] || null;
+    }, [disputes, selectedId, filteredDisputes]);
 
     const handleSelectDispute = (dispute) => {
         setSelectedId(dispute.id);
         setNotes('');
         setError('');
-        setShowMobileDetail(true);
     };
 
-    const handleArbitrate = (decision) => {
+    const openConfirmModal = (decision) => {
         if (!selectedDispute) return;
         if (!notes.trim()) {
-            setError('Internal notes are required to resolve this dispute.');
+            setError('Please provide resolution notes explaining your decision.');
             return;
         }
+        setError('');
+        setConfirmModal({ open: true, decision });
+    };
 
+    const executeArbitration = () => {
+        if (!selectedDispute || !confirmModal.decision) return;
+
+        const decision = confirmModal.decision;
         setIsSubmitting(true);
         setError('');
 
@@ -46,10 +92,14 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    addToast(`Dispute resolved: ${decision === 'refund' ? 'Full Refund Approved' : 'Claim Declined'}.`, 'success');
+                    addToast(
+                        `Dispute resolved: ${decision === 'refund' ? 'Full Refund Approved' : 'Funds Released to Seller'}.`, 
+                        'success'
+                    );
                     setNotes('');
-                    setShowMobileDetail(false);
-                    // Select another dispute if any
+                    setConfirmModal({ open: false, decision: null });
+
+                    // Select next available dispute
                     const remaining = disputes.filter(d => d.id !== selectedDispute.id);
                     if (remaining.length > 0) {
                         setSelectedId(remaining[0].id);
@@ -58,7 +108,8 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                     }
                 },
                 onError: (errs) => {
-                    setError(errs.message || errs.admin_notes || 'Failed to submit decision.');
+                    setError(errs.message || errs.admin_notes || 'Failed to submit dispute resolution.');
+                    setConfirmModal({ open: false, decision: null });
                 },
                 onFinish: () => {
                     setIsSubmitting(false);
@@ -67,311 +118,209 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
         );
     };
 
+    const openLightbox = (photos, index = 0) => {
+        setLightboxState({ open: true, photos, currentIndex: index });
+    };
+
+    const nextPhoto = () => {
+        setLightboxState(prev => ({
+            ...prev,
+            currentIndex: (prev.currentIndex + 1) % prev.photos.length
+        }));
+    };
+
+    const prevPhoto = () => {
+        setLightboxState(prev => ({
+            ...prev,
+            currentIndex: (prev.currentIndex - 1 + prev.photos.length) % prev.photos.length
+        }));
+    };
+
     return (
         <>
             <Head title="Order Dispute Resolution" />
 
-            <div className="space-y-6">
+            <div className="flex flex-col lg:h-[calc(100vh-140px)] min-h-[640px]">
                 {disputes.length === 0 ? (
                     <WorkspaceEmptyState
                         icon={CheckCircle2}
-                        title="All disputes resolved"
-                        description="There are currently no active escalated disputes awaiting review."
+                        title="All Disputes Resolved"
+                        description="There are currently no active order disputes requiring platform review."
                     />
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                        {/* LEFT COLUMN: Queue list */}
-                        <div className={`lg:col-span-4 bg-white border border-stone-200 rounded-3xl overflow-hidden shadow-sm h-[70vh] flex flex-col ${showMobileDetail ? 'hidden lg:flex' : 'flex'}`}>
-                            <div className="px-4 py-3 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Escalation Queue</span>
-                                {disputes.length > 0 && (
-                                    <span className="bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider">
-                                        {disputes.length} Active
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex-1 overflow-y-auto divide-y divide-stone-100 custom-scrollbar">
-                                {disputes.map((dispute) => {
-                                    const isActive = dispute.id === selectedId;
-                                    const buyerName = dispute.order?.user?.name || dispute.order?.customer_name || 'Buyer';
-                                    const shopName = dispute.order?.artisan?.shop_name || 'Artisan';
-                                    
-                                    return (
+                    <div className="flex-1 flex flex-col lg:flex-row gap-5 min-h-0 overflow-hidden">
+                        {/* LEFT COLUMN: Queue List */}
+                        <div className={`w-full lg:w-[380px] xl:w-[420px] bg-white border border-stone-200/80 rounded-2xl shadow-2xs flex flex-col overflow-hidden ${selectedDispute ? 'hidden lg:flex' : 'flex'} h-full shrink-0`}>
+                            {/* Queue Header */}
+                            <div className="p-4 border-b border-stone-100 bg-[#FCFBF9] shrink-0 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200/60">
+                                            <ShieldAlert size={14} />
+                                        </div>
+                                        <h3 className="font-bold text-stone-900 text-xs sm:text-sm">
+                                            Active Disputes
+                                        </h3>
+                                        <span className="inline-flex items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-800">
+                                            {filteredDisputes.length}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Search Input */}
+                                <div className="relative">
+                                    <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={13} />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="Search order #, customer, shop, or reason..."
+                                        className="w-full rounded-xl border border-stone-200 bg-white py-1.5 pl-8 pr-8 text-xs font-medium text-stone-900 placeholder-stone-400 focus:border-clay-500 focus:ring-1 focus:ring-clay-500 shadow-2xs h-[36px]"
+                                    />
+                                    {searchQuery && (
                                         <button
-                                            key={dispute.id}
-                                            onClick={() => handleSelectDispute(dispute)}
-                                            className={`w-full text-left p-4 transition-colors flex items-start gap-3 relative hover:bg-stone-50 ${isActive ? 'bg-clay-50/40' : ''}`}
+                                            type="button"
+                                            onClick={() => setSearchQuery('')}
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer"
                                         >
-                                            {isActive && (
-                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-clay-600 rounded-r" />
-                                            )}
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between gap-2 mb-1">
-                                                    <span className="font-mono text-[10px] font-bold text-stone-500 uppercase">
-                                                        Order #{dispute.order?.order_number || dispute.order_id}
-                                                    </span>
-                                                    <span className="text-[10px] font-medium text-stone-400">
-                                                        {dispute.order?.created_at ? new Date(dispute.order.created_at).toLocaleDateString() : ''}
-                                                    </span>
-                                                </div>
-                                                <h4 className="text-xs font-bold text-stone-900 truncate">
-                                                    {buyerName} vs {shopName}
-                                                </h4>
-                                                <p className="text-[11px] text-stone-500 line-clamp-2 mt-1 leading-normal">
-                                                    {dispute.reason}
-                                                </p>
-                                            </div>
-                                            <ChevronRight size={14} className="text-stone-400 shrink-0 self-center" />
+                                            <X size={12} />
                                         </button>
-                                    );
-                                })}
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Disputes Queue Items */}
+                            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                {filteredDisputes.length === 0 ? (
+                                    <div className="p-10 text-center">
+                                        <CheckCircle2 size={28} className="mx-auto mb-2 text-stone-300" />
+                                        <p className="font-bold text-stone-800 text-xs">No matching disputes found.</p>
+                                        <p className="text-[11px] text-stone-400 mt-1">Try clearing your search query.</p>
+                                    </div>
+                                ) : (
+                                    <ul className="divide-y divide-stone-100">
+                                        {filteredDisputes.map((dispute) => {
+                                            const isActive = dispute.id === selectedDispute?.id;
+                                            const buyerName = dispute.order?.user?.name || dispute.order?.customer_name || 'Buyer';
+                                            const shopName = dispute.order?.artisan?.shop_name || dispute.order?.artisan?.name || 'Artisan Shop';
+                                            const totalAmount = dispute.order?.total_amount ? Number(dispute.order.total_amount) : 0;
+                                            const photoCount = Array.isArray(dispute.proof_photos) ? dispute.proof_photos.length : 0;
+
+                                            return (
+                                                <li key={dispute.id} className="relative overflow-hidden group">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleSelectDispute(dispute)}
+                                                        className={`w-full text-left p-3.5 transition-all cursor-pointer ${
+                                                            isActive
+                                                                ? 'bg-clay-50/60 border-l-4 border-l-clay-700 pl-3'
+                                                                : 'bg-white hover:bg-stone-50/70 border-l-4 border-l-transparent'
+                                                        }`}
+                                                    >
+                                                        <div className="flex justify-between items-center mb-1.5 gap-2">
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                <span className="font-mono text-[10px] font-black text-stone-700 bg-stone-100 px-2 py-0.5 rounded border border-stone-200/60">
+                                                                    Order #{dispute.order?.order_number || dispute.order_id}
+                                                                </span>
+                                                                {totalAmount > 0 && (
+                                                                    <span className="font-mono text-[10px] font-bold text-stone-900 bg-white border border-stone-200 px-1.5 py-0.5 rounded">
+                                                                        ₱{totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
+                                                            <span className="text-[10px] font-medium text-stone-400 shrink-0">
+                                                                {dispute.updated_at ? new Date(dispute.updated_at).toLocaleDateString() : ''}
+                                                            </span>
+                                                        </div>
+
+                                                        <p className="text-xs font-bold text-stone-900 truncate mt-1">
+                                                            {buyerName} <span className="text-stone-400 font-normal">vs</span> {shopName}
+                                                        </p>
+
+                                                        <p className="text-[11px] text-stone-600 mt-1 line-clamp-1 leading-relaxed">
+                                                            &ldquo;{dispute.reason}&rdquo;
+                                                        </p>
+
+                                                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-stone-100 text-[10px] text-stone-400">
+                                                            <span className="inline-flex items-center gap-1 text-amber-700 font-bold">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                                                Under Review
+                                                            </span>
+
+                                                            <div className="flex items-center gap-2">
+                                                                {photoCount > 0 && (
+                                                                    <span className="inline-flex items-center gap-0.5 text-stone-500 font-medium">
+                                                                        <Camera size={10} />
+                                                                        {photoCount} {photoCount === 1 ? 'photo' : 'photos'}
+                                                                    </span>
+                                                                )}
+                                                                <span className="font-mono text-[9px]">Dispute #{dispute.id}</span>
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                )}
                             </div>
                         </div>
 
-                        {/* RIGHT COLUMN: Selected Detail & Action */}
-                        <div className={`lg:col-span-8 space-y-6 ${showMobileDetail ? 'block' : 'hidden lg:block'}`}>
+                        {/* RIGHT COLUMN: Case Detail & Arbitration Inspector */}
+                        <div className={`w-full lg:flex-1 min-w-0 bg-white border border-stone-200/80 rounded-2xl shadow-2xs flex flex-col overflow-hidden h-full ${selectedDispute ? 'flex' : 'hidden lg:flex'}`}>
                             {selectedDispute ? (
-                                <div className="bg-white border border-stone-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-                                    {/* Mobile Back Button */}
-                                    {showMobileDetail && (
-                                        <button
-                                            onClick={() => setShowMobileDetail(false)}
-                                            className="lg:hidden inline-flex items-center gap-1.5 text-xs font-bold text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-3.5 py-2 rounded-xl transition-all shadow-sm mb-4 min-h-[44px]"
-                                        >
-                                            <ArrowLeft size={14} />
-                                            Back to Queue
-                                        </button>
-                                    )}
-
-                                    {/* Detail Header */}
-                                    <div className="border-b border-stone-100 pb-5 flex flex-wrap items-start justify-between gap-4">
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-mono text-xs font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded">
-                                                    Order ID: {selectedDispute.order?.order_number || selectedDispute.order_id}
-                                                </span>
-                                                <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 shadow-sm">
-                                                    <ShieldAlert size={10} />
-                                                    Escalated
-                                                </span>
-                                            </div>
-                                            <h3 className="text-lg font-black text-stone-900 mt-2">
-                                                Dispute Case #{selectedDispute.id}
-                                            </h3>
-                                        </div>
-                                    </div>
-
-                                    {/* Side-by-Side Comparison */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-stone-100 pb-6">
-                                        {/* Buyer Claim */}
-                                        <div className="space-y-4">
-                                            <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest flex items-center gap-2">
-                                                <User size={14} className="text-stone-400" />
-                                                Buyer Claim Details
-                                            </h4>
-                                            
-                                            <div className="bg-stone-50/50 rounded-2xl border border-stone-200/60 p-4 space-y-3.5">
-                                                <div className="flex items-center gap-3">
-                                                    <UserAvatar user={selectedDispute.order?.user} className="h-9 w-9 border border-stone-200" />
-                                                    <div>
-                                                        <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider">
-                                                            Buyer Profile
-                                                        </span>
-                                                        <p className="text-xs font-bold text-stone-900">
-                                                            {selectedDispute.order?.user?.name || selectedDispute.order?.customer_name || 'Buyer'}
-                                                        </p>
-                                                        <p className="text-[10px] text-stone-500 font-medium">
-                                                            {selectedDispute.order?.user?.email || ''}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                <div>
-                                                    <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">
-                                                        Claim Reason
-                                                    </span>
-                                                    <p className="text-xs text-stone-700 leading-relaxed font-medium whitespace-pre-wrap">
-                                                        {selectedDispute.reason}
-                                                    </p>
-                                                </div>
-
-                                                {selectedDispute.escalation_reason && (
-                                                    <div>
-                                                        <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">
-                                                            Escalation Statement
-                                                        </span>
-                                                        <p className="text-xs text-stone-700 leading-relaxed font-medium whitespace-pre-wrap italic bg-white border border-stone-200/60 p-3 rounded-xl">
-                                                            "{selectedDispute.escalation_reason}"
-                                                        </p>
-                                                    </div>
-                                                )}
-
-                                                <div>
-                                                    <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5">
-                                                        Proof Photos
-                                                    </span>
-                                                    {selectedDispute.proof_photos && selectedDispute.proof_photos.length > 0 ? (
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {selectedDispute.proof_photos.map((photo, pIdx) => {
-                                                                const photoUrl = photo.startsWith('http') || photo.startsWith('/storage') ? photo : `/storage/${photo}`;
-                                                                return (
-                                                                    <a
-                                                                        key={pIdx}
-                                                                        href={photoUrl}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="relative group border border-stone-200 bg-white rounded-lg overflow-hidden h-14 w-14 shadow-sm hover:ring-2 hover:ring-clay-500 transition-all shrink-0"
-                                                                    >
-                                                                        <img src={photoUrl} className="h-full w-full object-cover" alt={`Proof ${pIdx + 1}`} />
-                                                                        <div className="absolute inset-0 bg-stone-900/10 group-hover:bg-stone-900/30 transition-colors" />
-                                                                    </a>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    ) : (
-                                                        <p className="text-[10px] text-stone-400 font-medium">No proof photo attached.</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Seller Defense */}
-                                        <div className="space-y-4">
-                                            <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest flex items-center gap-2">
-                                                <Store size={14} className="text-stone-400" />
-                                                Seller Counter/Defense
-                                            </h4>
-                                            
-                                            <div className="bg-stone-50/50 rounded-2xl border border-stone-200/60 p-4 space-y-3.5">
-                                                <div className="flex items-center gap-3">
-                                                    <UserAvatar user={selectedDispute.order?.artisan} className="h-9 w-9 border border-stone-200" />
-                                                    <div>
-                                                        <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider">
-                                                            Seller Shop Name
-                                                        </span>
-                                                        <p className="text-xs font-bold text-stone-900">
-                                                            {selectedDispute.order?.artisan?.shop_name || 'Artisan Shop'}
-                                                        </p>
-                                                        <p className="text-[10px] text-stone-500 font-medium">
-                                                            Owner: {selectedDispute.order?.artisan?.name || ''}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                <div>
-                                                    <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">
-                                                        Response Type
-                                                    </span>
-                                                    <span className="inline-flex rounded-md border border-stone-200 bg-white px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-stone-700 shadow-sm">
-                                                        {selectedDispute.seller_response_type || 'No counter offered'}
-                                                    </span>
-                                                </div>
-
-                                                {selectedDispute.seller_proposed_description && (
-                                                    <div>
-                                                        <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">
-                                                            Proposed Replacement Counter
-                                                        </span>
-                                                        <p className="text-xs text-stone-700 leading-relaxed font-medium whitespace-pre-wrap bg-white border border-stone-200/60 p-3 rounded-xl">
-                                                            {selectedDispute.seller_proposed_description}
-                                                        </p>
-                                                    </div>
-                                                )}
-
-                                                {selectedDispute.seller_explanation && (
-                                                    <div>
-                                                        <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">
-                                                            Rejection Reasoning
-                                                        </span>
-                                                        <p className="text-xs text-stone-700 leading-relaxed font-medium whitespace-pre-wrap bg-white border border-stone-200/60 p-3 rounded-xl">
-                                                            {selectedDispute.seller_explanation}
-                                                        </p>
-                                                    </div>
-                                                )}
-
-                                                {!selectedDispute.seller_proposed_description && !selectedDispute.seller_explanation && (
-                                                    <p className="text-xs text-stone-400 font-medium italic">
-                                                        Seller did not counter or explain their rejection response.
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Dispute Resolution Decision Panel */}
-                                    <div className="bg-stone-50 border border-stone-200 rounded-3xl p-5 sm:p-6 space-y-4">
-                                        <div className="flex items-center gap-2 text-stone-900 font-bold text-xs sm:text-sm">
-                                            <Info size={16} className="text-stone-500" />
-                                            <span>Dispute Decision Panel</span>
-                                        </div>
-                                        <p className="text-xs text-stone-500 font-medium leading-relaxed">
-                                            Review the statements and proof photos from both parties. Approving the refund returns payment to the buyer. Declining the claim retains the funds for the artisan and completes the order.
-                                        </p>
-
-                                        <div>
-                                            <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5">
-                                                Internal Notes & Decision Reasoning
-                                            </label>
-                                            <textarea
-                                                rows={3}
-                                                value={notes}
-                                                onChange={(e) => {
-                                                    setNotes(e.target.value);
-                                                    setError('');
-                                                }}
-                                                placeholder="Document the decision reasoning, findings, and evidence references. This will be recorded in the dispute history..."
-                                                className="w-full border-stone-200 rounded-xl focus:border-clay-500 focus:ring-0 shadow-sm text-xs font-medium resize-none"
-                                            />
-                                            {error && (
-                                                <p className="mt-1 text-xs font-bold text-rose-600">
-                                                    {error}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                                            <button
-                                                onClick={() => handleArbitrate('reject')}
-                                                disabled={isSubmitting}
-                                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold text-stone-700 hover:bg-stone-100 transition shadow-sm active:scale-95 disabled:opacity-50 min-h-[44px]"
-                                            >
-                                                {isSubmitting ? (
-                                                    <Loader2 size={14} className="animate-spin text-stone-500" />
-                                                ) : (
-                                                    <XCircle size={14} className="text-rose-500" />
-                                                )}
-                                                Decline Claim (Keep with Seller)
-                                            </button>
-                                            <button
-                                                onClick={() => handleArbitrate('refund')}
-                                                disabled={isSubmitting}
-                                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-clay-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-clay-700 transition shadow-md active:scale-95 disabled:opacity-50 min-h-[44px]"
-                                            >
-                                                {isSubmitting ? (
-                                                    <Loader2 size={14} className="animate-spin text-white" />
-                                                ) : (
-                                                    <CheckCircle2 size={14} className="text-white" />
-                                                )}
-                                                Approve Refund (Return to Buyer)
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <WorkspaceEmptyState
-                                    icon={Info}
-                                    title="No dispute selected"
-                                    description="Choose a dispute from the queue list on the left to review details."
+                                <DisputeInspectorContent 
+                                    dispute={selectedDispute}
+                                    notes={notes}
+                                    setNotes={setNotes}
+                                    error={error}
+                                    setError={setError}
+                                    isSubmitting={isSubmitting}
+                                    openConfirmModal={openConfirmModal}
+                                    openLightbox={openLightbox}
+                                    onBack={() => setSelectedId(null)}
                                 />
+                            ) : (
+                                <div className="flex-1 flex flex-col items-center justify-center text-center p-10 bg-[#FAF9F6]/50">
+                                    <div className="w-14 h-14 bg-white border border-stone-200 rounded-2xl flex items-center justify-center mb-3 shadow-2xs text-stone-300">
+                                        <ShieldAlert size={24} />
+                                    </div>
+                                    <h3 className="text-sm font-bold text-stone-900 mb-1">Select an Active Dispute</h3>
+                                    <p className="text-xs text-stone-500 max-w-xs leading-relaxed">
+                                        Choose a dispute from the queue to examine the buyer request, artisan response, and resolve the order.
+                                    </p>
+                                </div>
                             )}
                         </div>
                     </div>
                 )}
             </div>
+
+            {/* Photo Lightbox Modal */}
+            <DisputeLightboxModal
+                isOpen={lightboxState.open}
+                onClose={() => setLightboxState(prev => ({ ...prev, open: false }))}
+                photos={lightboxState.photos}
+                currentIndex={lightboxState.currentIndex}
+                onNext={nextPhoto}
+                onPrev={prevPhoto}
+            />
+
+            {/* Arbitration Confirmation Modal */}
+            <ArbitrationConfirmModal
+                isOpen={confirmModal.open}
+                onClose={() => setConfirmModal({ open: false, decision: null })}
+                decision={confirmModal.decision}
+                dispute={selectedDispute}
+                isSubmitting={isSubmitting}
+                onConfirm={executeArbitration}
+            />
         </>
     );
 }
 
 DisputeEscalationDashboard.layout = (page) => (
-    <AdminLayout title="Escalated Disputes">{page}</AdminLayout>
+    <AdminLayout title="Order Disputes">{page}</AdminLayout>
 );
+
