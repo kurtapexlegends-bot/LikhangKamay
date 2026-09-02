@@ -33,8 +33,8 @@ export default function CampaignIntelligence({
     }
 
     return (
-        <div className="bg-white rounded-3xl shadow-sm border border-stone-100 overflow-hidden">
-            <div className="p-6">
+        <div className="bg-white rounded-2xl shadow-2xs border border-stone-200/80 overflow-hidden">
+            <div className="p-5 sm:p-6">
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
                     <div>
                         <div className="flex items-center gap-2 mb-1">

@@ -62,6 +62,8 @@ class AnalyticsController extends Controller
                 'total_revenue' => $canViewRevenue ? $financials['current']['revenue'] : 0,
                 'gross_profit' => $canViewRevenue ? $financials['current']['profit'] : 0,
                 'profit_margin' => $canViewRevenue ? round($financials['current']['margin'], 1) : 0,
+                'orders_count' => (int) ($financials['current']['orders'] ?? 0),
+                'avg_order_value' => $canViewRevenue ? round($financials['current']['avg'] ?? 0, 2) : 0,
                 'growth' => array_merge(
                     $canViewRevenue ? $financials['growth'] : [
                         'revenue' => 0,

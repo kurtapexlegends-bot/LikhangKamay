@@ -23,9 +23,9 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
         <>
             <div className="space-y-6 print:hidden">
                 {/* Row 1: Peak Sales Heatmap (2/3) & Customer Ratings (1/3) */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
                     {/* Peak Activity Heatmap */}
-                    <div ref={heatmapCardRef} className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between min-h-[350px] relative">
+                    <div ref={heatmapCardRef} className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-2xs border border-stone-200/80 flex flex-col justify-between min-h-[340px] relative">
                         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
                             <div>
                                 <h3 className="text-base font-bold text-stone-900 leading-none">Peak Activity Heatmap</h3>
@@ -121,11 +121,11 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
                 </div>
 
                 {/* Row 2: Inventory Alert Hub (2/3) & Velocity & Top Volume (1/3) */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
                     {/* Inventory Alert Hub */}
-                    <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between min-h-[350px]">
+                    <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-2xs border border-stone-200/80 flex flex-col justify-between min-h-[340px]">
                         <div className="pb-3 border-b border-stone-100 mb-4">
-                            <h3 className="text-base font-bold text-stone-900 leading-none">Inventory Alert Hub</h3>
+                            <h3 className="text-base font-bold text-stone-900 leading-none">Inventory Health & Restock Alerts</h3>
                             <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Critical stock items and slow moving catalog</p>
                         </div>
 
@@ -188,7 +188,7 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
                     </div>
 
                     {/* Product Performance & Velocity */}
-                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between min-h-[350px]">
+                    <div className="bg-white p-5 rounded-2xl shadow-2xs border border-stone-200/80 flex flex-col justify-between min-h-[340px]">
                         <div className="pb-3 border-b border-stone-50 mb-3">
                             <h3 className="text-base font-bold text-stone-900 leading-none">Velocity & Top Volume</h3>
                             <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Delivery velocity & top items</p>

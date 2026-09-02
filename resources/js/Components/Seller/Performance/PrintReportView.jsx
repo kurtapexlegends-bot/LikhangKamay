@@ -45,17 +45,6 @@ export default function PrintReportView({
         return (chartData.monthly || []).slice(-7).map(d => d.profit || (d.revenue * 0.4));
     }, [chartData.monthly]);
 
-    const revenueBreakdown = useMemo(() => {
-        const result = {};
-        (categoryData || []).forEach(item => {
-            const label = item.name || item.category || 'Other';
-            if (label !== 'Other' || item.value > 0) {
-                result[label] = item.value;
-            }
-        });
-        return result;
-    }, [categoryData]);
-
     return (
         <div className="hidden print:block space-y-6">
             <style dangerouslySetInnerHTML={{__html: `
@@ -227,7 +216,6 @@ export default function PrintReportView({
                 metrics={metrics}
                 revenueTrend={revenueTrend}
                 profitTrend={profitTrend}
-                revenueBreakdown={revenueBreakdown}
                 shouldAnimateKPI={shouldAnimateKPI}
             />
 

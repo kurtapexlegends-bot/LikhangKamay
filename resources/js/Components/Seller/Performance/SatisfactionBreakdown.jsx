@@ -7,7 +7,7 @@ export default function SatisfactionBreakdown({ stats, compact = false }) {
     const averageRating = stats?.average || 0.0;
 
     return (
-        <div className={`bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col h-full ${compact ? 'min-h-[350px]' : 'min-h-[300px]'}`}>
+        <div className={`bg-white p-5 rounded-2xl shadow-2xs border border-stone-200/80 flex flex-col h-full ${compact ? 'min-h-[340px]' : 'min-h-[300px]'}`}>
             <div className="flex justify-between items-center pb-3 border-b border-stone-100 mb-4">
                 <div>
                     <h3 className="text-base font-bold text-stone-900 leading-none">Customer Ratings</h3>

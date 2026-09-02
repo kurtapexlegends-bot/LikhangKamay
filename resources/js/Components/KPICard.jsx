@@ -35,7 +35,7 @@ const Sparkline = ({ data, positive = true }) => {
 
 /**
  * A reusable KPI (Key Performance Indicator) Card for dashboard statistics.
- * Supports animations, growth indicators, sparklines, and a 3D flip-for-breakdown interaction.
+ * Supports animations, growth indicators, and sparklines.
  */
 const KPICard = ({ 
     title, 
@@ -46,13 +46,10 @@ const KPICard = ({
     growth,
     growthSuffix = '',
     trendData = [],
-    breakdown = null,
     animate = true,
     formatter,
     subtitle
 }) => {
-    const [isFlipped, setIsFlipped] = React.useState(false);
-
     let growthColor = 'text-stone-500';
     let GrowthIcon = Minus;
     let growthPrefix = '';
@@ -137,62 +134,9 @@ const KPICard = ({
         </div>
     );
 
-    const Back = breakdown ? (
-        <div className="h-full flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                    Breakdown
-                </p>
-                <div className={`${bg} ${color} p-1 rounded-lg`}>
-                    <Icon size={12} />
-                </div>
-            </div>
-            <div className="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
-                {Object.entries(breakdown).length > 0 ? (
-                    Object.entries(breakdown).map(([label, val]) => (
-                        <div key={label} className="flex items-center justify-between group/item">
-                            <span className="text-[11px] text-stone-500 font-medium truncate pr-2">
-                                {label}
-                            </span>
-                            <span className="text-[11px] text-stone-900 font-bold tabular-nums">
-                                {typeof val === 'number' ? displayFormatter(val) : val}
-                            </span>
-                        </div>
-                    ))
-                ) : (
-                    <div className="h-full flex items-center justify-center">
-                        <p className="text-[10px] text-stone-400 italic">No breakdown available</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    ) : null;
-
     const cardContent = (
-        <div 
-            className="relative h-28 w-full cursor-pointer [perspective:1000px]"
-            onClick={() => breakdown && setIsFlipped(!isFlipped)}
-        >
-            <motion.div
-                initial={false}
-                animate={{ rotateY: isFlipped ? 180 : 0 }}
-                transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
-                className="relative h-full w-full [transform-style:preserve-3d]"
-            >
-                <div 
-                    className="absolute inset-0 h-full w-full rounded-2xl border border-stone-100 bg-white p-5 shadow-sm hover:shadow-md transition-all duration-300 [backface-visibility:hidden]"
-                >
-                    {Front}
-                </div>
-
-                {breakdown && (
-                    <div 
-                        className="absolute inset-0 h-full w-full rounded-2xl border border-clay-100 bg-clay-50/30 p-5 shadow-inner [backface-visibility:hidden] [transform:rotateY(180deg)] backdrop-blur-sm print:hidden"
-                    >
-                        {Back}
-                    </div>
-                )}
-            </motion.div>
+        <div className="relative w-full rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5 shadow-2xs hover:shadow-xs hover:border-stone-300 transition-all duration-200">
+            {Front}
         </div>
     );
 

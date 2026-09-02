@@ -14,7 +14,6 @@ export default function PrintReportKPIs({
     metrics = {},
     revenueTrend = [],
     profitTrend = [],
-    revenueBreakdown = null,
     shouldAnimateKPI
 }) {
     return (
@@ -30,7 +29,6 @@ export default function PrintReportKPIs({
                             growth={metrics.growth?.revenue} 
                             growthSuffix=" vs last 30 days"
                             trendData={revenueTrend}
-                            breakdown={revenueBreakdown && Object.keys(revenueBreakdown || {}).length > 0 ? revenueBreakdown : null}
                             icon={DollarSign} 
                             bg="bg-stone-50" 
                             color="text-clay-600" 
