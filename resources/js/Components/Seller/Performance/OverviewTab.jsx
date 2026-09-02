@@ -1,3 +1,4 @@
+/* global route */
 import React, { useState, useMemo } from 'react';
 import KPICard from '@/Components/KPICard';
 import StaggerContainer from '@/Components/StaggerContainer';
@@ -27,14 +28,13 @@ import {
 
 const COLORS = ['#c07251', '#d97706', '#059669', '#57534e', '#e11d48', '#8c5a44'];
 
-const pesoFormatter = new Intl.NumberFormat('en-PH', {
-    style: 'currency',
-    currency: 'PHP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-});
-
-const formatPeso = (value) => pesoFormatter.format(Number(value || 0));
+const formatPeso = (value) => {
+    const num = Math.round(Number(value || 0));
+    if (num < 0) {
+        return `-₱${Math.abs(num).toLocaleString()}`;
+    }
+    return `₱${num.toLocaleString()}`;
+};
 
 export default function OverviewTab({
     isLoading,
@@ -205,7 +205,7 @@ export default function OverviewTab({
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
                                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} dy={10} />
-                                            <YAxis width={40} axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} tickFormatter={(val) => formatPeso(val)} />
+                                            <YAxis width={48} axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} tickFormatter={(val) => formatPeso(val)} />
                                             <RechartsTooltip
                                                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                                                 formatter={(value) => formatPeso(value)}

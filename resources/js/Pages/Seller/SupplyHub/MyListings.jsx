@@ -12,7 +12,7 @@ import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader'
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export default function MyListings({ products = [], availableCategories = [], availableUnits = {}, activeOrdersCount = 0, cartCount = 0 }) {
+export default function MyListings({ products = [], availableCategories = [], availableUnits = {}, activeOrdersCount = 0, wholesaleSalesCount = 0, cartCount = 0 }) {
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
     const [editingProduct, setEditingProduct] = useState(null);
@@ -132,10 +132,22 @@ export default function MyListings({ products = [], availableCategories = [], av
                                 href={route('seller.supply-hub.orders')}
                                 className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
                             >
-                                <span>Material Orders</span>
+                                <span>Material Purchases</span>
                                 {activeOrdersCount > 0 && (
                                     <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-stone-200 text-stone-600">
                                         {activeOrdersCount}
+                                    </span>
+                                )}
+                            </Link>
+
+                            <Link
+                                href={route('seller.supply-hub.sales')}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
+                            >
+                                <span>Wholesale Sales</span>
+                                {wholesaleSalesCount > 0 && (
+                                    <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-clay-600 text-white">
+                                        {wholesaleSalesCount}
                                     </span>
                                 )}
                             </Link>

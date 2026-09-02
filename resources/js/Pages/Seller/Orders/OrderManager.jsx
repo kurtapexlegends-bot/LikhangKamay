@@ -1,13 +1,14 @@
+/* global route */
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
-import { Head, router, usePage } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import Modal from "@/Components/Modal";
 import ReadOnlyCapabilityNotice from "@/Components/Seller/Shared/ReadOnlyCapabilityNotice";
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from "@/Layouts/SellerWorkspaceLayout";
 import SellerHeader from "@/Layouts/SellerHeader";
 import useSellerModuleAccess from "@/hooks/useSellerModuleAccess";
 import WorkspaceEmptyState from "@/Components/WorkspaceEmptyState";
-import { Box, Printer, LoaderCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Printer, LoaderCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/Components/ToastContext";
 import useFlashToast from "@/hooks/useFlashToast";
 import CompactPagination from "@/Components/CompactPagination";
@@ -55,14 +56,13 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
     const [paymentMethod, setPaymentMethod] = useState(filters.payment_method || "all");
     const [fulfillmentType, setFulfillmentType] = useState(filters.fulfillment_type || "all");
     const [flaggedOnly, setFlaggedOnly] = useState(filters.flagged || "all");
-    const [currentPage, setCurrentPage] = useState(1);
+    const currentPage = orders.current_page || 1;
     const [selectedOrderIds, setSelectedOrderIds] = useState([]);
     const [isPrintingSlips, setIsPrintingSlips] = useState(false);
     const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
-    const [mounted, setMounted] = useState(false);
+    const [mounted, setMounted] = useState(true);
 
     useEffect(() => {
-        setMounted(true);
         const timer = setTimeout(() => setShouldAnimateKPI(false), 2000);
         return () => clearTimeout(timer);
     }, []);
@@ -125,39 +125,12 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
         }
     }, [activeTab, searchQuery, quickFilter, dateRange]);
 
-    const resetSavedView = () => {
-        setActiveTab("All"); setSearchQuery(""); setQuickFilter("all"); setDateRange({ start: "", end: "" }); setCurrentPage(1);
-        updateFilters({ search: "", status: "All", quick_filter: "all", page: 1 });
-    };
-
-    const hasActiveCourierTracking = tabCounts?.hasActiveCourierTracking ?? false;
-
-    useEffect(() => {
-        if (!hasActiveCourierTracking || typeof window === "undefined") return undefined;
-        const intervalId = window.setInterval(() => {
-            if (!document.hidden) router.reload({ only: ["orders", "tabCounts"], preserveState: true, preserveScroll: true });
-        }, 15000);
-        return () => window.clearInterval(intervalId);
-    }, [hasActiveCourierTracking]);
-
-    const isFirstMount = React.useRef(true);
-    useEffect(() => {
-        if (isFirstMount.current) {
-            isFirstMount.current = false;
-            return;
-        }
-        updateFilters({
-            start_date: dateRange.start,
-            end_date: dateRange.end
-        });
-    }, [dateRange.start, dateRange.end]);
-
     const [isSearching, setIsSearching] = useState(false);
     const searchTimeoutRef = React.useRef(null);
 
     const updateFilters = (newFilters) => {
         const mergedFilters = {
-            search: newFilters.hasOwnProperty('search') ? newFilters.search : searchQuery,
+            search: ('search' in newFilters) ? newFilters.search : searchQuery,
             status: activeTab,
             start_date: dateRange.start,
             end_date: dateRange.end,
@@ -176,6 +149,29 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
             showProgress: false,
             only: ["orders", "tabCounts", "filters"],
             onFinish: () => setIsSearching(false),
+        });
+    };
+
+    const resetSavedView = () => {
+        setActiveTab("All"); setSearchQuery(""); setQuickFilter("all"); setDateRange({ start: "", end: "" });
+        updateFilters({ search: "", status: "All", quick_filter: "all", page: 1, start_date: "", end_date: "" });
+    };
+
+    const hasActiveCourierTracking = tabCounts?.hasActiveCourierTracking ?? false;
+
+    useEffect(() => {
+        if (!hasActiveCourierTracking || typeof window === "undefined") return undefined;
+        const intervalId = window.setInterval(() => {
+            if (!document.hidden) router.reload({ only: ["orders", "tabCounts"], preserveState: true, preserveScroll: true });
+        }, 15000);
+        return () => window.clearInterval(intervalId);
+    }, [hasActiveCourierTracking]);
+
+    const handleDateRangeChange = (newRange) => {
+        setDateRange(newRange);
+        updateFilters({
+            start_date: newRange.start,
+            end_date: newRange.end,
         });
     };
 
@@ -243,7 +239,6 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
     }, [paginatedOrders, searchQuery]);
 
     const handlePageChange = (page) => {
-        setCurrentPage(page);
         router.get(route("orders.index"), {
             search: searchQuery,
             status: activeTab,
@@ -263,8 +258,6 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
     const totalPages = orders.last_page || 1;
     const totalItems = orders.total || 0;
     const itemsPerPageForFilter = orders.per_page || 15;
-
-    useEffect(() => { if (orders.current_page) setCurrentPage(orders.current_page); }, [orders.current_page]);
 
     const initiateStatusUpdate = (orderId, newStatus) => {
         if (!canEditOrders) return;
@@ -476,11 +469,6 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
                     urgentCount={urgentCount}
                     shouldAnimateKPI={shouldAnimateKPI}
                     getCount={getCount}
-                    paymentHoldCount={paymentHoldCount}
-                    hasActiveCourierTracking={hasActiveCourierTracking}
-                    returnQueueCount={returnQueueCount}
-                    quickFilter={quickFilter}
-                    applyQuickFilter={applyQuickFilter}
                 />
 
                 {/* Filter Panel Wrapper */}
@@ -493,7 +481,7 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
                         handleSearch={handleSearch}
                         isSearching={isSearching}
                         dateRange={dateRange}
-                        setDateRange={setDateRange}
+                        setDateRange={handleDateRangeChange}
                         paymentMethod={paymentMethod}
                         setPaymentMethod={setPaymentMethod}
                         fulfillmentType={fulfillmentType}

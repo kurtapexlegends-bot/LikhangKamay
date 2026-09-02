@@ -74,10 +74,14 @@ const KPICard = ({
             (title && (title.toLowerCase().includes('revenue') || title.toLowerCase().includes('profit') || title.toLowerCase().includes('value') || title.toLowerCase().includes('price')));
         
         return (v) => {
+            const num = Math.round(Number(v) || 0);
             if (isCurrency) {
-                return `₱${Math.round(v).toLocaleString()}`;
+                if (num < 0) {
+                    return `-₱${Math.abs(num).toLocaleString()}`;
+                }
+                return `₱${num.toLocaleString()}`;
             }
-            return Math.round(v).toLocaleString();
+            return num.toLocaleString();
         };
     }, [formatter, value, title]);
 
@@ -91,9 +95,9 @@ const KPICard = ({
                 </p>
                 <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
                     <span className="print:hidden">
-                        {animate && (typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.]/g, ''))))) ? (
+                        {animate && (typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.-]/g, ''))))) ? (
                             <AnimatedCounter 
-                                value={typeof value === 'number' ? value : parseFloat(value.replace(/[^\d.]/g, ''))} 
+                                value={typeof value === 'number' ? value : parseFloat(value.replace(/[^\d.-]/g, ''))} 
                                 formatter={displayFormatter}
                             />
                         ) : (

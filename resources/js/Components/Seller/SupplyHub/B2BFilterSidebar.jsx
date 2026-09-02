@@ -4,7 +4,7 @@ import {
     Search, Tag, Package, X, RotateCcw, Boxes, Percent 
 } from 'lucide-react';
 
-export default function B2BFilterSidebar({
+function B2BFilterSidebar({
     categories = [],
     categoryCounts = {},
     availableLocations = [],
@@ -45,14 +45,18 @@ export default function B2BFilterSidebar({
     // Local price inputs for smooth typing before applying
     const [priceMinInput, setPriceMinInput] = useState(currentMinPrice || '');
     const [priceMaxInput, setPriceMaxInput] = useState(currentMaxPrice || '');
+    const [prevCurrentMinPrice, setPrevCurrentMinPrice] = useState(currentMinPrice);
+    const [prevCurrentMaxPrice, setPrevCurrentMaxPrice] = useState(currentMaxPrice);
 
-    useEffect(() => {
+    if (currentMinPrice !== prevCurrentMinPrice) {
+        setPrevCurrentMinPrice(currentMinPrice);
         setPriceMinInput(currentMinPrice || '');
-    }, [currentMinPrice]);
+    }
 
-    useEffect(() => {
+    if (currentMaxPrice !== prevCurrentMaxPrice) {
+        setPrevCurrentMaxPrice(currentMaxPrice);
         setPriceMaxInput(currentMaxPrice || '');
-    }, [currentMaxPrice]);
+    }
 
     // Accordion expand states
     const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
@@ -226,13 +230,13 @@ export default function B2BFilterSidebar({
                                 onClick={() => handleMoqTierSelect(opt.value)}
                                 className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl font-medium transition-colors text-left text-xs cursor-pointer ${
                                     currentMoqTier === opt.value
-                                        ? 'bg-stone-900 text-white font-bold shadow-2xs'
+                                        ? 'bg-clay-50 text-clay-800 font-bold border border-clay-200/70 shadow-2xs'
                                         : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                                 }`}
                             >
                                 <span className="truncate">{opt.label}</span>
                                 {currentMoqTier === opt.value && (
-                                    <Check size={12} className="text-white shrink-0 ml-1" />
+                                    <Check size={12} className="text-clay-700 shrink-0 ml-1" />
                                 )}
                             </button>
                         ))}
@@ -283,7 +287,7 @@ export default function B2BFilterSidebar({
                         <button
                             type="button"
                             onClick={handleApplyPriceFilter}
-                            className="w-full rounded-xl bg-stone-900 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-stone-800 transition-colors cursor-pointer"
+                            className="w-full rounded-xl bg-clay-700 hover:bg-clay-800 py-2 text-xs font-bold text-white shadow-2xs transition-all active:scale-95 cursor-pointer"
                         >
                             Apply Price
                         </button>
@@ -295,7 +299,7 @@ export default function B2BFilterSidebar({
             <div className="bg-white rounded-2xl border border-stone-200 p-3 sm:p-3.5 shadow-2xs">
                 <label className="flex items-center justify-between gap-2 cursor-pointer">
                     <span className="text-xs text-stone-700 font-semibold flex items-center gap-1.5">
-                        <Percent size={13} className="text-emerald-600" />
+                        <Percent size={13} className="text-rose-600" />
                         Bulk Discounts Only
                     </span>
                     <input
@@ -364,3 +368,5 @@ export default function B2BFilterSidebar({
         </aside>
     );
 }
+
+export default React.memo(B2BFilterSidebar);

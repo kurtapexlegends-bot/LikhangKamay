@@ -151,9 +151,12 @@ export default function TransactionLedgerTable({
                                         <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
                                             {item.type === 'sale' ? 'Sales Revenue' : item.type === 'payout' ? 'Payout Amount' : 'Action Amount'}
                                         </p>
-                                        <p className={`text-lg font-bold tracking-tight ${item.type === 'sale' ? 'text-emerald-600' : item.type === 'payout' ? 'text-emerald-700' : 'text-stone-900'}`}>
-                                            {isApproved && item.type !== 'sale' && item.type !== 'payout' ? '- ' : item.type === 'sale' ? '+ ' : ''}
-                                            {formatShortMoney(item.amount)}
+                                        <p className={`text-lg font-bold tracking-tight ${item.type === 'sale' ? 'text-emerald-600' : item.type === 'payout' ? 'text-emerald-700' : isApproved ? 'text-stone-800' : 'text-stone-900'}`}>
+                                            {isApproved && item.type !== 'sale' && item.type !== 'payout' 
+                                                ? formatShortMoney(-item.amount) 
+                                                : item.type === 'sale' 
+                                                ? `+ ${formatShortMoney(item.amount)}` 
+                                                : formatShortMoney(item.amount)}
                                         </p>
                                     </div>
                                     <button

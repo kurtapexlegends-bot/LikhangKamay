@@ -1,6 +1,21 @@
-export const formatMoney = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export const formatMoney = (value) => {
+    const num = Number(value || 0);
+    const formatted = Math.abs(num).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return num < 0 ? `- PHP ${formatted}` : `PHP ${formatted}`;
+};
 
-export const formatShortMoney = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+export const formatShortMoney = (value) => {
+    const num = Number(value || 0);
+    const formatted = Math.abs(num).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return num < 0 ? `- PHP ${formatted}` : `PHP ${formatted}`;
+};
+
+export const formatSignedMoney = (value, type = 'inflow') => {
+    const num = Number(value || 0);
+    const formatted = Math.abs(num).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const isOutflow = type === 'deduction' || type === 'payroll' || type === 'payout' || type === 'expense' || num < 0;
+    return isOutflow ? `- PHP ${formatted}` : `+ PHP ${formatted}`;
+};
 
 export const formatDate = (value) => (value ? new Date(value).toLocaleDateString() : 'N/A');
 

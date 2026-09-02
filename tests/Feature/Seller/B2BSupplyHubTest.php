@@ -425,5 +425,76 @@ class B2BSupplyHubTest extends TestCase
             ->has('pricing')
         );
     }
+
+    public function test_artisan_can_view_wholesale_sales_orders(): void
+    {
+        $order = Order::create([
+            'artisan_id' => $this->supplierArtisan->id,
+            'user_id' => $this->buyerArtisan->id,
+            'order_number' => 'ORD-B2B-TEST-1',
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'status' => 'Pending',
+            'total_amount' => 1400.00,
+            'merchandise_subtotal' => 1400.00,
+            'shipping_method' => 'Delivery',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => $this->b2bClaySack->name,
+            'price' => 350.00,
+            'cost' => 180.00,
+            'quantity' => 4,
+            'is_b2b_supply' => true,
+            'supply_unit' => 'bag',
+        ]);
+
+        $response = $this->actingAs($this->supplierArtisan)
+            ->get(route('seller.supply-hub.sales'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/WholesaleSales')
+            ->has('orders.data', 1)
+            ->where('activeSalesCount', 1)
+            ->where('pendingSalesCount', 1)
+        );
+    }
+
+    public function test_artisan_can_update_wholesale_sales_order_status(): void
+    {
+        $order = Order::create([
+            'artisan_id' => $this->supplierArtisan->id,
+            'user_id' => $this->buyerArtisan->id,
+            'order_number' => 'ORD-B2B-TEST-2',
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'status' => 'Pending',
+            'total_amount' => 1400.00,
+            'merchandise_subtotal' => 1400.00,
+            'shipping_method' => 'Delivery',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => $this->b2bClaySack->name,
+            'price' => 350.00,
+            'cost' => 180.00,
+            'quantity' => 4,
+            'is_b2b_supply' => true,
+            'supply_unit' => 'bag',
+        ]);
+
+        $response = $this->actingAs($this->supplierArtisan)
+            ->post(route('seller.supply-hub.sales.status', $order->order_number), [
+                'status' => 'Accepted',
+            ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertEquals('Accepted', $order->fresh()->status);
+    }
 }
 

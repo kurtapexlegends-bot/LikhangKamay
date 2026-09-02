@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatMoney, formatDateTime } from '@/utils/accountingFormatters';
+import { formatMoney, formatSignedMoney, formatDateTime } from '@/utils/accountingFormatters';
 
 export default function OrderSettlementView({ item }) {
     return (
@@ -32,11 +32,11 @@ export default function OrderSettlementView({ item }) {
                             </tr>
                             <tr>
                                 <td className="py-2.5 text-rose-600">Platform Commission Fee</td>
-                                <td className="py-2.5 text-right font-bold text-rose-600 whitespace-nowrap">- {formatMoney(item.financials?.platform_fee)}</td>
+                                <td className="py-2.5 text-right font-bold text-rose-600 whitespace-nowrap">{formatSignedMoney(item.financials?.platform_fee, 'deduction')}</td>
                             </tr>
                             <tr>
                                 <td className="py-2.5 text-rose-600">Transaction & Convenience Fee</td>
-                                <td className="py-2.5 text-right font-bold text-rose-600 whitespace-nowrap">- {formatMoney(item.financials?.convenience_fee)}</td>
+                                <td className="py-2.5 text-right font-bold text-rose-600 whitespace-nowrap">{formatSignedMoney(item.financials?.convenience_fee, 'deduction')}</td>
                             </tr>
                             <tr className="bg-emerald-50/50">
                                 <td className="py-3 font-bold text-emerald-800 pl-4 rounded-l-xl">Net Payout to Shop</td>

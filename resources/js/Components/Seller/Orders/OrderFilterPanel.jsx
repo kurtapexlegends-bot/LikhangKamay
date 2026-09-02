@@ -1,4 +1,6 @@
+/* global route */
 import React, { useState, useRef, useEffect } from "react";
+import { Link } from "@inertiajs/react";
 import {
     Search,
     X,
@@ -14,6 +16,7 @@ import {
     Filter,
     LoaderCircle,
     Printer,
+    Info,
 } from "lucide-react";
 import SlideOverDrawer from "@/Components/SlideOverDrawer";
 import ExportButton from "@/Components/ExportButton";
@@ -100,17 +103,6 @@ export default function OrderFilterPanel({
     const [draftStartDate, setDraftStartDate] = useState(dateRange?.start || "");
     const [draftEndDate, setDraftEndDate] = useState(dateRange?.end || "");
     const [draftFlaggedOnly, setDraftFlaggedOnly] = useState(flaggedOnly);
-
-    // Sync draft states whenever popover/drawer opens or props change
-    useEffect(() => {
-        if (isPopoverOpen || isDrawerOpen) {
-            setDraftPaymentMethod(paymentMethod);
-            setDraftFulfillmentType(fulfillmentType);
-            setDraftStartDate(dateRange?.start || "");
-            setDraftEndDate(dateRange?.end || "");
-            setDraftFlaggedOnly(flaggedOnly);
-        }
-    }, [isPopoverOpen, isDrawerOpen, paymentMethod, fulfillmentType, dateRange, flaggedOnly]);
 
     // Handle outside clicks to close desktop popover
     useEffect(() => {
@@ -398,35 +390,52 @@ export default function OrderFilterPanel({
 
             {/* Standardized Search & Right-Aligned Controls Toolbar */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-stone-100 bg-[#FCFAF7]/40 p-3.5">
-                {/* Search Input */}
-                <div className="relative flex-1">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
-                    <input
-                        ref={searchInputRef}
-                        type="text"
-                        placeholder="Search order ID, buyer, address, or item (Press '/' to focus)..."
-                        value={searchQuery}
-                        onChange={(e) => handleSearch(e.target.value)}
-                        className="w-full pl-9 pr-8 py-2 bg-white border border-stone-200 rounded-xl text-xs hover:border-stone-300 focus:ring-4 focus:ring-clay-500/10 focus:border-clay-500 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-[38px]"
-                    />
-                    {isSearching ? (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-clay-600">
-                            <LoaderCircle size={13} className="animate-spin" />
-                        </div>
-                    ) : searchQuery ? (
-                        <button
-                            onClick={() => handleSearch("")}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition active:scale-90"
-                            title="Clear search"
-                            type="button"
+                {/* Left: Minimal Wholesale Info Icon + Search Input */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="relative group shrink-0">
+                        <Link
+                            href={route("seller.supply-hub.sales")}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
+                            title="Wholesale material orders are in the Supply Hub"
                         >
-                            <X size={12} />
-                        </button>
-                    ) : (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none hidden sm:flex items-center gap-0.5 text-[9px] font-extrabold text-stone-300 bg-stone-100/80 border border-stone-200/60 px-1.5 py-0.5 rounded-md">
-                            /
+                            <Info size={16} />
+                        </Link>
+                        <div className="pointer-events-none absolute left-0 top-full mt-1.5 hidden w-56 rounded-xl border border-stone-800 bg-stone-900 px-3 py-2 text-[11px] font-medium text-stone-200 shadow-xl group-hover:block z-30">
+                            <span className="font-bold text-white block mb-0.5">Wholesale Orders</span>
+                            Orders placed by peer artisans for raw supplies are managed in the Supply Hub &rarr;
                         </div>
-                    )}
+                    </div>
+
+                    {/* Search Input */}
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            placeholder="Search order ID, buyer, address, or item (Press '/' to focus)..."
+                            value={searchQuery}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            className="w-full pl-9 pr-8 py-2 bg-white border border-stone-200 rounded-xl text-xs hover:border-stone-300 focus:ring-4 focus:ring-clay-500/10 focus:border-clay-500 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-[38px]"
+                        />
+                        {isSearching ? (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-clay-600">
+                                <LoaderCircle size={13} className="animate-spin" />
+                            </div>
+                        ) : searchQuery ? (
+                            <button
+                                onClick={() => handleSearch("")}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition active:scale-90"
+                                title="Clear search"
+                                type="button"
+                            >
+                                <X size={12} />
+                            </button>
+                        ) : (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none hidden sm:flex items-center gap-0.5 text-[9px] font-extrabold text-stone-300 bg-stone-100/80 border border-stone-200/60 px-1.5 py-0.5 rounded-md">
+                                /
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Right Controls: Select All Page + Filters Popover */}

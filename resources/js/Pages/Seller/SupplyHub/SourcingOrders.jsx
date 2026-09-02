@@ -28,6 +28,7 @@ export default function SourcingOrders({
     activeOrdersCount = 0,
     deliveredOrdersCount = 0,
     myPublishedCount = 0,
+    wholesaleSalesCount = 0,
     filters = {},
 }) {
     const { auth, flash, cartCount = 0 } = usePage().props;
@@ -107,10 +108,22 @@ export default function SourcingOrders({
                                 href={route('seller.supply-hub.orders')}
                                 className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 bg-white text-clay-800 shadow-xs font-black"
                             >
-                                <span>Material Orders</span>
+                                <span>Material Purchases</span>
                                 {activeOrdersCount > 0 && (
                                     <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-clay-100 text-clay-800">
                                         {activeOrdersCount}
+                                    </span>
+                                )}
+                            </Link>
+
+                            <Link
+                                href={route('seller.supply-hub.sales')}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
+                            >
+                                <span>Wholesale Sales</span>
+                                {wholesaleSalesCount > 0 && (
+                                    <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-clay-600 text-white">
+                                        {wholesaleSalesCount}
                                     </span>
                                 )}
                             </Link>

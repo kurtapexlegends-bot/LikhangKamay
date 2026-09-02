@@ -1,7 +1,7 @@
 import React from 'react';
-import { Search, SlidersHorizontal, ArrowUpDown, X } from 'lucide-react';
+import { Search, SlidersHorizontal, ArrowUpDown, X, Info } from 'lucide-react';
 
-export default function SourcingCatalogToolbar({
+function SourcingCatalogToolbar({
     searchInput,
     setSearchInput,
     onSearchSubmit,
@@ -18,15 +18,29 @@ export default function SourcingCatalogToolbar({
         <div className="space-y-2.5 sm:space-y-3">
             {/* Unified Single-Row Toolbar */}
             <div className="flex items-center gap-2 sm:gap-3 bg-white p-2.5 sm:p-3.5 rounded-2xl border border-stone-200 shadow-2xs">
+                {/* Minimal Sourcing Info Icon */}
+                <div className="relative group shrink-0">
+                    <div
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition cursor-help"
+                        title="Direct Workshop Delivery: Materials delivered from peer studios automatically sync to your Studio Inventory."
+                    >
+                        <Info size={16} />
+                    </div>
+                    <div className="pointer-events-none absolute left-0 top-full mt-1.5 hidden w-64 rounded-xl border border-stone-800 bg-stone-900 px-3 py-2 text-[11px] font-medium text-stone-200 shadow-xl group-hover:block z-30">
+                        <span className="font-bold text-white block mb-0.5">Direct Workshop Delivery</span>
+                        Materials delivered from peer studios automatically sync to your Studio Inventory. Verified Artisans Only.
+                    </div>
+                </div>
+
                 {/* Search Input Form */}
                 <form onSubmit={onSearchSubmit} className="relative flex-1 min-w-0">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={15} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={15} />
                     <input
                         type="text"
                         value={searchInput ?? ''}
                         onChange={(e) => setSearchInput(e.target.value)}
                         placeholder="Search materials..."
-                        className="w-full pl-8.5 pr-8 py-2 rounded-xl border border-stone-200 bg-stone-50/50 text-xs text-stone-900 placeholder:text-stone-400 focus:border-clay-500 focus:bg-white focus:ring-1 focus:ring-clay-500 transition-all font-medium min-h-[38px]"
+                        className="w-full pl-9 pr-8 py-2 rounded-xl border border-stone-200 bg-stone-50/50 text-xs text-stone-900 placeholder:text-stone-400 focus:border-clay-500 focus:bg-white focus:ring-1 focus:ring-clay-500 transition-all font-medium min-h-[38px]"
                     />
                     {searchInput && (
                         <button
@@ -148,3 +162,5 @@ export default function SourcingCatalogToolbar({
         </div>
     );
 }
+
+export default React.memo(SourcingCatalogToolbar);

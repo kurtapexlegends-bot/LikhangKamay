@@ -7,7 +7,7 @@ import { router } from '@inertiajs/react';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export default function B2BSupplyCard({
+function B2BSupplyCard({
     supply,
     item: propItem,
     quantity: controlledQuantity,
@@ -18,10 +18,10 @@ export default function B2BSupplyCard({
     onViewDetail,
 }) {
     const item = supply || propItem;
-    if (!item) return null;
-
-    const minOrderQty = Math.max(1, Number(item.moq) || 1);
+    const minOrderQty = Math.max(1, Number(item?.moq) || 1);
     const [localQty, setLocalQty] = useState(minOrderQty);
+
+    if (!item) return null;
 
     const qty = controlledQuantity !== undefined ? controlledQuantity : localQty;
 
@@ -81,6 +81,7 @@ export default function B2BSupplyCard({
             >
                 <img
                     loading="lazy"
+                    decoding="async"
                     src={item.img || '/images/placeholder.svg'}
                     alt={item.name}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
@@ -94,7 +95,7 @@ export default function B2BSupplyCard({
                     </span>
 
                     {discountPercentage && discountPercentage > 0 && (
-                        <span className="bg-emerald-600 text-white text-[9px] sm:text-[10px] font-extrabold px-1 sm:px-1.5 py-0.5 rounded-md shadow-2xs flex items-center gap-0.5">
+                        <span className="bg-rose-600 text-white text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full shadow-sm flex items-center gap-0.5">
                             <Percent size={8} className="sm:w-2.5 sm:h-2.5" /> -{discountPercentage}%
                         </span>
                     )}
@@ -222,3 +223,5 @@ export default function B2BSupplyCard({
         </div>
     );
 }
+
+export default React.memo(B2BSupplyCard);

@@ -21,12 +21,12 @@ export default function MaterialDetailModal({
     const item = supply || propItem;
     const minOrderQty = Math.max(1, Number(item?.moq) || 1);
     const [localQty, setLocalQty] = useState(minOrderQty);
+    const [prevItem, setPrevItem] = useState(item);
 
-    useEffect(() => {
-        if (item) {
-            setLocalQty(Math.max(1, Number(item.moq) || 1));
-        }
-    }, [item]);
+    if (item !== prevItem) {
+        setPrevItem(item);
+        setLocalQty(Math.max(1, Number(item?.moq) || 1));
+    }
 
     if (!item) return null;
 
@@ -136,7 +136,7 @@ export default function MaterialDetailModal({
                                 <span className="text-2xl font-black text-stone-900">{formatCurrency(unitPrice)}</span>
                                 <span className="text-stone-500 font-semibold text-xs">/ {item.supply_unit || 'pcs'}</span>
                                 {discountPercentage && discountPercentage > 0 && (
-                                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-1.5 py-0.5 rounded-md">
+                                    <span className="bg-rose-100 text-rose-800 text-[10px] font-black px-2 py-0.5 rounded-full">
                                         Save {discountPercentage}% Bulk
                                     </span>
                                 )}

@@ -5,7 +5,6 @@ import SellerHeader from '@/Layouts/SellerHeader';
 import B2BSupplyCard from '@/Components/Seller/SupplyHub/B2BSupplyCard';
 import B2BFilterSidebar from '@/Components/Seller/SupplyHub/B2BFilterSidebar';
 import SourcingCatalogToolbar from '@/Components/Seller/SupplyHub/SourcingCatalogToolbar';
-import SourcingNoticeBanner from '@/Components/Seller/SupplyHub/SourcingNoticeBanner';
 import MaterialDetailModal from '@/Components/Seller/SupplyHub/MaterialDetailModal';
 import ProcurementCartDrawer from '@/Components/Seller/SupplyHub/ProcurementCartDrawer';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
@@ -25,6 +24,7 @@ export default function Index({
     locationCounts = {},
     myPublishedCount = 0,
     activeOrdersCount = 0,
+    wholesaleSalesCount = 0,
     cart: initialCart = {},
     filters = {},
 }) {
@@ -37,10 +37,12 @@ export default function Index({
     const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
     const [cart, setCart] = useState(initialCart);
+    const [prevInitialCart, setPrevInitialCart] = useState(initialCart);
 
-    useEffect(() => {
+    if (initialCart !== prevInitialCart) {
+        setPrevInitialCart(initialCart);
         setCart(initialCart);
-    }, [initialCart]);
+    }
 
     const activeFiltersCount = useMemo(() => {
         let count = 0;
@@ -162,10 +164,22 @@ export default function Index({
                                 href={route('seller.supply-hub.orders')}
                                 className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
                             >
-                                <span>Material Orders</span>
+                                <span>Material Purchases</span>
                                 {activeOrdersCount > 0 && (
                                     <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-stone-200 text-stone-600">
                                         {activeOrdersCount}
+                                    </span>
+                                )}
+                            </Link>
+
+                            <Link
+                                href={route('seller.supply-hub.sales')}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
+                            >
+                                <span>Wholesale Sales</span>
+                                {wholesaleSalesCount > 0 && (
+                                    <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-clay-600 text-white">
+                                        {wholesaleSalesCount}
                                     </span>
                                 )}
                             </Link>
@@ -199,9 +213,6 @@ export default function Index({
                         </Link>
                     </div>
                 </div>
-
-                {/* Direct Delivery Notice Banner */}
-                <SourcingNoticeBanner />
 
                 {/* Main 2-Column Desktop Layout: Sidebar + Catalog */}
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">

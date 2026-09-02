@@ -271,6 +271,8 @@ class ListSellerOrders
                         'qty' => $item->quantity,
                         'price' => $item->price,
                         'img' => StorageUrl::url($item->product_img, '/images/placeholder.svg'),
+                        'is_b2b_supply' => (bool) ($item->is_b2b_supply || $item->product?->is_b2b_supply),
+                        'supply_unit' => $item->supply_unit ?: ($item->product?->supply_unit ?: 'pcs'),
                         'production_method' => $item->product?->production_method,
                         'recipes' => $item->product?->recipes->map(fn($r) => [
                             'supply_id' => $r->supply_id,

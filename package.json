@@ -5,6 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
+        "dev:all": "concurrently -k -p \"[{name}]\" -n \"PHP,VITE\" -c \"blue,green\" \"php artisan serve\" \"vite\"",
         "lint": "eslint resources/js"
     },
     "devDependencies": {

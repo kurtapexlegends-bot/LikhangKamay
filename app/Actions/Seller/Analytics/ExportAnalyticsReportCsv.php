@@ -2,6 +2,7 @@
 
 namespace App\Actions\Seller\Analytics;
 
+use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
 use App\Services\SponsorshipAnalyticsService;
@@ -64,6 +65,13 @@ class ExportAnalyticsReportCsv
             ->limit(10)
             ->get();
 
+        $refundedOrders = Order::where('artisan_id', $sellerId)
+            ->where('status', 'Refunded')
+            ->where('created_at', '>=', Carbon::now()->subMonths(12))
+            ->select('id', 'order_number', 'total_amount', 'seller_net_amount', 'created_at', 'updated_at')
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
         $includeSponsorshipAnalytics = $seller->isEliteTier();
         $sponsorshipAnalytics = $includeSponsorshipAnalytics
             ? $sponsorshipAnalyticsService->getSellerAnalytics($sellerId)
@@ -75,6 +83,7 @@ class ExportAnalyticsReportCsv
         $callback = function () use (
             $revenueData,
             $topProducts,
+            $refundedOrders,
             $includeSponsorshipAnalytics,
             $sponsorshipSummary,
             $sponsorshipMonthly,
@@ -103,6 +112,23 @@ class ExportAnalyticsReportCsv
                 $profit = $totalRevenue - $totalCost;
                 $margin = $totalRevenue > 0 ? ($profit / $totalRevenue) * 100 : 0;
                 fputcsv($file, [$product->product_name, $product->total_sold, $totalRevenue, $totalCost, $profit, round($margin, 1)]);
+            }
+
+            if ($refundedOrders->isNotEmpty()) {
+                fputcsv($file, []);
+                fputcsv($file, []);
+                fputcsv($file, ['REFUND & DISPUTE REVERSALS (LAST 12 MONTHS)']);
+                fputcsv($file, ['Order Number', 'Date Refunded', 'Gross Reversal', 'Net Payout Reversal']);
+                foreach ($refundedOrders as $order) {
+                    $gross = -1 * (float) ($order->total_amount ?? 0);
+                    $net = -1 * (float) ($order->seller_net_amount ?? 0);
+                    fputcsv($file, [
+                        $order->order_number ?? ('#' . $order->id),
+                        $order->updated_at ? $order->updated_at->format('Y-m-d') : 'N/A',
+                        $gross,
+                        $net,
+                    ]);
+                }
             }
 
             if ($includeSponsorshipAnalytics) {

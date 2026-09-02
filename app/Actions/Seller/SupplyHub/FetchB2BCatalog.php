@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\VehicleTypeResolver;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Session;
 
 class FetchB2BCatalog
@@ -33,11 +34,31 @@ class FetchB2BCatalog
      */
     public function execute(Request $request, User $actor): array
     {
-        $baseQuery = Product::b2bSupplies()
-            ->with(['user', 'discounts'])
+        $query = Product::b2bSupplies()
+            ->select([
+                'products.id',
+                'products.user_id',
+                'products.name',
+                'products.slug',
+                'products.description',
+                'products.category',
+                'products.price',
+                'products.stock',
+                'products.weight',
+                'products.is_b2b_supply',
+                'products.moq',
+                'products.wholesale_price',
+                'products.wholesale_min_qty',
+                'products.supply_unit',
+                'products.cover_photo_path',
+                'products.gallery_paths',
+                'products.created_at',
+            ])
+            ->with([
+                'user:id,name,shop_name,city,avatar,role,artisan_status',
+                'discounts',
+            ])
             ->where('user_id', '!=', $actor->id);
-
-        $query = (clone $baseQuery);
 
         // Search Filter
         if ($request->filled('search')) {
@@ -146,33 +167,37 @@ class FetchB2BCatalog
                     'name' => $product->user->name,
                     'shop_name' => $product->user->shop_name ?: $product->user->name,
                     'city' => $product->user->city ?? 'Cavite',
-                    'is_verified' => $product->user->is_artisan_approved ?? true,
+                    'is_verified' => $product->user ? $product->user->isArtisan() : true,
                     'avatar' => $product->user->avatar_url ?? null,
                 ],
                 'vehicle_preview' => $vehicleInfo,
             ];
         });
 
-        // Facet Aggregations
-        $rawCategoryCounts = (clone $baseQuery)
-            ->selectRaw('category, count(*) as count')
-            ->groupBy('category')
-            ->pluck('count', 'category')
-            ->toArray();
+        // Cached Global Facet Aggregations (60s TTL)
+        [$categoryCounts, $availableLocations, $locationCounts] = Cache::remember('b2b_supply_facets_v2', 60, function () {
+            $rawCategoryCounts = Product::b2bSupplies()
+                ->selectRaw('category, count(*) as count')
+                ->groupBy('category')
+                ->pluck('count', 'category')
+                ->toArray();
 
-        $categoryCounts = [];
-        foreach (self::SUPPLY_CATEGORIES as $cat) {
-            if ($cat === 'All') continue;
-            $categoryCounts[$cat] = (int) ($rawCategoryCounts[$cat] ?? 0);
-        }
+            $catCounts = [];
+            foreach (self::SUPPLY_CATEGORIES as $cat) {
+                if ($cat === 'All') continue;
+                $catCounts[$cat] = (int) ($rawCategoryCounts[$cat] ?? 0);
+            }
 
-        $supplierCities = (clone $baseQuery)
-            ->join('users', 'products.user_id', '=', 'users.id')
-            ->whereNotNull('users.city')
-            ->selectRaw('users.city, count(*) as count')
-            ->groupBy('users.city')
-            ->pluck('count', 'city')
-            ->toArray();
+            $cities = Product::b2bSupplies()
+                ->join('users', 'products.user_id', '=', 'users.id')
+                ->whereNotNull('users.city')
+                ->selectRaw('users.city, count(*) as count')
+                ->groupBy('users.city')
+                ->pluck('count', 'city')
+                ->toArray();
+
+            return [$catCounts, array_keys($cities), $cities];
+        });
 
         $myPublishedCount = Product::where('user_id', $actor->id)
             ->where('is_b2b_supply', true)
@@ -182,14 +207,20 @@ class FetchB2BCatalog
             ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
             ->count();
 
+        $wholesaleSalesCount = Order::where('artisan_id', $actor->id)
+            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', true))
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->count();
+
         return [
             'supplies' => $supplies,
             'categories' => self::SUPPLY_CATEGORIES,
             'categoryCounts' => $categoryCounts,
-            'availableLocations' => array_keys($supplierCities),
-            'locationCounts' => $supplierCities,
+            'availableLocations' => $availableLocations,
+            'locationCounts' => $locationCounts,
             'myPublishedCount' => $myPublishedCount,
             'activeOrdersCount' => $activeOrdersCount,
+            'wholesaleSalesCount' => $wholesaleSalesCount,
             'cart' => (array) Session::get('cart', []),
             'filters' => [
                 'search' => $request->input('search', ''),

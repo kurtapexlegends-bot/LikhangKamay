@@ -1,7 +1,7 @@
+/* global route */
 import React, { useState, useMemo } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import {
-    TrendingUp, TrendingDown, Minus,
     AlertTriangle, Users, ShoppingBag, 
     ClipboardCheck, ArrowRight, Printer, Download,
     Mail, Check, Loader2, Award, ExternalLink
@@ -308,7 +308,13 @@ export default function Insights({
                                         fontSize={10} 
                                         tickLine={false} 
                                         axisLine={false} 
-                                        tickFormatter={(v) => `₱${Number(v) >= 1000 ? (Number(v)/1000).toFixed(0) + 'k' : v}`} 
+                                        tickFormatter={(v) => {
+                                            const num = Number(v || 0);
+                                            if (num === 0) return '₱0';
+                                            const abs = Math.abs(num);
+                                            const formatted = abs >= 1000 ? `${(abs / 1000).toFixed(0)}k` : abs;
+                                            return num < 0 ? `-₱${formatted}` : `₱${formatted}`;
+                                        }} 
                                     />
                                     <Tooltip content={<CustomTooltip />} />
                                     <Area type="monotone" dataKey="gmv" stroke="#c07251" strokeWidth={2.5} fillOpacity={1} fill="url(#adminGmvFill)" />

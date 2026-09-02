@@ -50,9 +50,21 @@ const MetricCard = ({ title, value, growth, icon: Icon, bg, text, animateValue =
                 <p className="text-2xl font-bold text-stone-900 tracking-tight">
                     {animateValue && (typeof value === 'number' || (typeof value === 'string' && value.includes('₱'))) ? (
                         typeof value === 'number' ? (
-                            <AnimatedCounter value={value} />
+                            <AnimatedCounter 
+                                value={value} 
+                                formatter={(v) => {
+                                    const num = Math.round(Number(v) || 0);
+                                    return num < 0 ? `-₱${Math.abs(num).toLocaleString()}` : `₱${num.toLocaleString()}`;
+                                }} 
+                            />
                         ) : (
-                            <AnimatedCounter value={parseFloat(value.replace(/[^\d.]/g, ''))} formatter={(v) => `₱${Math.round(v).toLocaleString()}`} />
+                            <AnimatedCounter 
+                                value={parseFloat(value.replace(/[^\d.-]/g, ''))} 
+                                formatter={(v) => {
+                                    const num = Math.round(Number(v) || 0);
+                                    return num < 0 ? `-₱${Math.abs(num).toLocaleString()}` : `₱${num.toLocaleString()}`;
+                                }} 
+                            />
                         )
                     ) : (
                         value

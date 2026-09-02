@@ -1,13 +1,13 @@
-import React, { useEffect, useMemo, useState, Suspense, lazy } from 'react';
+/* global route */
+import React, { useMemo, useState, Suspense, lazy } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import Modal from '@/Components/Modal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import SellerHeader from '@/Layouts/SellerHeader';
 import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import {
-    UploadCloud, Cuboid, Rotate3d, Trash2, Search,
+    UploadCloud, Cuboid, Rotate3d, Trash2, Search, X,
     Package, AlertTriangle
 } from 'lucide-react';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
@@ -29,29 +29,13 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
         )
     ), [models, searchQuery]);
 
-    const selectedModel = useMemo(() => (
-        filteredModels.find((model) => model.id === selectedModelId) || null
-    ), [filteredModels, selectedModelId]);
-
-    useEffect(() => {
-        if (!models.length) {
-            setSelectedModelId(null);
-            return;
+    const activeModel = useMemo(() => {
+        if (!filteredModels.length) return null;
+        if (selectedModelId) {
+            const found = filteredModels.find((model) => model.id === selectedModelId);
+            if (found) return found;
         }
-
-        if (!models.some((model) => model.id === selectedModelId)) {
-            setSelectedModelId(models[0].id);
-        }
-    }, [models, selectedModelId]);
-
-    useEffect(() => {
-        if (!filteredModels.length) {
-            return;
-        }
-
-        if (!filteredModels.some((model) => model.id === selectedModelId)) {
-            setSelectedModelId(filteredModels[0].id);
-        }
+        return filteredModels[0];
     }, [filteredModels, selectedModelId]);
 
     const handleDelete = (productId) => {
@@ -84,10 +68,10 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                 )}
                 <div className="flex min-h-0 flex-1 flex-col gap-5 lg:flex-row">
                     <div className="flex-1 bg-gradient-to-b from-stone-50 to-stone-100 rounded-3xl border border-stone-200 relative overflow-hidden shadow-inner flex flex-col group">
-                        {selectedModel ? (
+                        {activeModel ? (
                             <div className="absolute top-4 left-4 z-10 bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-stone-200 text-[10px] font-black uppercase tracking-widest text-stone-600 flex items-center gap-2 shadow-sm">
-                                <div className={`w-2 h-2 rounded-full ${selectedModel.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></div>
-                                {selectedModel.name}
+                                <div className={`w-2 h-2 rounded-full ${activeModel.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></div>
+                                {activeModel.name}
                             </div>
                         ) : (
                             <div className="absolute top-4 left-4 z-10 bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-stone-200 text-[10px] font-black uppercase tracking-widest text-stone-400 shadow-sm">
@@ -95,10 +79,10 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                             </div>
                         )}
 
-                        {selectedModel && (
+                        {activeModel && (
                             <button
                                 type="button"
-                                onClick={() => handleDelete(selectedModel.id)}
+                                onClick={() => handleDelete(activeModel.id)}
                                 disabled={!canEditThreeD}
                                 className="absolute top-4 right-4 z-10 p-2 bg-white/70 backdrop-blur-md border border-stone-200 rounded-xl text-stone-600 hover:bg-rose-50 hover:text-rose-500 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                                 title="Delete Asset"
@@ -109,7 +93,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
 
                         <div className="flex-1 w-full h-full cursor-grab active:cursor-grabbing">
                             <Suspense fallback={<div className="h-full w-full flex items-center justify-center text-stone-400">Loading 3D Canvas...</div>}>
-                                <ThreeDCanvasViewer modelUrl={selectedModel?.url} />
+                                <ThreeDCanvasViewer modelUrl={activeModel?.url} />
                             </Suspense>
                         </div>
 
@@ -132,15 +116,25 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                         </div>
 
                         <div className="flex-1 bg-white rounded-2xl border border-stone-100 shadow-sm flex flex-col overflow-hidden">
-                            <div className="p-3 border-b border-stone-50 bg-stone-50/50 space-y-2.5">
-                                <button
-                                    onClick={() => canEditThreeD && setShowUploadModal(true)}
-                                    disabled={!canEditThreeD}
-                                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-clay-600 px-3.5 h-[38px] min-h-[38px] text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95"
-                                >
-                                    <UploadCloud size={15} />
-                                    <span>Upload 3D Model</span>
-                                </button>
+                            {/* Asset Library Header */}
+                            <div className="p-3.5 border-b border-stone-100 bg-stone-50/50 space-y-2.5">
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                        <h3 className="text-xs font-bold text-stone-900 truncate">Asset Library</h3>
+                                        <span className="inline-flex items-center justify-center rounded-full bg-stone-200/70 px-2 py-0.5 text-[10px] font-bold text-stone-600">
+                                            {models.length}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => canEditThreeD && setShowUploadModal(true)}
+                                        disabled={!canEditThreeD}
+                                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 shrink-0"
+                                    >
+                                        <UploadCloud size={13} />
+                                        <span>Upload Model</span>
+                                    </button>
+                                </div>
+
                                 <div className="relative">
                                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                                     <input
@@ -148,8 +142,18 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                         placeholder="Search assets..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-9 pr-3 py-2 bg-white border border-stone-200 rounded-xl text-xs font-medium focus:ring-1 focus:ring-clay-500 focus:border-clay-500 transition-all shadow-2xs placeholder:text-stone-300 h-[38px] min-h-[38px]"
+                                        className="w-full pl-9 pr-8 py-2 bg-white border border-stone-200 rounded-xl text-xs font-medium focus:ring-1 focus:ring-clay-500 focus:border-clay-500 transition-all shadow-2xs placeholder:text-stone-300 h-[36px]"
                                     />
+                                    {searchQuery && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearchQuery('')}
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition"
+                                            aria-label="Clear search"
+                                        >
+                                            <X size={13} />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -159,7 +163,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                         <div
                                             key={model.id}
                                             className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition group ${
-                                                selectedModelId === model.id
+                                                activeModel?.id === model.id
                                                     ? 'bg-clay-50 border border-clay-100 shadow-sm'
                                                     : 'hover:bg-gray-50 border border-transparent'
                                             }`}
@@ -169,18 +173,18 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                                 onClick={() => setSelectedModelId(model.id)}
                                                 className="flex min-w-0 flex-1 items-center gap-3 text-left"
                                             >
-                                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition ${selectedModelId === model.id ? 'bg-white text-clay-600 shadow-sm' : 'bg-stone-100 text-stone-400 group-hover:bg-white group-hover:shadow-sm'}`}>
+                                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition ${activeModel?.id === model.id ? 'bg-white text-clay-600 shadow-sm' : 'bg-stone-100 text-stone-400 group-hover:bg-white group-hover:shadow-sm'}`}>
                                                     <Cuboid size={16} />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <h4 className={`text-xs font-bold truncate ${selectedModelId === model.id ? 'text-stone-900' : 'text-stone-700'}`}>{model.name}</h4>
+                                                    <h4 className={`text-xs font-bold truncate ${activeModel?.id === model.id ? 'text-stone-900' : 'text-stone-700'}`}>{model.name}</h4>
                                                     <div className="flex items-center gap-2 mt-0.5">
                                                         <span className="text-[9px] font-bold text-stone-400">{model.size || '0MB'}</span>
                                                         <span className="text-[9px] text-stone-300">&bull;</span>
                                                         <span className="text-[9px] font-bold text-stone-400">{model.date}</span>
                                                     </div>
                                                 </div>
-                                                {selectedModelId === model.id && (
+                                                {activeModel?.id === model.id && (
                                                     <div className="w-1.5 h-1.5 bg-clay-500 rounded-full"></div>
                                                 )}
                                             </button>

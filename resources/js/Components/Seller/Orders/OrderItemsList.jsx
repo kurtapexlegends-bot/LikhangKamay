@@ -26,11 +26,18 @@ export default function OrderItemsList({ order }) {
                             />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="truncate text-xs font-bold text-stone-850">
-                                {item.name}
-                            </p>
-                            <p className="text-[10px] font-medium text-stone-500">
-                                Variant: {item.variant} / Qty {item.qty}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <p className="truncate text-xs font-bold text-stone-850">
+                                    {item.name}
+                                </p>
+                                {item.is_b2b_supply && (
+                                    <span className="inline-flex items-center rounded-full bg-clay-100 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-clay-700">
+                                        Supply Hub
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-[10px] font-medium text-stone-500 mt-0.5">
+                                Variant: {item.variant} &bull; Qty: {item.qty} {item.is_b2b_supply && item.supply_unit ? item.supply_unit : ''}
                             </p>
                         </div>
                         <div className="text-xs font-bold text-stone-800 shrink-0">

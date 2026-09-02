@@ -325,6 +325,8 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/supply-hub/checkout', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'storeOrder'])->name('seller.supply-hub.checkout.store');
         Route::get('/supply-hub/orders', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'sourcingOrders'])->name('seller.supply-hub.orders');
         Route::post('/supply-hub/orders/{id}/confirm-delivery', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'confirmDelivery'])->name('seller.supply-hub.orders.confirm');
+        Route::get('/supply-hub/sales', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'wholesaleSales'])->name('seller.supply-hub.sales');
+        Route::post('/supply-hub/sales/{id}/status', [\App\Http\Controllers\Seller\B2BSupplyHubController::class, 'updateWholesaleOrderStatus'])->name('seller.supply-hub.sales.status');
     });
     
     // BUYER: SHOPPING & ORDERS

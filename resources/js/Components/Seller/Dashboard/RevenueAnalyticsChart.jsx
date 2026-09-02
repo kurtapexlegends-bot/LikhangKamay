@@ -44,10 +44,25 @@ export default function RevenueAnalyticsChart({ chartFilter, setChartFilter, cur
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dy={10} />
-                            <YAxis width={40} axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} tickFormatter={(val) => `₱${val}`} />
+                            <YAxis 
+                                width={48} 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{fill: '#9ca3af', fontSize: 12}} 
+                                tickFormatter={(val) => {
+                                    const num = Number(val || 0);
+                                    if (num === 0) return '₱0';
+                                    const abs = Math.abs(num);
+                                    const formatted = abs >= 1000 ? `${(abs / 1000).toFixed(0)}k` : abs;
+                                    return num < 0 ? `-₱${formatted}` : `₱${formatted}`;
+                                }} 
+                            />
                             <Tooltip 
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                                formatter={(value) => `₱${Number(value).toLocaleString()}`} 
+                                formatter={(value) => {
+                                    const num = Number(value || 0);
+                                    return num < 0 ? `-₱${Math.abs(num).toLocaleString()}` : `₱${num.toLocaleString()}`;
+                                }} 
                                 cursor={{ stroke: '#c07251', strokeWidth: 1, strokeDasharray: '4 4' }}
                             />
                             <Area type="monotone" dataKey="value" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
