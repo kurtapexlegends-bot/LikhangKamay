@@ -56,8 +56,8 @@ class AdminArbitrateDispute
                 if ($buyer) {
                     $buyer->notify(new DisputeStatusNotification(
                         'dispute_arbitrated_refund',
-                        'Dispute Resolved: Refunded',
-                        "Platform administrator has ruled in favor of refund for Order #{$order->order_number}.",
+                        "Refund Approved: Order #{$order->order_number}",
+                        "Platform support approved a full refund for Order #{$order->order_number}. Funds will be refunded to your original payment method.",
                         route('my-orders.index')
                     ));
                     $this->sendMailSilently($buyer->email, new RefundProcessed($order));
@@ -67,8 +67,8 @@ class AdminArbitrateDispute
                 if ($seller) {
                     $seller->notify(new DisputeStatusNotification(
                         'dispute_arbitrated_refund',
-                        'Dispute Arbitrated: Refunded',
-                        "Platform administrator has ruled in favor of buyer refund for Order #{$order->order_number}.",
+                        "Refund Issued: Order #{$order->order_number}",
+                        "Platform support approved a full refund for Order #{$order->order_number}. Escrow funds have been returned to the customer.",
                         route('orders.index')
                     ));
                 }
@@ -83,8 +83,8 @@ class AdminArbitrateDispute
                     'event_type' => 'dispute_arbitrated_refund',
                     'severity' => 'warning',
                     'status' => 'refunded',
-                    'title' => 'Admin Ruled Refund',
-                    'summary' => "Admin arbitrated dispute in favor of Refund for Order #{$order->order_number}.",
+                    'title' => 'Refund Approved',
+                    'summary' => "Platform support approved a full refund for Order #{$order->order_number}.",
                     'subject_type' => Order::class,
                     'subject_id' => $order->id,
                     'subject_label' => $order->order_number,
@@ -109,8 +109,8 @@ class AdminArbitrateDispute
                 if ($buyer) {
                     $buyer->notify(new DisputeStatusNotification(
                         'dispute_arbitrated_rejected',
-                        'Dispute Resolved: Claim Rejected',
-                        "Platform administrator has rejected the return claim for Order #{$order->order_number}.",
+                        "Dispute Closed: Order #{$order->order_number}",
+                        "Platform support reviewed Order #{$order->order_number} and closed the dispute. Funds have been released to the artisan.",
                         route('my-orders.index')
                     ));
                     $this->sendMailSilently($buyer->email, new \App\Mail\DisputeArbitratedSellerWins($order, $adminNotes));
@@ -120,8 +120,8 @@ class AdminArbitrateDispute
                 if ($seller) {
                     $seller->notify(new DisputeStatusNotification(
                         'dispute_arbitrated_rejected',
-                        'Dispute Arbitrated: Rejected',
-                        "Platform administrator has ruled in favor of seller for Order #{$order->order_number}.",
+                        "Dispute Closed: Funds Released",
+                        "Platform support closed the dispute for Order #{$order->order_number} in your favor. Funds have been released to your shop balance.",
                         route('orders.index')
                     ));
                 }
@@ -136,8 +136,8 @@ class AdminArbitrateDispute
                     'event_type' => 'dispute_arbitrated_rejected',
                     'severity' => 'info',
                     'status' => 'completed',
-                    'title' => 'Admin Ruled Rejection',
-                    'summary' => "Admin arbitrated dispute in favor of Seller for Order #{$order->order_number}.",
+                    'title' => 'Dispute Closed (Funds Released)',
+                    'summary' => "Platform support closed the dispute for Order #{$order->order_number} and released escrow funds to the shop.",
                     'subject_type' => Order::class,
                     'subject_id' => $order->id,
                     'subject_label' => $order->order_number,

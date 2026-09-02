@@ -173,20 +173,47 @@ export const sellerIssueSummary = (order) => {
         const dispute = order.dispute;
         const reason = dispute ? dispute.reason : (order.return_reason || "No reason provided.");
         const proofPhotos = dispute ? dispute.proof_photos : (order.return_proof_image ? [order.return_proof_image] : []);
+        
+        let title = "Return Pending Decision";
+        let detail = "Review the buyer proof, coordinate in chat if needed, then respond to the dispute claim.";
+        let tone = "border-orange-200 bg-orange-50";
+        let badgeTone = "border-orange-200 bg-white text-orange-700";
+
+        if (dispute) {
+            if (dispute.status === "seller_accepted") {
+                title = "Refund Accepted by Shop";
+                detail = "You accepted the buyer's refund request.";
+                tone = "border-purple-200 bg-purple-50";
+                badgeTone = "border-purple-200 bg-white text-purple-700";
+            } else if (dispute.status === "seller_rejected") {
+                title = "Return Request Declined";
+                detail = "You declined the return claim. The buyer may accept this or escalate to platform support.";
+                tone = "border-rose-200 bg-rose-50";
+                badgeTone = "border-rose-200 bg-white text-rose-700";
+            } else if (dispute.status === "seller_proposed_replacement") {
+                title = "Replacement Offered";
+                detail = "You offered a replacement. Waiting for customer response.";
+                tone = "border-blue-200 bg-blue-50";
+                badgeTone = "border-blue-200 bg-white text-blue-700";
+            } else if (dispute.status === "escalated") {
+                title = "Needs Platform Review";
+                detail = "The dispute has been escalated. Platform support is reviewing evidence from both parties.";
+                tone = "border-amber-200 bg-amber-50";
+                badgeTone = "border-amber-200 bg-white text-amber-700";
+            }
+        }
+
         return {
-            tone: "border-orange-200 bg-orange-50",
-            badgeTone: "border-orange-200 bg-white text-orange-700",
+            tone,
+            badgeTone,
             icon: RotateCcw,
-            title: dispute && dispute.status !== "pending"
-                ? `Dispute status: ${dispute.status.replace(/_/g, " ").toUpperCase()}`
-                : "Return pending decision",
-            detail: dispute
-                ? "Review the buyer proof, coordinate in chat if needed, then respond to the dispute claim."
-                : "Review the buyer proof, coordinate in chat if needed, then refund, replace, or reject the request.",
-            timestampLabel: null,
-            timestampValue: null,
+            title,
+            detail,
+            timestampLabel: dispute?.resolved_at ? "Resolved" : null,
+            timestampValue: dispute?.resolved_at || null,
             infoLabel: "Reason",
             infoValue: reason,
+            resolutionNotes: dispute?.admin_notes || null,
             proofPhotos: proofPhotos,
             proofHref: !dispute && order.return_proof_image ? order.return_proof_image : null,
             proofLabel: "View Buyer Proof",
@@ -198,7 +225,7 @@ export const sellerIssueSummary = (order) => {
             tone: "border-teal-200 bg-teal-50",
             badgeTone: "border-teal-200 bg-white text-teal-700",
             icon: PackageCheck,
-            title: "Replacement approved",
+            title: "Replacement in progress",
             detail:
                 order.delivery?.flow_type === "replacement_exchange"
                     ? "Courier is handling the exchange. Wait for buyer confirmation before treating the case as closed."
@@ -236,11 +263,12 @@ export const sellerIssueSummary = (order) => {
             badgeTone: "border-purple-200 bg-white text-purple-700",
             icon: CreditCard,
             title: "Refund completed",
-            detail: "The refund is already processed for this order. The return case is closed unless a new issue is opened.",
-            timestampLabel: null,
-            timestampValue: null,
+            detail: "The refund was processed for this order. Escrow funds were returned to the customer.",
+            timestampLabel: dispute?.resolved_at ? "Resolved" : null,
+            timestampValue: dispute?.resolved_at || null,
             infoLabel: dispute ? "Reason" : null,
             infoValue: dispute ? dispute.reason : null,
+            resolutionNotes: dispute?.admin_notes || null,
             proofPhotos: proofPhotos,
             proofHref: !dispute && order.return_proof_image ? order.return_proof_image : null,
             proofLabel: "View Buyer Proof",

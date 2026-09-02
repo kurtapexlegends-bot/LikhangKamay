@@ -1,5 +1,5 @@
 /* global route */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
@@ -23,6 +23,23 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [showMobileDetail, setShowMobileDetail] = useState(false);
+
+    // Deep-linking from Global Search or Direct Links
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const params = new URLSearchParams(window.location.search);
+        const search = params.get('search');
+        if (search) {
+            setSearchQuery(search);
+            const match = disputes.find(d => 
+                String(d.id) === String(search) || 
+                String(d.order?.order_number || '').toLowerCase().includes(search.toLowerCase())
+            );
+            if (match) {
+                setSelectedId(match.id);
+            }
+        }
+    }, [disputes]);
 
     // Lightbox Modal State
     const [lightboxState, setLightboxState] = useState({ open: false, photos: [], currentIndex: 0 });

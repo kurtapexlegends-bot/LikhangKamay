@@ -36,6 +36,12 @@ export default function OrderIssueBanner({ order, issueSummary }) {
                             </p>
                         </div>
                     )}
+                    {issueSummary.resolutionNotes && (
+                        <div className="mt-2 rounded-lg border border-stone-200/80 bg-white/80 p-2.5 text-[10px] text-stone-700 leading-snug">
+                            <span className="font-bold text-stone-800">Platform Resolution Notes: </span>
+                            <span className="italic font-medium">"{issueSummary.resolutionNotes}"</span>
+                        </div>
+                    )}
                     {issueSummary.proofPhotos && issueSummary.proofPhotos.length > 0 && (
                         <div className="mt-3">
                             <span className="font-bold uppercase tracking-wider text-stone-400 text-[10px] block mb-1">

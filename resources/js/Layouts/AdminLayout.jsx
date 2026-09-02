@@ -106,7 +106,12 @@ export default function AdminLayout({ title, children }) {
     // Enable Real-time synchronization
     useRealtime();
 
-    const { pendingArtisanCount, auth } = usePage().props;
+    const { 
+        pendingArtisanCount, 
+        pendingComplianceCount, 
+        activeDisputesCount, 
+        auth 
+    } = usePage().props;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState(() => getInitialExpandedGroups());
@@ -181,7 +186,7 @@ export default function AdminLayout({ title, children }) {
                     href: route('admin.users.manager', { tab: 'approvals' }),
                     icon: Award,
                     current: isTabActive('admin.users.manager', 'approvals'),
-                    badge: null
+                    badge: pendingArtisanCount > 0 ? pendingArtisanCount : null
                 },
                 { name: 'Product Approvals', href: route('admin.catalog.index', { tab: 'moderation' }), icon: ShoppingBag, current: isTabActive('admin.catalog.index', 'moderation') },
                 { name: 'Sponsorships', href: route('admin.catalog.index', { tab: 'sponsorships' }), icon: Star, current: isTabActive('admin.catalog.index', 'sponsorships') },
@@ -190,8 +195,20 @@ export default function AdminLayout({ title, children }) {
         {
             title: 'Safety & Compliance',
             items: [
-                { name: 'Content Safety', href: route('admin.compliance'), icon: ShieldAlert, current: route().current('admin.compliance*') },
-                { name: 'Order Disputes', href: route('admin.disputes.index'), icon: RotateCcw, current: route().current('admin.disputes.*') },
+                { 
+                    name: 'Content Safety', 
+                    href: route('admin.compliance'), 
+                    icon: ShieldAlert, 
+                    current: route().current('admin.compliance*'),
+                    badge: pendingComplianceCount > 0 ? pendingComplianceCount : null
+                },
+                { 
+                    name: 'Order Disputes', 
+                    href: route('admin.disputes.index'), 
+                    icon: RotateCcw, 
+                    current: route().current('admin.disputes.*'),
+                    badge: activeDisputesCount > 0 ? activeDisputesCount : null
+                },
             ]
         },
         {

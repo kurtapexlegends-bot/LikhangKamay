@@ -178,6 +178,13 @@ export default function ReviewListItem({
                         </div>
                     )}
 
+                    {review.dispute?.resolution_notes && ['resolved', 'rejected'].includes(review.dispute.status) && (
+                        <div className="mb-3 rounded-xl border border-stone-200/80 bg-stone-50/80 p-2.5 text-[11px] text-stone-600 leading-snug">
+                            <span className="font-bold text-stone-800">Platform Resolution Notes: </span>
+                            <span className="italic font-medium">"{review.dispute.resolution_notes}"</span>
+                        </div>
+                    )}
+
                     {!review.dispute && review.is_hidden_from_marketplace && (
                         <div className="mb-3 flex flex-wrap items-center gap-2">
                             <div className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-rose-700">

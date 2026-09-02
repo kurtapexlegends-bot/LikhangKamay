@@ -88,6 +88,12 @@ class HandleInertiaRequests extends Middleware
             'pendingArtisanCount' => fn () => $user && $user->role === 'super_admin' 
                 ? rescue(fn () => \App\Models\User::where('role', 'artisan')->where('artisan_status', 'pending')->whereNotNull('setup_completed_at')->count(), 0, false) 
                 : 0,
+            'pendingComplianceCount' => fn () => $user && $user->role === 'super_admin'
+                ? rescue(fn () => \App\Models\FlaggedContent::where('status', 'pending')->count() + \App\Models\ReviewDispute::whereIn('status', ['pending', 'under_review'])->count(), 0, false)
+                : 0,
+            'activeDisputesCount' => fn () => $user && $user->role === 'super_admin'
+                ? rescue(fn () => \App\Models\Dispute::where('status', 'escalated')->count(), 0, false)
+                : 0,
             
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

@@ -21,7 +21,7 @@ import ReportedItemsInbox from '@/Components/Admin/Compliance/ReportedItemsInbox
 import ReportDetailsCard from '@/Components/Admin/Compliance/ReportDetailsCard';
 import ModerationActionModal from '@/Components/Admin/Compliance/ModerationActionModal';
 
-export default function ContentSafety({ flags, disputes = [] }) {
+export default function ContentSafety({ flags, disputes = [], defaultFilter = 'active' }) {
     const { addToast } = useToast();
 
     // ----------------------------------------------------
@@ -74,6 +74,23 @@ export default function ContentSafety({ flags, disputes = [] }) {
     const [confirmingFlagAction, setConfirmingFlagAction] = useState({ id: null, action: null });
     const [isMobile, setIsMobile] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
+
+    // Deep-linking: auto-select ticket when navigated from Global Search
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const params = new URLSearchParams(window.location.search);
+        const search = params.get('search');
+        if (search) {
+            const found = unifiedTickets.find(t => 
+                String(t.rawId) === String(search) || 
+                t.title?.toLowerCase().includes(search.toLowerCase()) ||
+                t.reason?.toLowerCase().includes(search.toLowerCase())
+            );
+            if (found) {
+                setSelectedTicketId(found.id);
+            }
+        }
+    }, [unifiedTickets]);
 
     // Track active selected ticket object from unified list
     const selectedTicket = useMemo(() => {

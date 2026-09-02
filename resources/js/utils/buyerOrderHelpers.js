@@ -223,38 +223,38 @@ export const buyerIssueSummary = (order) => {
         let badgeTone = 'border-orange-200 bg-white text-orange-700';
 
         if (dispute.status === 'seller_accepted') {
-            title = 'Refund Approved';
-            detail = 'The seller accepted your refund request.';
+            title = 'Refund Approved by Shop';
+            detail = 'The seller accepted your refund request. Funds will be returned to your original payment method.';
             tone = 'border-purple-200 bg-purple-50';
             badgeTone = 'border-purple-200 bg-white text-purple-700';
         } else if (dispute.status === 'seller_rejected') {
-            title = 'Dispute Rejected by Seller';
-            detail = 'The seller rejected your return request. You can chat with the seller, accept the decision, or ask LikhangKamay Support to review and help.';
-            tone = 'border-red-200 bg-red-50';
-            badgeTone = 'border-red-200 bg-white text-red-700';
+            title = 'Return Request Declined by Shop';
+            detail = 'The seller declined your return request. You can chat with the seller or request platform support to review.';
+            tone = 'border-rose-200 bg-rose-50';
+            badgeTone = 'border-rose-200 bg-white text-rose-700';
         } else if (dispute.status === 'seller_proposed_replacement') {
-            title = 'Replacement Exchange Proposed';
-            detail = 'The seller proposed a replacement exchange. Please review the details below. You can accept this offer or ask LikhangKamay Support to step in.';
+            title = 'Replacement Offered';
+            detail = 'The seller offered a replacement item. Please review the details below. You can accept this offer or ask platform support to review.';
             tone = 'border-blue-200 bg-blue-50';
             badgeTone = 'border-blue-200 bg-white text-blue-700';
         } else if (dispute.status === 'escalated') {
-            title = 'Escalated to Admin Support';
-            detail = 'The dispute has been escalated. Platform moderators are reviewing the evidence to resolve the issue.';
+            title = 'Needs Platform Review';
+            detail = 'The dispute has been escalated. Platform support is reviewing evidence to make a resolution.';
             tone = 'border-amber-200 bg-amber-50';
             badgeTone = 'border-amber-200 bg-white text-amber-700';
         } else if (dispute.status === 'resolved_refunded') {
-            title = 'Dispute Resolved: Refunded';
-            detail = 'A refund was approved and returned to your original payment method.';
+            title = 'Refund Approved by Platform';
+            detail = 'Platform support approved a full refund. Funds will be returned to your payment method.';
             tone = 'border-purple-200 bg-purple-50';
             badgeTone = 'border-purple-200 bg-white text-purple-700';
         } else if (dispute.status === 'resolved_rejected') {
-            title = 'Dispute Case Closed';
-            detail = 'Admin support ruled to reject the return claim. The order remains completed.';
+            title = 'Dispute Closed: Funds Released';
+            detail = 'Platform support reviewed the order and closed the dispute. Funds have been released to the artisan.';
             tone = 'border-stone-200 bg-stone-50';
             badgeTone = 'border-stone-200 bg-white text-stone-700';
         } else if (dispute.status === 'resolved_replacement') {
             title = 'Replacement Exchange Started';
-            detail = 'You accepted the replacement proposal. The seller is preparing the replacement item.';
+            detail = 'You accepted the replacement offer. The seller is preparing your replacement item.';
             tone = 'border-teal-200 bg-teal-50';
             badgeTone = 'border-teal-200 bg-white text-teal-700';
         }
@@ -267,8 +267,9 @@ export const buyerIssueSummary = (order) => {
             detail,
             timestampLabel: dispute.resolved_at ? 'Resolved' : (dispute.status === 'seller_proposed_replacement' ? 'Proposed' : null),
             timestampValue: dispute.resolved_at || null,
-            infoLabel: dispute.status === 'seller_proposed_replacement' ? 'Replacement Description' : (dispute.status === 'seller_rejected' ? 'Rejection Explanation' : 'Reason'),
+            infoLabel: dispute.status === 'seller_proposed_replacement' ? 'Replacement Description' : (dispute.status === 'seller_rejected' ? 'Shop Explanation' : 'Reason'),
             infoValue: dispute.status === 'seller_proposed_replacement' ? dispute.seller_proposed_description : (dispute.status === 'seller_rejected' ? dispute.seller_explanation : dispute.reason),
+            resolutionNotes: dispute.admin_notes || null,
             proofPhotos: dispute.proof_photos,
         };
     }

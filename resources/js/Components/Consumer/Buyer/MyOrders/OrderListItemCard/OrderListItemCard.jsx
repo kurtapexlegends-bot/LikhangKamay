@@ -169,6 +169,13 @@ export default function OrderListItemCard({
                             </div>
                         )}
 
+                        {issueSummary.resolutionNotes && (
+                            <div className="mt-2 rounded-lg border border-stone-200/80 bg-white/90 px-2.5 py-2 text-[10px] text-stone-700 leading-snug">
+                                <span className="font-bold text-stone-800">Platform Resolution Notes: </span>
+                                <span className="italic font-medium">"{issueSummary.resolutionNotes}"</span>
+                            </div>
+                        )}
+
                         {issueSummary.proofHref && (
                             <a
                                 href={issueSummary.proofHref}

@@ -8,7 +8,11 @@ use App\Models\ReviewDispute;
 use App\Models\FlaggedContent;
 use App\Models\User;
 use App\Models\Product;
+use App\Models\PlatformActivity;
 use App\Notifications\ReviewModerationStatusNotification;
+use App\Notifications\ProductModerationNotification;
+use App\Notifications\UserDisciplinaryNotification;
+use App\Notifications\DisputeStatusNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -162,6 +166,28 @@ class ModerationController extends Controller
                     )
                 );
             }
+
+            // Notify the artisan who reported the dispute
+            $artisanReporter = $reviewDispute->reporter ?? $review->product?->user;
+            if ($artisanReporter) {
+                $isApproved = $validated['status'] === 'resolved';
+                $productName = $review->product?->name ?? 'your product';
+                $artisanReporter->notify(new DisputeStatusNotification(
+                    'review_dispute_status',
+                    $isApproved ? 'Review Dispute Approved' : 'Review Dispute Declined',
+                    $isApproved 
+                        ? "Your dispute for the review on \"{$productName}\" was approved. The review is now hidden from the marketplace."
+                        : "Your dispute for the review on \"{$productName}\" was declined. The review remains visible.",
+                    route('reviews.index')
+                ));
+            }
+
+            PlatformActivity::create([
+                'user_id' => Auth::id(),
+                'action' => 'review_dispute_' . $validated['status'],
+                'description' => "Moderator marked review dispute #{$reviewDispute->id} as {$validated['status']}.",
+                'metadata' => ['review_dispute_id' => $reviewDispute->id, 'review_id' => $review->id, 'status' => $validated['status']]
+            ]);
         });
 
         return back()->with('success', 'Moderation request updated.');
@@ -217,6 +243,13 @@ class ModerationController extends Controller
             'resolved_at' => now(),
         ]);
 
+        PlatformActivity::create([
+            'user_id' => Auth::id(),
+            'action' => 'content_flag_resolved',
+            'description' => 'Moderator resolved flag on ' . strtolower(class_basename($flag->reportable_type)) . ' ID ' . $flag->reportable_id . '.',
+            'metadata' => ['flag_id' => $flag->id, 'reportable_type' => $flag->reportable_type, 'reportable_id' => $flag->reportable_id]
+        ]);
+
         return back()->with('success', 'Content flag marked as resolved.');
     }
 
@@ -229,13 +262,29 @@ class ModerationController extends Controller
         $flag = FlaggedContent::findOrFail($id);
         
         if ($flag->reportable_type === 'App\Models\Product' && $flag->reportable) {
-            $flag->reportable->update(['status' => 'Rejected']);
+            $product = $flag->reportable;
+            $product->update(['status' => 'Rejected']);
+
+            if ($product->user) {
+                $product->user->notify(new ProductModerationNotification(
+                    $product,
+                    'rejected',
+                    'Product listing was removed by platform moderation following a content safety report.'
+                ));
+            }
         }
 
         $flag->update([
             'status' => 'resolved',
             'resolved_by' => Auth::id(),
             'resolved_at' => now(),
+        ]);
+
+        PlatformActivity::create([
+            'user_id' => Auth::id(),
+            'action' => 'product_takedown',
+            'description' => "Moderator took down product ID {$flag->reportable_id} following content flag #{$flag->id}.",
+            'metadata' => ['flag_id' => $flag->id, 'product_id' => $flag->reportable_id]
         ]);
 
         return back()->with('success', 'Product taken down and flag resolved.');
@@ -260,6 +309,11 @@ class ModerationController extends Controller
             $user = User::find($userId);
             if ($user) {
                 $user->update(['artisan_status' => 'rejected']); 
+                $user->notify(new UserDisciplinaryNotification(
+                    'suspension',
+                    'Account suspended following a community safety investigation.',
+                    30
+                ));
             }
         }
 
@@ -267,6 +321,13 @@ class ModerationController extends Controller
             'status' => 'resolved',
             'resolved_by' => Auth::id(),
             'resolved_at' => now(),
+        ]);
+
+        PlatformActivity::create([
+            'user_id' => Auth::id(),
+            'action' => 'user_suspended',
+            'description' => "Moderator suspended user ID {$userId} following content flag #{$flag->id}.",
+            'metadata' => ['flag_id' => $flag->id, 'user_id' => $userId]
         ]);
 
         return back()->with('success', 'User suspended and flag resolved.');
@@ -284,6 +345,13 @@ class ModerationController extends Controller
             'status' => 'dismissed',
             'resolved_by' => Auth::id(),
             'resolved_at' => now(),
+        ]);
+
+        PlatformActivity::create([
+            'user_id' => Auth::id(),
+            'action' => 'content_flag_dismissed',
+            'description' => 'Moderator dismissed flag on ' . strtolower(class_basename($flag->reportable_type)) . ' ID ' . $flag->reportable_id . '.',
+            'metadata' => ['flag_id' => $flag->id, 'reportable_type' => $flag->reportable_type, 'reportable_id' => $flag->reportable_id]
         ]);
 
         return back()->with('success', 'Content flag dismissed.');
