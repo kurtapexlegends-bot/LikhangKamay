@@ -5,7 +5,7 @@ import StaffAttendanceMonitor from '@/Components/StaffAttendanceMonitor';
 import { 
     LayoutDashboard, Package, ShoppingBag, BarChart3, Box, 
     Users, MessageCircle, Settings, X, ChevronLeft,
-    ClipboardList, Warehouse, FileQuestion, Sliders, Banknote, Star, Award, Tag, ShieldCheck, Truck
+    ClipboardList, Warehouse, FileQuestion, Banknote, Star, Award, Tag, ShieldCheck, Truck
 } from 'lucide-react';
 import SidebarSettingsPopover from '@/Components/Seller/Sidebar/SidebarSettingsPopover';
 import SidebarPlanPromo from '@/Components/Seller/Sidebar/SidebarPlanPromo';
@@ -21,7 +21,6 @@ const resolveActiveGroup = (active) => {
     if (['staff-dashboard'].includes(active)) return 'workspace';
     if (['overview', 'products', 'analytics', '3d', 'approvals'].includes(active)) return 'core';
     if (['orders', 'chat', 'team-messages', 'reviews'].includes(active)) return 'crm';
-    if (['settings'].includes(active)) return 'appearance';
     if (['sponsorships', 'discounts'].includes(active)) return 'marketing';
     if (['hr', 'accounting', 'procurement', 'stock-requests', 'supply-hub', 'audit-log'].includes(active)) return 'advanced';
 
@@ -33,7 +32,6 @@ const getInitialExpandedGroups = (active) => {
         workspace: true,
         core: true,
         crm: true,
-        appearance: true,
         marketing: true,
         advanced: true,
     };
@@ -229,7 +227,6 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
         ? ['products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName))
         : ['overview', 'products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName)));
     const hasCrm = (!isStaffActor || hasActiveAttendanceSession) && ['orders', 'messages', 'team_messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName));
-    const hasAppearance = (!isStaffActor || hasActiveAttendanceSession) && visibleModulesSet.has('shop_settings');
     const hasMarketing = (!isStaffActor || hasActiveAttendanceSession) && visibleModulesSet.has('sponsorships');
     const hasAdvanced = (!isStaffActor || hasActiveAttendanceSession) && (
         ['hr', 'accounting', 'procurement', 'stock_requests'].some(moduleName => visibleModulesSet.has(moduleName))
@@ -368,21 +365,6 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 )}
                                 {visibleModulesSet.has('reviews') && (
                                     <NavItem href={route('reviews.index')} icon={Star} active={active === 'reviews'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Reviews')} onMouseLeave={handleTooltipLeave}>Reviews</NavItem>
-                                )}
-                            </CategoryGroup>
-                        </div>
-                    )}
-
-                    {hasAppearance && (
-                        <div>
-                            <CategoryGroup
-                                title="Shop Appearance"
-                                open={expandedGroups.appearance}
-                                onToggle={() => toggleGroup('appearance')}
-                                isCollapsed={isCollapsed}
-                            >
-                                {(user?.role === 'artisan' || user?.is_workspace_owner) && visibleModulesSet.has('shop_settings') && (
-                                    <NavItem href={route('seller.settings.index')} icon={Sliders} active={active === 'settings'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Settings')} onMouseLeave={handleTooltipLeave}>Settings</NavItem>
                                 )}
                             </CategoryGroup>
                         </div>
