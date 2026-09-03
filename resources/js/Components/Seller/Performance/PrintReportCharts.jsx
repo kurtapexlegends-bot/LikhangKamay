@@ -26,19 +26,33 @@ const pesoFormatter = new Intl.NumberFormat('en-PH', {
 
 const formatPeso = (value) => pesoFormatter.format(Number(value || 0));
 
+const formatYAxisPeso = (value) => {
+    const num = Number(value || 0);
+    if (num === 0) return '₱0';
+    const abs = Math.abs(num);
+    const sign = num < 0 ? '-' : '';
+    if (abs >= 1000000) {
+        return `${sign}₱${(abs / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
+    }
+    if (abs >= 10000) {
+        return `${sign}₱${(abs / 1000).toFixed(0)}k`;
+    }
+    return `${sign}₱${abs.toLocaleString()}`;
+};
+
 export default function PrintReportCharts({
     isLoading,
     chartFilter = '',
     currentChartData = [],
     categoryData = [],
-    updateCategoryFilter
 }) {
     // Guard clause: handle empty/invalid array
     const chartDataList = Array.isArray(currentChartData) ? currentChartData : [];
-    const categoryDataList = Array.isArray(categoryData) ? categoryData : [];
+    const categoryDataList = useMemo(() => {
+        return Array.isArray(categoryData) ? categoryData : [];
+    }, [categoryData]);
 
     const pieData = useMemo(() => {
-        if (!categoryDataList) return [];
         const active = categoryDataList.filter(c => Number(c.value || 0) > 0);
         if (active.length > 0) return active;
         return [{ category: 'No Sales', value: 1, isEmpty: true }];
@@ -57,16 +71,14 @@ export default function PrintReportCharts({
                         </div>
                     }
                 >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
+                    <div className="flex items-center justify-between mb-5">
                         <div>
-                            <h3 className="text-lg font-bold text-stone-900 flex items-center gap-2">
-                                <span>Revenue Analytics</span>
-                                <span className="hidden print:inline-block text-[10px] font-extrabold uppercase tracking-wider text-clay-700 bg-stone-50 px-2 py-0.5 rounded border border-stone-200">
-                                    {chartFilter}
-                                </span>
-                            </h3>
-                            <p className="text-sm text-stone-500">Income over time</p>
+                            <h3 className="text-base font-bold text-stone-900 leading-none">Revenue Trend</h3>
+                            <p className="text-xs text-stone-500 mt-1 font-medium">Income over time ({chartFilter.toLowerCase()} view)</p>
                         </div>
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-clay-50 text-clay-700 border border-clay-200/50">
+                            {chartFilter}
+                        </span>
                     </div>
 
                     <div className="h-64 min-h-[250px] w-full min-w-0">
@@ -75,7 +87,7 @@ export default function PrintReportCharts({
                                 {/* Screen Chart */}
                                 <div className="print:hidden h-full w-full">
                                     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                                        <AreaChart data={chartDataList} margin={{ top: 10, right: 10, left: -20, bottom: 15 }}>
+                                        <AreaChart data={chartDataList} margin={{ top: 10, right: 15, left: 10, bottom: 15 }}>
                                             <defs>
                                                 <linearGradient id="colorRevenuePrintScreen" x1="0" y1="0" x2="0" y2="1">
                                                     <stop offset="5%" stopColor="#c07251" stopOpacity={0.15} />
@@ -84,7 +96,7 @@ export default function PrintReportCharts({
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
                                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} dy={10} />
-                                            <YAxis width={40} axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} tickFormatter={(val) => formatPeso(val)} />
+                                            <YAxis width={56} axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 11 }} tickFormatter={(val) => formatYAxisPeso(val)} />
                                             <RechartsTooltip
                                                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                                                 formatter={(value) => formatPeso(value)}
@@ -96,7 +108,7 @@ export default function PrintReportCharts({
                                 </div>
                                 {/* Print Chart (Fixed width to bypass ResponsiveContainer collapse) */}
                                 <div className="hidden print:flex print:justify-center w-full h-[230px]">
-                                    <AreaChart width={445} height={220} data={chartDataList} margin={{ top: 10, right: 10, left: -20, bottom: 15 }}>
+                                    <AreaChart width={445} height={220} data={chartDataList} margin={{ top: 10, right: 15, left: 10, bottom: 15 }}>
                                         <defs>
                                             <linearGradient id="colorRevenuePrintPrint" x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="5%" stopColor="#c07251" stopOpacity={0.15} />
@@ -105,7 +117,7 @@ export default function PrintReportCharts({
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} dy={10} />
-                                        <YAxis width={40} axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} tickFormatter={(val) => formatPeso(val)} />
+                                        <YAxis width={56} axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 11 }} tickFormatter={(val) => formatYAxisPeso(val)} />
                                         <Area type="monotone" dataKey="value" stroke="#c07251" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenuePrintPrint)" dot={{ r: 4, fill: '#c07251', strokeWidth: 2, stroke: '#fff' }} isAnimationActive={false} />
                                     </AreaChart>
                                 </div>
@@ -145,8 +157,6 @@ export default function PrintReportCharts({
                                 paddingAngle={pieData.length > 1 ? 4 : 0}
                                 dataKey="value"
                                 stroke="none"
-                                onClick={updateCategoryFilter ? (data) => updateCategoryFilter(data.category || data.name) : undefined}
-                                className={updateCategoryFilter ? "cursor-pointer" : ""}
                                 isAnimationActive={false}
                             >
                                 {pieData.map((entry, index) => {

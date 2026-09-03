@@ -35,7 +35,7 @@ export default function RevenueAnalyticsChart({ chartFilter, setChartFilter, cur
                 
                 {currentChartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                        <AreaChart data={currentChartData} margin={{ top: 10, right: 10, left: -20, bottom: 15 }}>
+                        <AreaChart data={currentChartData} margin={{ top: 10, right: 15, left: 10, bottom: 15 }}>
                             <defs>
                                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#c07251" stopOpacity={0.15}/>
@@ -45,16 +45,18 @@ export default function RevenueAnalyticsChart({ chartFilter, setChartFilter, cur
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dy={10} />
                             <YAxis 
-                                width={48} 
+                                width={56} 
                                 axisLine={false} 
                                 tickLine={false} 
-                                tick={{fill: '#9ca3af', fontSize: 12}} 
+                                tick={{fill: '#9ca3af', fontSize: 11}} 
                                 tickFormatter={(val) => {
                                     const num = Number(val || 0);
                                     if (num === 0) return '₱0';
                                     const abs = Math.abs(num);
-                                    const formatted = abs >= 1000 ? `${(abs / 1000).toFixed(0)}k` : abs;
-                                    return num < 0 ? `-₱${formatted}` : `₱${formatted}`;
+                                    const sign = num < 0 ? '-' : '';
+                                    if (abs >= 1000000) return `${sign}₱${(abs / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
+                                    if (abs >= 10000) return `${sign}₱${(abs / 1000).toFixed(0)}k`;
+                                    return `${sign}₱${abs.toLocaleString()}`;
                                 }} 
                             />
                             <Tooltip 

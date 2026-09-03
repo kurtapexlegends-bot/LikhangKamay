@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
-import { Activity, Package, ArrowUpRight, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
+import { Package, ArrowUpRight, Sparkles, TrendingUp } from 'lucide-react';
 import SatisfactionBreakdown from './SatisfactionBreakdown';
 
 const pesoFormatter = new Intl.NumberFormat('en-PH', {
@@ -12,10 +12,9 @@ const pesoFormatter = new Intl.NumberFormat('en-PH', {
 
 const formatPeso = (value) => pesoFormatter.format(Number(value || 0));
 
-export default function OperationsControl({ metrics, insights, topProducts = [], salesHeatmap = [], stats }) {
+export default function OperationsControl({ insights, topProducts = [], salesHeatmap = [], stats }) {
     const [hoveredCell, setHoveredCell] = React.useState(null);
     const heatmapCardRef = React.useRef(null);
-    const lowStockProducts = insights?.low_stock_products || [];
     const slowMovers = insights?.slow_movers || [];
     const salesVelocity = insights?.sales_velocity || [];
 
@@ -120,214 +119,150 @@ export default function OperationsControl({ metrics, insights, topProducts = [],
                     </div>
                 </div>
 
-                {/* Row 2: Inventory Alert Hub (2/3) & Velocity & Top Volume (1/3) */}
+                {/* Row 2: Catalog Merchandising & Velocity (Top Products, Sales Velocity, Slow Movers) */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
-                    {/* Inventory Alert Hub */}
-                    <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-2xs border border-stone-200/80 flex flex-col justify-between min-h-[340px]">
-                        <div className="pb-3 border-b border-stone-100 mb-4">
-                            <h3 className="text-base font-bold text-stone-900 leading-none">Inventory Health & Restock Alerts</h3>
-                            <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Critical stock items and slow moving catalog</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
-                            {/* Low Stock Alerts */}
-                            <div className="bg-rose-50/30 p-4 rounded-2xl border border-rose-100/50 flex flex-col justify-between">
-                                <div>
-                                    <p className="text-[10px] text-rose-700 mb-3 font-bold uppercase tracking-wider flex justify-between items-center shrink-0">
-                                        <span className="flex items-center gap-1.5"><ShieldAlert size={12} /> Critical Low Stock</span>
-                                        {lowStockProducts.length > 0 && <span className="bg-rose-600 text-white rounded-full px-2 py-0.5 text-[9px] font-black">{lowStockProducts.length}</span>}
-                                    </p>
-                                    <div className="space-y-2.5 overflow-y-auto max-h-[160px] pr-1 flex-1">
-                                        {lowStockProducts.length > 0 ? lowStockProducts.map((p, i) => (
-                                            <div key={i} className="flex items-center justify-between text-xs bg-white p-2.5 rounded-xl border border-stone-100/70 hover:shadow-sm transition-shadow">
-                                                <div className="min-w-0">
-                                                    <p className="font-bold text-stone-900 truncate max-w-[150px]">{p.name}</p>
-                                                    <p className="text-[9px] text-stone-400 font-medium">SKU: {p.sku || 'N/A'}</p>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-rose-100/60 text-rose-700">
-                                                        {p.stock} left
-                                                    </span>
-                                                    <Link href={route('products.index')} className="p-1 bg-stone-50 border border-stone-200/50 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors">
-                                                        <ArrowUpRight size={11} />
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        )) : <p className="text-[10px] text-stone-500 text-center py-8 italic font-medium">All items have healthy stock.</p>}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Slow Movers */}
-                            <div className="bg-stone-50/50 p-4 rounded-2xl border border-stone-100/70 flex flex-col justify-between">
-                                <div>
-                                    <p className="text-[10px] text-stone-600 mb-3 font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0">
-                                        <Package size={12} /> Slow Movers (0 sales in 30 days)
-                                    </p>
-                                    <div className="space-y-2.5 overflow-y-auto max-h-[160px] pr-1 flex-1">
-                                        {slowMovers.length > 0 ? slowMovers.map((p, i) => (
-                                            <div key={i} className="flex items-center justify-between text-xs bg-white p-2.5 rounded-xl border border-stone-100/70 hover:shadow-sm transition-shadow">
-                                                <div className="min-w-0">
-                                                    <p className="font-bold text-stone-900 truncate max-w-[150px]">{p.name}</p>
-                                                    <p className="text-[9px] text-stone-400 font-medium">Inactive {Number(p.days_inactive || 0).toFixed(0)} days</p>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-200/40">
-                                                        {p.stock} units
-                                                    </span>
-                                                    <Link href={route('products.index')} className="p-1 bg-stone-50 border border-stone-200/50 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors">
-                                                        <ArrowUpRight size={11} />
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        )) : <p className="text-[10px] text-stone-500 text-center py-8 italic font-medium">All products are moving healthy!</p>}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Product Performance & Velocity */}
+                    {/* Card 1: Top Performing Products */}
                     <div className="bg-white p-5 rounded-2xl shadow-2xs border border-stone-200/80 flex flex-col justify-between min-h-[340px]">
-                        <div className="pb-3 border-b border-stone-50 mb-3">
-                            <h3 className="text-base font-bold text-stone-900 leading-none">Velocity & Top Volume</h3>
-                            <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Delivery velocity & top items</p>
-                        </div>
-
-                        <div className="flex-1 space-y-4 flex flex-col justify-between">
-                            {/* Sales Velocity */}
-                            <div className="space-y-2 border-b border-stone-50 pb-3">
-                                <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                                    <Sparkles size={11} /> Avg Days to Sell
-                                </p>
-                                <div className="space-y-2.5 max-h-[110px] overflow-y-auto pr-1">
-                                    {salesVelocity.length > 0 ? salesVelocity.slice(0, 3).map((v, i) => (
-                                        <div key={i} className="flex items-center justify-between">
-                                            <span className="text-xs font-semibold text-stone-700 truncate max-w-[130px]">{v.name}</span>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-xs font-black ${v.avg_days_to_sell <= 3 ? 'text-emerald-600' : 'text-stone-900'}`}>
-                                                    {Math.round(v.avg_days_to_sell)}d
-                                                </span>
-                                                <div className="w-12 h-1 bg-stone-100 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className={`h-full ${v.avg_days_to_sell <= 3 ? 'bg-emerald-500' : 'bg-stone-400'}`} 
-                                                        style={{ width: `${Math.min(100, (3 / v.avg_days_to_sell) * 100)}%` }} 
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )) : <p className="text-[10px] text-stone-400 text-center py-4 italic">Waiting for sales...</p>}
-                                </div>
-                            </div>
-
-                            {/* Top Products Volume */}
-                            <div className="space-y-2">
-                                <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                                    <TrendingUp size={11} /> Top Sales Volume
-                                </p>
-                                <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
-                                    {topProducts.length > 0 ? (
-                                        topProducts.slice(0, 2).map((item, index) => {
-                                            const imageUrl = item.img ? (item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`) : null;
-                                            return (
-                                                <div key={index} className="flex items-center gap-2.5 bg-stone-50/50 p-2 rounded-xl border border-stone-100/70 hover:bg-white hover:shadow-sm hover:border-stone-200 transition-all duration-300">
-                                                    <div className="w-8 h-8 rounded-lg overflow-hidden bg-stone-200 border border-white shrink-0">
-                                                        {imageUrl ? (
-                                                            <img 
-                                                                src={imageUrl} 
-                                                                alt="" 
-                                                                className="w-full h-full object-cover" 
-                                                                onError={(e) => { e.target.style.display = 'none'; }} 
-                                                            />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-stone-400 bg-stone-100"><Package size={12} /></div>
-                                                        )}
-                                                    </div>
-                                                    <div className="min-w-0 flex-1 flex flex-col justify-between">
-                                                        <div className="flex items-center justify-between">
-                                                            <p className="font-bold text-stone-900 truncate text-[11px] leading-none">{item.name}</p>
-                                                            <span className="text-[11px] font-black text-clay-700">{formatPeso(item.profit)}</span>
-                                                        </div>
-                                                        <div className="flex items-center justify-between text-[9px] text-stone-400 mt-1">
-                                                            <span>{item.sales} sold</span>
-                                                            <span>{item.margin}% margin</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })
-                                    ) : (
-                                        <div className="h-full flex items-center justify-center py-2 bg-stone-50 border border-stone-100 rounded-xl">
-                                            <p className="text-[10px] text-stone-400 italic">No sales recorded yet.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Print-Only Expanded View */}
-            <div className="hidden print:block bg-white p-5 rounded-2xl border border-stone-100 mt-6 page-break-inside-avoid">
-                <div className="pb-3 border-b border-stone-100 mb-4">
-                    <h3 className="text-base font-bold text-stone-900 leading-none">Operations Control Dashboard</h3>
-                    <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Key logistics, inventory health, and delivery metrics</p>
-                </div>
-                <div className="grid grid-cols-2 gap-6 operations-print-grid">
-                    {/* Stock Health */}
-                    <div className="border-r border-stone-100 pr-4">
-                        <h4 className="text-[10px] font-black uppercase text-stone-400 mb-3 tracking-wider">Stock Health</h4>
-                        <div className="space-y-3 max-h-[140px] overflow-y-auto pr-1">
-                            {lowStockProducts.length > 0 ? (
+                        <div>
+                            <div className="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
                                 <div>
-                                    <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-1">Low Stock Alerts</p>
-                                    {lowStockProducts.slice(0, 3).map((p, i) => (
-                                        <div key={i} className="flex items-center justify-between text-xs mt-1">
-                                            <span className="font-bold text-stone-900 truncate max-w-[100px]">{p.name}</span>
-                                            <span className="font-black text-rose-600 shrink-0">{p.stock} left</span>
-                                        </div>
-                                    ))}
+                                    <h3 className="text-base font-bold text-stone-900 leading-none">Top Products</h3>
+                                    <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Best sellers by profit & sales volume</p>
                                 </div>
-                            ) : (
-                                <p className="text-[10px] text-stone-400 italic">Stock is healthy.</p>
-                            )}
-                            {slowMovers.length > 0 && (
-                                <div className="border-t border-stone-100 pt-2 mt-2">
-                                    <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-1">Slow Movers</p>
-                                    {slowMovers.slice(0, 2).map((p, i) => (
-                                        <div key={i} className="flex items-center justify-between text-xs gap-2 mt-1">
-                                            <div className="min-w-0 flex-1">
-                                                <p className="font-bold text-stone-900 truncate">{p.name}</p>
-                                                <p className="text-[9px] text-stone-400 font-medium">Inactive {Number(p.days_inactive || 0).toFixed(0)} days</p>
+                                <div className="h-8 w-8 rounded-xl bg-clay-50 border border-clay-100 flex items-center justify-center text-clay-700 shrink-0">
+                                    <TrendingUp size={15} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2.5">
+                                {topProducts.length > 0 ? (
+                                    topProducts.slice(0, 3).map((item, index) => {
+                                        const imageUrl = item.img ? (item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`) : null;
+                                        return (
+                                            <div key={index} className="flex items-center gap-3 bg-stone-50/60 p-2.5 rounded-xl border border-stone-100/80 hover:bg-white hover:shadow-xs hover:border-stone-200 transition-all duration-200">
+                                                <div className="w-9 h-9 rounded-lg overflow-hidden bg-stone-200 border border-white shrink-0">
+                                                    {imageUrl ? (
+                                                        <img 
+                                                            src={imageUrl} 
+                                                            alt="" 
+                                                            className="w-full h-full object-cover" 
+                                                            onError={(e) => { e.target.style.display = 'none'; }} 
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-stone-400 bg-stone-100"><Package size={14} /></div>
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <p className="font-bold text-stone-900 truncate text-xs leading-none">{item.name}</p>
+                                                        <span className="text-xs font-black text-clay-700">{formatPeso(item.profit)}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-[10px] text-stone-400 mt-1">
+                                                        <span>{item.sales} sold</span>
+                                                        <span className="font-medium text-stone-500">{item.margin}% margin</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <span className="font-bold text-stone-500 shrink-0">{p.stock} units</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                                        );
+                                    })
+                                ) : (
+                                    <div className="py-8 text-center">
+                                        <p className="text-xs text-stone-400 italic">No sales recorded yet.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-stone-100/80 text-[10px] text-stone-400 font-medium">
+                            Ranked by net contribution margin
                         </div>
                     </div>
 
-                    {/* Sales Velocity */}
-                    <div className="pl-4">
-                        <h4 className="text-[10px] font-black uppercase text-stone-400 mb-3 tracking-wider">Sales Velocity</h4>
-                        <div className="space-y-3">
-                            {salesVelocity.length > 0 ? (
-                                salesVelocity.slice(0, 3).map((v, i) => (
-                                    <div key={i} className="flex flex-col gap-1.5">
-                                        <div className="flex justify-between items-center text-xs">
-                                            <span className="font-medium text-stone-600 truncate max-w-[95px]">{v.name}</span>
-                                            <span className="font-black text-stone-900">{Math.round(v.avg_days_to_sell)}d</span>
+                    {/* Card 2: Sales Velocity */}
+                    <div className="bg-white p-5 rounded-2xl shadow-2xs border border-stone-200/80 flex flex-col justify-between min-h-[340px]">
+                        <div>
+                            <div className="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
+                                <div>
+                                    <h3 className="text-base font-bold text-stone-900 leading-none">Sales Velocity</h3>
+                                    <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Average turnaround days after listing</p>
+                                </div>
+                                <div className="h-8 w-8 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-700 shrink-0">
+                                    <Sparkles size={15} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                {salesVelocity.length > 0 ? (
+                                    salesVelocity.slice(0, 4).map((v, i) => (
+                                        <div key={i} className="space-y-1.5 bg-stone-50/60 p-2.5 rounded-xl border border-stone-100/80">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-stone-800 truncate max-w-[150px]">{v.name}</span>
+                                                <span className={`text-xs font-black ${v.avg_days_to_sell <= 3 ? 'text-emerald-600' : 'text-stone-700'}`}>
+                                                    {Math.round(v.avg_days_to_sell)} {Math.round(v.avg_days_to_sell) === 1 ? 'day' : 'days'}
+                                                </span>
+                                            </div>
+                                            <div className="w-full bg-stone-200/70 h-1.5 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full rounded-full transition-all ${v.avg_days_to_sell <= 3 ? 'bg-emerald-500' : 'bg-stone-400'}`} 
+                                                    style={{ width: `${Math.min(100, (3 / Math.max(1, v.avg_days_to_sell)) * 100)}%` }} 
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
-                                            <div className="h-full bg-stone-400 rounded-full" style={{ width: `${Math.min(100, (3 / v.avg_days_to_sell) * 100)}%` }} />
-                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="py-8 text-center">
+                                        <p className="text-xs text-stone-400 italic">Awaiting recent sales velocity.</p>
                                     </div>
-                                ))
-                            ) : (
-                                <p className="text-[10px] text-stone-400 italic">No activity yet.</p>
-                            )}
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-stone-100/80 text-[10px] text-stone-400 font-medium">
+                            Faster turnaround indicates high market demand
+                        </div>
+                    </div>
+
+                    {/* Card 3: Slow-Moving Items */}
+                    <div className="bg-white p-5 rounded-2xl shadow-2xs border border-stone-200/80 flex flex-col justify-between min-h-[340px]">
+                        <div>
+                            <div className="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
+                                <div>
+                                    <h3 className="text-base font-bold text-stone-900 leading-none">Slow Movers</h3>
+                                    <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">Items with 0 orders in 30+ days</p>
+                                </div>
+                                <div className="h-8 w-8 rounded-xl bg-stone-100 border border-stone-200/70 flex items-center justify-center text-stone-600 shrink-0">
+                                    <Package size={15} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2.5">
+                                {slowMovers.length > 0 ? (
+                                    slowMovers.slice(0, 3).map((p, i) => (
+                                        <div key={i} className="flex items-center justify-between text-xs bg-stone-50/60 p-2.5 rounded-xl border border-stone-100/80 hover:bg-white hover:shadow-xs hover:border-stone-200 transition-all duration-200">
+                                            <div className="min-w-0 pr-2">
+                                                <p className="font-bold text-stone-900 truncate max-w-[140px] text-xs">{p.name}</p>
+                                                <p className="text-[10px] text-stone-400 font-medium mt-0.5">Inactive {Number(p.days_inactive || 0).toFixed(0)} days</p>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-200/60">
+                                                    {p.stock} units
+                                                </span>
+                                                <Link href={route('products.index')} className="p-1 bg-white border border-stone-200/80 rounded-lg text-stone-500 hover:bg-stone-50 hover:text-stone-800 transition-colors shadow-2xs">
+                                                    <ArrowUpRight size={11} />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="py-8 text-center">
+                                        <p className="text-xs text-stone-400 italic">All catalog items have healthy customer demand!</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-stone-100/80 text-[10px] text-stone-400 font-medium">
+                            Consider bundling or discounting stagnant items
                         </div>
                     </div>
                 </div>

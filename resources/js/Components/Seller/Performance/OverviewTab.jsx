@@ -1,5 +1,5 @@
 /* global route */
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import KPICard from '@/Components/KPICard';
 import StaggerContainer from '@/Components/StaggerContainer';
 import ContentTransition from '@/Components/ContentTransition';
@@ -7,11 +7,9 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import ArtisanSkeleton from '@/Components/Consumer/ArtisanSkeleton';
 import {
     Package,
-    Activity,
     DollarSign,
     TrendingUp,
-    Star,
-    Users
+    Star
 } from 'lucide-react';
 import {
     AreaChart,
@@ -36,6 +34,20 @@ const formatPeso = (value) => {
     return `₱${num.toLocaleString()}`;
 };
 
+const formatYAxisPeso = (value) => {
+    const num = Number(value || 0);
+    if (num === 0) return '₱0';
+    const abs = Math.abs(num);
+    const sign = num < 0 ? '-' : '';
+    if (abs >= 1000000) {
+        return `${sign}₱${(abs / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
+    }
+    if (abs >= 10000) {
+        return `${sign}₱${(abs / 1000).toFixed(0)}k`;
+    }
+    return `${sign}₱${abs.toLocaleString()}`;
+};
+
 export default function OverviewTab({
     isLoading,
     metrics,
@@ -46,7 +58,6 @@ export default function OverviewTab({
     setChartFilter,
     currentChartData,
     categoryData,
-    updateCategoryFilter,
 }) {
     const pieData = useMemo(() => {
         if (!categoryData) return [];
@@ -54,16 +65,6 @@ export default function OverviewTab({
         if (active.length > 0) return active;
         return [{ category: 'No Sales', value: 1, isEmpty: true }];
     }, [categoryData]);
-    const [activeCardIndex, setActiveCardIndex] = useState(0);
-
-    const handleCardScroll = (e) => {
-        const scrollLeft = e.currentTarget.scrollLeft;
-        const width = e.currentTarget.getBoundingClientRect().width;
-        if (width > 0) {
-            const index = Math.round(scrollLeft / width);
-            setActiveCardIndex(index);
-        }
-    };
 
     return (
         <div className="space-y-6">
@@ -145,16 +146,31 @@ export default function OverviewTab({
                                 <h3 className="text-base font-bold text-stone-900 leading-none">Revenue Trend</h3>
                                 <p className="text-xs text-stone-500 mt-1 font-medium">Income over time ({chartFilter.toLowerCase()} view)</p>
                             </div>
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-clay-50 text-clay-700 border border-clay-200/50">
-                                {chartFilter}
-                            </span>
+                            {setChartFilter && (
+                                <div className="flex items-center bg-stone-100 p-0.5 rounded-xl border border-stone-200/60">
+                                    {['Monthly', 'Yearly'].map((filter) => (
+                                        <button
+                                            key={filter}
+                                            type="button"
+                                            onClick={() => setChartFilter(filter)}
+                                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                                chartFilter === filter
+                                                    ? 'bg-white text-stone-900 shadow-2xs border border-stone-200/60'
+                                                    : 'text-stone-500 hover:text-stone-800'
+                                            }`}
+                                        >
+                                            {filter}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <div className="h-64 min-h-[250px] w-full min-w-0">
                             {currentChartData.length > 0 ? (
                                 <div className="h-full w-full">
                                     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                                        <AreaChart data={currentChartData} margin={{ top: 10, right: 10, left: -20, bottom: 15 }}>
+                                        <AreaChart data={currentChartData} margin={{ top: 10, right: 15, left: 10, bottom: 15 }}>
                                             <defs>
                                                 <linearGradient id="colorRevenueScreen" x1="0" y1="0" x2="0" y2="1">
                                                     <stop offset="5%" stopColor="#c07251" stopOpacity={0.15} />
@@ -163,7 +179,7 @@ export default function OverviewTab({
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
                                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} dy={10} />
-                                            <YAxis width={48} axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} tickFormatter={(val) => formatPeso(val)} />
+                                            <YAxis width={56} axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 11 }} tickFormatter={(val) => formatYAxisPeso(val)} />
                                             <RechartsTooltip
                                                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                                                 formatter={(value) => formatPeso(value)}
@@ -210,8 +226,6 @@ export default function OverviewTab({
                                         paddingAngle={pieData.length > 1 ? 4 : 0}
                                         dataKey="value"
                                         stroke="none"
-                                        onClick={(data) => updateCategoryFilter && updateCategoryFilter(data.category || data.name)}
-                                        className="cursor-pointer"
                                     >
                                         {pieData.map((entry, index) => {
                                             const originalIndex = categoryData.findIndex(c => c.category === entry.category);

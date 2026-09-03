@@ -5,8 +5,8 @@ export default function PrintReportHeatmap({ salesHeatmap = [] }) {
     const heatmapList = Array.isArray(salesHeatmap) ? salesHeatmap : [];
 
     return (
-        <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex flex-col justify-between">
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
+        <div className="w-full bg-white p-4 rounded-xl border border-stone-200 flex flex-col justify-between print-card">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-3">
                 <div>
                     <h3 className="text-base font-bold text-stone-900 leading-none">Peak Activity Heatmap</h3>
                     <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">When your customers are most likely to buy</p>
