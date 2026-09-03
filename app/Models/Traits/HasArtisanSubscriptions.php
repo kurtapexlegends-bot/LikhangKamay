@@ -37,7 +37,12 @@ trait HasArtisanSubscriptions
 
     public function hasAcceptedComplianceTerms(string $type = 'seller_terms'): bool
     {
-        return $this->complianceAgreements()->where('document_type', $type)->exists();
+        // An approved artisan who completed onboarding has already accepted seller terms
+        if ($this->isApproved() && $this->setup_completed_at !== null) {
+            return true;
+        }
+
+        return rescue(fn () => $this->complianceAgreements()->where('document_type', $type)->exists(), false);
     }
 
     public function canAccessDashboard(): bool

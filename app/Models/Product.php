@@ -465,9 +465,9 @@ class Product extends Model
      */
     public function scopeB2BSupplies($query)
     {
-        return $query->where('is_b2b_supply', true)
-            ->where('status', 'Active')
-            ->where('stock', '>', 0);
+        return $query->where('products.is_b2b_supply', true)
+            ->where('products.status', 'Active')
+            ->where('products.stock', '>', 0);
     }
 
     /**

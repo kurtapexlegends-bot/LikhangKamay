@@ -463,6 +463,9 @@ class StaffAttendanceService
 
         foreach ($sessions as $session) {
             $lastSignOfLife = $session->clock_in_at;
+            if (!$lastSignOfLife) {
+                continue;
+            }
             if ($session->last_heartbeat_at && $session->last_heartbeat_at->gt($lastSignOfLife)) {
                 $lastSignOfLife = $session->last_heartbeat_at;
             }
@@ -471,7 +474,7 @@ class StaffAttendanceService
             }
 
             $minutesSilent = $lastSignOfLife->diffInMinutes($now);
-            $isPastDay = $session->attendance_date->lt($now->toDateString());
+            $isPastDay = $session->attendance_date ? $session->attendance_date->lt($now->toDateString()) : false;
 
             if ($minutesSilent >= $timeoutMinutes || ($isPastDay && $minutesSilent >= 60)) {
                 // Retroactively cap at last sign of life + 15 minutes

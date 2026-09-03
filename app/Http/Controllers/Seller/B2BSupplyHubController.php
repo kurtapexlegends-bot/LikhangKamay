@@ -54,9 +54,36 @@ class B2BSupplyHubController extends Controller
             abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
         }
 
-        $catalogData = $this->fetchB2BCatalog->execute($request, $actor);
+        try {
+            $catalogData = $this->fetchB2BCatalog->execute($request, $actor);
+            return Inertia::render('Seller/SupplyHub/Index', $catalogData);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('B2BSupplyHubController index error: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
 
-        return Inertia::render('Seller/SupplyHub/Index', $catalogData);
+            return Inertia::render('Seller/SupplyHub/Index', [
+                'supplies' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 12),
+                'categories' => self::SUPPLY_CATEGORIES,
+                'categoryCounts' => [],
+                'availableLocations' => [],
+                'locationCounts' => [],
+                'myPublishedCount' => 0,
+                'activeOrdersCount' => 0,
+                'wholesaleSalesCount' => 0,
+                'cart' => (array) Session::get('cart', []),
+                'filters' => [
+                    'search' => '',
+                    'category' => 'All',
+                    'price_min' => '',
+                    'price_max' => '',
+                    'locations' => '',
+                    'has_wholesale' => false,
+                    'moq_tier' => 'all',
+                    'sort' => 'newest',
+                ],
+            ]);
+        }
     }
 
     /**

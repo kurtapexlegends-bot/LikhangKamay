@@ -36,33 +36,71 @@ class HRController extends Controller
         $seller = $this->sellerOwner();
         $actor = $this->sellerActor();
 
-        $activePeriod = HRWorkflowHelper::resolveActivePeriod($request);
-        $employees = HRWorkflowHelper::getEmployeesWithAttendance($seller, $attendanceService, $activePeriod);
+        try {
+            $activePeriod = HRWorkflowHelper::resolveActivePeriod($request);
+            $employees = rescue(fn() => HRWorkflowHelper::getEmployeesWithAttendance($seller, $attendanceService, $activePeriod), collect());
 
-        $payrolls = Payroll::with('requester:id,name')
-            ->where('user_id', $seller->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            $payrolls = rescue(fn() => Payroll::with('requester:id,name')
+                ->where('user_id', $seller->id)
+                ->orderBy('created_at', 'desc')
+                ->paginate(10), new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10));
 
-        $supportsProvisioning = HRWorkflowHelper::supportsStaffProvisioningSchema();
-        $canEditHrRecords = HRWorkflowHelper::canEditHrRecords($actor);
-        $recentAccessAudits = HRWorkflowHelper::getRecentAccessAudits($seller);
+            $supportsProvisioning = HRWorkflowHelper::supportsStaffProvisioningSchema();
+            $canEditHrRecords = HRWorkflowHelper::canEditHrRecords($actor);
+            $recentAccessAudits = rescue(fn() => HRWorkflowHelper::getRecentAccessAudits($seller), []);
 
-        $locations = rescue(fn() => \App\Models\SellerLocation::where('user_id', $seller->id)->get(), collect());
+            $locations = rescue(fn() => \App\Models\SellerLocation::where('user_id', $seller->id)->get(), collect());
 
-        return Inertia::render('Seller/HR/HR', [
-            'staff' => $employees,
-            'payrolls' => $payrolls,
-            'locations' => $locations,
-            'staffAccessAudits' => $recentAccessAudits,
-            'sellerSettings' => HRWorkflowHelper::buildSellerSettings($seller, $activePeriod),
-            'staffProvisioning' => HRWorkflowHelper::buildStaffProvisioningData(
-                $actor,
-                $entitlementService,
-                $supportsProvisioning,
-                $canEditHrRecords
-            ),
-        ]);
+            return Inertia::render('Seller/HR/HR', [
+                'staff' => $employees,
+                'payrolls' => $payrolls,
+                'locations' => $locations,
+                'staffAccessAudits' => $recentAccessAudits,
+                'sellerSettings' => HRWorkflowHelper::buildSellerSettings($seller, $activePeriod),
+                'staffProvisioning' => HRWorkflowHelper::buildStaffProvisioningData(
+                    $actor,
+                    $entitlementService,
+                    $supportsProvisioning,
+                    $canEditHrRecords
+                ),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('HRController index error: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
+
+            return Inertia::render('Seller/HR/HR', [
+                'staff' => collect(),
+                'payrolls' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10),
+                'locations' => collect(),
+                'staffAccessAudits' => [],
+                'sellerSettings' => [
+                    'overtime_rate' => 50.00,
+                    'overtime_multiplier' => 1.25,
+                    'payroll_factor_method' => 'custom',
+                    'rest_day_ot_multiplier' => 1.69,
+                    'holiday_ot_multiplier' => 2.60,
+                    'payroll_working_days' => 22,
+                    'standard_workday_hours' => 8.00,
+                    'shift_start_time' => '08:00',
+                    'shift_end_time' => '17:00',
+                    'grace_period_minutes' => 15,
+                    'break_window_start' => '11:30',
+                    'break_window_end' => '13:30',
+                    'break_allowance_minutes' => 60,
+                    'attendance_month_label' => now()->format('F Y'),
+                    'attendance_month_value' => now()->format('Y-m'),
+                    'created_at' => now()->toIso8601String(),
+                ],
+                'staffProvisioning' => [
+                    'supportsProvisioning' => false,
+                    'canManageStaff' => false,
+                    'rolePresets' => [],
+                    'modules' => [],
+                    'permissionLevels' => [],
+                ],
+            ]);
+        }
     }
 
     public function store(

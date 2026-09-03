@@ -163,12 +163,12 @@ class FetchB2BCatalog
                 'stock' => (int) $product->stock,
                 'img' => $product->img,
                 'seller' => [
-                    'id' => $product->user->id,
-                    'name' => $product->user->name,
-                    'shop_name' => $product->user->shop_name ?: $product->user->name,
-                    'city' => $product->user->city ?? 'Cavite',
+                    'id' => $product->user?->id ?? 0,
+                    'name' => $product->user?->name ?? 'Artisan Studio',
+                    'shop_name' => $product->user?->shop_name ?: ($product->user?->name ?? 'Artisan Studio'),
+                    'city' => $product->user?->city ?? 'Cavite',
                     'is_verified' => $product->user ? $product->user->isArtisan() : true,
-                    'avatar' => $product->user->avatar_url ?? null,
+                    'avatar' => $product->user?->avatar_url ?? null,
                 ],
                 'vehicle_preview' => $vehicleInfo,
             ];
@@ -176,11 +176,11 @@ class FetchB2BCatalog
 
         // Cached Global Facet Aggregations (60s TTL)
         [$categoryCounts, $availableLocations, $locationCounts] = Cache::remember('b2b_supply_facets_v2', 60, function () {
-            $rawCategoryCounts = Product::b2bSupplies()
-                ->selectRaw('category, count(*) as count')
-                ->groupBy('category')
+            $rawCategoryCounts = rescue(fn() => Product::b2bSupplies()
+                ->selectRaw('products.category, count(*) as count')
+                ->groupBy('products.category')
                 ->pluck('count', 'category')
-                ->toArray();
+                ->toArray(), []);
 
             $catCounts = [];
             foreach (self::SUPPLY_CATEGORIES as $cat) {
@@ -188,29 +188,29 @@ class FetchB2BCatalog
                 $catCounts[$cat] = (int) ($rawCategoryCounts[$cat] ?? 0);
             }
 
-            $cities = Product::b2bSupplies()
+            $cities = rescue(fn() => Product::b2bSupplies()
                 ->join('users', 'products.user_id', '=', 'users.id')
                 ->whereNotNull('users.city')
-                ->selectRaw('users.city, count(*) as count')
+                ->selectRaw('users.city as city_name, count(*) as count')
                 ->groupBy('users.city')
-                ->pluck('count', 'city')
-                ->toArray();
+                ->pluck('count', 'city_name')
+                ->toArray(), []);
 
             return [$catCounts, array_keys($cities), $cities];
         });
 
-        $myPublishedCount = Product::where('user_id', $actor->id)
+        $myPublishedCount = rescue(fn() => Product::where('user_id', $actor->id)
             ->where('is_b2b_supply', true)
-            ->count();
+            ->count(), 0);
 
-        $activeOrdersCount = Order::where('user_id', $actor->id)
+        $activeOrdersCount = rescue(fn() => Order::where('user_id', $actor->id)
             ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
-            ->count();
+            ->count(), 0);
 
-        $wholesaleSalesCount = Order::where('artisan_id', $actor->id)
+        $wholesaleSalesCount = rescue(fn() => Order::where('artisan_id', $actor->id)
             ->whereHas('items', fn($q) => $q->where('is_b2b_supply', true))
             ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
-            ->count();
+            ->count(), 0);
 
         return [
             'supplies' => $supplies,
