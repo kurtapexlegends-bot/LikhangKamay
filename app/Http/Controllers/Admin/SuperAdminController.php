@@ -208,8 +208,35 @@ class SuperAdminController extends Controller
                 'artisans' => $artisans,
             ]);
         } catch (\Throwable $e) {
-            Log::error("SuperAdmin UserManager error: " . $e->getMessage());
-            return back()->with('error', 'Error loading user manager.');
+            Log::error("SuperAdmin UserManager error: " . $e->getMessage(), [
+                'exception' => $e
+            ]);
+
+            return Inertia::render('Admin/Users/UserManager', [
+                'users' => [
+                    'data' => [],
+                    'total' => 0,
+                    'per_page' => 10,
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'links' => [],
+                ],
+                'filters' => [
+                    'role' => $request->get('role', 'all'),
+                    'search' => trim((string) $request->get('search', '')),
+                    'tab' => $request->get('tab', 'directory'),
+                    'status' => $request->get('status', 'all'),
+                    'verification' => $request->get('verification', 'all'),
+                    'start_date' => $request->get('start_date'),
+                    'end_date' => $request->get('end_date'),
+                ],
+                'unlinkedStaffGroup' => [
+                    'staff_members' => [],
+                    'staff_count' => 0,
+                ],
+                'artisans' => [],
+                'load_error' => 'Unable to load accounts at this moment: ' . $e->getMessage(),
+            ]);
         }
     }
 
@@ -245,7 +272,13 @@ class SuperAdminController extends Controller
                 'phone_number' => $user->phone_number,
                 'city' => $user->city,
                 'barangay' => $user->barangay,
-                'address' => StructuredAddress::formatPhilippineAddress(['street_address' => $user->street_address, 'barangay' => $user->barangay, 'city' => $user->city, 'region' => $user->region, 'postal_code' => $user->zip_code]),
+                'address' => rescue(fn() => StructuredAddress::formatPhilippineAddress([
+                    'street_address' => $user->street_address,
+                    'barangay' => $user->barangay,
+                    'city' => $user->city,
+                    'region' => $user->region,
+                    'postal_code' => $user->zip_code
+                ]), $user->street_address ?? 'N/A'),
                 'region' => $user->region,
                 'business_permit' => \App\Services\StorageUrl::url($user->business_permit),
                 'dti_registration' => \App\Services\StorageUrl::url($user->dti_registration),
@@ -254,8 +287,8 @@ class SuperAdminController extends Controller
                 'payout_method' => $user->payout_method,
                 'payout_account_name' => $user->payout_account_name,
                 'payout_account_number' => $user->payout_account_number,
-                'submitted_at' => $user->setup_completed_at->format('M d, Y h:i A'),
-                'raw_submitted_at' => $user->setup_completed_at->toIso8601String(),
+                'submitted_at' => $user->setup_completed_at?->format('M d, Y h:i A') ?? 'N/A',
+                'raw_submitted_at' => $user->setup_completed_at?->toIso8601String(),
                 'viewed_documents' => $this->getViewedArtisanDocumentKeys($user->id),
                 'viewed_document_keys' => $this->getViewedArtisanDocumentKeys($user->id),
             ]);
@@ -545,7 +578,7 @@ class SuperAdminController extends Controller
             'shop_name' => $user->shop_name,
             'account_state' => $state,
             'account_state_tone' => $tone,
-            'created_at' => $user->created_at->format('M d, Y'),
+            'created_at' => $user->created_at?->format('M d, Y') ?? 'N/A',
             'avatar' => $user->avatar,
             'avatar_url' => $user->avatar_url,
             'premium_tier' => $user->premium_tier,
@@ -566,7 +599,7 @@ class SuperAdminController extends Controller
             'is_warned' => $user->isWarned(),
             'is_banned' => $user->isBanned(),
             'days_remaining_suspension' => $user->daysRemainingSuspension(),
-            'disciplinary_logs' => $user->disciplinaryLogs()->with('admin:id,name')->take(10)->get()->map(fn($log) => [
+            'disciplinary_logs' => rescue(fn() => $user->disciplinaryLogs()->with('admin:id,name')->take(10)->get()->map(fn($log) => [
                 'id' => $log->id,
                 'action_type' => $log->action_type,
                 'reason' => $log->reason,
@@ -574,7 +607,7 @@ class SuperAdminController extends Controller
                 'suspended_until' => $log->suspended_until?->format('M d, Y'),
                 'created_at' => $log->created_at?->format('M d, Y h:i A'),
                 'admin_name' => $log->admin?->name ?? 'System Admin',
-            ]),
+            ]), collect([])),
         ];
     }
 

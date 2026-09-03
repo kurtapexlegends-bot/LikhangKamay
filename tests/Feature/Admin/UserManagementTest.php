@@ -277,6 +277,26 @@ class UserManagementTest extends TestCase
             );
     }
 
+    public function test_super_admin_users_page_handles_null_created_at_resiliently(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $userWithNullCreated = User::factory()->create();
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $userWithNullCreated->id)
+            ->update(['created_at' => null]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.manager'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Users/UserManager')
+                ->where('users.data', function ($users) use ($userWithNullCreated) {
+                    $row = collect($users)->firstWhere('id', $userWithNullCreated->id);
+                    return $row !== null && $row['created_at'] === 'N/A';
+                })
+            );
+    }
+
     private function createEmployee(User $owner, string $name): Employee
     {
         return Employee::create([

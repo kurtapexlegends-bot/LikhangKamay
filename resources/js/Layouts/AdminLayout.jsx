@@ -42,14 +42,27 @@ const MotionLink = motion(Link);
 
 const GROUPS_STORAGE_KEY = 'admin_sidebar_expanded_groups_v1';
 
-const isTabActive = (routeName, tabName = null) => {
+const isTabActive = (routeName, tabName = null, currentUrl = '') => {
     if (typeof window === 'undefined') {
         return route().current(routeName);
     }
     const isCurrentRoute = route().current(routeName);
     if (!isCurrentRoute) return false;
     if (!tabName) return true;
-    const currentTab = new URLSearchParams(window.location.search).get('tab');
+
+    let currentTab = null;
+    if (currentUrl) {
+        try {
+            const parsed = new URL(currentUrl, window.location.origin);
+            currentTab = parsed.searchParams.get('tab');
+        } catch {
+            currentTab = null;
+        }
+    }
+    if (!currentTab) {
+        currentTab = new URLSearchParams(window.location.search).get('tab');
+    }
+
     const defaultTabMap = {
         'admin.users.manager': 'directory',
         'admin.compliance': 'flags',
@@ -112,6 +125,7 @@ export default function AdminLayout({ title, children }) {
         activeDisputesCount, 
         auth 
     } = usePage().props;
+    const { url } = usePage();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState(() => getInitialExpandedGroups());
@@ -167,29 +181,29 @@ export default function AdminLayout({ title, children }) {
         }));
     };
 
-    const navigationGroups = [
+    const navigationGroups = useMemo(() => [
         {
             title: 'Operations Hub',
             items: [
-                { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: isTabActive('admin.dashboard') },
-                { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: isTabActive('admin.insights') },
-                { name: 'Monetization', href: route('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, current: isTabActive('admin.settings.index', 'monetization') },
+                { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: isTabActive('admin.dashboard', null, url) },
+                { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: isTabActive('admin.insights', null, url) },
+                { name: 'Monetization', href: route('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, current: isTabActive('admin.settings.index', 'monetization', url) },
                 { name: 'Payouts', href: route('admin.payouts.index'), icon: CreditCard, current: route().current('admin.payouts.*') },
             ]
         },
         {
             title: 'Marketplace',
             items: [
-                { name: 'User Directory', href: route('admin.users.manager', { tab: 'directory' }), icon: Users, current: isTabActive('admin.users.manager', 'directory') },
+                { name: 'User Directory', href: route('admin.users.manager', { tab: 'directory' }), icon: Users, current: isTabActive('admin.users.manager', 'directory', url) },
                 {
                     name: 'Artisan Applications',
                     href: route('admin.users.manager', { tab: 'approvals' }),
                     icon: Award,
-                    current: isTabActive('admin.users.manager', 'approvals'),
+                    current: isTabActive('admin.users.manager', 'approvals', url),
                     badge: pendingArtisanCount > 0 ? pendingArtisanCount : null
                 },
-                { name: 'Product Approvals', href: route('admin.catalog.index', { tab: 'moderation' }), icon: ShoppingBag, current: isTabActive('admin.catalog.index', 'moderation') },
-                { name: 'Sponsorships', href: route('admin.catalog.index', { tab: 'sponsorships' }), icon: Star, current: isTabActive('admin.catalog.index', 'sponsorships') },
+                { name: 'Product Approvals', href: route('admin.catalog.index', { tab: 'moderation' }), icon: ShoppingBag, current: isTabActive('admin.catalog.index', 'moderation', url) },
+                { name: 'Sponsorships', href: route('admin.catalog.index', { tab: 'sponsorships' }), icon: Star, current: isTabActive('admin.catalog.index', 'sponsorships', url) },
             ]
         },
         {
@@ -214,10 +228,10 @@ export default function AdminLayout({ title, children }) {
         {
             title: 'System Settings',
             items: [
-                { name: 'System Config', href: route('admin.settings.index'), icon: Settings, current: isTabActive('admin.settings.index') && !isTabActive('admin.settings.index', 'monetization') },
+                { name: 'System Config', href: route('admin.settings.index'), icon: Settings, current: isTabActive('admin.settings.index', null, url) && !isTabActive('admin.settings.index', 'monetization', url) },
             ]
         }
-    ];
+    ], [url, pendingArtisanCount, pendingComplianceCount, activeDisputesCount]);
 
     const activeItem = useMemo(() => {
         return navigationGroups

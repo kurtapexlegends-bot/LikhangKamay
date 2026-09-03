@@ -36,10 +36,9 @@ class StorageUrl
         $publicDriver = (string) config('filesystems.disks.public.driver', 'local');
         $disk = ($defaultDisk === 's3' || $publicDriver === 's3') ? 's3' : 'public';
 
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $adapter */
-        $adapter = Storage::disk($disk);
-
         try {
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $adapter */
+            $adapter = Storage::disk($disk);
             return $adapter->url($cleanPath);
         } catch (\Throwable $e) {
             return asset('storage/' . ltrim($cleanPath, '/'));

@@ -16,7 +16,7 @@ import ArtisanApprovalsTab from '@/Components/Admin/Users/ArtisanApprovalsTab';
 import DisciplinaryActionModal from '@/Components/Admin/DisciplinaryActionModal';
 import { getAutoExpandedRows } from '@/utils/userManagerHelpers';
 
-export default function UserManager({ users, filters, unlinkedStaffGroup = null, artisans }) {
+export default function UserManager({ users, filters, unlinkedStaffGroup = null, artisans, load_error = null }) {
     const { addToast } = useToast();
     const { pendingArtisanCount, url } = usePage().props;
 
@@ -30,20 +30,20 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
     // =========================================================================
     // STATE & LOGIC: USER DIRECTORY
     // =========================================================================
-    const [search, setSearch] = useState(filters.search || '');
+    const [search, setSearch] = useState(filters?.search || '');
     const [quickView, setQuickView] = useState('all');
     const [statusToggleTarget, setStatusToggleTarget] = useState(null);
     const [disciplinaryTarget, setDisciplinaryTarget] = useState(null);
     const [drawerArtisan, setDrawerArtisan] = useState(null);
     const [expandedRows, setExpandedRows] = useState(() =>
-        filters.search ? getAutoExpandedRows(users.data || []) : {}
+        filters?.search ? getAutoExpandedRows(users?.data || []) : {}
     );
     const deferredSearch = useDeferredValue(search);
 
     const searchTimeoutRef = useRef(null);
 
     useEffect(() => {
-        const visibleRowIds = new Set((users.data || []).map((account) => String(account.id)));
+        const visibleRowIds = new Set((users?.data || []).map((account) => String(account.id)));
         setExpandedRows((currentRows) => {
             const nextRows = Object.fromEntries(
                 Object.entries(currentRows).filter(([accountId]) => visibleRowIds.has(accountId))
@@ -166,13 +166,13 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
         }
     };
 
-    const visibleNestedStaffCount = (users.data || []).reduce(
+    const visibleNestedStaffCount = (users?.data || []).reduce(
         (total, account) => total + (account.staff_members?.length || 0),
         0
     ) + (unlinkedStaffGroup?.staff_members?.length || 0);
 
     const filteredAccounts = useMemo(() => {
-        const accountRows = users.data || [];
+        const accountRows = users?.data || [];
         if (quickView === 'all') return accountRows;
 
         return accountRows.filter((account) => {
@@ -188,11 +188,16 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
             }
             return true;
         });
-    }, [quickView, users.data]);
+    }, [quickView, users?.data]);
 
     return (
         <>
             <div className="space-y-6">
+                {load_error && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
+                        <span>{load_error}</span>
+                    </div>
+                )}
 
                 <AnimatePresence mode="wait">
                     <motion.div
@@ -215,7 +220,7 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                                     quickView={quickView}
                                     setQuickView={setQuickView}
                                     visibleNestedStaffCount={visibleNestedStaffCount}
-                                    usersTotal={users.total}
+                                    usersTotal={users?.total || 0}
                                     deferredSearch={deferredSearch}
                                 />
                                 <UserTable
