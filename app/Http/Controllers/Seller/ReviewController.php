@@ -9,6 +9,7 @@ use App\Models\ReviewDispute;
 use App\Services\StorageUrl;
 use App\Support\RichTextSanitizer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
@@ -207,8 +208,8 @@ class ReviewController extends Controller
         }
 
         Review::where('product_id', $review->product_id)
-            ->where('is_pinned', true)
-            ->update(['is_pinned' => false]);
+            ->where('is_pinned', DB::raw('true'))
+            ->update(['is_pinned' => DB::raw('false')]);
 
         $review->update(['is_pinned' => true]);
 

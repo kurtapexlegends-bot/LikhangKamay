@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Employee;
 use App\Mail\StaffClockInOtpMail;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
@@ -81,7 +82,7 @@ class StaffAttendanceService
             if (!$sellerLocation) {
                 // Fallback to seller owner's first active location
                 $sellerLocation = \App\Models\SellerLocation::where('user_id', $staff->getEffectiveSellerId())
-                    ->where('is_active', true)
+                    ->where('is_active', DB::raw('true'))
                     ->first();
             }
 
@@ -121,7 +122,7 @@ class StaffAttendanceService
             Cache::forget($cacheKey);
         } elseif (!empty($payload['workplace_pin'])) {
             $staff->loadMissing('employee.assignedLocation');
-            $targetLocation = $staff->employee?->assignedLocation ?: \App\Models\SellerLocation::where('user_id', $staff->getEffectiveSellerId())->where('is_active', true)->first();
+            $targetLocation = $staff->employee?->assignedLocation ?: \App\Models\SellerLocation::where('user_id', $staff->getEffectiveSellerId())->where('is_active', DB::raw('true'))->first();
             $expectedPin = $targetLocation?->getOrGenerateDailyPin();
 
             if ($expectedPin && trim((string)$payload['workplace_pin']) !== trim((string)$expectedPin)) {
@@ -704,7 +705,7 @@ class StaffAttendanceService
         $assignedLocation = $staff->employee?->assignedLocation;
         if (!$assignedLocation) {
             $assignedLocation = \App\Models\SellerLocation::where('user_id', $staff->getEffectiveSellerId())
-                ->where('is_active', true)
+                ->where('is_active', DB::raw('true'))
                 ->first();
         }
 

@@ -20,6 +20,7 @@ use App\Services\StorageUrl;
 use App\Support\OrderWorkflowHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -103,7 +104,7 @@ class B2BSupplyHubController extends Controller
             ->count();
 
         $wholesaleSalesCount = Order::where('artisan_id', $actor->id)
-            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', true))
+            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
             ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
             ->count();
 
@@ -192,7 +193,7 @@ class B2BSupplyHubController extends Controller
         }
 
         $myPublishedCount = Product::where('user_id', $actor->id)
-            ->where('is_b2b_supply', true)
+            ->where('is_b2b_supply', DB::raw('true'))
             ->count();
 
         $activeOrdersCount = Order::where('user_id', $actor->id)
@@ -228,7 +229,7 @@ class B2BSupplyHubController extends Controller
         }
 
         $myPublishedCount = Product::where('user_id', $actor->id)
-            ->where('is_b2b_supply', true)
+            ->where('is_b2b_supply', DB::raw('true'))
             ->count();
 
         $activeOrdersCount = Order::where('user_id', $actor->id)
@@ -319,11 +320,11 @@ class B2BSupplyHubController extends Controller
         $deliveredOrdersCount = (int) ($statusCounts->delivered_count ?? 0);
 
         $myPublishedCount = Product::where('user_id', $actor->id)
-            ->where('is_b2b_supply', true)
+            ->where('is_b2b_supply', DB::raw('true'))
             ->count();
 
         $wholesaleSalesCount = Order::where('artisan_id', $actor->id)
-            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', true))
+            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
             ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
             ->count();
 
@@ -378,7 +379,7 @@ class B2BSupplyHubController extends Controller
         $query = Order::with(['items.product', 'user', 'delivery'])
             ->where('artisan_id', $actor->id)
             ->whereHas('items', function ($iq) {
-                $iq->where('is_b2b_supply', true);
+                $iq->where('is_b2b_supply', DB::raw('true'));
             })
             ->latest();
 
@@ -457,7 +458,7 @@ class B2BSupplyHubController extends Controller
         });
 
         $statusCounts = Order::where('artisan_id', $actor->id)
-            ->whereHas('items', fn($iq) => $iq->where('is_b2b_supply', true))
+            ->whereHas('items', fn($iq) => $iq->where('is_b2b_supply', DB::raw('true')))
             ->selectRaw("
                 SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending_count,
                 SUM(CASE WHEN status IN ('Accepted', 'Processing') THEN 1 ELSE 0 END) as processing_count,
@@ -467,7 +468,7 @@ class B2BSupplyHubController extends Controller
             ->first();
 
         $myPublishedCount = Product::where('user_id', $actor->id)
-            ->where('is_b2b_supply', true)
+            ->where('is_b2b_supply', DB::raw('true'))
             ->count();
 
         $inboundOrdersCount = Order::where('user_id', $actor->id)

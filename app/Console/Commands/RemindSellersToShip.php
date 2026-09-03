@@ -20,7 +20,7 @@ class RemindSellersToShip extends Command
 
         // Find orders: Accepted, older than 3 days, reminder NOT sent
         $orders = \App\Models\Order::where('status', 'Accepted')
-            ->where('shipment_reminder_sent', false)
+            ->where('shipment_reminder_sent', \Illuminate\Support\Facades\DB::raw('false'))
             ->where('accepted_at', '<', now()->subDays(3))
             ->get();
 

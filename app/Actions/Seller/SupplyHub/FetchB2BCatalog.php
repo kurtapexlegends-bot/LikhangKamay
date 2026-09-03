@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\VehicleTypeResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 
 class FetchB2BCatalog
@@ -200,7 +201,7 @@ class FetchB2BCatalog
         });
 
         $myPublishedCount = rescue(fn() => Product::where('user_id', $actor->id)
-            ->where('is_b2b_supply', true)
+            ->where('is_b2b_supply', DB::raw('true'))
             ->count(), 0);
 
         $activeOrdersCount = rescue(fn() => Order::where('user_id', $actor->id)
@@ -208,7 +209,7 @@ class FetchB2BCatalog
             ->count(), 0);
 
         $wholesaleSalesCount = rescue(fn() => Order::where('artisan_id', $actor->id)
-            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', true))
+            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
             ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
             ->count(), 0);
 

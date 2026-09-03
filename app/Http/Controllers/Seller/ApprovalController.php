@@ -8,6 +8,7 @@ use App\Models\OwnerApproval;
 use App\Services\OwnerApprovalService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,17 +32,41 @@ class ApprovalController extends Controller
         $filters = $request->only(['status', 'domain', 'search']);
         $filters['status'] = $filters['status'] ?? OwnerApproval::STATUS_PENDING;
 
-        $approvals = $approvalService->getPaginatedApprovals($seller, $filters, 12);
-        $stats = $approvalService->getStats($seller);
+        try {
+            $approvals = $approvalService->getPaginatedApprovals($seller, $filters, 12);
+            $stats = $approvalService->getStats($seller);
 
-        return Inertia::render('Seller/Approvals/ApprovalManager', [
-            'approvals' => $approvals,
-            'stats' => $stats,
-            'pendingCount' => $stats['pending_count'],
-            'filters' => $filters,
-            'isElite' => $seller->isEliteTier(),
-            'isPremium' => $seller->isPremiumTier(),
-        ]);
+            return Inertia::render('Seller/Approvals/ApprovalManager', [
+                'approvals' => $approvals,
+                'stats' => $stats,
+                'pendingCount' => $stats['pending_count'],
+                'filters' => $filters,
+                'isElite' => $seller->isEliteTier(),
+                'isPremium' => $seller->isPremiumTier(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('ApprovalController index error: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
+
+            $emptyPaginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 12);
+            $emptyStats = [
+                'pending_count' => 0,
+                'approved_count' => 0,
+                'declined_count' => 0,
+                'active_staff_count' => 0,
+            ];
+
+            return Inertia::render('Seller/Approvals/ApprovalManager', [
+                'approvals' => $emptyPaginator,
+                'stats' => $emptyStats,
+                'pendingCount' => 0,
+                'filters' => $filters,
+                'isElite' => $seller->isEliteTier(),
+                'isPremium' => $seller->isPremiumTier(),
+                'load_error' => 'Unable to load approvals at this moment.',
+            ]);
+        }
     }
 
     /**

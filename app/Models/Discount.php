@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Discount extends Model
 {
@@ -49,7 +50,7 @@ class Discount extends Model
     public function scopeActive($query)
     {
         $now = now();
-        return $query->where('is_active', true)
+        return $query->where('is_active', DB::raw('true'))
                     ->where('start_at', '<=', $now)
                     ->where('end_at', '>=', $now)
                     ->where(function ($q) {

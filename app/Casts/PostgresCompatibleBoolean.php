@@ -43,11 +43,6 @@ class PostgresCompatibleBoolean implements CastsAttributes
      */
     public static function dbVal(bool $value): mixed
     {
-        try {
-            $isPg = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql';
-            return $isPg ? ($value ? 'true' : 'false') : ($value ? 1 : 0);
-        } catch (\Throwable $e) {
-            return $value;
-        }
+        return \Illuminate\Support\Facades\DB::raw($value ? 'true' : 'false');
     }
 }

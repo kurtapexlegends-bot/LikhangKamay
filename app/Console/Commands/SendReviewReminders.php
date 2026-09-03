@@ -20,7 +20,7 @@ class SendReviewReminders extends Command
 
         // Find orders: Completed, older than 3 days, reminder NOT sent
         $orders = \App\Models\Order::where('status', 'Completed')
-            ->where('review_reminder_sent', false)
+            ->where('review_reminder_sent', \Illuminate\Support\Facades\DB::raw('false'))
             ->where('updated_at', '<', now()->subDays(3))
             ->with('user')
             ->get();

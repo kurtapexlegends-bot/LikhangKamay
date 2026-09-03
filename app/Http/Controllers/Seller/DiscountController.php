@@ -35,66 +35,97 @@ class DiscountController extends Controller
     {
         $sellerId = $this->sellerOwnerId();
         $now = now();
-
-        $query = Discount::where('user_id', $sellerId)
-            ->with(['products:id,name,price,sku,cover_photo_path,status']);
-
         $statusFilter = $request->query('status', 'ongoing');
 
-        if ($statusFilter === 'ongoing') {
-            $query->where('is_active', true)
-                  ->where('start_at', '<=', $now)
-                  ->where('end_at', '>=', $now);
-        } elseif ($statusFilter === 'upcoming') {
-            $query->where('is_active', true)
-                  ->where('start_at', '>', $now);
-        } elseif ($statusFilter === 'expired') {
-            $query->where(function ($q) use ($now) {
-                $q->where('is_active', false)
-                  ->orWhere('end_at', '<', $now);
-            });
-        }
+        try {
+            $query = Discount::where('user_id', $sellerId)
+                ->with(['products:id,name,price,sku,cover_photo_path,status']);
 
-        $discounts = $query->latest()->paginate(15)->withQueryString();
+            if ($statusFilter === 'ongoing') {
+                $query->where('is_active', \Illuminate\Support\Facades\DB::raw('true'))
+                      ->where('start_at', '<=', $now)
+                      ->where('end_at', '>=', $now);
+            } elseif ($statusFilter === 'upcoming') {
+                $query->where('is_active', \Illuminate\Support\Facades\DB::raw('true'))
+                      ->where('start_at', '>', $now);
+            } elseif ($statusFilter === 'expired') {
+                $query->where(function ($q) use ($now) {
+                    $q->where('is_active', \Illuminate\Support\Facades\DB::raw('false'))
+                      ->orWhere('end_at', '<', $now);
+                });
+            }
 
-        $stats = [
-            'ongoing_count' => Discount::where('user_id', $sellerId)->active()->count(),
-            'upcoming_count' => Discount::where('user_id', $sellerId)->where('is_active', true)->where('start_at', '>', $now)->count(),
-            'expired_count' => Discount::where('user_id', $sellerId)->where(function ($q) use ($now) {
-                $q->where('is_active', false)->orWhere('end_at', '<', $now);
-            })->count(),
-            'total_promo_sold' => (int) Discount::where('user_id', $sellerId)->sum('promo_sold'),
-        ];
+            $discounts = $query->latest()->paginate(15)->withQueryString();
 
-        if ($request->wantsJson() && !$request->header('X-Inertia')) {
-            return response()->json([
-                'success' => true,
+            $stats = [
+                'ongoing_count' => rescue(fn() => Discount::where('user_id', $sellerId)->active()->count(), 0),
+                'upcoming_count' => rescue(fn() => Discount::where('user_id', $sellerId)->where('is_active', \Illuminate\Support\Facades\DB::raw('true'))->where('start_at', '>', $now)->count(), 0),
+                'expired_count' => rescue(fn() => Discount::where('user_id', $sellerId)->where(function ($q) use ($now) {
+                    $q->where('is_active', \Illuminate\Support\Facades\DB::raw('false'))->orWhere('end_at', '<', $now);
+                })->count(), 0),
+                'total_promo_sold' => (int) rescue(fn() => Discount::where('user_id', $sellerId)->sum('promo_sold'), 0),
+            ];
+
+            if ($request->wantsJson() && !$request->header('X-Inertia')) {
+                return response()->json([
+                    'success' => true,
+                    'discounts' => $discounts,
+                    'stats' => $stats,
+                ]);
+            }
+
+            $products = Product::where('user_id', $sellerId)
+                ->select('id', 'name', 'price', 'sku', 'cover_photo_path', 'stock', 'status')
+                ->latest()
+                ->get()
+                ->map(fn($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'price' => (float) $p->price,
+                    'sku' => $p->sku,
+                    'stock' => (int) $p->stock,
+                    'img' => $p->cover_photo_path ? (str_starts_with($p->cover_photo_path, 'http') ? $p->cover_photo_path : "/storage/{$p->cover_photo_path}") : '/images/no-image.png',
+                ]);
+
+            return Inertia::render('Seller/Marketing/DiscountManager', [
                 'discounts' => $discounts,
                 'stats' => $stats,
+                'filters' => [
+                    'status' => $statusFilter,
+                ],
+                'products' => $products,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('DiscountController index error: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
+
+            $emptyPaginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 15);
+            $emptyStats = [
+                'ongoing_count' => 0,
+                'upcoming_count' => 0,
+                'expired_count' => 0,
+                'total_promo_sold' => 0,
+            ];
+
+            if ($request->wantsJson() && !$request->header('X-Inertia')) {
+                return response()->json([
+                    'success' => false,
+                    'discounts' => $emptyPaginator,
+                    'stats' => $emptyStats,
+                ]);
+            }
+
+            return Inertia::render('Seller/Marketing/DiscountManager', [
+                'discounts' => $emptyPaginator,
+                'stats' => $emptyStats,
+                'filters' => [
+                    'status' => $statusFilter,
+                ],
+                'products' => collect(),
+                'load_error' => 'Unable to load discounts at this moment.',
             ]);
         }
-
-        $products = Product::where('user_id', $sellerId)
-            ->select('id', 'name', 'price', 'sku', 'cover_photo_path', 'stock', 'status')
-            ->latest()
-            ->get()
-            ->map(fn($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'price' => (float) $p->price,
-                'sku' => $p->sku,
-                'stock' => (int) $p->stock,
-                'img' => $p->cover_photo_path ? (str_starts_with($p->cover_photo_path, 'http') ? $p->cover_photo_path : "/storage/{$p->cover_photo_path}") : '/images/no-image.png',
-            ]);
-
-        return Inertia::render('Seller/Marketing/DiscountManager', [
-            'discounts' => $discounts,
-            'stats' => $stats,
-            'filters' => [
-                'status' => $statusFilter,
-            ],
-            'products' => $products,
-        ]);
     }
 
     /**

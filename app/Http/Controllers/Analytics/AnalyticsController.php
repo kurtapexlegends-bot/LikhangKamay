@@ -52,7 +52,7 @@ class AnalyticsController extends Controller
 
         $canViewSponsorshipAnalytics = $seller->isEliteTier();
         $sponsorshipAnalytics = $canViewSponsorshipAnalytics
-            ? \Illuminate\Support\Facades\Cache::remember("seller_sponsorship_analytics_{$sellerId}", 300, fn() => $sponsorshipAnalyticsService->getSellerAnalytics($sellerId))
+            ? rescue(fn() => \Illuminate\Support\Facades\Cache::remember("seller_sponsorship_analytics_{$sellerId}", 300, fn() => $sponsorshipAnalyticsService->getSellerAnalytics($sellerId)), null)
             : null;
 
         $canViewRevenue = $request->user()->hasStaffCapability(User::CAP_VIEW_REVENUE);

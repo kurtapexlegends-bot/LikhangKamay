@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 use App\Traits\Searchable;
 use App\Traits\HasTransformableImages;
@@ -465,7 +466,7 @@ class Product extends Model
      */
     public function scopeB2BSupplies($query)
     {
-        return $query->where('products.is_b2b_supply', true)
+        return $query->where('products.is_b2b_supply', DB::raw('true'))
             ->where('products.status', 'Active')
             ->where('products.stock', '>', 0);
     }

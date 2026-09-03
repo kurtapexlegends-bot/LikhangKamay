@@ -28,9 +28,9 @@ class SellerLocation extends Model
         'latitude' => 'float',
         'longitude' => 'float',
         'radius_meters' => 'integer',
-        'enforce_strict_geofence' => 'boolean',
+        'enforce_strict_geofence' => \App\Casts\PostgresCompatibleBoolean::class,
         'daily_pin_updated_at' => 'datetime',
-        'is_active' => 'boolean',
+        'is_active' => \App\Casts\PostgresCompatibleBoolean::class,
     ];
 
     public function getOrGenerateDailyPin(): string

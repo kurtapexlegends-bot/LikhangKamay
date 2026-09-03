@@ -16,6 +16,7 @@ use App\Support\HRWorkflowHelper;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 
 class OwnerApprovalService
@@ -253,6 +254,14 @@ class OwnerApprovalService
     }
 
     /**
+     * Check whether the owner_approvals table exists in the connected database.
+     */
+    public function supportsOwnerApprovals(): bool
+    {
+        return rescue(fn () => Schema::hasTable('owner_approvals'), false);
+    }
+
+    /**
      * Get aggregate executive KPI statistics for the approvals dashboard.
      *
      * @return array{
@@ -264,30 +273,39 @@ class OwnerApprovalService
      */
     public function getStats(User $seller): array
     {
-        $pendingCount = OwnerApproval::query()
+        $activeStaffCount = rescue(fn() => $seller->staffMembers()->count(), 0);
+        if ($activeStaffCount === 0) {
+            $activeStaffCount = rescue(fn() => Employee::query()
+                ->where('user_id', $seller->id)
+                ->where('status', 'active')
+                ->count(), 0);
+        }
+
+        if (!$this->supportsOwnerApprovals()) {
+            return [
+                'pending_count' => 0,
+                'approved_count' => 0,
+                'declined_count' => 0,
+                'active_staff_count' => $activeStaffCount,
+            ];
+        }
+
+        $pendingCount = rescue(fn() => OwnerApproval::query()
             ->where('seller_id', $seller->id)
             ->where('status', OwnerApproval::STATUS_PENDING)
-            ->count();
+            ->count(), 0);
 
-        $approvedCount = OwnerApproval::query()
+        $approvedCount = rescue(fn() => OwnerApproval::query()
             ->where('seller_id', $seller->id)
             ->where('status', OwnerApproval::STATUS_APPROVED)
             ->where('reviewed_at', '>=', now()->subDays(30))
-            ->count();
+            ->count(), 0);
 
-        $declinedCount = OwnerApproval::query()
+        $declinedCount = rescue(fn() => OwnerApproval::query()
             ->where('seller_id', $seller->id)
             ->where('status', OwnerApproval::STATUS_REJECTED)
             ->where('reviewed_at', '>=', now()->subDays(30))
-            ->count();
-
-        $activeStaffCount = $seller->staffMembers()->count();
-        if ($activeStaffCount === 0) {
-            $activeStaffCount = Employee::query()
-                ->where('user_id', $seller->id)
-                ->where('status', 'active')
-                ->count();
-        }
+            ->count(), 0);
 
         return [
             'pending_count' => $pendingCount,
@@ -302,10 +320,14 @@ class OwnerApprovalService
      */
     public function getPendingCount(User $seller): int
     {
-        return OwnerApproval::query()
+        if (!$this->supportsOwnerApprovals()) {
+            return 0;
+        }
+
+        return rescue(fn() => OwnerApproval::query()
             ->where('seller_id', $seller->id)
             ->where('status', OwnerApproval::STATUS_PENDING)
-            ->count();
+            ->count(), 0);
     }
 
     /**
@@ -315,31 +337,40 @@ class OwnerApprovalService
      */
     public function getPaginatedApprovals(User $seller, array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = OwnerApproval::query()
-            ->with(['requester:id,name,email,role', 'reviewer:id,name,email,role'])
-            ->where('seller_id', $seller->id);
+        if (!$this->supportsOwnerApprovals()) {
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage);
+        }
 
-        if (!empty($filters['status'])) {
-            if ($filters['status'] === 'reviewed') {
-                $query->whereIn('status', [OwnerApproval::STATUS_APPROVED, OwnerApproval::STATUS_REJECTED]);
-            } elseif (in_array($filters['status'], [OwnerApproval::STATUS_PENDING, OwnerApproval::STATUS_APPROVED, OwnerApproval::STATUS_REJECTED], true)) {
-                $query->where('status', $filters['status']);
+        try {
+            $query = OwnerApproval::query()
+                ->with(['requester:id,name,email,role', 'reviewer:id,name,email,role'])
+                ->where('seller_id', $seller->id);
+
+            if (!empty($filters['status'])) {
+                if ($filters['status'] === 'reviewed') {
+                    $query->whereIn('status', [OwnerApproval::STATUS_APPROVED, OwnerApproval::STATUS_REJECTED]);
+                } elseif (in_array($filters['status'], [OwnerApproval::STATUS_PENDING, OwnerApproval::STATUS_APPROVED, OwnerApproval::STATUS_REJECTED], true)) {
+                    $query->where('status', $filters['status']);
+                }
             }
-        }
 
-        if (!empty($filters['domain'])) {
-            $query->where('domain', $filters['domain']);
-        }
+            if (!empty($filters['domain'])) {
+                $query->where('domain', $filters['domain']);
+            }
 
-        if (!empty($filters['search'])) {
-            $search = '%' . trim((string)$filters['search']) . '%';
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', $search)
-                  ->orWhere('summary', 'like', $search);
-            });
-        }
+            if (!empty($filters['search'])) {
+                $search = '%' . trim((string)$filters['search']) . '%';
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', $search)
+                      ->orWhere('summary', 'like', $search);
+                });
+            }
 
-        return $query->latest()->paginate($perPage)->withQueryString();
+            return $query->latest()->paginate($perPage)->withQueryString();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('OwnerApprovalService getPaginatedApprovals fallback: ' . $e->getMessage());
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage);
+        }
     }
 
     /**
@@ -377,7 +408,7 @@ class OwnerApprovalService
                 } elseif (!empty($payload['discount_id'])) {
                     Discount::where('id', $payload['discount_id'])
                         ->where('user_id', $approval->seller_id)
-                        ->update(['is_active' => true]);
+                        ->update(['is_active' => DB::raw('true')]);
                 }
                 break;
 

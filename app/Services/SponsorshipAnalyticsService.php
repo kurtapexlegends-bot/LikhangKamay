@@ -108,21 +108,25 @@ class SponsorshipAnalyticsService
 
         $sponsoredOrders = 0;
         $sponsoredRevenue = 0.0;
-        $sponsoredOrderQuery = OrderItem::query()
-            ->where('was_sponsored', true)
-            ->whereHas('order', function ($query) use ($sellerId) {
-                $query->where('artisan_id', $sellerId)
-                    ->where('status', 'Completed');
-            });
+        if ($this->hasSponsoredOrderSnapshotSupport()) {
+            rescue(function () use ($sellerId, &$sponsoredOrders, &$sponsoredRevenue) {
+                $sponsoredOrderQuery = OrderItem::query()
+                    ->where('was_sponsored', DB::raw('true'))
+                    ->whereHas('order', function ($query) use ($sellerId) {
+                        $query->where('artisan_id', $sellerId)
+                            ->where('status', 'Completed');
+                    });
 
-        $sponsoredOrders = (clone $sponsoredOrderQuery)->distinct()->count('order_id');
-        $sponsoredRevenue = (float) ((clone $sponsoredOrderQuery)
-            ->selectRaw('SUM(price * quantity) as revenue')
-            ->value('revenue') ?? 0);
+                $sponsoredOrders = (clone $sponsoredOrderQuery)->distinct()->count('order_id');
+                $sponsoredRevenue = (float) ((clone $sponsoredOrderQuery)
+                    ->selectRaw('SUM(price * quantity) as revenue')
+                    ->value('revenue') ?? 0);
+            });
+        }
 
         $chartData = [
-            'daily' => $this->buildDailySeries($sellerId),
-            'monthly' => $this->buildMonthlySeries($sellerId),
+            'daily' => rescue(fn() => $this->buildDailySeries($sellerId), []),
+            'monthly' => rescue(fn() => $this->buildMonthlySeries($sellerId), []),
         ];
         $hasActivity = $impressions > 0
             || $clicks > 0
@@ -171,17 +175,17 @@ class SponsorshipAnalyticsService
 
         $orderRows = collect();
         if ($this->hasSponsoredOrderSnapshotSupport()) {
-            $orderRows = OrderItem::query()
+            $orderRows = rescue(fn() => OrderItem::query()
                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
                 ->where('orders.artisan_id', $sellerId)
                 ->where('orders.status', 'Completed')
-                ->where('order_items.was_sponsored', true)
+                ->where('order_items.was_sponsored', DB::raw('true'))
                 ->where('orders.created_at', '>=', $startDate)
                 ->selectRaw($this->dateExpression('orders.created_at') . " as period, COUNT(DISTINCT orders.id) as sponsored_orders, SUM(order_items.price * order_items.quantity) as sponsored_revenue")
                 ->groupByRaw($this->dateExpression('orders.created_at'))
                 ->orderByRaw($this->dateExpression('orders.created_at'))
                 ->get()
-                ->keyBy('period');
+                ->keyBy('period'), collect());
         }
 
         $rows = [];
@@ -214,29 +218,29 @@ class SponsorshipAnalyticsService
 
         $eventRows = collect();
         if ($this->hasSponsorshipEventsTable()) {
-            $eventRows = SponsorshipEvent::query()
+            $eventRows = rescue(fn() => SponsorshipEvent::query()
                 ->where('seller_id', $sellerId)
                 ->where('occurred_at', '>=', $startMonth)
                 ->selectRaw("{$monthExpr} as period, SUM(CASE WHEN event_type = 'impression' THEN 1 ELSE 0 END) as impressions, SUM(CASE WHEN event_type = 'click' THEN 1 ELSE 0 END) as clicks")
                 ->groupByRaw($monthExpr)
                 ->orderByRaw($monthExpr)
                 ->get()
-                ->keyBy('period');
+                ->keyBy('period'), collect());
         }
 
         $orderRows = collect();
         if ($this->hasSponsoredOrderSnapshotSupport()) {
-            $orderRows = OrderItem::query()
+            $orderRows = rescue(fn() => OrderItem::query()
                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
                 ->where('orders.artisan_id', $sellerId)
                 ->where('orders.status', 'Completed')
-                ->where('order_items.was_sponsored', true)
+                ->where('order_items.was_sponsored', DB::raw('true'))
                 ->where('orders.created_at', '>=', $startMonth)
                 ->selectRaw($this->yearMonthExpression('orders.created_at') . " as period, COUNT(DISTINCT orders.id) as sponsored_orders, SUM(order_items.price * order_items.quantity) as sponsored_revenue")
                 ->groupByRaw($this->yearMonthExpression('orders.created_at'))
                 ->orderByRaw($this->yearMonthExpression('orders.created_at'))
                 ->get()
-                ->keyBy('period');
+                ->keyBy('period'), collect());
         }
 
         $rows = [];
@@ -279,12 +283,12 @@ class SponsorshipAnalyticsService
 
     private function hasSponsorshipEventsTable(): bool
     {
-        return Schema::hasTable('sponsorship_events');
+        return rescue(fn() => Schema::hasTable('sponsorship_events'), false);
     }
 
     private function hasSponsoredOrderSnapshotSupport(): bool
     {
-        return Schema::hasTable('order_items')
-            && Schema::hasColumn('order_items', 'was_sponsored');
+        return rescue(fn() => Schema::hasTable('order_items')
+            && Schema::hasColumn('order_items', 'was_sponsored'), false);
     }
 }
