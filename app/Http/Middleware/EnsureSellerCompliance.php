@@ -20,7 +20,7 @@ class EnsureSellerCompliance
         // Only enforce for sellers/artisans
         if ($user && $user->isArtisan()) {
             if (!$user->hasAcceptedComplianceTerms('seller_terms')) {
-                if ($user->isApproved() && $user->setup_completed_at !== null) {
+                if ($user->isApproved()) {
                     // Backfill compliance agreement for existing approved artisans
                     rescue(fn () => $user->complianceAgreements()->updateOrCreate(
                         ['document_type' => 'seller_terms'],

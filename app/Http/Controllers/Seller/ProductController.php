@@ -41,73 +41,95 @@ class ProductController extends Controller
         /** @var \App\Models\User $seller */
         $seller = $this->sellerOwner();
 
-        $query = Product::where('user_id', $seller->id)
-            ->select([
-                'id', 'sku', 'name', 'description', 'category', 'status',
-                'clay_type', 'glaze_type', 'firing_method', 'food_safe', 'colors',
-                'height', 'width', 'weight', 'price', 'cost_price', 'stock',
-                'lead_time', 'sold', 'cover_photo_path', 'gallery_paths', 'model_3d_path',
-                'track_as_supply', 'production_method', 'rejection_reason', 'created_at', 'updated_at',
-            ])
-            ->with(['recipes.supply', 'discounts'])
-            ->withCount(['resubmissions as monthly_resubmission_count' => function ($q) {
-                $q->whereYear('created_at', now()->year)
-                  ->whereMonth('created_at', now()->month);
-            }]);
+        try {
+            $query = Product::where('user_id', $seller->id)
+                ->select([
+                    'id', 'sku', 'name', 'description', 'category', 'status',
+                    'clay_type', 'glaze_type', 'firing_method', 'food_safe', 'colors',
+                    'height', 'width', 'weight', 'price', 'cost_price', 'stock',
+                    'lead_time', 'sold', 'cover_photo_path', 'gallery_paths', 'model_3d_path',
+                    'track_as_supply', 'production_method', 'rejection_reason', 'created_at', 'updated_at',
+                ])
+                ->with(['recipes.supply', 'discounts'])
+                ->withCount(['resubmissions as monthly_resubmission_count' => function ($q) {
+                    $q->whereYear('created_at', now()->year)
+                      ->whereMonth('created_at', now()->month);
+                }]);
 
-        if ($request->filled('search')) {
-            $query->search($request->search, ['name', 'sku', 'category', 'description']);
-        }
-
-        if ($request->filled('status') && $request->status !== 'All') {
-            if ($request->status === 'Low Stock') {
-                $query->where('stock', '<', 10)->where('status', '!=', 'Archived');
-            } else {
-                $statusMap = [
-                    'Pending Review' => 'pending_review',
-                    'Rejected' => 'rejected',
-                    'Flagged' => 'flagged',
-                ];
-                $dbStatus = $statusMap[$request->status] ?? $request->status;
-                $query->where('status', $dbStatus);
+            if ($request->filled('search')) {
+                $query->search($request->search, ['name', 'sku', 'category', 'description']);
             }
+
+            if ($request->filled('status') && $request->status !== 'All') {
+                if ($request->status === 'Low Stock') {
+                    $query->where('stock', '<', 10)->where('status', '!=', 'Archived');
+                } else {
+                    $statusMap = [
+                        'Pending Review' => 'pending_review',
+                        'Rejected' => 'rejected',
+                        'Flagged' => 'flagged',
+                    ];
+                    $dbStatus = $statusMap[$request->status] ?? $request->status;
+                    $query->where('status', $dbStatus);
+                }
+            }
+
+            $sortKey = $request->input('sort_key', 'created_at');
+            $sortDir = $request->input('sort_dir', 'desc');
+            
+            $allowedSortKeys = ['name', 'price', 'stock', 'sold', 'created_at', 'sku'];
+            if (in_array($sortKey, $allowedSortKeys)) {
+                $query->orderBy($sortKey, $sortDir);
+            } else {
+                $query->orderBy('created_at', 'desc');
+            }
+
+            $paginator = $query->paginate(20)->withQueryString();
+
+            $paginator->through(fn (Product $product) => new SellerProductResource($product));
+
+            return Inertia::render('Seller/Catalog/ProductManager', [
+                'products' => $paginator,
+                'categories' => rescue(fn() => \App\Models\Category::pluck('name')->toArray(), []),
+                'supplies' => rescue(fn() => Supply::where('user_id', $seller->id)->where('category', '!=', 'Finished Goods')->get(), collect()),
+                'subscription' => [
+                    'plan' => $seller->premium_tier,
+                    'activeCount' => rescue(fn() => $seller->products()->where('status', 'Active')->count(), 0),
+                    'limit' => $seller->getActiveProductLimit(),
+                ],
+                'metrics' => [
+                    'lowStockCount' => rescue(fn() => $seller->products()->where('stock', '<', 10)->where('status', '!=', 'Archived')->count(), 0),
+                    'incompleteDraftCount' => rescue(fn() => $seller->products()->where('status', 'Draft')
+                        ->where(function($q) {
+                            $q->whereNull('cover_photo_path')
+                              ->orWhereNull('model_3d_path')
+                              ->orWhere(function($sq) {
+                                  $sq->whereJsonLength('gallery_paths', '<', 3);
+                              });
+                        })->count(), 0),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ProductController index error: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
+
+            return Inertia::render('Seller/Catalog/ProductManager', [
+                'products' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20),
+                'categories' => [],
+                'supplies' => collect(),
+                'subscription' => [
+                    'plan' => $seller->premium_tier,
+                    'activeCount' => 0,
+                    'limit' => $seller->getActiveProductLimit(),
+                ],
+                'metrics' => [
+                    'lowStockCount' => 0,
+                    'incompleteDraftCount' => 0,
+                ],
+                'load_error' => 'Unable to load products at this moment.',
+            ]);
         }
-
-        $sortKey = $request->input('sort_key', 'created_at');
-        $sortDir = $request->input('sort_dir', 'desc');
-        
-        $allowedSortKeys = ['name', 'price', 'stock', 'sold', 'created_at', 'sku'];
-        if (in_array($sortKey, $allowedSortKeys)) {
-            $query->orderBy($sortKey, $sortDir);
-        } else {
-            $query->orderBy('created_at', 'desc');
-        }
-
-        $paginator = $query->paginate(20)->withQueryString();
-
-        $paginator->through(fn (Product $product) => new SellerProductResource($product));
-
-        return Inertia::render('Seller/Catalog/ProductManager', [
-            'products' => $paginator,
-            'categories' => \App\Models\Category::pluck('name')->toArray(),
-            'supplies' => Supply::where('user_id', $seller->id)->where('category', '!=', 'Finished Goods')->get(),
-            'subscription' => [
-                'plan' => $seller->premium_tier,
-                'activeCount' => $seller->products()->where('status', 'Active')->count(),
-                'limit' => $seller->getActiveProductLimit(),
-            ],
-            'metrics' => [
-                'lowStockCount' => $seller->products()->where('stock', '<', 10)->where('status', '!=', 'Archived')->count(),
-                'incompleteDraftCount' => $seller->products()->where('status', 'Draft')
-                    ->where(function($q) {
-                        $q->whereNull('cover_photo_path')
-                          ->orWhereNull('model_3d_path')
-                          ->orWhere(function($sq) {
-                              $sq->whereJsonLength('gallery_paths', '<', 3);
-                          });
-                    })->count(),
-            ],
-        ]);
     }
 
     public function store(Request $request, CreateProduct $createProduct, ThreeDAssetService $threeDAssetService)

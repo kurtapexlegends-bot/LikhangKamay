@@ -271,6 +271,34 @@ export default function StaffTable({
         return filteredStaff.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     }, [filteredStaff, currentPage, itemsPerPage]);
 
+    const hasActiveFilters = Boolean(
+        searchTerm || 
+        statusFilter !== 'all' || 
+        entitlementFilter !== 'all' || 
+        startDateFilter || 
+        endDateFilter
+    );
+
+    const emptyStateProps = useMemo(() => {
+        if (hasActiveFilters) {
+            return {
+                title: 'No staff match your filter',
+                description: 'Try adjusting your search criteria or resetting filters to find what you are looking for.',
+                actionLabel: 'Reset Filters',
+                onAction: handleClearFilters,
+            };
+        }
+
+        return {
+            title: 'No employees added yet',
+            description: canEditHrRecords 
+                ? 'Get started by adding your first studio employee to manage attendance, shift hours, and payroll.' 
+                : 'No employees are registered in the studio directory yet.',
+            actionLabel: canEditHrRecords && onAddClick ? 'Add Employee' : undefined,
+            onAction: canEditHrRecords && onAddClick ? onAddClick : undefined,
+        };
+    }, [hasActiveFilters, canEditHrRecords, onAddClick]);
+
     const filterFieldsGrid = (
         <div className="space-y-3 text-left">
             {/* 1. Date Range Section */}

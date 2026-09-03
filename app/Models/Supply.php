@@ -10,6 +10,37 @@ class Supply extends Model
 {
     use SoftDeletes;
 
+    protected static ?bool $hasDeletedAtColumn = null;
+
+    public static function supportsSoftDeletes(): bool
+    {
+        if (static::$hasDeletedAtColumn === null) {
+            try {
+                static::$hasDeletedAtColumn = \Illuminate\Support\Facades\Schema::hasColumn('supplies', 'deleted_at');
+            } catch (\Throwable $e) {
+                static::$hasDeletedAtColumn = false;
+            }
+        }
+
+        return (bool) static::$hasDeletedAtColumn;
+    }
+
+    public static function bootSoftDeletes()
+    {
+        if (static::supportsSoftDeletes()) {
+            static::addGlobalScope(new \Illuminate\Database\Eloquent\SoftDeletingScope);
+        }
+    }
+
+    protected function runSoftDelete()
+    {
+        if (!static::supportsSoftDeletes()) {
+            return $this->performDeleteOnModel();
+        }
+
+        return parent::runSoftDelete();
+    }
+
     public const CATEGORIES = [
         'Raw Clay & Slips',
         'Glazes & Oxides',

@@ -35,34 +35,64 @@ class ProcurementController extends Controller
         $actor = $this->sellerActor();
         $sellerId = $this->sellerOwnerId();
 
-        $supplies = Supply::forUser($sellerId)
-            ->with('product')
-            ->orderBy('category')
-            ->orderBy('name')
-            ->get();
+        try {
+            $supplies = Supply::forUser($sellerId)
+                ->with('product')
+                ->orderBy('category')
+                ->orderBy('name')
+                ->get();
 
-        $categories = $supplies->pluck('category')->unique()->values();
+            $categories = $supplies->pluck('category')->unique()->values();
 
-        $requests = StockRequest::with('supply')
-            ->where('user_id', $sellerId)
-            ->whereNotIn('status', [StockRequest::STATUS_COMPLETED, StockRequest::STATUS_REJECTED])
-            ->latest()
-            ->get();
+            $requests = rescue(fn() => StockRequest::with('supply')
+                ->where('user_id', $sellerId)
+                ->whereNotIn('status', [StockRequest::STATUS_COMPLETED, StockRequest::STATUS_REJECTED])
+                ->latest()
+                ->get(), collect());
 
-        $finances = $this->accountingLedgerService->getProcurementFinancialSummary($sellerId, $actor);
+            $finances = rescue(fn() => $this->accountingLedgerService->getProcurementFinancialSummary($sellerId, $actor), [
+                'current_funds' => 0,
+                'available_funds' => 0,
+                'allocated_funds' => 0,
+                'pending_funds' => 0,
+            ]);
 
-        return Inertia::render('Seller/Procurement/Index', [
-            'supplies' => $supplies,
-            'requests' => $requests,
-            'finances' => $finances,
-            'totalItems' => $supplies->count(),
-            'lowStockItems' => $supplies->filter(fn(Supply $s) => $s->isLowStock())->count(),
-            'totalValue' => $supplies->sum(fn($s) => $s->quantity * ($s->unit_cost ?? 0)),
-            'categories' => $categories,
-            'availableCategories' => Supply::CATEGORIES,
-            'availableUnits' => Supply::UNITS,
-            'initTab' => request('tab', 'inventory'),
-        ]);
+            return Inertia::render('Seller/Procurement/Index', [
+                'supplies' => $supplies,
+                'requests' => $requests,
+                'finances' => $finances,
+                'totalItems' => $supplies->count(),
+                'lowStockItems' => $supplies->filter(fn(Supply $s) => $s->isLowStock())->count(),
+                'totalValue' => $supplies->sum(fn($s) => $s->quantity * ($s->unit_cost ?? 0)),
+                'categories' => $categories,
+                'availableCategories' => Supply::CATEGORIES,
+                'availableUnits' => Supply::UNITS,
+                'initTab' => request('tab', 'inventory'),
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ProcurementController index error: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
+
+            return Inertia::render('Seller/Procurement/Index', [
+                'supplies' => collect(),
+                'requests' => collect(),
+                'finances' => [
+                    'current_funds' => 0,
+                    'available_funds' => 0,
+                    'allocated_funds' => 0,
+                    'pending_funds' => 0,
+                ],
+                'totalItems' => 0,
+                'lowStockItems' => 0,
+                'totalValue' => 0,
+                'categories' => collect(),
+                'availableCategories' => Supply::CATEGORIES,
+                'availableUnits' => Supply::UNITS,
+                'initTab' => request('tab', 'inventory'),
+                'load_error' => 'Unable to load inventory data at this moment.',
+            ]);
+        }
     }
 
     /**

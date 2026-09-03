@@ -37,8 +37,8 @@ trait HasArtisanSubscriptions
 
     public function hasAcceptedComplianceTerms(string $type = 'seller_terms'): bool
     {
-        // An approved artisan who completed onboarding has already accepted seller terms
-        if ($this->isApproved() && $this->setup_completed_at !== null) {
+        // An approved artisan has already satisfied seller compliance
+        if ($this->isApproved()) {
             return true;
         }
 
