@@ -148,12 +148,12 @@ export default function SourcingOrders({
 
     return (
         <>
-            <Head title="Inbound Material Orders - Supply Hub" />
+            <Head title="Supplies Ordered - Supply Hub" />
             <SellerHeader
                 title="Supply Hub"
-                subtitle="Track and manage inbound material shipments and verify delivery from peer workshops."
+                subtitle="Track and manage shipments of workshop supplies ordered from peer studios."
                 onMenuClick={openSidebar}
-                badge={{ label: 'Wholesale Supplies', iconColor: 'text-clay-500' }}
+                badge={{ label: 'Supplies Ordered', iconColor: 'text-clay-500' }}
             />
 
             <div className="p-3 sm:p-6 lg:p-8 space-y-3 sm:space-y-4 lg:space-y-6 pb-12">
@@ -192,7 +192,7 @@ export default function SourcingOrders({
                                 href={route('seller.supply-hub.orders')}
                                 className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 bg-white text-clay-800 shadow-xs font-black"
                             >
-                                <span>Material Purchases</span>
+                                <span>Supplies Ordered</span>
                                 {activeOrdersCount > 0 && (
                                     <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-clay-600 text-white">
                                         {activeOrdersCount}
@@ -204,7 +204,7 @@ export default function SourcingOrders({
                                 href={route('seller.supply-hub.sales')}
                                 className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
                             >
-                                <span>Wholesale Sales</span>
+                                <span>Supplies Sold</span>
                                 {wholesaleSalesCount > 0 && (
                                     <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-stone-200 text-stone-600">
                                         {wholesaleSalesCount}
@@ -296,7 +296,7 @@ export default function SourcingOrders({
                                 type="text"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Search purchases or materials..."
+                                placeholder="Search ordered supplies..."
                                 className="w-full rounded-xl border border-stone-200 bg-stone-50/50 py-1.5 pl-9 pr-8 text-xs font-medium text-stone-800 placeholder-stone-400 focus:bg-white focus:border-clay-500 focus:ring-1 focus:ring-clay-500"
                             />
                             {searchTerm && (
@@ -356,7 +356,7 @@ export default function SourcingOrders({
                                                 {order.date}
                                             </span>
                                             <span className="inline-flex items-center gap-1 rounded-full bg-clay-100 px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-clay-800">
-                                                Material Inbound
+                                                Workshop Supplies
                                             </span>
                                         </div>
 
@@ -686,9 +686,9 @@ export default function SourcingOrders({
                 ) : (
                     <div className="rounded-2xl border border-stone-200 bg-white p-12 text-center space-y-3 shadow-2xs">
                         <Package size={40} className="mx-auto text-stone-300" />
-                        <h4 className="font-bold text-stone-900 text-sm">No Inbound Sourcing Orders Found</h4>
+                        <h4 className="font-bold text-stone-900 text-sm">No Ordered Supplies Found</h4>
                         <p className="text-xs text-stone-500 max-w-sm mx-auto">
-                            You have no inbound raw material orders matching this filter. Browse peer artisan supplies to restock your studio with clay, timber, or glazes.
+                            You have no supply orders matching this filter. Browse peer artisan supplies to restock your studio with clay, timber, or glazes.
                         </p>
                         <Link
                             href={route('seller.supply-hub.index')}

@@ -396,13 +396,13 @@ export default function OrderFilterPanel({
                         <Link
                             href={route("seller.supply-hub.sales")}
                             className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
-                            title="Wholesale material orders are in the Supply Hub"
+                            title="Orders for your workshop supplies are managed in the Supply Hub"
                         >
                             <Info size={16} />
                         </Link>
                         <div className="pointer-events-none absolute left-0 top-full mt-1.5 hidden w-56 rounded-xl border border-stone-800 bg-stone-900 px-3 py-2 text-[11px] font-medium text-stone-200 shadow-xl group-hover:block z-30">
-                            <span className="font-bold text-white block mb-0.5">Wholesale Orders</span>
-                            Orders placed by peer artisans for raw supplies are managed in the Supply Hub &rarr;
+                            <span className="font-bold text-white block mb-0.5">Supplies Sold (Supply Hub)</span>
+                            Orders placed by peer artisans for your workshop supplies are managed in the Supply Hub &rarr;
                         </div>
                     </div>
 

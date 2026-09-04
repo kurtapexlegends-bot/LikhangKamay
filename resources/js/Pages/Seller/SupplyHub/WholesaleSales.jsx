@@ -149,12 +149,12 @@ export default function WholesaleSales({
 
     return (
         <>
-            <Head title="Wholesale Sales Orders - Supply Hub" />
+            <Head title="Supplies Sold - Supply Hub" />
             <SellerHeader
                 title="Supply Hub"
-                subtitle="Fulfill wholesale raw materials and supplies ordered by peer artisan studios."
+                subtitle="Fulfill workshop supplies ordered by peer artisan studios."
                 onMenuClick={openSidebar}
-                badge={{ label: 'Wholesale Supplies', iconColor: 'text-clay-500' }}
+                badge={{ label: 'Supplies Sold', iconColor: 'text-clay-500' }}
             />
 
             <div className="p-3 sm:p-6 lg:p-8 space-y-3 sm:space-y-4 lg:space-y-6 pb-12">
@@ -193,7 +193,7 @@ export default function WholesaleSales({
                                 href={route('seller.supply-hub.orders')}
                                 className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
                             >
-                                <span>Material Purchases</span>
+                                <span>Supplies Ordered</span>
                                 {activeOrdersCount > 0 && (
                                     <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-stone-200 text-stone-600">
                                         {activeOrdersCount}
@@ -205,7 +205,7 @@ export default function WholesaleSales({
                                 href={route('seller.supply-hub.sales')}
                                 className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 bg-white text-clay-800 shadow-xs font-black"
                             >
-                                <span>Wholesale Sales</span>
+                                <span>Supplies Sold</span>
                                 {activeSalesCount > 0 && (
                                     <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-clay-600 text-white">
                                         {activeSalesCount}
@@ -299,7 +299,7 @@ export default function WholesaleSales({
                                 type="text"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Search wholesale orders..."
+                                placeholder="Search supply orders..."
                                 className="w-full rounded-xl border border-stone-200 bg-stone-50/50 py-1.5 pl-9 pr-8 text-xs font-medium text-stone-800 placeholder-stone-400 focus:bg-white focus:border-clay-500 focus:ring-1 focus:ring-clay-500"
                             />
                             {searchTerm && (
@@ -350,7 +350,7 @@ export default function WholesaleSales({
                                                 {order.date}
                                             </span>
                                             <span className="inline-flex items-center gap-1 rounded-full bg-clay-100 px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-clay-800">
-                                                Wholesale Materials
+                                                Workshop Supplies
                                             </span>
                                         </div>
 
@@ -705,10 +705,10 @@ export default function WholesaleSales({
                         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 text-stone-400 mb-3">
                             <Truck size={24} />
                         </div>
-                        <h3 className="text-sm font-bold text-stone-800">No Wholesale Orders Found</h3>
+                        <h3 className="text-sm font-bold text-stone-800">No Supply Orders Found</h3>
                         <p className="mt-1 text-xs text-stone-500 max-w-sm mx-auto">
                             {filters.status && filters.status !== 'all'
-                                ? `No wholesale material orders currently match the "${filters.status}" filter.`
+                                ? `No supply orders currently match the "${filters.status}" filter.`
                                 : 'When other artisans order your published workshop materials, their orders will appear here for packing and dispatch.'}
                         </p>
                     </div>
@@ -722,7 +722,7 @@ export default function WholesaleSales({
                     <div className="w-full max-w-md rounded-2xl bg-white p-5 sm:p-6 shadow-xl border border-stone-200">
                         <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
                             <h3 className="text-sm font-bold text-stone-900">
-                                Update Wholesale Order #{actionModal.order?.id}
+                                Update Supply Order #{actionModal.order?.id}
                             </h3>
                             <button
                                 onClick={() => setActionModal({ isOpen: false, order: null, nextStatus: '', trackingNumber: '', notes: '' })}
