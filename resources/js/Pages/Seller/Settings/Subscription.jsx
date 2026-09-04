@@ -61,7 +61,7 @@ export default function Subscription({
                 featureIconClass: 'text-stone-500',
                 upgradeButtonClass: 'bg-stone-900 text-white hover:bg-stone-800',
                 downgradeButtonClass: 'border-stone-300 bg-white text-stone-700 hover:border-stone-400 hover:bg-stone-50',
-                heroStripeClass: 'from-stone-300 via-stone-200 to-[#F4EEE8]',
+                heroStripeClass: 'bg-stone-200',
                 benefitCardClass: 'border-stone-200 bg-stone-50/70',
                 supportCopy: 'Best for new artisan shops keeping a focused active catalog.',
                 features: [
@@ -86,7 +86,7 @@ export default function Subscription({
                 featureIconClass: 'text-green-500',
                 upgradeButtonClass: 'bg-orange-600 text-white hover:bg-orange-700 shadow-md',
                 downgradeButtonClass: 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50 hover:border-orange-300',
-                heroStripeClass: 'from-[#F3D7BA] via-[#EBC8A4] to-[#FCF7F2]',
+                heroStripeClass: 'bg-clay-200',
                 benefitCardClass: 'border-[#E7D8C9] bg-[#FCF7F2]',
                 supportCopy: 'A balanced plan for shops that need more products and stronger reporting.',
                 features: [
@@ -108,12 +108,12 @@ export default function Subscription({
                 icon: Sparkles,
                 badgeClass: 'border-stone-800 bg-stone-800 text-stone-100',
                 iconClass: 'bg-stone-900 text-amber-300',
-                cardClass: 'border-stone-300 bg-gradient-to-b from-white to-stone-50',
+                cardClass: 'border-stone-300 bg-white',
                 currentClass: 'border-orange-500 ring-1 ring-orange-500',
                 featureIconClass: 'text-green-500',
                 upgradeButtonClass: 'bg-stone-900 text-white hover:bg-stone-800 shadow-sm shadow-stone-900/10',
                 downgradeButtonClass: 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50 hover:border-stone-400',
-                heroStripeClass: 'from-stone-900 via-stone-700 to-[#B78A5A]',
+                heroStripeClass: 'bg-stone-800',
                 benefitCardClass: 'border-stone-200 bg-stone-50',
                 supportCopy: 'Built for artisan shops using advanced modules, staff accounts, and sponsored reach.',
                 features: [

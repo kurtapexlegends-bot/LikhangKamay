@@ -128,8 +128,8 @@ export default function ArtisanRegister() {
         if (!data.password) {
             localErrors.password = 'Password is required';
             if (!firstInvalidRef) firstInvalidRef = passwordRef;
-        } else if (data.password.length < 8) {
-            localErrors.password = 'Password must be at least 8 characters';
+        } else if (data.password.length < 12) {
+            localErrors.password = 'The password field must be at least 12 characters.';
             if (!firstInvalidRef) firstInvalidRef = passwordRef;
         }
 
@@ -391,7 +391,10 @@ export default function ArtisanRegister() {
                                 value={data.password}
                                 className="block w-full"
                                 autoComplete="new-password"
-                                onChange={(e) => setData('password', e.target.value)}
+                                onChange={(e) => {
+                                    setData('password', e.target.value);
+                                    if (errors.password) clearErrors('password');
+                                }}
                                 onKeyDown={handleKeyDown(confirmPasswordRef)}
                                 hasError={!!errors.password}
                                 required
@@ -408,7 +411,10 @@ export default function ArtisanRegister() {
                                 value={data.password_confirmation}
                                 className="block w-full"
                                 autoComplete="new-password"
-                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                onChange={(e) => {
+                                    setData('password_confirmation', e.target.value);
+                                    if (errors.password_confirmation) clearErrors('password_confirmation');
+                                }}
                                 hasError={!!errors.password_confirmation}
                                 required
                                 floatingLabel="Confirm Password"

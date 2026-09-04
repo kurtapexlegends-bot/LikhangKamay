@@ -98,10 +98,10 @@ class ArtisanSetupController extends Controller
         // --- STEP 2: LEGAL FILES ---
         if ($step == 2) {
             $request->validate([
-                'business_permit' => [$user->business_permit ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
-                'dti_registration' => [$user->dti_registration ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
-                'valid_id' => [$user->valid_id ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
-                'tin_id' => [$user->tin_id ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+                'business_permit' => [$user->business_permit ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
+                'dti_registration' => [$user->dti_registration ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
+                'valid_id' => [$user->valid_id ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
+                'tin_id' => [$user->tin_id ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
             ]);
 
             $documentFlags = [];
@@ -312,7 +312,7 @@ class ArtisanSetupController extends Controller
         }
 
         $request->validate([
-            'document' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'document' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ]);
 
         $file = $request->file('document');

@@ -97,11 +97,12 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
             }
         }
 
+        const minPassLength = isArtisan ? 12 : 8;
         if (!data.password) {
             localErrors.password = 'Password is required';
             if (!firstInvalidRef) firstInvalidRef = passwordRef;
-        } else if (data.password.length < 8) {
-            localErrors.password = 'Password must be at least 8 characters';
+        } else if (data.password.length < minPassLength) {
+            localErrors.password = `The password field must be at least ${minPassLength} characters.`;
             if (!firstInvalidRef) firstInvalidRef = passwordRef;
         }
 
@@ -378,7 +379,10 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 value={data.password}
                                 className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                                 autoComplete="new-password"
-                                onChange={(e) => setData('password', e.target.value)}
+                                onChange={(e) => {
+                                    setData('password', e.target.value);
+                                    if (errors.password) clearErrors('password');
+                                }}
                                 onKeyDown={handleKeyDown(confirmPasswordRef)}
                                 hasError={!!errors.password}
                                 required
@@ -395,7 +399,10 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 value={data.password_confirmation}
                                 className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                                 autoComplete="new-password"
-                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                onChange={(e) => {
+                                    setData('password_confirmation', e.target.value);
+                                    if (errors.password_confirmation) clearErrors('password_confirmation');
+                                }}
                                 hasError={!!errors.password_confirmation}
                                 required
                                 floatingLabel="Confirm Password"
@@ -432,7 +439,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                     {/* Password Strength Indicator */}
                     {data.password && (
                         <motion.div variants={itemVariants}>
-                            <PasswordStrengthIndicator password={data.password} />
+                            <PasswordStrengthIndicator password={data.password} minLength={isArtisan ? 12 : 8} />
                         </motion.div>
                     )}
 

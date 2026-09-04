@@ -47,7 +47,11 @@ class EnforceSingleDeviceSession
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
-                if ($request->wantsJson() || $request->header('X-Inertia')) {
+                if ($request->header('X-Inertia')) {
+                    return \Inertia\Inertia::location(route('login'));
+                }
+
+                if ($request->wantsJson()) {
                     return response()->json([
                         'message' => 'Your account was logged in from another device. For security, only one active session per account is permitted.',
                         'requires_login' => true,

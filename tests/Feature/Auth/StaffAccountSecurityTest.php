@@ -206,4 +206,81 @@ class StaffAccountSecurityTest extends TestCase
         $this->assertFalse($staff->fresh()->hasVerifiedEmail());
         $this->assertAuthenticatedAs($owner);
     }
+
+    public function test_staff_forced_password_fails_if_password_is_shorter_than_12_characters(): void
+    {
+        \Illuminate\Validation\Rules\Password::defaults(function () {
+            return \Illuminate\Validation\Rules\Password::min(12);
+        });
+
+        $staff = User::factory()->staff(User::factory()->artisanApproved()->create())->create([
+            'must_change_password' => true,
+        ]);
+
+        $response = $this
+            ->actingAs($staff)
+            ->from(route('staff.password.edit'))
+            ->put(route('staff.password.update'), [
+                'current_password' => 'password',
+                'password' => 'short-12345',
+                'password_confirmation' => 'short-12345',
+            ]);
+
+        $response->assertSessionHasErrors('password');
+        $response->assertRedirect(route('staff.password.edit'));
+        $this->assertEquals(
+            'The password field must be at least 12 characters.',
+            session('errors')->first('password')
+        );
+    }
+
+    public function test_unverified_staff_logging_out_is_logged_out_directly_without_staff_session_modal(): void
+    {
+        $owner = User::factory()->artisanApproved()->create();
+        $staff = User::factory()->staff($owner)->unverified()->create([
+            'must_change_password' => true,
+        ]);
+
+        $response = $this->actingAs($staff)->post(route('logout'));
+
+        $this->assertGuest();
+        $response->assertRedirect('/');
+    }
+
+    public function test_staff_requiring_password_change_logging_out_is_logged_out_directly_without_staff_session_modal(): void
+    {
+        $owner = User::factory()->artisanApproved()->create();
+        $staff = User::factory()->staff($owner)->create([
+            'must_change_password' => true,
+        ]);
+
+        $response = $this->actingAs($staff)->post(route('logout'));
+
+        $this->assertGuest();
+        $response->assertRedirect('/');
+    }
+
+    public function test_unverified_staff_cannot_access_staff_logout_confirm_screen(): void
+    {
+        $owner = User::factory()->artisanApproved()->create();
+        $staff = User::factory()->staff($owner)->unverified()->create([
+            'must_change_password' => true,
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('staff.logout.confirm'));
+
+        $response->assertRedirect(route('verification.notice', absolute: false));
+    }
+
+    public function test_staff_requiring_password_change_cannot_access_staff_logout_confirm_screen(): void
+    {
+        $owner = User::factory()->artisanApproved()->create();
+        $staff = User::factory()->staff($owner)->create([
+            'must_change_password' => true,
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('staff.logout.confirm'));
+
+        $response->assertRedirect(route('staff.password.edit', absolute: false));
+    }
 }

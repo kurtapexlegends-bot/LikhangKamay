@@ -177,13 +177,13 @@ export default function OrderPricingSummary({
                             <AlertTriangle size={14} className="shrink-0 mt-0.5 animate-bounce" />
                             <div>
                                 <p className="font-bold">Delivery Quote Failed</p>
-                                <p className="mt-0.5 text-red-655 leading-relaxed">Unable to calculate shipping. Please verify your address or connection and try again.</p>
+                                <p className="mt-0.5 text-rose-600 leading-relaxed">Unable to calculate shipping. Please verify your address or connection and try again.</p>
                             </div>
                         </div>
                         <button
                             type="button"
                             onClick={() => setQuoteRetryNonce((current) => current + 1)}
-                            className="mt-2.5 w-full rounded-lg border border-red-250 bg-white px-3 py-2.5 text-center text-xs font-bold text-red-700 hover:bg-red-50 transition-colors shadow-sm"
+                            className="mt-2.5 w-full rounded-lg border border-rose-200 bg-white px-3 py-2.5 text-center text-xs font-bold text-rose-700 hover:bg-rose-50 transition-colors shadow-sm"
                         >
                             Retry Quote Calculation
                         </button>

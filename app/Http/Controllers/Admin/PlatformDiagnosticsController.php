@@ -55,11 +55,12 @@ class PlatformDiagnosticsController extends Controller
         $activities = PlatformActivity::query()
             ->with('user:id,name,role')
             ->when($search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('description', 'like', "%{$search}%")
-                      ->orWhere('action', 'like', "%{$search}%")
-                      ->orWhereHas('user', function ($uq) use ($search) {
-                          $uq->where('name', 'like', "%{$search}%");
+                $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
+                $query->where(function ($q) use ($search, $like) {
+                    $q->where('description', $like, "%{$search}%")
+                      ->orWhere('action', $like, "%{$search}%")
+                      ->orWhereHas('user', function ($uq) use ($search, $like) {
+                          $uq->where('name', $like, "%{$search}%");
                       });
                 });
             })
@@ -121,11 +122,12 @@ class PlatformDiagnosticsController extends Controller
         return PlatformActivity::query()
             ->with('user:id,name,role,avatar')
             ->when($search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('description', 'like', "%{$search}%")
-                      ->orWhere('action', 'like', "%{$search}%")
-                      ->orWhereHas('user', function ($uq) use ($search) {
-                          $uq->where('name', 'like', "%{$search}%");
+                $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
+                $query->where(function ($q) use ($search, $like) {
+                    $q->where('description', $like, "%{$search}%")
+                      ->orWhere('action', $like, "%{$search}%")
+                      ->orWhereHas('user', function ($uq) use ($search, $like) {
+                          $uq->where('name', $like, "%{$search}%");
                       });
                 });
             })

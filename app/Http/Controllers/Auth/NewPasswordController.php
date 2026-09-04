@@ -21,9 +21,13 @@ class NewPasswordController extends Controller
      */
     public function create(Request $request): Response
     {
+        $user = $request->email ? \App\Models\User::where('email', strtolower(trim((string) $request->email)))->first() : null;
+        $isBusiness = $user ? !$user->isBuyer() : false;
+
         return Inertia::render('Auth/ResetPassword', [
             'email' => $request->email,
             'token' => $request->route('token'),
+            'minLength' => $isBusiness ? 12 : 8,
         ]);
     }
 
@@ -34,10 +38,12 @@ class NewPasswordController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $user = \App\Models\User::where('email', strtolower(trim((string) $request->email)))->first();
+
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => ['required', 'confirmed', \App\Support\PasswordRules::forUser($user)],
         ]);
 
         // Here we will attempt to reset the user's password. If it is successful we

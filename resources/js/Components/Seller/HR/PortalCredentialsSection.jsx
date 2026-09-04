@@ -1,5 +1,6 @@
 import React from 'react';
 import { Loader2, CheckCircle2, AlertTriangle, Sparkles, Eye, EyeOff, KeyRound } from 'lucide-react';
+import InputError from '@/Components/InputError';
 import { modalFieldWithIconClass } from '@/utils/hrHelpers';
 
 export default function PortalCredentialsSection({
@@ -15,6 +16,33 @@ export default function PortalCredentialsSection({
     setShowPassword,
     hasLinkedLogin
 }) {
+    const handleGeneratePassword = () => {
+        const lower = 'abcdefghjkmnpqrstuvwxyz';
+        const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        const numbers = '23456789';
+        const symbols = '!@#$%^&*';
+        const all = lower + upper + numbers + symbols;
+
+        const chars = [
+            lower[Math.floor(Math.random() * lower.length)],
+            upper[Math.floor(Math.random() * upper.length)],
+            numbers[Math.floor(Math.random() * numbers.length)],
+            symbols[Math.floor(Math.random() * symbols.length)],
+        ];
+
+        for (let i = 4; i < 12; i++) {
+            chars.push(all[Math.floor(Math.random() * all.length)]);
+        }
+
+        for (let i = chars.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [chars[i], chars[j]] = [chars[j], chars[i]];
+        }
+
+        setData('default_password', chars.join(''));
+        setShowPassword(true);
+    };
+
     return (
         <div className="rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5 shadow-xs space-y-3.5">
             <div className="flex items-center gap-2 text-stone-800 font-bold text-xs uppercase tracking-wider">
@@ -67,7 +95,7 @@ export default function PortalCredentialsSection({
                             {emailValidation.message}
                         </p>
                     )}
-                    {errors.email && <p className="mt-1 text-xs text-red-500 font-medium">{errors.email}</p>}
+                    {errors.email && <InputError message={errors.email} className="mt-1" />}
                 </div>
 
                 {/* Password Input */}
@@ -78,15 +106,7 @@ export default function PortalCredentialsSection({
                         </label>
                         <button
                             type="button"
-                            onClick={() => {
-                                const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-                                let generatedPassword = '';
-                                for (let i = 0; i < 12; i++) {
-                                    generatedPassword += chars.charAt(Math.floor(Math.random() * chars.length));
-                                }
-                                setData('default_password', generatedPassword);
-                                setShowPassword(true);
-                            }}
+                            onClick={handleGeneratePassword}
                             className="inline-flex items-center gap-1 text-[10px] font-bold text-clay-700 hover:text-clay-900 transition hover:underline"
                         >
                             <Sparkles size={11} /> Generate
@@ -96,7 +116,7 @@ export default function PortalCredentialsSection({
                         <input
                             type={showPassword ? 'text' : 'password'}
                             className={`${modalFieldWithIconClass} ${errors.default_password ? 'border-red-300 bg-red-50/10 focus:ring-red-500 focus:border-red-500' : ''} h-9.5 text-xs`}
-                            placeholder={hasLinkedLogin ? 'Leave blank to keep current' : 'Temporary password'}
+                            placeholder={hasLinkedLogin ? 'Leave blank to keep current' : 'Temporary password (min. 12 characters)'}
                             value={data.default_password}
                             onChange={(e) => setData('default_password', e.target.value)}
                             required={!hasLinkedLogin && data.create_login_account}
@@ -110,7 +130,12 @@ export default function PortalCredentialsSection({
                             {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                         </button>
                     </div>
-                    {errors.default_password && <p className="mt-1 text-xs text-red-500 font-medium">{errors.default_password}</p>}
+                    {data.default_password && data.default_password.length < 12 && !errors.default_password && (
+                        <p className="mt-1 text-[11px] font-semibold text-amber-600">
+                            Password must be at least 12 characters ({data.default_password.length}/12).
+                        </p>
+                    )}
+                    {errors.default_password && <InputError message={errors.default_password} className="mt-1" />}
                 </div>
             </div>
         </div>

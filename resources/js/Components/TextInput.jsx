@@ -43,7 +43,7 @@ export default forwardRef(function TextInput(
 
     const inputClasses = `w-full rounded-xl shadow-sm transition-all duration-300 outline-none disabled:bg-stone-100 disabled:text-stone-500 disabled:border-stone-200 disabled:shadow-none disabled:cursor-not-allowed ${
         hasError 
-            ? 'border-rose-355 bg-rose-50/50 text-rose-900 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/20' 
+            ? 'border-rose-300 bg-rose-50/50 text-rose-900 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/20' 
             : 'border-stone-200 bg-stone-50/40 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 hover:border-stone-300 disabled:hover:border-stone-200'
     } ${paddingLeftClass} ${paddingRightClass} ${paddingYClass} text-sm font-medium text-stone-900 ${className}`;
 

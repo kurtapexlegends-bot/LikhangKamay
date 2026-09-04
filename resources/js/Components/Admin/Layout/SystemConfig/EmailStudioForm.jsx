@@ -22,7 +22,8 @@ import {
     Monitor,
     Smartphone,
     RotateCcw,
-    ChevronDown
+    ChevronDown,
+    Zap
 } from 'lucide-react';
 import FormSkeleton from './Partials/FormSkeleton';
 
@@ -668,8 +669,9 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                                             <div className="max-h-52 overflow-y-auto space-y-2 pr-0.5 scrollbar-thin">
                                                 {filteredCustom.length > 0 && (
                                                     <div>
-                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-clay-700 px-2 py-1 bg-clay-50 rounded mb-1">
-                                                            ✨ Custom Broadcast Templates
+                                                        <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-clay-700 px-2 py-1 bg-clay-50 rounded mb-1">
+                                                            <Sparkles size={11} className="text-clay-600 shrink-0" />
+                                                            <span>Custom Broadcast Templates</span>
                                                         </span>
                                                         {filteredCustom.map(t => (
                                                             <div
@@ -691,8 +693,9 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
 
                                                 {filteredSystem.length > 0 && (
                                                     <div>
-                                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-stone-500 px-2 py-1 bg-stone-100 rounded mb-1">
-                                                            ⚡ System Default Templates
+                                                        <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-stone-500 px-2 py-1 bg-stone-100 rounded mb-1">
+                                                            <Zap size={11} className="text-stone-500 shrink-0" />
+                                                            <span>System Default Templates</span>
                                                         </span>
                                                         {filteredSystem.map(t => (
                                                             <div
@@ -714,7 +717,7 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
 
                                                 {filteredCustom.length === 0 && filteredSystem.length === 0 && (
                                                     <div className="p-3 text-center text-xs text-stone-400 font-medium">
-                                                        No templates matching "{templateSearchQuery}"
+                                                        No templates matching &quot;{templateSearchQuery}&quot;
                                                     </div>
                                                 )}
                                             </div>

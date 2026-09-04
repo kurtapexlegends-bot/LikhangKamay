@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import { X, Sparkles, MessageSquare, Bot, Plus, Trash2, Edit2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Sparkles, MessageSquare, Bot, Plus, Trash2, Edit2, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 
 export default function ChatAutomationModal({
@@ -10,8 +10,6 @@ export default function ChatAutomationModal({
     chatTemplates = [],
     canEdit = true
 }) {
-    if (!isOpen) return null;
-
     const hasAutoReply = Boolean(autoReplySettings);
     const [activeTab, setActiveTab] = useState(hasAutoReply ? 'auto-reply' : 'templates');
     const { addToast } = useToast();
@@ -22,6 +20,15 @@ export default function ChatAutomationModal({
         auto_reply_completion_message: autoReplySettings?.message || '',
     });
 
+    const [prevSettings, setPrevSettings] = useState(autoReplySettings);
+    if (autoReplySettings !== prevSettings) {
+        setPrevSettings(autoReplySettings);
+        autoReplyForm.setData({
+            auto_reply_on_completion: autoReplySettings?.enabled ?? true,
+            auto_reply_completion_message: autoReplySettings?.message || '',
+        });
+    }
+
     // Quick Templates Form
     const [editingTemplateId, setEditingTemplateId] = useState(null);
     const templateForm = useForm({
@@ -29,6 +36,8 @@ export default function ChatAutomationModal({
         shortcut: '',
         content: '',
     });
+
+    if (!isOpen) return null;
 
     const handleSaveAutoReply = (e) => {
         e.preventDefault();

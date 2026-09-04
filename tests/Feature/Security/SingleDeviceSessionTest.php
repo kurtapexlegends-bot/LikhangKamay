@@ -34,6 +34,19 @@ class SingleDeviceSessionTest extends TestCase
         // Device 1 attempts to access workspace with old session ID: middleware intercepts and returns 423
         $response = $this->actingAs($user)->getJson('/staff/dashboard');
         $response->assertStatus(423);
+
+        // Inertia request returns 409 with X-Inertia-Location header
+        $inertiaResponse = $this->actingAs($user)->get('/staff/dashboard', [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => \Inertia\Inertia::getVersion(),
+        ]);
+        $inertiaResponse->assertStatus(409);
+        $this->assertEquals(route('login'), $inertiaResponse->headers->get('X-Inertia-Location'));
+
+        // Standard web request redirects to login with flash message
+        $webResponse = $this->actingAs($user)->get('/staff/dashboard');
+        $webResponse->assertRedirect(route('login'));
+        $webResponse->assertSessionHas('warning');
     }
 
     public function test_workplace_daily_pin_clock_in_validation(): void

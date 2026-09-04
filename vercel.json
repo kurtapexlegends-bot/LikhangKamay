@@ -42,7 +42,7 @@
         "APP_DEBUG": "false",
         "LOG_CHANNEL": "stderr",
         "VIEW_COMPILED_PATH": "/tmp/storage/framework/views",
-        "SESSION_DRIVER": "cookie",
+        "SESSION_DRIVER": "database",
         "CACHE_STORE": "database",
         "PUBLIC_DISK_DRIVER": "s3",
         "APP_CONFIG_CACHE": "/tmp/config.php",

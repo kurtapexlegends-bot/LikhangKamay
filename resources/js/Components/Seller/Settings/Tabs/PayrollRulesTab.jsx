@@ -6,6 +6,7 @@ import {
     TrendingUp, Coins, Info, CheckCircle2, AlertTriangle, Calculator
 } from 'lucide-react';
 import InputLabel from '@/Components/InputLabel';
+import InputError from '@/Components/InputError';
 import { useToast } from '@/Components/ToastContext';
 
 function ScheduleOptionCard({ active, onClick, icon: Icon, title, daysBadge, simpleDesc, disabled }) {
@@ -53,7 +54,7 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
     const canEdit = permissions?.can_edit_hr_settings;
     const { addToast } = useToast();
 
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, processing, errors, clearErrors } = useForm({
         overtime_rate: sellerOwner.overtime_rate || 50.00,
         overtime_multiplier: sellerOwner.overtime_multiplier || 1.25,
         payroll_factor_method: sellerOwner.payroll_factor_method || 'custom',
@@ -117,7 +118,7 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
         (Number(data.holiday_ot_multiplier) || 0) < 2.60;
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} noValidate className="space-y-6">
             {/* ── SECTION 1: WORK SCHEDULE & DAILY RATES ── */}
             <div className="bg-white rounded-3xl border border-stone-200/80 p-5 sm:p-6 shadow-2xs space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
@@ -147,7 +148,12 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <ScheduleOptionCard
                             active={data.payroll_factor_method === '261'}
-                            onClick={() => canEdit && setData('payroll_factor_method', '261')}
+                            onClick={() => {
+                                if (canEdit) {
+                                    setData('payroll_factor_method', '261');
+                                    if (errors.payroll_factor_method) clearErrors('payroll_factor_method');
+                                }
+                            }}
                             icon={Calendar}
                             title="Monday to Friday"
                             daysBadge="5 Days / Week"
@@ -156,7 +162,12 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                         />
                         <ScheduleOptionCard
                             active={data.payroll_factor_method === '313'}
-                            onClick={() => canEdit && setData('payroll_factor_method', '313')}
+                            onClick={() => {
+                                if (canEdit) {
+                                    setData('payroll_factor_method', '313');
+                                    if (errors.payroll_factor_method) clearErrors('payroll_factor_method');
+                                }
+                            }}
                             icon={CalendarDays}
                             title="Monday to Saturday"
                             daysBadge="6 Days / Week"
@@ -165,7 +176,12 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                         />
                         <ScheduleOptionCard
                             active={data.payroll_factor_method === 'custom'}
-                            onClick={() => canEdit && setData('payroll_factor_method', 'custom')}
+                            onClick={() => {
+                                if (canEdit) {
+                                    setData('payroll_factor_method', 'custom');
+                                    if (errors.payroll_factor_method) clearErrors('payroll_factor_method');
+                                }
+                            }}
                             icon={Sliders}
                             title="Custom Working Days"
                             daysBadge="Custom Days"
@@ -173,6 +189,7 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                             disabled={!canEdit}
                         />
                     </div>
+                    {errors.payroll_factor_method && <InputError message={errors.payroll_factor_method} className="mt-1" />}
                 </div>
 
                 {/* Workday Hours & Optional Custom Days */}
@@ -183,10 +200,15 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                             <div className="mt-1.5 relative rounded-xl shadow-2xs">
                                 <input
                                     type="number"
-                                    className="w-full rounded-xl border border-stone-300 pr-14 text-sm font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[44px] bg-white"
+                                    className={`w-full rounded-xl border pr-14 text-sm font-bold text-stone-850 focus:ring-clay-500 min-h-[44px] bg-white ${
+                                        errors.payroll_working_days ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
+                                    }`}
                                     value={data.payroll_working_days ?? ''}
                                     onKeyDown={(e) => { if (e.key === '-' || e.key === '.') e.preventDefault(); }}
-                                    onChange={(e) => setData('payroll_working_days', e.target.value.replace(/[-.]/g, ''))}
+                                    onChange={(e) => {
+                                        setData('payroll_working_days', e.target.value.replace(/[-.]/g, ''));
+                                        if (errors.payroll_working_days) clearErrors('payroll_working_days');
+                                    }}
                                     disabled={!canEdit}
                                     required
                                     min="1"
@@ -196,6 +218,7 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                                     days
                                 </span>
                             </div>
+                            {errors.payroll_working_days && <InputError message={errors.payroll_working_days} className="mt-1.5" />}
                             <span className="text-[10px] text-stone-500 mt-1 block">Usually 22 days (5-day week) or 26 days (6-day week)</span>
                         </div>
                     ) : (
@@ -213,10 +236,15 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                         <div className="mt-1.5 relative rounded-xl shadow-2xs">
                             <input
                                 type="number"
-                                className="w-full rounded-xl border border-stone-300 pr-14 text-sm font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[44px]"
+                                className={`w-full rounded-xl border pr-14 text-sm font-bold text-stone-850 focus:ring-clay-500 min-h-[44px] ${
+                                    errors.standard_workday_hours ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
+                                }`}
                                 value={data.standard_workday_hours ?? ''}
                                 onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                                onChange={(e) => setData('standard_workday_hours', e.target.value.replace(/-/g, ''))}
+                                onChange={(e) => {
+                                    setData('standard_workday_hours', e.target.value.replace(/-/g, ''));
+                                    if (errors.standard_workday_hours) clearErrors('standard_workday_hours');
+                                }}
                                 disabled={!canEdit}
                                 required
                                 min="4"
@@ -227,6 +255,7 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                                 hours
                             </span>
                         </div>
+                        {errors.standard_workday_hours && <InputError message={errors.standard_workday_hours} className="mt-1.5" />}
                         <span className="text-[10px] text-stone-500 mt-1 block">Standard full-time workday is 8 hours</span>
                     </div>
                 </div>
@@ -302,24 +331,36 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                                 <InputLabel value="Work Starts At" />
                                 <input
                                     type="time"
-                                    className="w-full rounded-xl border border-stone-300 text-xs font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[42px] mt-1 bg-white shadow-2xs"
+                                    className={`w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] mt-1 bg-white shadow-2xs ${
+                                        errors.shift_start_time ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
+                                    }`}
                                     value={data.shift_start_time || '08:00'}
-                                    onChange={(e) => setData('shift_start_time', e.target.value)}
+                                    onChange={(e) => {
+                                        setData('shift_start_time', e.target.value);
+                                        if (errors.shift_start_time) clearErrors('shift_start_time');
+                                    }}
                                     disabled={!canEdit}
                                     required
                                 />
+                                {errors.shift_start_time && <InputError message={errors.shift_start_time} className="mt-1" />}
                             </div>
 
                             <div>
                                 <InputLabel value="Work Ends At" />
                                 <input
                                     type="time"
-                                    className="w-full rounded-xl border border-stone-300 text-xs font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[42px] mt-1 bg-white shadow-2xs"
+                                    className={`w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] mt-1 bg-white shadow-2xs ${
+                                        errors.shift_end_time ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
+                                    }`}
                                     value={data.shift_end_time || '17:00'}
-                                    onChange={(e) => setData('shift_end_time', e.target.value)}
+                                    onChange={(e) => {
+                                        setData('shift_end_time', e.target.value);
+                                        if (errors.shift_end_time) clearErrors('shift_end_time');
+                                    }}
                                     disabled={!canEdit}
                                     required
                                 />
+                                {errors.shift_end_time && <InputError message={errors.shift_end_time} className="mt-1" />}
                             </div>
                         </div>
 
@@ -329,9 +370,14 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                                 <div className="mt-1 relative rounded-xl shadow-2xs">
                                     <input
                                         type="number"
-                                        className="w-full rounded-xl border border-stone-300 pr-16 text-xs font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[42px] bg-white"
+                                        className={`w-full rounded-xl border pr-16 text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] bg-white ${
+                                            errors.earliest_clock_in_minutes ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
+                                        }`}
                                         value={data.earliest_clock_in_minutes ?? 30}
-                                        onChange={(e) => setData('earliest_clock_in_minutes', e.target.value)}
+                                        onChange={(e) => {
+                                            setData('earliest_clock_in_minutes', e.target.value);
+                                            if (errors.earliest_clock_in_minutes) clearErrors('earliest_clock_in_minutes');
+                                        }}
                                         disabled={!canEdit}
                                         min="0"
                                         max="120"
@@ -341,6 +387,7 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                                         mins early
                                     </span>
                                 </div>
+                                {errors.earliest_clock_in_minutes && <InputError message={errors.earliest_clock_in_minutes} className="mt-1" />}
                                 <span className="text-[10px] text-stone-500 mt-1 block">Staff can clock in up to {data.earliest_clock_in_minutes ?? 30}m before shift</span>
                             </div>
 
@@ -349,9 +396,14 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                                 <div className="mt-1 relative rounded-xl shadow-2xs">
                                     <input
                                         type="number"
-                                        className="w-full rounded-xl border border-stone-300 pr-16 text-xs font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[42px] bg-white"
+                                        className={`w-full rounded-xl border pr-16 text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] bg-white ${
+                                            errors.grace_period_minutes ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
+                                        }`}
                                         value={data.grace_period_minutes ?? 15}
-                                        onChange={(e) => setData('grace_period_minutes', e.target.value)}
+                                        onChange={(e) => {
+                                            setData('grace_period_minutes', e.target.value);
+                                            if (errors.grace_period_minutes) clearErrors('grace_period_minutes');
+                                        }}
                                         disabled={!canEdit}
                                         min="0"
                                         max="120"
@@ -361,6 +413,7 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                                         minutes
                                     </span>
                                 </div>
+                                {errors.grace_period_minutes && <InputError message={errors.grace_period_minutes} className="mt-1" />}
                                 <span className="text-[10px] text-stone-500 mt-1 block">Staff arriving within {data.grace_period_minutes ?? 15}m are marked on-time</span>
                             </div>
                         </div>
@@ -407,22 +460,34 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                                 <InputLabel value="Lunch Starts At" />
                                 <input
                                     type="time"
-                                    className="w-full rounded-xl border border-stone-300 text-xs font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[42px] mt-1 bg-white shadow-2xs"
+                                    className={`w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] mt-1 bg-white shadow-2xs ${
+                                        errors.break_window_start ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
+                                    }`}
                                     value={data.break_window_start || '11:30'}
-                                    onChange={(e) => setData('break_window_start', e.target.value)}
+                                    onChange={(e) => {
+                                        setData('break_window_start', e.target.value);
+                                        if (errors.break_window_start) clearErrors('break_window_start');
+                                    }}
                                     disabled={!canEdit}
                                 />
+                                {errors.break_window_start && <InputError message={errors.break_window_start} className="mt-1" />}
                             </div>
 
                             <div>
                                 <InputLabel value="Lunch Ends At" />
                                 <input
                                     type="time"
-                                    className="w-full rounded-xl border border-stone-300 text-xs font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[42px] mt-1 bg-white shadow-2xs"
+                                    className={`w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] mt-1 bg-white shadow-2xs ${
+                                        errors.break_window_end ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
+                                    }`}
                                     value={data.break_window_end || '13:30'}
-                                    onChange={(e) => setData('break_window_end', e.target.value)}
+                                    onChange={(e) => {
+                                        setData('break_window_end', e.target.value);
+                                        if (errors.break_window_end) clearErrors('break_window_end');
+                                    }}
                                     disabled={!canEdit}
                                 />
+                                {errors.break_window_end && <InputError message={errors.break_window_end} className="mt-1" />}
                             </div>
                         </div>
 
@@ -431,9 +496,14 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                             <div className="mt-1 relative rounded-xl shadow-2xs">
                                 <input
                                     type="number"
-                                    className="w-full rounded-xl border border-stone-300 pr-16 text-xs font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[42px] bg-white"
+                                    className={`w-full rounded-xl border pr-16 text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] bg-white ${
+                                        errors.break_allowance_minutes ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
+                                    }`}
                                     value={data.break_allowance_minutes ?? 60}
-                                    onChange={(e) => setData('break_allowance_minutes', e.target.value)}
+                                    onChange={(e) => {
+                                        setData('break_allowance_minutes', e.target.value);
+                                        if (errors.break_allowance_minutes) clearErrors('break_allowance_minutes');
+                                    }}
                                     disabled={!canEdit}
                                     min="0"
                                     max="180"
@@ -443,6 +513,7 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                                     minutes
                                 </span>
                             </div>
+                            {errors.break_allowance_minutes && <InputError message={errors.break_allowance_minutes} className="mt-1" />}
                             <span className="text-[10px] text-stone-500 mt-1 block">Standard meal break is 60 minutes (1 hour)</span>
                         </div>
                     </div>
@@ -488,10 +559,15 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                         <div className="mt-1 relative rounded-xl shadow-2xs">
                             <input
                                 type="number"
-                                className="w-full rounded-xl border border-stone-300 pr-8 text-sm font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[42px]"
+                                className={`w-full rounded-xl border pr-8 text-sm font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] ${
+                                    errors.overtime_multiplier ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
+                                }`}
                                 value={data.overtime_multiplier ?? ''}
                                 onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                                onChange={(e) => setData('overtime_multiplier', e.target.value.replace(/-/g, ''))}
+                                onChange={(e) => {
+                                    setData('overtime_multiplier', e.target.value.replace(/-/g, ''));
+                                    if (errors.overtime_multiplier) clearErrors('overtime_multiplier');
+                                }}
                                 disabled={!canEdit}
                                 required
                                 min="0.01"
@@ -502,6 +578,7 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                                 ×
                             </span>
                         </div>
+                        {errors.overtime_multiplier && <InputError message={errors.overtime_multiplier} className="mt-1" />}
                         <span className="text-[10px] text-stone-400 mt-1.5 block font-medium">Pay + 25% for overtime</span>
                     </div>
 
@@ -517,10 +594,15 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                         <div className="mt-1 relative rounded-xl shadow-2xs">
                             <input
                                 type="number"
-                                className="w-full rounded-xl border border-stone-300 pr-8 text-sm font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[42px]"
+                                className={`w-full rounded-xl border pr-8 text-sm font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] ${
+                                    errors.rest_day_ot_multiplier ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
+                                }`}
                                 value={data.rest_day_ot_multiplier ?? ''}
                                 onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                                onChange={(e) => setData('rest_day_ot_multiplier', e.target.value.replace(/-/g, ''))}
+                                onChange={(e) => {
+                                    setData('rest_day_ot_multiplier', e.target.value.replace(/-/g, ''));
+                                    if (errors.rest_day_ot_multiplier) clearErrors('rest_day_ot_multiplier');
+                                }}
                                 disabled={!canEdit}
                                 required
                                 min="0.01"
@@ -531,6 +613,7 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                                 ×
                             </span>
                         </div>
+                        {errors.rest_day_ot_multiplier && <InputError message={errors.rest_day_ot_multiplier} className="mt-1" />}
                         <span className="text-[10px] text-stone-400 mt-1.5 block font-medium">Pay 169% on Sunday/Special Day OT</span>
                     </div>
 
@@ -546,10 +629,15 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                         <div className="mt-1 relative rounded-xl shadow-2xs">
                             <input
                                 type="number"
-                                className="w-full rounded-xl border border-stone-300 pr-8 text-sm font-bold text-stone-850 focus:border-clay-500 focus:ring-clay-500 min-h-[42px]"
+                                className={`w-full rounded-xl border pr-8 text-sm font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] ${
+                                    errors.holiday_ot_multiplier ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
+                                }`}
                                 value={data.holiday_ot_multiplier ?? ''}
                                 onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
-                                onChange={(e) => setData('holiday_ot_multiplier', e.target.value.replace(/-/g, ''))}
+                                onChange={(e) => {
+                                    setData('holiday_ot_multiplier', e.target.value.replace(/-/g, ''));
+                                    if (errors.holiday_ot_multiplier) clearErrors('holiday_ot_multiplier');
+                                }}
                                 disabled={!canEdit}
                                 required
                                 min="0.01"
@@ -560,6 +648,7 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                                 ×
                             </span>
                         </div>
+                        {errors.holiday_ot_multiplier && <InputError message={errors.holiday_ot_multiplier} className="mt-1" />}
                         <span className="text-[10px] text-stone-400 mt-1.5 block font-medium">Pay 260% on Christmas/New Year OT</span>
                     </div>
                 </div>

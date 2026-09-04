@@ -3,6 +3,7 @@ import { useForm, router } from '@inertiajs/react';
 import { MapPin, Navigation, Crosshair, Plus, Trash2, Edit3, Shield, CheckCircle2, AlertCircle, X, Search, Loader2, Mail } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import Modal from '@/Components/Modal';
+import InputError from '@/Components/InputError';
 import LocationPickerMap from './LocationPickerMap';
 
 export default function WorkplaceLocationsManager({ locations = [], canEdit = true }) {
@@ -17,7 +18,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
     const searchContainerRef = useRef(null);
     const { addToast } = useToast();
 
-    const { data, setData, post, put, processing, errors, reset } = useForm({
+    const { data, setData, post, put, processing, errors, clearErrors, reset } = useForm({
         name: '',
         address: '',
         latitude: 14.5995,
@@ -233,6 +234,9 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                     addToast('Workplace location updated.', 'success');
                     closeModal();
                 },
+                onError: () => {
+                    addToast('Please check the highlighted fields.', 'error');
+                },
             });
         } else {
             post(route('shop.locations.store'), {
@@ -240,6 +244,9 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                 onSuccess: () => {
                     addToast('Workplace location created.', 'success');
                     closeModal();
+                },
+                onError: () => {
+                    addToast('Please check the highlighted fields.', 'error');
                 },
             });
         }
@@ -379,7 +386,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                     </div>
 
                     {/* Modal Form Body */}
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} noValidate className="space-y-4">
                         <div>
                             <label className="block text-xs font-bold text-stone-700 mb-1">Location Name</label>
                             <input
@@ -387,9 +394,15 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                 required
                                 placeholder="e.g. Main Artisan Workshop"
                                 value={data.name}
-                                onChange={(e) => setData('name', e.target.value)}
-                                className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-medium text-stone-900 focus:border-clay-500 focus:ring-clay-500"
+                                onChange={(e) => {
+                                    setData('name', e.target.value);
+                                    if (errors.name) clearErrors('name');
+                                }}
+                                className={`w-full rounded-xl border px-3.5 py-2 text-xs font-medium text-stone-900 focus:ring-clay-500 ${
+                                    errors.name ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-200 focus:border-clay-500'
+                                }`}
                             />
+                            {errors.name && <InputError message={errors.name} className="mt-1.5" />}
                         </div>
 
                         {/* Search via Address Autocomplete & GPS */}
@@ -401,9 +414,14 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                         type="text"
                                         placeholder="Search city, barangay, landmark, or street..."
                                         value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onChange={(e) => {
+                                            setSearchQuery(e.target.value);
+                                            if (errors.address) clearErrors('address');
+                                        }}
                                         onFocus={() => searchResults.length > 0 && setShowSuggestions(true)}
-                                        className="w-full rounded-xl border border-stone-200 pl-8 pr-8 py-2 text-xs font-medium text-stone-900 focus:border-clay-500 focus:ring-clay-500"
+                                        className={`w-full rounded-xl border pl-8 pr-8 py-2 text-xs font-medium text-stone-900 focus:ring-clay-500 ${
+                                            errors.address ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-200 focus:border-clay-500'
+                                        }`}
                                     />
                                     <Search size={14} className="absolute left-2.5 top-2.5 text-stone-400 pointer-events-none" />
                                     {isDebouncing && (
@@ -448,6 +466,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                     {detectingGps ? 'Locating...' : 'Use Current Location'}
                                 </button>
                             </div>
+                            {errors.address && <InputError message={errors.address} className="mt-1" />}
                         </div>
 
                         {/* Interactive Leaflet Map Visualizer with Locating Overlay */}
@@ -466,9 +485,15 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                         latitude,
                                         longitude,
                                     }));
+                                    if (errors.latitude || errors.longitude) {
+                                        clearErrors('latitude', 'longitude');
+                                    }
                                 }}
                                 height="200px"
                             />
+                            {(errors.latitude || errors.longitude) && (
+                                <InputError message={errors.latitude || errors.longitude} className="mt-1" />
+                            )}
                         </div>
 
                         {/* Radius Slider */}
@@ -483,9 +508,13 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                 max="1000"
                                 step="10"
                                 value={data.radius_meters}
-                                onChange={(e) => setData('radius_meters', parseInt(e.target.value, 10))}
+                                onChange={(e) => {
+                                    setData('radius_meters', parseInt(e.target.value, 10));
+                                    if (errors.radius_meters) clearErrors('radius_meters');
+                                }}
                                 className="w-full accent-clay-600"
                             />
+                            {errors.radius_meters && <InputError message={errors.radius_meters} className="mt-1" />}
                             <p className="text-[10px] text-stone-400 font-medium mt-1">
                                 Staff can clock in within {data.radius_meters} meters of this store location.
                             </p>

@@ -103,9 +103,8 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                 
                 {/* SECTION 1: METRICS PANEL */}
                 <div className="flex overflow-x-auto pb-2.5 gap-4 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-3 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto bg-stone-900 text-white rounded-2xl p-5 shadow-sm border border-stone-850 relative overflow-hidden flex flex-col justify-between">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
-                        <div className="relative z-10 flex items-start justify-between">
+                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto bg-stone-900 text-white rounded-2xl p-5 shadow-sm border border-stone-850 flex flex-col justify-between">
+                        <div className="flex items-start justify-between">
                             <div>
                                 <h4 className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1">Available Credits</h4>
                                 <h3 className="text-3xl font-bold text-white tracking-tight flex items-baseline gap-1">
@@ -333,7 +332,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                     </div>
                                     <h3 className="text-xs font-bold text-stone-950">No sponsorships yet</h3>
                                     <p className="text-[10px] text-stone-500 mt-1 max-w-[180px]">
-                                        You haven't requested any product sponsorships. Select a product on the left to get started.
+                                        You haven&apos;t requested any product sponsorships. Select a product on the left to get started.
                                     </p>
                                 </div>
                             )}

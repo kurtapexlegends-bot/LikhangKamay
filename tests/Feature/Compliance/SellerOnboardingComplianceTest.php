@@ -19,8 +19,8 @@ class SellerOnboardingComplianceTest extends TestCase
             'first_name' => 'Juan',
             'last_name' => 'Dela Cruz',
             'email' => 'juan.artisan@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'password1234',
+            'password_confirmation' => 'password1234',
             'shop_name' => 'Juan Pottery Shop',
             'terms' => true,
         ]);
@@ -58,8 +58,8 @@ class SellerOnboardingComplianceTest extends TestCase
             'first_name' => 'Maria',
             'last_name' => 'Makiling',
             'shop_name' => 'Maria Clay Arts',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'password1234',
+            'password_confirmation' => 'password1234',
             'terms' => true,
         ]);
 

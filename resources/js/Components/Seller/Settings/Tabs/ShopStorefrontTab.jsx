@@ -72,8 +72,9 @@ export default function ShopStorefrontTab({ sellerOwner, stats, products = [], p
             onSuccess: () => {
                 if (addToast) addToast('Shop storefront settings updated.', 'success');
             },
-            onError: () => {
-                if (addToast) addToast('Failed to update shop settings.', 'error');
+            onError: (errs) => {
+                const firstError = Object.values(errs || {})[0];
+                if (addToast) addToast(firstError || 'Failed to update shop settings. Please check the fields.', 'error');
             }
         });
     };
@@ -135,39 +136,51 @@ export default function ShopStorefrontTab({ sellerOwner, stats, products = [], p
                         onChange={handleBannerChange}
                     />
                 </div>
+                {errors.banner_image && (
+                    <p className="px-5 md:px-8 pt-2 text-xs text-rose-500 font-bold flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5" /> {errors.banner_image}
+                    </p>
+                )}
 
                 {/* Profile Details Header */}
                 <div className="px-5 md:px-8 pb-6 flex flex-col md:flex-row items-center md:items-start gap-4 relative z-10 -mt-12">
                     {/* Avatar (Editable with Camera Overlay) */}
-                    <div 
-                        className="w-24 h-24 min-w-[6rem] min-h-[6rem] aspect-square rounded-full border-4 border-white bg-white shadow-md flex items-center justify-center overflow-hidden flex-none self-start relative z-20 group cursor-pointer"
-                        onClick={() => canEdit && avatarInputRef.current?.click()}
-                    >
-                        {avatarPreview ? (
-                            <img 
-                                src={avatarPreview} 
-                                alt={shopName} 
-                                className="w-full h-full object-cover" 
-                                onError={() => setAvatarPreview(null)}
-                            />
-                        ) : (
-                            <div className="w-full h-full bg-stone-100 text-stone-600 flex items-center justify-center text-3xl font-bold uppercase">
-                                {shopName.charAt(0)}
+                    <div className="flex flex-col items-center">
+                        <div 
+                            className="w-24 h-24 min-w-[6rem] min-h-[6rem] aspect-square rounded-full border-4 border-white bg-white shadow-md flex items-center justify-center overflow-hidden flex-none self-start relative z-20 group cursor-pointer"
+                            onClick={() => canEdit && avatarInputRef.current?.click()}
+                        >
+                            {avatarPreview ? (
+                                <img 
+                                    src={avatarPreview} 
+                                    alt={shopName} 
+                                    className="w-full h-full object-cover" 
+                                    onError={() => setAvatarPreview(null)}
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-stone-100 text-stone-600 flex items-center justify-center text-3xl font-bold uppercase">
+                                    {shopName.charAt(0)}
+                                </div>
+                            )}
+
+                            {/* Camera Overlay */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
+                                <Camera className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
-                        )}
 
-                        {/* Camera Overlay */}
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
-                            <Camera className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <input
+                                ref={avatarInputRef}
+                                type="file"
+                                className="hidden"
+                                accept="image/jpeg,image/png,image/jpg"
+                                onChange={handleAvatarChange}
+                            />
                         </div>
-
-                        <input
-                            ref={avatarInputRef}
-                            type="file"
-                            className="hidden"
-                            accept="image/jpeg,image/png,image/jpg"
-                            onChange={handleAvatarChange}
-                        />
+                        {errors.avatar && (
+                            <p className="mt-1 text-xs text-rose-500 font-bold flex items-center gap-1 z-30">
+                                <AlertCircle className="w-3.5 h-3.5" /> {errors.avatar}
+                            </p>
+                        )}
                     </div>
 
                     {/* Info & Stats Block */}

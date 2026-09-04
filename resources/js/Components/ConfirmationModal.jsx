@@ -115,7 +115,7 @@ export default function ConfirmationModal({
                             autoFocus
                         />
                         {passwordError && (
-                            <p className="text-xs font-bold text-red-655 mt-2">{passwordError}</p>
+                            <p className="text-xs font-bold text-rose-600 mt-2">{passwordError}</p>
                         )}
                     </div>
                 )}

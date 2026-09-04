@@ -85,7 +85,7 @@ export default function SponsorshipDecisionModal({
         const renderRejectForm = () => (
             <form onSubmit={handleConfirmClick} className="space-y-6">
                 <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-655 flex items-center justify-center border border-red-100/50 shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-red-50 text-rose-600 flex items-center justify-center border border-red-100/50 shrink-0">
                         <XCircle size={22} />
                     </div>
                     <div>
@@ -106,7 +106,7 @@ export default function SponsorshipDecisionModal({
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
                         rows={5}
-                        className="w-full rounded-xl border border-stone-200 focus:border-red-350 focus:ring-red-200 text-sm"
+                        className="w-full rounded-xl border border-stone-200 focus:border-rose-400 focus:ring-rose-200 text-sm"
                         placeholder="Explain why the request was rejected so the seller knows what to improve."
                         autoFocus
                     />
@@ -128,7 +128,7 @@ export default function SponsorshipDecisionModal({
                         disabled={verifying || processing}
                     />
                     {passwordError && (
-                        <p className="text-xs font-bold text-red-655 mt-2">{passwordError}</p>
+                        <p className="text-xs font-bold text-rose-600 mt-2">{passwordError}</p>
                     )}
                 </div>
 

@@ -23,8 +23,6 @@ class EnsureStaffSecurityGate
         'staff.attendance.break',
         'staff.attendance.heartbeat',
         'staff.logout.direct',
-        'staff.logout.confirm',
-        'staff.logout',
         'logout',
     ];
 
@@ -42,8 +40,6 @@ class EnsureStaffSecurityGate
         'staff.attendance.break',
         'staff.attendance.heartbeat',
         'staff.logout.direct',
-        'staff.logout.confirm',
-        'staff.logout',
         'logout',
     ];
 

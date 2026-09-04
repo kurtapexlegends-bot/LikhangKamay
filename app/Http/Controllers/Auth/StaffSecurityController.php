@@ -61,6 +61,15 @@ class StaffSecurityController extends Controller
     public function confirmLogout(Request $request, StaffAttendanceService $attendanceService): Response|RedirectResponse
     {
         $user = $this->getStaffUser($request);
+
+        if (!$user->hasCompletedStaffSecurityGate()) {
+            if (!$user->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice');
+            }
+
+            return redirect()->route('staff.password.edit');
+        }
+
         $fromGenericLogout = (bool) $request->session()->pull('staff.logout.intent', false);
 
         if ($user->canAccessSellerWorkspace() && !$fromGenericLogout) {
@@ -185,7 +194,7 @@ class StaffSecurityController extends Controller
 
         $validated = $request->validate([
             'current_password' => ['required', 'current_password'],
-            'password' => ['required', Password::defaults(), 'confirmed'],
+            'password' => ['required', \App\Support\PasswordRules::business(), 'confirmed'],
         ]);
 
         $user->update([

@@ -217,7 +217,7 @@ class HRStaffProvisioner
                         ? \Illuminate\Validation\Rule::unique('users', 'email')->ignore($linkedLogin->id)
                         : \Illuminate\Validation\Rule::unique('users', 'email'),
                 ],
-                'default_password' => [$linkedLogin ? 'nullable' : 'required', 'string', \Illuminate\Validation\Rules\Password::defaults()],
+                'default_password' => [$linkedLogin ? 'nullable' : 'required', 'string', \App\Support\PasswordRules::business()],
                 'staff_role_preset_key' => ['required', 'string', \Illuminate\Validation\Rule::in(array_keys($entitlementService->getRolePresetDefaults()))],
                 'staff_access_permission_level' => ['nullable', 'string', \Illuminate\Validation\Rule::in(User::staffAccessPermissionLevels())],
                 'staff_user_level' => ['nullable', 'string', \Illuminate\Validation\Rule::in(User::staffUserLevelValidationValues())],

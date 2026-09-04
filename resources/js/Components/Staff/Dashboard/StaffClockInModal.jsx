@@ -108,7 +108,7 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                 setMaskedEmail(res.data.masked_email);
             }
         } catch (err) {
-            setOtpError(err.response?.data?.errors?.otp?.[0] || err.response?.data?.message || 'Failed to send OTP code. Please try again.');
+            setOtpError(err.response?.data?.errors?.otp?.[0] || err.response?.data?.message || 'Failed to send email security code. Please try again.');
         } finally {
             setIsSendingOtp(false);
         }

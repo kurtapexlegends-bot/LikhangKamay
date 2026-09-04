@@ -153,7 +153,7 @@ export default function StaffGeofenceMap({
             {/* Read-Only Non-Editable Badge */}
             <div className="absolute top-2.5 left-2.5 z-[400] bg-stone-950/80 backdrop-blur-md border border-white/10 text-white text-[9px] font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
                 <MapPin size={11} className="text-amber-400" />
-                <span>Geofence Visual Map (Read-Only)</span>
+                <span>Store Location Map (Read-Only)</span>
             </div>
 
             {/* Distance & Boundary Overlay Badge */}

@@ -26,7 +26,7 @@ export default function SubscriptionPlans({
             <div className="border-b border-stone-100 px-5 py-4 sm:px-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-start gap-3.5">
-                        <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1.05rem] bg-gradient-to-br from-[#FFA426] to-[#FF7A00] text-white shadow-sm">
+                        <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1.05rem] bg-clay-600 text-white shadow-xs">
                             <Crown className="h-[18px] w-[18px]" />
                         </div>
                         <div>
@@ -70,20 +70,20 @@ export default function SubscriptionPlans({
                         const isElitePlan = plan.id === 'super_premium';
 
                         const cardClass = current
-                            ? 'border-[#C4B5FD] ring-2 ring-[#DDD6FE] shadow-[0_28px_50px_-42px_rgba(109,94,246,0.55)]'
+                            ? 'border-clay-400 ring-2 ring-clay-200 shadow-md'
                             : isPremiumPlan
-                                ? 'border-stone-300 shadow-[0_28px_50px_-44px_rgba(255,138,28,0.45)]'
-                                : 'border-stone-200 shadow-[0_24px_40px_-42px_rgba(15,23,42,0.45)]';
+                                ? 'border-stone-300 shadow-md'
+                                : 'border-stone-200 shadow-xs';
 
                         const iconClass = isElitePlan
-                            ? 'bg-[#6D5EF6] text-white'
+                            ? 'bg-stone-900 text-amber-300'
                             : isPremiumPlan
-                                ? 'bg-gradient-to-br from-[#FFA426] to-[#FF7A00] text-white'
-                                : 'bg-[#6D625C] text-white';
+                                ? 'bg-clay-700 text-white'
+                                : 'bg-stone-700 text-white';
 
                         const upgradeButtonClass = isElitePlan
-                            ? 'bg-[#6D5EF6] text-white hover:bg-[#5C4DEA]'
-                            : 'bg-orange-600 text-white hover:bg-orange-700';
+                            ? 'bg-stone-900 text-white hover:bg-stone-800'
+                            : 'bg-clay-700 text-white hover:bg-clay-800';
 
                         return (
                             <article
@@ -98,7 +98,7 @@ export default function SubscriptionPlans({
                                         <div className="flex flex-wrap items-center gap-2">
                                             <h3 className="text-xl sm:text-[1.55rem] font-black leading-none tracking-tight text-stone-900">{plan.name}</h3>
                                             {isPremiumPlan && (
-                                                <span className="rounded-full bg-gradient-to-r from-[#FFB432] to-[#FF8A1C] text-white shadow-sm px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap">
+                                                <span className="rounded-full bg-clay-700 text-white shadow-xs px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap">
                                                     Most Popular
                                                 </span>
                                             )}
@@ -119,7 +119,7 @@ export default function SubscriptionPlans({
                                 <ul className="mt-5 space-y-3">
                                     {plan.features.map((feature, index) => (
                                         <li key={index} className="flex items-start gap-3">
-                                            <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${isElitePlan ? 'text-[#6D5EF6]' : 'text-green-500'}`} />
+                                            <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${isElitePlan ? 'text-amber-500' : 'text-emerald-600'}`} />
                                             <span className="text-[13px] leading-6 text-stone-700">{feature}</span>
                                         </li>
                                     ))}
@@ -185,7 +185,7 @@ export default function SubscriptionPlans({
                         <span
                             key={i}
                             className={`h-1.5 rounded-full transition-all duration-300 ${
-                                activePageIndex === i ? 'w-4 bg-orange-600' : 'w-1.5 bg-stone-200'
+                                activePageIndex === i ? 'w-4 bg-clay-700' : 'w-1.5 bg-stone-200'
                             }`}
                         />
                     ))}
@@ -200,7 +200,7 @@ export default function SubscriptionPlans({
                     <button
                         type="button"
                         onClick={() => window.location.assign(pendingUpgrade.checkoutUrl)}
-                        className="inline-flex items-center gap-1.5 font-bold text-orange-600 transition-all active:scale-95 hover:text-orange-700"
+                        className="inline-flex items-center gap-1.5 font-bold text-clay-700 transition-all active:scale-95 hover:text-clay-800"
                     >
                         Continue Payment
                         <ChevronRight className="h-[15px] w-[15px]" />

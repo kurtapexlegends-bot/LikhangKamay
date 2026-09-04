@@ -63,15 +63,16 @@ class FetchB2BCatalog
 
         // Search Filter
         if ($request->filled('search')) {
+            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
             $search = trim((string) $request->search);
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('clay_type', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($uq) use ($search) {
-                      $uq->where('shop_name', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%")
-                        ->orWhere('city', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search, $like) {
+                $q->where('name', $like, "%{$search}%")
+                  ->orWhere('description', $like, "%{$search}%")
+                  ->orWhere('clay_type', $like, "%{$search}%")
+                  ->orWhereHas('user', function ($uq) use ($search, $like) {
+                      $uq->where('shop_name', $like, "%{$search}%")
+                        ->orWhere('name', $like, "%{$search}%")
+                        ->orWhere('city', $like, "%{$search}%");
                   });
             });
         }

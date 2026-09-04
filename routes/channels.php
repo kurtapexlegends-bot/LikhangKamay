@@ -10,14 +10,16 @@ Broadcast::channel('chat.{userId}', function ($user, $userId) {
     if ((int) $user->id === (int) $userId) {
         return true;
     }
-    return $user->seller_id && (int) $user->seller_id === (int) $userId;
+    $sellerOwnerId = $user->seller_owner_id ?? $user->seller_id;
+    return (bool) ($sellerOwnerId && (int) $sellerOwnerId === (int) $userId);
 });
 
 Broadcast::channel('team-chat.{userId}', function ($user, $userId) {
     if ((int) $user->id === (int) $userId) {
         return true;
     }
-    return $user->seller_id && (int) $user->seller_id === (int) $userId;
+    $sellerOwnerId = $user->seller_owner_id ?? $user->seller_id;
+    return (bool) ($sellerOwnerId && (int) $sellerOwnerId === (int) $userId);
 });
 
 Broadcast::channel('team-channel.{channelId}', function ($user, $channelId) {

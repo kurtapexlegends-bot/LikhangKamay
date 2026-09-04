@@ -9,8 +9,6 @@ export default function ChannelInfoSidebar({
 }) {
     const [activeTab, setActiveTab] = useState('info'); // 'info' | 'files'
 
-    if (!currentChannel) return null;
-
     // Filter and collect all shared files from activeMessages
     const sharedFiles = useMemo(() => {
         return activeMessages
@@ -24,6 +22,8 @@ export default function ChannelInfoSidebar({
             }))
             .reverse(); // Newest first
     }, [activeMessages]);
+
+    if (!currentChannel) return null;
 
     return (
         <>

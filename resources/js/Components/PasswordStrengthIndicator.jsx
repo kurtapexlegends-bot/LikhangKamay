@@ -1,14 +1,14 @@
 import React, { useMemo } from 'react';
 import { Check, X } from 'lucide-react';
 
-export default function PasswordStrengthIndicator({ password = '', className = '' }) {
+export default function PasswordStrengthIndicator({ password = '', className = '', minLength = 12 }) {
     const rules = useMemo(() => [
-        { id: 'min_length', label: 'At least 12 characters', passed: password.length >= 12 },
+        { id: 'min_length', label: `At least ${minLength} characters`, passed: password.length >= minLength },
         { id: 'lowercase', label: 'Lowercase letter (a-z)', passed: /[a-z]/.test(password) },
         { id: 'uppercase', label: 'Uppercase letter (A-Z)', passed: /[A-Z]/.test(password) },
         { id: 'number', label: 'Number (0-9)', passed: /[0-9]/.test(password) },
         { id: 'symbol', label: 'Special character (!@#$...)', passed: /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/`~]/.test(password) },
-    ], [password]);
+    ], [password, minLength]);
 
     const passedCount = useMemo(() => rules.filter(r => r.passed).length, [rules]);
 

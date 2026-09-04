@@ -1,9 +1,12 @@
 import React from 'react';
 import { useForm, usePage } from '@inertiajs/react';
 import { User, Mail, Lock, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { useToast } from '@/Components/ToastContext';
+import PasswordStrengthIndicator from '@/Components/PasswordStrengthIndicator';
 
 export default function AccountProfileTab() {
     const { auth } = usePage().props;
+    const { addToast } = useToast();
     const user = auth?.user || {};
 
     const profileForm = useForm({
@@ -21,14 +24,45 @@ export default function AccountProfileTab() {
         e.preventDefault();
         profileForm.patch(route('profile.update'), {
             preserveScroll: true,
+            onSuccess: () => {
+                if (addToast) addToast('Profile updated successfully.', 'success');
+            },
         });
     };
 
     const handlePasswordSubmit = (e) => {
         e.preventDefault();
+
+        const localErrors = {};
+        if (!passwordForm.data.current_password) {
+            localErrors.current_password = 'Current password is required';
+        }
+
+        if (!passwordForm.data.password) {
+            localErrors.password = 'New password is required';
+        } else if (passwordForm.data.password.length < 12) {
+            localErrors.password = 'The password field must be at least 12 characters.';
+        }
+
+        if (passwordForm.data.password !== passwordForm.data.password_confirmation) {
+            localErrors.password_confirmation = 'Passwords do not match';
+        }
+
+        if (Object.keys(localErrors).length > 0) {
+            passwordForm.setError(localErrors);
+            return;
+        }
+
+        passwordForm.clearErrors();
         passwordForm.put(route('password.update'), {
             preserveScroll: true,
-            onSuccess: () => passwordForm.reset(),
+            onSuccess: () => {
+                passwordForm.reset();
+                if (addToast) addToast('Password updated successfully.', 'success');
+            },
+            onError: () => {
+                if (addToast) addToast('Failed to update password. Please check the fields.', 'error');
+            },
         });
     };
 
@@ -93,14 +127,14 @@ export default function AccountProfileTab() {
             </form>
 
             {/* Password Update Card */}
-            <form onSubmit={handlePasswordSubmit} className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-2xs space-y-4">
+            <form onSubmit={handlePasswordSubmit} noValidate className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-2xs space-y-4">
                 <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
                     <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center text-stone-600">
                         <Lock size={20} />
                     </div>
                     <div>
                         <h3 className="text-base font-bold text-stone-900">Security & Password</h3>
-                        <p className="text-xs text-stone-500">Ensure your account is using a strong password.</p>
+                        <p className="text-xs text-stone-500">Ensure your account is using a strong password with at least 12 characters.</p>
                     </div>
                 </div>
 
@@ -112,10 +146,15 @@ export default function AccountProfileTab() {
                         <input
                             type="password"
                             value={passwordForm.data.current_password}
-                            onChange={(e) => passwordForm.setData('current_password', e.target.value)}
-                            className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500"
-                            required
+                            onChange={(e) => {
+                                passwordForm.setData('current_password', e.target.value);
+                                if (passwordForm.errors.current_password) passwordForm.clearErrors('current_password');
+                            }}
+                            className={`w-full rounded-xl text-sm focus:ring-clay-500 ${passwordForm.errors.current_password ? 'border-rose-300 focus:border-rose-500' : 'border-stone-200 focus:border-clay-500'}`}
                         />
+                        {passwordForm.errors.current_password && (
+                            <p className="text-xs text-rose-600 mt-1">{passwordForm.errors.current_password}</p>
+                        )}
                     </div>
 
                     <div>
@@ -125,10 +164,15 @@ export default function AccountProfileTab() {
                         <input
                             type="password"
                             value={passwordForm.data.password}
-                            onChange={(e) => passwordForm.setData('password', e.target.value)}
-                            className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500"
-                            required
+                            onChange={(e) => {
+                                passwordForm.setData('password', e.target.value);
+                                if (passwordForm.errors.password) passwordForm.clearErrors('password');
+                            }}
+                            className={`w-full rounded-xl text-sm focus:ring-clay-500 ${passwordForm.errors.password ? 'border-rose-300 focus:border-rose-500' : 'border-stone-200 focus:border-clay-500'}`}
                         />
+                        {passwordForm.errors.password && (
+                            <p className="text-xs text-rose-600 mt-1">{passwordForm.errors.password}</p>
+                        )}
                     </div>
 
                     <div>
@@ -138,12 +182,21 @@ export default function AccountProfileTab() {
                         <input
                             type="password"
                             value={passwordForm.data.password_confirmation}
-                            onChange={(e) => passwordForm.setData('password_confirmation', e.target.value)}
-                            className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500"
-                            required
+                            onChange={(e) => {
+                                passwordForm.setData('password_confirmation', e.target.value);
+                                if (passwordForm.errors.password_confirmation) passwordForm.clearErrors('password_confirmation');
+                            }}
+                            className={`w-full rounded-xl text-sm focus:ring-clay-500 ${passwordForm.errors.password_confirmation ? 'border-rose-300 focus:border-rose-500' : 'border-stone-200 focus:border-clay-500'}`}
                         />
+                        {passwordForm.errors.password_confirmation && (
+                            <p className="text-xs text-rose-600 mt-1">{passwordForm.errors.password_confirmation}</p>
+                        )}
                     </div>
                 </div>
+
+                {passwordForm.data.password && (
+                    <PasswordStrengthIndicator password={passwordForm.data.password} />
+                )}
 
                 <div className="flex justify-end pt-2">
                     <button

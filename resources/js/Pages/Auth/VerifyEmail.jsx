@@ -205,6 +205,7 @@ export default function VerifyEmail({ status, verification }) {
                 >
                     <WorkspaceLogoutLink
                         variant="button"
+                        direct
                         className="inline-flex items-center gap-2 text-xs text-stone-400 hover:text-clay-700 transition uppercase tracking-wider font-bold"
                     >
                         <LogOut size={14} className="text-stone-400" />

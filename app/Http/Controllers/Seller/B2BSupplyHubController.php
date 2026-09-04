@@ -317,10 +317,11 @@ class B2BSupplyHubController extends Controller
             ->latest();
 
         if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('order_number', 'like', "%{$search}%")
-                  ->orWhereHas('items', function ($iq) use ($search) {
-                      $iq->where('name', 'like', "%{$search}%");
+            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
+            $query->where(function ($q) use ($search, $like) {
+                $q->where('order_number', $like, "%{$search}%")
+                  ->orWhereHas('items', function ($iq) use ($search, $like) {
+                      $iq->where('name', $like, "%{$search}%");
                   });
             });
         }
@@ -463,15 +464,16 @@ class B2BSupplyHubController extends Controller
             ->latest();
 
         if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('order_number', 'like', "%{$search}%")
-                  ->orWhere('customer_name', 'like', "%{$search}%")
-                  ->orWhereHas('items', function ($iq) use ($search) {
-                      $iq->where('product_name', 'like', "%{$search}%");
+            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
+            $query->where(function ($q) use ($search, $like) {
+                $q->where('order_number', $like, "%{$search}%")
+                  ->orWhere('customer_name', $like, "%{$search}%")
+                  ->orWhereHas('items', function ($iq) use ($search, $like) {
+                      $iq->where('product_name', $like, "%{$search}%");
                   })
-                  ->orWhereHas('user', function ($uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%")
-                         ->orWhere('shop_name', 'like', "%{$search}%");
+                  ->orWhereHas('user', function ($uq) use ($search, $like) {
+                      $uq->where('name', $like, "%{$search}%")
+                         ->orWhere('shop_name', $like, "%{$search}%");
                   });
             });
         }

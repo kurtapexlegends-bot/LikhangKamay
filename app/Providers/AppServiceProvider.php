@@ -100,13 +100,7 @@ class AppServiceProvider extends ServiceProvider
 
         // --- PASSWORD COMPLEXITY DEFAULTS ---
         \Illuminate\Validation\Rules\Password::defaults(function () {
-            if (app()->runningUnitTests()) {
-                return \Illuminate\Validation\Rules\Password::min(8);
-            }
-            $rule = \Illuminate\Validation\Rules\Password::min(12);
-            return app()->isProduction()
-                ? $rule->letters()->mixedCase()->numbers()->symbols()->uncompromised()
-                : $rule;
+            return \App\Support\PasswordRules::buyer();
         });
 
         // --- RATE LIMITERS ---

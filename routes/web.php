@@ -403,7 +403,9 @@ Route::get('/subscription/payment/cancel', [\App\Http\Controllers\Seller\Subscri
 Route::post('/webhooks/lalamove', \App\Http\Controllers\Webhooks\LalamoveWebhookController::class)->middleware('throttle:120,1')->name('webhooks.lalamove');
 Route::post('/webhooks/paymongo', [\App\Http\Controllers\Webhooks\PaymongoWebhookController::class, 'handle'])->middleware('throttle:120,1')->name('webhooks.paymongo');
 Route::get('/webhooks/cron', function () {
-    if (request()->header('X-Vercel-Cron-Secret') !== env('CRON_SECRET')) {
+    $cronSecret = config('app.cron_secret') ?: env('CRON_SECRET');
+    $provided = request()->header('X-Vercel-Cron-Secret');
+    if (!$cronSecret || empty($provided) || !hash_equals((string) $cronSecret, (string) $provided)) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
     \Illuminate\Support\Facades\Artisan::call('schedule:run');
@@ -414,7 +416,9 @@ Route::get('/webhooks/cron', function () {
 })->name('webhooks.cron');
 
 Route::get('/webhooks/cron/queue', function () {
-    if (request()->header('X-Vercel-Cron-Secret') !== env('CRON_SECRET')) {
+    $cronSecret = config('app.cron_secret') ?: env('CRON_SECRET');
+    $provided = request()->header('X-Vercel-Cron-Secret');
+    if (!$cronSecret || empty($provided) || !hash_equals((string) $cronSecret, (string) $provided)) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
     \Illuminate\Support\Facades\Artisan::call('queue:work', [
@@ -429,15 +433,14 @@ Route::get('/webhooks/cron/queue', function () {
 
 Route::get('/webhooks/migrate', function (\Illuminate\Http\Request $request) {
     $user = $request->user();
-    $cronSecret = env('CRON_SECRET');
-    $providedSecret = $request->query('secret');
+    $cronSecret = config('app.cron_secret') ?: env('CRON_SECRET');
+    $providedSecret = $request->query('secret') ?: $request->header('X-Vercel-Cron-Secret');
 
-    $isAuthorized = ($cronSecret && $providedSecret === $cronSecret)
-        || ($user && in_array($user->role, ['super_admin', 'artisan', 'admin']))
-        || ($providedSecret === 'likhangkamay_migrate_2026');
+    $isAuthorized = ($cronSecret && !empty($providedSecret) && hash_equals((string) $cronSecret, (string) $providedSecret))
+        || ($user && in_array($user->role, ['super_admin', 'admin'], true));
 
     if (!$isAuthorized) {
-        return response()->json(['error' => 'Unauthorized. Please provide ?secret=likhangkamay_migrate_2026 or log in as an artisan/admin.'], 401);
+        return response()->json(['error' => 'Unauthorized. Please provide a valid secret or log in as an administrator.'], 401);
     }
 
     try {

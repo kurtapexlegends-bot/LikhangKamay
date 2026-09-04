@@ -103,7 +103,7 @@ export default function Register() {
             localErrors.password = 'Password is required';
             if (!firstInvalidRef) firstInvalidRef = passwordRef;
         } else if (data.password.length < 8) {
-            localErrors.password = 'Password must be at least 8 characters';
+            localErrors.password = 'The password field must be at least 8 characters.';
             if (!firstInvalidRef) firstInvalidRef = passwordRef;
         }
 
@@ -126,7 +126,7 @@ export default function Register() {
         post(route('register'));
     };
 
-    const handleKeyDown = (nextRef) => (e) => {
+    const handleKeyDown = (e, nextRef) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             nextRef.current?.focus();
@@ -268,7 +268,7 @@ export default function Register() {
                                 autoComplete="given-name"
                                 isFocused={true}
                                 onChange={(e) => setData('first_name', e.target.value)}
-                                onKeyDown={handleKeyDown(lastNameRef)}
+                                onKeyDown={(e) => handleKeyDown(e, lastNameRef)}
                                 hasError={!!errors.first_name}
                                 maxLength={50}
                                 required
@@ -287,7 +287,7 @@ export default function Register() {
                                 className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                                 autoComplete="family-name"
                                 onChange={(e) => setData('last_name', e.target.value)}
-                                onKeyDown={handleKeyDown(emailRef)}
+                                onKeyDown={(e) => handleKeyDown(e, emailRef)}
                                 hasError={!!errors.last_name}
                                 maxLength={50}
                                 floatingLabel="Last Name"
@@ -308,7 +308,7 @@ export default function Register() {
                             className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                             autoComplete="username"
                             onChange={(e) => setData('email', e.target.value)}
-                            onKeyDown={handleKeyDown(passwordRef)}
+                            onKeyDown={(e) => handleKeyDown(e, passwordRef)}
                             hasError={!!errors.email}
                             required
                             floatingLabel="Email Address"
@@ -342,8 +342,11 @@ export default function Register() {
                                 value={data.password}
                                 className="block w-full"
                                 autoComplete="new-password"
-                                onChange={(e) => setData('password', e.target.value)}
-                                onKeyDown={handleKeyDown(confirmPasswordRef)}
+                                onChange={(e) => {
+                                    setData('password', e.target.value);
+                                    if (errors.password) clearErrors('password');
+                                }}
+                                onKeyDown={(e) => handleKeyDown(e, confirmPasswordRef)}
                                 hasError={!!errors.password}
                                 required
                                 floatingLabel="Password"
@@ -359,7 +362,10 @@ export default function Register() {
                                 value={data.password_confirmation}
                                 className="block w-full"
                                 autoComplete="new-password"
-                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                onChange={(e) => {
+                                    setData('password_confirmation', e.target.value);
+                                    if (errors.password_confirmation) clearErrors('password_confirmation');
+                                }}
                                 hasError={!!errors.password_confirmation}
                                 required
                                 floatingLabel="Confirm Password"
@@ -396,7 +402,7 @@ export default function Register() {
                     {/* Password Strength Indicator */}
                     {data.password && (
                         <motion.div variants={itemVariants}>
-                            <PasswordStrengthIndicator password={data.password} />
+                            <PasswordStrengthIndicator password={data.password} minLength={8} />
                         </motion.div>
                     )}
 

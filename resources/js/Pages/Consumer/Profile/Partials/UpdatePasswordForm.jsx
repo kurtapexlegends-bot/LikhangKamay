@@ -4,12 +4,16 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import PasswordStrengthIndicator from '@/Components/PasswordStrengthIndicator';
 import { Transition } from '@headlessui/react';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function UpdatePasswordForm({ className = '' }) {
+    const user = usePage().props.auth?.user;
+    const isBusinessUser = user?.role === 'artisan' || user?.role === 'staff' || user?.role === 'admin';
+    const minPassLength = isBusinessUser ? 12 : 8;
+
     const passwordInput = useRef();
     const currentPasswordInput = useRef();
     const confirmPasswordInput = useRef();
@@ -44,8 +48,8 @@ export default function UpdatePasswordForm({ className = '' }) {
         if (!data.password || data.password === '') {
             localErrors.password = 'New password is required';
             if (!firstInvalidRef) firstInvalidRef = passwordInput;
-        } else if (data.password.length < 8) {
-            localErrors.password = 'Password must be at least 8 characters';
+        } else if (data.password.length < minPassLength) {
+            localErrors.password = `The password field must be at least ${minPassLength} characters.`;
             if (!firstInvalidRef) firstInvalidRef = passwordInput;
         }
 
@@ -87,7 +91,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </p>
             </header>
 
-            <form onSubmit={updatePassword} className="space-y-6">
+            <form onSubmit={updatePassword} noValidate className="space-y-6">
                 <div className="max-w-xl space-y-4">
                     <div>
                         <InputLabel htmlFor="current_password" value="Current Password" />
@@ -95,7 +99,10 @@ export default function UpdatePasswordForm({ className = '' }) {
                             id="current_password"
                             ref={currentPasswordInput}
                             value={data.current_password}
-                            onChange={(e) => setData('current_password', e.target.value)}
+                            onChange={(e) => {
+                                setData('current_password', e.target.value);
+                                if (errors.current_password) clearErrors('current_password');
+                            }}
                             type="password"
                             className="mt-1 block w-full border-stone-200 bg-stone-50/30"
                             autoComplete="current-password"
@@ -110,7 +117,10 @@ export default function UpdatePasswordForm({ className = '' }) {
                             id="password"
                             ref={passwordInput}
                             value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
+                            onChange={(e) => {
+                                setData('password', e.target.value);
+                                if (errors.password) clearErrors('password');
+                            }}
                             type="password"
                             className="mt-1 block w-full border-stone-200 bg-stone-50/30"
                             autoComplete="new-password"
@@ -125,7 +135,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                         >
-                            <PasswordStrengthIndicator password={data.password} />
+                            <PasswordStrengthIndicator password={data.password} minLength={minPassLength} />
                         </motion.div>
                     )}
 
@@ -135,7 +145,10 @@ export default function UpdatePasswordForm({ className = '' }) {
                             id="password_confirmation"
                             ref={confirmPasswordInput}
                             value={data.password_confirmation}
-                            onChange={(e) => setData('password_confirmation', e.target.value)}
+                            onChange={(e) => {
+                                setData('password_confirmation', e.target.value);
+                                if (errors.password_confirmation) clearErrors('password_confirmation');
+                            }}
                             type="password"
                             className="mt-1 block w-full border-stone-200 bg-stone-50/30"
                             autoComplete="new-password"

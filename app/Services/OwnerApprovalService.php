@@ -432,10 +432,11 @@ class OwnerApprovalService
             }
 
             if (!empty($filters['search'])) {
+                $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
                 $search = '%' . trim((string)$filters['search']) . '%';
-                $query->where(function ($q) use ($search) {
-                    $q->where('title', 'like', $search)
-                      ->orWhere('summary', 'like', $search);
+                $query->where(function ($q) use ($search, $like) {
+                    $q->where('title', $like, $search)
+                      ->orWhere('summary', $like, $search);
                 });
             }
 

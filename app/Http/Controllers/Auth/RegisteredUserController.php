@@ -42,12 +42,14 @@ class RegisteredUserController extends Controller
             ]);
         }
 
+        $role = $request->filled('shop_name') ? 'artisan' : 'buyer';
+
         $request->validate([
             'first_name' => 'required_without:name|string|min:2|max:50',
             'last_name' => 'nullable|string|min:2|max:50',
             'name' => 'required_without:first_name|string|min:2|max:50',
             'email' => 'required|string|lowercase|email|max:255',
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => ['required', 'confirmed', \App\Support\PasswordRules::forRole($role)],
             'shop_name' => 'nullable|string|min:3|max:30',
             'terms' => 'accepted', // <--- CRITICAL: Enforces terms acceptance on server
         ]);
@@ -57,8 +59,6 @@ class RegisteredUserController extends Controller
             $request->input('last_name'),
             $request->input('name'),
         );
-
-        $role = $request->filled('shop_name') ? 'artisan' : 'buyer';
 
         $user = \Illuminate\Support\Facades\DB::transaction(function () use ($name, $request, $role, $existingUser) {
             if ($existingUser && is_null($existingUser->email_verified_at)) {

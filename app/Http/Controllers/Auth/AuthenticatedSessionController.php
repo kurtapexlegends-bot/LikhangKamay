@@ -84,6 +84,7 @@ class AuthenticatedSessionController extends Controller
         if (
             $user?->isStaff()
             && $user->canAccessSellerWorkspace()
+            && $user->hasCompletedStaffSecurityGate()
             && $request->route()?->getName() !== 'staff.logout.direct'
         ) {
             $request->session()->put('staff.logout.intent', true);

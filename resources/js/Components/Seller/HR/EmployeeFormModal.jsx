@@ -229,7 +229,10 @@ export default function EmployeeFormModal({
                 onSuccess: (page) => {
                     onClose();
                     addToast(page?.props?.flash?.success || (isProvisioningLogin ? 'Employee and staff login created. Verification code sent.' : 'Employee added.'), 'success');
-                }
+                },
+                onError: () => {
+                    addToast('Please check the highlighted fields.', 'error');
+                },
             });
         } else {
             if (!employee) return;
@@ -237,7 +240,10 @@ export default function EmployeeFormModal({
                 onSuccess: (page) => {
                     onClose();
                     addToast(page?.props?.flash?.success || 'Employee details updated.', 'success');
-                }
+                },
+                onError: () => {
+                    addToast('Please check the highlighted fields.', 'error');
+                },
             });
         }
     };
@@ -250,7 +256,7 @@ export default function EmployeeFormModal({
 
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="2xl">
-            <form onSubmit={handleSubmit} className="flex flex-col max-h-[88vh]">
+            <form onSubmit={handleSubmit} noValidate className="flex flex-col max-h-[88vh]">
                 {/* Header */}
                 <div className="shrink-0 flex justify-between items-center px-5 py-4 border-b border-stone-100 bg-[#FDFBF9]">
                     <div className="flex items-center gap-3">

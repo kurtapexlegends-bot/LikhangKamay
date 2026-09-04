@@ -1,14 +1,14 @@
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import PasswordStrengthIndicator from '@/Components/PasswordStrengthIndicator';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { KeyRound, Mail, Eye, EyeOff, Loader2, Lock } from 'lucide-react';
+import { KeyRound, Mail, Loader2, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function ResetPassword({ token, email }) {
+export default function ResetPassword({ token, email, minLength = 8 }) {
     const { data, setData, post, processing, errors, reset, setError, clearErrors } = useForm({
         token: token,
         email: email,
@@ -28,8 +28,8 @@ export default function ResetPassword({ token, email }) {
         if (!data.password || data.password === '') {
             localErrors.password = 'Password is required';
             if (!firstInvalidRef) firstInvalidRef = passwordRef;
-        } else if (data.password.length < 8) {
-            localErrors.password = 'Password must be at least 8 characters';
+        } else if (data.password.length < minLength) {
+            localErrors.password = `The password field must be at least ${minLength} characters.`;
             if (!firstInvalidRef) firstInvalidRef = passwordRef;
         }
 
@@ -46,7 +46,15 @@ export default function ResetPassword({ token, email }) {
 
         clearErrors();
         post(route('password.store'), {
-            onFinish: () => reset('password', 'password_confirmation'),
+            preserveScroll: true,
+            onSuccess: () => reset(),
+            onError: (errs) => {
+                if (errs.password) {
+                    passwordRef.current?.focus();
+                } else if (errs.password_confirmation) {
+                    confirmPasswordRef.current?.focus();
+                }
+            },
         });
     };
 
@@ -87,7 +95,7 @@ export default function ResetPassword({ token, email }) {
                         Create New Password
                     </h1>
                     <p className="text-stone-400 text-xs font-medium">
-                        Choose a strong password with at least 8 characters.
+                        Choose a strong password with at least 12 characters.
                     </p>
                 </motion.div>
 
@@ -95,6 +103,7 @@ export default function ResetPassword({ token, email }) {
                 <motion.form 
                     variants={containerVariants}
                     onSubmit={submit} 
+                    noValidate
                     className="space-y-5"
                 >
                     {/* Email (Read-only, pre-filled) */}
@@ -124,9 +133,11 @@ export default function ResetPassword({ token, email }) {
                                 className="block w-full"
                                 autoComplete="new-password"
                                 isFocused={true}
-                                onChange={(e) => setData('password', e.target.value)}
+                                onChange={(e) => {
+                                    setData('password', e.target.value);
+                                    if (errors.password) clearErrors('password');
+                                }}
                                 hasError={!!errors.password}
-                                required
                                 floatingLabel="New Password"
                                 icon={Lock}
                             />
@@ -140,9 +151,11 @@ export default function ResetPassword({ token, email }) {
                                 value={data.password_confirmation}
                                 className="block w-full"
                                 autoComplete="new-password"
-                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                onChange={(e) => {
+                                    setData('password_confirmation', e.target.value);
+                                    if (errors.password_confirmation) clearErrors('password_confirmation');
+                                }}
                                 hasError={!!errors.password_confirmation}
-                                required
                                 floatingLabel="Confirm Password"
                                 icon={Lock}
                             />
@@ -154,7 +167,7 @@ export default function ResetPassword({ token, email }) {
                     {/* Password Strength Indicator */}
                     {data.password && (
                         <motion.div variants={itemVariants}>
-                            <PasswordStrengthIndicator password={data.password} />
+                            <PasswordStrengthIndicator password={data.password} minLength={minLength} />
                         </motion.div>
                     )}
 

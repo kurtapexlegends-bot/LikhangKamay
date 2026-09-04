@@ -2,25 +2,24 @@ import React, { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import InputError from '@/Components/InputError';
-import { AlertTriangle, Clock, Ban, CheckCircle2, History, X, ShieldAlert, ShieldCheck, AlertCircle } from 'lucide-react';
+import { AlertTriangle, Clock, Ban, CheckCircle2, History, X, ShieldAlert, ShieldCheck } from 'lucide-react';
 
 export default function DisciplinaryActionModal({ user, onClose, onSuccess }) {
-    if (!user) return null;
-
-    const isSuspended = Boolean(user.is_suspended);
-    const isBanned = Boolean(user.is_banned);
-    const isWarned = Boolean(user.is_warned);
+    const isSuspended = Boolean(user?.is_suspended);
+    const isBanned = Boolean(user?.is_banned);
+    const isWarned = Boolean(user?.is_warned);
 
     const defaultAction = isBanned 
         ? 'unban' 
         : isSuspended 
         ? 'lift_suspension' 
-        : user.warning_count >= 2 
+        : (user?.warning_count ?? 0) >= 2 
         ? 'ban' 
-        : user.warning_count >= 1 
+        : (user?.warning_count ?? 0) >= 1 
         ? 'suspension' 
         : 'warning';
 
+    const [prevUserId, setPrevUserId] = useState(user?.id);
     const [activeAction, setActiveAction] = useState(defaultAction);
 
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -28,6 +27,18 @@ export default function DisciplinaryActionModal({ user, onClose, onSuccess }) {
         reason: '',
         duration_days: 7,
     });
+
+    if (user?.id !== prevUserId) {
+        setPrevUserId(user?.id);
+        setActiveAction(defaultAction);
+        setData({
+            action: defaultAction,
+            reason: '',
+            duration_days: 7,
+        });
+    }
+
+    if (!user) return null;
 
     const handleActionChange = (action) => {
         setActiveAction(action);

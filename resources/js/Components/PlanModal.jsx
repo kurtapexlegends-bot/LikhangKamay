@@ -158,13 +158,10 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                     }`}
                 >
                     <div className="relative border-b border-stone-100 px-5 py-3 sm:px-6">
-                        <div className="absolute right-3 top-0 h-20 w-20 -translate-y-1/3 rounded-full bg-gradient-to-br from-amber-100/25 to-orange-100/20 blur-2xl pointer-events-none" />
-                        <div className="absolute left-3 top-3 h-14 w-14 rounded-full bg-gradient-to-br from-violet-100/20 to-indigo-100/10 blur-xl pointer-events-none" />
-
                         <div className="relative flex items-start justify-between">
                             <div>
                                 <div className="mb-1 flex items-center gap-2.5">
-                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm shadow-amber-200/40">
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-clay-600 shadow-xs">
                                         <Crown size={15} className="text-white" />
                                     </div>
                                     <h2 className="text-lg font-extrabold tracking-tight text-stone-900 sm:text-[1.35rem]">

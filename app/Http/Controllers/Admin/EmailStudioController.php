@@ -11,6 +11,7 @@ use App\Notifications\SystemBroadcastNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -33,10 +34,11 @@ class EmailStudioController extends Controller
         $search = $request->query('query');
         $users = [];
         if ($search) {
+            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
             $users = User::query()
-                ->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%")
-                ->orWhere('shop_name', 'like', "%{$search}%")
+                ->where('name', $like, "%{$search}%")
+                ->orWhere('email', $like, "%{$search}%")
+                ->orWhere('shop_name', $like, "%{$search}%")
                 ->limit(10)
                 ->get(['id', 'name', 'email', 'shop_name', 'role', 'avatar']);
         }

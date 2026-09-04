@@ -261,13 +261,19 @@ class AccountingLedgerService
 
         if (!empty($searchQuery)) {
             $outerQuery->where(function ($q) use ($searchQuery) {
+                $isPgsql = DB::connection()->getDriverName() === 'pgsql';
+                $like = $isPgsql ? 'ILIKE' : 'like';
                 $term = '%' . $searchQuery . '%';
-                $q->where('id', 'like', $term)
-                  ->orWhere('status', 'like', $term)
-                  ->orWhere('requester_name', 'like', $term)
-                  ->orWhere('detail_name', 'like', $term)
-                  ->orWhere('detail_category', 'like', $term)
-                  ->orWhere('order_number', 'like', $term);
+                if ($isPgsql) {
+                    $q->whereRaw('CAST(id AS TEXT) ILIKE ?', [$term]);
+                } else {
+                    $q->where('id', 'like', $term);
+                }
+                $q->orWhere('status', $like, $term)
+                  ->orWhere('requester_name', $like, $term)
+                  ->orWhere('detail_name', $like, $term)
+                  ->orWhere('detail_category', $like, $term)
+                  ->orWhere('order_number', $like, $term);
             });
         }
 

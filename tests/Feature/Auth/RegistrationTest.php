@@ -45,8 +45,8 @@ class RegistrationTest extends TestCase
             'last_name' => 'Seller',
             'shop_name' => 'Clay Seller Studio',
             'email' => 'artisan@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'password1234',
+            'password_confirmation' => 'password1234',
             'terms' => true,
         ]);
 
@@ -170,8 +170,8 @@ class RegistrationTest extends TestCase
                 'first_name' => 'Artisan',
                 'last_name' => 'Social',
                 'shop_name' => 'Social Pottery',
-                'password' => 'password123',
-                'password_confirmation' => 'password123',
+                'password' => 'password1234',
+                'password_confirmation' => 'password1234',
                 'terms' => false,
             ]);
 
@@ -233,5 +233,24 @@ class RegistrationTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('email');
+    }
+
+    public function test_artisan_registration_fails_if_password_is_shorter_than_12_characters(): void
+    {
+        $response = $this->post('/register', [
+            'first_name' => 'Clay',
+            'last_name' => 'Seller',
+            'shop_name' => 'Clay Studio Unique',
+            'email' => 'artisan-short@example.com',
+            'password' => 'short-12345',
+            'password_confirmation' => 'short-12345',
+            'terms' => true,
+        ]);
+
+        $response->assertSessionHasErrors('password');
+        $this->assertEquals(
+            'The password field must be at least 12 characters.',
+            session('errors')->first('password')
+        );
     }
 }

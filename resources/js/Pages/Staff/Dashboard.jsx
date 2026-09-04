@@ -273,7 +273,7 @@ export default function StaffDashboard({ auth, hub }) {
                                             <p className="mt-1.5 text-xs leading-relaxed text-stone-600 max-w-xl font-medium">
                                                 {isPaused
                                                     ? 'Your assigned operational modules remain temporarily locked while on break. Resume your shift anytime to restore full workspace access.'
-                                                    : 'Complete biometric selfie proof and GPS workplace geofence verification to unlock your assigned operational tools.'}
+                                                    : 'Complete quick face photo and store location verification to unlock your assigned operational tools.'}
                                             </p>
 
                                             <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-bold text-stone-600">
@@ -281,7 +281,7 @@ export default function StaffDashboard({ auth, hub }) {
                                                     <Camera size={13} className="text-clay-600" /> Webcam Selfie Proof
                                                 </span>
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100/80 border border-stone-200/70">
-                                                    <MapPin size={13} className="text-clay-600" /> GPS Geofence Check
+                                                    <MapPin size={13} className="text-clay-600" /> Store Location Check
                                                 </span>
                                             </div>
 

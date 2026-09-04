@@ -227,7 +227,7 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
                                                                             <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-stone-200/50">
                                                                                 {session.liveness_verified && (
                                                                                     <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200/70 px-2 py-0.5 rounded-full">
-                                                                                        <CheckCircle2 size={10} /> 3D Liveness Verified
+                                                                                        <CheckCircle2 size={10} /> Face Check Verified
                                                                                     </span>
                                                                                 )}
 

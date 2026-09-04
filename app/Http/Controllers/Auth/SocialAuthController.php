@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -187,7 +188,7 @@ class SocialAuthController extends Controller
                 'last_name' => 'nullable|string|max:255',
                 'name' => 'required_without:first_name|string|max:255',
                 'shop_name' => ['required', 'string', 'max:30', Rule::unique('users', 'shop_name')],
-                'password' => 'required|string|min:8|confirmed',
+                'password' => ['required', 'string', 'confirmed', \App\Support\PasswordRules::business()],
                 'terms' => 'accepted',
             ]);
         } else {
@@ -195,7 +196,7 @@ class SocialAuthController extends Controller
                 'first_name' => 'required_without:name|string|max:255',
                 'last_name' => 'nullable|string|max:255',
                 'name' => 'required_without:first_name|string|max:255',
-                'password' => 'required|string|min:8|confirmed',
+                'password' => ['required', 'string', 'confirmed', \App\Support\PasswordRules::buyer()],
                 'terms' => 'accepted',
             ]);
         }

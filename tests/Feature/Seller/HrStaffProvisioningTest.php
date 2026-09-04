@@ -53,7 +53,7 @@ class HrStaffProvisioningTest extends TestCase
             'salary' => 18500,
             'create_login_account' => true,
             'email' => 'jose.reyes@gmail.com',
-            'default_password' => 'password',
+            'default_password' => 'password1234',
             'staff_user_level' => 'standard',
             'staff_role_preset_key' => 'accountant',
             'module_overrides' => [
@@ -95,7 +95,7 @@ class HrStaffProvisioningTest extends TestCase
 
         $loginResponse = $this->post('/login', [
             'email' => 'jose.reyes@gmail.com',
-            'password' => 'password',
+            'password' => 'password1234',
         ]);
 
         $this->assertAuthenticatedAs($staff);
@@ -114,7 +114,7 @@ class HrStaffProvisioningTest extends TestCase
             'salary' => 21000,
             'create_login_account' => true,
             'email' => 'nina.torres@gmail.com',
-            'default_password' => 'password',
+            'default_password' => 'password1234',
             'manage_staff_accounts' => true,
             'staff_role_preset_key' => 'hr',
             'module_overrides' => [
@@ -148,7 +148,7 @@ class HrStaffProvisioningTest extends TestCase
             'salary' => 19800,
             'create_login_account' => true,
             'email' => 'paolo.cruz@gmail.com',
-            'default_password' => 'password',
+            'default_password' => 'password1234',
             'staff_access_permission_level' => User::STAFF_ACCESS_PERMISSION_UPDATE,
             'staff_role_preset_key' => 'hr',
             'module_overrides' => [
@@ -245,7 +245,7 @@ class HrStaffProvisioningTest extends TestCase
             'salary' => 16000,
             'create_login_account' => true,
             'email' => 'ana@company.com',
-            'default_password' => 'password',
+            'default_password' => 'password1234',
             'staff_user_level' => 'standard',
             'staff_role_preset_key' => 'hr',
             'module_overrides' => [
@@ -277,7 +277,7 @@ class HrStaffProvisioningTest extends TestCase
             'salary' => 12000,
             'create_login_account' => true,
             'email' => 'blocked.user@gmail.com',
-            'default_password' => 'password',
+            'default_password' => 'password1234',
             'staff_user_level' => 'standard',
             'staff_role_preset_key' => 'stock_clerk',
             'module_overrides' => [
@@ -337,7 +337,7 @@ class HrStaffProvisioningTest extends TestCase
             'salary' => 13800,
             'create_login_account' => true,
             'email' => 'managed.user@gmail.com',
-            'default_password' => 'password',
+            'default_password' => 'password1234',
             'staff_user_level' => 'standard',
             'staff_role_preset_key' => 'customer_support',
             'module_overrides' => [
@@ -383,7 +383,7 @@ class HrStaffProvisioningTest extends TestCase
             'salary' => 13800,
             'create_login_account' => true,
             'email' => 'limited.user@gmail.com',
-            'default_password' => 'password',
+            'default_password' => 'password1234',
             'staff_access_permission_level' => User::STAFF_ACCESS_PERMISSION_READ_ONLY,
             'staff_role_preset_key' => 'customer_support',
             'module_overrides' => [
@@ -410,7 +410,7 @@ class HrStaffProvisioningTest extends TestCase
             'salary' => 13800,
             'create_login_account' => true,
             'email' => 'staff.only.alias@gmail.com',
-            'default_password' => 'password',
+            'default_password' => 'password1234',
             'staff_user_level' => 'staff_only',
             'staff_role_preset_key' => 'customer_support',
             'module_overrides' => [
@@ -566,7 +566,7 @@ class HrStaffProvisioningTest extends TestCase
             'salary' => 19500,
             'create_login_account' => true,
             'email' => 'linked.updated@gmail.com',
-            'default_password' => 'password',
+            'default_password' => 'password1234',
             'staff_user_level' => 'manager',
             'staff_role_preset_key' => 'accountant',
             'module_overrides' => [
@@ -623,7 +623,7 @@ class HrStaffProvisioningTest extends TestCase
             'salary' => 14250,
             'create_login_account' => true,
             'email' => 'provision.later@gmail.com',
-            'default_password' => 'password',
+            'default_password' => 'password1234',
             'staff_user_level' => 'manager',
             'staff_role_preset_key' => 'stock_clerk',
             'module_overrides' => [
@@ -1236,6 +1236,25 @@ class HrStaffProvisioningTest extends TestCase
 
         $response2 = $this->actingAs($readOnlyStaff)->post(route('hr.employees.toggle-suspension', $regularEmployee->id));
         $response2->assertForbidden();
+    }
+
+    public function test_owner_cannot_provision_staff_with_password_shorter_than_12_characters(): void
+    {
+        $owner = $this->createOwnerWithHrAccess();
+
+        $response = $this->actingAs($owner)->post(route('hr.store'), [
+            'name' => 'Short Pass Staff',
+            'role' => 'Assistant',
+            'salary' => 15000,
+            'create_login_account' => true,
+            'email' => 'shortpass.staff@gmail.com',
+            'default_password' => 'pass1234',
+            'staff_user_level' => 'standard',
+            'staff_role_preset_key' => 'accountant',
+        ]);
+
+        $response->assertSessionHasErrors(['default_password']);
+        $this->assertDatabaseMissing('users', ['email' => 'shortpass.staff@gmail.com']);
     }
 
     private function createOwnerWithHrAccess(): User
