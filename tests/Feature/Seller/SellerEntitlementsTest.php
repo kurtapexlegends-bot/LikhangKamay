@@ -249,13 +249,11 @@ class SellerEntitlementsTest extends TestCase
             );
     }
 
-    public function test_approved_artisan_without_compliance_record_can_access_seller_routes(): void
+    public function test_approved_artisan_can_access_seller_routes_without_redirection_loop(): void
     {
         $owner = User::factory()->artisanApproved()->create([
             'setup_completed_at' => now(),
         ]);
-        // Ensure no compliance agreements exist
-        \App\Models\SellerComplianceAgreement::where('user_id', $owner->id)->delete();
 
         // Should access products without redirection loop
         $this->actingAs($owner)

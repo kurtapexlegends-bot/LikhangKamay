@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\SellerActivityLog;
 use App\Models\User;
 use App\Http\Requests\CheckoutRequest;
 use App\Services\OrderFinanceService;
@@ -171,6 +172,35 @@ class B2BSupplyHubController extends Controller
             'wholesale_price' => $validated['wholesale_price'] ?? null,
             'wholesale_min_qty' => $validated['wholesale_min_qty'] ?? null,
             'supply_unit' => $validated['supply_unit'] ?? ($product->supply_unit ?: 'pcs'),
+        ]);
+
+        $isListed = (bool) $validated['is_b2b_supply'];
+
+        SellerActivityLog::recordEvent([
+            'seller_owner_id' => $actor->id,
+            'actor_user_id' => $actor->id,
+            'actor_type' => SellerActivityLog::resolveActorType($actor, 'owner'),
+            'category' => 'operations',
+            'module' => 'supply_hub',
+            'event_type' => $isListed ? 'supply_listed' : 'supply_unlisted',
+            'severity' => 'info',
+            'status' => $isListed ? 'published' : 'unlisted',
+            'title' => $isListed ? 'Material Listed on Supply Hub' : 'Material Delisted from Supply Hub',
+            'summary' => $isListed
+                ? "Published \"{$product->name}\" to peer studio supplies."
+                : "Unpublished \"{$product->name}\" from peer studio supplies.",
+            'subject_type' => Product::class,
+            'subject_id' => $product->id,
+            'subject_label' => $product->name,
+            'reference' => $product->sku,
+            'amount_label' => isset($validated['wholesale_price']) && $validated['wholesale_price'] !== null ? 'PHP ' . number_format((float) $validated['wholesale_price'], 2) : null,
+            'details' => [
+                'is_b2b_supply' => $isListed,
+                'moq' => $product->moq,
+                'wholesale_price' => $product->wholesale_price,
+            ],
+            'target_url' => '/seller/supply-hub/my-listings',
+            'target_label' => 'View Listings',
         ]);
 
         $msg = $validated['is_b2b_supply']

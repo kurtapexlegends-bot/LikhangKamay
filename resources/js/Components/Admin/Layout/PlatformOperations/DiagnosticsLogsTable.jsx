@@ -5,7 +5,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import ExportButton from '@/Components/ExportButton';
-import { getActionIcon, getActionColor } from '@/utils/platformOperationsHelpers';
+import { getActionIcon, getActionColor, formatActionLabel } from '@/utils/platformOperationsHelpers';
 
 export default function DiagnosticsLogsTable({ activities, filters = {}, availableActions = [], admins = [], exportUrl = null }) {
     const [search, setSearch] = useState(filters.search || '');
@@ -25,15 +25,6 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
     const [draftStartDate, setDraftStartDate] = useState(startDate);
     const [draftEndDate, setDraftEndDate] = useState(endDate);
 
-    // Sync draft states when popover/drawer opens or props update
-    useEffect(() => {
-        if (isPopoverOpen || isDrawerOpen) {
-            setDraftActionType(actionType);
-            setDraftAdminId(adminId);
-            setDraftStartDate(startDate);
-            setDraftEndDate(endDate);
-        }
-    }, [isPopoverOpen, isDrawerOpen, actionType, adminId, startDate, endDate]);
 
     // Handle outside clicks to close desktop popover
     useEffect(() => {
@@ -166,7 +157,7 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
                         <option value="">All Action Types ({availableActions.length})</option>
                         {availableActions.map((action) => (
                             <option key={action} value={action}>
-                                {action.replace(/_/g, ' ')}
+                                {formatActionLabel(action)}
                             </option>
                         ))}
                     </select>
@@ -471,7 +462,7 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
                                                             <ActionIcon size={14} />
                                                         </div>
                                                         <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${colorClasses}`}>
-                                                            {log.action.split('_')[0]}
+                                                            {formatActionLabel(log.action)}
                                                         </span>
                                                     </div>
                                                 </td>

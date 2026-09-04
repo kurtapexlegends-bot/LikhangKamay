@@ -37,11 +37,6 @@ trait HasArtisanSubscriptions
 
     public function hasAcceptedComplianceTerms(string $type = 'seller_terms'): bool
     {
-        // An approved artisan has already satisfied seller compliance
-        if ($this->isApproved()) {
-            return true;
-        }
-
         return rescue(fn () => $this->complianceAgreements()->where('document_type', $type)->exists(), false);
     }
 

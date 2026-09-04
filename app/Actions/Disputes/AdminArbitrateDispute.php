@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Dispute;
 use App\Models\User;
 use App\Models\SellerActivityLog;
+use App\Models\PlatformActivity;
 use App\Notifications\DisputeStatusNotification;
 use App\Mail\RefundProcessed;
 use Illuminate\Support\Facades\DB;
@@ -145,6 +146,18 @@ class AdminArbitrateDispute
                     'amount_label' => 'PHP ' . number_format((float) $order->total_amount, 2),
                 ]);
             }
+
+            PlatformActivity::create([
+                'user_id' => $actor->id,
+                'action' => 'dispute_arbitrated',
+                'description' => "Super Admin arbitrated dispute #{$disputeId} with decision '{$decision}' for Order #{$order->order_number}.",
+                'metadata' => [
+                    'dispute_id' => $disputeId,
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'decision' => $decision,
+                ],
+            ]);
         });
     }
 

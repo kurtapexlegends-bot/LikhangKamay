@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Search, X, SlidersHorizontal, ChevronDown, Filter, RotateCcw } from "lucide-react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { Search, X, SlidersHorizontal, ChevronDown, Filter, RotateCcw, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import SlideOverDrawer from "@/Components/SlideOverDrawer";
 
 /**
@@ -40,6 +40,89 @@ export default function FilterToolbarHeader({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isPopoverOpen]);
 
+    // Horizontal scroll and hitbox support for segmented tabs
+    const tabsContainerRef = useRef(null);
+    const isDraggingRef = useRef(false);
+    const startXRef = useRef(0);
+    const scrollLeftRef = useRef(0);
+    const hasDraggedRef = useRef(false);
+
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+
+    const checkScrollBounds = useCallback(() => {
+        const el = tabsContainerRef.current;
+        if (!el) return;
+        setCanScrollLeft(el.scrollLeft > 4);
+        setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    }, []);
+
+    useEffect(() => {
+        const el = tabsContainerRef.current;
+        if (!el) return;
+
+        checkScrollBounds();
+        el.addEventListener("scroll", checkScrollBounds, { passive: true });
+
+        // Wheel to horizontal scroll
+        const handleWheel = (e) => {
+            if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                e.preventDefault();
+                el.scrollLeft += e.deltaY;
+            }
+        };
+        el.addEventListener("wheel", handleWheel, { passive: false });
+
+        const handleResize = () => checkScrollBounds();
+        window.addEventListener("resize", handleResize);
+
+        return () => {
+            el.removeEventListener("scroll", checkScrollBounds);
+            el.removeEventListener("wheel", handleWheel);
+            window.removeEventListener("resize", handleResize);
+        };
+    }, [checkScrollBounds, tabs]);
+
+    // Auto-scroll active tab into view smoothly
+    useEffect(() => {
+        if (!tabsContainerRef.current) return;
+        const activeBtn = tabsContainerRef.current.querySelector('[data-active="true"]');
+        if (activeBtn) {
+            activeBtn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        }
+    }, [activeTab]);
+
+    const handleScrollStep = (direction) => {
+        if (!tabsContainerRef.current) return;
+        const offset = direction === "left" ? -180 : 180;
+        tabsContainerRef.current.scrollBy({ left: offset, behavior: "smooth" });
+    };
+
+    const handleMouseDown = (e) => {
+        const el = tabsContainerRef.current;
+        if (!el || el.scrollWidth <= el.clientWidth) return;
+        if (e.button !== 0) return;
+        isDraggingRef.current = true;
+        hasDraggedRef.current = false;
+        startXRef.current = e.pageX - el.offsetLeft;
+        scrollLeftRef.current = el.scrollLeft;
+    };
+
+    const handleMouseMove = (e) => {
+        if (!isDraggingRef.current || !tabsContainerRef.current) return;
+        const el = tabsContainerRef.current;
+        const x = e.pageX - el.offsetLeft;
+        const walk = x - startXRef.current;
+        if (Math.abs(walk) > 4) {
+            hasDraggedRef.current = true;
+        }
+        el.scrollLeft = scrollLeftRef.current - walk;
+    };
+
+    const handleMouseUp = () => {
+        isDraggingRef.current = false;
+    };
+
     const handleOpenFilters = () => {
         if (window.innerWidth < 640) {
             setIsDrawerOpen(true);
@@ -55,39 +138,78 @@ export default function FilterToolbarHeader({
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 min-w-0">
                 {/* Segmented Tab Pill Track */}
                 {tabs && tabs.length > 0 && (
-                    <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar scrollbar-hide flex items-center h-[38px]">
-                        <div className="h-[38px] p-1 bg-stone-100/80 rounded-xl inline-flex items-center gap-1 shrink-0 snap-x border border-stone-200/60 box-border">
-                            {tabs.map((tab) => {
-                                const tabKey = typeof tab === "object" ? tab.key || tab.id || tab.label : tab;
-                                const tabLabel = typeof tab === "object" ? tab.label : tab;
-                                const tabCount = typeof tab === "object" ? tab.count : null;
-                                const isActive = activeTab === tabKey || activeTab === tabLabel;
+                    <div className="relative flex-1 min-w-0 flex items-center group/tabtrack">
+                        {/* Scroll Left Button */}
+                        {canScrollLeft && (
+                            <button
+                                type="button"
+                                onClick={() => handleScrollStep("left")}
+                                className="absolute left-0 z-20 hidden md:flex items-center justify-center w-6 h-6 rounded-full bg-white/95 border border-stone-200/90 shadow-sm text-stone-600 hover:text-stone-900 cursor-pointer transition-all active:scale-90 hover:bg-stone-50"
+                                aria-label="Scroll tabs left"
+                            >
+                                <ChevronLeft size={13} strokeWidth={2.5} />
+                            </button>
+                        )}
 
-                                return (
-                                    <button
-                                        key={tabKey}
-                                        type="button"
-                                        onClick={() => onTabChange && onTabChange(tabKey)}
-                                        className={`px-3 h-[28px] rounded-lg text-xs font-bold transition inline-flex items-center justify-center gap-1.5 shrink-0 snap-start select-none ${
-                                            isActive
-                                                ? "bg-white text-clay-800 shadow-2xs font-black"
-                                                : "text-stone-500 hover:text-stone-800 font-semibold"
-                                        }`}
-                                    >
-                                        <span className="whitespace-nowrap">{tabLabel}</span>
-                                        {tabCount !== null && tabCount !== undefined && tabCount > 0 && (
-                                            <span
-                                                className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${
-                                                    isActive ? "bg-clay-100 text-clay-800" : "bg-stone-200 text-stone-600"
-                                                }`}
-                                            >
-                                                {tabCount}
-                                            </span>
-                                        )}
-                                    </button>
-                                );
-                            })}
+                        {/* Scroll Container */}
+                        <div
+                            ref={tabsContainerRef}
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseUp}
+                            className="flex-1 min-w-0 overflow-x-auto no-scrollbar scrollbar-hide py-1 -my-1 overscroll-x-contain touch-pan-x select-none"
+                        >
+                            <div className="h-[38px] p-1 bg-stone-100/80 rounded-xl inline-flex items-center gap-1 shrink-0 snap-x border border-stone-200/60 box-border">
+                                {tabs.map((tab) => {
+                                    const tabKey = typeof tab === "object" ? tab.key || tab.id || tab.label : tab;
+                                    const tabLabel = typeof tab === "object" ? tab.label : tab;
+                                    const tabCount = typeof tab === "object" ? tab.count : null;
+                                    const isActive = activeTab === tabKey || activeTab === tabLabel;
+
+                                    return (
+                                        <button
+                                            key={tabKey}
+                                            type="button"
+                                            data-active={isActive ? "true" : "false"}
+                                            onClick={() => {
+                                                if (!hasDraggedRef.current && onTabChange) {
+                                                    onTabChange(tabKey);
+                                                }
+                                            }}
+                                            className={`px-3.5 h-[30px] rounded-lg text-xs transition-all inline-flex items-center justify-center gap-1.5 shrink-0 snap-start select-none cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500 focus-visible:ring-offset-1 ${
+                                                isActive
+                                                    ? "bg-white text-clay-800 shadow-2xs font-black"
+                                                    : "text-stone-500 hover:text-stone-800 hover:bg-stone-200/50 font-semibold"
+                                            }`}
+                                        >
+                                            <span className="whitespace-nowrap pointer-events-none">{tabLabel}</span>
+                                            {tabCount !== null && tabCount !== undefined && tabCount > 0 && (
+                                                <span
+                                                    className={`px-1.5 py-0.2 text-[10px] rounded-full font-black pointer-events-none ${
+                                                        isActive ? "bg-clay-100 text-clay-800" : "bg-stone-200 text-stone-600"
+                                                    }`}
+                                                >
+                                                    {tabCount}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
+
+                        {/* Scroll Right Button */}
+                        {canScrollRight && (
+                            <button
+                                type="button"
+                                onClick={() => handleScrollStep("right")}
+                                className="absolute right-0 z-20 hidden md:flex items-center justify-center w-6 h-6 rounded-full bg-white/95 border border-stone-200/90 shadow-sm text-stone-600 hover:text-stone-900 cursor-pointer transition-all active:scale-90 hover:bg-stone-50"
+                                aria-label="Scroll tabs right"
+                            >
+                                <ChevronRight size={13} strokeWidth={2.5} />
+                            </button>
+                        )}
                     </div>
                 )}
 
@@ -96,7 +218,11 @@ export default function FilterToolbarHeader({
                     {/* Search Input */}
                     {onSearchChange && (
                         <div className="relative flex-1 md:flex-initial md:w-56 lg:w-64 min-w-0">
-                            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                            {isSearching ? (
+                                <Loader2 size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-clay-500 animate-spin" />
+                            ) : (
+                                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                            )}
                             <input
                                 type="text"
                                 value={searchQuery}

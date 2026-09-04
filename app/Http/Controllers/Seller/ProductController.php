@@ -103,8 +103,10 @@ class ProductController extends Controller
                         ->where(function($q) {
                             $q->whereNull('cover_photo_path')
                               ->orWhereNull('model_3d_path')
+                              ->orWhereNull('gallery_paths')
                               ->orWhere(function($sq) {
-                                  $sq->whereJsonLength('gallery_paths', '<', 3);
+                                  $sq->whereNotNull('gallery_paths')
+                                     ->whereJsonLength('gallery_paths', '<', 3);
                               });
                         })->count(), 0),
                 ],

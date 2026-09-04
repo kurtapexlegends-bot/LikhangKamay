@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\PlatformActivity;
 use App\Models\SponsorshipRequest;
 use App\Models\User;
 use App\Notifications\SponsorshipStatusNotification;
@@ -102,7 +103,7 @@ class CatalogController extends Controller
             'icon' => 'nullable|string|max:255'
         ]);
 
-        Category::create([
+        $createdCategory = Category::create([
             'name' => $name,
             'slug' => $slug,
             'icon' => $request->input('icon')
@@ -110,6 +111,12 @@ class CatalogController extends Controller
 
         \Illuminate\Support\Facades\Cache::forget('home_categories');
         \Illuminate\Support\Facades\Cache::forget('catalog_categories');
+
+        PlatformActivity::log(
+            'taxonomy_created',
+            "Administrator created marketplace category '{$name}'.",
+            ['category_id' => $createdCategory->id, 'name' => $name, 'slug' => $slug]
+        );
 
         return back()->with('success', 'Category created successfully.');
     }
@@ -150,6 +157,12 @@ class CatalogController extends Controller
         \Illuminate\Support\Facades\Cache::forget('home_categories');
         \Illuminate\Support\Facades\Cache::forget('catalog_categories');
 
+        PlatformActivity::log(
+            'taxonomy_updated',
+            "Administrator updated category from '{$oldName}' to '{$newName}'.",
+            ['category_id' => $category->id, 'old_name' => $oldName, 'new_name' => $newName]
+        );
+
         return back()->with('success', 'Category updated and all associated products updated.');
     }
 
@@ -163,10 +176,17 @@ class CatalogController extends Controller
             return back()->with('error', 'Cannot delete a category that contains products. Please reassign the products first.');
         }
 
+        $deletedName = $category->name;
         $category->delete();
 
         \Illuminate\Support\Facades\Cache::forget('home_categories');
         \Illuminate\Support\Facades\Cache::forget('catalog_categories');
+
+        PlatformActivity::log(
+            'taxonomy_deleted',
+            "Administrator deleted category '{$deletedName}'.",
+            ['category_name' => $deletedName]
+        );
 
         return back()->with('success', 'Category deleted successfully.');
     }
@@ -217,6 +237,12 @@ class CatalogController extends Controller
         $sponsorshipRequest->loadMissing('product');
         $sponsorshipRequest->user?->notify(new SponsorshipStatusNotification($sponsorshipRequest));
 
+        PlatformActivity::log(
+            'sponsorship_approved',
+            "Administrator approved 7-day sponsorship for '{$sponsorshipRequest->product?->name}'.",
+            ['sponsorship_id' => $sponsorshipRequest->id, 'product_id' => $sponsorshipRequest->product_id]
+        );
+
         return back()->with('success', 'Sponsorship approved for 7 days.');
     }
 
@@ -242,6 +268,12 @@ class CatalogController extends Controller
 
         $sponsorshipRequest->loadMissing('product');
         $sponsorshipRequest->user?->notify(new SponsorshipStatusNotification($sponsorshipRequest));
+
+        PlatformActivity::log(
+            'sponsorship_rejected',
+            "Administrator rejected sponsorship for '{$sponsorshipRequest->product?->name}'.",
+            ['sponsorship_id' => $sponsorshipRequest->id, 'product_id' => $sponsorshipRequest->product_id, 'reason' => $validated['rejection_reason']]
+        );
 
         return back()->with('success', 'Sponsorship rejected.');
     }
@@ -303,6 +335,12 @@ class CatalogController extends Controller
             'reject' => 'rejected',
             'flag' => 'flagged',
         };
+
+        PlatformActivity::log(
+            'products_moderated',
+            "Administrator applied moderation '{$actionLabel}' to " . count($validated['ids']) . " product(s).",
+            ['action' => $action, 'product_ids' => $validated['ids']]
+        );
 
         return back()->with('success', count($validated['ids']) . " product(s) successfully {$actionLabel}.");
     }

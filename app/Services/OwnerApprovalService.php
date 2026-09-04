@@ -12,6 +12,7 @@ use App\Models\Supply;
 use App\Models\OrderDispute;
 use App\Models\Discount;
 use App\Models\Product;
+use App\Models\SellerActivityLog;
 use App\Support\HRWorkflowHelper;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
@@ -33,7 +34,7 @@ class OwnerApprovalService
         ?Model $approvable = null,
         ?array $payload = null
     ): OwnerApproval {
-        return OwnerApproval::create([
+        $approval = OwnerApproval::create([
             'seller_id' => $seller->id,
             'requester_id' => $requester->id,
             'domain' => $domain,
@@ -44,6 +45,31 @@ class OwnerApprovalService
             'changes_payload' => $payload,
             'status' => OwnerApproval::STATUS_PENDING,
         ]);
+
+        SellerActivityLog::recordEvent([
+            'seller_owner_id' => $seller->id,
+            'actor_user_id' => $requester->id,
+            'actor_type' => SellerActivityLog::resolveActorType($requester, 'staff'),
+            'category' => 'operations',
+            'module' => 'approvals',
+            'event_type' => 'approval_requested',
+            'severity' => 'info',
+            'status' => 'pending',
+            'title' => 'Approval Requested',
+            'summary' => "{$requester->name} submitted approval request: {$title}",
+            'subject_type' => OwnerApproval::class,
+            'subject_id' => $approval->id,
+            'subject_label' => $title,
+            'reference' => 'REQ-' . str_pad((string) $approval->id, 5, '0', STR_PAD_LEFT),
+            'details' => [
+                'domain' => $domain,
+                'summary' => $summary,
+            ],
+            'target_url' => '/seller/approvals?status=pending',
+            'target_label' => 'View Approvals',
+        ]);
+
+        return $approval;
     }
 
     /**
@@ -200,6 +226,29 @@ class OwnerApprovalService
                 'rejection_reason' => null,
             ]);
 
+            SellerActivityLog::recordEvent([
+                'seller_owner_id' => $locked->seller_id,
+                'actor_user_id' => $reviewer->id,
+                'actor_type' => SellerActivityLog::resolveActorType($reviewer, 'owner'),
+                'category' => 'operations',
+                'module' => 'approvals',
+                'event_type' => 'approval_approved',
+                'severity' => 'success',
+                'status' => 'approved',
+                'title' => 'Approval Granted',
+                'summary' => "Executive approval granted for: {$locked->title}",
+                'subject_type' => OwnerApproval::class,
+                'subject_id' => $locked->id,
+                'subject_label' => $locked->title,
+                'reference' => 'REQ-' . str_pad((string) $locked->id, 5, '0', STR_PAD_LEFT),
+                'details' => [
+                    'domain' => $locked->domain,
+                    'requester_id' => $locked->requester_id,
+                ],
+                'target_url' => '/seller/approvals?status=approved',
+                'target_label' => 'View Approvals',
+            ]);
+
             return true;
         });
     }
@@ -224,6 +273,30 @@ class OwnerApprovalService
                 'reviewer_id' => $reviewer->id,
                 'reviewed_at' => now(),
                 'rejection_reason' => $reason,
+            ]);
+
+            SellerActivityLog::recordEvent([
+                'seller_owner_id' => $locked->seller_id,
+                'actor_user_id' => $reviewer->id,
+                'actor_type' => SellerActivityLog::resolveActorType($reviewer, 'owner'),
+                'category' => 'operations',
+                'module' => 'approvals',
+                'event_type' => 'approval_declined',
+                'severity' => 'warning',
+                'status' => 'rejected',
+                'title' => 'Approval Declined',
+                'summary' => "Executive request declined for: {$locked->title}" . ($reason ? ": {$reason}" : ''),
+                'subject_type' => OwnerApproval::class,
+                'subject_id' => $locked->id,
+                'subject_label' => $locked->title,
+                'reference' => 'REQ-' . str_pad((string) $locked->id, 5, '0', STR_PAD_LEFT),
+                'details' => [
+                    'domain' => $locked->domain,
+                    'requester_id' => $locked->requester_id,
+                    'reason' => $reason,
+                ],
+                'target_url' => '/seller/approvals?status=rejected',
+                'target_label' => 'View Approvals',
             ]);
 
             return true;

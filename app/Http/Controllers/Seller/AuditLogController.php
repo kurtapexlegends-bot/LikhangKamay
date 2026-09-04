@@ -85,22 +85,38 @@ class AuditLogController extends Controller
     public function apiData(Request $request, AuditLogAggregationService $auditService)
     {
         $user = $request->user();
-        if ($user && $user->role === 'super_admin') {
-            $activities = \App\Models\PlatformActivity::with('user:id,name,email')
+        if ($user && in_array($user->role, ['admin', 'super_admin'])) {
+            $activities = \App\Models\PlatformActivity::with('user:id,name,email,role')
                 ->latest()
                 ->take(100)
                 ->get()
                 ->map(function ($activity) {
+                    $action = strtolower((string) $activity->action);
+                    $category = match (true) {
+                        str_contains($action, 'payout') => 'Finance',
+                        str_contains($action, 'artisan') || str_contains($action, 'user') => 'Directory',
+                        str_contains($action, 'flag') || str_contains($action, 'dispute') || str_contains($action, 'moderation') || str_contains($action, 'suspend') || str_contains($action, 'takedown') => 'Safety',
+                        str_contains($action, 'setting') || str_contains($action, 'config') || str_contains($action, 'taxonomy') || str_contains($action, 'cache') || str_contains($action, 'branding') => 'Settings',
+                        default => 'System',
+                    };
+
+                    $severity = match (true) {
+                        str_contains($action, 'rejected') || str_contains($action, 'deleted') || str_contains($action, 'suspended') || str_contains($action, 'takedown') => 'danger',
+                        str_contains($action, 'flagged') || str_contains($action, 'dispute') || str_contains($action, 'pending') => 'warning',
+                        str_contains($action, 'approved') || str_contains($action, 'restored') || str_contains($action, 'disbursed') || str_contains($action, 'resolved') => 'success',
+                        default => 'info',
+                    };
+
                     return [
                         'id' => $activity->id,
                         'title' => str_replace('_', ' ', ucwords(strtolower($activity->action))),
-                        'description' => $activity->details,
-                        'category' => 'System',
+                        'description' => $activity->description ?? $activity->details ?? '',
+                        'category' => $category,
                         'module' => 'Platform Ops',
-                        'severity' => 'info',
+                        'severity' => $severity,
                         'status' => 'success',
                         'actor' => $activity->user?->name ?? 'System Admin',
-                        'actor_type' => 'Super Admin',
+                        'actor_type' => $activity->user?->role ? ucwords(str_replace('_', ' ', $activity->user->role)) : 'Super Admin',
                         'occurred_at' => $activity->created_at?->diffForHumans() ?? 'Just now',
                         'timestamp' => $activity->created_at?->toIso8601String(),
                         'ip_address' => $activity->ip_address ?? '127.0.0.1',

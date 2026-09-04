@@ -215,7 +215,7 @@ export default function Cart({
     const isAllGloballySelected = totalItemsInCart > 0 && Object.keys(cart).every(k => !!selectedItems[k]);
 
     return (
-        <SellerWorkspaceLayout active="supply-hub">
+        <>
             <Head title="View Cart | LikhangKamay" />
 
             <SellerHeader
@@ -330,9 +330,11 @@ export default function Cart({
                     </div>
                 )}
             </div>
-        </SellerWorkspaceLayout>
+        </>
     );
 }
+
+Cart.layout = (page) => <SellerWorkspaceLayout active="supply-hub">{page}</SellerWorkspaceLayout>;
 
 function roundNumber(num, dec) {
     return Math.round(num * Math.pow(10, dec)) / Math.pow(10, dec);

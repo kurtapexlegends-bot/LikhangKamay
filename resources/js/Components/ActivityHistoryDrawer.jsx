@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { usePage } from '@inertiajs/react';
 import axios from 'axios';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import TextInput from '@/Components/TextInput';
@@ -18,8 +19,12 @@ import {
     Terminal,
     Globe
 } from 'lucide-react';
+import { formatRelative } from '@/utils/auditLogHelpers';
 
 export default function ActivityHistoryDrawer({ isOpen, onClose }) {
+    const { auth } = usePage().props;
+    const isAdmin = auth?.user?.role === 'super_admin' || auth?.user?.role === 'admin';
+
     const [entries, setEntries] = useState([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
@@ -43,7 +48,9 @@ export default function ActivityHistoryDrawer({ isOpen, onClose }) {
         }
     };
 
-    const categories = ['All', 'System', 'Auth', 'Settings', 'Finance', 'Staff'];
+    const categories = isAdmin
+        ? ['All', 'System', 'Safety', 'Directory', 'Settings', 'Finance']
+        : ['All', 'Operations', 'Staff', 'Finance', 'Billing'];
 
     const filteredEntries = entries.filter((entry) => {
         const matchesCategory = selectedCategory === 'All' || 
@@ -53,8 +60,8 @@ export default function ActivityHistoryDrawer({ isOpen, onClose }) {
         const q = search.toLowerCase();
         const matchesSearch = !search || 
             (entry.title && entry.title.toLowerCase().includes(q)) ||
-            (entry.description && entry.description.toLowerCase().includes(q)) ||
-            (entry.actor && entry.actor.toLowerCase().includes(q));
+            ((entry.description || entry.summary) && (entry.description || entry.summary).toLowerCase().includes(q)) ||
+            ((entry.actor || entry.actor_name || entry.actor_type) && (entry.actor || entry.actor_name || entry.actor_type).toLowerCase().includes(q));
 
         return matchesCategory && matchesSearch;
     });
@@ -63,14 +70,17 @@ export default function ActivityHistoryDrawer({ isOpen, onClose }) {
         switch ((category || '').toLowerCase()) {
             case 'auth':
             case 'security':
+            case 'safety':
                 return <ShieldCheck size={14} className="text-amber-600" />;
             case 'settings':
+            case 'operations':
                 return <Settings size={14} className="text-clay-600" />;
             case 'finance':
             case 'billing':
                 return <CreditCard size={14} className="text-emerald-600" />;
             case 'staff':
             case 'hr':
+            case 'directory':
                 return <Users size={14} className="text-sky-600" />;
             default:
                 return <Terminal size={14} className="text-stone-600" />;
@@ -78,10 +88,16 @@ export default function ActivityHistoryDrawer({ isOpen, onClose }) {
     };
 
     const handleExport = () => {
-        window.location.href = route('audit-log.export', {
-            category: selectedCategory !== 'All' ? selectedCategory : null,
-            search: search || null
-        });
+        if (isAdmin) {
+            window.location.href = route('admin.activity.export', {
+                search: search || null
+            });
+        } else {
+            window.location.href = route('audit-log.export', {
+                category: selectedCategory !== 'All' ? selectedCategory.toLowerCase() : null,
+                search: search || null
+            });
+        }
     };
 
     return (
@@ -177,13 +193,15 @@ export default function ActivityHistoryDrawer({ isOpen, onClose }) {
                                             {item.title}
                                         </h4>
                                         <span className="text-[10px] font-medium text-stone-400 shrink-0">
-                                            {item.occurred_at}
+                                            {item.occurred_at && item.occurred_at.includes('T')
+                                                ? formatRelative(item.occurred_at)
+                                                : (item.occurred_at || 'Just now')}
                                         </span>
                                     </div>
 
-                                    {item.description && (
+                                    {(item.description || item.summary) && (
                                         <p className="text-[11px] text-stone-600 leading-relaxed font-normal">
-                                            {item.description}
+                                            {item.description || item.summary}
                                         </p>
                                     )}
 
@@ -191,7 +209,7 @@ export default function ActivityHistoryDrawer({ isOpen, onClose }) {
                                     <div className="pt-2 border-t border-stone-200/40 flex items-center justify-between text-[9.5px] text-stone-400 font-medium">
                                         <span className="flex items-center gap-1">
                                             <User size={10} />
-                                            {item.actor || item.actor_type || 'System'}
+                                            {item.actor || item.actor_name || item.actor_type || 'System'}
                                         </span>
                                         {item.ip_address && (
                                             <span className="flex items-center gap-1">

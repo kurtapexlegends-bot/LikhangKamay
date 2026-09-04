@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\StaffAttendanceSession;
+use App\Models\SellerActivityLog;
 use App\Models\User;
 use App\Models\Employee;
 use App\Mail\StaffClockInOtpMail;
@@ -295,6 +296,34 @@ class StaffAttendanceService
             'rejection_reason' => null,
         ]);
 
+        $session->loadMissing('staffUser', 'employee');
+        $staffName = $session->staffUser?->name ?: ($session->employee?->name ?: 'Staff Member');
+        $sellerOwnerId = $session->seller_owner_id ?: ($session->staffUser?->getEffectiveSellerId() ?? $manager->getEffectiveSellerId());
+
+        SellerActivityLog::recordEvent([
+            'seller_owner_id' => $sellerOwnerId,
+            'actor_user_id' => $manager->id,
+            'actor_type' => SellerActivityLog::resolveActorType($manager, 'owner'),
+            'category' => 'staff',
+            'module' => 'attendance',
+            'event_type' => 'attendance_approved',
+            'severity' => 'success',
+            'status' => 'approved',
+            'title' => 'Attendance Session Approved',
+            'summary' => "Manager {$manager->name} approved work session for {$staffName}.",
+            'subject_type' => StaffAttendanceSession::class,
+            'subject_id' => $session->id,
+            'subject_label' => "{$staffName} Attendance",
+            'reference' => 'ATT-' . $session->id,
+            'details' => [
+                'staff_user_id' => $session->staff_user_id,
+                'attendance_date' => optional($session->attendance_date)->toDateString(),
+                'worked_minutes' => $session->worked_minutes,
+            ],
+            'target_url' => '/seller/hr?tab=attendance',
+            'target_label' => 'View Attendance',
+        ]);
+
         return $session;
     }
 
@@ -305,6 +334,34 @@ class StaffAttendanceService
             'approved_by_user_id' => $manager->id,
             'approved_at' => now(),
             'rejection_reason' => $reason ?: 'Rejected by manager',
+        ]);
+
+        $session->loadMissing('staffUser', 'employee');
+        $staffName = $session->staffUser?->name ?: ($session->employee?->name ?: 'Staff Member');
+        $sellerOwnerId = $session->seller_owner_id ?: ($session->staffUser?->getEffectiveSellerId() ?? $manager->getEffectiveSellerId());
+
+        SellerActivityLog::recordEvent([
+            'seller_owner_id' => $sellerOwnerId,
+            'actor_user_id' => $manager->id,
+            'actor_type' => SellerActivityLog::resolveActorType($manager, 'owner'),
+            'category' => 'staff',
+            'module' => 'attendance',
+            'event_type' => 'attendance_rejected',
+            'severity' => 'warning',
+            'status' => 'rejected',
+            'title' => 'Attendance Session Rejected',
+            'summary' => "Manager {$manager->name} rejected work session for {$staffName}" . ($reason ? ": {$reason}" : '.'),
+            'subject_type' => StaffAttendanceSession::class,
+            'subject_id' => $session->id,
+            'subject_label' => "{$staffName} Attendance",
+            'reference' => 'ATT-' . $session->id,
+            'details' => [
+                'staff_user_id' => $session->staff_user_id,
+                'attendance_date' => optional($session->attendance_date)->toDateString(),
+                'rejection_reason' => $reason,
+            ],
+            'target_url' => '/seller/hr?tab=attendance',
+            'target_label' => 'View Attendance',
         ]);
 
         return $session;

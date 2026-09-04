@@ -156,7 +156,7 @@ export default function ApprovalManager({
     const approvalList = approvals?.data || [];
 
     return (
-        <SellerWorkspaceLayout user={auth.user} title="Approvals" active="approvals">
+        <>
             <Head title="Executive Approvals - Artisan Workspace" />
 
             <SellerHeader
@@ -421,6 +421,8 @@ export default function ApprovalManager({
                 onReject={handleOpenDeclineModal}
                 processing={processingId === inspectModal.approval?.id}
             />
-        </SellerWorkspaceLayout>
+        </>
     );
 }
+
+ApprovalManager.layout = (page) => <SellerWorkspaceLayout active="approvals">{page}</SellerWorkspaceLayout>;

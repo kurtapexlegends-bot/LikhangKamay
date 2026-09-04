@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Discount;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\SellerActivityLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
@@ -64,6 +65,31 @@ class DiscountService
                     $discount->products()->sync($validProductIds);
                     $createdDiscounts[] = $discount;
                     $allValidProductIds = array_merge($allValidProductIds, $validProductIds);
+
+                    SellerActivityLog::recordEvent([
+                        'seller_owner_id' => $seller->id,
+                        'actor_user_id' => auth()->id() ?? $seller->id,
+                        'actor_type' => SellerActivityLog::resolveActorType(auth()->user() ?? $seller, 'owner'),
+                        'category' => 'operations',
+                        'module' => 'discounts',
+                        'event_type' => 'discount_created',
+                        'severity' => 'success',
+                        'status' => 'active',
+                        'title' => 'Discount Promotion Created',
+                        'summary' => 'Created promotion: ' . ($discount->name ?: ($discount->type === 'percentage' ? "{$discount->value}% OFF" : "PHP {$discount->value} OFF")),
+                        'subject_type' => Discount::class,
+                        'subject_id' => $discount->id,
+                        'subject_label' => $discount->name ?: "Promo #{$discount->id}",
+                        'reference' => "PROMO-{$discount->id}",
+                        'amount_label' => $discount->type === 'percentage' ? "{$discount->value}%" : 'PHP ' . number_format((float) $discount->value, 2),
+                        'details' => [
+                            'type' => $discount->type,
+                            'value' => (float) $discount->value,
+                            'products_count' => count($validProductIds),
+                        ],
+                        'target_url' => '/seller/discounts',
+                        'target_label' => 'View Discounts',
+                    ]);
                 }
             } else {
                 $discount = $this->createDiscount($seller, $data, $data['product_ids'] ?? []);
@@ -100,6 +126,32 @@ class DiscountService
             ->all();
 
         $discount->products()->sync($validProductIds);
+
+        SellerActivityLog::recordEvent([
+            'seller_owner_id' => $seller->id,
+            'actor_user_id' => auth()->id() ?? $seller->id,
+            'actor_type' => SellerActivityLog::resolveActorType(auth()->user() ?? $seller, 'owner'),
+            'category' => 'operations',
+            'module' => 'discounts',
+            'event_type' => 'discount_created',
+            'severity' => 'success',
+            'status' => 'active',
+            'title' => 'Discount Promotion Created',
+            'summary' => 'Created promotion: ' . ($discount->name ?: ($discount->type === 'percentage' ? "{$discount->value}% OFF" : "PHP {$discount->value} OFF")),
+            'subject_type' => Discount::class,
+            'subject_id' => $discount->id,
+            'subject_label' => $discount->name ?: "Promo #{$discount->id}",
+            'reference' => "PROMO-{$discount->id}",
+            'amount_label' => $discount->type === 'percentage' ? "{$discount->value}%" : 'PHP ' . number_format((float) $discount->value, 2),
+            'details' => [
+                'type' => $discount->type,
+                'value' => (float) $discount->value,
+                'products_count' => count($validProductIds),
+            ],
+            'target_url' => '/seller/discounts',
+            'target_label' => 'View Discounts',
+        ]);
+
         return $discount;
     }
 
@@ -138,6 +190,34 @@ class DiscountService
             $productIds = $discount->products()->pluck('products.id')->all();
             $this->clearSellerProductCaches($discount->user_id, $productIds);
 
+            SellerActivityLog::recordEvent([
+                'seller_owner_id' => $discount->user_id,
+                'actor_user_id' => auth()->id() ?? $discount->user_id,
+                'actor_type' => SellerActivityLog::resolveActorType(auth()->user(), 'owner'),
+                'category' => 'operations',
+                'module' => 'discounts',
+                'event_type' => 'discount_updated',
+                'severity' => 'info',
+                'status' => $discount->is_active ? 'active' : 'inactive',
+                'title' => 'Discount Promotion Updated',
+                'summary' => 'Updated promotion: ' . ($discount->name ?: "Promo #{$discount->id}"),
+                'subject_type' => Discount::class,
+                'subject_id' => $discount->id,
+                'subject_label' => $discount->name ?: "Promo #{$discount->id}",
+                'reference' => "PROMO-{$discount->id}",
+                'amount_label' => $discount->type === 'percentage' ? "{$discount->value}%" : 'PHP ' . number_format((float) $discount->value, 2),
+                'details' => [
+                    'after' => [
+                        'name' => $discount->name,
+                        'type' => $discount->type,
+                        'value' => (float) $discount->value,
+                        'is_active' => (bool) $discount->is_active,
+                    ],
+                ],
+                'target_url' => '/seller/discounts',
+                'target_label' => 'View Discounts',
+            ]);
+
             return $discount;
         });
     }
@@ -152,6 +232,25 @@ class DiscountService
 
             $productIds = $discount->products()->pluck('products.id')->all();
             $this->clearSellerProductCaches($discount->user_id, $productIds);
+
+            SellerActivityLog::recordEvent([
+                'seller_owner_id' => $discount->user_id,
+                'actor_user_id' => auth()->id() ?? $discount->user_id,
+                'actor_type' => SellerActivityLog::resolveActorType(auth()->user(), 'owner'),
+                'category' => 'operations',
+                'module' => 'discounts',
+                'event_type' => 'discount_deactivated',
+                'severity' => 'warning',
+                'status' => 'expired',
+                'title' => 'Discount Promotion Deactivated',
+                'summary' => 'Deactivated promotion: ' . ($discount->name ?: "Promo #{$discount->id}"),
+                'subject_type' => Discount::class,
+                'subject_id' => $discount->id,
+                'subject_label' => $discount->name ?: "Promo #{$discount->id}",
+                'reference' => "PROMO-{$discount->id}",
+                'target_url' => '/seller/discounts',
+                'target_label' => 'View Discounts',
+            ]);
         });
     }
 

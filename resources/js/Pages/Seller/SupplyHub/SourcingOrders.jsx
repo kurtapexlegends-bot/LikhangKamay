@@ -160,7 +160,14 @@ export default function SourcingOrders({
                 
                 {/* Top Sub-Navigation Pill Tabs & Cart Row */}
                 <div className="flex items-center justify-between gap-2 border-b border-stone-200/80 pb-2.5 sm:pb-3">
-                    <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1">
+                    <div 
+                        className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1 touch-pan-x overscroll-x-contain"
+                        onWheel={(e) => {
+                            if (e.currentTarget.scrollWidth > e.currentTarget.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                                e.currentTarget.scrollLeft += e.deltaY;
+                            }
+                        }}
+                    >
                         <div className="p-1 bg-stone-100/70 rounded-2xl inline-flex items-center gap-1">
                             <Link
                                 href={route('seller.supply-hub.index')}
@@ -238,7 +245,14 @@ export default function SourcingOrders({
                 <div className="bg-white rounded-2xl border border-stone-200/80 p-3 sm:p-4 shadow-xs space-y-3">
                     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                         {/* Status Pills */}
-                        <div className="flex items-center gap-1 overflow-x-auto scrollbar-none p-1 bg-stone-100/70 rounded-2xl text-xs font-bold">
+                        <div 
+                            className="flex items-center gap-1 overflow-x-auto scrollbar-none p-1 bg-stone-100/70 rounded-2xl text-xs font-bold touch-pan-x overscroll-x-contain"
+                            onWheel={(e) => {
+                                if (e.currentTarget.scrollWidth > e.currentTarget.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                                    e.currentTarget.scrollLeft += e.deltaY;
+                                }
+                            }}
+                        >
                             {[
                                 { id: 'all', label: 'All Orders' },
                                 { id: 'active', label: 'Active Shipments', count: activeOrdersCount },

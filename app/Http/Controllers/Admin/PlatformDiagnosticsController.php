@@ -161,7 +161,7 @@ class PlatformDiagnosticsController extends Controller
 
     private function getAvailableActions(): array
     {
-        return Cache::remember('platform_activity_actions', 3600, function () {
+        return Cache::remember('platform_activity_actions', 300, function () {
             return PlatformActivity::select('action')
                 ->distinct()
                 ->pluck('action')

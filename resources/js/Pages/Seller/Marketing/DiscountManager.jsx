@@ -96,7 +96,7 @@ export default function DiscountManager({ discounts, stats, filters, products, a
     };
 
     return (
-        <SellerWorkspaceLayout user={auth.user} title="Discounts" active="discounts">
+        <>
             <Head title="Discount Campaigns Manager" />
 
             <SellerHeader
@@ -527,6 +527,8 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                 canEdit={true}
                 discountToEdit={editingDiscount}
             />
-        </SellerWorkspaceLayout>
+        </>
     );
 }
+
+DiscountManager.layout = (page) => <SellerWorkspaceLayout active="discounts">{page}</SellerWorkspaceLayout>;

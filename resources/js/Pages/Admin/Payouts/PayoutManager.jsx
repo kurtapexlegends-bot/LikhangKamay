@@ -99,7 +99,7 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
     const totalHistoryCount = payoutHistory.total || payoutHistory.data?.length || 0;
 
     return (
-        <AdminLayout title="Payouts">
+        <>
             <Head title="Seller Payouts" />
 
             <div className="space-y-6 pb-28">
@@ -516,7 +516,7 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
                     setDisbursingArtisan(artisan);
                 }}
             />
-        </AdminLayout>
+        </>
     );
 }
 
@@ -813,3 +813,5 @@ function ArtisanStatementModal({ artisan, onClose, formatCurrency, onDisburse })
         </Modal>
     );
 }
+
+PayoutManager.layout = (page) => <AdminLayout title="Payouts">{page}</AdminLayout>;

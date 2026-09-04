@@ -67,6 +67,15 @@ export const statusTone = {
     draft: 'bg-amber-50 text-amber-700 border-amber-200/60',
     refund_return: 'bg-red-50 text-red-700 border-red-200/60',
     refunded: 'bg-red-50 text-red-700 border-red-200/60',
+    ongoing: 'bg-sky-50 text-sky-700 border-sky-200/60',
+    expired: 'bg-stone-100 text-stone-600 border-stone-200',
+    upcoming: 'bg-purple-50 text-purple-700 border-purple-200/60',
+    published: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+    unlisted: 'bg-stone-100 text-stone-600 border-stone-200',
+    resolved: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+    flagged: 'bg-amber-50 text-amber-700 border-amber-200/60',
+    inactive: 'bg-stone-100 text-stone-600 border-stone-200',
+    logged: 'bg-stone-100 text-stone-600 border-stone-200',
 };
 
 export const actorTypeLabel = {
@@ -86,6 +95,14 @@ export const moduleLabel = {
     accounting: 'Finance',
     stock_requests: 'Restock Requests',
     subscription: 'Subscription',
+    discounts: 'Discounts & Promos',
+    approvals: 'Executive Approvals',
+    supply_hub: 'Supply Hub',
+    attendance: 'Attendance',
+    payouts: 'Payouts',
+    sponsorships: 'Sponsorships',
+    disputes: 'Disputes',
+    workspace: 'Workspace',
 };
 
 export const formatDateTime = (value) => value
