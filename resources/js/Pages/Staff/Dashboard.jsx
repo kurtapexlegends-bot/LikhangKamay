@@ -1,12 +1,12 @@
+/* global route */
 import React, { useMemo, useState, useEffect } from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SellerHeader from '@/Layouts/SellerHeader';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import {
     ArrowRight,
     PlayCircle,
-    Compass,
     Plus,
     ShieldCheck,
     Camera,
@@ -48,6 +48,7 @@ export default function StaffDashboard({ auth, hub }) {
         if (hub.variant === 'hr') return 'HR and payroll operations';
         if (hub.variant === 'accounting') return 'finance approvals and release checkpoints';
         if (hub.variant === 'procurement') return 'inventory coordination and stock flow';
+        if (hub.variant === 'driver') return 'local deliveries and proof-of-delivery checkpoints';
 
         return 'orders, reviews, and internal team coordination';
     }, [hub.variant]);

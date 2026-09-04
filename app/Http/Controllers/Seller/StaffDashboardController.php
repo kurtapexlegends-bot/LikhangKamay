@@ -7,11 +7,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Employee;
 use App\Models\Order;
+use App\Models\OrderDelivery;
 use App\Models\Payroll;
 use App\Models\Review;
 use App\Models\StockRequest;
 use App\Models\TeamMessage;
 use App\Models\User;
+use App\Services\StaffAttendanceService;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,7 +24,7 @@ class StaffDashboardController extends Controller
 {
     use InteractsWithSellerContext;
 
-    public function index(Request $request): Response|RedirectResponse
+    public function index(Request $request, StaffAttendanceService $attendanceService): Response|RedirectResponse
     {
         /** @var \App\Models\User $user */
         $user = $request->user();
@@ -38,7 +41,10 @@ class StaffDashboardController extends Controller
             return redirect()->route('staff.home');
         }
 
-        if ($user->staff_role_preset_key === 'driver' || ($user->employee && $user->employee->role === 'Logistics / Driver')) {
+        $isDriver = $user->staff_role_preset_key === 'driver' || ($user->employee && $user->employee->role === 'Logistics / Driver');
+        $hasOpenSession = $attendanceService->getOpenSession($user) !== null;
+
+        if ($isDriver && $hasOpenSession) {
             return redirect()->route('staff.deliveries');
         }
 
@@ -95,7 +101,40 @@ class StaffDashboardController extends Controller
             ->whereHas('product', fn($query) => $query->where('user_id', $sellerId))
             ->count();
 
+        $driverDeliveriesToday = 0;
+        if ($variant === 'driver') {
+            $employeeId = $user->employee?->id ?? ($user->employee_id ?? null);
+            $driverDeliveriesToday = OrderDelivery::query()
+                ->where('provider', OrderDelivery::PROVIDER_IN_HOUSE)
+                ->where(function ($q) use ($user, $employeeId) {
+                    $q->where('driver_user_id', $user->id);
+                    if ($employeeId) {
+                        $q->orWhere('driver_employee_id', $employeeId);
+                    }
+                })
+                ->where(function ($q) {
+                    $q->whereDate('dispatched_at', Carbon::today())
+                        ->orWhereDate('delivered_at', Carbon::today());
+                })
+                ->count();
+        }
+
         $variantMeta = match ($variant) {
+            'driver' => [
+                'title' => 'Logistics Hub',
+                'subtitle' => 'Local delivery dispatches, route runs, and proof-of-delivery checkpoints.',
+                'eyebrow' => 'Driver Workspace',
+                'focus' => 'Logistics & Dispatch',
+                'theme' => 'clay',
+                'stats' => [
+                    ['label' => 'Today Deliveries', 'value' => $driverDeliveriesToday, 'tone' => 'emerald', 'routeName' => 'staff.deliveries'],
+                    ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages, 'tone' => 'sky', 'routeName' => 'team-messages.index'],
+                ],
+                'highlights' => [
+                    'Complete your quick face photo and store location check to start your shift.',
+                    'Once on duty, your local delivery dispatches will appear in your delivery console.',
+                ],
+            ],
             'hr' => [
                 'title' => 'HR Hub',
                 'subtitle' => 'Employee records, payroll preparation, and people operations.',
@@ -188,6 +227,7 @@ class StaffDashboardController extends Controller
                     'activeReturns' => $activeReturns,
                     'unresolvedReviews' => $unresolvedReviews,
                     'unreadTeamMessages' => $unreadTeamMessages,
+                    'driverDeliveriesToday' => $driverDeliveriesToday,
                 ]
             ),
         ];
@@ -275,6 +315,15 @@ class StaffDashboardController extends Controller
                 'metricValue' => $metrics['activeReturns'],
                 'tone' => 'slate',
             ],
+            'deliveries' => [
+                'module' => 'deliveries',
+                'title' => 'Delivery Console',
+                'description' => 'View route dispatches and complete drop-offs with proof-of-delivery.',
+                'routeName' => 'staff.deliveries',
+                'metricLabel' => 'Deliveries',
+                'metricValue' => $metrics['driverDeliveriesToday'] ?? 0,
+                'tone' => 'clay',
+            ],
             'team_messages' => [
                 'module' => 'team_messages',
                 'title' => 'Team Inbox',
@@ -290,6 +339,7 @@ class StaffDashboardController extends Controller
             'hr' => ['hr', 'team_messages', 'accounting'],
             'accounting' => ['accounting', 'team_messages', 'orders'],
             'procurement' => ['procurement', 'stock_requests', 'team_messages'],
+            'driver' => ['deliveries', 'orders', 'team_messages'],
             default => ['orders', 'reviews', 'team_messages', 'products', 'analytics', 'hr', 'accounting', 'procurement', 'stock_requests'],
         };
 
@@ -297,6 +347,10 @@ class StaffDashboardController extends Controller
             ->filter(function (string $key) use ($catalog, $hasModule) {
                 if (!isset($catalog[$key])) {
                     return false;
+                }
+
+                if ($catalog[$key]['module'] === 'deliveries') {
+                    return true;
                 }
 
                 return $hasModule($catalog[$key]['module']);

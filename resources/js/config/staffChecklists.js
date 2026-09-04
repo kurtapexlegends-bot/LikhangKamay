@@ -14,6 +14,11 @@ export const staffChecklistPresets = {
         { id: '2', text: 'Check low-stock supply alert logs', completed: false },
         { id: '3', text: 'Review incoming stock request documents', completed: false },
     ],
+    driver: [
+        { id: '1', text: 'Clock in for your shift schedule', completed: true },
+        { id: '2', text: 'Check assigned dispatches for today', completed: false },
+        { id: '3', text: 'Verify proof of delivery upon drop-off', completed: false },
+    ],
     default: [
         { id: '1', text: 'Clock in for your shift schedule', completed: true },
         { id: '2', text: 'Review open active customer orders', completed: false },

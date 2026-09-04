@@ -135,6 +135,45 @@ class StaffDashboardTest extends TestCase
             );
     }
 
+    public function test_off_duty_driver_lands_on_logistics_hub_with_clock_in_gate(): void
+    {
+        $owner = $this->createPremiumOwner();
+        $driver = $this->createStaff($owner, 'driver', [], false);
+
+        $this->actingAs($driver)
+            ->get(route('staff.dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Staff/Dashboard')
+                ->where('hub.variant', 'driver')
+                ->where('hub.title', 'Logistics Hub')
+                ->where('hub.focus', 'Logistics & Dispatch')
+                ->where('hub.cards.0.routeName', 'staff.deliveries')
+            );
+
+        $this->actingAs($driver)
+            ->get(route('staff.deliveries'))
+            ->assertRedirect(route('staff.dashboard'));
+    }
+
+    public function test_clocked_in_driver_is_redirected_to_deliveries_console(): void
+    {
+        $owner = $this->createPremiumOwner();
+        $driver = $this->createStaff($owner, 'driver', [], true);
+
+        $this->actingAs($driver)
+            ->get(route('staff.dashboard'))
+            ->assertRedirect(route('staff.deliveries'));
+
+        $this->actingAs($driver)
+            ->get(route('staff.deliveries'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Staff/DriverDeliveries')
+                ->where('driverProfile.is_clocked_in', true)
+            );
+    }
+
     private function createPremiumOwner(array $modulesEnabled = []): User
     {
         $owner = User::factory()->artisanApproved()->create([
@@ -151,7 +190,7 @@ class StaffDashboardTest extends TestCase
         return $owner;
     }
 
-    private function createStaff(User $owner, string $presetKey, array $permissions = []): User
+    private function createStaff(User $owner, string $presetKey, array $permissions = [], bool $clockedIn = true): User
     {
         $staff = User::factory()->staff($owner)->create([
             'email_verified_at' => now(),
@@ -160,14 +199,16 @@ class StaffDashboardTest extends TestCase
             'staff_module_permissions' => User::withWorkspaceAccessFlag($permissions, true),
         ]);
 
-        StaffAttendanceSession::create([
-            'staff_user_id' => $staff->id,
-            'seller_owner_id' => $owner->id,
-            'attendance_date' => now(config('app.timezone'))->toDateString(),
-            'clock_in_at' => now(config('app.timezone'))->subHour(),
-            'last_heartbeat_at' => now(config('app.timezone')),
-            'worked_minutes' => 60,
-        ]);
+        if ($clockedIn) {
+            StaffAttendanceSession::create([
+                'staff_user_id' => $staff->id,
+                'seller_owner_id' => $owner->id,
+                'attendance_date' => now(config('app.timezone'))->toDateString(),
+                'clock_in_at' => now(config('app.timezone'))->subHour(),
+                'last_heartbeat_at' => now(config('app.timezone')),
+                'worked_minutes' => 60,
+            ]);
+        }
 
         return $staff;
     }

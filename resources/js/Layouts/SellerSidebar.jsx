@@ -18,7 +18,7 @@ import StaffAttendanceDock from '@/Components/Seller/Sidebar/StaffAttendanceDock
 const GROUPS_STORAGE_KEY = 'seller_sidebar_expanded_groups_v1';
 const GEAR_HINT_STORAGE_KEY = 'seller_sidebar_gear_hint_seen_v1';
 const resolveActiveGroup = (active) => {
-    if (['staff-dashboard'].includes(active)) return 'workspace';
+    if (['staff-dashboard', 'deliveries'].includes(active)) return 'workspace';
     if (['overview', 'products', 'analytics', '3d', 'approvals'].includes(active)) return 'core';
     if (['orders', 'chat', 'team-messages', 'reviews'].includes(active)) return 'crm';
     if (['sponsorships', 'discounts'].includes(active)) return 'marketing';
@@ -96,6 +96,8 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
     const canManagePlan = sellerSubscription?.canManageSubscription ?? entitlement.canManageSubscription ?? user?.role === 'artisan';
     const showPlanPanel = sellerSubscription?.showPlanPanel ?? entitlement.showPlanPanel ?? user?.role === 'artisan';
     const isStaffActor = (entitlement.actorType || (user?.role === 'staff' ? 'staff' : 'owner')) === 'staff';
+    const staffRolePreset = entitlement.rolePresetKey || user?.staff_role_preset_key || user?.role_preset_key;
+    const isDriverStaff = isStaffActor && (staffRolePreset === 'driver' || user?.employee?.role === 'Logistics / Driver');
 
     const enabledToggles = useMemo(() => {
         return {
@@ -116,11 +118,12 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
     const isRestoringScrollRef = React.useRef(false);
     const { url } = usePage();
 
-    const handleTooltipShow = useCallback((e, label) => {
+    const handleTooltipShow = useCallback((e, text, subtext = null) => {
         if (!isCollapsed) return;
         const rect = e.currentTarget.getBoundingClientRect();
         setActiveTooltip({
-            label,
+            text: text || '',
+            subtext: subtext || null,
             y: rect.top + rect.height / 2,
             x: rect.right + 12
         });
@@ -315,7 +318,31 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                             onToggle={() => toggleGroup('workspace')}
                             isCollapsed={isCollapsed}
                         >
-                            <NavItem href={route('staff.dashboard')} icon={LayoutDashboard} active={active === 'staff-dashboard'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Staff Hub')} onMouseLeave={handleTooltipLeave}>Staff Hub</NavItem>
+                            {isDriverStaff ? (
+                                <NavItem 
+                                    href={route('staff.deliveries')} 
+                                    icon={Truck} 
+                                    active={active === 'deliveries' || active === 'staff-dashboard'} 
+                                    onClick={onClose} 
+                                    isCollapsed={isCollapsed} 
+                                    onMouseEnter={(e) => handleTooltipShow(e, 'Deliveries')} 
+                                    onMouseLeave={handleTooltipLeave}
+                                >
+                                    Deliveries
+                                </NavItem>
+                            ) : (
+                                <NavItem 
+                                    href={route('staff.dashboard')} 
+                                    icon={LayoutDashboard} 
+                                    active={active === 'staff-dashboard'} 
+                                    onClick={onClose} 
+                                    isCollapsed={isCollapsed} 
+                                    onMouseEnter={(e) => handleTooltipShow(e, 'Staff Hub')} 
+                                    onMouseLeave={handleTooltipLeave}
+                                >
+                                    Staff Hub
+                                </NavItem>
+                            )}
                         </CategoryGroup>
                     )}
 
@@ -355,7 +382,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 isCollapsed={isCollapsed}
                             >
                                 {visibleModulesSet.has('orders') && (
-                                    <NavItem href={route('orders.index')} icon={ShoppingBag} active={active === 'orders'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Orders')} onMouseLeave={handleTooltipLeave}>Orders</NavItem>
+                                    <NavItem href={route('orders.index')} icon={ShoppingBag} active={active === 'orders' || (!isStaffActor && active === 'deliveries')} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Orders')} onMouseLeave={handleTooltipLeave}>Orders</NavItem>
                                 )}
                                 {visibleModulesSet.has('messages') && (
                                     <NavItem href={route('chat.index')} icon={MessageCircle} active={active === 'chat'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Messages')} onMouseLeave={handleTooltipLeave}>Messages</NavItem>
@@ -459,7 +486,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     }}
                     className="pointer-events-none z-[9999] bg-[#1c1917] text-white text-xs rounded-xl px-3.5 py-2.5 shadow-xl border border-stone-800/80 whitespace-nowrap text-center"
                 >
-                    <p className="font-bold text-white text-xs leading-none">{activeTooltip.text}</p>
+                    <p className="font-bold text-white text-xs leading-none">{activeTooltip.text || activeTooltip.label}</p>
                     {activeTooltip.subtext && (
                         <p className="text-[10px] text-stone-400 font-medium mt-1.5 leading-none">
                             {activeTooltip.subtext}

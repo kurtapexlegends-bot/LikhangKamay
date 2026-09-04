@@ -28,6 +28,10 @@ class DriverDeliveryController extends Controller
             abort(403, 'Workspace access denied.');
         }
 
+        if ($user->isStaff() && !$attendanceService->getOpenSession($user)) {
+            return redirect()->route('staff.dashboard');
+        }
+
         $employee = $user->isStaff() ? $user->employee : null;
         $employeeId = $employee?->id ?? ($user->employee_id ?? null);
         $isOwner = $user->isSellerOwner();

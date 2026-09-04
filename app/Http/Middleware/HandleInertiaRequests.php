@@ -52,7 +52,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $user ? array_merge(
-                    $user->only(['id', 'name', 'first_name', 'last_name', 'email', 'role', 'shop_name', 'shop_slug', 'avatar', 'avatar_url', 'banner_image', 'banner_image_url', 'artisan_status', 'premium_tier', 'payout_method', 'payout_account_name', 'payout_account_number']),
+                    $user->only(['id', 'name', 'first_name', 'last_name', 'email', 'role', 'staff_role_preset_key', 'shop_name', 'shop_slug', 'avatar', 'avatar_url', 'banner_image', 'banner_image_url', 'artisan_status', 'premium_tier', 'payout_method', 'payout_account_name', 'payout_account_number']),
                     [
                         'business_permit' => $user->business_permit,
                         'business_permit_url' => $urlHelper($user->business_permit),
