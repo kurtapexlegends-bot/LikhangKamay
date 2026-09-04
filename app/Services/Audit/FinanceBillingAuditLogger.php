@@ -73,6 +73,7 @@ class FinanceBillingAuditLogger
                     ],
                     targetUrl: route('hr.payroll.show', ['payroll' => $payroll->id]),
                     targetLabel: 'Open Payroll Run',
+                    actorId: (int) ($payroll->requested_by_user_id ?: $payroll->user_id),
                 );
             });
 
@@ -153,6 +154,7 @@ class FinanceBillingAuditLogger
                     ],
                     targetUrl: route('stock-requests.index', ['highlight_request' => $request->id]),
                     targetLabel: 'Open Restock Requests',
+                    actorId: (int) ($request->requested_by_user_id ?: $request->user_id),
                 );
             });
 
@@ -235,6 +237,7 @@ class FinanceBillingAuditLogger
                     ],
                     targetUrl: route('seller.subscription'),
                     targetLabel: 'Open Subscription',
+                    actorId: (int) $transaction->user_id,
                 );
             });
 
@@ -304,6 +307,7 @@ class FinanceBillingAuditLogger
                     ],
                     targetUrl: route('accounting.index'),
                     targetLabel: 'Open Finance',
+                    actorId: (int) ($adjustment->adjusted_by_user_id ?: $adjustment->user_id),
                 );
             });
 

@@ -86,6 +86,7 @@ class AuditLogAggregationService
                     after: self::normalizeDiffBlock($details['after'] ?? null),
                     targetUrl: $entry->target_url,
                     targetLabel: $entry->target_label ?: 'Open Record',
+                    actorId: (int) ($entry->actor_user_id ?: $entry->actor?->id),
                 );
             });
 
@@ -150,6 +151,7 @@ class AuditLogAggregationService
                     after: self::normalizeDiffBlock($details['after'] ?? null),
                     targetUrl: route('hr.index', ['highlight_staff' => $audit->staff_user_id]),
                     targetLabel: 'Open HR',
+                    actorId: (int) ($audit->actor_id ?: $audit->staff_user_id),
                 );
             });
 
@@ -189,6 +191,7 @@ class AuditLogAggregationService
         ?array $after = null,
         ?string $targetUrl = null,
         ?string $targetLabel = null,
+        ?int $actorId = null,
     ): array {
         return [
             'id' => $id,
@@ -200,6 +203,7 @@ class AuditLogAggregationService
             'status' => $status,
             'severity' => $severity,
             'occurred_at' => $occurredAt,
+            'actor_id' => $actorId,
             'actor_name' => $actorName,
             'actor_type' => $actorType,
             'subject' => $subject,

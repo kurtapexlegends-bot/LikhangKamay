@@ -1,3 +1,4 @@
+/* global route */
 import React, { useDeferredValue, useMemo, useState } from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import SellerHeader from '@/Layouts/SellerHeader';
@@ -5,15 +6,13 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
-import { Printer, ReceiptText } from 'lucide-react';
-import ExportButton from '@/Components/ExportButton';
+import { ReceiptText } from 'lucide-react';
 
 import {
     summaryCards,
     categoryOptions,
     actorTypeLabel,
     moduleLabel,
-    formatDateTime,
     formatRelative,
     formatStatusLabel,
     dayLabel,
@@ -44,7 +43,7 @@ export default function AuditLog({ auth, auditLog }) {
     // Selected log entry for mobile bottom sheet details drawer
     const [selectedDetailEntry, setSelectedDetailEntry] = useState(null);
 
-    const entries = auditLog?.entries || [];
+    const entries = useMemo(() => auditLog?.entries || [], [auditLog?.entries]);
     const latestEventAt = auditLog?.summary?.latest_event_at;
     const coverage = auditLog?.summary?.coverage || [];
 
@@ -147,58 +146,6 @@ export default function AuditLog({ auth, auditLog }) {
 
         return Array.from(groups.values());
     }, [paginatedEntries]);
-
-    const exportCsv = () => {
-        const headers = [
-            'Occurred At',
-            'Category',
-            'Module',
-            'Event Type',
-            'Severity',
-            'Status',
-            'Title',
-            'Summary',
-            'Actor',
-            'Actor Type',
-            'Subject',
-            'Reference',
-            'Amount',
-            'Details',
-        ];
-
-        const rows = filteredEntries.map((entry) => ([
-            formatDateTime(entry.occurred_at),
-            entry.category || '',
-            moduleLabel[entry.module] || formatStatusLabel(entry.module),
-            entry.event_type || '',
-            formatStatusLabel(entry.severity),
-            formatStatusLabel(entry.status),
-            entry.title || '',
-            entry.summary || '',
-            entry.actor_name || '',
-            actorTypeLabel[entry.actor_type] || formatStatusLabel(entry.actor_type),
-            entry.subject || '',
-            entry.reference || '',
-            entry.amount_label || '',
-            [
-                ...(entry.detail_lines || []),
-                ...Object.entries(entry.before || {}).map(([key, value]) => `Before ${key}: ${value}`),
-                ...Object.entries(entry.after || {}).map(([key, value]) => `After ${key}: ${value}`),
-            ].join(' | '),
-        ]));
-
-        const csv = [headers, ...rows]
-            .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
-            .join('\n');
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
-        link.click();
-        window.URL.revokeObjectURL(url);
-    };
 
     const resetFilters = () => {
         setSelectedCategory('all');
@@ -338,11 +285,17 @@ export default function AuditLog({ auth, auditLog }) {
             </div>
 
             <SellerHeader
-                title="Activity Log Center"
-                subtitle="Review security actions, staff access logs, and billing history."
+                title={auditLog?.summary?.is_staff_view ? "My Activity History" : "Activity Log Center"}
+                subtitle={auditLog?.summary?.is_staff_view
+                    ? "Review your shift actions, delivery logs, and workspace activity history."
+                    : "Review security actions, staff access logs, and billing history."
+                }
                 auth={auth}
                 onMenuClick={openSidebar}
-                badge={{ label: 'Workspace Oversight', iconColor: 'text-stone-400' }}
+                badge={{
+                    label: auditLog?.summary?.is_staff_view ? 'Personal Activity' : 'Workspace Oversight',
+                    iconColor: auditLog?.summary?.is_staff_view ? 'text-clay-500' : 'text-stone-400',
+                }}
             />
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
@@ -371,9 +324,13 @@ export default function AuditLog({ auth, auditLog }) {
                     <div className="border-b border-stone-100 px-5 py-6 sm:px-8">
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div>
-                                <h2 className="text-xl font-bold tracking-tight text-stone-900">Activity Ledger</h2>
+                                <h2 className="text-xl font-bold tracking-tight text-stone-900">
+                                    {auditLog?.summary?.is_staff_view ? "Activity History" : "Activity Ledger"}
+                                </h2>
                                 <p className="mt-1 max-w-2xl text-[12px] font-medium leading-tight text-stone-500">
-                                    Search, filter, and review specific workspace events.
+                                    {auditLog?.summary?.is_staff_view
+                                        ? "Search and review your personal workspace actions and events."
+                                        : "Search, filter, and review specific workspace events."}
                                 </p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
@@ -413,7 +370,7 @@ export default function AuditLog({ auth, auditLog }) {
                         formatStatusLabel={formatStatusLabel}
                         filteredCount={filteredEntries.length}
                         onPrint={() => setTimeout(() => window.print(), 150)}
-                        exportUrl={route('audit-log.export', {
+                        exportUrl={auditLog?.summary?.is_staff_view ? null : route('audit-log.export', {
                             category: selectedCategory,
                             module: selectedModule,
                             status: selectedStatus,
@@ -434,8 +391,11 @@ export default function AuditLog({ auth, auditLog }) {
                     ) : (
                         <WorkspaceEmptyState
                             icon={ReceiptText}
-                            title="No audit activity found"
-                            description="Try a broader date range or clear the filters to review more workspace history."
+                            title={auditLog?.summary?.is_staff_view ? "No personal activity found" : "No audit activity found"}
+                            description={auditLog?.summary?.is_staff_view
+                                ? "No actions or events recorded for your account yet."
+                                : "Try a broader date range or clear the filters to review more workspace history."
+                            }
                         />
                     )}
 
@@ -449,30 +409,32 @@ export default function AuditLog({ auth, auditLog }) {
                         itemLabel="activity entries"
                     />
 
-                    {/* Coverage footer */}
-                    <div className="border-t border-stone-100 px-5 py-4 sm:px-8 bg-stone-50/50">
-                        <div className="flex flex-wrap gap-2">
-                            {coverage.map((source) => (
-                                <span
-                                    key={source.key}
-                                    className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-medium ${
-                                        source.available
-                                            ? 'border-stone-200 bg-white text-stone-500'
-                                            : 'border-amber-200 bg-amber-50 text-amber-700'
-                                    }`}
-                                >
-                                    <span>{source.label}</span>
-                                    <span className="mx-1 h-1 w-1 rounded-full bg-current opacity-50" />
-                                    <span>{source.count}</span>
-                                </span>
-                            ))}
+                    {/* Coverage footer (Shop owners only) */}
+                    {!auditLog?.summary?.is_staff_view && (
+                        <div className="border-t border-stone-100 px-5 py-4 sm:px-8 bg-stone-50/50">
+                            <div className="flex flex-wrap gap-2">
+                                {coverage.map((source) => (
+                                    <span
+                                        key={source.key}
+                                        className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-medium ${
+                                            source.available
+                                                ? 'border-stone-200 bg-white text-stone-500'
+                                                : 'border-amber-200 bg-amber-50 text-amber-700'
+                                        }`}
+                                    >
+                                        <span>{source.label}</span>
+                                        <span className="mx-1 h-1 w-1 rounded-full bg-current opacity-50" />
+                                        <span>{source.count}</span>
+                                    </span>
+                                ))}
+                            </div>
+                            {auditLog?.summary?.missing_sources?.length ? (
+                                <p className="mt-2 text-[10px] font-bold text-amber-700 uppercase tracking-widest">
+                                    Partial coverage: {auditLog.summary.missing_sources.join(', ')} missing.
+                                </p>
+                            ) : null}
                         </div>
-                        {auditLog?.summary?.missing_sources?.length ? (
-                            <p className="mt-2 text-[10px] font-bold text-amber-700 uppercase tracking-widest">
-                                Partial coverage: {auditLog.summary.missing_sources.join(', ')} missing.
-                            </p>
-                        ) : null}
-                    </div>
+                    )}
                 </section>
             </main>
 

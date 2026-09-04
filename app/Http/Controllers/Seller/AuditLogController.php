@@ -61,10 +61,18 @@ class AuditLogController extends Controller
             'auditLog' => [
                 'summary' => [
                     'total_events' => count($entries),
-                    'operations_events' => $sources['operations']['count'],
-                    'staff_events' => $sources['staff']['count'],
-                    'finance_events' => $sources['payroll']['count'] + $sources['procurement']['count'] + $sources['capital']['count'],
-                    'billing_events' => $sources['billing']['count'],
+                    'operations_events' => $isStaff
+                        ? collect($entries)->where('category', 'operations')->count()
+                        : $sources['operations']['count'],
+                    'staff_events' => $isStaff
+                        ? collect($entries)->where('category', 'staff')->count()
+                        : $sources['staff']['count'],
+                    'finance_events' => $isStaff
+                        ? collect($entries)->where('category', 'finance')->count()
+                        : $sources['payroll']['count'] + $sources['procurement']['count'] + $sources['capital']['count'],
+                    'billing_events' => $isStaff
+                        ? collect($entries)->where('category', 'billing')->count()
+                        : $sources['billing']['count'],
                     'latest_event_at' => $entries[0]['occurred_at'] ?? null,
                     'coverage' => $coverage,
                     'is_staff_view' => $isStaff,
@@ -127,11 +135,19 @@ class AuditLogController extends Controller
         }
 
         $seller = $this->sellerOwner();
+        $isStaff = $user->id !== $seller->id;
         $sources = $auditService->getAuditSources($seller);
 
         $entries = collect($sources)
             ->pluck('entries')
             ->flatten(1)
+            ->when($isStaff, function ($collection) use ($user) {
+                return $collection->filter(function (array $entry) use ($user) {
+                    return (isset($entry['actor_id']) && (int)$entry['actor_id'] === (int)$user->id)
+                        || (isset($entry['actor_user_id']) && (int)$entry['actor_user_id'] === (int)$user->id)
+                        || (isset($entry['user_id']) && (int)$entry['user_id'] === (int)$user->id);
+                });
+            })
             ->sortByDesc('sort_at')
             ->take(100)
             ->values()

@@ -165,24 +165,87 @@ class AuditLogCenterTest extends TestCase
         ], $entries->groupBy('category')->map->count()->sortKeys()->all());
     }
 
-    public function test_staff_cannot_access_owner_only_audit_log_center(): void
+    public function test_staff_can_view_personal_activity_history_with_rbac_filtering(): void
     {
         $seller = User::factory()->artisanApproved()->create();
         $staff = User::factory()->staff($seller)->create([
             'email_verified_at' => now(),
+            'name' => 'Rider Ken',
         ]);
-        StaffAttendanceSession::create([
-            'staff_user_id' => $staff->id,
-            'seller_owner_id' => $seller->id,
-            'attendance_date' => now(config('app.timezone'))->toDateString(),
-            'clock_in_at' => now(config('app.timezone'))->subHour(),
-            'last_heartbeat_at' => now(config('app.timezone')),
-            'worked_minutes' => 60,
+        $otherStaff = User::factory()->staff($seller)->create([
+            'email_verified_at' => now(),
+            'name' => 'Clerk Joy',
         ]);
 
-        $this->actingAs($staff)
+        // Create log entry for the owner
+        SellerActivityLog::create([
+            'seller_owner_id' => $seller->id,
+            'actor_user_id' => $seller->id,
+            'actor_type' => 'owner',
+            'category' => 'operations',
+            'module' => 'products',
+            'event_type' => 'product_created',
+            'severity' => 'success',
+            'status' => 'active',
+            'title' => 'Product Created By Owner',
+            'summary' => 'Sand Vase was added to the catalog.',
+            'subject_type' => \App\Models\Product::class,
+            'subject_id' => 99,
+            'subject_label' => 'Sand Vase',
+            'details' => [],
+            'occurred_at' => now()->subMinutes(10),
+        ]);
+
+        // Create log entry for rider Ken
+        SellerActivityLog::create([
+            'seller_owner_id' => $seller->id,
+            'actor_user_id' => $staff->id,
+            'actor_type' => 'staff',
+            'category' => 'operations',
+            'module' => 'orders',
+            'event_type' => 'order_dispatched',
+            'severity' => 'info',
+            'status' => 'completed',
+            'title' => 'Order Delivered by Rider',
+            'summary' => 'Order was delivered to customer.',
+            'subject_type' => \App\Models\Product::class,
+            'subject_id' => 100,
+            'subject_label' => 'Order #100',
+            'details' => [],
+            'occurred_at' => now()->subMinutes(5),
+        ]);
+
+        // Create log entry for clerk Joy
+        SellerActivityLog::create([
+            'seller_owner_id' => $seller->id,
+            'actor_user_id' => $otherStaff->id,
+            'actor_type' => 'staff',
+            'category' => 'operations',
+            'module' => 'inventory',
+            'event_type' => 'stock_updated',
+            'severity' => 'info',
+            'status' => 'completed',
+            'title' => 'Stock Counted by Clerk',
+            'summary' => 'Inventory counted.',
+            'subject_type' => \App\Models\Product::class,
+            'subject_id' => 101,
+            'subject_label' => 'Clay',
+            'details' => [],
+            'occurred_at' => now()->subMinute(),
+        ]);
+
+        $response = $this->actingAs($staff)
             ->get(route('audit-log.index'))
-            ->assertForbidden();
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Seller/Profile/AuditLog')
+                ->where('auditLog.summary.is_staff_view', true)
+                ->where('auditLog.summary.total_events', 1)
+                ->has('auditLog.entries', 1)
+                ->where('auditLog.entries.0.title', 'Order Delivered by Rider')
+            );
+
+        $this->assertCount(1, $response->viewData('page')['props']['auditLog']['entries']);
     }
 
     public function test_seller_owner_can_export_audit_log_csv(): void
