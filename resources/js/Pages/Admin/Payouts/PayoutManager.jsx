@@ -1,3 +1,4 @@
+/* global route */
 import React, { useState, useMemo } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import { 
@@ -5,7 +6,6 @@ import {
     History, 
     Calendar, 
     ArrowUpRight, 
-    Search, 
     CheckCircle2, 
     Loader2, 
     Store, 
@@ -13,11 +13,9 @@ import {
     Check, 
     ExternalLink, 
     Download, 
-    CreditCard,
-    X,
-    FileText,
-    AlertCircle,
-    Info,
+    X, 
+    FileText, 
+    AlertCircle, 
     TrendingUp
 } from 'lucide-react';
 import AdminLayout from '@/Layouts/AdminLayout';
@@ -531,8 +529,6 @@ function DisbursePayoutModal({ artisan, onClose, formatCurrency, handleCopy, cop
     });
 
     if (!artisan) return null;
-
-    const isCopied = copiedKey === `modal-acc-${artisan.id}`;
 
     const handleSubmit = (e) => {
         e.preventDefault();

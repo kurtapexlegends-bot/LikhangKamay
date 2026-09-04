@@ -28,11 +28,12 @@ class ApproveOrderReplacement
      * @param User|null $sellerOwner
      * @return string Status message
      */
-    public function execute(Order $order, string $resolutionDescription, User $actor, ?User $sellerOwner): string
+    public function execute(Order $order, string $resolutionDescription, User $actor, ?User $sellerOwner = null): string
     {
         $shouldAutoBookReplacement = false;
+        $previousDeliveryProvider = null;
 
-        DB::transaction(function () use ($order, $resolutionDescription, &$shouldAutoBookReplacement) {
+        DB::transaction(function () use ($order, $resolutionDescription, &$shouldAutoBookReplacement, &$previousDeliveryProvider) {
             $lockedOrder = Order::query()
                 ->with(['items', 'user', 'delivery'])
                 ->lockForUpdate()
@@ -57,6 +58,8 @@ class ApproveOrderReplacement
                     $product->supply->update(['quantity' => $product->stock]);
                 }
             }
+
+            $previousDeliveryProvider = $lockedOrder->delivery?->provider;
 
             if ($lockedOrder->shipping_method === 'Delivery' && $lockedOrder->delivery) {
                 $lockedOrder->delivery()->delete();
@@ -91,12 +94,22 @@ class ApproveOrderReplacement
             $order->refresh();
             $order->loadMissing(['delivery', 'user']);
 
-            try {
-                $this->orderLogisticsService->bookLalamoveDelivery($order, $sellerOwner);
-                $message = 'Replacement approved. Buyer notified and the replacement exchange courier was booked.';
-            } catch (\Throwable $e) {
-                report($e);
-                $message = 'Replacement approved. Buyer notified. Courier rebooking could not be created automatically. Use Create Lalamove Delivery to retry.';
+            $owner = $sellerOwner ?? ($actor->role === 'artisan' ? $actor : User::find($order->artisan_id));
+            $hasInHouseDelivery = ($previousDeliveryProvider === \App\Models\OrderDelivery::PROVIDER_IN_HOUSE)
+                || ($order->delivery && $order->delivery->provider === \App\Models\OrderDelivery::PROVIDER_IN_HOUSE);
+            $hasStudioDrivers = $owner ? !empty(app(\App\Services\Logistics\InHouseDispatchService::class)->getDriversWithLiveAvailability($owner)) : false;
+            $prefersInHouse = $hasInHouseDelivery || $hasStudioDrivers;
+
+            if ($prefersInHouse) {
+                $message = 'Replacement approved. Buyer notified. Dispatch replacement via your studio drivers.';
+            } else {
+                try {
+                    $this->orderLogisticsService->bookLalamoveDelivery($order, $owner);
+                    $message = 'Replacement approved. Buyer notified and the replacement exchange courier was booked.';
+                } catch (\Throwable $e) {
+                    report($e);
+                    $message = 'Replacement approved. Buyer notified. Courier rebooking could not be created automatically. Use Create Lalamove Delivery to retry.';
+                }
             }
         }
 

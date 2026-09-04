@@ -35,11 +35,11 @@ class BuyerInitiateDispute
                 throw new \Exception('This order is not completed.');
             }
 
-            // Check 1-day warranty window
-            if (!$order->received_at && $order->delivered_at) {
-                $order->received_at = $order->delivered_at;
-            }
-            $warrantyExpires = $order->warranty_expires_at ?? ($order->received_at ? $order->received_at->addDay() : null);
+            // Check 1-day warranty window against received_at or completion date
+            $completionDate = $order->received_at ?? $order->updated_at;
+            $warrantyExpires = ($order->warranty_expires_at && $completionDate && $order->warranty_expires_at->greaterThan($completionDate))
+                ? $order->warranty_expires_at
+                : ($completionDate ? $completionDate->copy()->addDay() : null);
 
             if (!$warrantyExpires || now()->greaterThan($warrantyExpires)) {
                 throw new \Exception('Dispute window has expired. Disputes must be filed within 1 day of receiving the order.');

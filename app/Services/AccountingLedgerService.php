@@ -106,10 +106,18 @@ class AccountingLedgerService
             ->where('status', 'Completed')
             ->sum('amount');
 
+        $codRevenue = (float) Order::where('artisan_id', $userId)
+            ->where('status', 'Completed')
+            ->where('payment_method', 'COD')
+            ->sum('seller_net_amount');
+
+        $onlineRevenue = max(0.00, $totalRevenue - $codRevenue);
+
         $baseFunds = (float) ($seller->base_funds ?? 0);
         $totalExpenses = (float) $stockExpenses + (float) $payrollExpenses;
         $currentBalance = $baseFunds + $totalRevenue - $totalExpenses - $totalPayouts;
-        $readyForPayout = max(0.00, $totalRevenue - $totalPayouts - $heldForDispute);
+        $readyForPayout = max(0.00, $onlineRevenue - $totalExpenses - $totalPayouts - $heldForDispute);
+        $readyForPayout = min($readyForPayout, max(0.00, $currentBalance));
 
         return [
             'base_funds' => $baseFunds,

@@ -83,17 +83,32 @@ class PaymongoWebhookController extends Controller
             $status = $sessionData['attributes']['payment_status'] ?? ($sessionData['attributes']['status'] ?? null);
 
             if ($sessionId && $status === 'paid') {
+                $paymentId = null;
+                $payments = $sessionData['attributes']['payments'] ?? [];
+                if (is_array($payments) && !empty($payments)) {
+                    $firstPayment = reset($payments);
+                    $paymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
+                }
+                if (!$paymentId && !empty($sessionData['relationships']['payments']['data'])) {
+                    $relPayments = $sessionData['relationships']['payments']['data'];
+                    if (is_array($relPayments)) {
+                        $firstRel = reset($relPayments);
+                        $paymentId = $firstRel['id'] ?? null;
+                    }
+                }
+
                 // Check if it's one or more Orders
                 $orders = Order::where('paymongo_session_id', $sessionId)->get();
                 if ($orders->isNotEmpty()) {
-                    \Illuminate\Support\Facades\DB::transaction(function () use ($orders) {
+                    \Illuminate\Support\Facades\DB::transaction(function () use ($orders, $paymentId) {
                         foreach ($orders as $order) {
-                            if ($order->payment_status !== 'paid') {
-                                $order->update([
-                                    'payment_status' => 'paid',
-                                    'paymongo_session_id' => null, // Clear session ID
-                                ]);
-                                Log::info('Order marked as paid via Webhook', ['order_id' => $order->id, 'order_number' => $order->order_number]);
+                            if ($order->payment_status !== 'paid' || ($paymentId && empty($order->payment_id))) {
+                                $updateData = ['payment_status' => 'paid'];
+                                if ($paymentId && empty($order->payment_id)) {
+                                    $updateData['payment_id'] = $paymentId;
+                                }
+                                $order->update($updateData);
+                                Log::info('Order marked as paid via Webhook', ['order_id' => $order->id, 'order_number' => $order->order_number, 'payment_id' => $paymentId]);
                             }
                         }
                     });

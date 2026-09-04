@@ -9,6 +9,7 @@ use App\Notifications\AccountingApprovalRequestedNotification;
 use App\Models\StockRequest;
 use App\Models\Supply;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
@@ -139,34 +140,44 @@ class StockRequestController extends Controller
 
         $validated = $request->validate(['quantity' => 'required|integer|min:1']);
         
-        // Check buffer availability
-        $available = $stockRequest->received_quantity - $stockRequest->transferred_quantity;
-        if ($validated['quantity'] > $available) {
-             return back()->with('error', "Cannot transfer more than available in buffer ({$available}).");
+        try {
+            DB::transaction(function () use ($stockRequest, $validated) {
+                /** @var StockRequest $lockedStockRequest */
+                $lockedStockRequest = StockRequest::where('id', $stockRequest->id)->lockForUpdate()->firstOrFail();
+
+                // Check buffer availability
+                $available = (int) $lockedStockRequest->received_quantity - (int) $lockedStockRequest->transferred_quantity;
+                if ($validated['quantity'] > $available) {
+                    throw new \DomainException("Cannot transfer more than available in buffer ({$available}).");
+                }
+
+                // 1. Update Inventory with lock
+                if ($lockedStockRequest->supply_id) {
+                    $supply = Supply::where('id', $lockedStockRequest->supply_id)->lockForUpdate()->first();
+                    if ($supply) {
+                        $supply->increment('quantity', $validated['quantity']);
+
+                        // Sync to linked Product (Track as Supply)
+                        if ($linkedProduct = $supply->product) {
+                            $supply->refresh();
+                            $linkedProduct->update(['stock' => $supply->quantity]);
+                        }
+                    }
+                }
+
+                // 2. Update Transfer Count
+                $lockedStockRequest->transferred_quantity += $validated['quantity'];
+
+                // 3. Check for completion (if we transferred up to the requested amount)
+                if ($lockedStockRequest->transferred_quantity >= $lockedStockRequest->quantity) {
+                    $lockedStockRequest->status = StockRequest::STATUS_COMPLETED;
+                }
+                
+                $lockedStockRequest->save();
+            });
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        // 1. Update Inventory
-        $supply = $stockRequest->supply;
-        if ($supply) {
-            $supply->increment('quantity', $validated['quantity']);
-
-            // Sync to linked Product (Track as Supply)
-            if ($linkedProduct = $supply->product) {
-                // Bug M4 Fix: Use fresh supply quantity
-                $supply->refresh();
-                $linkedProduct->update(['stock' => $supply->quantity]);
-            }
-        }
-
-        // 2. Update Transfer Count
-        $stockRequest->transferred_quantity += $validated['quantity'];
-
-        // 3. Check for completion (if we transferred up to the requested amount)
-        if ($stockRequest->transferred_quantity >= $stockRequest->quantity) {
-             $stockRequest->status = StockRequest::STATUS_COMPLETED;
-        }
-        
-        $stockRequest->save();
         
         return back()->with('success', "Transferred {$validated['quantity']} items to active inventory.");
     }

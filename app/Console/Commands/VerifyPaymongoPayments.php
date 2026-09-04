@@ -43,22 +43,35 @@ class VerifyPaymongoPayments extends Command
                 $attributes = $session['attributes'] ?? [];
 
                 $isPaid = ($attributes['payment_status'] ?? 'unpaid') === 'paid';
-                $hasPaidPayment = collect($session['included'] ?? [])
-                    ->contains(fn (array $included) => ($included['type'] ?? null) === 'payment'
-                        && (($included['attributes']['status'] ?? null) === 'paid'));
+                $paymentId = null;
+                $hasPaidPayment = false;
+
+                foreach (($session['included'] ?? []) as $included) {
+                    if (($included['type'] ?? null) === 'payment' && (($included['attributes']['status'] ?? null) === 'paid')) {
+                        $hasPaidPayment = true;
+                        $paymentId = $included['id'] ?? null;
+                        break;
+                    }
+                }
 
                 if (!$hasPaidPayment && !empty($attributes['payments']) && is_array($attributes['payments'])) {
-                    $hasPaidPayment = collect($attributes['payments'])
-                        ->contains(fn ($payment) => ($payment['status'] ?? ($payment['attributes']['status'] ?? null)) === 'paid');
+                    foreach ($attributes['payments'] as $payment) {
+                        if (($payment['status'] ?? ($payment['attributes']['status'] ?? null)) === 'paid') {
+                            $hasPaidPayment = true;
+                            $paymentId = $payment['id'] ?? ($payment['attributes']['id'] ?? null);
+                            break;
+                        }
+                    }
                 }
 
                 if ($isPaid || $hasPaidPayment) {
-                    $order->update([
-                        'payment_status' => 'paid',
-                        'paymongo_session_id' => null,
-                    ]);
+                    $updateData = ['payment_status' => 'paid'];
+                    if ($paymentId && empty($order->payment_id)) {
+                        $updateData['payment_id'] = $paymentId;
+                    }
+                    $order->update($updateData);
                     $this->info("Order #{$order->order_number} marked as paid.");
-                    Log::info('Order marked as paid via verified command', ['order_id' => $order->id]);
+                    Log::info('Order marked as paid via verified command', ['order_id' => $order->id, 'payment_id' => $paymentId]);
                 }
             } catch (\Exception $e) {
                 Log::error("Failed to verify PayMongo session for Order {$order->id}: " . $e->getMessage());

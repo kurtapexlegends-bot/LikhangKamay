@@ -38,7 +38,53 @@ class AdminArbitrateDispute
                 throw new \Exception('This dispute is not escalated for arbitration.');
             }
 
+            $refundGatewayStatus = 'skipped';
+            $refundGatewayId = null;
+
             if ($decision === 'refund') {
+                // Trigger PayMongo automated refund for online payment
+                if ($order->payment_id || ($order->payment_status === 'paid' && $order->payment_method !== 'COD')) {
+                    if (empty($order->payment_id) && !empty($order->paymongo_session_id)) {
+                        try {
+                            $session = app(\App\Services\PayMongoService::class)->retrieveCheckoutSession($order->paymongo_session_id);
+                            $payments = $session['attributes']['payments'] ?? [];
+                            if (is_array($payments) && !empty($payments)) {
+                                $firstPayment = reset($payments);
+                                $resolvedPaymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
+                                if ($resolvedPaymentId) {
+                                    $order->payment_id = $resolvedPaymentId;
+                                    $order->save();
+                                }
+                            }
+                        } catch (\Throwable $e) {
+                            \Illuminate\Support\Facades\Log::warning("Failed resolving PayMongo payment_id from session {$order->paymongo_session_id}: " . $e->getMessage());
+                        }
+                    }
+
+                    if ($order->payment_id) {
+                        try {
+                            $amountInCents = (int) round(((float) $order->total_amount) * 100);
+                            $refundResult = app(\App\Services\PayMongoService::class)->createRefund(
+                                paymentId: $order->payment_id,
+                                amountInCents: $amountInCents,
+                                reason: 'requested_by_customer',
+                                notes: "Order {$order->order_number} arbitrated refund approved by admin: {$adminNotes}"
+                            );
+                            if ($refundResult) {
+                                $refundGatewayStatus = 'success';
+                                $refundGatewayId = $refundResult['id'] ?? null;
+                                \Illuminate\Support\Facades\Log::info("PayMongo refund created for order {$order->id}", ['refund_id' => $refundGatewayId]);
+                            } else {
+                                $refundGatewayStatus = 'failed';
+                                \Illuminate\Support\Facades\Log::warning("PayMongo refund returned empty/failed for order {$order->id}");
+                            }
+                        } catch (\Throwable $e) {
+                            $refundGatewayStatus = 'failed';
+                            \Illuminate\Support\Facades\Log::warning("PayMongo automated refund exception for dispute order {$order->id}: " . $e->getMessage());
+                        }
+                    }
+                }
+
                 // Refund order
                 $dispute->update([
                     'status' => 'resolved_refunded',
@@ -156,6 +202,8 @@ class AdminArbitrateDispute
                     'order_id' => $order->id,
                     'order_number' => $order->order_number,
                     'decision' => $decision,
+                    'refund_gateway_status' => $refundGatewayStatus,
+                    'refund_gateway_id' => $refundGatewayId,
                 ],
             ]);
         });

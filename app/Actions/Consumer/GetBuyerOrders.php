@@ -79,12 +79,31 @@ class GetBuyerOrders
                             });
                     }
 
+                    $paymentId = null;
+                    foreach ($session['included'] ?? [] as $included) {
+                        if (($included['type'] ?? null) === 'payment' && !empty($included['id'])) {
+                            $paymentId = $included['id'];
+                            break;
+                        }
+                    }
+                    if (!$paymentId && !empty($attributes['payments']) && is_array($attributes['payments'])) {
+                        foreach ($attributes['payments'] as $payment) {
+                            if (!empty($payment['id'])) {
+                                $paymentId = $payment['id'];
+                                break;
+                            }
+                        }
+                    }
+
                     if ($isPaid || $hasPaidPayment) {
-                        $order->update([
+                        $updateData = [
                             'payment_status' => 'paid',
                             'payment_method' => $order->payment_method ?: 'GCash',
-                            'paymongo_session_id' => null,
-                        ]);
+                        ];
+                        if ($paymentId) {
+                            $updateData['payment_id'] = $paymentId;
+                        }
+                        $order->update($updateData);
                     }
                 } catch (\Throwable $e) {
                     report($e);

@@ -47,7 +47,7 @@ class Order extends Model
     protected $fillable = [
         'artisan_id', 'user_id', 'order_number', 'customer_name', 
         'merchandise_subtotal', 'convenience_fee_amount', 'shipping_fee_amount', 'platform_commission_amount', 'seller_net_amount',
-        'total_amount', 'status', 'payment_method', 'payment_status', 'paymongo_session_id', 'review_reminder_sent', 'shipment_reminder_sent', 'shipping_address', 'shipping_address_type',
+        'total_amount', 'status', 'auto_complete_at', 'payment_method', 'payment_status', 'paymongo_session_id', 'payment_id', 'review_reminder_sent', 'shipment_reminder_sent', 'shipping_address', 'shipping_address_type',
         'shipping_street_address', 'shipping_barangay', 'shipping_city', 'shipping_region', 'shipping_postal_code',
         'shipping_latitude', 'shipping_longitude',
         'shipping_recipient_name', 'shipping_contact_phone', 'shipping_notes', 'tracking_number', 'received_at', 'warranty_expires_at',
@@ -59,6 +59,7 @@ class Order extends Model
     // Format date automatically for frontend (e.g., "Oct 24, 2025")
     protected $casts = [
         'created_at' => 'datetime:M d, Y • h:i A',
+        'auto_complete_at' => 'datetime',
         'received_at' => 'datetime',
         'warranty_expires_at' => 'datetime',
         'accepted_at' => 'datetime',

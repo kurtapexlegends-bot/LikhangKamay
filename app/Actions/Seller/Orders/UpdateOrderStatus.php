@@ -102,7 +102,7 @@ class UpdateOrderStatus
                 $updateData['shipped_at'] = now();
             } elseif ($status === 'Delivered') {
                 $updateData['delivered_at'] = now();
-                // Auto-complete after 1 day if no return
+                $updateData['auto_complete_at'] = now()->addDays(1);
                 $updateData['warranty_expires_at'] = now()->addDay();
             }
 
@@ -128,12 +128,13 @@ class UpdateOrderStatus
                             $product->supply->update(['quantity' => $product->stock]);
                         }
 
-                        if ($product->has_discount && $product->discount_info) {
-                            $activeDiscountId = $product->discount_info['id'] ?? null;
-                            $maxLimit = $product->discount_info['max_purchase_limit'] ?? null;
+                        $targetDiscountId = $item->discount_id ?: ($product->has_discount && $product->discount_info ? ($product->discount_info['id'] ?? null) : null);
+                        if ($targetDiscountId) {
+                            $discount = \App\Models\Discount::find($targetDiscountId);
+                            $maxLimit = $discount?->max_purchase_limit ?? ($product->discount_info['max_purchase_limit'] ?? null);
                             $promoCount = ($maxLimit !== null && $maxLimit > 0) ? min($item->quantity, $maxLimit) : $item->quantity;
-                            if ($activeDiscountId && $promoCount > 0) {
-                                \App\Models\Discount::where('id', $activeDiscountId)
+                            if ($promoCount > 0) {
+                                \App\Models\Discount::where('id', $targetDiscountId)
                                     ->where('promo_sold', '>=', $promoCount)
                                     ->decrement('promo_sold', $promoCount);
                             }
@@ -141,14 +142,20 @@ class UpdateOrderStatus
                     }
                 }
 
-                // Restore BOM Supplies if it was Processing
-                if ($lockedOrder->status === 'Processing') {
+                // Restore BOM Supplies if it was Processing, Shipped, or Ready for Pickup
+                if (in_array($lockedOrder->status, ['Processing', 'Shipped', 'Ready for Pickup'])) {
                     foreach ($lockedOrder->items as $item) {
                         $product = Product::with('recipes.supply')->find($item->product_id);
                         if ($product && $product->production_method === 'manufactured') {
                             foreach ($product->recipes as $recipe) {
                                 if ($recipe->supply) {
-                                    $recipe->supply->increment('quantity', $recipe->quantity_required * $item->quantity);
+                                    $restoreQty = $recipe->quantity_required * $item->quantity;
+                                    $recipe->supply->increment('quantity', $restoreQty);
+
+                                    if ($linkedSupplyProduct = $recipe->supply->product) {
+                                        $recipe->supply->refresh();
+                                        $linkedSupplyProduct->update(['stock' => $recipe->supply->quantity]);
+                                    }
                                 }
                             }
                         }
@@ -278,8 +285,8 @@ class UpdateOrderStatus
             'Processing' => $order->shipping_method === 'Pick Up'
                 ? ['Ready for Pickup', 'Rejected', 'Cancelled']
                 : ['Shipped', 'Rejected', 'Cancelled'],
-            'Shipped' => ['Delivered'],
-            'Ready for Pickup' => ['Delivered'],
+            'Shipped' => ['Delivered', 'Cancelled'],
+            'Ready for Pickup' => ['Delivered', 'Cancelled'],
             'Delivered' => ['Completed'],
             'Refund/Return' => ['Completed'],
             default => [],

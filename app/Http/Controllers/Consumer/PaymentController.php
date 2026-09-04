@@ -163,12 +163,14 @@ class PaymentController extends Controller
 
             $isPaid = ($attributes['payment_status'] ?? 'unpaid') === 'paid';
             $hasPaidPayment = false;
+            $paymentId = null;
 
             foreach (($session['included'] ?? []) as $included) {
                 $includedType = $included['type'] ?? null;
                 $includedStatus = $included['attributes']['status'] ?? null;
                 if ($includedType === 'payment' && $includedStatus === 'paid') {
                     $hasPaidPayment = true;
+                    $paymentId = $included['id'] ?? null;
                     break;
                 }
             }
@@ -178,9 +180,15 @@ class PaymentController extends Controller
                     $paymentStatus = $payment['status'] ?? ($payment['attributes']['status'] ?? null);
                     if ($paymentStatus === 'paid') {
                         $hasPaidPayment = true;
+                        $paymentId = $payment['id'] ?? ($payment['attributes']['id'] ?? null);
                         break;
                     }
                 }
+            }
+
+            if (!$paymentId && !empty($attributes['payments']) && is_array($attributes['payments'])) {
+                $firstPayment = reset($attributes['payments']);
+                $paymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
             }
 
             $sessionStatus = $attributes['status'] ?? 'pending';
@@ -208,8 +216,8 @@ class PaymentController extends Controller
                     $updateData['payment_method'] = $order->payment_method ?: 'GCash';
                 }
 
-                if ($order->paymongo_session_id) {
-                    $updateData['paymongo_session_id'] = null;
+                if ($paymentId && empty($order->payment_id)) {
+                    $updateData['payment_id'] = $paymentId;
                 }
 
                 if (!empty($updateData)) {

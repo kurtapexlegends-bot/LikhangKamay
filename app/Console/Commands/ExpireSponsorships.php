@@ -25,10 +25,22 @@ class ExpireSponsorships extends Command
      */
     public function handle()
     {
-        $expiredCount = \App\Models\Product::where('is_sponsored', \Illuminate\Support\Facades\DB::raw('true'))
+        $expiredProducts = \App\Models\Product::where('is_sponsored', true)
             ->whereNotNull('sponsored_until')
             ->where('sponsored_until', '<', now())
-            ->update(['is_sponsored' => \Illuminate\Support\Facades\DB::raw('false')]);
+            ->get(['id']);
+
+        $productIds = $expiredProducts->pluck('id')->all();
+
+        $expiredCount = 0;
+        if (!empty($productIds)) {
+            $expiredCount = \App\Models\Product::whereIn('id', $productIds)
+                ->update(['is_sponsored' => false]);
+
+            \App\Models\SponsorshipRequest::whereIn('product_id', $productIds)
+                ->where('status', 'approved')
+                ->update(['status' => 'expired']);
+        }
             
         $this->info("Expired {$expiredCount} sponsorships.");
     }

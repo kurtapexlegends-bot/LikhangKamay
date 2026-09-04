@@ -622,6 +622,16 @@ export default function SourcingOrders({
 
                                             {/* Order Action Buttons */}
                                             <div className="pt-1">
+                                                {order.payment_status === 'pending' && order.payment_method !== 'COD' && order.status !== 'Cancelled' && (
+                                                    <a
+                                                        href={route('payment.pay', order.order_number || order.id)}
+                                                        className="mb-2 w-full flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 py-2.5 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition active:scale-95 cursor-pointer"
+                                                    >
+                                                        <CreditCard size={14} />
+                                                        <span>Pay Now</span>
+                                                    </a>
+                                                )}
+
                                                 {isDelivered && (
                                                     <button
                                                         type="button"

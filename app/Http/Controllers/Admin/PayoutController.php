@@ -44,7 +44,40 @@ class PayoutController extends Controller
             ->get()
             ->keyBy('artisan_id');
 
-        // 1b. Pre-aggregate completed payouts
+        // 1b. Pre-aggregate COD completed sales (cash collected directly by artisan/courier, excluded from platform payouts)
+        $codSalesAggregates = Order::whereIn('artisan_id', $artisanIds)
+            ->where('status', 'Completed')
+            ->where('payment_method', 'COD')
+            ->selectRaw('artisan_id, SUM(seller_net_amount) as cod_sales')
+            ->groupBy('artisan_id')
+            ->get()
+            ->keyBy('artisan_id');
+
+        // 1c. Pre-aggregate stock request expenses
+        $stockExpenseAggregates = DB::table('stock_requests')
+            ->whereIn('user_id', $artisanIds)
+            ->whereIn('status', [
+                \App\Models\StockRequest::STATUS_ACCOUNTING_APPROVED,
+                \App\Models\StockRequest::STATUS_ORDERED,
+                \App\Models\StockRequest::STATUS_PARTIALLY_RECEIVED,
+                \App\Models\StockRequest::STATUS_RECEIVED,
+                \App\Models\StockRequest::STATUS_COMPLETED,
+            ])
+            ->selectRaw('user_id, SUM(total_cost) as total_stock_expenses')
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
+
+        // 1d. Pre-aggregate payroll expenses
+        $payrollExpenseAggregates = DB::table('payrolls')
+            ->whereIn('user_id', $artisanIds)
+            ->where('status', 'Paid')
+            ->selectRaw('user_id, SUM(total_amount) as total_payroll_expenses')
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
+
+        // 1e. Pre-aggregate completed payouts
         $payoutAggregates = DB::table('payouts')
             ->whereIn('user_id', $artisanIds)
             ->where('status', 'Completed')
@@ -53,7 +86,7 @@ class PayoutController extends Controller
             ->get()
             ->keyBy('user_id');
 
-        // 1c. Pre-aggregate dispute holds
+        // 1f. Pre-aggregate dispute holds
         $disputeHoldAggregates = Order::whereIn('artisan_id', $artisanIds)
             ->where('status', 'Completed')
             ->where(function ($query) {
@@ -70,7 +103,7 @@ class PayoutController extends Controller
             ->get()
             ->keyBy('artisan_id');
 
-        // 1d. Pre-aggregate orders in progress
+        // 1g. Pre-aggregate orders in progress
         $ordersInProgressAggregates = Order::whereIn('artisan_id', $artisanIds)
             ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
             ->selectRaw('artisan_id, SUM(seller_net_amount) as total_in_progress')
@@ -78,7 +111,7 @@ class PayoutController extends Controller
             ->get()
             ->keyBy('artisan_id');
 
-        // 1e. Pre-fetch recent completed orders
+        // 1h. Pre-fetch recent completed orders
         $recentOrdersGrouped = Order::whereIn('artisan_id', $artisanIds)
             ->where('status', 'Completed')
             ->select('id', 'artisan_id', 'order_number', 'customer_name', 'merchandise_subtotal', 'platform_commission_amount', 'seller_net_amount', 'created_at')
@@ -88,6 +121,9 @@ class PayoutController extends Controller
 
         $artisans = $artisanUsers->map(function ($user) use (
             $completedSalesAggregates,
+            $codSalesAggregates,
+            $stockExpenseAggregates,
+            $payrollExpenseAggregates,
             $payoutAggregates,
             $disputeHoldAggregates,
             $ordersInProgressAggregates,
@@ -98,11 +134,21 @@ class PayoutController extends Controller
             $platformFees = (float) ($sales->platform_fees ?? 0);
             $netSales = (float) ($sales->net_sales ?? 0);
 
+            $codSales = (float) ($codSalesAggregates->get($user->id)->cod_sales ?? 0);
+            $onlineSales = max(0.00, $netSales - $codSales);
+
+            $stockExpenses = (float) ($stockExpenseAggregates->get($user->id)->total_stock_expenses ?? 0);
+            $payrollExpenses = (float) ($payrollExpenseAggregates->get($user->id)->total_payroll_expenses ?? 0);
+            $totalExpenses = $stockExpenses + $payrollExpenses;
+
             $payouts = (float) ($payoutAggregates->get($user->id)->total_payouts ?? 0);
             $heldForDispute = (float) ($disputeHoldAggregates->get($user->id)->total_held ?? 0);
             $ordersInProgress = (float) ($ordersInProgressAggregates->get($user->id)->total_in_progress ?? 0);
 
-            $unpaidBalance = max(0.00, $netSales - $payouts - $heldForDispute);
+            $baseFunds = (float) ($user->base_funds ?? 0);
+            $currentBalance = $baseFunds + $netSales - $totalExpenses - $payouts;
+            $readyForPayout = max(0.00, $onlineSales - $totalExpenses - $payouts - $heldForDispute);
+            $readyForPayout = min($readyForPayout, max(0.00, $currentBalance));
 
             $recentOrders = ($recentOrdersGrouped->get($user->id) ?? collect())
                 ->take(10)
@@ -132,8 +178,9 @@ class PayoutController extends Controller
                 'payout_account_name' => $user->payout_account_name ?? '',
                 'payout_account_number' => $user->payout_account_number ?? '',
                 'has_payout_account' => !empty($user->payout_account_number),
-                'balance' => $unpaidBalance,
-                'ready_for_payout' => $unpaidBalance,
+                'balance' => $readyForPayout,
+                'ready_for_payout' => $readyForPayout,
+                'ledger_balance' => $currentBalance,
                 'gross_sales' => $grossSales,
                 'platform_fees' => $platformFees,
                 'net_sales' => $netSales,
@@ -150,9 +197,10 @@ class PayoutController extends Controller
             ->paginate(15)
             ->through(fn($payout) => [
                 'id' => $payout->id,
-                'shop_name' => $payout->user?->shop_name ?? 'N/A',
-                'artisan_name' => $payout->user?->name ?? 'N/A',
-                'user' => $payout->user ? [
+                'amount' => (float) $payout->amount,
+                'payout_method' => $payout->payout_method,
+                'payout_account_name' => $payout->payout_account_name,
+                'artisan' => [
                     'id' => $payout->user->id,
                     'name' => $payout->user->name,
                     'shop_name' => $payout->user->shop_name,
@@ -162,10 +210,9 @@ class PayoutController extends Controller
                     'avatar' => $payout->user->avatar,
                     'avatar_url' => $payout->user->avatar_url,
                     'updated_at' => $payout->user->updated_at?->toIso8601String(),
-                ] : null,
-                'amount' => (float) $payout->amount,
-                'payout_method' => $payout->payout_method,
-                'payout_account_name' => $payout->payout_account_name,
+                ],
+                'artisan_name' => $payout->user->name ?? 'Unknown Artisan',
+                'shop_name' => $payout->user->shop_name ?? 'Unknown Shop',
                 'payout_account_number' => $payout->payout_account_number,
                 'reference_number' => $payout->reference_number,
                 'created_at' => $payout->created_at->format('M d, Y h:i A'),
@@ -173,14 +220,18 @@ class PayoutController extends Controller
             ]);
 
         // 3. Compute KPI metrics
-        $totalOwed = $artisans->where('balance', '>', 0)->sum('balance');
+        $totalOwed = (float) $artisans->sum('ready_for_payout');
+        $totalSettled = (float) DB::table('payouts')->where('status', 'Completed')->sum('amount');
         $totalPaid = (float) Payout::where('status', 'Completed')->sum('amount');
-        $artisansOwedCount = $artisans->where('balance', '>', 0)->count();
+        $totalPlatformFees = (float) DB::table('orders')->where('status', 'Completed')->sum('platform_commission_amount');
+        $artisansOwedCount = $artisans->where('ready_for_payout', '>', 0)->count();
 
         return Inertia::render('Admin/Payouts/PayoutManager', [
             'artisans' => $artisans,
             'payoutHistory' => $payoutHistory,
             'metrics' => [
+                'total_settled' => $totalSettled,
+                'total_platform_fees_collected' => $totalPlatformFees,
                 'total_owed' => $totalOwed,
                 'total_paid' => $totalPaid,
                 'artisans_owed_count' => $artisansOwedCount,
@@ -205,46 +256,52 @@ class PayoutController extends Controller
             'reference_number' => 'nullable|string|max:100',
         ]);
 
-        $artisan = User::findOrFail($validated['user_id']);
-        
-        // Ensure artisan is approved
-        if ($artisan->artisan_status !== 'approved') {
-            return back()->with('error', 'Cannot disburse payout to an unapproved artisan.');
-        }
+        $artisan = null;
 
-        // Validate that disbursement amount does not exceed available unpaid balance
-        $snapshot = $this->ledgerService->buildFinancialSnapshot($artisan);
-        $availableBalance = max(0.00, round((float) ($snapshot['ready_for_payout'] > 0 ? $snapshot['ready_for_payout'] : $snapshot['balance']), 2));
+        try {
+            $payout = DB::transaction(function () use ($validated, &$artisan) {
+                $artisan = User::where('id', $validated['user_id'])->lockForUpdate()->firstOrFail();
 
-        if ((float) $validated['amount'] > $availableBalance) {
-            return back()->with('error', "Disbursement amount (PHP " . number_format($validated['amount'], 2) . ") exceeds the artisan's available balance of PHP " . number_format($availableBalance, 2) . ".");
-        }
+                // Ensure artisan is approved
+                if ($artisan->artisan_status !== 'approved') {
+                    throw new \DomainException('Cannot disburse payout to an unapproved artisan.');
+                }
 
-        $payout = DB::transaction(function () use ($validated, $artisan) {
-            $payout = Payout::create([
-                'user_id' => $validated['user_id'],
-                'amount' => $validated['amount'],
-                'payout_method' => $validated['payout_method'],
-                'payout_account_name' => $validated['payout_account_name'],
-                'payout_account_number' => $validated['payout_account_number'],
-                'reference_number' => $validated['reference_number'],
-                'status' => 'Completed',
-            ]);
+                // Validate that disbursement amount does not exceed available unpaid balance
+                $snapshot = $this->ledgerService->buildFinancialSnapshot($artisan);
+                $availableBalance = max(0.00, round((float) ($snapshot['ready_for_payout'] ?? 0), 2));
 
-            \App\Models\PlatformActivity::create([
-                'user_id' => \Illuminate\Support\Facades\Auth::id(),
-                'action' => 'payout_disbursed',
-                'description' => "Disbursed payout of PHP " . number_format($validated['amount'], 2) . " to {$artisan->shop_name}",
-                'metadata' => [
-                    'artisan_id' => $artisan->id,
-                    'shop_name' => $artisan->shop_name,
+                if ((float) $validated['amount'] > $availableBalance) {
+                    throw new \DomainException("Disbursement amount (PHP " . number_format($validated['amount'], 2) . ") exceeds the artisan's available balance of PHP " . number_format($availableBalance, 2) . ".");
+                }
+
+                $payout = Payout::create([
+                    'user_id' => $validated['user_id'],
                     'amount' => $validated['amount'],
-                    'reference_number' => $validated['reference_number'],
-                ]
-            ]);
+                    'payout_method' => $validated['payout_method'],
+                    'payout_account_name' => $validated['payout_account_name'],
+                    'payout_account_number' => $validated['payout_account_number'],
+                    'reference_number' => $validated['reference_number'] ?? null,
+                    'status' => 'Completed',
+                ]);
 
-            return $payout;
-        });
+                \App\Models\PlatformActivity::create([
+                    'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                    'action' => 'payout_disbursed',
+                    'description' => "Disbursed payout of PHP " . number_format($validated['amount'], 2) . " to {$artisan->shop_name}",
+                    'metadata' => [
+                        'artisan_id' => $artisan->id,
+                        'shop_name' => $artisan->shop_name,
+                        'amount' => $validated['amount'],
+                        'reference_number' => $validated['reference_number'] ?? null,
+                    ]
+                ]);
+
+                return $payout;
+            });
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         // Dispatch in-app & email notification to artisan
         \Illuminate\Support\Facades\Notification::send(

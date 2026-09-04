@@ -10,7 +10,7 @@ class OrderItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'order_id', 'product_id', 'product_name', 
+        'order_id', 'product_id', 'discount_id', 'product_name', 
         'variant', 'price', 'cost', 'quantity', 'product_img',
         'was_sponsored', 'sponsorship_request_id', 'sponsored_at_checkout',
         'is_b2b_supply', 'supply_unit',
@@ -30,6 +30,11 @@ class OrderItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class)->withTrashed();
+    }
+
+    public function discount()
+    {
+        return $this->belongsTo(Discount::class);
     }
 
     public function sponsorshipRequest()

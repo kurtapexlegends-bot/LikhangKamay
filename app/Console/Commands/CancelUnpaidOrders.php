@@ -39,16 +39,17 @@ class CancelUnpaidOrders extends Command
                              $product->supply->update(['quantity' => $product->stock]);
                          }
 
-                         if ($product->has_discount && $product->discount_info) {
-                             $activeDiscountId = $product->discount_info['id'] ?? null;
-                             $maxLimit = $product->discount_info['max_purchase_limit'] ?? null;
-                             $promoCount = ($maxLimit !== null && $maxLimit > 0) ? min($item->quantity, $maxLimit) : $item->quantity;
-                             if ($activeDiscountId && $promoCount > 0) {
-                                 \App\Models\Discount::where('id', $activeDiscountId)
-                                     ->where('promo_sold', '>=', $promoCount)
-                                     ->decrement('promo_sold', $promoCount);
-                             }
-                         }
+                          $targetDiscountId = $item->discount_id ?: ($product->has_discount && $product->discount_info ? ($product->discount_info['id'] ?? null) : null);
+                          if ($targetDiscountId) {
+                              $discount = \App\Models\Discount::find($targetDiscountId);
+                              $maxLimit = $discount?->max_purchase_limit ?? ($product->discount_info['max_purchase_limit'] ?? null);
+                              $promoCount = ($maxLimit !== null && $maxLimit > 0) ? min($item->quantity, $maxLimit) : $item->quantity;
+                              if ($promoCount > 0) {
+                                  \App\Models\Discount::where('id', $targetDiscountId)
+                                      ->where('promo_sold', '>=', $promoCount)
+                                      ->decrement('promo_sold', $promoCount);
+                              }
+                          }
                      }
                 }
 

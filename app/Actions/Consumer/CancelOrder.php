@@ -55,12 +55,13 @@ class CancelOrder
                         $product->supply->update(['quantity' => $product->stock]);
                     }
 
-                    if ($product->has_discount && $product->discount_info) {
-                        $activeDiscountId = $product->discount_info['id'] ?? null;
-                        $maxLimit = $product->discount_info['max_purchase_limit'] ?? null;
+                    $targetDiscountId = $item->discount_id ?: ($product->has_discount && $product->discount_info ? ($product->discount_info['id'] ?? null) : null);
+                    if ($targetDiscountId) {
+                        $discount = \App\Models\Discount::find($targetDiscountId);
+                        $maxLimit = $discount?->max_purchase_limit ?? ($product->discount_info['max_purchase_limit'] ?? null);
                         $promoCount = ($maxLimit !== null && $maxLimit > 0) ? min($item->quantity, $maxLimit) : $item->quantity;
-                        if ($activeDiscountId && $promoCount > 0) {
-                            \App\Models\Discount::where('id', $activeDiscountId)
+                        if ($promoCount > 0) {
+                            \App\Models\Discount::where('id', $targetDiscountId)
                                 ->where('promo_sold', '>=', $promoCount)
                                 ->decrement('promo_sold', $promoCount);
                         }
@@ -77,6 +78,23 @@ class CancelOrder
             // Online Payment (PayMongo GCash/Card) Refund Trigger
             if ($order->payment_status === 'paid') {
                 $updateData['payment_status'] = 'refunded';
+
+                if (empty($order->payment_id) && !empty($order->paymongo_session_id)) {
+                    try {
+                        $session = $this->payMongoService->retrieveCheckoutSession($order->paymongo_session_id);
+                        $payments = $session['attributes']['payments'] ?? [];
+                        if (is_array($payments) && !empty($payments)) {
+                            $firstPayment = reset($payments);
+                            $resolvedPaymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
+                            if ($resolvedPaymentId) {
+                                $order->payment_id = $resolvedPaymentId;
+                                $updateData['payment_id'] = $resolvedPaymentId;
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        Log::warning("Failed resolving PayMongo payment_id from session {$order->paymongo_session_id}: " . $e->getMessage());
+                    }
+                }
 
                 if ($order->payment_id) {
                     try {

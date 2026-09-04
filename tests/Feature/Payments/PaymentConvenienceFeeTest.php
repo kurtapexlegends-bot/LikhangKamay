@@ -223,7 +223,7 @@ class PaymentConvenienceFeeTest extends TestCase
 
         $order->refresh();
         $this->assertSame('paid', $order->payment_status);
-        $this->assertNull($order->paymongo_session_id);
+        $this->assertSame('cs_test_guest_paid', $order->paymongo_session_id);
     }
 
     public function test_guest_success_callback_with_reference_mismatch_redirects_cleanly_to_login(): void
@@ -331,6 +331,6 @@ class PaymentConvenienceFeeTest extends TestCase
 
         $order->refresh();
         $this->assertSame('paid', $order->payment_status);
-        $this->assertNull($order->paymongo_session_id);
+        $this->assertSame('cs_test_reconcile', $order->paymongo_session_id);
     }
 }

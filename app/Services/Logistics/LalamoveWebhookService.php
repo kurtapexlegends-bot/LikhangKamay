@@ -277,6 +277,7 @@ class LalamoveWebhookService
                 $order->update([
                     'status' => 'Delivered',
                     'delivered_at' => now(),
+                    'auto_complete_at' => now()->addDays(1),
                     'warranty_expires_at' => now()->addDay(),
                 ]);
 

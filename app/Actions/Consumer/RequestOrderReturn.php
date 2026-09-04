@@ -32,7 +32,12 @@ class RequestOrderReturn
                 throw new \RuntimeException('This order is not completed.');
             }
 
-            if (!$order->warranty_expires_at || now()->greaterThan($order->warranty_expires_at)) {
+            $completionDate = $order->received_at ?? $order->updated_at;
+            $warrantyExpires = ($order->warranty_expires_at && $completionDate && $order->warranty_expires_at->greaterThan($completionDate))
+                ? $order->warranty_expires_at
+                : ($completionDate ? $completionDate->copy()->addDay() : null);
+
+            if (!$warrantyExpires || now()->greaterThan($warrantyExpires)) {
                 throw new \RuntimeException('Return window has expired. Returns must be requested within 1 day of receiving your order.');
             }
 

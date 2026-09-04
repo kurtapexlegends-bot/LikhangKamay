@@ -262,12 +262,14 @@ class PlaceOrder
                         $itemUnitPrice = $item['qty'] > 0 ? round($itemTotalPrice / $item['qty'], 2) : $product->effective_price;
                     }
 
+                    $appliedDiscountId = null;
                     if ($product->has_discount && $product->discount_info) {
                         $activeDiscountId = $product->discount_info['id'] ?? null;
                         $maxLimit = $product->discount_info['max_purchase_limit'] ?? null;
                         $promoCount = ($maxLimit !== null && $maxLimit > 0) ? min($item['qty'], $maxLimit) : $item['qty'];
                         if ($activeDiscountId && $promoCount > 0) {
                             Discount::where('id', $activeDiscountId)->increment('promo_sold', $promoCount);
+                            $appliedDiscountId = $activeDiscountId;
                         }
                     }
 
@@ -280,6 +282,7 @@ class PlaceOrder
 
                     $orderItemData = [
                         'product_id' => $product->id,
+                        'discount_id' => $appliedDiscountId,
                         'product_name' => $product->name,
                         'variant' => $item['variant'] ?? null,
                         'price' => $itemUnitPrice,

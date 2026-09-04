@@ -103,7 +103,7 @@ class StaffAttendanceService
                 if (!$isWithinGeofence && !$isRemoteWorker && $sellerLocation->enforce_strict_geofence) {
                     throw ValidationException::withMessages([
                         'location' => [
-                            "Clock-in blocked: You are {$distanceMeters}m away from {$sellerLocation->name}. Strict geofence enforcement requires you to be within {$allowedRadius}m."
+                            "Clock-in blocked: You are {$distanceMeters}m away from {$sellerLocation->name}. Store location enforcement requires you to be within {$allowedRadius}m."
                         ],
                     ]);
                 }
@@ -116,7 +116,7 @@ class StaffAttendanceService
 
             if (!$cachedData || trim((string)$payload['otp_code']) !== (string)($cachedData['code'] ?? '')) {
                 throw ValidationException::withMessages([
-                    'otp_code' => ['Invalid or expired verification OTP. Please request a new code.'],
+                    'otp_code' => ['Invalid or expired Email Security Code. Please request a new code.'],
                 ]);
             }
 
