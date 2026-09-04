@@ -309,15 +309,61 @@ class B2BSupplyHubController extends Controller
 
         $orders = $query->paginate(8)->withQueryString();
 
+        $orders->through(function ($order) {
+            $merchandiseSubtotal = (float) ($order->merchandise_subtotal ?? $order->items->sum(fn($i) => ($i->price ?? $i->unit_price ?? 0) * $i->quantity));
+            $shippingFee = (float) ($order->shipping_fee_amount ?? max(0, (float)$order->total_amount - $merchandiseSubtotal));
+            $totalAmount = (float) ($order->total_amount ?? ($merchandiseSubtotal + $shippingFee));
+
+            return [
+                'id' => $order->order_number ?: (string)$order->id,
+                'db_id' => $order->id,
+                'order_number' => $order->order_number ?: (string)$order->id,
+                'date' => $order->created_at ? $order->created_at->format('M d, Y - h:i A') : 'Recent',
+                'supplier_name' => $order->seller?->shop_name ?: ($order->seller?->name ?: 'Peer Artisan Studio'),
+                'supplier_shop_name' => $order->seller?->shop_name,
+                'supplier_avatar' => $order->seller?->avatar_url,
+                'supplier_city' => $order->seller?->city,
+                'supplier_id' => $order->artisan_id ?: $order->seller_id ?: $order->seller?->id,
+                'status' => $order->status,
+                'payment_status' => $order->payment_status ?? 'paid',
+                'payment_method' => $order->payment_method ?? 'Direct Payout',
+                'total' => number_format($totalAmount, 2),
+                'total_amount' => $totalAmount,
+                'merchandise_subtotal' => $merchandiseSubtotal,
+                'shipping_fee_amount' => $shippingFee,
+                'convenience_fee_amount' => (float) ($order->convenience_fee_amount ?? 0),
+                'shipping_address' => $order->shipping_address,
+                'shipping_contact_phone' => $order->shipping_contact_phone,
+                'shipping_method' => $order->shipping_method,
+                'shipping_notes' => $order->shipping_notes,
+                'tracking_number' => $order->tracking_number ?: $order->delivery?->tracking_number,
+                'delivery' => OrderWorkflowHelper::serializeDelivery($order->delivery),
+                'timeline' => OrderWorkflowHelper::buildOrderTimeline($order),
+                'items' => $order->items->map(fn($item) => [
+                    'id' => $item->id,
+                    'name' => $item->product_name ?: $item->name,
+                    'variant' => $item->variant ?? 'Standard',
+                    'qty' => $item->quantity,
+                    'price' => (float) ($item->price ?? $item->unit_price ?? 0),
+                    'supply_unit' => $item->supply_unit ?: ($item->product?->supply_unit ?: 'pcs'),
+                    'img' => StorageUrl::url($item->product_img ?: $item->product?->cover_photo_path, '/images/placeholder.svg'),
+                ])->all(),
+            ];
+        });
+
         $statusCounts = Order::where('user_id', $actor->id)
             ->selectRaw("
                 SUM(CASE WHEN status IN ('Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup') THEN 1 ELSE 0 END) as active_count,
-                SUM(CASE WHEN status = 'Delivered' THEN 1 ELSE 0 END) as delivered_count
+                SUM(CASE WHEN status = 'Delivered' THEN 1 ELSE 0 END) as delivered_count,
+                SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed_count,
+                SUM(CASE WHEN status IN ('Cancelled', 'Refunded') THEN 1 ELSE 0 END) as cancelled_count
             ")
             ->first();
 
         $activeOrdersCount = (int) ($statusCounts->active_count ?? 0);
         $deliveredOrdersCount = (int) ($statusCounts->delivered_count ?? 0);
+        $completedOrdersCount = (int) ($statusCounts->completed_count ?? 0);
+        $cancelledOrdersCount = (int) ($statusCounts->cancelled_count ?? 0);
 
         $myPublishedCount = Product::where('user_id', $actor->id)
             ->where('is_b2b_supply', DB::raw('true'))
@@ -332,6 +378,8 @@ class B2BSupplyHubController extends Controller
             'orders' => $orders,
             'activeOrdersCount' => $activeOrdersCount,
             'deliveredOrdersCount' => $deliveredOrdersCount,
+            'completedOrdersCount' => $completedOrdersCount,
+            'cancelledOrdersCount' => $cancelledOrdersCount,
             'myPublishedCount' => $myPublishedCount,
             'wholesaleSalesCount' => $wholesaleSalesCount,
             'filters' => [
