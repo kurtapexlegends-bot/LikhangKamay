@@ -45,6 +45,9 @@ class Employee extends Model
         'employee_id',
         'name',
         'role',
+        'vehicle_type',
+        'vehicle_plate_number',
+        'driver_license_number',
         'salary',
         'status',
         'join_date'
@@ -69,6 +72,11 @@ class Employee extends Model
     public function loginAccount()
     {
         return $this->hasOne(User::class, 'employee_id');
+    }
+
+    public function deliveries()
+    {
+        return $this->hasMany(OrderDelivery::class, 'driver_employee_id');
     }
 
     public function assignedLocation()

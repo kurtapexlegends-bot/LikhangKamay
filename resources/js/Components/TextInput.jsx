@@ -32,8 +32,12 @@ export default forwardRef(function TextInput(
     const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
 
     const hasPrefixIcon = Icon !== null || withIcon;
-    const paddingLeftClass = hasPrefixIcon ? 'pl-10' : 'pl-4';
-    const paddingRightClass = isPassword ? 'pr-10' : 'pr-4';
+    const hasCustomPl = className.includes('pl-');
+    const hasCustomPr = className.includes('pr-');
+    const hasCustomPy = className.includes('py-');
+    const paddingLeftClass = hasCustomPl ? '' : (hasPrefixIcon ? 'pl-10' : 'pl-4');
+    const paddingRightClass = hasCustomPr ? '' : (isPassword ? 'pr-10' : 'pr-4');
+    const paddingYClass = hasCustomPy ? '' : 'py-3.5';
 
     const labelVal = label || floatingLabel;
 
@@ -41,7 +45,7 @@ export default forwardRef(function TextInput(
         hasError 
             ? 'border-rose-355 bg-rose-50/50 text-rose-900 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/20' 
             : 'border-stone-200 bg-stone-50/40 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 hover:border-stone-300 disabled:hover:border-stone-200'
-    } ${paddingLeftClass} ${paddingRightClass} py-3.5 text-sm font-medium text-stone-900 ${className}`;
+    } ${paddingLeftClass} ${paddingRightClass} ${paddingYClass} text-sm font-medium text-stone-900 ${className}`;
 
     const renderIcon = () => {
         if (!Icon) return null;
@@ -58,8 +62,9 @@ export default forwardRef(function TextInput(
             <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center text-stone-400 hover:text-clay-600 transition-colors duration-300 z-30"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center text-stone-400 hover:text-clay-600 transition-colors duration-300 z-30 p-1 focus:outline-none"
                 tabIndex="-1"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>

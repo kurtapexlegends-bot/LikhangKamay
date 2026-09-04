@@ -111,6 +111,8 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     // DASHBOARD & PROFILE
     Route::get('/dashboard', [\App\Http\Controllers\Seller\DashboardController::class, 'index'])->middleware('staff.attendance')->name('dashboard');
     Route::get('/staff/dashboard', [\App\Http\Controllers\Seller\StaffDashboardController::class, 'index'])->name('staff.dashboard');
+    Route::get('/staff/deliveries', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'index'])->name('staff.deliveries');
+    Route::post('/staff/deliveries/{delivery}/complete', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'complete'])->name('staff.deliveries.complete');
     Route::middleware(['ensure.not.pending.artisan'])->group(function () {
         // PROFILE
         Route::get('/profile', [\App\Http\Controllers\Core\ProfileController::class, 'edit'])->name('profile.edit');
@@ -164,6 +166,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/orders/{id}/payment-status', [\App\Http\Controllers\Seller\SellerOrderController::class, 'updatePaymentStatus'])->middleware('seller.module:orders')->name('orders.payment-status');
         Route::post('/orders/{id}/lalamove', [\App\Http\Controllers\Seller\LalamoveDeliveryController::class, 'store'])->middleware('seller.module:orders')->name('orders.lalamove.store');
         Route::post('/orders/bulk-lalamove', [\App\Http\Controllers\Seller\LalamoveDeliveryController::class, 'bulkStore'])->middleware('seller.module:orders')->name('orders.bulk-lalamove');
+        Route::get('/orders/dispatch/drivers', [\App\Http\Controllers\Seller\InHouseDispatchController::class, 'getDrivers'])->middleware('seller.module:orders')->name('orders.dispatch.drivers');
+        Route::post('/orders/{id}/dispatch-in-house', [\App\Http\Controllers\Seller\InHouseDispatchController::class, 'dispatch'])->middleware('seller.module:orders')->name('orders.dispatch-in-house');
+        Route::post('/orders/bulk-dispatch-in-house', [\App\Http\Controllers\Seller\InHouseDispatchController::class, 'bulkDispatch'])->middleware('seller.module:orders')->name('orders.bulk-dispatch-in-house');
         Route::get('/orders/bulk-labels', [\App\Http\Controllers\Seller\SellerOrderController::class, 'bulkLabels'])->middleware('seller.module:orders')->name('orders.bulk-labels');
         Route::post('/orders/bulk-packing-slips', [\App\Http\Controllers\Seller\OrderPrintController::class, 'bulkPackingSlips'])->middleware('seller.module:orders')->name('orders.bulk-packing-slips');
         Route::post('/disputes/{id}/respond', [\App\Http\Controllers\Core\DisputeController::class, 'sellerRespond'])->middleware('seller.module:orders')->name('disputes.respond');

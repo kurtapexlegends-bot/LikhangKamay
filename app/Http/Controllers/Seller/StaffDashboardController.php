@@ -38,6 +38,10 @@ class StaffDashboardController extends Controller
             return redirect()->route('staff.home');
         }
 
+        if ($user->staff_role_preset_key === 'driver' || ($user->employee && $user->employee->role === 'Logistics / Driver')) {
+            return redirect()->route('staff.deliveries');
+        }
+
         $visibleModules = $user->getSellerEntitlements()['visibleModules'] ?? [];
         $unreadTeamMessages = TeamMessage::query()
             ->where('seller_owner_id', $seller->id)

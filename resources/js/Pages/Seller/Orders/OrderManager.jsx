@@ -22,6 +22,7 @@ import DisputeResponseModal from "@/Components/Seller/Orders/DisputeResponseModa
 import ReplacementModal from "@/Components/Seller/Orders/ReplacementModal";
 import BulkActionsBar from "@/Components/Seller/Orders/BulkActionsBar";
 import OrderKPICards from "@/Components/Seller/Orders/OrderKPICards";
+import DispatchOrderModal from "@/Components/Seller/Orders/DispatchOrderModal";
 
 const ORDER_MANAGER_VIEW_KEY = "seller-order-manager-view";
 
@@ -58,9 +59,15 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
     const [flaggedOnly, setFlaggedOnly] = useState(filters.flagged || "all");
     const currentPage = orders.current_page || 1;
     const [selectedOrderIds, setSelectedOrderIds] = useState([]);
+    const [dispatchModal, setDispatchModal] = useState({ isOpen: false, order: null });
     const [isPrintingSlips, setIsPrintingSlips] = useState(false);
     const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
     const [mounted, setMounted] = useState(true);
+
+    const openDispatchModal = (order) => {
+        if (!canEditOrders) return;
+        setDispatchModal({ isOpen: true, order });
+    };
 
     useEffect(() => {
         const timer = setTimeout(() => setShouldAnimateKPI(false), 2000);
@@ -508,7 +515,7 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
                     {displayedOrders.length > 0 ? (
                         displayedOrders.map((order, idx) => (
                             <OrderCard
-                                key={order.id} order={order} idx={idx} canAccessMessages={canAccessMessages} canEditOrders={canEditOrders} openChat={openChat} toggleOrderSelection={toggleOrderSelection} selectedOrderIds={selectedOrderIds} initiateStatusUpdate={initiateStatusUpdate} openShippingModal={openShippingModal} createLalamoveDelivery={createLalamoveDelivery} bookingOrderId={bookingOrderId} submitRefundApproval={submitRefundApproval} openReplacementModal={openReplacementModal} returnActionKey={returnActionKey} openDisputeModal={openDisputeModal} expandedTimelines={expandedTimelines} toggleTimelineExpansion={toggleTimelineExpansion} expandedCourierTrackings={expandedCourierTrackings} toggleCourierTrackingExpansion={toggleCourierTrackingExpansion} expandedPricingDetails={expandedPricingDetails} togglePricingDetailsExpansion={togglePricingDetailsExpansion} markAsPaidAction={markAsPaidAction} replacementModal={replacementModal}
+                                key={order.id} order={order} idx={idx} canAccessMessages={canAccessMessages} canEditOrders={canEditOrders} openChat={openChat} toggleOrderSelection={toggleOrderSelection} selectedOrderIds={selectedOrderIds} initiateStatusUpdate={initiateStatusUpdate} openShippingModal={openShippingModal} openDispatchModal={openDispatchModal} createLalamoveDelivery={createLalamoveDelivery} bookingOrderId={bookingOrderId} submitRefundApproval={submitRefundApproval} openReplacementModal={openReplacementModal} returnActionKey={returnActionKey} openDisputeModal={openDisputeModal} expandedTimelines={expandedTimelines} toggleTimelineExpansion={toggleTimelineExpansion} expandedCourierTrackings={expandedCourierTrackings} toggleCourierTrackingExpansion={toggleCourierTrackingExpansion} expandedPricingDetails={expandedPricingDetails} togglePricingDetailsExpansion={togglePricingDetailsExpansion} markAsPaidAction={markAsPaidAction} replacementModal={replacementModal}
                             />
                         ))
                     ) : (
@@ -549,6 +556,15 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
 
             {/* DISPUTE RESPONSE MODAL */}
             <DisputeResponseModal isOpen={disputeModalState.isOpen} onClose={() => setDisputeModalState(prev => ({ ...prev, isOpen: false }))} disputeModalState={disputeModalState} setDisputeModalState={setDisputeModalState} submitDisputeResponse={submitDisputeResponse} canEditOrders={canEditOrders} />
+
+            {/* IN-HOUSE & LALAMOVE DISPATCH MODAL */}
+            <DispatchOrderModal
+                isOpen={dispatchModal.isOpen}
+                onClose={() => setDispatchModal({ isOpen: false, order: null })}
+                order={dispatchModal.order}
+                canEditOrders={canEditOrders}
+                isPremium={sellerSidebar?.isPremium ?? true}
+            />
 
             {/* Floating Bulk Actions Bar */}
             <BulkActionsBar

@@ -24,6 +24,7 @@ export default function FulfillmentActionGroup({
     openChat,
     initiateStatusUpdate,
     openShippingModal,
+    openDispatchModal,
     createLalamoveDelivery,
     bookingOrderId,
     submitRefundApproval,
@@ -166,34 +167,22 @@ export default function FulfillmentActionGroup({
                             <PackageCheck size={18} /> Mark as Ready for Pickup
                         </button>
                     ) : (
-                        <div className="space-y-2.5">
+                        <div className="space-y-2">
+                            <button
+                                disabled={!canEditOrders}
+                                onClick={() => openDispatchModal ? openDispatchModal(order) : openShippingModal(order, "ship")}
+                                className="flex w-full items-center justify-center gap-2 rounded-lg bg-clay-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-clay-200 transition-colors hover:bg-clay-800 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
+                                type="button"
+                            >
+                                <Truck size={18} /> Dispatch Order
+                            </button>
                             <button
                                 disabled={!canEditOrders}
                                 onClick={() => openShippingModal(order, "ship")}
-                                className="flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-700 shadow-sm transition-colors hover:bg-blue-100 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
+                                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 shadow-2xs transition-colors hover:bg-stone-50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 min-h-[38px]"
                                 type="button"
                             >
-                                <PackageCheck size={18} /> Mark as Shipped
-                            </button>
-                            <button
-                                onClick={() => createLalamoveDelivery(order.id)}
-                                disabled={
-                                    !canEditOrders ||
-                                    !order.lalamove_booking_ready ||
-                                    bookingOrderId === order.id
-                                }
-                                className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-200 transition-colors hover:bg-blue-700 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 min-h-[44px]"
-                                type="button"
-                            >
-                                {bookingOrderId === order.id ? (
-                                    <>
-                                        <LoaderCircle size={18} className="animate-spin" /> Booking Lalamove...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Truck size={18} /> Book Lalamove Rider
-                                    </>
-                                )}
+                                <PackageCheck size={15} /> Manual Tracking
                             </button>
                         </div>
                     )}

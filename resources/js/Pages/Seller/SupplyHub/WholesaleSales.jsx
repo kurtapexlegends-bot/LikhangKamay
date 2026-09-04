@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
+import DispatchOrderModal from '@/Components/Seller/Orders/DispatchOrderModal';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -26,13 +27,15 @@ export default function WholesaleSales({
     activeOrdersCount = 0,
     filters = {},
 }) {
-    const { flash, cartCount = 0 } = usePage().props;
+    const { flash, cartCount = 0, sellerSidebar } = usePage().props;
+    const isPremium = sellerSidebar?.isPremium ?? true;
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
     useFlashToast(flash, addToast);
 
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [actionModal, setActionModal] = useState({ isOpen: false, order: null, nextStatus: '', trackingNumber: '', notes: '' });
+    const [dispatchModal, setDispatchModal] = useState({ isOpen: false, order: null });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [copiedId, setCopiedId] = useState(null);
 
@@ -405,14 +408,16 @@ export default function WholesaleSales({
                                             </div>
 
                                             {/* Chat button */}
-                                            <button
-                                                type="button"
-                                                onClick={() => router.get(route('chat.index'), { recipient: order.user_id })}
-                                                className="ml-1 p-1.5 text-clay-600 hover:text-clay-800 bg-white hover:bg-clay-50 border border-stone-200 rounded-lg transition-all flex items-center justify-center shrink-0 shadow-2xs"
-                                                title="Chat with peer artisan"
-                                            >
-                                                <MessageSquare size={12} />
-                                            </button>
+                                            {order.user_id && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => router.visit(route('chat.index', { user_id: order.user_id }))}
+                                                    className="ml-1 p-1.5 text-clay-600 hover:text-clay-800 bg-white hover:bg-clay-50 border border-stone-200 rounded-lg transition-all flex items-center justify-center shrink-0 shadow-2xs cursor-pointer"
+                                                    title="Chat with peer artisan"
+                                                >
+                                                    <MessageSquare size={12} />
+                                                </button>
+                                            )}
                                         </div>
 
                                         {/* Right: Logistics details */}
@@ -620,7 +625,7 @@ export default function WholesaleSales({
                                                 {(order.status === 'Accepted' || order.status === 'Processing') && (
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleOpenActionModal(order, 'Shipped')}
+                                                        onClick={() => setDispatchModal({ isOpen: true, order })}
                                                         className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-clay-700 py-2 text-xs font-bold text-white hover:bg-clay-800 transition shadow-2xs active:scale-95"
                                                     >
                                                         <Truck size={13} />
@@ -758,6 +763,13 @@ export default function WholesaleSales({
                     </div>
                 </div>
             )}
+
+            <DispatchOrderModal
+                isOpen={dispatchModal.isOpen}
+                onClose={() => setDispatchModal({ isOpen: false, order: null })}
+                order={dispatchModal.order}
+                isPremium={isPremium}
+            />
         </>
     );
 }

@@ -425,7 +425,7 @@ export default function SourcingOrders({
                                             {order.supplier_id && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => router.get(route('chat.index'), { recipient: order.supplier_id })}
+                                                    onClick={() => router.visit(route('chat.index', { user_id: order.supplier_id }))}
                                                     className="ml-1 px-2 py-1 text-clay-700 hover:text-clay-900 bg-white hover:bg-clay-50 border border-stone-200 rounded-lg transition-all flex items-center gap-1 shrink-0 shadow-2xs text-[11px] font-bold cursor-pointer"
                                                     title="Message Supplier Studio"
                                                 >

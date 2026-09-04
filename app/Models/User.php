@@ -397,6 +397,11 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         return $this->hasMany(\App\Models\StaffAttendanceSession::class, 'staff_user_id');
     }
 
+    public function driverDeliveries()
+    {
+        return $this->hasMany(\App\Models\OrderDelivery::class, 'driver_user_id');
+    }
+
     public function sellerLocations()
     {
         return $this->hasMany(\App\Models\SellerLocation::class, 'user_id');

@@ -21,6 +21,7 @@ export default function OrderCard({
     selectedOrderIds,
     initiateStatusUpdate,
     openShippingModal,
+    openDispatchModal,
     createLalamoveDelivery,
     bookingOrderId,
     submitRefundApproval,
@@ -125,6 +126,7 @@ export default function OrderCard({
                             openChat={openChat}
                             initiateStatusUpdate={initiateStatusUpdate}
                             openShippingModal={openShippingModal}
+                            openDispatchModal={openDispatchModal}
                             createLalamoveDelivery={createLalamoveDelivery}
                             bookingOrderId={bookingOrderId}
                             submitRefundApproval={submitRefundApproval}

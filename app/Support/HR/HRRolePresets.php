@@ -14,6 +14,7 @@ class HRRolePresets
             'accountant' => ['label' => 'Accountant', 'description' => 'Focus on financials. Can view revenue, manage payroll, and approve payouts.'],
             'stock_clerk' => ['label' => 'Stock Clerk', 'description' => 'Operations focus. Can manage inventory, process orders, and request supplies.'],
             'customer_support' => ['label' => 'Customer Care', 'description' => 'Orders, buyer messages, team inbox, and customer review handling.'],
+            'driver' => ['label' => 'Logistics & Driver', 'description' => 'Delivery companion console to view assigned routes and submit delivery proof.'],
             'hr' => ['label' => 'People & Payroll', 'description' => 'Employee records, payroll prep, and workspace access coordination.'],
             'accounting' => ['label' => 'Finance Review', 'description' => 'Legacy finance visibility role.'],
             'procurement' => ['label' => 'Procurement', 'description' => 'Legacy inventory tracking role.'],

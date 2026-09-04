@@ -322,7 +322,7 @@ class ChatController extends Controller
         $this->directMessageService->authorizeChatActor($actor, $sellerPerspective);
 
         $userId = $this->directMessageService->resolveConversationUserId($actor, $sellerPerspective);
-        $activeChatId = $request->query('user_id') ? (int) $request->query('user_id') : null;
+        $activeChatId = (int) ($request->query('user_id') ?: $request->query('recipient') ?: $request->query('user') ?: 0) ?: null;
 
         $isPartial = $request->header('X-Inertia-Partial-Component') === $viewName;
         $partialData = explode(',', (string) $request->header('X-Inertia-Partial-Data', ''));
