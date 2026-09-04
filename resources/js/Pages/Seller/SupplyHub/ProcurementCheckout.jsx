@@ -128,7 +128,7 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
                 title="Supply Hub"
                 subtitle="Review your delivery address, courier allocation, and order total."
                 onMenuClick={openSidebar}
-                badge={{ label: 'Wholesale Supplies', iconColor: 'text-clay-500' }}
+                badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
             />
 
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">

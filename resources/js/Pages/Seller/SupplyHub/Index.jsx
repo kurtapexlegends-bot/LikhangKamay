@@ -133,7 +133,7 @@ export default function Index({
                 title="Supply Hub"
                 subtitle="Source pottery clay, timber, glazes, and packaging directly from verified peer workshops."
                 onMenuClick={openSidebar}
-                badge={{ label: 'Wholesale Supplies', iconColor: 'text-clay-500' }}
+                badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
             />
 
             <div className="p-3 sm:p-6 lg:p-8 space-y-3 sm:space-y-4 lg:space-y-6 pb-12">

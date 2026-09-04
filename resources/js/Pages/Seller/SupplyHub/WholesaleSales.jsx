@@ -154,7 +154,7 @@ export default function WholesaleSales({
                 title="Supply Hub"
                 subtitle="Fulfill workshop supplies ordered by peer artisan studios."
                 onMenuClick={openSidebar}
-                badge={{ label: 'Supplies Sold', iconColor: 'text-clay-500' }}
+                badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
             />
 
             <div className="p-3 sm:p-6 lg:p-8 space-y-3 sm:space-y-4 lg:space-y-6 pb-12">

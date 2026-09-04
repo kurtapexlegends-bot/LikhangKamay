@@ -158,7 +158,7 @@ export default function StockRequestIndex({ auth, requests }) {
                 subtitle="Track stock purchase orders and material intake from suppliers and peer workshops."
                 auth={auth}
                 onMenuClick={openSidebar}
-                badge={{ label: 'Inventory Intake', iconColor: 'text-clay-500' }}
+                badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
             />
 
             <div className="p-3 sm:p-6 lg:p-8 space-y-3 sm:space-y-4 lg:space-y-6 pb-12">

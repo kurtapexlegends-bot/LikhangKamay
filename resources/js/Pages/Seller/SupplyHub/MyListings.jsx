@@ -102,7 +102,7 @@ export default function MyListings({ products = [], availableCategories = [], av
                 title="Supply Hub"
                 subtitle="Manage your bulk raw materials, clay sacks, timber, and workshop glazes for peer artisans."
                 onMenuClick={openSidebar}
-                badge={{ label: 'Wholesale Supplies', iconColor: 'text-clay-500' }}
+                badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
             />
 
             <div className="p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 pb-12">
