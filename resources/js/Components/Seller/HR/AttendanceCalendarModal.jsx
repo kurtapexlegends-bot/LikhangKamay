@@ -17,6 +17,47 @@ export default function AttendanceCalendarModal({
     sellerSettings = {},
     onMonthChange
 }) {
+    const createdAt = sellerSettings?.created_at;
+    const currentMonthValue = sellerSettings?.attendance_month_value || new Date().toISOString().slice(0, 7);
+
+    const selectableMonths = React.useMemo(() => {
+        const currentDate = new Date();
+        if (!createdAt) {
+            const val = currentDate.toISOString().slice(0, 7);
+            const lbl = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            return [{ value: val, label: lbl }];
+        }
+        
+        const createdDate = new Date(createdAt);
+        const months = [];
+        let year = createdDate.getFullYear();
+        let month = createdDate.getMonth();
+        
+        const endYear = currentDate.getFullYear();
+        const endMonth = currentDate.getMonth();
+        
+        while (year < endYear || (year === endYear && month <= endMonth)) {
+            const val = `${year}-${String(month + 1).padStart(2, '0')}`;
+            const dateObj = new Date(year, month, 1);
+            const lbl = dateObj.toLocaleString('default', { month: 'long', year: 'numeric' });
+            months.push({ value: val, label: lbl });
+            
+            month++;
+            if (month > 11) {
+                month = 0;
+                year++;
+            }
+        }
+        
+        if (months.length === 0) {
+            const val = currentDate.toISOString().slice(0, 7);
+            const lbl = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            months.push({ value: val, label: lbl });
+        }
+        
+        return months.reverse();
+    }, [createdAt]);
+
     if (!employee) return null;
 
     const standardWorkdayHours = Number(sellerSettings.standard_workday_hours) || 8.0;
@@ -60,47 +101,6 @@ export default function AttendanceCalendarModal({
             </div>
         </div>
     );
-
-    const createdAt = sellerSettings.created_at;
-    const currentMonthValue = sellerSettings.attendance_month_value || new Date().toISOString().slice(0, 7);
-
-    const selectableMonths = React.useMemo(() => {
-        const currentDate = new Date();
-        if (!createdAt) {
-            const val = currentDate.toISOString().slice(0, 7);
-            const lbl = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-            return [{ value: val, label: lbl }];
-        }
-        
-        const createdDate = new Date(createdAt);
-        const months = [];
-        let year = createdDate.getFullYear();
-        let month = createdDate.getMonth();
-        
-        const endYear = currentDate.getFullYear();
-        const endMonth = currentDate.getMonth();
-        
-        while (year < endYear || (year === endYear && month <= endMonth)) {
-            const val = `${year}-${String(month + 1).padStart(2, '0')}`;
-            const dateObj = new Date(year, month, 1);
-            const lbl = dateObj.toLocaleString('default', { month: 'long', year: 'numeric' });
-            months.push({ value: val, label: lbl });
-            
-            month++;
-            if (month > 11) {
-                month = 0;
-                year++;
-            }
-        }
-        
-        if (months.length === 0) {
-            const val = currentDate.toISOString().slice(0, 7);
-            const lbl = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-            months.push({ value: val, label: lbl });
-        }
-        
-        return months.reverse();
-    }, [createdAt]);
 
     const currentIndex = selectableMonths.findIndex(m => m.value === currentMonthValue);
     

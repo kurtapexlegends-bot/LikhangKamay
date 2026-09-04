@@ -23,11 +23,34 @@ export default function Catalog(props) {
         }))
         : [];
     
+    const safeFilters = (props.filters && typeof props.filters === 'object' && !Array.isArray(props.filters)) ? props.filters : {};
     const [products, setProducts] = useState(initialProducts);
     const [nextPageUrl, setNextPageUrl] = useState(props.products?.next_page_url);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const observerRef = useRef(null);
+
+    // --- STATE ---
+    const [minPrice, setMinPrice] = useState(safeFilters.price_min || '');
+    const [maxPrice, setMaxPrice] = useState(safeFilters.price_max || '');
+    const [activeCategory, setActiveCategory] = useState(safeFilters.category || 'All');
+    const [sortBy, setSortBy] = useState(safeFilters.sort || 'newest');
+    const [searchTerm, setSearchTerm] = useState(safeFilters.search || '');
+    const [followedOnly, setFollowedOnly] = useState(Boolean(safeFilters.followed_only));
+
+    // Location filter
+    const initialLocations = safeFilters.locations ? String(safeFilters.locations).split(',') : [];
+    const [selectedLocations, setSelectedLocations] = useState(initialLocations);
+
+    // Material filter
+    const initialMaterials = safeFilters.materials ? String(safeFilters.materials).split(',') : [];
+    const [selectedMaterials, setSelectedMaterials] = useState(initialMaterials);
+
+    // Rating filter
+    const [minRating, setMinRating] = useState(safeFilters.min_rating || '');
     
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
     useEffect(() => {
         // Reset products and next page URL only on initial load or filter/search resets (page 1)
         if (!props.products?.current_page || props.products.current_page === 1) {
@@ -68,35 +91,12 @@ export default function Catalog(props) {
     const categoryCounts = (props.categoryCounts && typeof props.categoryCounts === 'object') ? props.categoryCounts : {};
     const materialCounts = (props.materialCounts && typeof props.materialCounts === 'object') ? props.materialCounts : {};
     const locationCounts = (props.locationCounts && typeof props.locationCounts === 'object') ? props.locationCounts : {};
-    const safeFilters = (props.filters && typeof props.filters === 'object' && !Array.isArray(props.filters)) ? props.filters : {};
     const sponsoredResultsPlacement = 'catalog_sponsored_results';
     const sponsoredGridPlacement = 'catalog_sponsored_grid';
     const sponsoredGridProducts = products.filter((product) => product.is_sponsored);
 
     useSponsoredImpressionTracking(sponsoredProducts, sponsoredResultsPlacement);
     useSponsoredImpressionTracking(sponsoredGridProducts, sponsoredGridPlacement);
-    
-    // --- STATE ---
-    const [minPrice, setMinPrice] = useState(safeFilters.price_min || '');
-    const [maxPrice, setMaxPrice] = useState(safeFilters.price_max || '');
-    const [activeCategory, setActiveCategory] = useState(safeFilters.category || 'All');
-    const [sortBy, setSortBy] = useState(safeFilters.sort || 'newest');
-    const [searchTerm, setSearchTerm] = useState(safeFilters.search || '');
-    const [followedOnly, setFollowedOnly] = useState(Boolean(safeFilters.followed_only));
-    
-    // Location filter
-    const initialLocations = safeFilters.locations ? String(safeFilters.locations).split(',') : [];
-    const [selectedLocations, setSelectedLocations] = useState(initialLocations);
-    
-    // Material filter
-    const initialMaterials = safeFilters.materials ? String(safeFilters.materials).split(',') : [];
-    const [selectedMaterials, setSelectedMaterials] = useState(initialMaterials);
-    
-    // Rating filter
-    const [minRating, setMinRating] = useState(safeFilters.min_rating || '');
-    
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
 
     // Sort options configuration
     const sortOptions = [
@@ -351,7 +351,7 @@ export default function Catalog(props) {
                                     <div>
                                         <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-0.5">Search Results</p>
                                         <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                            "{safeFilters.search}"
+                                            &ldquo;{safeFilters.search}&rdquo;
                                             <button onClick={clearSearch} className="text-gray-300 hover:text-red-500 transition-all active:scale-95" title="Clear">
                                                 <X size={16} />
                                             </button>
@@ -424,7 +424,7 @@ export default function Catalog(props) {
                                 {/* Search Term Chip */}
                                 {searchTerm && (
                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-stone-200 text-stone-800 font-bold rounded-lg shadow-2xs">
-                                        Search: "{searchTerm}"
+                                        Search: &ldquo;{searchTerm}&rdquo;
                                         <button onClick={clearSearch} className="hover:text-red-600 transition" title="Remove search">
                                             <X size={12} />
                                         </button>

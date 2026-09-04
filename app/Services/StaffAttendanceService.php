@@ -320,7 +320,7 @@ class StaffAttendanceService
                 'attendance_date' => optional($session->attendance_date)->toDateString(),
                 'worked_minutes' => $session->worked_minutes,
             ],
-            'target_url' => '/seller/hr?tab=attendance',
+            'target_url' => route('hr.index', ['tab' => 'attendance']),
             'target_label' => 'View Attendance',
         ]);
 
@@ -360,7 +360,7 @@ class StaffAttendanceService
                 'attendance_date' => optional($session->attendance_date)->toDateString(),
                 'rejection_reason' => $reason,
             ],
-            'target_url' => '/seller/hr?tab=attendance',
+            'target_url' => route('hr.index', ['tab' => 'attendance']),
             'target_label' => 'View Attendance',
         ]);
 

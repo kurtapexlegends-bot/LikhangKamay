@@ -72,18 +72,6 @@ export default function useOrderFilters(filters = {}) {
         );
     }, [activeTab, searchQuery, quickFilter, dateRange]);
 
-    // Debounced search trigger (300ms) to prevent network request spamming
-    useEffect(() => {
-        const queryToSync = (filters.search || "").trim();
-        if (searchQuery.trim() === queryToSync) return;
-
-        const timer = setTimeout(() => {
-            updateFilters({ search: searchQuery });
-        }, 300);
-
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
-
     const updateFilters = (newFilters) => {
         const queryParams = {
             search: searchQuery,
@@ -98,6 +86,18 @@ export default function useOrderFilters(filters = {}) {
             only: ["orders", "tabCounts", "filters"],
         });
     };
+
+    // Debounced search trigger (300ms) to prevent network request spamming
+    useEffect(() => {
+        const queryToSync = (filters.search || "").trim();
+        if (searchQuery.trim() === queryToSync) return;
+
+        const timer = setTimeout(() => {
+            updateFilters({ search: searchQuery });
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);

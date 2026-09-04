@@ -11,8 +11,6 @@ export default function OrderContextSidebar({
 }) {
     const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'files'
 
-    if (!currentChatUser) return null;
-
     // Filter and collect all shared files from activeMessages
     const sharedFiles = useMemo(() => {
         return activeMessages
@@ -26,6 +24,8 @@ export default function OrderContextSidebar({
             }))
             .reverse(); // Newest first
     }, [activeMessages]);
+
+    if (!currentChatUser) return null;
 
     return (
         <>

@@ -51,6 +51,7 @@ export default [
             ...reactHooks.configs.recommended.rules,
             "react/react-in-jsx-scope": "off", // Not needed with React 17+
             "react/prop-types": "off",          // Skip prop-types enforcement
+            "react-hooks/set-state-in-effect": "warn",
             "no-unused-vars": "warn",
             "no-undef": "warn",
         },
@@ -62,6 +63,7 @@ export default [
             "public/**",
             "storage/**",
             "bootstrap/cache/**",
+            "resources/js/ziggy.js",
         ],
     },
 ];

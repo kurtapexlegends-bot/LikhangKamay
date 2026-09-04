@@ -31,30 +31,8 @@ export default function Checkout({ auth, pricing }) {
     const isPendingArtisan = auth?.user?.role === 'artisan' && auth?.user?.artisan_status === 'pending';
     const isAdmin = auth?.user?.role === 'super_admin' || auth?.user?.role === 'admin';
 
-    if (isAdmin) {
-        return (
-            <div className="min-h-screen bg-[#FDFBF9] flex flex-col items-center justify-center p-4 text-center">
-                <div className="max-w-md bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
-                    <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-500">
-                        <AlertTriangle size={32} />
-                    </div>
-                    <h2 className="text-lg font-bold text-stone-900 mb-2">Access Restricted</h2>
-                    <p className="text-sm text-stone-500 mb-6">
-                        Administrators are not permitted to make purchases or proceed to checkout.
-                    </p>
-                    <Link
-                        href={route('admin.dashboard')}
-                        className="inline-flex items-center justify-center px-4 py-2.5 bg-stone-900 text-white rounded-xl text-xs font-bold hover:bg-stone-850 transition-all active:scale-95 shadow-sm w-full"
-                    >
-                        Back to Admin Dashboard
-                    </Link>
-                </div>
-            </div>
-        );
-    }
-
     const convenienceFeeRate = pricing?.convenience_fee_rate ?? 0.03;
-    const defaultAddress = auth.user.addresses?.find((address) => address.is_default) || null;
+    const defaultAddress = auth?.user?.addresses?.find((address) => address.is_default) || null;
     const [quoteRetryNonce, setQuoteRetryNonce] = useState(0);
     const [showMobileSummary, setShowMobileSummary] = useState(false);
     const [showNotes, setShowNotes] = useState(false);
@@ -303,6 +281,28 @@ export default function Checkout({ auth, pricing }) {
             preserveScroll: true,
         });
     };
+
+    if (isAdmin) {
+        return (
+            <div className="min-h-screen bg-[#FDFBF9] flex flex-col items-center justify-center p-4 text-center">
+                <div className="max-w-md bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
+                    <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-500">
+                        <AlertTriangle size={32} />
+                    </div>
+                    <h2 className="text-lg font-bold text-stone-900 mb-2">Access Restricted</h2>
+                    <p className="text-sm text-stone-500 mb-6">
+                        Administrators are not permitted to make purchases or proceed to checkout.
+                    </p>
+                    <Link
+                        href={route('admin.dashboard')}
+                        className="inline-flex items-center justify-center px-4 py-2.5 bg-stone-900 text-white rounded-xl text-xs font-bold hover:bg-stone-850 transition-all active:scale-95 shadow-sm w-full"
+                    >
+                        Back to Admin Dashboard
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-stone-50/50 px-4 py-6 pb-32 font-sans text-stone-800 sm:px-6 sm:py-12 sm:pb-12 lg:px-8">

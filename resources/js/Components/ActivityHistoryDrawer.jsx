@@ -193,9 +193,7 @@ export default function ActivityHistoryDrawer({ isOpen, onClose }) {
                                             {item.title}
                                         </h4>
                                         <span className="text-[10px] font-medium text-stone-400 shrink-0">
-                                            {item.occurred_at && item.occurred_at.includes('T')
-                                                ? formatRelative(item.occurred_at)
-                                                : (item.occurred_at || 'Just now')}
+                                            {item.occurred_at ? formatRelative(item.occurred_at) : 'Just now'}
                                         </span>
                                     </div>
 

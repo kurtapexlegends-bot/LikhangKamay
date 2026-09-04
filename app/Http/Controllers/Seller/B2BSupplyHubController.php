@@ -199,7 +199,7 @@ class B2BSupplyHubController extends Controller
                 'moq' => $product->moq,
                 'wholesale_price' => $product->wholesale_price,
             ],
-            'target_url' => '/seller/supply-hub/my-listings',
+            'target_url' => route('seller.supply-hub.my-listings'),
             'target_label' => 'View Listings',
         ]);
 

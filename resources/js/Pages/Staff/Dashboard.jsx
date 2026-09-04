@@ -18,6 +18,7 @@ import TaskChecklist from '@/Components/Staff/Dashboard/TaskChecklist';
 import ShiftConsolePanel from '@/Components/Staff/Dashboard/ShiftConsolePanel';
 import MobileShiftSheet from '@/Components/Staff/Dashboard/MobileShiftSheet';
 import StaffClockInModal from '@/Components/Staff/Dashboard/StaffClockInModal';
+import StaffAttendanceDock from '@/Components/Seller/Sidebar/StaffAttendanceDock';
 import { getDefaultChecklistForVariant } from '@/config/staffChecklists';
 
 export default function StaffDashboard({ auth, hub }) {

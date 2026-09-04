@@ -120,6 +120,8 @@ export const formatRelative = (value) => {
 
     const now = Date.now();
     const target = new Date(value).getTime();
+    if (Number.isNaN(target)) return value;
+
     const diffMinutes = Math.round((target - now) / 60000);
     const formatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 

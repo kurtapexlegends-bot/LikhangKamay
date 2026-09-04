@@ -34,25 +34,6 @@ export default function ShippingAddressSelector({
     const isNewAddress = data.selected_address_id === 'new' || !auth.user.addresses?.length;
     const showAddressForm = isAddingNew || editingAddressId !== null;
 
-    useEffect(() => {
-        if (!auth.user.addresses?.length) {
-            if (data.selected_address_id !== 'new') {
-                setData('selected_address_id', 'new');
-            }
-            return;
-        }
-
-        if (data.selected_address_id === 'new') return;
-
-        const stillExists = auth.user.addresses.some((address) => String(address.id) === String(data.selected_address_id));
-        if (!stillExists) {
-            const fallback = auth.user.addresses.find((address) => address.is_default) || auth.user.addresses[0];
-            if (fallback) {
-                chooseSavedAddress(fallback);
-            }
-        }
-    }, [auth.user.addresses, data.selected_address_id]);
-
     const chooseSavedAddress = (address) => {
         setEditingAddressId(null);
         setData((current) => ({
@@ -75,6 +56,25 @@ export default function ShippingAddressSelector({
             save_address: false,
         }));
     };
+
+    useEffect(() => {
+        if (!auth.user.addresses?.length) {
+            if (data.selected_address_id !== 'new') {
+                setData('selected_address_id', 'new');
+            }
+            return;
+        }
+
+        if (data.selected_address_id === 'new') return;
+
+        const stillExists = auth.user.addresses.some((address) => String(address.id) === String(data.selected_address_id));
+        if (!stillExists) {
+            const fallback = auth.user.addresses.find((address) => address.is_default) || auth.user.addresses[0];
+            if (fallback) {
+                chooseSavedAddress(fallback);
+            }
+        }
+    }, [auth.user.addresses, data.selected_address_id]);
 
     const chooseNewAddress = () => {
         setEditingAddressId(null);
@@ -244,7 +244,7 @@ export default function ShippingAddressSelector({
             </div>
 
             {/* Saved Addresses (Mobile: Grid-to-scroll, Tablet/Desktop: 2-column Grid) */}
-            {!!auth.user.addresses?.length ? (
+            {auth?.user?.addresses?.length > 0 ? (
                 <div className="flex md:grid overflow-x-auto md:overflow-visible flex-nowrap md:grid-cols-2 gap-4 pb-3 md:pb-0 snap-x scrollbar-hide">
                     {auth.user.addresses.map((address) => (
                         <div key={address.id} className="w-[290px] md:w-auto shrink-0 md:shrink snap-start h-full">

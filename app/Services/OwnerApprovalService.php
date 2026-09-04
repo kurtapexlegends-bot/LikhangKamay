@@ -65,7 +65,7 @@ class OwnerApprovalService
                 'domain' => $domain,
                 'summary' => $summary,
             ],
-            'target_url' => '/seller/approvals?status=pending',
+            'target_url' => route('seller.approvals.index', ['status' => 'pending']),
             'target_label' => 'View Approvals',
         ]);
 
@@ -245,7 +245,7 @@ class OwnerApprovalService
                     'domain' => $locked->domain,
                     'requester_id' => $locked->requester_id,
                 ],
-                'target_url' => '/seller/approvals?status=approved',
+                'target_url' => route('seller.approvals.index', ['status' => 'approved']),
                 'target_label' => 'View Approvals',
             ]);
 
@@ -295,7 +295,7 @@ class OwnerApprovalService
                     'requester_id' => $locked->requester_id,
                     'reason' => $reason,
                 ],
-                'target_url' => '/seller/approvals?status=rejected',
+                'target_url' => route('seller.approvals.index', ['status' => 'rejected']),
                 'target_label' => 'View Approvals',
             ]);
 

@@ -186,7 +186,7 @@ export default function FilterToolbarHeader({
                                             <span className="whitespace-nowrap pointer-events-none">{tabLabel}</span>
                                             {tabCount !== null && tabCount !== undefined && tabCount > 0 && (
                                                 <span
-                                                    className={`px-1.5 py-0.2 text-[10px] rounded-full font-black pointer-events-none ${
+                                                    className={`px-1.5 py-0.5 text-[10px] rounded-full font-black pointer-events-none ${
                                                         isActive ? "bg-clay-100 text-clay-800" : "bg-stone-200 text-stone-600"
                                                     }`}
                                                 >
@@ -228,13 +228,13 @@ export default function FilterToolbarHeader({
                                 value={searchQuery}
                                 onChange={(e) => onSearchChange(e.target.value)}
                                 placeholder={searchPlaceholder}
-                                className="w-full pl-9 pr-8 py-2 text-xs font-medium rounded-xl border border-stone-200/80 outline-none focus:border-clay-500 focus:ring-1 focus:ring-clay-500 bg-white h-[38px] min-h-[38px]"
+                                className="w-full pl-9 pr-9 py-2 text-xs font-medium rounded-xl border border-stone-200/80 outline-none focus:border-clay-500 focus:ring-1 focus:ring-clay-500 bg-white h-[38px] min-h-[38px]"
                             />
                             {searchQuery && (
                                 <button
                                     type="button"
                                     onClick={() => onSearchChange("")}
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-stone-400 hover:text-stone-700 transition-colors rounded-lg cursor-pointer"
                                     title="Clear search"
                                 >
                                     <X size={13} />

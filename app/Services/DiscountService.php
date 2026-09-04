@@ -87,7 +87,7 @@ class DiscountService
                             'value' => (float) $discount->value,
                             'products_count' => count($validProductIds),
                         ],
-                        'target_url' => '/seller/discounts',
+                        'target_url' => route('discounts.index'),
                         'target_label' => 'View Discounts',
                     ]);
                 }
@@ -148,7 +148,7 @@ class DiscountService
                 'value' => (float) $discount->value,
                 'products_count' => count($validProductIds),
             ],
-            'target_url' => '/seller/discounts',
+            'target_url' => route('discounts.index'),
             'target_label' => 'View Discounts',
         ]);
 
@@ -214,7 +214,7 @@ class DiscountService
                         'is_active' => (bool) $discount->is_active,
                     ],
                 ],
-                'target_url' => '/seller/discounts',
+                'target_url' => route('discounts.index'),
                 'target_label' => 'View Discounts',
             ]);
 
@@ -248,7 +248,7 @@ class DiscountService
                 'subject_id' => $discount->id,
                 'subject_label' => $discount->name ?: "Promo #{$discount->id}",
                 'reference' => "PROMO-{$discount->id}",
-                'target_url' => '/seller/discounts',
+                'target_url' => route('discounts.index'),
                 'target_label' => 'View Discounts',
             ]);
         });

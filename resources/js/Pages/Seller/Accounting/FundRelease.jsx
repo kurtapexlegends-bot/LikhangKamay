@@ -127,6 +127,20 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
         });
     };
 
+    const closeReviewModal = () => {
+        setReviewModal({ open: false, item: null, source: 'pending' });
+    };
+
+    const resetReviewModal = () => {
+        setReviewModal({ open: false, item: null, source: 'pending' });
+        setRejectReason('');
+    };
+
+    const openReviewModal = (item, source = 'pending') => {
+        setReviewModal({ open: true, item, source });
+        setRejectReason(item?.rejection_reason || '');
+    };
+
     const applyFilters = (filterObj) => {
         if ('type' in filterObj) setEntryTypeFilter(filterObj.type);
         if ('ledger_status' in filterObj) setLedgerStatusFilter(filterObj.ledger_status);
@@ -199,20 +213,6 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
     };
 
     useFlashToast(flash, addToast);
-
-    const closeReviewModal = () => {
-        setReviewModal({ open: false, item: null, source: 'pending' });
-    };
-
-    const resetReviewModal = () => {
-        setReviewModal({ open: false, item: null, source: 'pending' });
-        setRejectReason('');
-    };
-
-    const openReviewModal = (item, source = 'pending') => {
-        setReviewModal({ open: true, item, source });
-        setRejectReason(item?.rejection_reason || '');
-    };
 
     const handleApprove = () => {
         if (!reviewModal.item || !canEditAccounting) return;
