@@ -365,4 +365,52 @@ class InHouseDispatchTest extends TestCase
             'driver_employee_id' => $driver->id,
         ]);
     }
+
+    public function test_driver_with_hr_preset_role_or_preset_key_is_discovered_with_live_status(): void
+    {
+        // Driver with 'Logistics & Driver' (ampersand format from HRRolePresets)
+        $presetDriverUser = User::factory()->create([
+            'role' => 'staff',
+            'seller_owner_id' => $this->premiumSeller->id,
+            'email_verified_at' => now(),
+            'phone_number' => '09192223333',
+            'staff_role_preset_key' => 'driver',
+        ]);
+
+        $presetDriver = Employee::create([
+            'user_id' => $this->premiumSeller->id,
+            'name' => 'Kurt Logistics Rider',
+            'role' => 'Logistics & Driver',
+            'status' => 'Active',
+            'salary' => 18000,
+            'join_date' => '2026-02-01',
+            'vehicle_type' => 'MPV',
+            'vehicle_plate_number' => 'QWEQWEE',
+        ]);
+
+        $presetDriverUser->update(['employee_id' => $presetDriver->id]);
+
+        StaffAttendanceSession::create([
+            'staff_user_id' => $presetDriverUser->id,
+            'seller_owner_id' => $this->premiumSeller->id,
+            'employee_id' => $presetDriver->id,
+            'attendance_date' => Carbon::today(),
+            'clock_in_at' => now()->subMinutes(45),
+            'clock_out_at' => null,
+        ]);
+
+        $response = $this->actingAs($this->premiumSeller)->getJson(route('orders.dispatch.drivers'));
+
+        $response->assertStatus(200);
+        $drivers = $response->json('drivers');
+        $found = collect($drivers)->firstWhere('id', $presetDriver->id);
+
+        $this->assertNotNull($found);
+        $this->assertEquals('Kurt Logistics Rider', $found['name']);
+        $this->assertEquals('Logistics & Driver', $found['role']);
+        $this->assertEquals('MPV', $found['vehicle_type']);
+        $this->assertEquals('QWEQWEE', $found['vehicle_plate_number']);
+        $this->assertEquals('available', $found['status']);
+        $this->assertTrue($found['is_clocked_in']);
+    }
 }

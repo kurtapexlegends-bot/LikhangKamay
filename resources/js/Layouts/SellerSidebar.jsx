@@ -97,7 +97,12 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
     const showPlanPanel = sellerSubscription?.showPlanPanel ?? entitlement.showPlanPanel ?? user?.role === 'artisan';
     const isStaffActor = (entitlement.actorType || (user?.role === 'staff' ? 'staff' : 'owner')) === 'staff';
     const staffRolePreset = entitlement.rolePresetKey || user?.staff_role_preset_key || user?.role_preset_key;
-    const isDriverStaff = isStaffActor && (staffRolePreset === 'driver' || user?.employee?.role === 'Logistics / Driver');
+    const isDriverStaff = isStaffActor && (
+        staffRolePreset === 'driver' ||
+        user?.employee?.role === 'Logistics & Driver' ||
+        user?.employee?.role === 'Logistics / Driver' ||
+        user?.employee?.role === 'Driver'
+    );
 
     const enabledToggles = useMemo(() => {
         return {
@@ -229,7 +234,11 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
     const hasCore = (!isStaffActor || hasActiveAttendanceSession) && (isStaffActor
         ? ['products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName))
         : ['overview', 'products', 'analytics', '3d'].some((moduleName) => visibleModulesSet.has(moduleName)));
-    const hasCrm = (!isStaffActor || hasActiveAttendanceSession) && ['orders', 'messages', 'team_messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName));
+    const hasCrm = (!isStaffActor || hasActiveAttendanceSession) && (
+        isDriverStaff
+            ? ['messages', 'team_messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName))
+            : ['orders', 'messages', 'team_messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName))
+    );
     const hasMarketing = (!isStaffActor || hasActiveAttendanceSession) && visibleModulesSet.has('sponsorships');
     const hasAdvanced = (!isStaffActor || hasActiveAttendanceSession) && (
         ['hr', 'accounting', 'procurement', 'stock_requests'].some(moduleName => visibleModulesSet.has(moduleName))
@@ -381,7 +390,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 onToggle={() => toggleGroup('crm')}
                                 isCollapsed={isCollapsed}
                             >
-                                {visibleModulesSet.has('orders') && (
+                                {!isDriverStaff && visibleModulesSet.has('orders') && (
                                     <NavItem href={route('orders.index')} icon={ShoppingBag} active={active === 'orders' || (!isStaffActor && active === 'deliveries')} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Orders')} onMouseLeave={handleTooltipLeave}>Orders</NavItem>
                                 )}
                                 {visibleModulesSet.has('messages') && (

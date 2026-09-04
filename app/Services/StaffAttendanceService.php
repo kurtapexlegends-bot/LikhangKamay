@@ -15,6 +15,7 @@ use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use App\Services\StorageUrl;
 
 class StaffAttendanceService
 {
@@ -993,6 +994,22 @@ class StaffAttendanceService
                 'salary' => $employee->salary,
                 'status' => $employee->status,
                 'join_date' => $employee->join_date,
+                'assigned_location_id' => $employee->assigned_location_id,
+                'allow_remote_clock_in' => (bool) $employee->allow_remote_clock_in,
+                'schedule_type' => $employee->schedule_type ?: 'default',
+                'working_days' => $employee->working_days,
+                'shift_start_time' => $employee->shift_start_time,
+                'shift_end_time' => $employee->shift_end_time,
+                'standard_workday_hours' => $employee->standard_workday_hours,
+                'grace_period_minutes' => $employee->grace_period_minutes,
+                'break_allowance_minutes' => $employee->break_allowance_minutes,
+                'vehicle_type' => $employee->vehicle_type ?: 'Motorcycle',
+                'vehicle_plate_number' => $employee->vehicle_plate_number,
+                'driver_license_number' => $employee->driver_license_number,
+                'driver_license_photo_path' => $employee->driver_license_photo_path,
+                'driver_license_photo_url' => $employee->driver_license_photo_path ? StorageUrl::url($employee->driver_license_photo_path) : null,
+                'delivery_compensation_type' => $employee->delivery_compensation_type ?: 'salary',
+                'delivery_fee_rate' => $employee->delivery_fee_rate,
                 'has_login_account' => $supportsEmployeeLoginLinks && (bool) $loginAccount,
                 'login_account' => $loginAccount ? [
                     'id' => $loginAccount->id,

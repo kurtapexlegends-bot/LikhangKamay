@@ -51,6 +51,11 @@ export default function EmployeeFormModal({
         standard_workday_hours: '',
         grace_period_minutes: '',
         break_allowance_minutes: '',
+        vehicle_type: 'Motorcycle',
+        vehicle_plate_number: '',
+        driver_license_number: '',
+        delivery_compensation_type: 'salary',
+        delivery_fee_rate: '',
         create_login_account: false,
         email: '',
         default_password: '',
@@ -81,6 +86,11 @@ export default function EmployeeFormModal({
                     standard_workday_hours: '',
                     grace_period_minutes: '',
                     break_allowance_minutes: '',
+                    vehicle_type: 'Motorcycle',
+                    vehicle_plate_number: '',
+                    driver_license_number: '',
+                    delivery_compensation_type: 'salary',
+                    delivery_fee_rate: '',
                     create_login_account: false,
                     email: '',
                     default_password: '',
@@ -116,6 +126,11 @@ export default function EmployeeFormModal({
                     standard_workday_hours: employee.standard_workday_hours ?? '',
                     grace_period_minutes: employee.grace_period_minutes ?? '',
                     break_allowance_minutes: employee.break_allowance_minutes ?? '',
+                    vehicle_type: employee.vehicle_type || 'Motorcycle',
+                    vehicle_plate_number: employee.vehicle_plate_number || '',
+                    driver_license_number: employee.driver_license_number || '',
+                    delivery_compensation_type: employee.delivery_compensation_type || 'salary',
+                    delivery_fee_rate: employee.delivery_fee_rate ?? '',
                     create_login_account: hasLoginAccount ? workspaceAccessEnabled : false,
                     email: employee.login_account?.email || '',
                     default_password: '',
@@ -314,6 +329,7 @@ export default function EmployeeFormModal({
                         isEmployeeIdSaved={isEmployeeIdSaved}
                         sellerLocations={sellerLocations}
                         sellerSettings={sellerSettings}
+                        driverLicensePhotoUrl={employee?.driver_license_photo_url}
                     />
 
                     {/* Section 4: Seller Portal Access & Permissions */}

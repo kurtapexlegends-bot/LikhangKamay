@@ -66,7 +66,7 @@ class SellerEntitlementService
             'hr' => ['overview', 'hr'],
             'stock_clerk' => ['overview', 'products', 'orders', 'procurement', 'stock_requests'],
             'customer_support' => ['overview', 'orders', 'messages', 'reviews'],
-            'driver' => ['overview', 'orders'],
+            'driver' => ['overview'],
             'custom' => [],
         ];
     }

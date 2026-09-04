@@ -31,8 +31,28 @@ class InHouseDispatchService
 
         $drivers = Employee::query()
             ->where('user_id', $sellerId)
-            ->whereIn('role', ['Logistics / Driver', 'Driver', 'Courier', 'Rider'])
             ->where('status', 'Active')
+            ->where(function ($q) {
+                $q->whereIn('role', [
+                    'Logistics & Driver',
+                    'Logistics / Driver',
+                    'Driver',
+                    'Courier',
+                    'Rider',
+                    'logistics & driver',
+                    'logistics / driver',
+                    'driver',
+                    'courier',
+                    'rider',
+                ])
+                ->orWhereRaw('LOWER(role) LIKE ?', ['%driver%'])
+                ->orWhereRaw('LOWER(role) LIKE ?', ['%logistics%'])
+                ->orWhereRaw('LOWER(role) LIKE ?', ['%courier%'])
+                ->orWhereRaw('LOWER(role) LIKE ?', ['%rider%'])
+                ->orWhereHas('loginAccount', function ($userQuery) {
+                    $userQuery->where('staff_role_preset_key', 'driver');
+                });
+            })
             ->with(['loginAccount'])
             ->orderBy('name')
             ->get();
@@ -64,26 +84,33 @@ class InHouseDispatchService
         $activeDeliveriesByEmployee = $activeDeliveries->groupBy('driver_employee_id');
         $activeDeliveriesByUser = $activeDeliveries->groupBy('driver_user_id');
 
-        // Query today's attendance sessions for linked staff user accounts
-        $attendanceSessions = collect();
-        if (!empty($staffUserIds)) {
-            $attendanceSessions = StaffAttendanceSession::query()
-                ->whereIn('staff_user_id', $staffUserIds)
-                ->whereDate('attendance_date', $today)
-                ->latest('clock_in_at')
-                ->get()
-                ->groupBy('staff_user_id');
-        }
+        // Query today's attendance sessions for linked staff user accounts or employee IDs
+        $attendanceSessions = StaffAttendanceSession::query()
+            ->where(function ($q) use ($employeeIds, $staffUserIds) {
+                $q->whereIn('employee_id', $employeeIds);
+                if (!empty($staffUserIds)) {
+                    $q->orWhereIn('staff_user_id', $staffUserIds);
+                }
+            })
+            ->whereDate('attendance_date', $today)
+            ->latest('clock_in_at')
+            ->get();
 
-        return $drivers->map(function (Employee $driver) use ($activeDeliveriesByEmployee, $activeDeliveriesByUser, $attendanceSessions) {
+        $sessionsByEmployee = $attendanceSessions->groupBy('employee_id');
+        $sessionsByUser = $attendanceSessions->groupBy('staff_user_id');
+
+        return $drivers->map(function (Employee $driver) use ($activeDeliveriesByEmployee, $activeDeliveriesByUser, $sessionsByEmployee, $sessionsByUser) {
             $staffUser = $driver->loginAccount;
             $userDeliveries = $staffUser ? ($activeDeliveriesByUser->get($staffUser->id) ?? collect()) : collect();
             $empDeliveries = $activeDeliveriesByEmployee->get($driver->id) ?? collect();
             $totalActiveDeliveries = $userDeliveries->merge($empDeliveries)->unique('id')->count();
 
-            $userSessions = $staffUser ? ($attendanceSessions->get($staffUser->id) ?? collect()) : collect();
-            $openSession = $userSessions->first(fn(StaffAttendanceSession $s) => $s->clock_in_at !== null && $s->clock_out_at === null);
-            $latestSession = $userSessions->first();
+            $userSessions = $staffUser ? ($sessionsByUser->get($staffUser->id) ?? collect()) : collect();
+            $empSessions = $sessionsByEmployee->get($driver->id) ?? collect();
+            $allSessions = $userSessions->merge($empSessions)->unique('id');
+
+            $openSession = $allSessions->first(fn(StaffAttendanceSession $s) => $s->clock_in_at !== null && $s->clock_out_at === null);
+            $latestSession = $allSessions->sortByDesc('clock_in_at')->first();
 
             // Status resolution: available, on_delivery, on_break, off_duty
             $statusKey = 'off_duty';
@@ -116,6 +143,8 @@ class InHouseDispatchService
                 'vehicle_type' => $driver->vehicle_type ?: 'Motorcycle',
                 'vehicle_plate_number' => $driver->vehicle_plate_number,
                 'driver_license_number' => $driver->driver_license_number,
+                'delivery_compensation_type' => $driver->delivery_compensation_type ?: 'salary',
+                'delivery_fee_rate' => $driver->delivery_fee_rate !== null ? (float) $driver->delivery_fee_rate : null,
                 'status' => $statusKey,
                 'status_label' => $statusLabel,
                 'badge_color' => $badgeColor,

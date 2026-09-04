@@ -202,6 +202,11 @@ class HRStaffProvisioner
             'earliest_clock_in_minutes' => ['nullable', 'integer', 'min:0', 'max:180'],
             'standard_workday_hours' => ['nullable', 'numeric', 'min:1', 'max:24'],
             'enforce_strict_shift_window' => ['nullable', 'boolean'],
+            'vehicle_type' => ['nullable', 'string', \Illuminate\Validation\Rule::in(['Motorcycle', 'Bicycle', 'Sedan', 'MPV', 'Van'])],
+            'vehicle_plate_number' => ['nullable', 'string', 'max:20'],
+            'driver_license_number' => ['nullable', 'string', 'max:50'],
+            'delivery_compensation_type' => ['nullable', 'string', \Illuminate\Validation\Rule::in(['salary', 'per_delivery', 'hybrid'])],
+            'delivery_fee_rate' => ['nullable', 'numeric', 'min:0'],
             'create_login_account' => ['nullable', 'boolean'],
         ];
 

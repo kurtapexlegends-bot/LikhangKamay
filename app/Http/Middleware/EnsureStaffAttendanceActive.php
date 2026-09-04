@@ -31,7 +31,7 @@ class EnsureStaffAttendanceActive
                 return $next($request);
             }
 
-            if ($routeName === 'staff.dashboard') {
+            if (in_array($routeName, ['staff.dashboard', 'audit-log.index', 'audit-log.data'], true)) {
                 return $next($request);
             }
 

@@ -48,7 +48,10 @@ class Employee extends Model
         'vehicle_type',
         'vehicle_plate_number',
         'driver_license_number',
+        'driver_license_photo_path',
         'salary',
+        'delivery_compensation_type',
+        'delivery_fee_rate',
         'status',
         'join_date'
     ];
@@ -61,6 +64,7 @@ class Employee extends Model
         'grace_period_minutes' => 'integer',
         'earliest_clock_in_minutes' => 'integer',
         'standard_workday_hours' => 'float',
+        'delivery_fee_rate' => 'decimal:2',
     ];
 
     // Optional: Relationship back to the Seller

@@ -41,7 +41,18 @@ class StaffDashboardController extends Controller
             return redirect()->route('staff.home');
         }
 
-        $isDriver = $user->staff_role_preset_key === 'driver' || ($user->employee && $user->employee->role === 'Logistics / Driver');
+        $isDriver = $user->staff_role_preset_key === 'driver'
+            || in_array($user->employee?->role, [
+                'Logistics & Driver',
+                'Logistics / Driver',
+                'Driver',
+                'Courier',
+                'Rider',
+            ], true)
+            || ($user->employee && (
+                str_contains(strtolower($user->employee->role ?? ''), 'driver')
+                || str_contains(strtolower($user->employee->role ?? ''), 'logistics')
+            ));
         $hasOpenSession = $attendanceService->getOpenSession($user) !== null;
 
         if ($isDriver && $hasOpenSession) {

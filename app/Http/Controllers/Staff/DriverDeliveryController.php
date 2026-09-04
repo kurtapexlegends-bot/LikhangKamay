@@ -10,6 +10,7 @@ use App\Services\StaffAttendanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Services\StorageUrl;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -72,6 +73,16 @@ class DriverDeliveryController extends Controller
             ->map(fn(OrderDelivery $d) => $this->transformDelivery($d));
 
         $openSession = $user->isStaff() ? $attendanceService->getOpenSession($user) : null;
+        $compensationType = $employee?->delivery_compensation_type ?: 'salary';
+        $feeRate = (float) ($employee?->delivery_fee_rate ?? 0);
+        $todayCompletedCount = $completedToday->count();
+        $todayDropEarnings = in_array($compensationType, ['per_delivery', 'hybrid'], true)
+            ? round($todayCompletedCount * $feeRate, 2)
+            : 0;
+
+        $isVehicleVerified = !empty($employee?->vehicle_plate_number)
+            && !empty($employee?->driver_license_number)
+            && !empty($employee?->driver_license_photo_path);
 
         return Inertia::render('Staff/DriverDeliveries', [
             'activeDeliveries' => $activeDeliveries,
@@ -80,6 +91,13 @@ class DriverDeliveryController extends Controller
                 'name' => $employee?->name ?: $user->name,
                 'vehicle_type' => $employee?->vehicle_type ?: 'Motorcycle',
                 'vehicle_plate_number' => $employee?->vehicle_plate_number,
+                'driver_license_number' => $employee?->driver_license_number,
+                'driver_license_photo_url' => $employee?->driver_license_photo_path ? StorageUrl::url($employee->driver_license_photo_path) : null,
+                'is_vehicle_verified' => $isVehicleVerified,
+                'compensation_type' => $compensationType,
+                'delivery_fee_rate' => $feeRate,
+                'today_completed_count' => $todayCompletedCount,
+                'today_drop_earnings' => $todayDropEarnings,
                 'is_clocked_in' => $openSession !== null,
                 'is_owner_view' => $isOwner,
             ],
@@ -114,6 +132,54 @@ class DriverDeliveryController extends Controller
 
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Self-verify driver vehicle details and upload driver license or ID photo.
+     */
+    public function verifyVehicle(Request $request): RedirectResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        $employee = $user->isStaff() ? $user->employee : null;
+        if (!$employee && $user->employee_id) {
+            $employee = Employee::find($user->employee_id);
+        }
+
+        if (!$employee && $user->isSellerOwner()) {
+            $employee = Employee::where('user_id', $user->id)->first();
+        }
+
+        if (!$employee) {
+            return back()->with('error', 'Employee record not found for this user account.');
+        }
+
+        $validated = $request->validate([
+            'vehicle_type' => ['required', 'string', 'in:Motorcycle,Bicycle,Sedan,MPV,Van'],
+            'vehicle_plate_number' => ['required', 'string', 'max:20'],
+            'driver_license_number' => ['required', 'string', 'max:50'],
+            'driver_license_photo' => [
+                $employee->driver_license_photo_path ? 'nullable' : 'required',
+                'image',
+                'mimes:jpeg,png,jpg,webp',
+                'max:4096', // 4MB per Vercel serverless limit
+            ],
+        ]);
+
+        $photoPath = $employee->driver_license_photo_path;
+        if ($request->hasFile('driver_license_photo')) {
+            $photoPath = $request->file('driver_license_photo')->store('driver_licenses', 'public');
+        }
+
+        $employee->update([
+            'vehicle_type' => $validated['vehicle_type'],
+            'vehicle_plate_number' => strtoupper(trim($validated['vehicle_plate_number'])),
+            'driver_license_number' => strtoupper(trim($validated['driver_license_number'])),
+            'driver_license_photo_path' => $photoPath,
+        ]);
+
+        return back()->with('success', 'Vehicle and driver license details successfully verified!');
     }
 
     /**

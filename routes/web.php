@@ -113,6 +113,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::get('/staff/dashboard', [\App\Http\Controllers\Seller\StaffDashboardController::class, 'index'])->name('staff.dashboard');
     Route::get('/staff/deliveries', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'index'])->name('staff.deliveries');
     Route::post('/staff/deliveries/{delivery}/complete', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'complete'])->name('staff.deliveries.complete');
+    Route::post('/staff/deliveries/verify-vehicle', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'verifyVehicle'])->name('staff.deliveries.verify-vehicle');
     Route::middleware(['ensure.not.pending.artisan'])->group(function () {
         // PROFILE
         Route::get('/profile', [\App\Http\Controllers\Core\ProfileController::class, 'edit'])->name('profile.edit');
@@ -200,7 +201,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::put('/3d-manager/local-upload', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'localUpload'])->middleware('seller.module:3d')->name('3d.local-upload');
         Route::delete('/3d-manager/{product:id}', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'destroy'])->middleware('seller.module:3d')->name('3d.destroy');
 
-        Route::get('/audit-log', [\App\Http\Controllers\Seller\AuditLogController::class, 'index'])->middleware('artisan')->name('audit-log.index');
+        Route::get('/audit-log', [\App\Http\Controllers\Seller\AuditLogController::class, 'index'])->name('audit-log.index');
         Route::get('/audit-log/data', [\App\Http\Controllers\Seller\AuditLogController::class, 'apiData'])->name('audit-log.data');
         Route::get('/audit-log/export', [\App\Http\Controllers\Seller\AuditLogController::class, 'export'])->middleware('artisan')->name('audit-log.export');
 

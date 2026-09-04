@@ -46,7 +46,7 @@ export const STAFF_ACCESS_EVENT_LABELS = {
 };
 
 export const DEFAULT_EMPLOYEE_ROLE = 'Potter';
-export const EMPLOYEE_ROLE_OPTIONS = ['Potter', 'Assistant', 'Packer', 'Logistics / Driver', 'Artist'];
+export const EMPLOYEE_ROLE_OPTIONS = ['Potter', 'Assistant', 'Packer', 'Logistics & Driver', 'Logistics / Driver', 'Artist'];
 
 export const pesoFormatter = new Intl.NumberFormat('en-PH', {
     style: 'currency',

@@ -1257,6 +1257,85 @@ class HrStaffProvisioningTest extends TestCase
         $this->assertDatabaseMissing('users', ['email' => 'shortpass.staff@gmail.com']);
     }
 
+    public function test_owner_can_provision_driver_employee_with_vehicle_and_compensation(): void
+    {
+        $owner = $this->createOwnerWithHrAccess();
+
+        $response = $this->actingAs($owner)->post(route('hr.store'), [
+            'name' => 'Danilo Dispatch',
+            'role' => 'Logistics / Driver',
+            'salary' => 16000,
+            'vehicle_type' => 'Motorcycle',
+            'vehicle_plate_number' => 'DAN-1234',
+            'driver_license_number' => 'N01-88-999999',
+            'delivery_compensation_type' => 'hybrid',
+            'delivery_fee_rate' => 50.00,
+            'create_login_account' => true,
+            'email' => 'danilo.driver@gmail.com',
+            'default_password' => 'password1234',
+            'staff_user_level' => 'standard',
+            'staff_role_preset_key' => 'driver',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('employees', [
+            'name' => 'Danilo Dispatch',
+            'role' => 'Logistics / Driver',
+            'vehicle_type' => 'Motorcycle',
+            'vehicle_plate_number' => 'DAN-1234',
+            'driver_license_number' => 'N01-88-999999',
+            'delivery_compensation_type' => 'hybrid',
+            'delivery_fee_rate' => 50.00,
+        ]);
+
+        $driverUser = User::where('email', 'danilo.driver@gmail.com')->first();
+        $this->assertNotNull($driverUser);
+        $this->assertSame('driver', $driverUser->staff_role_preset_key);
+        $this->assertFalse($driverUser->canAccessSellerModule('orders'));
+        $this->assertTrue($driverUser->canAccessSellerModule('overview'));
+    }
+
+    public function test_owner_can_update_driver_employee_vehicle_and_compensation(): void
+    {
+        $owner = $this->createOwnerWithHrAccess();
+
+        $employee = Employee::create([
+            'user_id' => $owner->id,
+            'name' => 'Danilo Dispatch',
+            'role' => 'Logistics / Driver',
+            'status' => 'Active',
+            'salary' => 16000,
+            'join_date' => '2026-01-01',
+            'vehicle_type' => 'Motorcycle',
+            'vehicle_plate_number' => 'DAN-1234',
+            'delivery_compensation_type' => 'salary',
+            'delivery_fee_rate' => null,
+        ]);
+
+        $response = $this->actingAs($owner)->patch(route('hr.update', $employee->id), [
+            'name' => 'Danilo Dispatch',
+            'role' => 'Logistics / Driver',
+            'salary' => 18000,
+            'vehicle_type' => 'Van',
+            'vehicle_plate_number' => 'VAN-5678',
+            'driver_license_number' => 'N01-77-888888',
+            'delivery_compensation_type' => 'per_delivery',
+            'delivery_fee_rate' => 75.00,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $employee->refresh();
+        $this->assertSame('Van', $employee->vehicle_type);
+        $this->assertSame('VAN-5678', $employee->vehicle_plate_number);
+        $this->assertSame('N01-77-888888', $employee->driver_license_number);
+        $this->assertSame('per_delivery', $employee->delivery_compensation_type);
+        $this->assertEquals(75.00, $employee->delivery_fee_rate);
+    }
+
     private function createOwnerWithHrAccess(): User
     {
         $owner = User::factory()->artisanApproved()->create([
