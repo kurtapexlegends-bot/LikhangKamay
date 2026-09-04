@@ -311,8 +311,9 @@ class B2BSupplyHubController extends Controller
 
         $orders->through(function ($order) {
             $merchandiseSubtotal = (float) ($order->merchandise_subtotal ?? $order->items->sum(fn($i) => ($i->price ?? $i->unit_price ?? 0) * $i->quantity));
-            $shippingFee = (float) ($order->shipping_fee_amount ?? max(0, (float)$order->total_amount - $merchandiseSubtotal));
-            $totalAmount = (float) ($order->total_amount ?? ($merchandiseSubtotal + $shippingFee));
+            $shippingFee = $order->getResolvedShippingFeeAmount();
+            $convenienceFee = (float) ($order->convenience_fee_amount ?? 0);
+            $totalAmount = (float) ($order->total_amount ?? ($merchandiseSubtotal + $shippingFee + $convenienceFee));
 
             return [
                 'id' => $order->order_number ?: (string)$order->id,
@@ -331,7 +332,7 @@ class B2BSupplyHubController extends Controller
                 'total_amount' => $totalAmount,
                 'merchandise_subtotal' => $merchandiseSubtotal,
                 'shipping_fee_amount' => $shippingFee,
-                'convenience_fee_amount' => (float) ($order->convenience_fee_amount ?? 0),
+                'convenience_fee_amount' => $convenienceFee,
                 'shipping_address' => $order->shipping_address,
                 'shipping_contact_phone' => $order->shipping_contact_phone,
                 'shipping_method' => $order->shipping_method,
@@ -479,7 +480,7 @@ class B2BSupplyHubController extends Controller
                 'total' => number_format((float) $order->total_amount, 2),
                 'total_amount' => (float) $order->total_amount,
                 'merchandise_subtotal' => (float) $order->merchandise_subtotal,
-                'shipping_fee_amount' => (float) $order->shipping_fee_amount,
+                'shipping_fee_amount' => $order->getResolvedShippingFeeAmount(),
                 'convenience_fee_amount' => (float) $order->convenience_fee_amount,
                 'seller_net_amount' => $order->getResolvedSellerNetAmount(),
                 'shipping_address' => $order->shipping_address,

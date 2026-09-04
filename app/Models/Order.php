@@ -149,7 +149,14 @@ class Order extends Model
 
     public function getResolvedShippingFeeAmount(): float
     {
-        return round((float) ($this->getAttribute('shipping_fee_amount') ?? 0), 2);
+        $fee = (float) ($this->getAttribute('shipping_fee_amount') ?? 0);
+        if ($fee <= 0 && (float) $this->total_amount > (float) $this->merchandise_subtotal) {
+            $diff = (float) $this->total_amount - (float) $this->merchandise_subtotal - (float) ($this->convenience_fee_amount ?? 0);
+            if ($diff > 0) {
+                return round($diff, 2);
+            }
+        }
+        return round($fee, 2);
     }
 
     public function getResolvedPlatformCommissionAmount(): float
