@@ -31,7 +31,10 @@ class ReceiveOrder
         $successMessage = '';
 
         DB::transaction(function () use ($id, $buyer, &$successMessage) {
-            $order = Order::lockForUpdate()->where('id', $id)
+            $order = Order::lockForUpdate()
+                ->where(function ($q) use ($id) {
+                    $q->where('order_number', $id)->orWhere('id', $id);
+                })
                 ->where('user_id', $buyer->id)
                 ->firstOrFail();
 
@@ -87,9 +90,10 @@ class ReceiveOrder
                 ? 'Replacement received and order marked as completed.'
                 : 'Order marked as received! You have 1 day to request a return if needed.';
         });
-
         try {
-            $freshOrder = Order::find($id);
+            $freshOrder = Order::where(function ($q) use ($id) {
+                $q->where('order_number', $id)->orWhere('id', $id);
+            })->first();
             if ($freshOrder && $freshOrder->status === 'Completed') {
                 app(\App\Actions\Seller\Chat\SendOrderCompletionAutoReply::class)->execute($freshOrder);
             }

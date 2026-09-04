@@ -496,5 +496,255 @@ class B2BSupplyHubTest extends TestCase
         $response->assertSessionHasNoErrors();
         $this->assertEquals('Accepted', $order->fresh()->status);
     }
+
+    public function test_retail_orders_index_strictly_excludes_b2b_wholesale_orders(): void
+    {
+        // 1. Retail Order
+        $retailProduct = Product::factory()->create([
+            'user_id' => $this->supplierArtisan->id,
+            'sku' => 'RET-VASE-001',
+            'name' => 'Handmade Ceramic Vase',
+            'category' => 'Pottery',
+            'price' => 1500.00,
+            'is_b2b_supply' => false,
+        ]);
+
+        $retailOrder = Order::create([
+            'artisan_id' => $this->supplierArtisan->id,
+            'seller_id' => $this->supplierArtisan->id,
+            'user_id' => $this->regularBuyer->id,
+            'order_number' => 'ORD-RET-1001',
+            'customer_name' => $this->regularBuyer->name,
+            'shipping_address' => 'Manila, Philippines',
+            'status' => 'Pending',
+            'total_amount' => 1500.00,
+            'merchandise_subtotal' => 1500.00,
+            'shipping_method' => 'Delivery',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $retailOrder->id,
+            'product_id' => $retailProduct->id,
+            'product_name' => $retailProduct->name,
+            'price' => 1500.00,
+            'cost' => 500.00,
+            'quantity' => 1,
+            'is_b2b_supply' => false,
+        ]);
+
+        // 2. B2B Wholesale Order
+        $b2bOrder = Order::create([
+            'artisan_id' => $this->supplierArtisan->id,
+            'seller_id' => $this->supplierArtisan->id,
+            'user_id' => $this->buyerArtisan->id,
+            'order_number' => 'ORD-B2B-1002',
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'status' => 'Pending',
+            'total_amount' => 1400.00,
+            'merchandise_subtotal' => 1400.00,
+            'shipping_method' => 'Delivery',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $b2bOrder->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => $this->b2bClaySack->name,
+            'price' => 350.00,
+            'cost' => 180.00,
+            'quantity' => 4,
+            'is_b2b_supply' => true,
+        ]);
+
+        // Access retail orders manager
+        $response = $this->actingAs($this->supplierArtisan)->get(route('orders.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Seller/Orders/OrderManager')
+            ->has('orders.data', 1)
+            ->where('orders.data.0.id', 'ORD-RET-1001')
+        );
+    }
+
+    public function test_sourcing_orders_strictly_includes_b2b_and_excludes_personal_retail_purchases(): void
+    {
+        // 1. Retail purchase made by buyer artisan as a consumer
+        $retailOrder = Order::create([
+            'artisan_id' => $this->supplierArtisan->id,
+            'seller_id' => $this->supplierArtisan->id,
+            'user_id' => $this->buyerArtisan->id,
+            'order_number' => 'ORD-RET-BUYER-01',
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'status' => 'Pending',
+            'total_amount' => 500.00,
+            'merchandise_subtotal' => 500.00,
+            'shipping_method' => 'Delivery',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $retailOrder->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => 'Retail Gift Mug',
+            'price' => 500.00,
+            'cost' => 200.00,
+            'quantity' => 1,
+            'is_b2b_supply' => false,
+        ]);
+
+        // 2. B2B material purchase
+        $b2bOrder = Order::create([
+            'artisan_id' => $this->supplierArtisan->id,
+            'seller_id' => $this->supplierArtisan->id,
+            'user_id' => $this->buyerArtisan->id,
+            'order_number' => 'ORD-B2B-SOURCING-01',
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'status' => 'Pending',
+            'total_amount' => 1400.00,
+            'merchandise_subtotal' => 1400.00,
+            'shipping_method' => 'Delivery',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $b2bOrder->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => $this->b2bClaySack->name,
+            'price' => 350.00,
+            'cost' => 180.00,
+            'quantity' => 4,
+            'is_b2b_supply' => true,
+        ]);
+
+        $response = $this->actingAs($this->buyerArtisan)
+            ->get(route('seller.supply-hub.orders'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/SourcingOrders')
+            ->has('orders.data', 1)
+            ->where('orders.data.0.order_number', 'ORD-B2B-SOURCING-01')
+            ->where('activeOrdersCount', 1)
+        );
+    }
+
+    public function test_artisan_can_confirm_delivery_using_order_number_string(): void
+    {
+        $order = Order::create([
+            'artisan_id' => $this->supplierArtisan->id,
+            'seller_id' => $this->supplierArtisan->id,
+            'user_id' => $this->buyerArtisan->id,
+            'order_number' => 'ORD-2026-B2B-STRING-ID',
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'status' => 'Delivered',
+            'payment_status' => 'paid',
+            'payment_method' => 'Credit Card',
+            'total_amount' => 1400.00,
+            'merchandise_subtotal' => 1400.00,
+            'shipping_method' => 'Delivery',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => $this->b2bClaySack->name,
+            'price' => 350.00,
+            'cost' => 180.00,
+            'quantity' => 4,
+            'is_b2b_supply' => true,
+            'supply_unit' => 'bag',
+        ]);
+
+        $response = $this->actingAs($this->buyerArtisan)
+            ->post(route('seller.supply-hub.orders.confirm', 'ORD-2026-B2B-STRING-ID'));
+
+        $response->assertSessionHas('success');
+        $this->assertEquals('Completed', $order->fresh()->status);
+    }
+
+    public function test_wholesale_sales_returns_delivered_completed_and_cancelled_counts(): void
+    {
+        // 1. Delivered wholesale order
+        $deliveredOrder = Order::create([
+            'artisan_id' => $this->supplierArtisan->id,
+            'seller_id' => $this->supplierArtisan->id,
+            'user_id' => $this->buyerArtisan->id,
+            'order_number' => 'ORD-B2B-DEL-01',
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'status' => 'Delivered',
+            'total_amount' => 700.00,
+            'merchandise_subtotal' => 700.00,
+            'shipping_method' => 'Delivery',
+        ]);
+        OrderItem::create([
+            'order_id' => $deliveredOrder->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => $this->b2bClaySack->name,
+            'price' => 350.00,
+            'cost' => 180.00,
+            'quantity' => 2,
+            'is_b2b_supply' => true,
+        ]);
+
+        // 2. Completed wholesale order
+        $completedOrder = Order::create([
+            'artisan_id' => $this->supplierArtisan->id,
+            'seller_id' => $this->supplierArtisan->id,
+            'user_id' => $this->buyerArtisan->id,
+            'order_number' => 'ORD-B2B-CMP-01',
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'status' => 'Completed',
+            'total_amount' => 700.00,
+            'merchandise_subtotal' => 700.00,
+            'shipping_method' => 'Delivery',
+        ]);
+        OrderItem::create([
+            'order_id' => $completedOrder->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => $this->b2bClaySack->name,
+            'price' => 350.00,
+            'cost' => 180.00,
+            'quantity' => 2,
+            'is_b2b_supply' => true,
+        ]);
+
+        // 3. Cancelled wholesale order
+        $cancelledOrder = Order::create([
+            'artisan_id' => $this->supplierArtisan->id,
+            'seller_id' => $this->supplierArtisan->id,
+            'user_id' => $this->buyerArtisan->id,
+            'order_number' => 'ORD-B2B-CAN-01',
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'status' => 'Cancelled',
+            'total_amount' => 700.00,
+            'merchandise_subtotal' => 700.00,
+            'shipping_method' => 'Delivery',
+        ]);
+        OrderItem::create([
+            'order_id' => $cancelledOrder->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => $this->b2bClaySack->name,
+            'price' => 350.00,
+            'cost' => 180.00,
+            'quantity' => 2,
+            'is_b2b_supply' => true,
+        ]);
+
+        $response = $this->actingAs($this->supplierArtisan)
+            ->get(route('seller.supply-hub.sales'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/WholesaleSales')
+            ->where('deliveredSalesCount', 1)
+            ->where('completedSalesCount', 1)
+            ->where('cancelledSalesCount', 1)
+        );
+    }
 }
 

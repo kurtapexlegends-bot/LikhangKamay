@@ -314,6 +314,7 @@ class B2BSupplyHubController extends Controller
 
         $query = Order::with(['items.product', 'seller', 'delivery'])
             ->where('user_id', $actor->id)
+            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
             ->latest();
 
         if ($search) {
@@ -384,6 +385,7 @@ class B2BSupplyHubController extends Controller
         });
 
         $statusCounts = Order::where('user_id', $actor->id)
+            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
             ->selectRaw("
                 SUM(CASE WHEN status IN ('Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup') THEN 1 ELSE 0 END) as active_count,
                 SUM(CASE WHEN status = 'Delivered' THEN 1 ELSE 0 END) as delivered_count,
@@ -424,7 +426,7 @@ class B2BSupplyHubController extends Controller
     /**
      * Confirm delivery receipt on a B2B procurement order and auto-restock workshop inventory.
      */
-    public function confirmDelivery(int $id, ReceiveOrder $receiveOrder)
+    public function confirmDelivery(string|int $id, ReceiveOrder $receiveOrder)
     {
         /** @var User $actor */
         $actor = Auth::user();
@@ -498,6 +500,7 @@ class B2BSupplyHubController extends Controller
 
         $orders->through(function ($order) use ($actor) {
             $bookingRequirements = OrderWorkflowHelper::lalamoveBookingRequirements($order, $actor);
+            $vehicleInfo = app(\App\Services\VehicleTypeResolver::class)->resolveForItems($order->items);
             return [
                 'id' => $order->order_number,
                 'db_id' => $order->id,
@@ -513,6 +516,9 @@ class B2BSupplyHubController extends Controller
                 'total_amount' => (float) $order->total_amount,
                 'merchandise_subtotal' => (float) $order->merchandise_subtotal,
                 'shipping_fee_amount' => $order->getResolvedShippingFeeAmount(),
+                'vehicle_info' => $vehicleInfo,
+                'total_weight_kg' => (float) ($vehicleInfo['total_weight_kg'] ?? 0),
+                'recommended_vehicle' => $vehicleInfo['label'] ?? 'Motorcycle',
                 'convenience_fee_amount' => (float) $order->convenience_fee_amount,
                 'seller_net_amount' => $order->getResolvedSellerNetAmount(),
                 'shipping_address' => $order->shipping_address,
@@ -531,6 +537,7 @@ class B2BSupplyHubController extends Controller
                     'variant' => $item->variant ?? 'Standard',
                     'qty' => $item->quantity,
                     'price' => $item->price,
+                    'weight' => $item->product?->weight ? (float) $item->product->weight : null,
                     'is_b2b_supply' => true,
                     'supply_unit' => $item->supply_unit ?: ($item->product?->supply_unit ?: 'pcs'),
                     'img' => StorageUrl::url($item->product_img, '/images/placeholder.svg'),
@@ -544,7 +551,9 @@ class B2BSupplyHubController extends Controller
                 SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending_count,
                 SUM(CASE WHEN status IN ('Accepted', 'Processing') THEN 1 ELSE 0 END) as processing_count,
                 SUM(CASE WHEN status IN ('Shipped', 'Ready for Pickup') THEN 1 ELSE 0 END) as shipped_count,
-                SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed_count
+                SUM(CASE WHEN status = 'Delivered' THEN 1 ELSE 0 END) as delivered_count,
+                SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed_count,
+                SUM(CASE WHEN status IN ('Cancelled', 'Refunded') THEN 1 ELSE 0 END) as cancelled_count
             ")
             ->first();
 
@@ -553,6 +562,7 @@ class B2BSupplyHubController extends Controller
             ->count();
 
         $inboundOrdersCount = Order::where('user_id', $actor->id)
+            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
             ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
             ->count();
 
@@ -564,7 +574,9 @@ class B2BSupplyHubController extends Controller
             'pendingSalesCount' => (int) ($statusCounts->pending_count ?? 0),
             'processingSalesCount' => (int) ($statusCounts->processing_count ?? 0),
             'shippedSalesCount' => (int) ($statusCounts->shipped_count ?? 0),
+            'deliveredSalesCount' => (int) ($statusCounts->delivered_count ?? 0),
             'completedSalesCount' => (int) ($statusCounts->completed_count ?? 0),
+            'cancelledSalesCount' => (int) ($statusCounts->cancelled_count ?? 0),
             'myPublishedCount' => $myPublishedCount,
             'activeOrdersCount' => $inboundOrdersCount,
             'wholesaleSalesCount' => $activeSalesCount,
@@ -590,7 +602,9 @@ class B2BSupplyHubController extends Controller
             abort(403, 'Unauthorized.');
         }
 
-        $order = Order::where('order_number', $id)
+        $order = Order::where(function ($q) use ($id) {
+                $q->where('order_number', $id)->orWhere('id', $id);
+            })
             ->where('artisan_id', $actor->id)
             ->firstOrFail();
 

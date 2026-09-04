@@ -4,11 +4,11 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
 import { 
-    Truck, Package, CheckCircle2, 
-    Search, Check, MapPin, Calendar,
+    Truck, CheckCircle2, 
+    Search, Check, MapPin,
     MessageSquare, ShoppingCart, Boxes, X, Phone,
     ChevronDown, ChevronRight, Hash, Copy, CheckCheck,
-    CreditCard, ArrowRight, ShieldCheck, Store, Clock
+    CreditCard, Store, Clock
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
@@ -22,7 +22,9 @@ export default function WholesaleSales({
     pendingSalesCount = 0,
     processingSalesCount = 0,
     shippedSalesCount = 0,
+    deliveredSalesCount = 0,
     completedSalesCount = 0,
+    cancelledSalesCount = 0,
     myPublishedCount = 0,
     activeOrdersCount = 0,
     filters = {},
@@ -257,7 +259,9 @@ export default function WholesaleSales({
                                 { id: 'pending', label: 'Needs Decision', count: pendingSalesCount, alert: pendingSalesCount > 0 },
                                 { id: 'processing', label: 'In Production / Packing', count: processingSalesCount },
                                 { id: 'shipped', label: 'In Transit', count: shippedSalesCount },
-                                { id: 'completed', label: 'Completed' },
+                                { id: 'delivered', label: 'Delivered (Awaiting Confirmation)', count: deliveredSalesCount, alert: deliveredSalesCount > 0 },
+                                { id: 'completed', label: 'Completed & Settled', count: completedSalesCount },
+                                { id: 'cancelled', label: 'Cancelled', count: cancelledSalesCount },
                             ].map((tab) => {
                                 const isActive = activeTab === tab.id;
                                 return (
@@ -370,8 +374,12 @@ export default function WholesaleSales({
                                                     ? 'bg-blue-100 text-blue-900'
                                                     : order.status === 'Shipped' || order.status === 'Ready for Pickup'
                                                     ? 'bg-purple-100 text-purple-900'
-                                                    : order.status === 'Completed' || order.status === 'Delivered'
+                                                    : order.status === 'Delivered'
+                                                    ? 'bg-amber-100 text-amber-900'
+                                                    : order.status === 'Completed'
                                                     ? 'bg-emerald-100 text-emerald-900'
+                                                    : order.status === 'Cancelled' || order.status === 'Refunded'
+                                                    ? 'bg-rose-100 text-rose-900'
                                                     : 'bg-stone-100 text-stone-700'
                                             }`}>
                                                 {order.status}
@@ -644,10 +652,24 @@ export default function WholesaleSales({
                                                     </button>
                                                 )}
 
-                                                {(order.status === 'Delivered' || order.status === 'Completed') && (
+                                                {order.status === 'Delivered' && (
+                                                    <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-2 text-center text-xs font-bold text-amber-900 flex items-center justify-center gap-1.5">
+                                                        <Clock size={14} className="text-amber-700" />
+                                                        <span>Delivered • Awaiting Buyer Confirmation</span>
+                                                    </div>
+                                                )}
+
+                                                {order.status === 'Completed' && (
                                                     <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-2 text-center text-xs font-bold text-emerald-800 flex items-center justify-center gap-1.5">
                                                         <CheckCircle2 size={14} className="text-emerald-600" />
                                                         <span>Completed & Settled</span>
+                                                    </div>
+                                                )}
+
+                                                {(order.status === 'Cancelled' || order.status === 'Refunded') && (
+                                                    <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-2 text-center text-xs font-bold text-rose-800 flex items-center justify-center gap-1.5">
+                                                        <X size={14} className="text-rose-600" />
+                                                        <span>{order.status}</span>
                                                     </div>
                                                 )}
                                             </div>

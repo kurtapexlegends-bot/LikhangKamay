@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Services\OrderLogisticsService;
 use App\Services\StorageUrl;
+use App\Services\VehicleTypeResolver;
 use App\Support\OrderWorkflowHelper;
 use Illuminate\Support\Facades\DB;
 
@@ -31,6 +32,7 @@ class ListSellerOrders
         $seller?->loadMissing('addresses');
 
         $query = Order::where('artisan_id', $sellerId)
+            ->whereDoesntHave('items', fn($q) => $q->where('is_b2b_supply', true))
             ->with(['items.product.recipes.supply', 'user', 'delivery.events', 'dispute', 'artisan']);
 
         $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
@@ -79,7 +81,8 @@ class ListSellerOrders
         }
 
         // Fetch tab counts for this artisan (with search and date filters applied, but status omitted)
-        $countsQuery = Order::where('artisan_id', $sellerId);
+        $countsQuery = Order::where('artisan_id', $sellerId)
+            ->whereDoesntHave('items', fn($q) => $q->where('is_b2b_supply', true));
 
         $applySearchFilter($countsQuery);
 
@@ -106,11 +109,13 @@ class ListSellerOrders
             'Completed' => $statusCounts['Completed'] ?? 0,
             'Cancelled' => ($statusCounts['Cancelled'] ?? 0) + ($statusCounts['Rejected'] ?? 0),
             'paymentHoldCount' => Order::where('artisan_id', $sellerId)
+                ->whereDoesntHave('items', fn($q) => $q->where('is_b2b_supply', true))
                 ->where('payment_method', '!=', 'COD')
                 ->where('payment_status', '!=', 'paid')
                 ->where('status', 'Accepted')
                 ->count(),
             'hasActiveCourierTracking' => Order::where('artisan_id', $sellerId)
+                ->whereDoesntHave('items', fn($q) => $q->where('is_b2b_supply', true))
                 ->where('shipping_method', 'Delivery')
                 ->whereHas('delivery', function ($q) {
                     $q->whereNotNull('external_order_id')
@@ -210,6 +215,7 @@ class ListSellerOrders
 
         $paginator->through(function ($order) use ($seller) {
             $bookingRequirements = OrderWorkflowHelper::lalamoveBookingRequirements($order, $seller);
+            $vehicleInfo = app(VehicleTypeResolver::class)->resolveForItems($order->items);
 
             return [
                 'id' => $order->order_number,
@@ -226,6 +232,9 @@ class ListSellerOrders
                 'merchandise_subtotal' => (float) $order->merchandise_subtotal,
                 'convenience_fee_amount' => (float) $order->convenience_fee_amount,
                 'shipping_fee_amount' => $order->getResolvedShippingFeeAmount(),
+                'vehicle_info' => $vehicleInfo,
+                'total_weight_kg' => (float) ($vehicleInfo['total_weight_kg'] ?? 0),
+                'recommended_vehicle' => $vehicleInfo['label'] ?? 'Motorcycle',
                 'platform_commission_amount' => $order->getResolvedPlatformCommissionAmount(),
                 'seller_net_amount' => $order->getResolvedSellerNetAmount(),
                 'shipping_address' => $order->shipping_address,
@@ -270,6 +279,7 @@ class ListSellerOrders
                         'variant' => $item->variant ?? 'Standard',
                         'qty' => $item->quantity,
                         'price' => $item->price,
+                        'weight' => $item->product?->weight ? (float) $item->product->weight : null,
                         'img' => StorageUrl::url($item->product_img, '/images/placeholder.svg'),
                         'is_b2b_supply' => (bool) ($item->is_b2b_supply || $item->product?->is_b2b_supply),
                         'supply_unit' => $item->supply_unit ?: ($item->product?->supply_unit ?: 'pcs'),

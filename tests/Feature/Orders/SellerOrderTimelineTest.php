@@ -100,6 +100,8 @@ class SellerOrderTimelineTest extends TestCase
         $response->assertInertia(
             fn (Assert $page) => $page
                 ->component('Seller/Orders/OrderManager')
+                ->where('orders.data.0.recommended_vehicle', 'Motorcycle')
+                ->where('orders.data.0.total_weight_kg', 1.1)
                 ->where('orders.data.0.timeline', function ($timeline) {
                     $labels = collect($timeline)->pluck('label')->all();
 
