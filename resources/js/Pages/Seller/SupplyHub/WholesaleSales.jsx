@@ -748,4 +748,4 @@ export default function WholesaleSales({
     );
 }
 
-WholesaleSales.layout = (page) => <SellerWorkspaceLayout>{page}</SellerWorkspaceLayout>;
+WholesaleSales.layout = (page) => <SellerWorkspaceLayout active="supply-hub">{page}</SellerWorkspaceLayout>;
