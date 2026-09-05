@@ -3,7 +3,9 @@
 namespace App\Actions\Seller\HR;
 
 use App\Models\Employee;
+use App\Models\OwnerApproval;
 use App\Models\User;
+use App\Services\OwnerApprovalService;
 use App\Support\HRWorkflowHelper;
 use Illuminate\Support\Facades\DB;
 
@@ -130,6 +132,48 @@ class ProvisionStaffAccount
         $workspaceSuspended = false;
         $workspaceRestored = false;
         $auditAfter = null;
+        $pendingRateApproval = null;
+
+        $isStaffActor = $actor->isStaff() || $actor->id !== $seller->id;
+        $submittedSalary = isset($validated['salary']) ? (float) $validated['salary'] : (float) $employee->salary;
+        $salaryChanged = abs($submittedSalary - (float) $employee->salary) > 0.001;
+
+        if ($isStaffActor && $salaryChanged) {
+            $approvalService = app(OwnerApprovalService::class);
+            $justification = $validated['justification'] ?? null ?: 'Staff salary adjustment requested';
+            $effectiveDate = $validated['effective_date'] ?? null;
+            $payload = $approvalService->buildStaffRatePayload($employee, $submittedSalary, $justification, $effectiveDate);
+
+            $existingPending = OwnerApproval::query()
+                ->where('seller_id', $seller->id)
+                ->where('domain', OwnerApproval::DOMAIN_STAFF_RATE)
+                ->where('approvable_type', Employee::class)
+                ->where('approvable_id', $employee->id)
+                ->where('status', OwnerApproval::STATUS_PENDING)
+                ->first();
+
+            if ($existingPending) {
+                $existingPending->update([
+                    'requester_id' => $actor->id,
+                    'title' => "Salary Adjustment: {$employee->name}",
+                    'summary' => "Salary adjustment for {$employee->name} from ₱" . number_format((float) $employee->salary, 2) . " to ₱" . number_format($submittedSalary, 2) . " submitted for owner review.",
+                    'changes_payload' => $payload,
+                ]);
+                $pendingRateApproval = $existingPending;
+            } else {
+                $pendingRateApproval = $approvalService->submitRequest(
+                    $seller,
+                    $actor,
+                    OwnerApproval::DOMAIN_STAFF_RATE,
+                    "Salary Adjustment: {$employee->name}",
+                    "Salary adjustment for {$employee->name} from ₱" . number_format((float) $employee->salary, 2) . " to ₱" . number_format($submittedSalary, 2) . " submitted for owner review.",
+                    $employee,
+                    $payload
+                );
+            }
+        }
+
+        $salaryToSave = ($isStaffActor && $salaryChanged) ? $employee->salary : $validated['salary'];
 
         DB::transaction(function () use (
             $employee,
@@ -147,7 +191,8 @@ class ProvisionStaffAccount
             &$auditAfter,
             $actor,
             $employeeId,
-            $seller
+            $seller,
+            $salaryToSave
         ) {
             $employee->update([
                 'employee_id' => $employeeId,
@@ -156,7 +201,7 @@ class ProvisionStaffAccount
                 'vehicle_type' => $validated['vehicle_type'] ?? $employee->vehicle_type ?? 'Motorcycle',
                 'vehicle_plate_number' => $validated['vehicle_plate_number'] ?? null,
                 'driver_license_number' => $validated['driver_license_number'] ?? null,
-                'salary' => $validated['salary'],
+                'salary' => $salaryToSave,
                 'delivery_compensation_type' => $validated['delivery_compensation_type'] ?? $employee->delivery_compensation_type ?? 'salary',
                 'delivery_fee_rate' => isset($validated['delivery_fee_rate']) && $validated['delivery_fee_rate'] !== '' ? (float) $validated['delivery_fee_rate'] : 0.00,
                 'assigned_location_id' => $validated['assigned_location_id'] ?? null,
@@ -269,6 +314,7 @@ class ProvisionStaffAccount
             'workspaceSuspended' => $workspaceSuspended,
             'workspaceRestored' => $workspaceRestored,
             'auditAfter' => $auditAfter,
+            'pendingRateApproval' => $pendingRateApproval,
         ];
     }
 }

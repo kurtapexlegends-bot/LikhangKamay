@@ -8,6 +8,8 @@ use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Notifications\AccountingApprovalRequestedNotification;
 use App\Models\StockRequest;
 use App\Models\Supply;
+use App\Models\OwnerApproval;
+use App\Services\OwnerApprovalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -83,6 +85,23 @@ class StockRequestController extends Controller
                 $stockRequest->id,
             ));
         });
+
+        $actor = $this->sellerActor();
+        $seller = $this->sellerOwner();
+
+        if ($actor->isStaff() || $actor->id !== $seller->id) {
+            $approvalService = app(OwnerApprovalService::class);
+            $payload = $approvalService->buildProcurementPayload($supply, (int) $validated['quantity']);
+            $approvalService->submitRequest(
+                $seller,
+                $actor,
+                OwnerApproval::DOMAIN_PROCUREMENT,
+                "Procurement Restock: {$supply->name}",
+                "Restock request for {$validated['quantity']}x {$supply->name} (₱" . number_format((float) $totalCost, 2) . ") submitted for owner review.",
+                $stockRequest,
+                $payload
+            );
+        }
 
         return redirect()->route('stock-requests.index')->with('success', 'Stock request created. Waiting for Accounting approval.');
     }

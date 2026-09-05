@@ -104,6 +104,7 @@ class NotificationPresenter
             'shipment_deadline' => route('orders.index'),
             'supply_depleted' => route('procurement.index'),
             'disciplinary_action' => route('profile.edit'),
+            'owner_approval_decision' => self::resolveOwnerApprovalDecisionUrl($data, $user),
             default => $data['url'] ?? null,
         };
     }
@@ -150,5 +151,24 @@ class NotificationPresenter
         }
 
         return route('team-messages.index', ['user_id' => $senderId]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function resolveOwnerApprovalDecisionUrl(array $data, ?User $user): string
+    {
+        $domain = $data['domain'] ?? null;
+        $isRestrictedStaff = $user?->isStaff() && !$user->canEditSellerModule('overview');
+
+        if ($isRestrictedStaff) {
+            return match ($domain) {
+                'procurement' => route('stock-requests.index'),
+                'hr_payroll', 'staff_rate' => route('hr.index'),
+                default => route('dashboard'),
+            };
+        }
+
+        return $data['url'] ?? route('seller.approvals.index', ['status' => $data['status'] ?? 'pending']);
     }
 }

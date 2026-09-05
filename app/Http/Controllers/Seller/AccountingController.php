@@ -9,6 +9,7 @@ use App\Models\Payroll;
 use App\Models\StockRequest;
 use App\Models\User;
 use App\Models\CapitalAdjustment;
+use App\Models\OwnerApproval;
 use App\Notifications\AccountingRejectedNotification;
 use App\Services\AccountingLedgerService;
 use Illuminate\Http\Request;
@@ -168,7 +169,7 @@ class AccountingController extends Controller
             return back()->with('error', 'Governance Control: Maker-Checker rule violation. You cannot approve a request you initiated.');
         }
 
-        $error = DB::transaction(function () use ($stockRequest) {
+        $error = DB::transaction(function () use ($stockRequest, $actor) {
             /** @var \App\Models\User $lockedUser */
             $lockedUser = User::where('id', $this->sellerOwnerId())->lockForUpdate()->first();
             
@@ -183,6 +184,19 @@ class AccountingController extends Controller
             }
 
             StockRequest::where('id', $stockRequest->id)->update(['status' => StockRequest::STATUS_ACCOUNTING_APPROVED]);
+
+            OwnerApproval::query()
+                ->where('seller_id', $lockedUser->id)
+                ->where('domain', OwnerApproval::DOMAIN_PROCUREMENT)
+                ->where('approvable_type', StockRequest::class)
+                ->where('approvable_id', $stockRequest->id)
+                ->where('status', OwnerApproval::STATUS_PENDING)
+                ->update([
+                    'status' => OwnerApproval::STATUS_APPROVED,
+                    'reviewer_id' => $actor->id,
+                    'reviewed_at' => now(),
+                ]);
+
             return null;
         });
 
@@ -209,6 +223,19 @@ class AccountingController extends Controller
             'status' => StockRequest::STATUS_REJECTED,
             'rejection_reason' => $validated['reason'],
         ]);
+
+        OwnerApproval::query()
+            ->where('seller_id', $this->sellerOwnerId())
+            ->where('domain', OwnerApproval::DOMAIN_PROCUREMENT)
+            ->where('approvable_type', StockRequest::class)
+            ->where('approvable_id', $stockRequest->id)
+            ->where('status', OwnerApproval::STATUS_PENDING)
+            ->update([
+                'status' => OwnerApproval::STATUS_REJECTED,
+                'reviewer_id' => $this->sellerActor()->id,
+                'reviewed_at' => now(),
+                'rejection_reason' => $validated['reason'],
+            ]);
 
         $stockRequest->loadMissing(['supply', 'requester', 'user']);
 
@@ -241,7 +268,7 @@ class AccountingController extends Controller
             return back()->with('error', 'Governance Control: Maker-Checker rule violation. You cannot approve a request you initiated.');
         }
 
-        $error = DB::transaction(function () use ($payroll) {
+        $error = DB::transaction(function () use ($payroll, $actor) {
             /** @var \App\Models\User $lockedUser */
             $lockedUser = User::where('id', $this->sellerOwnerId())->lockForUpdate()->first();
             
@@ -256,6 +283,19 @@ class AccountingController extends Controller
             }
 
             Payroll::where('id', $payroll->id)->update(['status' => 'Paid']);
+
+            OwnerApproval::query()
+                ->where('seller_id', $lockedUser->id)
+                ->where('domain', OwnerApproval::DOMAIN_HR_PAYROLL)
+                ->where('approvable_type', Payroll::class)
+                ->where('approvable_id', $payroll->id)
+                ->where('status', OwnerApproval::STATUS_PENDING)
+                ->update([
+                    'status' => OwnerApproval::STATUS_APPROVED,
+                    'reviewer_id' => $actor->id,
+                    'reviewed_at' => now(),
+                ]);
+
             return null;
         });
 
@@ -282,6 +322,19 @@ class AccountingController extends Controller
             'status' => 'Rejected',
             'rejection_reason' => $validated['reason'],
         ]);
+
+        OwnerApproval::query()
+            ->where('seller_id', $this->sellerOwnerId())
+            ->where('domain', OwnerApproval::DOMAIN_HR_PAYROLL)
+            ->where('approvable_type', Payroll::class)
+            ->where('approvable_id', $payroll->id)
+            ->where('status', OwnerApproval::STATUS_PENDING)
+            ->update([
+                'status' => OwnerApproval::STATUS_REJECTED,
+                'reviewer_id' => $this->sellerActor()->id,
+                'reviewed_at' => now(),
+                'rejection_reason' => $validated['reason'],
+            ]);
 
         $payroll->loadMissing(['requester', 'user']);
 

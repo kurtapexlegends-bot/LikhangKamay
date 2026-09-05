@@ -60,7 +60,7 @@ const getInitialExpandedGroups = (active) => {
 };
 
 export default function SellerSidebar({ active, user, mobileOpen = false, onClose = () => {}, isCollapsed = false, onToggleCollapse = () => {} }) {
-    const { sellerSubscription, sellerSidebar, attendance } = usePage().props;
+    const { sellerSubscription, sellerSidebar, attendance, pendingApprovalsCount } = usePage().props;
 
     const currentTierKey = sellerSubscription?.tierKey
         || sellerSidebar?.tierKey
@@ -376,7 +376,18 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                     <NavItem href={route('3d.index')} icon={Box} active={active === '3d'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, '3D Manager')} onMouseLeave={handleTooltipLeave}>3D Manager</NavItem>
                                 )}
                                 {(!isStaffActor || visibleModulesSet.has('approvals')) && (user?.role === 'artisan' || user?.is_workspace_owner) && (
-                                    <NavItem href={route('seller.approvals.index')} icon={ShieldCheck} active={active === 'approvals'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Approvals')} onMouseLeave={handleTooltipLeave}>Approvals</NavItem>
+                                    <NavItem
+                                        href={route('seller.approvals.index')}
+                                        icon={ShieldCheck}
+                                        active={active === 'approvals'}
+                                        onClick={onClose}
+                                        isCollapsed={isCollapsed}
+                                        onMouseEnter={(e) => handleTooltipShow(e, 'Approvals', pendingApprovalsCount > 0 ? `${pendingApprovalsCount} pending` : null)}
+                                        onMouseLeave={handleTooltipLeave}
+                                        badge={pendingApprovalsCount}
+                                    >
+                                        Approvals
+                                    </NavItem>
                                 )}
                             </CategoryGroup>
                         </div>

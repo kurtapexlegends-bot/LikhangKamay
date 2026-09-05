@@ -89,13 +89,17 @@ class ApprovalController extends Controller
             abort(403, 'You cannot approve your own submitted request.');
         }
 
-        $success = $approvalService->approve($approval, $user);
+        try {
+            $success = $approvalService->approve($approval, $user);
 
-        if ($success) {
-            return back()->with('success', "Approved: {$approval->title}");
+            if ($success) {
+                return back()->with('success', "Approved: {$approval->title}");
+            }
+
+            return back()->with('error', 'Could not process approval. The item may have already been reviewed.');
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        return back()->with('error', 'Could not process approval. The item may have already been reviewed.');
     }
 
     /**
@@ -148,8 +152,19 @@ class ApprovalController extends Controller
             'approval_ids.*' => ['integer', 'exists:owner_approvals,id'],
         ]);
 
-        $approvedCount = $approvalService->batchApprove($seller, $user, $validated['approval_ids']);
+        try {
+            $approvedCount = $approvalService->batchApprove($seller, $user, $validated['approval_ids']);
+            $totalCount = count($validated['approval_ids']);
 
-        return back()->with('success', "Successfully batch approved {$approvedCount} request(s).");
+            if ($approvedCount === $totalCount) {
+                return back()->with('success', "Successfully batch approved {$approvedCount} request(s).");
+            } elseif ($approvedCount > 0) {
+                return back()->with('success', "Batch approved {$approvedCount} of {$totalCount} request(s). Some items could not be approved due to insufficient funds or conflicting state.");
+            }
+
+            return back()->with('error', 'Could not approve the selected requests. Please review available funds or item status.');
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 }

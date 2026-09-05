@@ -13,6 +13,8 @@ use App\Models\OrderDispute;
 use App\Models\Discount;
 use App\Models\Product;
 use App\Models\SellerActivityLog;
+use App\Notifications\OwnerApprovalDecisionNotification;
+use App\Services\AccountingLedgerService;
 use App\Support\HRWorkflowHelper;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +24,11 @@ use InvalidArgumentException;
 
 class OwnerApprovalService
 {
+    public function __construct(
+        protected ?AccountingLedgerService $ledgerService = null
+    ) {
+        $this->ledgerService ??= app(AccountingLedgerService::class);
+    }
     /**
      * Submit an action into the owner approval queue.
      */
@@ -249,6 +256,15 @@ class OwnerApprovalService
                 'target_label' => 'View Approvals',
             ]);
 
+            $locked->loadMissing('requester');
+            if ($locked->requester && $locked->requester_id !== $reviewer->id) {
+                rescue(fn () => $locked->requester->notify(new OwnerApprovalDecisionNotification(
+                    approval: $locked,
+                    status: OwnerApproval::STATUS_APPROVED,
+                    reviewer: $reviewer
+                )));
+            }
+
             return true;
         });
     }
@@ -267,6 +283,9 @@ class OwnerApprovalService
             if ($locked->status !== OwnerApproval::STATUS_PENDING) {
                 return false;
             }
+
+            // Apply underlying domain rejection side-effects
+            $this->executeRejectedDomainAction($locked, $reason);
 
             $locked->update([
                 'status' => OwnerApproval::STATUS_REJECTED,
@@ -299,6 +318,16 @@ class OwnerApprovalService
                 'target_label' => 'View Approvals',
             ]);
 
+            $locked->loadMissing('requester');
+            if ($locked->requester && $locked->requester_id !== $reviewer->id) {
+                rescue(fn () => $locked->requester->notify(new OwnerApprovalDecisionNotification(
+                    approval: $locked,
+                    status: OwnerApproval::STATUS_REJECTED,
+                    reviewer: $reviewer,
+                    reason: $reason
+                )));
+            }
+
             return true;
         });
     }
@@ -318,8 +347,12 @@ class OwnerApprovalService
 
         $count = 0;
         foreach ($approvals as $approval) {
-            if ($this->approve($approval, $reviewer)) {
-                $count++;
+            try {
+                if ($this->approve($approval, $reviewer)) {
+                    $count++;
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Batch approve failed for approval #{$approval->id}: " . $e->getMessage());
             }
         }
 
@@ -341,26 +374,26 @@ class OwnerApprovalService
      *     pending_count: int,
      *     approved_count: int,
      *     declined_count: int,
-     *     active_staff_count: int
+     *     active_staff_count: int,
      * }
      */
     public function getStats(User $seller): array
     {
+        if (!$this->supportsOwnerApprovals()) {
+            return [
+                'pending_count' => 0,
+                'approved_count' => 0,
+                'declined_count' => 0,
+                'active_staff_count' => 0,
+            ];
+        }
+
         $activeStaffCount = rescue(fn() => $seller->staffMembers()->count(), 0);
         if ($activeStaffCount === 0) {
             $activeStaffCount = rescue(fn() => Employee::query()
                 ->where('user_id', $seller->id)
                 ->where('status', 'active')
                 ->count(), 0);
-        }
-
-        if (!$this->supportsOwnerApprovals()) {
-            return [
-                'pending_count' => 0,
-                'approved_count' => 0,
-                'declined_count' => 0,
-                'active_staff_count' => $activeStaffCount,
-            ];
         }
 
         $pendingCount = rescue(fn() => OwnerApproval::query()
@@ -389,7 +422,7 @@ class OwnerApprovalService
     }
 
     /**
-     * Count pending items awaiting review for a seller.
+     * Get total pending requests awaiting owner action.
      */
     public function getPendingCount(User $seller): int
     {
@@ -404,7 +437,7 @@ class OwnerApprovalService
     }
 
     /**
-     * Get paginated approvals for a seller with optional domain and status filtering.
+     * Retrieve paginated approvals with filters for the dashboard.
      *
      * @param array<string, mixed> $filters
      */
@@ -456,23 +489,68 @@ class OwnerApprovalService
 
         switch ($approval->domain) {
             case OwnerApproval::DOMAIN_STAFF_RATE:
-                if (!empty($payload['employee_id']) && isset($payload['new_rate'])) {
-                    Employee::query()
-                        ->where('id', $payload['employee_id'])
-                        ->where('user_id', $approval->seller_id)
-                        ->update(['salary' => $payload['new_rate']]);
+                $employeeId = $approval->approvable_id ?? ($payload['employee_id'] ?? null);
+                $newRate = $payload['new_rate'] ?? null;
+                if ($employeeId && $newRate !== null) {
+                    $employee = $approval->approvable instanceof Employee
+                        ? $approval->approvable
+                        : Employee::where('id', $employeeId)->where('user_id', $approval->seller_id)->first();
+
+                    if ($employee) {
+                        $employee->update(['salary' => $newRate]);
+                    }
                 }
                 break;
 
             case OwnerApproval::DOMAIN_HR_PAYROLL:
-                if ($approval->approvable_id && $approval->approvable instanceof PayrollRun) {
-                    $approval->approvable->update(['status' => 'approved']);
+                $payroll = $approval->approvable;
+                if (!$payroll && $approval->approvable_id) {
+                    $payroll = Payroll::find($approval->approvable_id);
+                }
+
+                if ($payroll instanceof Payroll) {
+                    if ($payroll->status !== 'Pending') {
+                        throw new \RuntimeException('Payroll request is not pending approval.');
+                    }
+
+                    /** @var User|null $lockedSeller */
+                    $lockedSeller = User::where('id', $approval->seller_id)->lockForUpdate()->first();
+                    if (!$lockedSeller) {
+                        throw new \RuntimeException("Seller owner not found during payroll approval.");
+                    }
+
+                    $currentBalance = $this->ledgerService->buildFinancialSnapshot($lockedSeller)['balance'];
+                    if (round($currentBalance, 2) < round((float) $payroll->total_amount, 2)) {
+                        throw new \RuntimeException('Insufficient funds. Cannot release payroll of PHP ' . number_format((float) $payroll->total_amount, 2));
+                    }
+
+                    Payroll::where('id', $payroll->id)->update(['status' => 'Paid']);
+                } elseif ($payroll instanceof PayrollRun) {
+                    $payroll->update(['status' => 'approved']);
                 }
                 break;
 
             case OwnerApproval::DOMAIN_PROCUREMENT:
-                if ($approval->approvable_id && $approval->approvable instanceof StockRequest) {
-                    $approval->approvable->update(['status' => 'approved']);
+                $stockRequest = $approval->approvable;
+                if (!$stockRequest && $approval->approvable_id) {
+                    $stockRequest = StockRequest::find($approval->approvable_id);
+                }
+
+                if ($stockRequest instanceof StockRequest) {
+                    if ($stockRequest->status !== StockRequest::STATUS_PENDING) {
+                        throw new \RuntimeException('Stock request is not pending approval.');
+                    }
+
+                    /** @var User|null $lockedSeller */
+                    $lockedSeller = User::where('id', $approval->seller_id)->lockForUpdate()->first();
+                    if ($lockedSeller) {
+                        $currentBalance = $this->ledgerService->buildFinancialSnapshot($lockedSeller)['balance'];
+                        if (round($currentBalance, 2) < round((float) $stockRequest->total_cost, 2)) {
+                            throw new \RuntimeException('Insufficient funds. Cannot release PHP ' . number_format((float) $stockRequest->total_cost, 2));
+                        }
+                    }
+
+                    StockRequest::where('id', $stockRequest->id)->update(['status' => StockRequest::STATUS_ACCOUNTING_APPROVED]);
                 }
                 break;
 
@@ -488,6 +566,43 @@ class OwnerApprovalService
 
             default:
                 // No automatic side effect required for general review items
+                break;
+        }
+    }
+
+    /**
+     * Execute live database mutations upon rejection.
+     */
+    protected function executeRejectedDomainAction(OwnerApproval $approval, ?string $reason = null): void
+    {
+        switch ($approval->domain) {
+            case OwnerApproval::DOMAIN_HR_PAYROLL:
+                $payroll = $approval->approvable;
+                if (!$payroll && $approval->approvable_id) {
+                    $payroll = Payroll::find($approval->approvable_id);
+                }
+                if ($payroll instanceof Payroll && $payroll->status === 'Pending') {
+                    $payroll->update([
+                        'status' => 'Rejected',
+                        'rejection_reason' => $reason,
+                    ]);
+                }
+                break;
+
+            case OwnerApproval::DOMAIN_PROCUREMENT:
+                $stockRequest = $approval->approvable;
+                if (!$stockRequest && $approval->approvable_id) {
+                    $stockRequest = StockRequest::find($approval->approvable_id);
+                }
+                if ($stockRequest instanceof StockRequest && $stockRequest->status === StockRequest::STATUS_PENDING) {
+                    $stockRequest->update([
+                        'status' => StockRequest::STATUS_REJECTED,
+                        'rejection_reason' => $reason,
+                    ]);
+                }
+                break;
+
+            default:
                 break;
         }
     }

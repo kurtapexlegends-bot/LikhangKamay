@@ -4,8 +4,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import { 
     Banknote, User, ShoppingBag, Tag, AlertCircle, 
     FileText, Clock, CheckCircle2, XCircle, ArrowRight, 
-    Calendar, Building2, Package, Layers, ShieldAlert,
-    ExternalLink, Check, DollarSign, Percent, AlertTriangle
+    Package, AlertTriangle
 } from 'lucide-react';
 
 const DOMAIN_CONFIG = {
@@ -266,7 +265,7 @@ export default function ApprovalDetailsDrawer({
                 {payload.notes && (
                     <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 text-xs text-stone-700">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block mb-1">Staff Note</span>
-                        <p className="italic">"{payload.notes}"</p>
+                        <p className="italic">&ldquo;{payload.notes}&rdquo;</p>
                     </div>
                 )}
             </div>
@@ -335,7 +334,7 @@ export default function ApprovalDetailsDrawer({
                 {payload.justification && (
                     <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 text-xs text-stone-700">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block mb-1">Reason / Justification</span>
-                        <p className="leading-relaxed">"{payload.justification}"</p>
+                        <p className="leading-relaxed">&ldquo;{payload.justification}&rdquo;</p>
                     </div>
                 )}
             </div>

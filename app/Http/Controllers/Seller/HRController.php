@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Seller;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Employee;
+use App\Models\OwnerApproval;
 use App\Models\Payroll;
 use App\Models\StaffAccessAudit;
 use App\Models\User;
 use App\Services\StaffAttendanceService;
 use App\Services\SellerEntitlementService;
+use App\Services\OwnerApprovalService;
 use App\Services\HR\PayrollCalculatorService;
 use App\Actions\Seller\HR\ProvisionStaffAccount;
 use App\Support\HRWorkflowHelper;
@@ -420,13 +422,19 @@ class HRController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', HRWorkflowHelper::buildEmployeeUpdateSuccessMessage(
+        $message = HRWorkflowHelper::buildEmployeeUpdateSuccessMessage(
             $result['createdLogin'],
             $result['workspaceSuspended'],
             $result['workspaceRestored'],
             $result['emailChanged'],
             $result['passwordReset']
-        ));
+        );
+
+        if (!empty($result['pendingRateApproval'])) {
+            $message .= ' The salary adjustment was submitted for owner review.';
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 
     public function updateSettings(Request $request)
@@ -517,6 +525,22 @@ class HRController extends Controller
         try {
             $payroll = $payrollService->generate($selectedItems, $this->sellerOwner(), $this->sellerActor(), $validated);
 
+            $actor = $this->sellerActor();
+            $seller = $this->sellerOwner();
+            if (($validated['action'] ?? 'submit') !== 'draft' && ($actor->isStaff() || $actor->id !== $seller->id)) {
+                $approvalService = app(OwnerApprovalService::class);
+                $payload = $approvalService->buildPayrollPayload($payroll, $seller);
+                $approvalService->submitRequest(
+                    $seller,
+                    $actor,
+                    OwnerApproval::DOMAIN_HR_PAYROLL,
+                    "Payroll Run: {$payroll->month}",
+                    "Payroll run for {$payroll->month} ({$payroll->employee_count} employees, ₱" . number_format((float) $payroll->total_amount, 2) . ") submitted for owner review.",
+                    $payroll,
+                    $payload
+                );
+            }
+
             return redirect()
                 ->route('hr.payroll.show', $payroll)
                 ->with('success', ($validated['action'] ?? 'submit') === 'draft'
@@ -556,6 +580,31 @@ class HRController extends Controller
         ]));
 
         HRWorkflowHelper::notifyAccountingOfPayrollRun($payroll->fresh(['requester']), $seller, $payroll->month, $this->sellerActor());
+
+        $actor = $this->sellerActor();
+        if ($actor->isStaff() || $actor->id !== $seller->id) {
+            $approvalService = app(OwnerApprovalService::class);
+            $alreadyExists = OwnerApproval::query()
+                ->where('seller_id', $seller->id)
+                ->where('domain', OwnerApproval::DOMAIN_HR_PAYROLL)
+                ->where('approvable_type', Payroll::class)
+                ->where('approvable_id', $payroll->id)
+                ->where('status', OwnerApproval::STATUS_PENDING)
+                ->exists();
+
+            if (!$alreadyExists) {
+                $payload = $approvalService->buildPayrollPayload($payroll, $seller);
+                $approvalService->submitRequest(
+                    $seller,
+                    $actor,
+                    OwnerApproval::DOMAIN_HR_PAYROLL,
+                    "Payroll Run: {$payroll->month}",
+                    "Payroll run for {$payroll->month} ({$payroll->employee_count} employees, ₱" . number_format((float) $payroll->total_amount, 2) . ") submitted for owner review.",
+                    $payroll,
+                    $payload
+                );
+            }
+        }
 
         return redirect()
             ->route('hr.payroll.show', $payroll)

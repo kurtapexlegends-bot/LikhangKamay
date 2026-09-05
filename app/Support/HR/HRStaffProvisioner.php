@@ -208,6 +208,8 @@ class HRStaffProvisioner
             'delivery_compensation_type' => ['nullable', 'string', \Illuminate\Validation\Rule::in(['salary', 'per_delivery', 'hybrid'])],
             'delivery_fee_rate' => ['nullable', 'numeric', 'min:0'],
             'create_login_account' => ['nullable', 'boolean'],
+            'justification' => ['nullable', 'string', 'max:500'],
+            'effective_date' => ['nullable', 'date'],
         ];
 
         if ($shouldManageLoginSettings) {

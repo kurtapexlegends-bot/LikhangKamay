@@ -94,6 +94,16 @@ class HandleInertiaRequests extends Middleware
             'activeDisputesCount' => fn () => $user && $user->role === 'super_admin'
                 ? rescue(fn () => \App\Models\Dispute::where('status', 'escalated')->count(), 0, false)
                 : 0,
+            'pendingApprovalsCount' => fn () => $user ? rescue(function () use ($user) {
+                $seller = $user->getEffectiveSeller();
+                if (!$seller || !$seller->isArtisan()) {
+                    return 0;
+                }
+                if ($user->isStaff() && !$user->canEditSellerModule('overview')) {
+                    return 0;
+                }
+                return app(\App\Services\OwnerApprovalService::class)->getPendingCount($seller);
+            }, 0, false) : 0,
             
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

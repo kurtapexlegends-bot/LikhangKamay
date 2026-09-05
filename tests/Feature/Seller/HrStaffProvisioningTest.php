@@ -818,7 +818,15 @@ class HrStaffProvisioningTest extends TestCase
             'id' => $employee->id,
             'name' => 'Edited By HR',
             'role' => 'Payroll Assistant',
-            'salary' => 16250,
+            'salary' => 15000,
+        ]);
+        $this->assertDatabaseHas('owner_approvals', [
+            'seller_id' => $owner->id,
+            'requester_id' => $staff->id,
+            'domain' => \App\Models\OwnerApproval::DOMAIN_STAFF_RATE,
+            'approvable_type' => Employee::class,
+            'approvable_id' => $employee->id,
+            'status' => \App\Models\OwnerApproval::STATUS_PENDING,
         ]);
     }
 
