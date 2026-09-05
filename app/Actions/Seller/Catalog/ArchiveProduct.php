@@ -12,7 +12,15 @@ class ArchiveProduct
     public function execute(Product $product, int $sellerId): void
     {
         DB::transaction(function () use ($product, $sellerId) {
-            $product->update(['status' => 'Archived']);
+            $updateData = ['status' => 'Archived'];
+            if ($product->is_sponsored) {
+                $updateData['is_sponsored'] = false;
+                \App\Models\SponsorshipRequest::where('product_id', $product->id)
+                    ->where('status', 'approved')
+                    ->update(['status' => 'expired']);
+                \Illuminate\Support\Facades\Cache::forget('home_sponsored_products');
+            }
+            $product->update($updateData);
 
             SellerActivityLog::recordEvent([
                 'seller_owner_id' => $sellerId,

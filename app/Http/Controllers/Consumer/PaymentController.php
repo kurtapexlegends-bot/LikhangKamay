@@ -25,7 +25,9 @@ class PaymentController extends Controller
      */
     public function pay(Request $request, string $orderId)
     {
-        $order = Order::where('order_number', $orderId)
+        $order = Order::where(function ($q) use ($orderId) {
+                $q->where('order_number', $orderId)->orWhere('id', $orderId);
+            })
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -33,12 +35,14 @@ class PaymentController extends Controller
             return redirect()->back()->with('error', 'Online payments are currently disabled for maintenance. Please try again later or contact support.');
         }
 
+        $targetRoute = $this->resolveOrderDashboardRoute($order);
+
         if ($order->payment_status === 'paid') {
-            return redirect()->route('my-orders.index')->with('success', 'Order is already paid.');
+            return redirect()->route($targetRoute)->with('success', 'Order is already paid.');
         }
 
         if (!$this->canInitiateOnlinePayment($order)) {
-            return redirect()->route('my-orders.index')->with('error', 'This order is not eligible for online payment.');
+            return redirect()->route($targetRoute)->with('error', 'This order is not eligible for online payment.');
         }
 
         if ($order->total_amount < 20) {
@@ -255,8 +259,20 @@ class PaymentController extends Controller
      */
     public function cancel(Request $request)
     {
+        $orderNumber = $request->query('order_id');
+        $isB2B = false;
+        if ($orderNumber) {
+            $order = Order::where(function ($q) use ($orderNumber) {
+                $q->where('order_number', $orderNumber)->orWhere('id', $orderNumber);
+            })->first();
+            if ($order) {
+                $isB2B = $this->resolveOrderDashboardRoute($order) === 'seller.supply-hub.orders';
+            }
+        }
+
         if (Auth::check()) {
-            return redirect()->route('my-orders.index')->with('error', 'Payment was cancelled.');
+            $targetRoute = $isB2B ? 'seller.supply-hub.orders' : 'my-orders.index';
+            return redirect()->route($targetRoute)->with('error', 'Payment was cancelled.');
         }
 
         return redirect()->route('login')->with('status', 'Payment was cancelled. Sign in to continue with your order.');
@@ -269,10 +285,20 @@ class PaymentController extends Controller
             && $order->payment_status === 'pending';
     }
 
+    private function resolveOrderDashboardRoute(Order $order): string
+    {
+        $isB2B = $order->relationLoaded('items')
+            ? $order->items->contains('is_b2b_supply', true)
+            : $order->items()->where('is_b2b_supply', true)->exists();
+
+        return $isB2B ? 'seller.supply-hub.orders' : 'my-orders.index';
+    }
+
     private function redirectAfterPaymentResolution(Order $order, string $flashKey, string $ownerMessage, string $guestMessage)
     {
         if (Auth::id() === $order->user_id) {
-            return redirect()->route('my-orders.index')->with($flashKey, $ownerMessage);
+            $targetRoute = $this->resolveOrderDashboardRoute($order);
+            return redirect()->route($targetRoute)->with($flashKey, $ownerMessage);
         }
 
         if (!Auth::check()) {
