@@ -101,12 +101,13 @@ class B2BSupplyHubController extends Controller
         }
 
         $activeOrdersCount = Order::where('user_id', $actor->id)
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
             ->count();
 
         $wholesaleSalesCount = Order::where('artisan_id', $actor->id)
             ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
             ->count();
 
         $products = Product::where('user_id', $actor->id)
@@ -142,6 +143,7 @@ class B2BSupplyHubController extends Controller
             'availableCategories' => self::SUPPLY_CATEGORIES,
             'availableUnits' => self::SUPPLY_UNITS,
             'activeOrdersCount' => $activeOrdersCount,
+            'openOrdersCount' => $activeOrdersCount,
             'wholesaleSalesCount' => $wholesaleSalesCount,
         ]);
     }
@@ -227,7 +229,8 @@ class B2BSupplyHubController extends Controller
             ->count();
 
         $activeOrdersCount = Order::where('user_id', $actor->id)
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
             ->count();
 
         $cart = (array) Session::get('cart', []);
@@ -236,6 +239,7 @@ class B2BSupplyHubController extends Controller
             'cart' => $cart,
             'myPublishedCount' => $myPublishedCount,
             'activeOrdersCount' => $activeOrdersCount,
+            'openOrdersCount' => $activeOrdersCount,
             'pricing' => OrderFinanceService::getPricingData(),
         ]);
     }
@@ -263,7 +267,8 @@ class B2BSupplyHubController extends Controller
             ->count();
 
         $activeOrdersCount = Order::where('user_id', $actor->id)
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
             ->count();
 
         return Inertia::render('Seller/SupplyHub/ProcurementCheckout', [
@@ -271,6 +276,7 @@ class B2BSupplyHubController extends Controller
             'pricing' => OrderFinanceService::getPricingData(),
             'myPublishedCount' => $myPublishedCount,
             'activeOrdersCount' => $activeOrdersCount,
+            'openOrdersCount' => $activeOrdersCount,
             'userAddresses' => $actor->addresses,
         ]);
     }
@@ -398,6 +404,7 @@ class B2BSupplyHubController extends Controller
         $deliveredOrdersCount = (int) ($statusCounts->delivered_count ?? 0);
         $completedOrdersCount = (int) ($statusCounts->completed_count ?? 0);
         $cancelledOrdersCount = (int) ($statusCounts->cancelled_count ?? 0);
+        $openOrdersCount = $activeOrdersCount + $deliveredOrdersCount;
 
         $myPublishedCount = Product::where('user_id', $actor->id)
             ->where('is_b2b_supply', DB::raw('true'))
@@ -405,7 +412,7 @@ class B2BSupplyHubController extends Controller
 
         $wholesaleSalesCount = Order::where('artisan_id', $actor->id)
             ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
             ->count();
 
         return Inertia::render('Seller/SupplyHub/SourcingOrders', [
@@ -414,6 +421,7 @@ class B2BSupplyHubController extends Controller
             'deliveredOrdersCount' => $deliveredOrdersCount,
             'completedOrdersCount' => $completedOrdersCount,
             'cancelledOrdersCount' => $cancelledOrdersCount,
+            'openOrdersCount' => $openOrdersCount,
             'myPublishedCount' => $myPublishedCount,
             'wholesaleSalesCount' => $wholesaleSalesCount,
             'filters' => [
@@ -563,10 +571,15 @@ class B2BSupplyHubController extends Controller
 
         $inboundOrdersCount = Order::where('user_id', $actor->id)
             ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
             ->count();
 
-        $activeSalesCount = (int) (($statusCounts->pending_count ?? 0) + ($statusCounts->processing_count ?? 0) + ($statusCounts->shipped_count ?? 0));
+        $activeSalesCount = (int) (
+            ($statusCounts->pending_count ?? 0) +
+            ($statusCounts->processing_count ?? 0) +
+            ($statusCounts->shipped_count ?? 0) +
+            ($statusCounts->delivered_count ?? 0)
+        );
 
         return Inertia::render('Seller/SupplyHub/WholesaleSales', [
             'orders' => $orders,
@@ -579,6 +592,7 @@ class B2BSupplyHubController extends Controller
             'cancelledSalesCount' => (int) ($statusCounts->cancelled_count ?? 0),
             'myPublishedCount' => $myPublishedCount,
             'activeOrdersCount' => $inboundOrdersCount,
+            'openOrdersCount' => $inboundOrdersCount,
             'wholesaleSalesCount' => $activeSalesCount,
             'filters' => [
                 'search' => $search,

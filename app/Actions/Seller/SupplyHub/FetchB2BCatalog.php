@@ -206,12 +206,13 @@ class FetchB2BCatalog
             ->count(), 0);
 
         $activeOrdersCount = rescue(fn() => Order::where('user_id', $actor->id)
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
             ->count(), 0);
 
         $wholesaleSalesCount = rescue(fn() => Order::where('artisan_id', $actor->id)
             ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
             ->count(), 0);
 
         return [
@@ -222,6 +223,7 @@ class FetchB2BCatalog
             'locationCounts' => $locationCounts,
             'myPublishedCount' => $myPublishedCount,
             'activeOrdersCount' => $activeOrdersCount,
+            'openOrdersCount' => $activeOrdersCount,
             'wholesaleSalesCount' => $wholesaleSalesCount,
             'cart' => (array) Session::get('cart', []),
             'filters' => [

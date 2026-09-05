@@ -27,6 +27,7 @@ export default function WholesaleSales({
     cancelledSalesCount = 0,
     myPublishedCount = 0,
     activeOrdersCount = 0,
+    openOrdersCount,
     filters = {},
 }) {
     const { flash, cartCount = 0, sellerSidebar } = usePage().props;
@@ -34,6 +35,10 @@ export default function WholesaleSales({
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
     useFlashToast(flash, addToast);
+
+    const totalOpenInboundOrders = openOrdersCount !== undefined
+        ? Number(openOrdersCount)
+        : Number(activeOrdersCount || 0);
 
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [actionModal, setActionModal] = useState({ isOpen: false, order: null, nextStatus: '', trackingNumber: '', notes: '' });
@@ -194,9 +199,9 @@ export default function WholesaleSales({
                                 className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
                             >
                                 <span>Supplies Ordered</span>
-                                {activeOrdersCount > 0 && (
+                                {totalOpenInboundOrders > 0 && (
                                     <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-stone-200 text-stone-600">
-                                        {activeOrdersCount}
+                                        {totalOpenInboundOrders}
                                     </span>
                                 )}
                             </Link>

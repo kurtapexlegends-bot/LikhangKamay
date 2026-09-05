@@ -23,6 +23,7 @@ export default function SourcingOrders({
     deliveredOrdersCount = 0,
     completedOrdersCount = 0,
     cancelledOrdersCount = 0,
+    openOrdersCount,
     myPublishedCount = 0,
     wholesaleSalesCount = 0,
     filters = {},
@@ -31,6 +32,10 @@ export default function SourcingOrders({
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
     useFlashToast(flash, addToast);
+
+    const totalOpenOrders = openOrdersCount !== undefined
+        ? Number(openOrdersCount)
+        : (Number(activeOrdersCount || 0) + Number(deliveredOrdersCount || 0));
 
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, order: null });
@@ -193,9 +198,9 @@ export default function SourcingOrders({
                                 className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 bg-white text-clay-800 shadow-xs font-black"
                             >
                                 <span>Supplies Ordered</span>
-                                {activeOrdersCount > 0 && (
+                                {totalOpenOrders > 0 && (
                                     <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-clay-600 text-white">
-                                        {activeOrdersCount}
+                                        {totalOpenOrders}
                                     </span>
                                 )}
                             </Link>

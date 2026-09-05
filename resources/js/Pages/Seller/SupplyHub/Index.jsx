@@ -25,12 +25,17 @@ export default function Index({
     locationCounts = {},
     myPublishedCount = 0,
     activeOrdersCount = 0,
+    openOrdersCount,
     wholesaleSalesCount = 0,
     cart: initialCart = {},
     filters = {},
 }) {
     const { addToast } = useToast() || { addToast: () => {} };
     const { openSidebar } = useSellerWorkspaceShell();
+
+    const totalOpenOrders = openOrdersCount !== undefined
+        ? Number(openOrdersCount)
+        : Number(activeOrdersCount || 0);
 
     // Search input state
     const [searchInput, setSearchInput] = useState(filters.search || '');
@@ -166,9 +171,9 @@ export default function Index({
                                 className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 text-stone-500 hover:text-stone-800 font-semibold"
                             >
                                 <span>Supplies Ordered</span>
-                                {activeOrdersCount > 0 && (
+                                {totalOpenOrders > 0 && (
                                     <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-stone-200 text-stone-600">
-                                        {activeOrdersCount}
+                                        {totalOpenOrders}
                                     </span>
                                 )}
                             </Link>
@@ -179,7 +184,7 @@ export default function Index({
                             >
                                 <span>Supplies Sold</span>
                                 {wholesaleSalesCount > 0 && (
-                                    <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-clay-600 text-white">
+                                    <span className="px-1.5 py-0.2 text-[10px] rounded-full font-black bg-stone-200 text-stone-600">
                                         {wholesaleSalesCount}
                                     </span>
                                 )}

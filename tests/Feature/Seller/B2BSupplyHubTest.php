@@ -802,5 +802,70 @@ class B2BSupplyHubTest extends TestCase
             ->has('orders.data', 0)
         );
     }
+
+    public function test_sourcing_orders_accurately_counts_delivered_and_open_orders(): void
+    {
+        $deliveredOrder = Order::create([
+            'artisan_id' => $this->supplierArtisan->id,
+            'seller_id' => $this->supplierArtisan->id,
+            'user_id' => $this->buyerArtisan->id,
+            'order_number' => 'ORD-B2B-DELIVERED-COUNT-01',
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'status' => 'Delivered',
+            'total_amount' => 1400.00,
+            'merchandise_subtotal' => 1400.00,
+            'shipping_method' => 'Delivery',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $deliveredOrder->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => $this->b2bClaySack->name,
+            'price' => 350.00,
+            'cost' => 180.00,
+            'quantity' => 4,
+            'is_b2b_supply' => true,
+        ]);
+
+        $response = $this->actingAs($this->buyerArtisan)
+            ->get(route('seller.supply-hub.orders'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/SourcingOrders')
+            ->has('orders.data', 1)
+            ->where('activeOrdersCount', 0)
+            ->where('deliveredOrdersCount', 1)
+            ->where('openOrdersCount', 1)
+        );
+
+        $salesResponse = $this->actingAs($this->buyerArtisan)
+            ->get(route('seller.supply-hub.sales'));
+        $salesResponse->assertOk();
+        $salesResponse->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/WholesaleSales')
+            ->where('activeOrdersCount', 1)
+            ->where('openOrdersCount', 1)
+        );
+
+        $listingsResponse = $this->actingAs($this->buyerArtisan)
+            ->get(route('seller.supply-hub.my-listings'));
+        $listingsResponse->assertOk();
+        $listingsResponse->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/MyListings')
+            ->where('activeOrdersCount', 1)
+            ->where('openOrdersCount', 1)
+        );
+
+        $indexResponse = $this->actingAs($this->buyerArtisan)
+            ->get(route('seller.supply-hub.index'));
+        $indexResponse->assertOk();
+        $indexResponse->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/Index')
+            ->where('activeOrdersCount', 1)
+            ->where('openOrdersCount', 1)
+        );
+    }
 }
 
