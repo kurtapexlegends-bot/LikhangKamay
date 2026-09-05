@@ -80,7 +80,7 @@ class HandleInertiaRequests extends Middleware
             'cartCount' => fn () => (int) array_sum(array_column(Session::get('cart', []), 'qty')),
             
             // LAZY LOADED: Notifications list (only loaded when requested/dropdown is opened)
-            'notifications' => Inertia::lazy(fn () => $user ? rescue(fn () => $user->getNotificationsQuery()->latest()->take(10)->get()->map(fn ($n) => NotificationPresenter::present($n, $user)), [], false) : []),
+            'notifications' => Inertia::lazy(fn () => $user ? rescue(fn () => NotificationPresenter::presentCollection($user->getNotificationsQuery()->latest()->take(10)->get(), $user), [], false) : []),
             
             // Shared counts evaluated on initial page load (for real-time headers/sidebar)
             'unreadNotificationCount' => fn () => $user ? rescue(fn () => $user->getUnreadNotificationsQuery()->count(), 0, false) : 0,

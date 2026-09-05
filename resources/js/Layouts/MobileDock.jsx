@@ -1,19 +1,24 @@
+/* global route */
 import React, { useState } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { 
-    ShoppingBag, Search, ShoppingCart, User, Heart, Home, LogOut, Settings, Package, Clock, Edit2, Store, Shield, ShieldAlert, MapPin
+    ShoppingBag, Search, ShoppingCart, User, Heart, Home, LogOut, Settings, Package, Clock, Edit2, Store, Shield, ShieldAlert, MapPin, Bell
 } from 'lucide-react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import UserAvatar from '@/Components/UserAvatar';
 
 export default function MobileDock() {
     const { url } = usePage();
-    const { auth, cartCount, sellerSidebar } = usePage().props;
+    const { auth, cartCount, sellerSidebar, unreadNotificationCount } = usePage().props;
     const user = auth?.user;
     const [isAccountOpen, setIsAccountOpen] = useState(false);
     const [localCartCount, setLocalCartCount] = useState(() => {
         const cached = localStorage.getItem('lk_cart_count');
         return cached !== null ? parseInt(cached, 10) : (cartCount || 0);
+    });
+    const [localUnreadNotificationCount, setLocalUnreadNotificationCount] = useState(() => {
+        const cached = localStorage.getItem('lk_unread_notifications');
+        return cached !== null ? parseInt(cached, 10) : (unreadNotificationCount || 0);
     });
 
     React.useEffect(() => {
@@ -22,6 +27,13 @@ export default function MobileDock() {
             localStorage.setItem('lk_cart_count', cartCount);
         }
     }, [cartCount]);
+
+    React.useEffect(() => {
+        if (typeof unreadNotificationCount === 'number') {
+            setLocalUnreadNotificationCount(unreadNotificationCount);
+            localStorage.setItem('lk_unread_notifications', unreadNotificationCount);
+        }
+    }, [unreadNotificationCount]);
 
     const handleSearchClick = (e) => {
         e.preventDefault();
@@ -147,6 +159,17 @@ export default function MobileDock() {
                             {/* Section: Shopping */}
                             <div className="space-y-0.5">
                                 <p className="px-3 mb-1.5 text-[9px] font-black uppercase tracking-widest text-stone-400">Shopping</p>
+                                <MenuLink 
+                                    href={route('notifications.index')} 
+                                    icon={Bell} 
+                                    label="Notifications" 
+                                    onClick={() => setIsAccountOpen(false)}
+                                    badge={localUnreadNotificationCount > 0 ? (
+                                        <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-clay-500 px-1 text-[9px] font-bold text-white shadow-sm">
+                                            {localUnreadNotificationCount > 99 ? '99+' : localUnreadNotificationCount}
+                                        </span>
+                                    ) : null}
+                                />
                                 <MenuLink href={route('my-orders.index')} icon={Package} label="Purchases" onClick={() => setIsAccountOpen(false)} />
                                 <MenuLink href={route('saved.index')} icon={Heart} label="Saved Items" onClick={() => setIsAccountOpen(false)} />
                                 <MenuLink href={route('buyer.reviews')} icon={Edit2} label="My Reviews" onClick={() => setIsAccountOpen(false)} />
@@ -222,13 +245,16 @@ export default function MobileDock() {
     );
 }
 
-const MenuLink = ({ href, icon: Icon, label, onClick, className = "" }) => (
+const MenuLink = ({ href, icon: Icon, label, onClick, className = "", badge = null }) => (
     <Link 
         href={href} 
-        className={`flex items-center gap-3 px-3 py-2.5 text-xs font-black text-stone-600 hover:text-stone-950 hover:bg-white hover:shadow-sm rounded-xl transition-all border border-transparent hover:border-stone-200/50 ${className}`}
+        className={`flex items-center justify-between px-3 py-2.5 text-xs font-black text-stone-600 hover:text-stone-950 hover:bg-white hover:shadow-sm rounded-xl transition-all border border-transparent hover:border-stone-200/50 ${className}`}
         onClick={onClick}
     >
-        <Icon size={14} className="text-stone-400 shrink-0" />
-        {label}
+        <div className="flex items-center gap-3 min-w-0">
+            <Icon size={14} className="text-stone-400 shrink-0" />
+            <span className="truncate">{label}</span>
+        </div>
+        {badge}
     </Link>
 );

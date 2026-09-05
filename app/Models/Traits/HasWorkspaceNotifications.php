@@ -21,7 +21,7 @@ trait HasWorkspaceNotifications
             $ownerId = $this->getEffectiveSellerId();
             if ($ownerId && $ownerId !== $this->id) {
                 // Collect allowed notification types matching staff module access
-                $allowedTypes = ['general', 'team_message']; // Direct/team alerts are always allowed
+                $allowedTypes = ['general', 'team_message', 'team_channel_message', 'team_mention']; // Direct/team alerts are always allowed
                 
                 if ($this->canAccessSellerModule('orders')) {
                     $allowedTypes = array_merge($allowedTypes, [
@@ -42,6 +42,15 @@ trait HasWorkspaceNotifications
                 }
                 if ($this->canAccessSellerModule('messages')) {
                     $allowedTypes = array_merge($allowedTypes, ['new_message']);
+                }
+                if ($this->canAccessSellerModule('team_messages')) {
+                    $allowedTypes = array_merge($allowedTypes, ['team_message', 'team_channel_message', 'team_mention']);
+                }
+                if ($this->canAccessSellerModule('reviews')) {
+                    $allowedTypes = array_merge($allowedTypes, ['new_review', 'review_moderation_status']);
+                }
+                if ($this->canAccessSellerModule('hr')) {
+                    $allowedTypes = array_merge($allowedTypes, ['off_site_clock_in']);
                 }
 
                 $query->where(function ($q) use ($ownerId, $allowedTypes) {
@@ -220,19 +229,7 @@ trait HasWorkspaceNotifications
 
     public function notifySellerWorkspace($notification, ?string $requiredModule = null): void
     {
-        $this->notify($notification);
-
-        if ($this->isArtisan()) {
-            $staffUsers = \App\Models\User::query()
-                ->where('seller_owner_id', $this->id)
-                ->where('role', 'staff')
-                ->get();
-
-            foreach ($staffUsers as $staff) {
-                if (!$requiredModule || $staff->canAccessSellerModule($requiredModule)) {
-                    $staff->notify($notification);
-                }
-            }
-        }
+        $target = ($this->isStaff() && $this->sellerOwner) ? $this->sellerOwner : $this;
+        $target->notify($notification);
     }
 }

@@ -1,5 +1,6 @@
+/* global route */
 import React from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import SellerWorkspaceLayout from '@/Layouts/SellerWorkspaceLayout';
 import AdminLayout from '@/Layouts/AdminLayout';
@@ -14,7 +15,11 @@ export default function Notifications({ notifications = [], unreadNotificationCo
     const { auth } = usePage().props;
     const user = auth?.user;
 
-    const handleMarkAsRead = (id) => {
+    const handleMarkAsRead = (e, id) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         router.post(route('notifications.read', id), {}, { preserveScroll: true });
     };
 
@@ -86,9 +91,16 @@ export default function Notifications({ notifications = [], unreadNotificationCo
                     bgClass: 'bg-teal-50'
                 };
             case 'team_message':
+            case 'team_channel_message':
+            case 'team_mention':
                 return {
                     icon: <Users size={20} className="text-emerald-600" />,
                     bgClass: 'bg-emerald-50'
+                };
+            case 'off_site_clock_in':
+                return {
+                    icon: <Clock size={20} className="text-amber-600" />,
+                    bgClass: 'bg-amber-50'
                 };
             case 'delivery_update':
                 return {
@@ -122,6 +134,7 @@ export default function Notifications({ notifications = [], unreadNotificationCo
                 };
             case 'product_moderation':
             case 'dispute_escalated':
+            case 'disciplinary_action':
                 return {
                     icon: <ShieldAlert size={20} className="text-amber-600" />,
                     bgClass: 'bg-amber-50'
@@ -215,7 +228,7 @@ export default function Notifications({ notifications = [], unreadNotificationCo
                                     {/* Action Buttons */}
                                     <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
-                                            onClick={(e) => notification.read_at ? handleMarkAsUnread(e, notification.id) : handleMarkAsRead(notification.id)}
+                                            onClick={(e) => notification.read_at ? handleMarkAsUnread(e, notification.id) : handleMarkAsRead(e, notification.id)}
                                             className="p-1.5 rounded-lg border border-stone-200 bg-white text-stone-500 hover:text-clay-600 hover:bg-stone-50 transition shadow-sm"
                                             title={notification.read_at ? 'Mark as Unread' : 'Mark as Read'}
                                         >
@@ -242,7 +255,7 @@ export default function Notifications({ notifications = [], unreadNotificationCo
                 <div className="text-center py-20 bg-stone-50 rounded-2xl border border-dashed border-stone-200">
                     <Bell size={48} className="mx-auto text-stone-300 mb-4 opacity-40" />
                     <h3 className="text-stone-900 font-bold">No notifications yet</h3>
-                    <p className="text-stone-500 text-sm mt-1">We'll let you know when something important happens.</p>
+                    <p className="text-stone-500 text-sm mt-1">We&apos;ll let you know when something important happens.</p>
                 </div>
             )}
         </div>

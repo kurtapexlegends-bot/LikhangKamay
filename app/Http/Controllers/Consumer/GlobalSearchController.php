@@ -446,7 +446,7 @@ class GlobalSearchController extends Controller
             ],
             [
                 'keywords' => ['location', 'locations', 'workplace', 'workplace locations', 'geofence', 'gps', 'perimeter', 'strict block', 'clock in location', 'map', 'radius', 'soft audit'],
-                'title' => 'Workplace Locations & Geofence',
+                'title' => 'Workplace Store Locations & Boundaries',
                 'subtitle' => 'Define physical store/workshop GPS perimeters, Leaflet map coordinates, and clock-in rules',
                 'type' => 'Setting',
                 'url' => $shopSettingsUrl,
@@ -529,7 +529,7 @@ class GlobalSearchController extends Controller
             [
                 'keywords' => ['attendance', 'timecard', 'time card', 'clock in', 'clock out', 'selfie', 'off site'],
                 'title' => 'Time Card Audit & Attendance',
-                'subtitle' => 'Review staff clock-in records, selfie proofs, and geofence exceptions',
+                'subtitle' => 'Review staff clock-in records, selfie proofs, and store location exceptions',
                 'type' => 'Module',
                 'url' => $this->safeRoute('hr.index', ['tab' => 'timecard_audit']),
                 'icon' => 'clock',

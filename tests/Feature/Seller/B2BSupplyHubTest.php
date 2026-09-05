@@ -746,5 +746,61 @@ class B2BSupplyHubTest extends TestCase
             ->where('cancelledSalesCount', 1)
         );
     }
+
+    public function test_artisan_can_search_inbound_sourcing_orders_by_product_name_and_order_number(): void
+    {
+        $order = Order::create([
+            'artisan_id' => $this->supplierArtisan->id,
+            'seller_id' => $this->supplierArtisan->id,
+            'user_id' => $this->buyerArtisan->id,
+            'order_number' => 'ORD-B2B-SRC-888',
+            'customer_name' => $this->buyerArtisan->name,
+            'shipping_address' => 'Silang Studio, Cavite',
+            'status' => 'Pending',
+            'total_amount' => 700.00,
+            'merchandise_subtotal' => 700.00,
+            'shipping_method' => 'Delivery',
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $this->b2bClaySack->id,
+            'product_name' => 'Stoneware Moist Clay 25kg Sack',
+            'price' => 350.00,
+            'cost' => 180.00,
+            'quantity' => 2,
+            'is_b2b_supply' => true,
+        ]);
+
+        // Search by product_name
+        $response1 = $this->actingAs($this->buyerArtisan)
+            ->get(route('seller.supply-hub.orders', ['search' => 'Stoneware']));
+
+        $response1->assertOk();
+        $response1->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/SourcingOrders')
+            ->has('orders.data', 1)
+            ->where('orders.data.0.order_number', 'ORD-B2B-SRC-888')
+        );
+
+        // Search by order_number
+        $response2 = $this->actingAs($this->buyerArtisan)
+            ->get(route('seller.supply-hub.orders', ['search' => 'SRC-888']));
+
+        $response2->assertOk();
+        $response2->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/SourcingOrders')
+            ->has('orders.data', 1)
+        );
+
+        // Search for non-existent term
+        $response3 = $this->actingAs($this->buyerArtisan)
+            ->get(route('seller.supply-hub.orders', ['search' => 'NonExistentItem']));
+
+        $response3->assertOk();
+        $response3->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/SourcingOrders')
+            ->has('orders.data', 0)
+        );
+    }
 }
 

@@ -18,11 +18,11 @@ const matchesNotificationFilter = (notification, filterKey) => {
     }
 
     if (filterKey === 'messages') {
-        return ['new_message', 'team_message'].includes(notification.type);
+        return ['new_message', 'team_message', 'team_channel_message', 'team_mention'].includes(notification.type);
     }
 
     if (filterKey === 'attention') {
-        return ['low_stock', 'low_stock_warning', 'supply_depleted', 'accounting_rejected', 'accounting_request', 'artisan_application', 'sponsorship_status', 'review_moderation_status', 'refund_request', 'shipment_deadline', 'product_moderation', 'new_review', 'dispute_escalated', 'dispute_accepted', 'dispute_replacement_proposed', 'dispute_rejected', 'dispute_arbitrated_refund', 'dispute_arbitrated_rejected'].includes(notification.type);
+        return ['low_stock', 'low_stock_warning', 'supply_depleted', 'accounting_rejected', 'accounting_request', 'artisan_application', 'sponsorship_status', 'review_moderation_status', 'refund_request', 'shipment_deadline', 'product_moderation', 'new_review', 'dispute_escalated', 'dispute_accepted', 'dispute_replacement_proposed', 'dispute_rejected', 'dispute_arbitrated_refund', 'dispute_arbitrated_rejected', 'disciplinary_action', 'off_site_clock_in'].includes(notification.type);
     }
 
     return true;
@@ -176,6 +176,8 @@ export default function NotificationDropdown() {
                     bgClass: 'bg-teal-50'
                 };
             case 'team_message':
+            case 'team_channel_message':
+            case 'team_mention':
                 return {
                     icon: <Users size={16} className="text-emerald-600" />,
                     bgClass: 'bg-emerald-50'
@@ -212,8 +214,14 @@ export default function NotificationDropdown() {
                 };
             case 'product_moderation':
             case 'dispute_escalated':
+            case 'disciplinary_action':
                 return {
                     icon: <ShieldAlert size={16} className="text-amber-600" />,
+                    bgClass: 'bg-amber-50'
+                };
+            case 'off_site_clock_in':
+                return {
+                    icon: <Clock size={16} className="text-amber-600" />,
                     bgClass: 'bg-amber-50'
                 };
             case 'dispute_rejected':
@@ -401,7 +409,15 @@ export default function NotificationDropdown() {
                                     {activeMenu === notification.id && (
                                         <div className="absolute top-10 right-2 z-10 w-32 rounded-lg border border-stone-200 bg-white shadow-lg py-1 animate-in fade-in zoom-in-95 duration-100 md:top-8">
                                             <button
-                                                onClick={(e) => notification.read_at ? handleMarkAsUnread(e, notification.id) : handleMarkAsRead(notification.id, null, false)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setActiveMenu(null);
+                                                    if (notification.read_at) {
+                                                        handleMarkAsUnread(e, notification.id);
+                                                    } else {
+                                                        handleMarkAsRead(notification.id, null, false);
+                                                    }
+                                                }}
                                                 className="flex w-full items-center gap-2 px-3 py-3 md:py-2 text-left text-xs text-gray-700 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 min-h-[44px] md:min-h-0"
                                             >
                                                 {notification.read_at ? <Mail size={12} /> : <MailOpen size={12} />}

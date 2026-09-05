@@ -140,7 +140,7 @@ export default function GlobalSearch() {
             { label: 'Go to Materials Inventory & Supplies', cmd: '> inventory', url: getSafeRoute('procurement.index'), icon: Box, color: 'text-blue-600 bg-blue-50', module: 'procurement' },
             { label: 'Go to Stock Requests Queue', cmd: '> stock-requests', url: getSafeRoute('stock-requests.index'), icon: ClipboardList, color: 'text-clay-600 bg-clay-50', module: 'stock_requests' },
             { label: 'Go to Customer Reviews & Feedback', cmd: '> reviews', url: getSafeRoute('reviews.index'), icon: Star, color: 'text-amber-600 bg-amber-50', module: 'reviews' },
-            { label: 'Go to Team Messages & Channels', cmd: '> team-messages', url: getSafeRoute('team-messages.index'), icon: MessageSquare, color: 'text-sky-600 bg-sky-50', module: 'crm' },
+            { label: 'Go to Team Messages & Channels', cmd: '> team-messages', url: getSafeRoute('team-messages.index'), icon: MessageSquare, color: 'text-sky-600 bg-sky-50', module: 'team_messages' },
             { label: 'Go to Sponsorship Campaigns', cmd: '> sponsorships', url: getSafeRoute('seller.sponsorships'), icon: Award, color: 'text-indigo-600 bg-indigo-50', module: 'sponsorships', ownerOnly: true },
             { label: 'Go to HR Employee Directory', cmd: '> hr', url: getSafeRoute('hr.index'), icon: Users, color: 'text-purple-600 bg-purple-50', module: 'hr' },
             { label: 'Go to Attendance & Time Card Audit', cmd: '> attendance', url: getSafeRoute('hr.index', { tab: 'timecard_audit' }), icon: Clock, color: 'text-purple-600 bg-purple-50', module: 'hr' },

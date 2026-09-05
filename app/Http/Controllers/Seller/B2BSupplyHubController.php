@@ -322,7 +322,7 @@ class B2BSupplyHubController extends Controller
             $query->where(function ($q) use ($search, $like) {
                 $q->where('order_number', $like, "%{$search}%")
                   ->orWhereHas('items', function ($iq) use ($search, $like) {
-                      $iq->where('name', $like, "%{$search}%");
+                      $iq->where('product_name', $like, "%{$search}%");
                   });
             });
         }

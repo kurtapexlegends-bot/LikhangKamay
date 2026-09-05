@@ -8,7 +8,7 @@ import SellerWorkspaceLayout, { useSellerWorkspaceShell } from "@/Layouts/Seller
 import SellerHeader from "@/Layouts/SellerHeader";
 import useSellerModuleAccess from "@/hooks/useSellerModuleAccess";
 import WorkspaceEmptyState from "@/Components/WorkspaceEmptyState";
-import { Printer, LoaderCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Printer, LoaderCircle, AlertTriangle, CheckCircle2, Box } from "lucide-react";
 import { useToast } from "@/Components/ToastContext";
 import useFlashToast from "@/hooks/useFlashToast";
 import CompactPagination from "@/Components/CompactPagination";
@@ -40,23 +40,24 @@ const readStoredOrderManagerView = () => {
     } catch { return null; }
 };
 
-export default function OrderManager({ auth, orders = [], tabCounts }) {
+export default function OrderManager({ auth, orders = [], tabCounts, filters: propFilters }) {
     const { addToast } = useToast();
     const paginatedOrders = Array.isArray(orders) ? orders : (orders?.data || []);
     const { openSidebar } = useSellerWorkspaceShell();
     const storedView = readStoredOrderManagerView();
-    const { flash, sellerSidebar, filters = {} } = usePage().props;
+    const { flash, sellerSidebar, filters: pageFilters = {} } = usePage().props;
+    const filters = propFilters || pageFilters || {};
     const canAccessMessages = sellerSidebar?.visibleModules?.includes("messages");
     const { canEdit: canEditOrders, isReadOnly: isOrdersReadOnly } = useSellerModuleAccess("orders");
 
     // Filters and toggles
     const [activeTab, setActiveTab] = useState(storedView?.activeTab || "All");
-    const [searchQuery, setSearchQuery] = useState(filters.search || storedView?.searchQuery || "");
+    const [searchQuery, setSearchQuery] = useState(filters?.search || storedView?.searchQuery || "");
     const [quickFilter, setQuickFilter] = useState(storedView?.quickFilter || "all");
-    const [dateRange, setDateRange] = useState(storedView?.dateRange || { start: filters.start_date || "", end: filters.end_date || "" });
-    const [paymentMethod, setPaymentMethod] = useState(filters.payment_method || "all");
-    const [fulfillmentType, setFulfillmentType] = useState(filters.fulfillment_type || "all");
-    const [flaggedOnly, setFlaggedOnly] = useState(filters.flagged || "all");
+    const [dateRange, setDateRange] = useState(storedView?.dateRange || { start: filters?.start_date || "", end: filters?.end_date || "" });
+    const [paymentMethod, setPaymentMethod] = useState(filters?.payment_method || "all");
+    const [fulfillmentType, setFulfillmentType] = useState(filters?.fulfillment_type || "all");
+    const [flaggedOnly, setFlaggedOnly] = useState(filters?.flagged || "all");
     const currentPage = orders.current_page || 1;
     const [selectedOrderIds, setSelectedOrderIds] = useState([]);
     const [dispatchModal, setDispatchModal] = useState({ isOpen: false, order: null });
@@ -73,6 +74,14 @@ export default function OrderManager({ auth, orders = [], tabCounts }) {
         const timer = setTimeout(() => setShouldAnimateKPI(false), 2000);
         return () => clearTimeout(timer);
     }, []);
+
+    const prevSearchProp = React.useRef(filters?.search);
+    useEffect(() => {
+        if (prevSearchProp.current !== filters?.search) {
+            prevSearchProp.current = filters?.search;
+            setSearchQuery(filters?.search || "");
+        }
+    }, [filters?.search]);
 
     useEffect(() => {
         const handleResize = () => {

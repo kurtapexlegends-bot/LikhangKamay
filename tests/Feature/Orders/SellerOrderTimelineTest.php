@@ -112,4 +112,64 @@ class SellerOrderTimelineTest extends TestCase
                 })
         );
     }
+
+    public function test_seller_orders_can_be_filtered_by_payment_method_case_insensitively(): void
+    {
+        $seller = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'premium',
+        ]);
+
+        $buyer = User::factory()->create([
+            'role' => 'buyer',
+            'name' => 'Buyer Filter',
+        ]);
+
+        $order1 = Order::create([
+            'seller_id' => $seller->id,
+            'artisan_id' => $seller->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-PM-001',
+            'customer_name' => 'Buyer Filter',
+            'payment_method' => 'GCash',
+            'payment_status' => 'paid',
+            'status' => 'Pending',
+            'total_amount' => 500,
+            'shipping_method' => 'Delivery',
+            'shipping_address' => 'Cavite',
+        ]);
+
+        $order2 = Order::create([
+            'seller_id' => $seller->id,
+            'artisan_id' => $seller->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-PM-002',
+            'customer_name' => 'Buyer Filter',
+            'payment_method' => 'COD',
+            'payment_status' => 'unpaid',
+            'status' => 'Pending',
+            'total_amount' => 300,
+            'shipping_method' => 'Delivery',
+            'shipping_address' => 'Cavite',
+        ]);
+
+        $response = $this->actingAs($seller)->get(route('orders.index', ['payment_method' => 'paymongo']));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn (Assert $page) => $page
+                ->component('Seller/Orders/OrderManager')
+                ->has('orders.data', 1)
+                ->where('orders.data.0.id', 'ORD-PM-001')
+        );
+
+        $responseManual = $this->actingAs($seller)->get(route('orders.index', ['payment_method' => 'manual']));
+
+        $responseManual->assertOk();
+        $responseManual->assertInertia(
+            fn (Assert $page) => $page
+                ->component('Seller/Orders/OrderManager')
+                ->has('orders.data', 1)
+                ->where('orders.data.0.id', 'ORD-PM-002')
+        );
+    }
 }

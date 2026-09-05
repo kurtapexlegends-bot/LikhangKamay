@@ -50,8 +50,29 @@ class UserDisciplinaryNotification extends Notification implements ShouldQueue
 
     public function toArray(object $notifiable): array
     {
+        $actionTitle = match ($this->actionType) {
+            'warning' => 'Important Policy Notice',
+            'suspension' => "Temporary Account Suspension" . ($this->days ? " ({$this->days} Days)" : ""),
+            'ban' => 'Account Deactivation Notice',
+            'lift_suspension' => 'Account Suspension Lifted',
+            'unban' => 'Account Reinstated',
+            default => 'Account Status Update',
+        };
+
+        $actionMessage = match ($this->actionType) {
+            'warning' => "You have received an official policy warning: {$this->reason}",
+            'suspension' => "Your account has been suspended" . ($this->days ? " for {$this->days} days" : "") . ". Reason: {$this->reason}",
+            'ban' => "Your account has been deactivated. Reason: {$this->reason}",
+            'lift_suspension' => "Your account suspension has been lifted. Reason: {$this->reason}",
+            'unban' => "Your account has been reinstated. Reason: {$this->reason}",
+            default => "Account status update: {$this->reason}",
+        };
+
         return [
             'type' => 'disciplinary_action',
+            'title' => $actionTitle,
+            'message' => $actionMessage,
+            'url' => route('profile.edit'),
             'action_type' => $this->actionType,
             'reason' => $this->reason,
             'days' => $this->days,

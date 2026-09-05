@@ -28,7 +28,7 @@ class OffSiteClockInNotification extends Notification
         return [
             'type' => 'off_site_clock_in',
             'title' => 'Off-Site Clock-In Flagged',
-            'message' => "{$this->staffName} clocked in {$this->distanceMeters}m outside {$this->locationName} geofence perimeter.",
+            'message' => "{$this->staffName} clocked in {$this->distanceMeters}m outside {$this->locationName} store location boundary.",
             'session_id' => $this->session->id,
             'employee_id' => $this->session->employee_id,
             'distance_meters' => $this->distanceMeters,

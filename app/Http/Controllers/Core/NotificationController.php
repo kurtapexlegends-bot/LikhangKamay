@@ -19,8 +19,9 @@ class NotificationController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
         
-        $notifications = $user->getNotificationsQuery()->latest()->take(30)->get()->map(
-            fn ($notification) => NotificationPresenter::present($notification, $user)
+        $notifications = NotificationPresenter::presentCollection(
+            $user->getNotificationsQuery()->latest()->take(30)->get(),
+            $user
         );
         $unreadCount = $user->getUnreadNotificationsQuery()->count();
 

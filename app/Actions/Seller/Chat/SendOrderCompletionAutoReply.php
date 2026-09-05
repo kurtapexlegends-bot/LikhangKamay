@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Notifications\NewMessageNotification;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class SendOrderCompletionAutoReply
 {
@@ -54,11 +55,12 @@ class SendOrderCompletionAutoReply
         }
 
         // Check if a completion message with order reference already exists
+        $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
         $existingMessage = Message::query()
             ->where('sender_id', $seller->id)
             ->where('receiver_id', $order->user_id)
-            ->where('message', 'like', "%#{$order->order_number}%")
-            ->where('message', 'like', "%complete%")
+            ->where('message', $like, "%#{$order->order_number}%")
+            ->where('message', $like, "%complete%")
             ->first();
 
         if ($existingMessage) {

@@ -41,6 +41,7 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
     const deferredSearch = useDeferredValue(search);
 
     const searchTimeoutRef = useRef(null);
+    const prevSearchProp = useRef(filters?.search);
 
     useEffect(() => {
         const visibleRowIds = new Set((users?.data || []).map((account) => String(account.id)));
@@ -48,15 +49,22 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
             const nextRows = Object.fromEntries(
                 Object.entries(currentRows).filter(([accountId]) => visibleRowIds.has(accountId))
             );
-            if (filters.search) {
+            if (filters?.search) {
                 return {
                     ...nextRows,
-                    ...getAutoExpandedRows(users.data || []),
+                    ...getAutoExpandedRows(users?.data || []),
                 };
             }
             return nextRows;
         });
-    }, [filters.search, users.data]);
+    }, [filters?.search, users?.data]);
+
+    useEffect(() => {
+        if (prevSearchProp.current !== filters?.search) {
+            prevSearchProp.current = filters?.search;
+            setSearch(filters?.search || '');
+        }
+    }, [filters?.search]);
 
     const executeSearch = (searchTerm) => {
         router.get(

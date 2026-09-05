@@ -8,17 +8,56 @@ use Illuminate\Notifications\DatabaseNotification;
 class NotificationPresenter
 {
     /**
+     * Present a collection of notifications bulk-fetching user notification states in a single query.
+     *
+     * @param iterable<DatabaseNotification> $notifications
+     * @param User|null $user
+     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     */
+    public static function presentCollection(iterable $notifications, ?User $user): \Illuminate\Support\Collection
+    {
+        $collection = collect($notifications);
+        if ($collection->isEmpty()) {
+            return collect();
+        }
+
+        $userStates = collect();
+        if ($user) {
+            $notificationIds = $collection->map(fn ($n) => (string) $n->id)->filter()->all();
+            if (!empty($notificationIds)) {
+                $userStates = \App\Models\UserNotificationState::where('user_id', $user->id)
+                    ->whereIn('notification_id', $notificationIds)
+                    ->get()
+                    ->keyBy(fn ($state) => (string) $state->notification_id);
+            }
+        }
+
+        return $collection->map(
+            fn (DatabaseNotification $notification) => self::present(
+                $notification,
+                $user,
+                $userStates->get((string) $notification->id)
+            )
+        );
+    }
+
+    /**
+     * @param DatabaseNotification $notification
+     * @param User|null $user
+     * @param \App\Models\UserNotificationState|null|false $userState
      * @return array<string, mixed>
      */
-    public static function present(DatabaseNotification $notification, ?User $user): array
+    public static function present(DatabaseNotification $notification, ?User $user, $userState = false): array
     {
         $data = $notification->data ?? [];
 
         $readAt = $notification->read_at;
         if ($user) {
-            $userState = \App\Models\UserNotificationState::where('user_id', $user->id)
-                ->where('notification_id', $notification->id)
-                ->first();
+            if ($userState === false) {
+                $userState = \App\Models\UserNotificationState::where('user_id', $user->id)
+                    ->where('notification_id', $notification->id)
+                    ->first();
+            }
 
             if ($userState) {
                 $readAt = $userState->read_at;
@@ -52,7 +91,7 @@ class NotificationPresenter
 
         return match ($type) {
             'new_message' => self::resolveBuyerSellerChatUrl($data, $user),
-            'team_message' => self::resolveTeamMessageUrl($data),
+            'team_message', 'team_channel_message', 'team_mention' => self::resolveTeamMessageUrl($data),
             'new_order' => route('orders.index'),
             'new_review' => route('reviews.index'),
             'low_stock' => route('products.index'),
@@ -64,6 +103,7 @@ class NotificationPresenter
             'refund_request' => route('orders.index'),
             'shipment_deadline' => route('orders.index'),
             'supply_depleted' => route('procurement.index'),
+            'disciplinary_action' => route('profile.edit'),
             default => $data['url'] ?? null,
         };
     }
@@ -95,10 +135,18 @@ class NotificationPresenter
      */
     private static function resolveTeamMessageUrl(array $data): ?string
     {
+        if (!empty($data['url'])) {
+            return $data['url'];
+        }
+
+        if (!empty($data['team_channel_id'])) {
+            return route('team-messages.index', ['channel_id' => (int) $data['team_channel_id']]);
+        }
+
         $senderId = isset($data['sender_id']) ? (int) $data['sender_id'] : null;
 
         if (!$senderId) {
-            return $data['url'] ?? null;
+            return null;
         }
 
         return route('team-messages.index', ['user_id' => $senderId]);

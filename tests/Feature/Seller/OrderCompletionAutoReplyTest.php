@@ -161,4 +161,42 @@ class OrderCompletionAutoReplyTest extends TestCase
             'receiver_id' => $buyer->id,
         ]);
     }
+
+    public function test_case_insensitive_matching_prevents_duplicate_auto_reply_for_completed_order(): void
+    {
+        $seller = User::factory()->create([
+            'role' => 'artisan',
+            'premium_tier' => 'premium',
+            'auto_reply_on_completion' => true,
+        ]);
+
+        $buyer = User::factory()->create(['role' => 'customer']);
+
+        $order = Order::create([
+            'seller_id' => $seller->id,
+            'artisan_id' => $seller->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-CASE-999',
+            'status' => 'Completed',
+            'total_amount' => 500,
+            'payment_method' => 'GCash',
+            'payment_status' => 'paid',
+            'shipping_method' => 'Delivery',
+            'customer_name' => 'Maria Santos',
+            'customer_email' => $buyer->email,
+            'shipping_address' => 'Manila',
+        ]);
+
+        Message::create([
+            'sender_id' => $seller->id,
+            'receiver_id' => $buyer->id,
+            'message' => 'Thank you! Order #ORD-CASE-999 is COMPLETED.',
+        ]);
+
+        $action = new SendOrderCompletionAutoReply();
+        $result = $action->execute($order);
+
+        $this->assertNull($result);
+        $this->assertEquals(1, Message::where('receiver_id', $buyer->id)->count());
+    }
 }

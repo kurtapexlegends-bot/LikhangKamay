@@ -141,23 +141,23 @@ class ListSellerOrders
         if (!empty($filters['payment_method']) && $filters['payment_method'] !== 'all') {
             $pm = strtolower($filters['payment_method']);
             if ($pm === 'paymongo') {
-                $query->where(function ($q) {
-                    $q->where('payment_method', 'like', '%paymongo%')
-                      ->orWhere('payment_method', 'like', '%e-wallet%')
-                      ->orWhere('payment_method', 'like', '%gcash%')
-                      ->orWhere('payment_method', 'like', '%maya%');
+                $query->where(function ($q) use ($like) {
+                    $q->where('payment_method', $like, '%paymongo%')
+                      ->orWhere('payment_method', $like, '%e-wallet%')
+                      ->orWhere('payment_method', $like, '%gcash%')
+                      ->orWhere('payment_method', $like, '%maya%');
                 });
             } elseif ($pm === 'card') {
-                $query->where(function ($q) {
-                    $q->where('payment_method', 'like', '%card%')
-                      ->orWhere('payment_method', 'like', '%credit%')
-                      ->orWhere('payment_method', 'like', '%debit%');
+                $query->where(function ($q) use ($like) {
+                    $q->where('payment_method', $like, '%card%')
+                      ->orWhere('payment_method', $like, '%credit%')
+                      ->orWhere('payment_method', $like, '%debit%');
                 });
             } elseif ($pm === 'manual') {
-                $query->where(function ($q) {
-                    $q->where('payment_method', 'like', '%manual%')
-                      ->orWhere('payment_method', 'like', '%cod%')
-                      ->orWhere('payment_method', 'like', '%bank%');
+                $query->where(function ($q) use ($like) {
+                    $q->where('payment_method', $like, '%manual%')
+                      ->orWhere('payment_method', $like, '%cod%')
+                      ->orWhere('payment_method', $like, '%bank%');
                 });
             }
         }
