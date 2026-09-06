@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { Search, X, Pencil, Trash2, UserX, UserCheck, UserPlus, CalendarDays, Users, SlidersHorizontal, Filter, RotateCcw, ChevronDown, Calendar, Clock3 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
@@ -202,13 +202,13 @@ export default function StaffTable({
         setDraftEndDate('');
     };
 
-    const handleClearFilters = () => {
+    const handleClearFilters = useCallback(() => {
         setSearchTerm('');
         setStatusFilter('all');
         setEntitlementFilter('all');
         setStartDateFilter('');
         setEndDateFilter('');
-    };
+    }, [setSearchTerm, setStatusFilter, setEntitlementFilter, setStartDateFilter, setEndDateFilter]);
 
     const filteredStaff = useMemo(() => {
         if (!Array.isArray(staff) || staff.length === 0) return [];
@@ -297,7 +297,7 @@ export default function StaffTable({
             actionLabel: canEditHrRecords && onAddClick ? 'Add Employee' : undefined,
             onAction: canEditHrRecords && onAddClick ? onAddClick : undefined,
         };
-    }, [hasActiveFilters, canEditHrRecords, onAddClick]);
+    }, [hasActiveFilters, canEditHrRecords, onAddClick, handleClearFilters]);
 
     const filterFieldsGrid = (
         <div className="space-y-3 text-left">

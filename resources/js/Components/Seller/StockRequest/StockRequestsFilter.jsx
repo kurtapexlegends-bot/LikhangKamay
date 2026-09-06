@@ -10,18 +10,20 @@ export default function StockRequestsFilter({
     setSearchTerm,
     filteredCount
 }) {
-    const getCount = (status) => {
-        if (status === 'all') return requests.length;
-        if (status === 'pending') return requests.filter(r => r.status === 'pending').length;
-        return requests.filter(r => r.status === status).length;
-    };
-
     const tabs = useMemo(() => {
-        return STATUS_TABS.map(tab => ({
-            key: tab.id,
-            label: tab.label,
-            count: getCount(tab.id)
-        }));
+        return STATUS_TABS.map(tab => {
+            let count = requests.length;
+            if (tab.id === 'pending') {
+                count = requests.filter(r => r.status === 'pending').length;
+            } else if (tab.id !== 'all') {
+                count = requests.filter(r => r.status === tab.id).length;
+            }
+            return {
+                key: tab.id,
+                label: tab.label,
+                count,
+            };
+        });
     }, [requests]);
 
     return (

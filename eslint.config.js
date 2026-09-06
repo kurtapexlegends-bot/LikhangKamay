@@ -51,6 +51,25 @@ export default [
             ...reactHooks.configs.recommended.rules,
             "react/react-in-jsx-scope": "off", // Not needed with React 17+
             "react/prop-types": "off",          // Skip prop-types enforcement
+            "react/no-unescaped-entities": "off", // Modern JSX handles quotes and apostrophes cleanly
+            "react/no-unknown-property": [
+                "error",
+                {
+                    ignore: [
+                        "scroll-region",
+                        "directory",
+                        "webkitdirectory",
+                        "args",
+                        "roughness",
+                        "metalness",
+                        "dispose",
+                        "object",
+                        "position",
+                        "rotation",
+                        "wireframe",
+                    ],
+                },
+            ],
             "react-hooks/set-state-in-effect": "warn",
             "no-unused-vars": "warn",
             "no-undef": "warn",

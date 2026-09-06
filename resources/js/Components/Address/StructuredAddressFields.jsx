@@ -31,18 +31,19 @@ export default function StructuredAddressFields({
     postalCodeRef = null,
     regionRef = null,
 }) {
-    const field = (name) => fieldNames[name] || `${prefix}${name}`;
-    const rawValue = (name) => data[field(name)] ?? '';
+    const field = useCallback((name) => fieldNames[name] || `${prefix}${name}`, [fieldNames, prefix]);
+    const rawValue = useCallback((name) => data[field(name)] ?? '', [data, field]);
+    const cityValue = data[field('city')];
 
     // Match canonical Cavite city from options if value exists
     const matchedCity = useMemo(() => {
-        const current = normalizeValue(rawValue('city'));
+        const current = normalizeValue(cityValue ?? '');
         if (!current) return '';
         const found = CAVITE_CITY_OPTIONS.find(
             (opt) => normalizeValue(opt) === current || normalizeValue(opt).replace(/\s+city$/i, '') === current.replace(/\s+city$/i, '')
         );
-        return found || rawValue('city');
-    }, [data[field('city')]]);
+        return found || (cityValue ?? '');
+    }, [cityValue]);
 
     const currentBarangays = useMemo(
         () => getCaviteBarangaysForCity(matchedCity),
@@ -54,11 +55,11 @@ export default function StructuredAddressFields({
             formatStructuredAddress({
                 street_address: rawValue('street_address'),
                 barangay: rawValue('barangay'),
-                city: matchedCity || rawValue('city'),
+                city: matchedCity || cityValue || '',
                 region: CAVITE_REGION,
                 postal_code: rawValue('postal_code'),
             }),
-        [data, prefix, matchedCity],
+        [rawValue, matchedCity, cityValue],
     );
 
     // Ensure region is always set to Cavite

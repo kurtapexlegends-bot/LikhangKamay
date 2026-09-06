@@ -54,7 +54,7 @@ export default function useProductFiltersState({
 
     const updateFilters = (newFilters) => {
         const queryParams = {
-            search: newFilters.hasOwnProperty('search') ? newFilters.search : searchQuery,
+            search: Object.prototype.hasOwnProperty.call(newFilters, 'search') ? newFilters.search : searchQuery,
             status: activeTab,
             sort_key: sortConfig.key,
             sort_dir: sortConfig.direction,

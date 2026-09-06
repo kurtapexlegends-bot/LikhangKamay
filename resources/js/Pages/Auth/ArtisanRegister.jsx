@@ -152,10 +152,10 @@ export default function ArtisanRegister() {
         post(route('register')); 
     };
 
-    const handleKeyDown = (nextRef) => (e) => {
+    const handleKeyDown = (e, nextRef) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            nextRef.current?.focus();
+            nextRef?.current?.focus();
         }
     };
 
@@ -286,7 +286,7 @@ export default function ArtisanRegister() {
                                 autoComplete="given-name"
                                 isFocused={true}
                                 onChange={(e) => setData('first_name', e.target.value)}
-                                onKeyDown={handleKeyDown(lastNameRef)}
+                                onKeyDown={(e) => handleKeyDown(e, lastNameRef)}
                                 hasError={!!errors.first_name}
                                 required
                                 floatingLabel="First Name"
@@ -304,7 +304,7 @@ export default function ArtisanRegister() {
                                 className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                                 autoComplete="family-name"
                                 onChange={(e) => setData('last_name', e.target.value)}
-                                onKeyDown={handleKeyDown(shopNameRef)}
+                                onKeyDown={(e) => handleKeyDown(e, shopNameRef)}
                                 hasError={!!errors.last_name}
                                 floatingLabel="Last Name"
                                 icon={User}
@@ -323,7 +323,7 @@ export default function ArtisanRegister() {
                             className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                             autoComplete="organization"
                             onChange={(e) => setData('shop_name', e.target.value)}
-                            onKeyDown={handleKeyDown(emailRef)}
+                            onKeyDown={(e) => handleKeyDown(e, emailRef)}
                             hasError={!!errors.shop_name}
                             required
                             floatingLabel="Shop Name"
@@ -357,7 +357,7 @@ export default function ArtisanRegister() {
                             className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                             autoComplete="username"
                             onChange={(e) => setData('email', e.target.value)}
-                            onKeyDown={handleKeyDown(passwordRef)}
+                            onKeyDown={(e) => handleKeyDown(e, passwordRef)}
                             hasError={!!errors.email}
                             required
                             floatingLabel="Business Email"
@@ -395,7 +395,7 @@ export default function ArtisanRegister() {
                                     setData('password', e.target.value);
                                     if (errors.password) clearErrors('password');
                                 }}
-                                onKeyDown={handleKeyDown(confirmPasswordRef)}
+                                onKeyDown={(e) => handleKeyDown(e, confirmPasswordRef)}
                                 hasError={!!errors.password}
                                 required
                                 floatingLabel="Password"

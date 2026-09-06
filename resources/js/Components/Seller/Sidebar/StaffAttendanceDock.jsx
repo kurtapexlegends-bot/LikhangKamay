@@ -1,7 +1,8 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, Suspense, lazy } from 'react';
 import { Clock3, ChevronRight, PauseCircle, PlayCircle, ShieldCheck } from 'lucide-react';
-import StaffClockInModal from '@/Components/Staff/Dashboard/StaffClockInModal';
 import StaffLogoutModal from '@/Components/StaffLogoutModal';
+
+const StaffClockInModal = lazy(() => import('@/Components/Staff/Dashboard/StaffClockInModal'));
 
 const formatElapsedTimer = (startedAt, currentTimestamp) => {
     if (!startedAt) return null;
@@ -32,9 +33,15 @@ function StaffAttendanceDock({ attendance, isCollapsed = false, onMouseEnter, on
     const [isClockInModalOpen, setIsClockInModalOpen] = useState(false);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-    const serverOffsetMs = React.useMemo(() => {
+    const [serverOffsetMs, setServerOffsetMs] = useState(() => {
         if (!attendance?.server_timestamp) return 0;
         return (attendance.server_timestamp * 1000) - Date.now();
+    });
+
+    useEffect(() => {
+        if (attendance?.server_timestamp) {
+            setServerOffsetMs((attendance.server_timestamp * 1000) - Date.now());
+        }
     }, [attendance?.server_timestamp]);
 
     const [timerNow, setTimerNow] = useState(() => Date.now() + serverOffsetMs);
@@ -135,10 +142,14 @@ function StaffAttendanceDock({ attendance, isCollapsed = false, onMouseEnter, on
             </button>
 
             {/* Clock In Biometric Modal */}
-            <StaffClockInModal
-                isOpen={isClockInModalOpen}
-                onClose={() => setIsClockInModalOpen(false)}
-            />
+            {isClockInModalOpen && (
+                <Suspense fallback={null}>
+                    <StaffClockInModal
+                        isOpen={isClockInModalOpen}
+                        onClose={() => setIsClockInModalOpen(false)}
+                    />
+                </Suspense>
+            )}
 
             {/* Shift Session Manager Control Modal */}
             <StaffLogoutModal

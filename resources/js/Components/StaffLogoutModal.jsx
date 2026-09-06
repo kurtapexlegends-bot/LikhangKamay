@@ -84,9 +84,15 @@ function ActionTile({ icon: Icon, title, description, variant = 'default', disab
 
 export function StaffLogoutDecisionPanel({ attendance = null, onClose = null }) {
     const [processingAction, setProcessingAction] = useState(null);
-    const serverOffsetMs = useMemo(() => {
+    const [serverOffsetMs, setServerOffsetMs] = useState(() => {
         if (!attendance?.server_timestamp) return 0;
         return (attendance.server_timestamp * 1000) - Date.now();
+    });
+
+    useEffect(() => {
+        if (attendance?.server_timestamp) {
+            setServerOffsetMs((attendance.server_timestamp * 1000) - Date.now());
+        }
     }, [attendance?.server_timestamp]);
 
     const [timerNow, setTimerNow] = useState(() => Date.now() + serverOffsetMs);

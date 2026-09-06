@@ -19,13 +19,14 @@ export default function DiscountScheduleCard({
         return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
-    const minStart = formatLocalForInput(new Date());
+    const [minStart] = useState(() => formatLocalForInput(new Date()));
 
     // Staged Draft States
-    const [draftStartAt, setDraftStartAt] = useState(startAt || minStart);
+    const [draftStartAt, setDraftStartAt] = useState(() => startAt || formatLocalForInput(new Date()));
     const [draftEndAt, setDraftEndAt] = useState(
-        endAt || formatLocalForInput(new Date(Date.now() + 7 * 86400000))
+        () => endAt || formatLocalForInput(new Date(Date.now() + 7 * 86400000))
     );
+    const [nowBuffer] = useState(() => new Date(Date.now() - 60 * 1000));
 
     useEffect(() => {
         if (startAt) setDraftStartAt(startAt);
@@ -34,7 +35,6 @@ export default function DiscountScheduleCard({
 
     const startDateObj = draftStartAt ? new Date(draftStartAt) : null;
     const endDateObj = draftEndAt ? new Date(draftEndAt) : null;
-    const nowBuffer = new Date(Date.now() - 60 * 1000);
     const isPastStart = !isEditingExisting && startDateObj && startDateObj < nowBuffer;
     const isInvalidEnd = startDateObj && endDateObj && endDateObj <= startDateObj;
 

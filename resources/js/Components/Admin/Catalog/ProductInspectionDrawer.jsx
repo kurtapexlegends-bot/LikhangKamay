@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import { 
     CheckCircle2, 
@@ -18,9 +18,9 @@ import {
     Rotate3d,
     Image as ImageIcon
 } from 'lucide-react';
-import GLTFModel from '@/Components/ThreeD/GLTFModel';
-import ProductViewer3D from '@/Components/ThreeD/ProductViewer3D';
 import UserAvatar from '@/Components/UserAvatar';
+
+const ProductViewer3D = lazy(() => import('@/Components/ThreeD/ProductViewer3D'));
 
 export default function ProductInspectionDrawer({
     isOpen,
@@ -250,10 +250,12 @@ export default function ProductInspectionDrawer({
                     <div className="w-full h-72 rounded-2xl border border-stone-200 bg-stone-50 overflow-hidden relative flex items-center justify-center">
                         {viewingMode === '3d' && product.model_3d_path ? (
                             <div className="w-full h-full">
-                                <ProductViewer3D 
-                                    modelUrl={product.model_3d_url} 
-                                    adjustCamera={2.2}
-                                />
+                                <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-xs text-stone-400">Loading 3D Canvas...</div>}>
+                                    <ProductViewer3D 
+                                        modelUrl={product.model_3d_url} 
+                                        adjustCamera={2.2}
+                                    />
+                                </Suspense>
                             </div>
                         ) : (
                             <img

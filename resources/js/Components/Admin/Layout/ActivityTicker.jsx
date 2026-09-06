@@ -1,8 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserPlus, Package, Store, AlertTriangle, ShieldAlert, CheckCircle, CreditCard, Box, Clock, XCircle } from 'lucide-react';
 import { formatChatRelative } from '@/lib/chatTime';
 
 export default function ActivityTicker({ activities }) {
+    const [now, setNow] = useState(() => Date.now());
+
+    useEffect(() => {
+        const interval = setInterval(() => setNow(Date.now()), 30000);
+        return () => clearInterval(interval);
+    }, []);
+
     const getActionDetails = (action) => {
         switch(action) {
             case 'artisan_registered': return { color: 'bg-clay-100 text-clay-600', icon: Store };
@@ -31,8 +38,6 @@ export default function ActivityTicker({ activities }) {
             </div>
         );
     }
-
-    const now = Date.now();
 
     return (
         <div className="bg-white border border-stone-200 rounded-2xl shadow-sm h-[500px] flex flex-col overflow-hidden">

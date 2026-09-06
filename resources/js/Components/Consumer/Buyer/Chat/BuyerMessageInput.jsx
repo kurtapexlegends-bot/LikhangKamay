@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Send, Paperclip, Image as ImageIcon, Smile, FileIcon, X, Package } from 'lucide-react';
-import EmojiPicker from 'emoji-picker-react';
 import { compressImage } from "@/utils/imageCompressor";
 import { OrderMentionsList, useOrderMentions } from '@/Components/Chat/OrderMentionsList';
+
+const EmojiPicker = lazy(() => import('emoji-picker-react'));
 
 const BUYER_QUICK_REPLIES = [
     'Hello! Is this product available?',
@@ -219,12 +220,14 @@ export default function BuyerMessageInput({ currentChatUser, form, userOrders = 
                 {/* Emoji Picker Popover */}
                 {showEmojiPicker && (
                     <div ref={emojiPickerRef} className="absolute bottom-full right-3 sm:right-4 mb-2 z-50 animate-in slide-in-from-bottom-2 duration-200 shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
-                        <EmojiPicker 
-                            onEmojiClick={onEmojiClick}
-                            autoFocusSearch={false}
-                            theme="light"
-                            lazyLoadEmojis={true}
-                        />
+                        <Suspense fallback={<div className="h-[350px] w-[300px] flex items-center justify-center bg-white text-xs text-stone-400">Loading emojis...</div>}>
+                            <EmojiPicker 
+                                onEmojiClick={onEmojiClick}
+                                autoFocusSearch={false}
+                                theme="light"
+                                lazyLoadEmojis={true}
+                            />
+                        </Suspense>
                     </div>
                 )}
 

@@ -8,6 +8,7 @@ import { ThreeDModelBoundary, ThreeDModelUnavailable } from './ThreeDModelBounda
 function CameraController({ zoom }) {
     const { camera } = useThree();
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/immutability
         camera.zoom = zoom;
         camera.updateProjectionMatrix();
     }, [zoom, camera]);

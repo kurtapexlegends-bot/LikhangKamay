@@ -38,11 +38,13 @@ export default function DiscountModal({
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMsg, setErrorMsg] = useState(null);
+    const [nowBuffer, setNowBuffer] = useState(() => new Date(Date.now() - 60000));
 
     // Initialize defaults or discountToEdit on modal open
     useEffect(() => {
         if (!isOpen) return;
 
+        setNowBuffer(new Date(Date.now() - 60000));
         setSearchQuery("");
         setErrorMsg(null);
 
@@ -221,7 +223,6 @@ export default function DiscountModal({
         (p.sku && p.sku.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
-    const nowBuffer = new Date(Date.now() - 60000);
     const isEditingExistingActive = Boolean(discountToEdit && discountToEdit.start_at && new Date(discountToEdit.start_at) <= new Date());
     const isInvalidStartTime = !isEditingExistingActive && startAt && new Date(startAt) < nowBuffer;
     const isInvalidSchedule = startAt && endAt && new Date(endAt) <= new Date(startAt);

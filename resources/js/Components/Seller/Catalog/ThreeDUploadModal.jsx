@@ -1,12 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, Suspense, lazy } from 'react';
 import { useForm, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
 import External3DToolLink from '@/Components/ThreeD/External3DToolLink';
 import { ThreeDModelUnavailable } from '@/Components/ThreeD/ThreeDModelBoundary';
-import ThreeDCanvasViewer from '@/Components/Seller/Catalog/ThreeDCanvasViewer';
 import { UploadCloud, Rotate3d, X, Check } from 'lucide-react';
 import axios from 'axios';
+
+const ThreeDCanvasViewer = lazy(() => import('@/Components/Seller/Catalog/ThreeDCanvasViewer'));
 
 export default function ThreeDUploadModal({ show, onClose, products = [], canEditThreeD }) {
     const { data, setData, processing, reset, errors } = useForm({
@@ -257,21 +258,23 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
                                 <div className="flex flex-col items-center gap-4">
                                     <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden relative">
                                         {data.model.name.toLowerCase().endsWith('.glb') ? (
-                                            <ThreeDCanvasViewer
-                                                modelUrl={previewUrl}
-                                                scale={1.08}
-                                                showDemoFallback={false}
-                                                resetKey={previewUrl || 'preview'}
-                                                suspenseFallback={null}
-                                                fallback={() => (
-                                                    <ThreeDModelUnavailable
-                                                        compact
-                                                        title="Preview unavailable"
-                                                        description="This file could not be previewed locally."
-                                                        className="h-full"
-                                                    />
-                                                )}
-                                            />
+                                            <Suspense fallback={null}>
+                                                <ThreeDCanvasViewer
+                                                    modelUrl={previewUrl}
+                                                    scale={1.08}
+                                                    showDemoFallback={false}
+                                                    resetKey={previewUrl || 'preview'}
+                                                    suspenseFallback={null}
+                                                    fallback={() => (
+                                                        <ThreeDModelUnavailable
+                                                            compact
+                                                            title="Preview unavailable"
+                                                            description="This file could not be previewed locally."
+                                                            className="h-full"
+                                                        />
+                                                    )}
+                                                />
+                                            </Suspense>
                                         ) : (
                                             <div className="flex h-full items-center justify-center px-4 text-center">
                                                 <div>

@@ -139,6 +139,7 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
     
     const [previewUrl, setPreviewUrl] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [canCancel, setCanCancel] = useState(false);
     const [uploadError, setUploadError] = useState(null);
     const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
@@ -160,6 +161,7 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
         if (!selectedFile) return;
 
         setUploading(true);
+        setCanCancel(true);
         setUploadError(null);
         setShowConfirmDelete(false);
 
@@ -174,6 +176,7 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
                 preserveState: true,
                 onSuccess: () => {
                     setUploading(false);
+                    setCanCancel(false);
                     activeRequestRef.current = null;
                     if (inputRef.current) {
                         inputRef.current.value = '';
@@ -181,6 +184,7 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
                 },
                 onError: (errs) => {
                     setUploading(false);
+                    setCanCancel(false);
                     activeRequestRef.current = null;
                     console.error('File Upload Error details:', errs);
                     setUploadError(errs.document || 'Failed to upload document.');
@@ -191,6 +195,7 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
             });
         } catch (err) {
             setUploading(false);
+            setCanCancel(false);
             activeRequestRef.current = null;
             setUploadError('Failed to process file before upload.');
             console.error('File compression error:', err);
@@ -201,12 +206,13 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
         e.stopPropagation();
         if (activeRequestRef.current) {
             activeRequestRef.current.cancel();
-            setUploading(false);
-            setUploadError('Upload cancelled.');
             activeRequestRef.current = null;
-            if (inputRef.current) {
-                inputRef.current.value = '';
-            }
+        }
+        setCanCancel(false);
+        setUploading(false);
+        setUploadError('Upload cancelled.');
+        if (inputRef.current) {
+            inputRef.current.value = '';
         }
     };
 
@@ -258,7 +264,7 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
                         <Loader2 size={32} className="mb-2 text-clay-600 animate-spin" />
                         <p className="text-sm font-semibold text-clay-800">Processing document...</p>
                         <p className="text-xs text-gray-500 mb-3">Uploading to secure storage</p>
-                        {activeRequestRef.current && (
+                        {canCancel && (
                             <button
                                 type="button"
                                 onClick={handleCancel}
@@ -362,3 +368,5 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
         </div>
     );
 });
+
+FileUploadField.displayName = 'FileUploadField';
