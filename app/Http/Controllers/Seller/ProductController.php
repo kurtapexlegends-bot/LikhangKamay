@@ -439,6 +439,7 @@ class ProductController extends Controller
 
         $product->load([
             'user',
+            'discounts',
             'reviews' => fn ($query) => $query->visibleToMarketplace()->with('user'),
         ]);
 

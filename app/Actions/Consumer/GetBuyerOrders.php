@@ -32,14 +32,12 @@ class GetBuyerOrders
     {
         $this->reconcilePendingOnlinePaymentsForUser($buyer);
 
-        $ordersQuery = Order::where('user_id', $buyer->id)
+        $rawOrders = Order::where('user_id', $buyer->id)
             ->with(['items', 'user', 'artisan:id,name,shop_name', 'delivery', 'dispute'])
-            ->latest();
+            ->latest()
+            ->get();
 
-        $initialOrders = (clone $ordersQuery)->get();
-        $this->orderLogisticsService->syncVisibleDeliveries($initialOrders->pluck('delivery')->filter());
-
-        $rawOrders = (clone $ordersQuery)->get();
+        $this->orderLogisticsService->syncVisibleDeliveries($rawOrders->pluck('delivery')->filter());
         $reviewsByProduct = $this->getBuyerReviewsByProduct($buyer->id, $rawOrders);
 
         return $rawOrders->map(function ($order) use ($reviewsByProduct) {

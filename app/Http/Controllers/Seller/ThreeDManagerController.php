@@ -31,6 +31,8 @@ class ThreeDManagerController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get()
             ->map(function ($product) {
+                $sizeBytes = $this->getFileSizeBytes($product->model_3d_path);
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -38,16 +40,12 @@ class ThreeDManagerController extends Controller
                     'thumbnail' => \App\Services\StorageUrl::url($product->cover_photo_path),
                     'status' => $product->status,
                     'date' => $product->updated_at->format('M d, Y'),
-                    'size' => $this->getFileSize($product->model_3d_path),
+                    'size' => $this->formatBytes($sizeBytes),
+                    'size_bytes' => $sizeBytes,
                 ];
             });
 
-        $totalSize = Product::where('user_id', $sellerId)
-            ->whereNotNull('model_3d_path')
-            ->get()
-            ->sum(function ($product) {
-                return $this->getFileSizeBytes($product->model_3d_path);
-            });
+        $totalSize = (int) $models->sum('size_bytes');
 
         $usagePercent = min(100, ($totalSize / self::MAX_STORAGE_BYTES) * 100);
 

@@ -463,7 +463,17 @@ Route::get('/webhooks/migrate', function (\Illuminate\Http\Request $request) {
 
 Route::get('/ping', function () {
     return response('pong', 200)->header('Content-Type', 'text/plain');
-});
+})->withoutMiddleware([
+    \Illuminate\Session\Middleware\StartSession::class,
+    \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+    \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+    \App\Http\Middleware\HandleInertiaRequests::class,
+    \App\Http\Middleware\CheckMaintenanceMode::class,
+    \App\Http\Middleware\UpdateLastSeen::class,
+    \App\Http\Middleware\TrackStaffActivity::class,
+    \App\Http\Middleware\EnsureNotBanned::class,
+    \App\Http\Middleware\EnforceSingleDeviceSession::class,
+]);
 
 Route::get('/img/proxy', [\App\Http\Controllers\Core\ImageProxyController::class, 'proxy'])->name('img.proxy');
 
