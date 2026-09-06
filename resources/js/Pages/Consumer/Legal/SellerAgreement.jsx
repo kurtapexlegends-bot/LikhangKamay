@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import { 
     UserCheck, Box, Percent, Truck, Award, 
     RefreshCw, MessageSquare, Banknote, ShieldAlert, AlertTriangle, 
-    FileText, Edit3, Mail, ArrowLeft, CreditCard
+    FileText, Edit3, Mail, ArrowLeft, CreditCard, Layers
 } from 'lucide-react';
 
 
@@ -20,6 +20,11 @@ export default function SellerAgreement() {
             content: "All products listed must be authentic, handcrafted items made by you or your artisan team. Provide accurate descriptions including dimensions, materials, care instructions, and high-quality images. Listings must not contain misleading information or prohibited items."
         },
         {
+            title: "B2B Supply Hub & Wholesale Procurement",
+            icon: Layers,
+            content: "Artisans may list raw pottery materials (such as clay, glazes, stains, kiln supplies, and protective packaging) and procure workshop supplies at wholesale pricing through the B2B Supply Hub. Artisans listing supplies warrant that all materials are safe, non-hazardous, accurately graded, and sold with clear minimum order quantities (MOQ) and unit measures. Upon delivery confirmation of a supply order, stock quantities automatically synchronize into the purchasing artisan's studio inventory. Discrepancies, defective materials, or damaged goods must be reported within 24 hours of delivery with photo or video evidence."
+        },
+        {
             title: "Pricing and Fees",
             icon: Percent,
             content: "You are solely responsible for setting product prices. LikhangKamay charges 0% platform commission on each successful sale, allowing artisans to keep 100% of their merchandise earnings. Platform operations are funded through seller subscription tiers."
@@ -32,7 +37,12 @@ export default function SellerAgreement() {
         {
             title: "Order Fulfillment",
             icon: Truck,
-            content: "Upon receiving an order, you agree to: confirm within 24 hours, process within 3 business days, ship within 7 business days (unless custom times stated), provide tracking when available, and use appropriate packaging for fragile items."
+            content: "Upon receiving a retail or wholesale order, you agree to: confirm within 24 hours, process within 3 business days, ship within 7 business days (unless custom production schedules are declared), provide real-time tracking, and use appropriate packaging for fragile ceramic items."
+        },
+        {
+            title: "Studio Dispatch & Logistics",
+            icon: Truck,
+            content: "Artisans may fulfill customer and wholesale deliveries using either integrated on-demand third-party couriers (Lalamove API) or authorized in-house studio delivery personnel. For in-house deliveries, drivers must possess valid driver's licenses, operate roadworthy transport, and record electronic proof of delivery (recipient signature and delivery photo). For third-party courier dispatch, artisans must accurately declare parcel dimensions, vehicle type, and fragile handling. Completed deliveries initiate a 24-hour customer inspection period before automated order completion."
         },
         {
             title: "Quality Standards",
@@ -42,7 +52,7 @@ export default function SellerAgreement() {
         {
             title: "Returns and Refunds",
             icon: RefreshCw,
-            content: "Accept returns for items that: arrive damaged, are significantly different from description, or are defective. Process returns within 1 day of customer request. Seller Protection Program may cover refunds for transit damage with proper packaging evidence."
+            content: "Accept returns for items that: arrive damaged, are significantly different from description, or are defective. Process returns within 1 day (24 hours) of customer request. Customer dispute claims filed within the 24-hour post-delivery window are adjudicated through our Resolution Center. Seller Protection may cover refunds for transit damage with verified packaging evidence."
         },
         {
             title: "Communication Standards",
@@ -115,7 +125,7 @@ export default function SellerAgreement() {
                         <div className="border-b border-stone-200/80 pb-5">
                             <span className="text-[10px] font-bold tracking-widest text-clay-600 uppercase">Artisan Partner</span>
                             <h1 className="font-serif text-3xl font-bold text-stone-900 mt-1">Seller Agreement</h1>
-                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: August 2026</p>
+                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: September 2026</p>
                         </div>
 
                         {/* 3D Product Showcase Alert (Highly Visible in Sidebar) */}
@@ -190,7 +200,7 @@ export default function SellerAgreement() {
                         <div className="lg:hidden border-b border-stone-200/80 pb-5 mb-6">
                             <span className="text-[9px] font-bold tracking-widest text-clay-600 uppercase">Artisan Partner</span>
                             <h1 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">Seller Agreement</h1>
-                            <p className="text-[10px] text-stone-500 mt-1">Last updated: August 2026</p>
+                            <p className="text-[10px] text-stone-500 mt-1">Last updated: September 2026</p>
                         </div>
 
                         <p className="text-stone-600 text-sm leading-relaxed pb-4 border-b border-stone-100">

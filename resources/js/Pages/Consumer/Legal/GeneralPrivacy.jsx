@@ -10,7 +10,7 @@ export default function GeneralPrivacy() {
         {
             title: "Information We Collect",
             icon: Database,
-            content: "We collect personal information (name, email, phone, addresses), payment information processed securely by partners, and automatically collected data like device info, IP address, browsing history, and purchase records on our Platform."
+            content: "We collect personal information (name, email, phone, delivery addresses), transaction details, delivery coordinates for dispatch matching, payment information processed securely by partners, and automatically collected device, browsing, and purchase records on our Platform."
         },
         {
             title: "How We Use Your Information",
@@ -20,7 +20,7 @@ export default function GeneralPrivacy() {
         {
             title: "Information Sharing",
             icon: Share2,
-            content: "We share data with: Sellers (shipping info for orders), Payment Processors (for transactions), Shipping Partners (for delivery), Service Providers (platform operations), and Legal Authorities (when required by law). We never sell your personal information."
+            content: "We share data with: Sellers and Studio Drivers (delivery addresses and contact info for order drop-off), Payment Processors (for transactions), On-Demand Shipping Partners (such as Lalamove for dispatch), Service Providers (platform operations), and Legal Authorities (when required by law). We never sell your personal information."
         },
         {
             title: "Data Security",
@@ -97,7 +97,7 @@ export default function GeneralPrivacy() {
                         <div className="border-b border-stone-200/80 pb-5">
                             <span className="text-[10px] font-bold tracking-widest text-sage-600 uppercase">Legal Policy</span>
                             <h1 className="font-serif text-3xl font-bold text-stone-900 mt-1">Privacy Policy</h1>
-                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: August 2026</p>
+                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: September 2026</p>
                         </div>
 
                         {/* DPA Notice */}
@@ -169,7 +169,7 @@ export default function GeneralPrivacy() {
                         <div className="lg:hidden border-b border-stone-200/80 pb-5 mb-6">
                             <span className="text-[9px] font-bold tracking-widest text-sage-600 uppercase">Legal Policy</span>
                             <h1 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">Privacy Policy</h1>
-                            <p className="text-[10px] text-stone-500 mt-1">Last updated: August 2026</p>
+                            <p className="text-[10px] text-stone-500 mt-1">Last updated: September 2026</p>
                         </div>
 
                         <p className="text-stone-600 text-sm leading-relaxed pb-4 border-b border-stone-100">

@@ -4,7 +4,6 @@ import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
-import LegalModal from '@/Components/LegalModal';
 import SellerTermsModal from '@/Components/SellerTermsModal';
 import PasswordStrengthIndicator from '@/Components/PasswordStrengthIndicator';
 import { Head, Link, useForm } from '@inertiajs/react';
@@ -164,7 +163,7 @@ export default function ArtisanRegister() {
     };
 
     const closeLegalModal = () => {
-        setLegalModal({ isOpen: false, type: legalModal.type });
+        setLegalModal((previous) => ({ ...previous, isOpen: false }));
     };
 
     const openNextRequiredLegalModal = (documents = acceptedLegalDocuments) => {
@@ -192,19 +191,36 @@ export default function ArtisanRegister() {
     };
 
     const handleLegalAccept = () => {
+        const currentType = legalModal.type;
         const updatedDocuments = {
             ...acceptedLegalDocuments,
-            [legalModal.type]: true,
+            [currentType]: true,
         };
 
         setAcceptedLegalDocuments(updatedDocuments);
 
-        if (isGuidingTermsAcceptance) {
-            openNextRequiredLegalModal(updatedDocuments);
+        // If on seller agreement and seller privacy not yet accepted, advance smoothly to privacy
+        if (currentType === 'seller' && !updatedDocuments.sellerPrivacy) {
+            setLegalModal({ isOpen: true, type: 'sellerPrivacy' });
             return false;
         }
 
+        // If on seller privacy and seller agreement not yet accepted, advance to seller
+        if (currentType === 'sellerPrivacy' && !updatedDocuments.seller) {
+            setLegalModal({ isOpen: true, type: 'seller' });
+            return false;
+        }
+
+        // Both documents have been accepted
+        setIsGuidingTermsAcceptance(false);
+        setLegalModal((previous) => ({ ...previous, isOpen: false }));
+        setData('terms', true);
         return true;
+    };
+
+    const handleLegalBack = () => {
+        const previousType = legalModal.type === 'seller' ? 'sellerPrivacy' : 'seller';
+        setLegalModal({ isOpen: true, type: previousType });
     };
 
     const handleTermsCheckboxChange = (e) => {
@@ -228,6 +244,30 @@ export default function ArtisanRegister() {
     };
 
     const canEnableTermsCheckbox = acceptedLegalDocuments.seller && acceptedLegalDocuments.sellerPrivacy;
+
+    const isSellerAgreed = Boolean(acceptedLegalDocuments.seller);
+    const isPrivacyAgreed = Boolean(acceptedLegalDocuments.sellerPrivacy);
+    const isBothAgreed = isSellerAgreed && isPrivacyAgreed;
+    const currentDocAccepted = Boolean(acceptedLegalDocuments[legalModal.type]);
+    const counterpartAccepted = legalModal.type === 'seller' ? isPrivacyAgreed : isSellerAgreed;
+
+    let modalStep = null;
+    let modalTotalSteps = null;
+    let modalHasNextStep = false;
+
+    if (!isBothAgreed) {
+        modalTotalSteps = 2;
+        if (!counterpartAccepted && !currentDocAccepted) {
+            modalStep = 1;
+            modalHasNextStep = true;
+        } else if (counterpartAccepted && !currentDocAccepted) {
+            modalStep = 2;
+            modalHasNextStep = false;
+        } else {
+            modalStep = 1;
+            modalHasNextStep = true;
+        }
+    }
 
     // Staggered animation configurations
     const containerVariants = {
@@ -565,23 +605,16 @@ export default function ArtisanRegister() {
             </motion.div>
 
             {/* Legal Modal */}
-            {legalModal.isOpen && legalModal.type === 'seller' ? (
-                <SellerTermsModal
-                    show={true}
-                    onClose={() => handleLegalModalClose({ accepted: false })}
-                    onAccept={() => {
-                        handleLegalAccept();
-                        handleLegalModalClose({ accepted: true });
-                    }}
-                />
-            ) : (
-                <LegalModal 
-                    isOpen={legalModal.isOpen} 
-                    onClose={handleLegalModalClose} 
-                    onAccept={handleLegalAccept}
-                    type={legalModal.type} 
-                />
-            )}
+            <SellerTermsModal
+                show={legalModal.isOpen}
+                type={legalModal.type}
+                step={modalStep}
+                totalSteps={modalTotalSteps}
+                hasNextStep={modalHasNextStep}
+                onClose={() => handleLegalModalClose({ accepted: false })}
+                onAccept={handleLegalAccept}
+                onBack={modalStep === 2 ? handleLegalBack : undefined}
+            />
         </GuestLayout>
     );
 }

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { 
     Lock, Database, Settings, Share2, Scale, 
-    Clock, AlertTriangle, Mail, ArrowLeft, BarChart3, UserCheck
+    Clock, AlertTriangle, Mail, ArrowLeft, BarChart3, UserCheck, Camera
 } from 'lucide-react';
 
 export default function SellerPrivacy() {
@@ -16,6 +16,11 @@ export default function SellerPrivacy() {
             title: "Customer Data Access",
             icon: UserCheck,
             content: "To fulfill orders, you receive limited customer info: name, shipping address, contact number, and order details. This data must only be used for order fulfillment, not stored beyond the transaction, and never shared with third parties."
+        },
+        {
+            title: "Studio Staff & Attendance Data (RA 10173)",
+            icon: Camera,
+            content: "For artisans using Studio Staff Management, timekeeping records—including quick face photos and store location coordinates captured during clock-in and clock-out—are processed strictly for employment attendance verification under Republic Act 10173. This sensitive verification data is encrypted, accessible only to authorized studio administrators, never shared with third-party advertisers or commercial entities, and retained solely for the duration of active employment plus statutory labor record requirements."
         },
         {
             title: "How We Use Seller Data",
@@ -97,7 +102,7 @@ export default function SellerPrivacy() {
                         <div className="border-b border-stone-200/80 pb-5">
                             <span className="text-[10px] font-bold tracking-widest text-sage-600 uppercase">Artisan Partner</span>
                             <h1 className="font-serif text-3xl font-bold text-stone-900 mt-1">Seller Privacy</h1>
-                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: August 2026</p>
+                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: September 2026</p>
                         </div>
 
                         {/* DPA Notice */}
@@ -169,7 +174,7 @@ export default function SellerPrivacy() {
                         <div className="lg:hidden border-b border-stone-200/80 pb-5 mb-6">
                             <span className="text-[9px] font-bold tracking-widest text-sage-600 uppercase">Artisan Partner</span>
                             <h1 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">Seller Data Privacy</h1>
-                            <p className="text-[10px] text-stone-500 mt-1">Last updated: August 2026</p>
+                            <p className="text-[10px] text-stone-500 mt-1">Last updated: September 2026</p>
                         </div>
 
                         <p className="text-stone-600 text-sm leading-relaxed pb-4 border-b border-stone-100">

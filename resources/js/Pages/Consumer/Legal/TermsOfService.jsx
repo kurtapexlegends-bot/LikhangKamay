@@ -2,7 +2,7 @@ import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { 
     FileText, CheckCircle2, UserCheck, Lock, Store, CreditCard, 
-    Truck, RefreshCw, AlertOctagon, Scale, Edit3, ShieldAlert, ArrowLeft
+    Truck, RefreshCw, AlertOctagon, Scale, Edit3, ShieldAlert, ArrowLeft, Layers
 } from 'lucide-react';
 
 export default function TermsOfService() {
@@ -25,7 +25,12 @@ export default function TermsOfService() {
         {
             title: "Platform Services",
             icon: Store,
-            content: "LikhangKamay is an online marketplace that connects buyers with local Filipino artisans specializing in handcrafted pottery, ceramics, and clay products. We facilitate transactions but are not a party to the sale agreement between buyers and sellers. The Platform provides product listings, secure payment processing, messaging services, and order tracking."
+            content: "LikhangKamay is an online marketplace that connects buyers with local Filipino artisans specializing in handcrafted pottery, ceramics, and clay products, alongside a dedicated B2B Supply Hub connecting craft studios with raw material and equipment suppliers. We facilitate transactions but are not a party to the sale agreement between buyers and sellers. The Platform provides product and supply listings, secure payment processing, messaging services, integrated logistics, and order tracking."
+        },
+        {
+            title: "B2B Sourcing & Commercial Transactions",
+            icon: Layers,
+            content: "Transactions conducted within the B2B Supply Hub are intended for artisan workshop production, studio operations, and wholesale procurement. Supply buyers must verify wholesale order quantities, delivery specifications, and material suitability upon delivery. Return or replacement requests for wholesale supplies must be submitted within 24 hours of delivery with photographic evidence of defects or contamination."
         },
         {
             title: "Purchases and Payments",
@@ -35,7 +40,7 @@ export default function TermsOfService() {
         {
             title: "Shipping and Delivery",
             icon: Truck,
-            content: "Shipping costs and delivery times vary depending on the seller's location and the shipping method selected. Sellers are responsible for packaging items securely, especially fragile pottery items. LikhangKamay is not liable for delays caused by shipping carriers or events beyond our control."
+            content: "Shipping costs and delivery times vary depending on the seller's location and the chosen fulfillment method. Orders may be dispatched via integrated third-party on-demand couriers (such as Lalamove) or authorized artisan in-house delivery personnel with electronic proof of delivery. Sellers are responsible for packaging fragile ceramic and pottery items securely. LikhangKamay provides tracking updates but is not liable for carrier delays or force majeure events. Delivered orders initiate a 24-hour inspection window prior to automatic completion."
         },
         {
             title: "Returns and Refunds",
@@ -108,7 +113,7 @@ export default function TermsOfService() {
                         <div className="border-b border-stone-200/80 pb-5">
                             <span className="text-[10px] font-bold tracking-widest text-clay-600 uppercase">Legal Agreement</span>
                             <h1 className="font-serif text-3xl font-bold text-stone-900 mt-1">Terms of Service</h1>
-                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: August 2026</p>
+                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: September 2026</p>
                         </div>
 
                         {/* Navigation Table of Contents */}
@@ -172,7 +177,7 @@ export default function TermsOfService() {
                         <div className="lg:hidden border-b border-stone-200/80 pb-5 mb-6">
                             <span className="text-[9px] font-bold tracking-widest text-clay-600 uppercase">Legal Agreement</span>
                             <h1 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">Terms of Service</h1>
-                            <p className="text-[10px] text-stone-500 mt-1">Last updated: August 2026</p>
+                            <p className="text-[10px] text-stone-500 mt-1">Last updated: September 2026</p>
                         </div>
 
                         <p className="text-stone-600 text-sm leading-relaxed pb-4 border-b border-stone-100">

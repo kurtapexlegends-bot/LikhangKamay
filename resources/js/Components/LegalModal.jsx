@@ -1,11 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, ChevronDown, ChevronUp, FileText, Shield, Store, Lock, Box, Check, AlertTriangle } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, FileText, Shield, Store, Lock, Box, Check, AlertTriangle, ArrowRight, ArrowDown } from 'lucide-react';
 import Modal from '@/Components/Modal';
 
-export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }) {
+export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = 'terms', step = null, totalSteps = null, hasNextStep = null }) {
     const [expandedSections, setExpandedSections] = useState({});
     const [hasReachedBottom, setHasReachedBottom] = useState(false);
+    const [isAutoAdvancing, setIsAutoAdvancing] = useState(false);
+    const autoAdvanceTimerRef = useRef(null);
     const contentRef = useRef(null);
+
+    const hasNext = hasNextStep !== null ? hasNextStep : (step ? step < totalSteps : type === 'terms');
+    const nextLabel = type === 'terms' ? 'Next: Privacy Policy' : (type === 'seller' ? 'Next: Seller Privacy' : (type === 'privacy' ? 'Next: Terms of Service' : 'Next: Seller Agreement'));
+
+    const clearAutoAdvanceTimer = () => {
+        if (autoAdvanceTimerRef.current) {
+            clearTimeout(autoAdvanceTimerRef.current);
+            autoAdvanceTimerRef.current = null;
+        }
+        setIsAutoAdvancing(false);
+    };
 
     const toggleSection = (index) => {
         setExpandedSections(prev => ({
@@ -15,6 +28,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
     };
 
     const handleAccept = () => {
+        clearAutoAdvanceTimer();
         if (!hasReachedBottom) {
             return;
         }
@@ -28,10 +42,23 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
 
     const handleContentScroll = (event) => {
         const container = event.currentTarget;
-        const reachedBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 8;
+        const reachedBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 24;
 
         if (reachedBottom) {
-            setHasReachedBottom(true);
+            if (!hasReachedBottom) {
+                setHasReachedBottom(true);
+            }
+
+            if (hasNext && !autoAdvanceTimerRef.current) {
+                setIsAutoAdvancing(true);
+                autoAdvanceTimerRef.current = setTimeout(() => {
+                    autoAdvanceTimerRef.current = null;
+                    setIsAutoAdvancing(false);
+                    handleAccept();
+                }, 700);
+            }
+        } else if (isAutoAdvancing) {
+            clearAutoAdvanceTimer();
         }
     };
 
@@ -44,9 +71,9 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
                 { title: "Acceptance of Terms", content: "By creating an account, browsing products, or making purchases on LikhangKamay, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service and our Privacy Policy." },
                 { title: "Eligibility", content: "You must be at least 18 years of age to create an account and use our services. By using LikhangKamay, you represent and warrant that you meet this age requirement." },
                 { title: "User Accounts", content: "You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. Provide accurate information during registration." },
-                { title: "Platform Services", content: "LikhangKamay is an online marketplace connecting buyers with local Filipino artisans specializing in handcrafted pottery, ceramics, and clay products." },
+                { title: "Platform Services", content: "LikhangKamay is an online marketplace connecting buyers with local Filipino artisans specializing in handcrafted pottery, ceramics, and clay products, alongside a B2B Supply Hub for craft material procurement." },
                 { title: "Purchases and Payments", content: "All prices are in Philippine Peso (₱). We accept various payment methods including cash on delivery and online payments. Orders are subject to availability." },
-                { title: "Shipping and Delivery", content: "Shipping costs vary by seller location. Sellers are responsible for secure packaging. LikhangKamay is not liable for carrier delays." },
+                { title: "Shipping and Delivery", content: "Shipping costs vary by seller location and fulfillment method (integrated courier or in-house studio drivers). Sellers are responsible for secure packaging. Delivered orders initiate a 24-hour inspection period before completion." },
                 { title: "Returns and Refunds", content: "Returns accepted for damaged, defective, or misrepresented items. Report issues within 1 day of delivery with photos. Refunds processed within 1 business day." },
                 { title: "User Conduct", content: "Users agree not to post false information, harass others, manipulate reviews, or engage in illegal activities on the Platform." },
                 { title: "Intellectual Property", content: "All content on LikhangKamay is protected by Philippine and international intellectual property laws." },
@@ -79,7 +106,8 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
             sections: [
                 { title: "Seller Eligibility", content: "Must be 18+, a legitimate artisan producing handmade pottery/ceramics, provide valid ID, and comply with Philippine laws." },
                 { title: "Product Listings", content: "All products must be authentic handcrafted items. Provide accurate descriptions, dimensions, materials, and high-quality images." },
-                { title: "Order Fulfillment", content: "Confirm orders within 24 hours, process within 3 business days, ship within 7 business days, and use appropriate packaging for fragile items." },
+                { title: "B2B Supply Hub", content: "Raw materials, glazes, packaging, and tools traded through the B2B Supply Hub must meet stated specifications and automatically sync to inventory upon delivery." },
+                { title: "Order Fulfillment", content: "Confirm orders within 24 hours, process within 3 business days, and ship via integrated couriers (Lalamove) or authorized in-house drivers with proof of delivery." },
                 { title: "Quality Standards", content: "Products must meet professional quality standards. Maintain a rating of at least 4.0 stars." },
                 { title: "Returns and Refunds", content: "Accept returns for damaged, misrepresented, or defective items. Process within 1 day of customer request." },
                 { title: "Communication", content: "Respond to inquiries within 24 hours. All communications must be professional and courteous." },
@@ -97,6 +125,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
             sections: [
                 { title: "Seller Data We Collect", content: "Personal info (name, ID, contact), business info (shop name, bank details, TIN), and product data (listings, 3D models, sales analytics)." },
                 { title: "Customer Data Access", content: "You receive limited customer info for order fulfillment only. Do not store beyond transaction or share with third parties." },
+                { title: "Studio Staff & Attendance", content: "Quick face photos and store location coordinates captured during employee clock-in/out are processed strictly for attendance verification under RA 10173 and never shared with third parties." },
                 { title: "How We Use Seller Data", content: "Verify identity, process orders, transfer earnings, provide analytics, communicate updates, and comply with legal requirements." },
                 { title: "Seller Analytics", content: "We provide sales trends, customer demographics (anonymized), popular products, and conversion rates." },
                 { title: "Data Retention", content: "Retained during active selling plus 5 years for financial records (BIR requirement), 3 years for dispute records." },
@@ -113,6 +142,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
         Object.fromEntries(sections.map((_, index) => [index, true]));
 
     useEffect(() => {
+        clearAutoAdvanceTimer();
         if (!isOpen) {
             return undefined;
         }
@@ -138,6 +168,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
         });
 
         return () => {
+            clearAutoAdvanceTimer();
             window.cancelAnimationFrame(frame);
             if (nestedFrame) {
                 window.cancelAnimationFrame(nestedFrame);
@@ -146,28 +177,37 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
     }, [isOpen, type]);
 
     return (
-        <Modal show={isOpen} onClose={() => onClose?.({ accepted: false })} maxWidth="lg">
+        <Modal show={isOpen} onClose={() => onClose?.({ accepted: false })} maxWidth="2xl">
             {/* Modal Content */}
-            <div className="bg-white flex flex-col overflow-hidden max-h-[85vh]">
-                {/* Header - Consistent clay color */}
-                <div className="bg-gradient-to-r from-clay-600 to-clay-700 p-5 text-white flex-shrink-0">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-white/20 backdrop-blur rounded-xl">
-                                <Icon size={24} />
-                            </div>
-                            <div>
-                                <h3 className="font-serif text-xl font-bold">{doc.title}</h3>
-                                <p className="text-white/70 text-xs mt-0.5">Last updated: January 2026</p>
-                            </div>
+            <div className="bg-white h-[82vh] max-h-[82vh] flex flex-col overflow-hidden rounded-2xl">
+                {/* Header - Consistent earthy styling */}
+                <div className="bg-[#FAF7F2] px-6 py-4 border-b border-stone-200/60 flex justify-between items-center flex-shrink-0">
+                    <div className="flex items-center gap-3">
+                        {step && totalSteps ? (
+                            <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${step === totalSteps ? 'bg-sage-100 text-sage-800' : 'bg-clay-100 text-clay-800'}`}>
+                                Step {step} of {totalSteps}
+                            </span>
+                        ) : null}
+                        {step === 2 && onBack && (
+                            <button
+                                type="button"
+                                onClick={onBack}
+                                className="text-xs text-clay-700 hover:text-clay-800 font-semibold underline transition-colors"
+                            >
+                                ← Previous
+                            </button>
+                        )}
+                        <div>
+                            <h3 className="text-lg font-serif font-bold text-stone-900">{doc.title}</h3>
+                            <p className="text-stone-500 text-xs mt-0.5 font-medium">Last updated: September 2026</p>
                         </div>
-                        <button 
-                            onClick={() => onClose?.({ accepted: false })}
-                            className="p-2 hover:bg-white/20 rounded-lg transition"
-                        >
-                            <X size={20} />
-                        </button>
                     </div>
+                    <button 
+                        onClick={() => onClose?.({ accepted: false })}
+                        className="text-stone-400 hover:text-stone-600 transition"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
                 {/* DPA Notice for privacy policies */}
@@ -186,7 +226,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
                 <div 
                     ref={contentRef}
                     onScroll={handleContentScroll}
-                    className="flex-1 overflow-y-auto p-5 space-y-3"
+                    className="flex-1 min-h-0 overflow-y-auto p-5 space-y-3"
                     style={{ scrollbarWidth: 'thin', scrollbarColor: '#d1d5db transparent' }}
                 >
                     {doc.sections.map((section, idx) => (
@@ -251,20 +291,48 @@ export default function LegalModal({ isOpen, onClose, onAccept, type = 'terms' }
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                    {!hasReachedBottom && (
-                        <p className="mb-3 text-xs font-medium text-stone-500">
-                            Scroll to the bottom of this document before continuing.
-                        </p>
-                    )}
-                    <button
-                        onClick={handleAccept}
-                        disabled={!hasReachedBottom}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-clay-600 hover:bg-clay-700 text-white rounded-xl font-bold transition text-sm disabled:cursor-not-allowed disabled:bg-clay-300"
-                    >
-                        <Check size={18} />
-                        I Understand
-                    </button>
+                <div className="px-6 py-4 bg-[#FCFBF9] border-t border-stone-200/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
+                    <div className="text-xs font-medium">
+                        {isAutoAdvancing ? (
+                            <span className="flex items-center gap-1.5 text-clay-700 font-semibold animate-pulse">
+                                <Check size={14} className="text-emerald-600" />
+                                <span>{type === 'terms' ? 'Continuing to Privacy Policy...' : 'Continuing to Terms of Service...'}</span>
+                            </span>
+                        ) : !hasReachedBottom ? (
+                            <span className="flex items-center gap-1.5 text-stone-500">
+                                <ArrowDown size={14} className="text-clay-600 animate-bounce" />
+                                <span>Scroll to the bottom to continue</span>
+                            </span>
+                        ) : hasNext ? (
+                            <span className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                                <Check size={14} className="text-emerald-600" />
+                                <span>Document completed. Click next or scroll to continue</span>
+                            </span>
+                        ) : (
+                            <span className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                                <Check size={14} className="text-emerald-600" />
+                                <span>End of document reached</span>
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex items-center justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => onClose?.({ accepted: false })}
+                            className="px-4 py-2 bg-white border border-stone-300 rounded-lg text-stone-700 font-medium hover:bg-stone-50 transition text-sm"
+                        >
+                            Close
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleAccept}
+                            disabled={!hasReachedBottom}
+                            className="px-4 py-2 bg-clay-600 hover:bg-clay-700 text-white rounded-lg font-bold transition text-sm disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-500 disabled:shadow-none shadow-sm flex items-center gap-1.5"
+                        >
+                            <span>{hasNext ? nextLabel : 'I Understand & Agree'}</span>
+                            {hasNext && <ArrowRight size={16} />}
+                        </button>
+                    </div>
                 </div>
             </div>
         </Modal>

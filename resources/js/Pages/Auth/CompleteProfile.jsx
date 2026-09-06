@@ -165,19 +165,36 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
     };
 
     const handleLegalAccept = () => {
+        const currentType = legalModal.type;
         const updatedDocuments = {
             ...acceptedLegalDocuments,
-            [legalModal.type]: true,
+            [currentType]: true,
         };
 
         setAcceptedLegalDocuments(updatedDocuments);
 
-        if (isGuidingTermsAcceptance) {
-            openNextRequiredLegalModal(updatedDocuments);
+        // If primary was accepted and secondary not yet accepted, advance smoothly to secondary
+        if (currentType === primaryLegalType && !updatedDocuments[secondaryLegalType]) {
+            setLegalModal({ isOpen: true, type: secondaryLegalType });
             return false;
         }
 
+        // If secondary was accepted and primary not yet accepted, advance to primary
+        if (currentType === secondaryLegalType && !updatedDocuments[primaryLegalType]) {
+            setLegalModal({ isOpen: true, type: primaryLegalType });
+            return false;
+        }
+
+        // Both documents have been accepted
+        setIsGuidingTermsAcceptance(false);
+        setLegalModal((previous) => ({ ...previous, isOpen: false }));
+        setData('terms', true);
         return true;
+    };
+
+    const handleLegalBack = () => {
+        const previousType = legalModal.type === primaryLegalType ? secondaryLegalType : primaryLegalType;
+        setLegalModal({ isOpen: true, type: previousType });
     };
 
     const handleTermsCheckboxChange = (e) => {
@@ -195,6 +212,30 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
         setIsGuidingTermsAcceptance(true);
         openNextRequiredLegalModal();
     };
+
+    const isPrimaryAgreed = Boolean(acceptedLegalDocuments[primaryLegalType]);
+    const isSecondaryAgreed = Boolean(acceptedLegalDocuments[secondaryLegalType]);
+    const isBothAgreed = isPrimaryAgreed && isSecondaryAgreed;
+    const currentDocAccepted = Boolean(acceptedLegalDocuments[legalModal.type]);
+    const counterpartAccepted = legalModal.type === primaryLegalType ? isSecondaryAgreed : isPrimaryAgreed;
+
+    let modalStep = null;
+    let modalTotalSteps = null;
+    let modalHasNextStep = false;
+
+    if (!isBothAgreed) {
+        modalTotalSteps = 2;
+        if (!counterpartAccepted && !currentDocAccepted) {
+            modalStep = 1;
+            modalHasNextStep = true;
+        } else if (counterpartAccepted && !currentDocAccepted) {
+            modalStep = 2;
+            modalHasNextStep = false;
+        } else {
+            modalStep = 1;
+            modalHasNextStep = true;
+        }
+    }
 
     // Staggered animation configurations
     const containerVariants = {
@@ -501,21 +542,27 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
             </motion.div>
 
             {/* Legal Modal */}
-            {legalModal.isOpen && legalModal.type === 'seller' ? (
+            {isArtisan ? (
                 <SellerTermsModal
-                    show={true}
+                    show={legalModal.isOpen}
+                    type={legalModal.type}
+                    step={modalStep}
+                    totalSteps={modalTotalSteps}
+                    hasNextStep={modalHasNextStep}
                     onClose={() => handleLegalModalClose({ accepted: false })}
-                    onAccept={() => {
-                        handleLegalAccept();
-                        handleLegalModalClose({ accepted: true });
-                    }}
+                    onAccept={handleLegalAccept}
+                    onBack={modalStep === 2 ? handleLegalBack : undefined}
                 />
             ) : (
                 <LegalModal 
                     isOpen={legalModal.isOpen} 
                     onClose={handleLegalModalClose} 
                     onAccept={handleLegalAccept}
+                    onBack={modalStep === 2 ? handleLegalBack : undefined}
                     type={legalModal.type} 
+                    step={modalStep}
+                    totalSteps={modalTotalSteps}
+                    hasNextStep={modalHasNextStep}
                 />
             )}
         </GuestLayout>

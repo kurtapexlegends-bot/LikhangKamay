@@ -142,7 +142,7 @@ export default function Register() {
     };
 
     const closeLegalModal = () => {
-        setLegalModal({ isOpen: false, type: legalModal.type });
+        setLegalModal((previous) => ({ ...previous, isOpen: false }));
     };
 
     const openNextRequiredLegalModal = (documents = acceptedLegalDocuments) => {
@@ -170,19 +170,36 @@ export default function Register() {
     };
 
     const handleLegalAccept = () => {
+        const currentType = legalModal.type;
         const updatedDocuments = {
             ...acceptedLegalDocuments,
-            [legalModal.type]: true,
+            [currentType]: true,
         };
 
         setAcceptedLegalDocuments(updatedDocuments);
 
-        if (isGuidingTermsAcceptance) {
-            openNextRequiredLegalModal(updatedDocuments);
+        // If on terms of service and privacy not yet accepted, advance smoothly to privacy
+        if (currentType === 'terms' && !updatedDocuments.privacy) {
+            setLegalModal({ isOpen: true, type: 'privacy' });
             return false;
         }
 
+        // If on privacy and terms not yet accepted, advance to terms
+        if (currentType === 'privacy' && !updatedDocuments.terms) {
+            setLegalModal({ isOpen: true, type: 'terms' });
+            return false;
+        }
+
+        // Both documents have been accepted
+        setIsGuidingTermsAcceptance(false);
+        setLegalModal((previous) => ({ ...previous, isOpen: false }));
+        setData('terms', true);
         return true;
+    };
+
+    const handleLegalBack = () => {
+        const previousType = legalModal.type === 'terms' ? 'privacy' : 'terms';
+        setLegalModal({ isOpen: true, type: previousType });
     };
 
     const handleTermsCheckboxChange = (e) => {
@@ -202,6 +219,30 @@ export default function Register() {
     };
 
     const canEnableTermsCheckbox = acceptedLegalDocuments.terms && acceptedLegalDocuments.privacy;
+
+    const isTermsAgreed = Boolean(acceptedLegalDocuments.terms);
+    const isPrivacyAgreed = Boolean(acceptedLegalDocuments.privacy);
+    const isBothAgreed = isTermsAgreed && isPrivacyAgreed;
+    const currentDocAccepted = Boolean(acceptedLegalDocuments[legalModal.type]);
+    const counterpartAccepted = legalModal.type === 'terms' ? isPrivacyAgreed : isTermsAgreed;
+
+    let modalStep = null;
+    let modalTotalSteps = null;
+    let modalHasNextStep = false;
+
+    if (!isBothAgreed) {
+        modalTotalSteps = 2;
+        if (!counterpartAccepted && !currentDocAccepted) {
+            modalStep = 1;
+            modalHasNextStep = true;
+        } else if (counterpartAccepted && !currentDocAccepted) {
+            modalStep = 2;
+            modalHasNextStep = false;
+        } else {
+            modalStep = 1;
+            modalHasNextStep = true;
+        }
+    }
 
     // Staggered animation configurations
     const containerVariants = {
@@ -520,7 +561,11 @@ export default function Register() {
                 isOpen={legalModal.isOpen} 
                 onClose={handleLegalModalClose} 
                 onAccept={handleLegalAccept}
+                onBack={modalStep === 2 ? handleLegalBack : undefined}
                 type={legalModal.type} 
+                step={modalStep}
+                totalSteps={modalTotalSteps}
+                hasNextStep={modalHasNextStep}
             />
         </GuestLayout>
     );
