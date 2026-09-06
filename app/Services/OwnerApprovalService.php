@@ -11,6 +11,7 @@ use App\Models\StockRequest;
 use App\Models\Supply;
 use App\Models\OrderDispute;
 use App\Models\Discount;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\SellerActivityLog;
 use App\Notifications\OwnerApprovalDecisionNotification;
@@ -205,6 +206,35 @@ class OwnerApprovalService
             'products_count' => $products->count(),
             'products' => $lineItems,
             'items' => $lineItems,
+        ];
+    }
+
+    /**
+     * Build an accurate refund/return payload snapshot from an Order.
+     */
+    public function buildRefundPayload(
+        Order $order,
+        string $actionType = 'refund',
+        ?string $resolutionDescription = null
+    ): array {
+        $proofUrl = null;
+        if ($order->return_proof_image) {
+            $proofUrl = \App\Services\StorageUrl::url($order->return_proof_image);
+        }
+
+        return [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'customer_name' => $order->customer_name,
+            'refund_amount' => (float) $order->total_amount,
+            'amount' => (float) $order->total_amount,
+            'buyer_claim' => $order->return_reason,
+            'proposed_resolution' => $actionType === 'refund' ? 'Full Refund' : 'Replacement Item',
+            'action_type' => $actionType,
+            'replacement_description' => $resolutionDescription,
+            'evidence_photos' => $proofUrl ? [$proofUrl] : [],
+            'payment_method' => $order->payment_method,
+            'payment_status' => $order->payment_status,
         ];
     }
 
@@ -564,6 +594,28 @@ class OwnerApprovalService
                 }
                 break;
 
+            case OwnerApproval::DOMAIN_REFUND:
+                $order = $approval->approvable;
+                if (!$order && $approval->approvable_id) {
+                    $order = Order::find($approval->approvable_id);
+                }
+                if ($order instanceof Order) {
+                    if ($order->status !== 'Refund/Return') {
+                        throw new \RuntimeException('Order return request is no longer pending review.');
+                    }
+                    $actionType = $payload['action_type'] ?? 'refund';
+                    if ($actionType === 'refund') {
+                        $actor = $approval->reviewer ?? $approval->seller;
+                        app(\App\Actions\Seller\Orders\ApproveOrderRefund::class)->execute($order, $actor);
+                    } else {
+                        $desc = $payload['replacement_description'] ?? 'Replacement approved by shop owner.';
+                        $actor = $approval->reviewer ?? $approval->seller;
+                        $seller = $approval->seller ?? User::find($order->artisan_id);
+                        app(\App\Actions\Seller\Orders\ApproveOrderReplacement::class)->execute($order, $desc, $actor, $seller);
+                    }
+                }
+                break;
+
             default:
                 // No automatic side effect required for general review items
                 break;
@@ -598,6 +650,18 @@ class OwnerApprovalService
                     $stockRequest->update([
                         'status' => StockRequest::STATUS_REJECTED,
                         'rejection_reason' => $reason,
+                    ]);
+                }
+                break;
+
+            case OwnerApproval::DOMAIN_REFUND:
+                $order = $approval->approvable;
+                if (!$order && $approval->approvable_id) {
+                    $order = Order::find($approval->approvable_id);
+                }
+                if ($order instanceof Order && $order->status === 'Refund/Return') {
+                    $order->update([
+                        'status' => 'Completed',
                     ]);
                 }
                 break;

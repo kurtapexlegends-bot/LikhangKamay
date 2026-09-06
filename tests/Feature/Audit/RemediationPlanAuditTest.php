@@ -642,6 +642,200 @@ class RemediationPlanAuditTest extends TestCase
         $this->assertEquals(16, (int) $supplyProduct->stock);
     }
 
+    public function test_phase4_bom_restoration_with_multiple_products_sharing_same_supply(): void
+    {
+        Notification::fake();
+
+        $seller = User::factory()->artisanApproved()->create();
+        $buyer = User::factory()->create(['role' => 'buyer']);
+
+        $supplyProduct = Product::create([
+            'user_id' => $seller->id,
+            'name' => 'Raw Terracotta Clay',
+            'sku' => 'SUPPLY-TERRA-MULTI',
+            'category' => 'Raw Materials',
+            'stock' => 10,
+            'price' => 50,
+            'status' => 'approved',
+        ]);
+
+        $supply = Supply::create([
+            'user_id' => $seller->id,
+            'product_id' => $supplyProduct->id,
+            'name' => 'Terracotta Clay',
+            'category' => 'Raw Clay & Slips',
+            'quantity' => 10,
+            'unit' => 'kg',
+            'min_stock' => 5,
+            'unit_cost' => 30,
+        ]);
+
+        $pot1 = Product::create([
+            'user_id' => $seller->id,
+            'name' => 'Clay Pot 1',
+            'sku' => 'POT-MULTI-01',
+            'category' => 'Ceramics',
+            'production_method' => 'manufactured',
+            'stock' => 2,
+            'price' => 500,
+            'status' => 'approved',
+        ]);
+
+        $pot2 = Product::create([
+            'user_id' => $seller->id,
+            'name' => 'Clay Pot 2',
+            'sku' => 'POT-MULTI-02',
+            'category' => 'Ceramics',
+            'production_method' => 'manufactured',
+            'stock' => 2,
+            'price' => 400,
+            'status' => 'approved',
+        ]);
+
+        ProductRecipe::create([
+            'product_id' => $pot1->id,
+            'supply_id' => $supply->id,
+            'quantity_required' => 3,
+        ]);
+
+        ProductRecipe::create([
+            'product_id' => $pot2->id,
+            'supply_id' => $supply->id,
+            'quantity_required' => 2,
+        ]);
+
+        $order = Order::create([
+            'order_number' => 'ORD-BOM-MULTI-01',
+            'artisan_id' => $seller->id,
+            'user_id' => $buyer->id,
+            'customer_name' => $buyer->name,
+            'status' => 'Ready for Pickup',
+            'payment_method' => 'COD',
+            'total_amount' => 1400.00,
+            'shipping_method' => 'Pick Up',
+            'shipping_address' => 'Pick Up at Studio',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $pot1->id,
+            'product_name' => $pot1->name,
+            'quantity' => 2,
+            'price' => 500.00,
+            'cost' => 200.00,
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $pot2->id,
+            'product_name' => $pot2->name,
+            'quantity' => 1,
+            'price' => 400.00,
+            'cost' => 150.00,
+        ]);
+
+        // Cancel order
+        app(UpdateOrderStatus::class)->execute($order, ['status' => 'Cancelled'], $seller, null);
+
+        $supply->refresh();
+        $supplyProduct->refresh();
+
+        // 10 initial + (2 * 3 kg) + (1 * 2 kg) = 18 kg
+        $this->assertEquals(18, (int) $supply->quantity);
+        // Linked product stock must also be synced to 18
+        $this->assertEquals(18, (int) $supplyProduct->stock);
+    }
+
+    public function test_phase4_bom_restoration_with_both_retail_supply_and_manufactured_product(): void
+    {
+        Notification::fake();
+
+        $seller = User::factory()->artisanApproved()->create();
+        $buyer = User::factory()->create(['role' => 'buyer']);
+
+        $supplyProduct = Product::create([
+            'user_id' => $seller->id,
+            'name' => 'Raw Terracotta Clay',
+            'sku' => 'SUPPLY-RETAIL-01',
+            'category' => 'Raw Materials',
+            'track_as_supply' => true,
+            'stock' => 10,
+            'price' => 50,
+            'status' => 'approved',
+        ]);
+
+        $supply = Supply::create([
+            'user_id' => $seller->id,
+            'product_id' => $supplyProduct->id,
+            'name' => 'Terracotta Clay',
+            'category' => 'Raw Clay & Slips',
+            'quantity' => 10,
+            'unit' => 'kg',
+            'min_stock' => 5,
+            'unit_cost' => 30,
+        ]);
+
+        $pot = Product::create([
+            'user_id' => $seller->id,
+            'name' => 'Clay Pot',
+            'sku' => 'POT-RETAIL-01',
+            'category' => 'Ceramics',
+            'production_method' => 'manufactured',
+            'stock' => 2,
+            'price' => 500,
+            'status' => 'approved',
+        ]);
+
+        ProductRecipe::create([
+            'product_id' => $pot->id,
+            'supply_id' => $supply->id,
+            'quantity_required' => 3,
+        ]);
+
+        $order = Order::create([
+            'order_number' => 'ORD-RETAIL-BOM-01',
+            'artisan_id' => $seller->id,
+            'user_id' => $buyer->id,
+            'customer_name' => $buyer->name,
+            'status' => 'Ready for Pickup',
+            'payment_method' => 'COD',
+            'total_amount' => 600.00,
+            'shipping_method' => 'Pick Up',
+            'shipping_address' => 'Pick Up at Studio',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $supplyProduct->id,
+            'product_name' => $supplyProduct->name,
+            'quantity' => 2,
+            'price' => 50.00,
+            'cost' => 30.00,
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $pot->id,
+            'product_name' => $pot->name,
+            'quantity' => 1,
+            'price' => 500.00,
+            'cost' => 200.00,
+        ]);
+
+        // Cancel order
+        app(UpdateOrderStatus::class)->execute($order, ['status' => 'Cancelled'], $seller, null);
+
+        $supply->refresh();
+        $supplyProduct->refresh();
+
+        // 10 initial + 2 retail + (1 pot * 3 kg) = 15 kg
+        $this->assertEquals(15, (int) $supply->quantity);
+        // Linked product stock must also be synced to 15
+        $this->assertEquals(15, (int) $supplyProduct->stock);
+    }
+
+
+
     /**
      * Phase 5 Edge Case: Replacement preserves in-house delivery provider even after delivery row deletion
      */

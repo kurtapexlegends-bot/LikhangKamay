@@ -7,6 +7,7 @@ use App\Models\OwnerApproval;
 use App\Models\Payroll;
 use App\Models\StaffAttendanceSession;
 use App\Models\StockRequest;
+use App\Models\Order;
 use App\Models\Supply;
 use App\Models\User;
 use App\Actions\Seller\HR\ProvisionStaffAccount;
@@ -14,6 +15,7 @@ use App\Notifications\OwnerApprovalDecisionNotification;
 use App\Services\OwnerApprovalService;
 use App\Support\NotificationPresenter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -862,5 +864,129 @@ class OwnerApprovalWorkflowTest extends TestCase
             'approvable_id' => $this->employee->id,
             'status' => OwnerApproval::STATUS_PENDING,
         ]);
+    }
+
+    public function test_staff_order_refund_approval_intercepted_and_creates_owner_approval(): void
+    {
+        Mail::fake();
+
+        $this->staff->update([
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(['orders' => 'can_edit'], true),
+        ]);
+
+        $buyer = User::factory()->create(['role' => 'buyer']);
+
+        $order = Order::create([
+            'artisan_id' => $this->owner->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-REFUND-' . strtoupper(uniqid()),
+            'customer_name' => $buyer->name,
+            'merchandise_subtotal' => 500,
+            'convenience_fee_amount' => 15,
+            'total_amount' => 515,
+            'status' => 'Refund/Return',
+            'payment_method' => 'COD',
+            'payment_status' => 'paid',
+            'shipping_address' => 'Blk 1 Lot 2, General Trias, Cavite',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        $response = $this->actingAs($this->staff)
+            ->post(route('orders.approve-return', $order->order_number), [
+                'action_type' => 'refund',
+            ]);
+
+        $response->assertSessionHas('success');
+
+        // Order status remains Refund/Return pending owner approval
+        $this->assertEquals('Refund/Return', $order->fresh()->status);
+
+        $this->assertDatabaseHas('owner_approvals', [
+            'seller_id' => $this->owner->id,
+            'requester_id' => $this->staff->id,
+            'domain' => OwnerApproval::DOMAIN_REFUND,
+            'approvable_id' => $order->id,
+            'status' => OwnerApproval::STATUS_PENDING,
+        ]);
+    }
+
+    public function test_owner_approving_refund_approval_executes_refund_and_updates_order(): void
+    {
+        Mail::fake();
+
+        $buyer = User::factory()->create(['role' => 'buyer']);
+
+        $order = Order::create([
+            'artisan_id' => $this->owner->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-EXEC-REFUND-' . strtoupper(uniqid()),
+            'customer_name' => $buyer->name,
+            'merchandise_subtotal' => 300,
+            'convenience_fee_amount' => 10,
+            'total_amount' => 310,
+            'status' => 'Refund/Return',
+            'payment_method' => 'COD',
+            'payment_status' => 'paid',
+            'shipping_address' => 'Blk 1 Lot 2, General Trias, Cavite',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        $approval = $this->approvalService->submitRequest(
+            seller: $this->owner,
+            requester: $this->staff,
+            domain: OwnerApproval::DOMAIN_REFUND,
+            title: "Approve Order Refund #{$order->order_number}",
+            summary: "Refund ₱310.00 for order #{$order->order_number}",
+            approvable: $order,
+            payload: $this->approvalService->buildRefundPayload($order, 'refund')
+        );
+
+        $response = $this->actingAs($this->owner)
+            ->post(route('seller.approvals.approve', $approval->id));
+
+        $response->assertSessionHas('success');
+        $this->assertEquals(OwnerApproval::STATUS_APPROVED, $approval->fresh()->status);
+        $this->assertEquals('Refunded', $order->fresh()->status);
+    }
+
+    public function test_owner_rejecting_refund_approval_reverts_order_to_completed(): void
+    {
+        Mail::fake();
+
+        $buyer = User::factory()->create(['role' => 'buyer']);
+
+        $order = Order::create([
+            'artisan_id' => $this->owner->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-REJ-REFUND-' . strtoupper(uniqid()),
+            'customer_name' => $buyer->name,
+            'merchandise_subtotal' => 200,
+            'convenience_fee_amount' => 6,
+            'total_amount' => 206,
+            'status' => 'Refund/Return',
+            'payment_method' => 'COD',
+            'payment_status' => 'paid',
+            'shipping_address' => 'Blk 1 Lot 2, General Trias, Cavite',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        $approval = $this->approvalService->submitRequest(
+            seller: $this->owner,
+            requester: $this->staff,
+            domain: OwnerApproval::DOMAIN_REFUND,
+            title: "Approve Order Refund #{$order->order_number}",
+            summary: "Refund ₱206.00 for order #{$order->order_number}",
+            approvable: $order,
+            payload: $this->approvalService->buildRefundPayload($order, 'refund')
+        );
+
+        $response = $this->actingAs($this->owner)
+            ->post(route('seller.approvals.reject', $approval->id), [
+                'rejection_reason' => 'Item was damaged by customer, not eligible.',
+            ]);
+
+        $response->assertSessionHas('success');
+        $this->assertEquals(OwnerApproval::STATUS_REJECTED, $approval->fresh()->status);
+        $this->assertEquals('Completed', $order->fresh()->status);
     }
 }

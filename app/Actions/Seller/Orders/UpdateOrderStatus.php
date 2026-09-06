@@ -118,11 +118,19 @@ class UpdateOrderStatus
 
             // Check for rejection/cancellation to restore stock
             if (in_array($status, ['Rejected', 'Cancelled']) && !in_array($lockedOrder->status, ['Rejected', 'Cancelled'])) {
+                $productIds = $lockedOrder->items->pluck('product_id')->filter()->unique();
+                $products = $productIds->isNotEmpty()
+                    ? Product::with(['supply', 'recipes.supply.product'])
+                        ->whereIn('id', $productIds)
+                        ->lockForUpdate()
+                        ->get()
+                        ->keyBy('id')
+                    : collect();
+
                 foreach ($lockedOrder->items as $item) {
-                    $product = Product::lockForUpdate()->find($item->product_id);
+                    $product = $products->get($item->product_id);
                     if ($product) {
                         $product->increment('stock', $item->quantity);
-                        $product->refresh();
                         // Sync to linked Supply
                         if ($product->track_as_supply && $product->supply) {
                             $product->supply->update(['quantity' => $product->stock]);
@@ -145,7 +153,7 @@ class UpdateOrderStatus
                 // Restore BOM Supplies if it was Processing, Shipped, or Ready for Pickup
                 if (in_array($lockedOrder->status, ['Processing', 'Shipped', 'Ready for Pickup'])) {
                     foreach ($lockedOrder->items as $item) {
-                        $product = Product::with('recipes.supply')->find($item->product_id);
+                        $product = $products->get($item->product_id);
                         if ($product && $product->production_method === 'manufactured') {
                             foreach ($product->recipes as $recipe) {
                                 if ($recipe->supply) {

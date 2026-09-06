@@ -95,6 +95,30 @@ class SellerOrderController extends Controller
             ->where('status', 'Refund/Return')
             ->firstOrFail();
 
+        $user = $request->user();
+        $isStaff = $user->isStaff() && !$user->isSellerOwner();
+
+        if ($isStaff) {
+            $approvalService = app(\App\Services\OwnerApprovalService::class);
+            $sellerOwner = $this->sellerOwner();
+            $actionLabel = $request->action_type === 'refund' ? 'Refund' : 'Replacement';
+            $approvalService->submitRequest(
+                seller: $sellerOwner,
+                requester: $user,
+                domain: \App\Models\OwnerApproval::DOMAIN_REFUND,
+                title: "Return {$actionLabel}: Order #{$order->order_number}",
+                summary: "Staff requested {$actionLabel} for {$order->customer_name} (PHP " . number_format((float) $order->total_amount, 2) . ")",
+                approvable: $order,
+                payload: $approvalService->buildRefundPayload(
+                    $order,
+                    $request->action_type,
+                    $request->replacement_resolution_description
+                )
+            );
+
+            return back()->with('success', "Order return {$actionLabel} submitted for executive shop owner approval.");
+        }
+
         if ($request->action_type === 'refund') {
             try {
                 $approveOrderRefund->execute($order, $request->user());

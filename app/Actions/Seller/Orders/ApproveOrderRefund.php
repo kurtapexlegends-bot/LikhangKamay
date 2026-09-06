@@ -40,6 +40,52 @@ class ApproveOrderRefund
         $order->refresh();
         $order->loadMissing('user');
 
+        $refundGatewayStatus = 'skipped';
+        $refundGatewayId = null;
+
+        // Trigger PayMongo automated refund for online payment
+        if ($order->payment_id || ($order->payment_status === 'paid' && $order->payment_method !== 'COD')) {
+            if (empty($order->payment_id) && !empty($order->paymongo_session_id)) {
+                try {
+                    $session = app(\App\Services\PayMongoService::class)->retrieveCheckoutSession($order->paymongo_session_id);
+                    $payments = $session['attributes']['payments'] ?? [];
+                    if (is_array($payments) && !empty($payments)) {
+                        $firstPayment = reset($payments);
+                        $resolvedPaymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
+                        if ($resolvedPaymentId) {
+                            $order->payment_id = $resolvedPaymentId;
+                            $order->save();
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning("Failed resolving PayMongo payment_id from session {$order->paymongo_session_id}: " . $e->getMessage());
+                }
+            }
+
+            if ($order->payment_id) {
+                try {
+                    $amountInCents = (int) round(((float) $order->total_amount) * 100);
+                    $refundResult = app(\App\Services\PayMongoService::class)->createRefund(
+                        paymentId: $order->payment_id,
+                        amountInCents: $amountInCents,
+                        reason: 'requested_by_customer',
+                        notes: "Order {$order->order_number} return refund approved by seller"
+                    );
+                    if ($refundResult) {
+                        $refundGatewayStatus = 'success';
+                        $refundGatewayId = $refundResult['id'] ?? null;
+                        Log::info("PayMongo refund created for order {$order->id}", ['refund_id' => $refundGatewayId]);
+                    } else {
+                        $refundGatewayStatus = 'failed';
+                        Log::warning("PayMongo refund returned empty/failed for order {$order->id}");
+                    }
+                } catch (\Throwable $e) {
+                    $refundGatewayStatus = 'failed';
+                    Log::warning("PayMongo automated refund exception for order {$order->id}: " . $e->getMessage());
+                }
+            }
+        }
+
         $this->recordOrderAuditEvent(
             $order,
             $actor,
@@ -56,7 +102,11 @@ class ApproveOrderRefund
                     'status' => $order->status,
                     'payment_status' => $order->payment_status,
                 ],
-                'lines' => ['Seller approved the buyer return request for refund.'],
+                'lines' => array_values(array_filter([
+                    'Seller approved the buyer return request for refund.',
+                    $refundGatewayStatus === 'success' ? "Online payment refunded via PayMongo (ID: {$refundGatewayId})." : null,
+                    $refundGatewayStatus === 'failed' ? 'Automated PayMongo refund failed. Please verify manual refund status.' : null,
+                ])),
             ],
         );
 
