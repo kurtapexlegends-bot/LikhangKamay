@@ -113,4 +113,39 @@ class CrossDatabaseLikeQueryTest extends TestCase
         $this->actingAs($seller)->get(route('seller.supply-hub.sales', ['search' => 'ORD-WHOLESALE']))
             ->assertStatus(200);
     }
+
+    public function test_seller_order_listing_executes_without_schema_error(): void
+    {
+        $seller = User::factory()->artisanApproved()->create();
+        $buyer = User::factory()->create();
+
+        $order = \App\Models\Order::create([
+            'order_number' => 'ORD-SCHEMA-001',
+            'artisan_id' => $seller->id,
+            'user_id' => $buyer->id,
+            'customer_name' => $buyer->name,
+            'status' => 'Pending',
+            'total_amount' => 100.00,
+            'payment_method' => 'COD',
+            'payment_status' => 'pending',
+            'shipping_method' => 'Pickup',
+            'shipping_address' => 'Cavite',
+        ]);
+
+        \App\Models\OrderItem::create([
+            'order_id' => $order->id,
+            'product_name' => 'Clay Pot',
+            'price' => 100.00,
+            'quantity' => 1,
+            'is_b2b_supply' => false,
+        ]);
+
+        $action = app(\App\Actions\Seller\Orders\ListSellerOrders::class);
+        $result = $action->execute($seller->id, $seller, []);
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('orders', $result);
+        $this->assertArrayHasKey('tabCounts', $result);
+        $this->assertEquals(1, $result['tabCounts']['Pending']);
+    }
 }

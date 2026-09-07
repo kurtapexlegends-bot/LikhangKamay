@@ -6,8 +6,9 @@ use App\Http\Controllers\Controller;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 
 class CartController extends Controller
@@ -163,10 +164,15 @@ class CartController extends Controller
             'variant' => 'nullable|string|max:120',
         ]);
 
-        $product = Product::select([
+        $productColumns = [
             'id', 'user_id', 'sku', 'name', 'slug', 'price', 'stock', 'cover_photo_path',
-            'moq', 'supply_unit', 'wholesale_price', 'wholesale_min_qty', 'is_b2b_supply', 'weight'
-        ])
+            'moq', 'supply_unit', 'wholesale_price', 'wholesale_min_qty', 'weight'
+        ];
+        if (rescue(fn() => Schema::hasColumn('products', 'is_b2b_supply'), false)) {
+            $productColumns[] = 'is_b2b_supply';
+        }
+
+        $product = Product::select($productColumns)
             ->with('user:id,name,shop_name,city')
             ->findOrFail($validated['product_id']);
         $requestedQty = (int) ($validated['quantity'] ?? ($product->moq ?? 1));

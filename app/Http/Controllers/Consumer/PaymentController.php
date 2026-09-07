@@ -8,6 +8,8 @@ use App\Models\Order;
 use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 class PaymentController extends Controller
@@ -287,9 +289,14 @@ class PaymentController extends Controller
 
     private function resolveOrderDashboardRoute(Order $order): string
     {
+        $hasB2B = rescue(fn() => Schema::hasTable('order_items') && Schema::hasColumn('order_items', 'is_b2b_supply'), false);
+        if (!$hasB2B) {
+            return 'my-orders.index';
+        }
+
         $isB2B = $order->relationLoaded('items')
-            ? $order->items->contains('is_b2b_supply', true)
-            : $order->items()->where('is_b2b_supply', true)->exists();
+            ? (bool) $order->items->contains('is_b2b_supply', true)
+            : $order->items()->where('is_b2b_supply', DB::raw('true'))->exists();
 
         return $isB2B ? 'seller.supply-hub.orders' : 'my-orders.index';
     }

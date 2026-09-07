@@ -9,6 +9,7 @@ use App\Services\StorageUrl;
 use App\Services\VehicleTypeResolver;
 use App\Support\OrderWorkflowHelper;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ListSellerOrders
 {
@@ -30,10 +31,21 @@ class ListSellerOrders
     public function execute(int $sellerId, ?User $seller, array $filters): array
     {
         $seller?->loadMissing('addresses');
+        $hasB2BSupport = rescue(fn () => Schema::hasTable('order_items') && Schema::hasColumn('order_items', 'is_b2b_supply'), false);
 
         $query = Order::where('artisan_id', $sellerId)
-            ->whereDoesntHave('items', fn($q) => $q->where('is_b2b_supply', true))
             ->with(['items.product.recipes.supply', 'user', 'delivery.events', 'dispute', 'artisan']);
+
+        if ($hasB2BSupport) {
+            if (isset($filters['type']) && $filters['type'] === 'b2b') {
+                $query->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')));
+            } else {
+                // Default to regular/retail orders only
+                $query->whereDoesntHave('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')));
+            }
+        } elseif (isset($filters['type']) && $filters['type'] === 'b2b') {
+            $query->whereRaw('1 = 0');
+        }
 
         $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
 
@@ -81,8 +93,10 @@ class ListSellerOrders
         }
 
         // Fetch tab counts for this artisan (with search and date filters applied, but status omitted)
-        $countsQuery = Order::where('artisan_id', $sellerId)
-            ->whereDoesntHave('items', fn($q) => $q->where('is_b2b_supply', true));
+        $countsQuery = Order::where('artisan_id', $sellerId);
+        if ($hasB2BSupport) {
+            $countsQuery->whereDoesntHave('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')));
+        }
 
         $applySearchFilter($countsQuery);
 
@@ -109,13 +123,13 @@ class ListSellerOrders
             'Completed' => $statusCounts['Completed'] ?? 0,
             'Cancelled' => ($statusCounts['Cancelled'] ?? 0) + ($statusCounts['Rejected'] ?? 0),
             'paymentHoldCount' => Order::where('artisan_id', $sellerId)
-                ->whereDoesntHave('items', fn($q) => $q->where('is_b2b_supply', true))
+                ->when($hasB2BSupport, fn($q) => $q->whereDoesntHave('items', fn($iq) => $iq->where('is_b2b_supply', DB::raw('true'))))
                 ->where('payment_method', '!=', 'COD')
                 ->where('payment_status', '!=', 'paid')
                 ->where('status', 'Accepted')
                 ->count(),
             'hasActiveCourierTracking' => Order::where('artisan_id', $sellerId)
-                ->whereDoesntHave('items', fn($q) => $q->where('is_b2b_supply', true))
+                ->when($hasB2BSupport, fn($q) => $q->whereDoesntHave('items', fn($iq) => $iq->where('is_b2b_supply', DB::raw('true'))))
                 ->where('shipping_method', 'Delivery')
                 ->whereHas('delivery', function ($q) {
                     $q->whereNotNull('external_order_id')
