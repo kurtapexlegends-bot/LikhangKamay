@@ -161,7 +161,7 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                         <div className="relative flex items-start justify-between">
                             <div>
                                 <div className="mb-1 flex items-center gap-2.5">
-                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-clay-600 shadow-xs">
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm shadow-amber-200/40">
                                         <Crown size={15} className="text-white" />
                                     </div>
                                     <h2 className="text-lg font-extrabold tracking-tight text-stone-900 sm:text-[1.35rem]">
