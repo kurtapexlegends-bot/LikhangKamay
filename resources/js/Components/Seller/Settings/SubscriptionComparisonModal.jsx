@@ -218,18 +218,18 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                                     </th>
 
                                     {/* Elite Header */}
-                                    <th scope="col" className={`py-3.5 px-4 text-center w-[21%] transition-colors ${currentPlan === 'super_premium' ? 'bg-stone-100/90 border-x border-stone-300' : 'bg-white'}`}>
+                                    <th scope="col" className={`py-3.5 px-4 text-center w-[21%] transition-colors ${currentPlan === 'super_premium' ? 'bg-violet-50/90 border-x border-violet-200' : 'bg-white'}`}>
                                         <div className="flex flex-col items-center gap-1">
-                                            <div className="w-7 h-7 rounded-lg bg-stone-900 text-amber-400 flex items-center justify-center shadow-xs">
+                                            <div className="w-7 h-7 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center shadow-xs">
                                                 <Sparkles size={15} />
                                             </div>
                                             <span className="font-extrabold text-stone-900 text-sm">Elite</span>
                                             {currentPlan === 'super_premium' ? (
-                                                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-stone-900 text-amber-300">
+                                                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-violet-600 text-white">
                                                     <ShieldCheck size={10} /> Active
                                                 </span>
                                             ) : (
-                                                <span className="text-[10px] font-bold text-stone-600">All Unlocked</span>
+                                                <span className="text-[10px] font-bold text-violet-700">All Unlocked</span>
                                             )}
                                         </div>
                                     </th>
@@ -258,7 +258,7 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                                                 <td className={`py-3.5 px-4 text-center align-middle ${currentPlan === 'premium' ? 'bg-amber-50/40 border-x border-amber-200/70' : ''}`}>
                                                     {renderValue(item.premium)}
                                                 </td>
-                                                <td className={`py-3.5 px-4 text-center align-middle ${currentPlan === 'super_premium' ? 'bg-stone-100/40 border-x border-stone-200/70' : ''}`}>
+                                                <td className={`py-3.5 px-4 text-center align-middle ${currentPlan === 'super_premium' ? 'bg-violet-50/40 border-x border-violet-200/70' : ''}`}>
                                                     {renderValue(item.super_premium)}
                                                 </td>
                                             </tr>

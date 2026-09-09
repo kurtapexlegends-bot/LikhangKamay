@@ -70,7 +70,11 @@ export default function SubscriptionPlans({
                         const isElitePlan = plan.id === 'super_premium';
 
                         const cardClass = current
-                            ? 'border-[#C4B5FD] ring-2 ring-[#DDD6FE] shadow-[0_28px_50px_-42px_rgba(109,94,246,0.55)]'
+                            ? isElitePlan
+                                ? 'border-[#C4B5FD] ring-2 ring-[#DDD6FE] shadow-[0_28px_50px_-42px_rgba(109,94,246,0.55)]'
+                                : isPremiumPlan
+                                    ? 'border-amber-300 ring-2 ring-amber-200 shadow-[0_28px_50px_-44px_rgba(255,138,28,0.45)]'
+                                    : 'border-stone-300 ring-2 ring-stone-200 shadow-[0_24px_40px_-42px_rgba(15,23,42,0.45)]'
                             : isPremiumPlan
                                 ? 'border-stone-300 shadow-[0_28px_50px_-44px_rgba(255,138,28,0.45)]'
                                 : 'border-stone-200 shadow-[0_24px_40px_-42px_rgba(15,23,42,0.45)]';

@@ -106,15 +106,15 @@ export default function Subscription({
                 description: 'Unlock the complete seller suite for larger shops, staff workflows, and sponsorship-driven growth.',
                 limit: superPremiumLimit,
                 icon: Sparkles,
-                badgeClass: 'border-stone-800 bg-stone-800 text-stone-100',
-                iconClass: 'bg-stone-900 text-amber-300',
-                cardClass: 'border-stone-300 bg-gradient-to-b from-white to-stone-50',
-                currentClass: 'border-orange-500 ring-1 ring-orange-500',
-                featureIconClass: 'text-green-500',
-                upgradeButtonClass: 'bg-stone-900 text-white hover:bg-stone-800 shadow-sm shadow-stone-900/10',
+                badgeClass: 'border-violet-200 bg-violet-50 text-violet-700',
+                iconClass: 'bg-violet-100 text-violet-700',
+                cardClass: 'border-violet-200 bg-white',
+                currentClass: 'border-violet-500 ring-1 ring-violet-500',
+                featureIconClass: 'text-[#6D5EF6]',
+                upgradeButtonClass: 'bg-[#6D5EF6] text-white hover:bg-[#5C4DEA] shadow-sm',
                 downgradeButtonClass: 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50 hover:border-stone-400',
-                heroStripeClass: 'from-stone-900 via-stone-700 to-[#B78A5A]',
-                benefitCardClass: 'border-stone-200 bg-stone-50',
+                heroStripeClass: 'from-violet-500 via-indigo-500 to-purple-500',
+                benefitCardClass: 'border-violet-100 bg-violet-50/40',
                 supportCopy: 'Built for artisan shops using advanced modules, staff accounts, and sponsored reach.',
                 features: [
                     `Up to ${superPremiumLimit} active products`,
@@ -265,10 +265,28 @@ export default function Subscription({
                         {/* Expiration & Policy Status Banner */}
                         <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
                             <div className="flex flex-wrap items-center gap-2">
-                                <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/80 bg-amber-50/70 px-3.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
-                                    <BadgeCheck className="h-4 w-4 text-emerald-600 shrink-0" />
-                                    <span>Your Current Plan: <strong className="font-black text-amber-950">{currentPlanMeta.name}</strong></span>
-                                </span>
+                                <span className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-bold shadow-2xs ${
+                                     currentPlan === 'super_premium'
+                                         ? 'border-violet-200/80 bg-violet-50/70 text-violet-900'
+                                         : currentPlan === 'premium'
+                                             ? 'border-amber-200/80 bg-amber-50/70 text-amber-900'
+                                             : 'border-stone-200 bg-stone-100/80 text-stone-800'
+                                 }`}>
+                                     <BadgeCheck className={`h-4 w-4 shrink-0 ${
+                                         currentPlan === 'super_premium'
+                                             ? 'text-violet-600'
+                                             : currentPlan === 'premium'
+                                                 ? 'text-amber-600'
+                                                 : 'text-stone-600'
+                                     }`} />
+                                     <span>Your Current Plan: <strong className={`font-black ${
+                                         currentPlan === 'super_premium'
+                                             ? 'text-violet-950'
+                                             : currentPlan === 'premium'
+                                                 ? 'text-amber-950'
+                                                 : 'text-stone-950'
+                                     }`}>{currentPlanMeta.name}</strong></span>
+                                 </span>
 
                                 {formattedExpirationDate && (
                                     <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50/80 px-3 py-1 text-xs font-semibold text-stone-700">
