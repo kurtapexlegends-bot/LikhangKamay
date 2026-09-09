@@ -32,6 +32,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     
     const defaultQty = product?.is_b2b_supply && product?.moq ? Math.max(1, Number(product.moq)) : 1;
     const [quantity, setQuantity] = useState(defaultQty);
+    const [viewMode, setViewMode] = useState('image');
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [addedToCart, setAddedToCart] = useState(false);

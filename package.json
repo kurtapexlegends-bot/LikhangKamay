@@ -6,7 +6,10 @@
         "build": "vite build",
         "dev": "vite",
         "dev:all": "concurrently -k -p \"[{name}]\" -n \"PHP,VITE\" -c \"blue,green\" \"php artisan serve\" \"vite\"",
-        "lint": "eslint resources/js"
+        "lint": "eslint resources/js",
+        "test:smoke": "php artisan test:smoke",
+        "test:refs": "node scripts/verify-references.js",
+        "test:e2e": "node tests/e2e/smoke.mjs"
     },
     "devDependencies": {
         "@eslint/js": "^9.39.0",
@@ -24,6 +27,7 @@
         "laravel-echo": "^2.3.7",
         "laravel-vite-plugin": "^2.0.0",
         "postcss": "^8.4.31",
+        "puppeteer-core": "^25.10.0",
         "pusher-js": "^8.5.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
