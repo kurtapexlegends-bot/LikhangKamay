@@ -189,7 +189,7 @@ class ReviewController extends Controller
     {
         static $cache = [];
 
-        return $cache[$column] ??= Schema::hasColumn('review_disputes', $column);
+        return $cache[$column] ??= rescue(fn() => Schema::hasColumn('review_disputes', $column), false);
     }
 
     public function togglePin(int $id)

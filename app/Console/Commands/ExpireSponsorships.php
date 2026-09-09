@@ -25,7 +25,7 @@ class ExpireSponsorships extends Command
      */
     public function handle()
     {
-        $expiredProducts = \App\Models\Product::where('is_sponsored', true)
+        $expiredProducts = \App\Models\Product::where('is_sponsored', \App\Casts\PostgresCompatibleBoolean::dbVal(true))
             ->whereNotNull('sponsored_until')
             ->where('sponsored_until', '<', now())
             ->get(['id']);
@@ -35,7 +35,7 @@ class ExpireSponsorships extends Command
         $expiredCount = 0;
         if (!empty($productIds)) {
             $expiredCount = \App\Models\Product::whereIn('id', $productIds)
-                ->update(['is_sponsored' => false]);
+                ->update(['is_sponsored' => \App\Casts\PostgresCompatibleBoolean::dbVal(false)]);
 
             \App\Models\SponsorshipRequest::whereIn('product_id', $productIds)
                 ->where('status', 'approved')

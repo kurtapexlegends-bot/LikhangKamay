@@ -152,15 +152,15 @@ class InitiateSubscriptionUpgrade
             ...$overrides,
         ];
 
-        if (\Illuminate\Support\Facades\Cache::remember('schema_sub_trans_artisan_id', 86400, fn() => Schema::hasColumn('subscription_transactions', 'artisan_id'))) {
+        if (\Illuminate\Support\Facades\Cache::remember('schema_sub_trans_artisan_id', 86400, fn() => rescue(fn() => Schema::hasColumn('subscription_transactions', 'artisan_id'), false))) {
             $payload['artisan_id'] = $user->id;
         }
 
-        if (\Illuminate\Support\Facades\Cache::remember('schema_sub_trans_tier_purchased', 86400, fn() => Schema::hasColumn('subscription_transactions', 'tier_purchased'))) {
+        if (\Illuminate\Support\Facades\Cache::remember('schema_sub_trans_tier_purchased', 86400, fn() => rescue(fn() => Schema::hasColumn('subscription_transactions', 'tier_purchased'), false))) {
             $payload['tier_purchased'] = $toPlan;
         }
 
-        if (\Illuminate\Support\Facades\Cache::remember('schema_sub_trans_amount_paid', 86400, fn() => Schema::hasColumn('subscription_transactions', 'amount_paid'))) {
+        if (\Illuminate\Support\Facades\Cache::remember('schema_sub_trans_amount_paid', 86400, fn() => rescue(fn() => Schema::hasColumn('subscription_transactions', 'amount_paid'), false))) {
             $payload['amount_paid'] = $amount;
         }
 

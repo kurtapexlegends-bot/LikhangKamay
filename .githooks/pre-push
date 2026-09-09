@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# LikhangKamay Pre-Push Hook: Verify Dual-Database Compatibility
+
+set -e
+
+echo "Running automated dual-database compatibility checks before push..."
+php artisan db:verify-dual
+
+echo "Dual-database checks passed."

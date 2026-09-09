@@ -4,6 +4,13 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+    server: {
+        headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+        },
+    },
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'resources/js'),

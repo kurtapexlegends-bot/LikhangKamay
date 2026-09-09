@@ -20,7 +20,7 @@ class HREmployeeLoader
 {
     public static function getEmployeeRecordsWithLogin(User $seller): Collection
     {
-        $supportsEmployeeLoginLinks = Cache::remember('schema_users_has_employee_id', 86400, fn() => Schema::hasColumn('users', 'employee_id'));
+        $supportsEmployeeLoginLinks = Cache::remember('schema_users_has_employee_id', 86400, fn() => rescue(fn() => Schema::hasColumn('users', 'employee_id'), false));
         $employeeQuery = Employee::query()
             ->with('assignedLocation')
             ->where('user_id', $seller->id)
@@ -37,9 +37,9 @@ class HREmployeeLoader
                 'email_verified_at',
                 'employee_id',
                 'staff_plan_suspended_at',
-                Cache::remember('schema_users_has_must_change_password', 86400, fn() => Schema::hasColumn('users', 'must_change_password')) ? 'must_change_password' : null,
-                Cache::remember('schema_users_has_staff_role_preset_key', 86400, fn() => Schema::hasColumn('users', 'staff_role_preset_key')) ? 'staff_role_preset_key' : null,
-                Cache::remember('schema_users_has_staff_module_permissions', 86400, fn() => Schema::hasColumn('users', 'staff_module_permissions')) ? 'staff_module_permissions' : null,
+                Cache::remember('schema_users_has_must_change_password', 86400, fn() => rescue(fn() => Schema::hasColumn('users', 'must_change_password'), false)) ? 'must_change_password' : null,
+                Cache::remember('schema_users_has_staff_role_preset_key', 86400, fn() => rescue(fn() => Schema::hasColumn('users', 'staff_role_preset_key'), false)) ? 'staff_role_preset_key' : null,
+                Cache::remember('schema_users_has_staff_module_permissions', 86400, fn() => rescue(fn() => Schema::hasColumn('users', 'staff_module_permissions'), false)) ? 'staff_module_permissions' : null,
             ]));
 
             $employeeQuery->with([

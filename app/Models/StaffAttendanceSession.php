@@ -72,15 +72,15 @@ class StaffAttendanceSession extends Model
             'clock_in_latitude' => 'float',
             'clock_in_longitude' => 'float',
             'distance_meters' => 'integer',
-            'is_within_geofence' => 'boolean',
-            'is_late' => 'boolean',
+            'is_within_geofence' => \App\Casts\PostgresCompatibleBoolean::class,
+            'is_late' => \App\Casts\PostgresCompatibleBoolean::class,
             'late_minutes' => 'integer',
-            'is_early_departure' => 'boolean',
+            'is_early_departure' => \App\Casts\PostgresCompatibleBoolean::class,
             'undertime_minutes' => 'integer',
             'total_break_minutes' => 'integer',
-            'is_extended_break' => 'boolean',
-            'liveness_verified' => 'boolean',
-            'is_flagged' => 'boolean',
+            'is_extended_break' => \App\Casts\PostgresCompatibleBoolean::class,
+            'liveness_verified' => \App\Casts\PostgresCompatibleBoolean::class,
+            'is_flagged' => \App\Casts\PostgresCompatibleBoolean::class,
         ];
     }
 

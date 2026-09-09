@@ -234,7 +234,7 @@ class AuditLogAggregationService
     public static function tableExists(string $table): bool
     {
         return \Illuminate\Support\Facades\Cache::remember("schema_table_exists_{$table}", 86400, function () use ($table) {
-            return Schema::hasTable($table);
+            return rescue(fn() => Schema::hasTable($table), false);
         });
     }
 

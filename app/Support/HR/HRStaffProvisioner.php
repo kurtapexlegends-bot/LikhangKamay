@@ -32,23 +32,19 @@ class HRStaffProvisioner
     public static function supportsStaffProvisioningSchema(): bool
     {
         return Cache::remember('schema_users_supports_provisioning', 86400, function () {
-            return Schema::hasColumn('users', 'seller_owner_id')
+            return rescue(fn () => Schema::hasColumn('users', 'seller_owner_id')
                 && Schema::hasColumn('users', 'staff_role_preset_key')
                 && Schema::hasColumn('users', 'staff_module_permissions')
                 && Schema::hasColumn('users', 'must_change_password')
                 && Schema::hasColumn('users', 'created_by_user_id')
-                && Schema::hasColumn('users', 'employee_id');
+                && Schema::hasColumn('users', 'employee_id'), false);
         });
     }
 
     public static function supportsStaffAccessAuditSchema(): bool
     {
         return Cache::remember('schema_has_table_staff_access_audits', 86400, function () {
-            try {
-                return Schema::hasTable('staff_access_audits');
-            } catch (Throwable) {
-                return false;
-            }
+            return rescue(fn () => Schema::hasTable('staff_access_audits'), false);
         });
     }
 

@@ -22,6 +22,7 @@ class SellerLocation extends Model
         'daily_workplace_pin',
         'daily_pin_updated_at',
         'is_active',
+        'allow_remote_clock_in',
     ];
 
     protected $casts = [
@@ -29,9 +30,15 @@ class SellerLocation extends Model
         'longitude' => 'float',
         'radius_meters' => 'integer',
         'enforce_strict_geofence' => \App\Casts\PostgresCompatibleBoolean::class,
+        'allow_remote_clock_in' => \App\Casts\PostgresCompatibleBoolean::class,
         'daily_pin_updated_at' => 'datetime',
         'is_active' => \App\Casts\PostgresCompatibleBoolean::class,
     ];
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', \App\Casts\PostgresCompatibleBoolean::dbVal(true));
+    }
 
     public function getOrGenerateDailyPin(): string
     {

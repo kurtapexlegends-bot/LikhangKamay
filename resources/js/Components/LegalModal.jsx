@@ -301,7 +301,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
                         ) : !hasReachedBottom ? (
                             <span className="flex items-center gap-1.5 text-stone-500">
                                 <ArrowDown size={14} className="text-clay-600 animate-bounce" />
-                                <span>Scroll to the bottom to continue</span>
+                                <span>Scroll to the bottom of this document before continuing.</span>
                             </span>
                         ) : hasNext ? (
                             <span className="flex items-center gap-1.5 text-emerald-700 font-medium">

@@ -326,27 +326,33 @@ class ShopAnalyticsMetricsService
         return round((($current - $previous) / $previous) * 100, 1);
     }
 
-    public function monthNumberExpression(string $column): string
+    public function monthNumberExpression(string $column, ?string $connection = null): string
     {
-        return match (DB::connection()->getDriverName()) {
+        $driver = in_array($connection, ['pgsql', 'mysql', 'sqlite'], true) ? $connection : ($connection ? DB::connection($connection)->getDriverName() : DB::connection()->getDriverName());
+
+        return match ($driver) {
             'sqlite' => "CAST(strftime('%m', {$column}) AS INTEGER)",
             'pgsql' => "EXTRACT(MONTH FROM {$column})",
             default => "MONTH({$column})",
         };
     }
 
-    public function yearNumberExpression(string $column): string
+    public function yearNumberExpression(string $column, ?string $connection = null): string
     {
-        return match (DB::connection()->getDriverName()) {
+        $driver = in_array($connection, ['pgsql', 'mysql', 'sqlite'], true) ? $connection : ($connection ? DB::connection($connection)->getDriverName() : DB::connection()->getDriverName());
+
+        return match ($driver) {
             'sqlite' => "CAST(strftime('%Y', {$column}) AS INTEGER)",
             'pgsql' => "EXTRACT(YEAR FROM {$column})",
             default => "YEAR({$column})",
         };
     }
 
-    public function dayOfWeekExpression(string $column): string
+    public function dayOfWeekExpression(string $column, ?string $connection = null): string
     {
-        return match (DB::connection()->getDriverName()) {
+        $driver = in_array($connection, ['pgsql', 'mysql', 'sqlite'], true) ? $connection : ($connection ? DB::connection($connection)->getDriverName() : DB::connection()->getDriverName());
+
+        return match ($driver) {
             'sqlite' => "
                 CASE CAST(strftime('%w', {$column}) AS INTEGER)
                     WHEN 0 THEN 'Sun'
@@ -371,27 +377,33 @@ class ShopAnalyticsMetricsService
         };
     }
 
-    public function hourExpression(string $column): string
+    public function hourExpression(string $column, ?string $connection = null): string
     {
-        return match (DB::connection()->getDriverName()) {
+        $driver = in_array($connection, ['pgsql', 'mysql', 'sqlite'], true) ? $connection : ($connection ? DB::connection($connection)->getDriverName() : DB::connection()->getDriverName());
+
+        return match ($driver) {
             'sqlite' => "CAST(strftime('%H', {$column}) AS INTEGER)",
             'pgsql' => "EXTRACT(HOUR FROM {$column})",
             default => "HOUR({$column})",
         };
     }
 
-    public function dateDiffExpression(string $column1, string $column2): string
+    public function dateDiffExpression(string $column1, string $column2, ?string $connection = null): string
     {
-        return match (DB::connection()->getDriverName()) {
+        $driver = in_array($connection, ['pgsql', 'mysql', 'sqlite'], true) ? $connection : ($connection ? DB::connection($connection)->getDriverName() : DB::connection()->getDriverName());
+
+        return match ($driver) {
             'sqlite' => "(julianday({$column1}) - julianday({$column2}))",
             'pgsql' => "({$column1}::date - {$column2}::date)",
             default => "DATEDIFF({$column1}, {$column2})",
         };
     }
 
-    public function yearMonthExpression(string $column): string
+    public function yearMonthExpression(string $column, ?string $connection = null): string
     {
-        return match (DB::connection()->getDriverName()) {
+        $driver = in_array($connection, ['pgsql', 'mysql', 'sqlite'], true) ? $connection : ($connection ? DB::connection($connection)->getDriverName() : DB::connection()->getDriverName());
+
+        return match ($driver) {
             'sqlite' => "strftime('%Y-%m', {$column})",
             'pgsql' => "to_char({$column}, 'YYYY-MM')",
             default => "DATE_FORMAT({$column}, '%Y-%m')",

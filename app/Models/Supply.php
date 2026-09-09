@@ -15,11 +15,7 @@ class Supply extends Model
     public static function supportsSoftDeletes(): bool
     {
         if (static::$hasDeletedAtColumn === null) {
-            try {
-                static::$hasDeletedAtColumn = \Illuminate\Support\Facades\Schema::hasColumn('supplies', 'deleted_at');
-            } catch (\Throwable $e) {
-                static::$hasDeletedAtColumn = false;
-            }
+            static::$hasDeletedAtColumn = rescue(fn() => \Illuminate\Support\Facades\Schema::hasColumn('supplies', 'deleted_at'), false);
         }
 
         return (bool) static::$hasDeletedAtColumn;

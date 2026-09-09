@@ -98,9 +98,9 @@ class PlaceOrder
             $buyer->update(['saved_address' => $selectedAddress->full_address]);
         }
 
-        $supportsWasSponsored = \Illuminate\Support\Facades\Cache::remember('schema_order_items_was_sponsored', 86400, fn() => Schema::hasColumn('order_items', 'was_sponsored'));
-        $supportsSponsorshipRequestId = \Illuminate\Support\Facades\Cache::remember('schema_order_items_sponsorship_request_id', 86400, fn() => Schema::hasColumn('order_items', 'sponsorship_request_id'));
-        $supportsSponsoredAtCheckout = \Illuminate\Support\Facades\Cache::remember('schema_order_items_sponsored_at_checkout', 86400, fn() => Schema::hasColumn('order_items', 'sponsored_at_checkout'));
+        $supportsWasSponsored = \Illuminate\Support\Facades\Cache::remember('schema_order_items_was_sponsored', 86400, fn() => rescue(fn() => Schema::hasColumn('order_items', 'was_sponsored'), false));
+        $supportsSponsorshipRequestId = \Illuminate\Support\Facades\Cache::remember('schema_order_items_sponsorship_request_id', 86400, fn() => rescue(fn() => Schema::hasColumn('order_items', 'sponsorship_request_id'), false));
+        $supportsSponsoredAtCheckout = \Illuminate\Support\Facades\Cache::remember('schema_order_items_sponsored_at_checkout', 86400, fn() => rescue(fn() => Schema::hasColumn('order_items', 'sponsored_at_checkout'), false));
 
         $groupedItems = OrderWorkflowHelper::groupCheckoutItemsBySeller($request->items);
 

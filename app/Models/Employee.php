@@ -58,8 +58,8 @@ class Employee extends Model
 
     protected $casts = [
         'working_days' => 'array',
-        'allow_remote_clock_in' => 'boolean',
-        'enforce_strict_shift_window' => 'boolean',
+        'allow_remote_clock_in' => \App\Casts\PostgresCompatibleBoolean::class,
+        'enforce_strict_shift_window' => \App\Casts\PostgresCompatibleBoolean::class,
         'break_allowance_minutes' => 'integer',
         'grace_period_minutes' => 'integer',
         'earliest_clock_in_minutes' => 'integer',

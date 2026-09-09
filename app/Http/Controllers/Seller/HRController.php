@@ -215,7 +215,7 @@ class HRController extends Controller
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
         abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
-        $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
+        $supportsEmployeeLoginLinks = rescue(fn() => Schema::hasColumn('users', 'employee_id'), false);
         $employeeQuery = Employee::query()
             ->where('user_id', $this->sellerOwnerId())
             ->where('id', $id);
@@ -266,7 +266,7 @@ class HRController extends Controller
         abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access cannot change employee status.');
         abort_unless($actor->canManageStaffAccounts(), 403, 'Only the shop owner or a user with staff management access can suspend employees.');
 
-        $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
+        $supportsEmployeeLoginLinks = rescue(fn() => Schema::hasColumn('users', 'employee_id'), false);
         $employeeQuery = Employee::query()
             ->where('user_id', $this->sellerOwnerId())
             ->where('id', $id);
@@ -337,7 +337,7 @@ class HRController extends Controller
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
         abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
-        $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
+        $supportsEmployeeLoginLinks = rescue(fn() => Schema::hasColumn('users', 'employee_id'), false);
         $employeeQuery = Employee::query()
             ->where('user_id', $this->sellerOwnerId())
             ->where('id', $id);

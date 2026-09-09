@@ -438,7 +438,6 @@ Route::get('/webhooks/migrate', function (\Illuminate\Http\Request $request) {
     $providedSecret = $request->query('secret') ?: $request->header('X-Vercel-Cron-Secret');
 
     $isAuthorized = ($cronSecret && !empty($providedSecret) && hash_equals((string) $cronSecret, (string) $providedSecret))
-        || (!empty($providedSecret) && hash_equals('likhangkamay_migrate_2026', (string) $providedSecret))
         || ($user && in_array($user->role, ['super_admin', 'admin'], true));
 
     if (!$isAuthorized) {

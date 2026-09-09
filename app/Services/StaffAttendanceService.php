@@ -963,10 +963,10 @@ class StaffAttendanceService
 
     public function transformEmployeeRecords(\Illuminate\Support\Collection $employeeRecords, array $attendanceSummaries): \Illuminate\Support\Collection
     {
-        $supportsEmployeeLoginLinks = Schema::hasColumn('users', 'employee_id');
-        $supportsMustChangePassword = Schema::hasColumn('users', 'must_change_password');
-        $supportsRolePresetKey = Schema::hasColumn('users', 'staff_role_preset_key');
-        $supportsStaffModulePermissions = Schema::hasColumn('users', 'staff_module_permissions');
+        $supportsEmployeeLoginLinks = rescue(fn() => Schema::hasColumn('users', 'employee_id'), false);
+        $supportsMustChangePassword = rescue(fn() => Schema::hasColumn('users', 'must_change_password'), false);
+        $supportsRolePresetKey = rescue(fn() => Schema::hasColumn('users', 'staff_role_preset_key'), false);
+        $supportsStaffModulePermissions = rescue(fn() => Schema::hasColumn('users', 'staff_module_permissions'), false);
 
         return $employeeRecords->map(function (Employee $employee) use ($supportsEmployeeLoginLinks, $supportsMustChangePassword, $supportsRolePresetKey, $supportsStaffModulePermissions, $attendanceSummaries) {
             $loginAccount = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;

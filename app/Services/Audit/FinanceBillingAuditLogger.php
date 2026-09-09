@@ -183,7 +183,7 @@ class FinanceBillingAuditLogger
             ->where(function ($query) use ($seller) {
                 $query->where('user_id', $seller->id);
                 
-                $hasArtisanId = \Illuminate\Support\Facades\Cache::remember('schema_sub_trans_artisan_id', 86400, fn() => \Illuminate\Support\Facades\Schema::hasColumn('subscription_transactions', 'artisan_id'));
+                $hasArtisanId = \Illuminate\Support\Facades\Cache::remember('schema_sub_trans_artisan_id', 86400, fn() => rescue(fn() => \Illuminate\Support\Facades\Schema::hasColumn('subscription_transactions', 'artisan_id'), false));
                 if ($hasArtisanId) {
                     $query->orWhere('artisan_id', $seller->id);
                 }
@@ -248,7 +248,7 @@ class FinanceBillingAuditLogger
                 ->where(function ($query) use ($seller) {
                     $query->where('user_id', $seller->id);
                     
-                    $hasArtisanId = \Illuminate\Support\Facades\Cache::remember('schema_sub_trans_artisan_id', 86400, fn() => \Illuminate\Support\Facades\Schema::hasColumn('subscription_transactions', 'artisan_id'));
+                    $hasArtisanId = \Illuminate\Support\Facades\Cache::remember('schema_sub_trans_artisan_id', 86400, fn() => rescue(fn() => \Illuminate\Support\Facades\Schema::hasColumn('subscription_transactions', 'artisan_id'), false));
                     if ($hasArtisanId) {
                         $query->orWhere('artisan_id', $seller->id);
                     }
