@@ -1,9 +1,10 @@
 /* global route */
-import React, { useState } from "react";
+import React, { useState, lazy, Suspense } from "react";
 import { Head, router } from "@inertiajs/react";
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from "@/Layouts/SellerWorkspaceLayout";
 import SellerHeader from "@/Layouts/SellerHeader";
-import StaffClockInModal from "@/Components/Staff/Dashboard/StaffClockInModal";
+
+const StaffClockInModal = lazy(() => import("@/Components/Staff/Dashboard/StaffClockInModal"));
 import Modal from "@/Components/Modal";
 import {
     Truck,
@@ -1164,10 +1165,14 @@ export default function DriverDeliveries({
             )}
 
             {/* Clock In Modal */}
-            <StaffClockInModal
-                isOpen={isClockInModalOpen}
-                onClose={() => setIsClockInModalOpen(false)}
-            />
+            {isClockInModalOpen && (
+                <Suspense fallback={null}>
+                    <StaffClockInModal
+                        isOpen={isClockInModalOpen}
+                        onClose={() => setIsClockInModalOpen(false)}
+                    />
+                </Suspense>
+            )}
         </div>
     );
 }

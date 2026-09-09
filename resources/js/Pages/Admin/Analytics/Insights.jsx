@@ -1,71 +1,23 @@
 /* global route */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, lazy, Suspense } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import {
     AlertTriangle, Users, ShoppingBag, 
     ClipboardCheck, ArrowRight, Printer, Download,
     Mail, Check, Loader2, Award, ExternalLink
 } from 'lucide-react';
-import {
-    ResponsiveContainer,
-    AreaChart, Area,
-    XAxis, YAxis, Tooltip, CartesianGrid
-} from 'recharts';
-import { PieChart, Pie, Cell } from 'recharts';
 import AdminLayout from '@/Layouts/AdminLayout';
 import UserAvatar from '@/Components/UserAvatar';
 import KPICard from '@/Components/KPICard';
 import ExportButton from '@/Components/ExportButton';
 import { useToast } from '@/Components/ToastContext';
+import ErrorBoundary from '@/Components/ErrorBoundary';
+
+const AdminGmvChart = lazy(() => import('@/Components/Admin/Analytics/AdminGmvChart'));
+const AdminCategoryPieChart = lazy(() => import('@/Components/Admin/Analytics/AdminCategoryPieChart'));
 
 // Earthy & Premium Palette
 const PIE_COLORS = ['#c07251', '#d97706', '#10b981', '#78716c', '#a8a29e', '#d6d3d1'];
-
-// ---- Premium Frosted Glass Tooltip Styling ----
-const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload?.length) {
-        const data = payload[0]?.payload;
-        return (
-            <div className="bg-white/90 backdrop-blur-xl border border-stone-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-xl px-4 py-3">
-                <p className="font-bold text-stone-900 text-[10px] uppercase tracking-wider mb-2">{label || data?.name}</p>
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-clay-550" style={{ backgroundColor: '#c07251' }}></div>
-                    <p className="text-xs font-bold text-stone-800">
-                        GMV: <span className="font-semibold text-stone-550">₱{Number(data?.gmv || 0).toLocaleString()}</span>
-                    </p>
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                    <div className="w-2 h-2 rounded-full bg-blue-500" style={{ backgroundColor: '#0284c7' }}></div>
-                    <p className="text-xs font-bold text-stone-800">
-                        Orders: <span className="font-semibold text-stone-550">{Number(data?.orders || 0).toLocaleString()}</span>
-                    </p>
-                </div>
-            </div>
-        );
-    }
-    return null;
-};
-
-// ---- Premium Frosted Glass Category Tooltip Styling ----
-const CategoryTooltip = ({ active, payload }) => {
-    if (active && payload?.length) {
-        const item = payload[0]?.payload;
-        const gmvValue = item?.isEmpty ? 0 : Number(item?.gmv || 0);
-
-        return (
-            <div className="bg-white/90 backdrop-blur-xl border border-stone-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-xl px-4 py-3">
-                <p className="font-bold text-stone-900 text-[11px] uppercase tracking-wider mb-2">{item?.category || 'Category'}</p>
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item?.isEmpty ? '#e7e5e4' : payload[0].color }}></div>
-                    <p className="text-sm font-bold text-stone-800">
-                        GMV: <span className="font-semibold text-stone-550">₱{gmvValue.toLocaleString()}</span>
-                    </p>
-                </div>
-            </div>
-        );
-    }
-    return null;
-};
 
 export default function Insights({ 
     transactions = { currentGmv: 0, growthRate: 0, seven_days: [], monthly: [], yearly: [] }, 
@@ -292,35 +244,31 @@ export default function Insights({
                         </div>
                     </div>
                     <div className="p-4 sm:p-6 flex-grow flex items-center">
-                        <div className="h-[260px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={currentChartData} margin={{ top: 10, right: 10, bottom: 5, left: -20 }}>
-                                    <defs>
-                                        <linearGradient id="adminGmvFill" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#c07251" stopOpacity={0.16} />
-                                            <stop offset="95%" stopColor="#c07251" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
-                                    <XAxis dataKey="name" stroke="#a8a29e" fontSize={10} tickLine={false} axisLine={false} />
-                                    <YAxis 
-                                        stroke="#a8a29e" 
-                                        fontSize={10} 
-                                        tickLine={false} 
-                                        axisLine={false} 
-                                        tickFormatter={(v) => {
-                                            const num = Number(v || 0);
-                                            if (num === 0) return '₱0';
-                                            const abs = Math.abs(num);
-                                            const formatted = abs >= 1000 ? `${(abs / 1000).toFixed(0)}k` : abs;
-                                            return num < 0 ? `-₱${formatted}` : `₱${formatted}`;
-                                        }} 
-                                    />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Area type="monotone" dataKey="gmv" stroke="#c07251" strokeWidth={2.5} fillOpacity={1} fill="url(#adminGmvFill)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
+                        <ErrorBoundary
+                            resetKey={chartFilter}
+                            fallback={({ retry }) => (
+                                <div className="h-[260px] w-full flex flex-col items-center justify-center gap-2 bg-stone-50/50 p-4 rounded-xl text-center">
+                                    <span className="text-xs text-stone-500 font-medium">Unable to load GMV chart.</span>
+                                    <button
+                                        type="button"
+                                        onClick={retry}
+                                        className="text-xs font-bold text-clay-700 hover:text-clay-800 underline"
+                                    >
+                                        Retry
+                                    </button>
+                                </div>
+                            )}
+                        >
+                            <Suspense fallback={
+                                <div className="h-[260px] w-full flex flex-col justify-end gap-2 bg-stone-50/50 p-4 rounded-xl animate-pulse">
+                                    <div className="w-full h-full bg-stone-100/70 rounded-lg flex items-center justify-center">
+                                        <span className="text-xs text-stone-400 font-medium">Loading sales analytics...</span>
+                                    </div>
+                                </div>
+                            }>
+                                <AdminGmvChart currentChartData={currentChartData} />
+                            </Suspense>
+                        </ErrorBoundary>
                         {/* Print Fallback Table */}
                         <div className="hidden print:block w-full">
                             <table className="w-full text-xs text-left border border-stone-200">
@@ -356,33 +304,33 @@ export default function Insights({
                     <div className="p-4 sm:p-5 flex flex-col justify-center flex-grow">
                         {pieData.length > 0 ? (
                             <div className="space-y-4">
-                                <div className="h-44 w-full flex items-center justify-center">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Tooltip content={<CategoryTooltip />} />
-                                            <Pie
-                                                data={pieData}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={48}
-                                                outerRadius={68}
-                                                paddingAngle={4}
-                                                dataKey="gmv"
-                                                onMouseEnter={(_, index) => setHoveredCategoryIndex(index)}
-                                                onMouseLeave={() => setHoveredCategoryIndex(null)}
+                                <ErrorBoundary
+                                    fallback={({ retry }) => (
+                                        <div className="h-44 w-full flex flex-col items-center justify-center gap-2 text-center">
+                                            <span className="text-xs text-stone-500 font-medium">Unable to load category chart.</span>
+                                            <button
+                                                type="button"
+                                                onClick={retry}
+                                                className="text-xs font-bold text-clay-700 hover:text-clay-800 underline"
                                             >
-                                                {pieData.map((entry, index) => (
-                                                    <Cell 
-                                                        key={`cell-${index}`} 
-                                                        fill={entry.isEmpty ? '#e7e5e4' : PIE_COLORS[index % PIE_COLORS.length]} 
-                                                        opacity={hoveredCategoryIndex === null || hoveredCategoryIndex === index ? 1 : 0.4}
-                                                        className="transition-opacity duration-200 outline-hidden"
-                                                    />
-                                                ))}
-                                            </Pie>
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
+                                                Retry
+                                            </button>
+                                        </div>
+                                    )}
+                                >
+                                    <Suspense fallback={
+                                        <div className="h-44 w-full flex items-center justify-center animate-pulse">
+                                            <div className="w-28 h-28 rounded-full border-4 border-stone-100 border-t-clay-600 animate-spin" />
+                                        </div>
+                                    }>
+                                        <AdminCategoryPieChart
+                                            pieData={pieData}
+                                            pieColors={PIE_COLORS}
+                                            hoveredCategoryIndex={hoveredCategoryIndex}
+                                            setHoveredCategoryIndex={setHoveredCategoryIndex}
+                                        />
+                                    </Suspense>
+                                </ErrorBoundary>
                                 <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
                                     {categories.map((item, index) => (
                                         <div 

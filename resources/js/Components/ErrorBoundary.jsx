@@ -32,8 +32,24 @@ class ErrorBoundary extends React.Component {
         }
     };
 
+    componentDidUpdate(prevProps) {
+        if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
+            this.setState({ hasError: false, error: null, errorInfo: null });
+        }
+    }
+
+    handleReset = () => {
+        this.setState({ hasError: false, error: null, errorInfo: null });
+    };
+
     render() {
         if (this.state.hasError) {
+            if (this.props.fallback) {
+                if (typeof this.props.fallback === 'function') {
+                    return this.props.fallback({ error: this.state.error, retry: this.handleReset });
+                }
+                return this.props.fallback;
+            }
             const isLocalOrDev = Boolean(
                 (typeof import.meta !== 'undefined' && (import.meta.env?.DEV || import.meta.env?.MODE === 'development')) ||
                 (typeof window !== 'undefined' && (

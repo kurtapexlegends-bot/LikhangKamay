@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+/* global route */
+import React, { useState, lazy, Suspense } from 'react';
 import { Link } from '@inertiajs/react';
-import { Calendar, ArrowRight, ShieldCheck, MessageSquare, Check } from 'lucide-react';
-import StaffClockInModal from '@/Components/Staff/Dashboard/StaffClockInModal';
+import { Calendar, ArrowRight, MessageSquare, Check } from 'lucide-react';
+
+const StaffClockInModal = lazy(() => import('@/Components/Staff/Dashboard/StaffClockInModal'));
 
 export default function ShiftConsolePanel({
     hasActiveSession,
@@ -159,7 +161,11 @@ export default function ShiftConsolePanel({
                 </div>
             )}
 
-            <StaffClockInModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+            {isModalOpen && (
+                <Suspense fallback={null}>
+                    <StaffClockInModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+                </Suspense>
+            )}
         </div>
     );
 }

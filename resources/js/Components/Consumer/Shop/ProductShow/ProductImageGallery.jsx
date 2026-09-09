@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useRef, useEffect } from 'react';
-import { Image as ImageIcon, Box, Flag, Heart } from 'lucide-react';
+import { Image as ImageIcon, Box, Flag, Heart, Loader2 } from 'lucide-react';
 import ProductImageMagnifier from './ProductImageMagnifier';
+import { ThreeDModelBoundary, ThreeDModelUnavailable } from '@/Components/ThreeD/ThreeDModelBoundary';
 
 const ProductViewer3D = lazy(() => import('@/Components/ThreeD/ProductViewer3D'));
 
@@ -85,14 +86,32 @@ export default function ProductImageGallery({
                         </div>
                     </>
                 ) : (
-                    <Suspense fallback={<div className="flex h-full items-center justify-center bg-gradient-to-b from-gray-50 to-white text-sm font-medium text-gray-500">Loading 3D view...</div>}>
-                        <ProductViewer3D
-                            modelUrl={product.model_3d_url || product.model_url}
-                            productName={product.name}
-                            compact
-                            className="h-full rounded-none border-0 bg-gradient-to-b from-gray-50 to-white"
-                        />
-                    </Suspense>
+                    <ThreeDModelBoundary
+                        resetKey={product.model_3d_url || product.model_url}
+                        fallback={({ onRetry }) => (
+                            <ThreeDModelUnavailable
+                                compact
+                                title={`${product.name} 3D view is unavailable`}
+                                description="Could not load the 3D viewer. Please check your network connection."
+                                onRetry={onRetry}
+                                className="h-full"
+                            />
+                        )}
+                    >
+                        <Suspense fallback={
+                            <div className="flex flex-col h-full items-center justify-center bg-gradient-to-b from-gray-50 to-white text-sm font-medium text-stone-500 gap-2">
+                                <Loader2 className="w-6 h-6 animate-spin text-clay-600" />
+                                <span>Loading 3D view...</span>
+                            </div>
+                        }>
+                            <ProductViewer3D
+                                modelUrl={product.model_3d_url || product.model_url}
+                                productName={product.name}
+                                compact
+                                className="h-full rounded-none border-0 bg-gradient-to-b from-gray-50 to-white"
+                            />
+                        </Suspense>
+                    </ThreeDModelBoundary>
                 )}
 
                 {/* View Toggle */}

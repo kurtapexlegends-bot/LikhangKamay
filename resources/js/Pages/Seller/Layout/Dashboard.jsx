@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
@@ -6,10 +6,12 @@ import SellerHeader from '@/Layouts/SellerHeader';
 // Subcomponents
 import DashboardKPIs from '@/Components/Seller/Dashboard/DashboardKPIs';
 import ShopHealthStrip from '@/Components/Seller/Dashboard/ShopHealthStrip';
-import RevenueAnalyticsChart from '@/Components/Seller/Dashboard/RevenueAnalyticsChart';
-import SalesByCategoryChart from '@/Components/Seller/Dashboard/SalesByCategoryChart';
 import RecentOrdersPreview from '@/Components/Seller/Dashboard/RecentOrdersPreview';
 import WelcomeModal from '@/Components/Seller/Dashboard/WelcomeModal';
+import ErrorBoundary from '@/Components/ErrorBoundary';
+
+const RevenueAnalyticsChart = lazy(() => import('@/Components/Seller/Dashboard/RevenueAnalyticsChart'));
+const SalesByCategoryChart = lazy(() => import('@/Components/Seller/Dashboard/SalesByCategoryChart'));
 
 export default function Dashboard({ auth }) {
     const { metrics, chartData, categoryData, recentOrders, filters } = usePage().props;
@@ -111,16 +113,75 @@ export default function Dashboard({ auth }) {
 
                 {/* Charts Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <RevenueAnalyticsChart 
-                        chartFilter={chartFilter} 
-                        setChartFilter={setChartFilter} 
-                        currentChartData={currentChartData} 
-                        isLoading={isLoading} 
-                    />
-                    <SalesByCategoryChart 
-                        categoryData={categoryData} 
-                        isLoading={isLoading} 
-                />
+                    <ErrorBoundary
+                        resetKey={chartFilter}
+                        fallback={({ retry }) => (
+                            <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center min-h-[416px] text-center gap-3">
+                                <p className="text-xs text-stone-500 font-medium">Unable to load revenue chart.</p>
+                                <button
+                                    type="button"
+                                    onClick={retry}
+                                    className="px-3 py-1.5 text-xs font-bold text-clay-700 hover:text-clay-800 bg-clay-50 hover:bg-clay-100 rounded-lg transition"
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        )}
+                    >
+                        <Suspense fallback={
+                            <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between min-h-[416px] animate-pulse">
+                                <div className="flex justify-between items-center mb-6">
+                                    <div className="space-y-2">
+                                        <div className="h-5 w-36 bg-stone-100 rounded-lg" />
+                                        <div className="h-3 w-24 bg-stone-100 rounded-lg" />
+                                    </div>
+                                    <div className="h-8 w-32 bg-stone-100 rounded-lg" />
+                                </div>
+                                <div className="flex-1 w-full bg-stone-50/60 rounded-xl flex items-center justify-center">
+                                    <span className="text-xs text-stone-400 font-medium">Loading revenue chart...</span>
+                                </div>
+                            </div>
+                        }>
+                            <RevenueAnalyticsChart 
+                                chartFilter={chartFilter} 
+                                setChartFilter={setChartFilter} 
+                                currentChartData={currentChartData} 
+                                isLoading={isLoading} 
+                            />
+                        </Suspense>
+                    </ErrorBoundary>
+
+                    <ErrorBoundary
+                        fallback={({ retry }) => (
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center min-h-[416px] text-center gap-3">
+                                <p className="text-xs text-stone-500 font-medium">Unable to load sales by category.</p>
+                                <button
+                                    type="button"
+                                    onClick={retry}
+                                    className="px-3 py-1.5 text-xs font-bold text-clay-700 hover:text-clay-800 bg-clay-50 hover:bg-clay-100 rounded-lg transition"
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        )}
+                    >
+                        <Suspense fallback={
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between min-h-[416px] animate-pulse">
+                                <div className="space-y-2 mb-4">
+                                    <div className="h-5 w-36 bg-stone-100 rounded-lg" />
+                                    <div className="h-3 w-24 bg-stone-100 rounded-lg" />
+                                </div>
+                                <div className="flex-1 flex items-center justify-center">
+                                    <div className="w-36 h-36 rounded-full border-4 border-stone-100 border-t-clay-600 animate-spin" />
+                                </div>
+                            </div>
+                        }>
+                            <SalesByCategoryChart 
+                                categoryData={categoryData} 
+                                isLoading={isLoading} 
+                            />
+                        </Suspense>
+                    </ErrorBoundary>
                 </div>
 
                 {/* Recent Orders Preview Card Grid/Table */}

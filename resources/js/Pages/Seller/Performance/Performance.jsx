@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Head, usePage } from '@inertiajs/react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
@@ -12,9 +12,11 @@ import ExportButton from '@/Components/ExportButton';
 
 // Modular UI Components
 import OperationsControl from '@/Components/Seller/Performance/OperationsControl';
-import CampaignIntelligence from '@/Components/Seller/Performance/CampaignIntelligence';
-import OverviewTab from '@/Components/Seller/Performance/OverviewTab';
-import PrintReportView from '@/Components/Seller/Performance/PrintReportView';
+import ErrorBoundary from '@/Components/ErrorBoundary';
+
+const CampaignIntelligence = lazy(() => import('@/Components/Seller/Performance/CampaignIntelligence'));
+const OverviewTab = lazy(() => import('@/Components/Seller/Performance/OverviewTab'));
+const PrintReportView = lazy(() => import('@/Components/Seller/Performance/PrintReportView'));
 
 export default function Analytics({
     auth,
@@ -34,7 +36,21 @@ export default function Analytics({
     const [chartFilter, setChartFilter] = useState('Monthly');
     const [isLoading] = useState(false);
     const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
+    const [isPrinting, setIsPrinting] = useState(false);
 
+    const handlePrint = async () => {
+        setIsPrinting(true);
+        try {
+            await import('@/Components/Seller/Performance/PrintReportView');
+            setTimeout(() => {
+                window.print();
+                setIsPrinting(false);
+            }, 150);
+        } catch {
+            setIsPrinting(false);
+            window.print();
+        }
+    };
 
     useEffect(() => {
         const timer = setTimeout(() => setShouldAnimateKPI(false), 2000);
@@ -67,13 +83,14 @@ export default function Analytics({
                 {/* Page Action Bar */}
                 <div className="flex items-center justify-end gap-2 print:hidden">
                     <ExportButton 
-                        onClick={() => setTimeout(() => window.print(), 150)} 
+                        onClick={handlePrint} 
+                        disabled={isPrinting}
                         icon={Printer} 
                         variant="secondary" 
                         className="h-9 min-h-[36px] px-3.5 rounded-xl shadow-2xs font-bold text-xs"
                     >
-                        <span className="hidden sm:inline">Print Report</span>
-                        <span className="sm:hidden">Print</span>
+                        <span className="hidden sm:inline">{isPrinting ? 'Preparing Print...' : 'Print Report'}</span>
+                        <span className="sm:hidden">{isPrinting ? 'Preparing...' : 'Print'}</span>
                     </ExportButton>
 
                     {financials_masked ? (
@@ -123,17 +140,47 @@ export default function Analytics({
                             }
                         }}
                     >
-                        <OverviewTab 
-                            isLoading={isLoading}
-                            metrics={metrics}
-                            revenueTrend={revenueTrend}
-                            profitTrend={profitTrend}
-                            shouldAnimateKPI={shouldAnimateKPI}
-                            chartFilter={chartFilter}
-                            setChartFilter={setChartFilter}
-                            currentChartData={currentChartData}
-                            categoryData={categoryData}
-                        />
+                        <ErrorBoundary
+                            resetKey={chartFilter}
+                            fallback={({ retry }) => (
+                                <div className="p-8 bg-white rounded-2xl border border-stone-200/80 text-center space-y-3">
+                                    <p className="text-xs text-stone-500 font-medium">Unable to load analytics charts.</p>
+                                    <button
+                                        type="button"
+                                        onClick={retry}
+                                        className="px-3.5 py-1.5 text-xs font-bold text-clay-700 hover:text-clay-800 bg-clay-50 hover:bg-clay-100 rounded-xl transition"
+                                    >
+                                        Retry
+                                    </button>
+                                </div>
+                            )}
+                        >
+                            <Suspense fallback={
+                                <div className="space-y-6 animate-pulse">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <div className="h-28 bg-white rounded-2xl border border-stone-200/80" />
+                                        <div className="h-28 bg-white rounded-2xl border border-stone-200/80" />
+                                        <div className="h-28 bg-white rounded-2xl border border-stone-200/80" />
+                                    </div>
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                        <div className="lg:col-span-2 h-80 bg-white rounded-2xl border border-stone-200/80" />
+                                        <div className="h-80 bg-white rounded-2xl border border-stone-200/80" />
+                                    </div>
+                                </div>
+                            }>
+                                <OverviewTab 
+                                    isLoading={isLoading}
+                                    metrics={metrics}
+                                    revenueTrend={revenueTrend}
+                                    profitTrend={profitTrend}
+                                    shouldAnimateKPI={shouldAnimateKPI}
+                                    chartFilter={chartFilter}
+                                    setChartFilter={setChartFilter}
+                                    currentChartData={currentChartData}
+                                    categoryData={categoryData}
+                                />
+                            </Suspense>
+                        </ErrorBoundary>
                     </motion.section>
 
                     {/* Zone 2: Store Operations & Inventory */}
@@ -187,34 +234,53 @@ export default function Analytics({
                                 <div className="h-px bg-stone-200/60 flex-1" />
                             </div>
 
-                            <CampaignIntelligence 
-                                sellerSubscription={sellerSubscription} 
-                                sponsorshipMetrics={sponsorshipMetrics} 
-                                sponsorshipChartData={sponsorshipChartData} 
-                                sponsorshipAnalyticsAvailability={sponsorshipAnalyticsAvailability} 
-                                animate={shouldAnimateKPI}
-                            />
+                            <ErrorBoundary
+                                fallback={({ retry }) => (
+                                    <div className="p-6 bg-white rounded-2xl border border-stone-200/80 text-center space-y-2">
+                                        <p className="text-xs text-stone-500 font-medium">Unable to load campaign intelligence.</p>
+                                        <button
+                                            type="button"
+                                            onClick={retry}
+                                            className="px-3.5 py-1.5 text-xs font-bold text-clay-700 hover:text-clay-800 bg-clay-50 hover:bg-clay-100 rounded-xl transition"
+                                        >
+                                            Retry
+                                        </button>
+                                    </div>
+                                )}
+                            >
+                                <Suspense fallback={<div className="h-64 bg-white rounded-2xl border border-stone-200/80 animate-pulse" />}>
+                                    <CampaignIntelligence 
+                                        sellerSubscription={sellerSubscription} 
+                                        sponsorshipMetrics={sponsorshipMetrics} 
+                                        sponsorshipChartData={sponsorshipChartData} 
+                                        sponsorshipAnalyticsAvailability={sponsorshipAnalyticsAvailability} 
+                                        animate={shouldAnimateKPI}
+                                    />
+                                </Suspense>
+                            </ErrorBoundary>
                         </motion.section>
                     )}
                 </motion.div>
 
                 {/* Print-Only Layout (Hidden on screen, visible during print) */}
-                <PrintReportView
-                    auth={auth}
-                    isLoading={isLoading}
-                    metrics={metrics}
-                    insights={insights}
-                    dataContext={dataContext}
-                    chartFilter={chartFilter}
-                    chartData={chartData}
-                    categoryData={categoryData}
-                    topProducts={topProducts}
-                    sellerSubscription={sellerSubscription}
-                    sponsorshipMetrics={sponsorshipMetrics}
-                    sponsorshipChartData={sponsorshipChartData}
-                    sponsorshipAnalyticsAvailability={sponsorshipAnalyticsAvailability}
-                    shouldAnimateKPI={shouldAnimateKPI}
-                />
+                <Suspense fallback={null}>
+                    <PrintReportView
+                        auth={auth}
+                        isLoading={isLoading}
+                        metrics={metrics}
+                        insights={insights}
+                        dataContext={dataContext}
+                        chartFilter={chartFilter}
+                        chartData={chartData}
+                        categoryData={categoryData}
+                        topProducts={topProducts}
+                        sellerSubscription={sellerSubscription}
+                        sponsorshipMetrics={sponsorshipMetrics}
+                        sponsorshipChartData={sponsorshipChartData}
+                        sponsorshipAnalyticsAvailability={sponsorshipAnalyticsAvailability}
+                        shouldAnimateKPI={shouldAnimateKPI}
+                    />
+                </Suspense>
 
             </main>
         </>

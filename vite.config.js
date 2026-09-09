@@ -21,59 +21,83 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks(id) {
-                    if (id.includes('@react-three/drei') || id.includes('three-stdlib')) {
+                    const normalizedId = id.replace(/\\/g, '/');
+
+                    if (
+                        normalizedId.includes('@react-three/drei') ||
+                        normalizedId.includes('three-stdlib') ||
+                        normalizedId.includes('troika-three-text') ||
+                        normalizedId.includes('troika-three-utils')
+                    ) {
                         return 'react-three-drei';
                     }
-                    if (id.includes('/three/examples/') || id.includes('\\three\\examples\\')) {
+                    if (normalizedId.includes('/three/examples/')) {
                         return 'three-examples';
                     }
-                    if (id.includes('@react-three/fiber') || id.includes('/three/') || id.includes('\\three\\')) {
+                    if (
+                        normalizedId.includes('@react-three/fiber') ||
+                        normalizedId.includes('/three/') ||
+                        normalizedId.includes('its-fine') ||
+                        normalizedId.includes('suspend-react')
+                    ) {
                         return 'react-three-core';
                     }
-                    if (id.includes('node_modules/recharts')) {
+                    if (
+                        normalizedId.includes('node_modules/recharts') ||
+                        normalizedId.includes('node_modules/victory-vendor') ||
+                        normalizedId.includes('node_modules/d3-') ||
+                        normalizedId.includes('node_modules/@reduxjs/toolkit') ||
+                        normalizedId.includes('node_modules/react-redux') ||
+                        normalizedId.includes('node_modules/reselect')
+                    ) {
                         return 'vendor-recharts';
                     }
-                    if (id.includes('node_modules/framer-motion')) {
+                    if (normalizedId.includes('node_modules/framer-motion')) {
                         return 'vendor-framer-motion';
                     }
-                    if (id.includes('node_modules/@xenova/transformers')) {
+                    if (normalizedId.includes('node_modules/@xenova/transformers')) {
                         return 'vendor-transformers';
                     }
-                    if (id.includes('node_modules/lucide-react')) {
+                    if (normalizedId.includes('node_modules/lucide-react')) {
                         return 'vendor-lucide';
                     }
-                    if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+                    if (
+                        normalizedId.includes('node_modules/react/') ||
+                        normalizedId.includes('node_modules/react-dom/') ||
+                        normalizedId.includes('node_modules/use-sync-external-store/') ||
+                        normalizedId.includes('node_modules/scheduler/') ||
+                        normalizedId.includes('vite/preload-helper')
+                    ) {
                         return 'vendor-react';
                     }
-                    if (id.includes('node_modules/@inertiajs')) {
+                    if (normalizedId.includes('node_modules/@inertiajs')) {
                         return 'vendor-inertia';
                     }
-                    if (id.includes('node_modules/@headlessui')) {
+                    if (normalizedId.includes('node_modules/@headlessui')) {
                         return 'vendor-headlessui';
                     }
-                    if (id.includes('node_modules/@sentry')) {
+                    if (normalizedId.includes('node_modules/@sentry')) {
                         return 'vendor-sentry';
                     }
-                    if (id.includes('node_modules/@vladmandic/face-api')) {
+                    if (normalizedId.includes('node_modules/@vladmandic/face-api')) {
                         return 'vendor-face-api';
                     }
-                    if (id.includes('node_modules/leaflet')) {
+                    if (normalizedId.includes('node_modules/leaflet')) {
                         return 'vendor-leaflet';
                     }
-                    if (id.includes('node_modules/axios')) {
+                    if (normalizedId.includes('node_modules/axios')) {
                         return 'vendor-axios';
                     }
-                    if (id.includes('node_modules/laravel-echo') || id.includes('node_modules/pusher-js')) {
+                    if (normalizedId.includes('node_modules/laravel-echo') || normalizedId.includes('node_modules/pusher-js')) {
                         return 'vendor-echo';
                     }
-                    if (id.includes('node_modules/emoji-picker-react')) {
+                    if (normalizedId.includes('node_modules/emoji-picker-react')) {
                         return 'vendor-emoji';
                     }
-                    if (id.includes('node_modules/@gradio')) {
+                    if (normalizedId.includes('node_modules/@gradio')) {
                         return 'vendor-gradio';
                     }
                 },
-                experimentalMinChunkSize: 10000,
             },
         },
     },

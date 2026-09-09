@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import { Camera, MapPin, RefreshCw, CheckCircle2, AlertTriangle, AlertCircle, ShieldCheck, ShieldAlert, X, Loader2, Navigation, Mail, Send, Inbox } from 'lucide-react';
 import axios from 'axios';
 import Modal from '@/Components/Modal';
+import ErrorBoundary from '@/Components/ErrorBoundary';
 import StaffGeofenceMap from './StaffGeofenceMap';
-import LivenessFaceScanner from './LivenessFaceScanner';
+
+const LivenessFaceScanner = lazy(() => import('./LivenessFaceScanner'));
 
 const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
     if (lat1 === null || lon1 === null || lat2 === null || lon2 === null) return null;
@@ -317,15 +319,58 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center p-2 rounded-2xl bg-stone-50/70 border border-stone-200/80 min-h-[290px]">
-                                <LivenessFaceScanner
-                                    onVerified={({ photoData }) => {
-                                        setCapturedPhoto(photoData);
-                                        setActiveMobileTab('geofence');
-                                    }}
-                                    onError={(err) => {
-                                        setCameraError(err);
-                                    }}
-                                />
+                                <ErrorBoundary
+                                    resetKey={isOpen}
+                                    fallback={({ retry }) => (
+                                        <div className="flex flex-col items-center justify-center p-6 text-center min-h-[290px] w-full gap-3">
+                                            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                                                <AlertTriangle size={24} />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-stone-800">Face check unavailable</p>
+                                                <p className="text-xs text-stone-500 mt-1 max-w-xs">
+                                                    Unable to load the camera scanner. You can use your email security code to clock in.
+                                                </p>
+                                            </div>
+                                            <div className="flex gap-2 mt-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setUseOtpFallback(true);
+                                                        if (!otpSent) handleRequestOtp();
+                                                    }}
+                                                    className="px-3.5 py-2 text-xs font-bold text-white bg-clay-600 hover:bg-clay-700 rounded-xl transition shadow-2xs"
+                                                >
+                                                    Use Email Security Code
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={retry}
+                                                    className="px-3.5 py-2 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl transition"
+                                                >
+                                                    Retry
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                >
+                                    <Suspense fallback={
+                                        <div className="flex flex-col items-center justify-center p-8 gap-3 min-h-[290px] w-full">
+                                            <Loader2 className="animate-spin text-clay-600" size={32} />
+                                            <span className="text-xs text-stone-500 font-medium">Loading camera & face check...</span>
+                                        </div>
+                                    }>
+                                        <LivenessFaceScanner
+                                            onVerified={({ photoData }) => {
+                                                setCapturedPhoto(photoData);
+                                                setActiveMobileTab('geofence');
+                                            }}
+                                            onError={(err) => {
+                                                setCameraError(err);
+                                            }}
+                                        />
+                                    </Suspense>
+                                </ErrorBoundary>
                             </div>
                         )}
 

@@ -1,5 +1,5 @@
 /* global route */
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, lazy, Suspense } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SellerHeader from '@/Layouts/SellerHeader';
@@ -17,9 +17,10 @@ import WorkspaceTools from '@/Components/Staff/Dashboard/WorkspaceTools';
 import TaskChecklist from '@/Components/Staff/Dashboard/TaskChecklist';
 import ShiftConsolePanel from '@/Components/Staff/Dashboard/ShiftConsolePanel';
 import MobileShiftSheet from '@/Components/Staff/Dashboard/MobileShiftSheet';
-import StaffClockInModal from '@/Components/Staff/Dashboard/StaffClockInModal';
 import StaffAttendanceDock from '@/Components/Seller/Sidebar/StaffAttendanceDock';
 import { getDefaultChecklistForVariant } from '@/config/staffChecklists';
+
+const StaffClockInModal = lazy(() => import('@/Components/Staff/Dashboard/StaffClockInModal'));
 
 export default function StaffDashboard({ auth, hub }) {
     const { openSidebar } = useSellerWorkspaceShell();
@@ -365,7 +366,11 @@ export default function StaffDashboard({ auth, hub }) {
                 </div>
             )}
 
-            <StaffClockInModal isOpen={isClockInModalOpen} onClose={() => setIsClockInModalOpen(false)} />
+            {isClockInModalOpen && (
+                <Suspense fallback={null}>
+                    <StaffClockInModal isOpen={isClockInModalOpen} onClose={() => setIsClockInModalOpen(false)} />
+                </Suspense>
+            )}
         </>
     );
 }
