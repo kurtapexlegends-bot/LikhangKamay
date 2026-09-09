@@ -12,7 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('payroll_factor_method')->default('custom')->after('overtime_multiplier');
+            $column = $table->string('payroll_factor_method')->default('custom');
+            if (rescue(fn() => Schema::hasColumn('users', 'overtime_multiplier'), false)) {
+                $column->after('overtime_multiplier');
+            }
             $table->decimal('rest_day_ot_multiplier', 8, 2)->default(1.69)->after('payroll_factor_method');
             $table->decimal('holiday_ot_multiplier', 8, 2)->default(2.60)->after('rest_day_ot_multiplier');
         });
