@@ -248,8 +248,9 @@ class DualDatabaseCompatibilityTest extends TestCase
      */
     public function test_db_verify_dual_command_executes_successfully(): void
     {
-        $exitCode = Artisan::call('db:verify-dual');
-        $output = Artisan::output();
+        $buffer = new \Symfony\Component\Console\Output\BufferedOutput();
+        $exitCode = Artisan::call('db:verify-dual', [], $buffer);
+        $output = $buffer->fetch();
 
         $this->assertEquals(0, $exitCode, "db:verify-dual failed with output:\n" . $output);
         $this->assertStringContainsString('ZERO banned commands', $output);
