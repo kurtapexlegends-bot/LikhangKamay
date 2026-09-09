@@ -65,4 +65,5 @@ Schedule::command('orders:sync-lalamove')->everyFifteenMinutes();
 Schedule::command('orders:auto-cancel-failed-deliveries')->everyFifteenMinutes();
 Schedule::command('sponsorships:expire')->daily();
 Schedule::command('paymongo:verify')->everyFiveMinutes();
+Schedule::command('subscriptions:process-lifecycle')->hourly();
 Schedule::command('system:prune-trash')->daily();

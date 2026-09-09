@@ -65,7 +65,7 @@ trait ProductControllerHelpers
 
         if ($skipped > 0) {
             $productWord = $skipped === 1 ? 'product' : 'products';
-            $message .= " {$skipped} {$productWord} were skipped due to plan limits.";
+            $message .= " {$skipped} {$productWord} were skipped due to plan limits. Please upgrade your plan to activate more products.";
         }
 
         return trim($message);

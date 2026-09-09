@@ -57,6 +57,33 @@ class SubscriptionService
                     ]);
                     
                 $resolution = 'applied';
+            } elseif ($targetLevel === $currentLevel && $targetPlan !== 'free') {
+                // Subscription Renewal event for active paid tier
+                $baseDate = ($user->subscription_expires_at && $user->subscription_expires_at->isFuture())
+                    ? $user->subscription_expires_at
+                    : now();
+
+                $user->update([
+                    'premium_tier' => $targetPlan,
+                    'subscription_expires_at' => $baseDate->copy()->addDays(30),
+                    'subscription_cancelled_at' => null,
+                    'pending_downgrade_tier' => 'free',
+                ]);
+
+                // Clear plan-based staff suspension if they had any
+                $user->staffMembers()
+                    ->whereNotNull('staff_plan_suspended_at')
+                    ->update([
+                        'staff_plan_suspended_at' => null,
+                    ]);
+
+                UserTierLog::create([
+                    'user_id' => $user->id,
+                    'previous_tier' => $currentPlan,
+                    'new_tier' => $targetPlan,
+                ]);
+
+                $resolution = 'renewed';
             } elseif ($targetLevel === $currentLevel) {
                 $resolution = 'already_active';
             } else {
@@ -86,6 +113,61 @@ class SubscriptionService
         });
 
         return $resolution;
+    }
+
+    /**
+     * Mark a subscription transaction as failed (e.g. on webhook payment failure).
+     *
+     * @param SubscriptionTransaction $transaction
+     * @param array<string, mixed>|null $failureData
+     * @return void
+     */
+    public function failSubscription(SubscriptionTransaction $transaction, ?array $failureData = null): void
+    {
+        DB::transaction(function () use ($transaction, $failureData) {
+            $lockedTransaction = SubscriptionTransaction::query()->lockForUpdate()->findOrFail($transaction->id);
+
+            if ($lockedTransaction->status === SubscriptionTransaction::STATUS_PAID) {
+                return;
+            }
+
+            $metadata = $lockedTransaction->metadata ?? [];
+            if ($failureData) {
+                $failureReason = $failureData['attributes']['failed_code'] 
+                    ?? ($failureData['attributes']['failure_message'] ?? 'Payment failed');
+
+                $metadata = array_merge($metadata, [
+                    'failure_reason' => $failureReason,
+                    'failed_at' => now()->toIso8601String(),
+                ]);
+            }
+
+            $lockedTransaction->update([
+                'status' => SubscriptionTransaction::STATUS_FAILED,
+                'metadata' => $metadata,
+            ]);
+
+            $user = $lockedTransaction->user;
+            if ($user) {
+                \App\Models\SellerActivityLog::recordEvent([
+                    'seller_owner_id' => $user->id,
+                    'actor_user_id' => $user->id,
+                    'actor_type' => 'system',
+                    'category' => 'operations',
+                    'module' => 'shop_settings',
+                    'event_type' => 'subscription_payment_failed',
+                    'severity' => 'warning',
+                    'status' => 'failed',
+                    'title' => 'Subscription Payment Failed',
+                    'summary' => "Payment for {$lockedTransaction->to_plan} subscription failed.",
+                    'subject_type' => SubscriptionTransaction::class,
+                    'subject_id' => $lockedTransaction->id,
+                    'reference' => $lockedTransaction->reference_number,
+                    'target_url' => route('seller.subscription'),
+                    'target_label' => 'Review Subscription',
+                ]);
+            }
+        });
     }
 
     private function normalizeTier(?string $tier): string

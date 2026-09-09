@@ -116,10 +116,73 @@ class PaymongoWebhookController extends Controller
                 }
 
                 // Check if it's a SubscriptionTransaction
-                $transaction = SubscriptionTransaction::where('paymongo_session_id', $sessionId)->first();
-                if ($transaction && $transaction->status !== 'paid') {
-                    app(SubscriptionService::class)->activateSubscription($transaction);
-                    Log::info('Subscription marked as paid via Webhook', ['transaction_id' => $transaction->id]);
+                $ref = $sessionData['attributes']['metadata']['reference_number'] ?? null;
+                $transaction = SubscriptionTransaction::query()
+                    ->where(function ($q) use ($sessionId, $ref) {
+                        if ($sessionId) {
+                            $q->where('paymongo_session_id', $sessionId);
+                        }
+                        if ($ref) {
+                            $sessionId ? $q->orWhere('reference_number', $ref) : $q->where('reference_number', $ref);
+                        }
+                    })
+                    ->first();
+
+                if ($transaction) {
+                    if ($transaction->status !== SubscriptionTransaction::STATUS_PAID) {
+                        app(SubscriptionService::class)->activateSubscription($transaction, $sessionData);
+                        Log::info('Subscription marked as paid via Webhook', ['transaction_id' => $transaction->id]);
+                    }
+                    return response()->json(['status' => 'success']);
+                }
+            }
+        } elseif ($eventType === 'payment.paid') {
+            $paymentData = $payload['data']['attributes']['data'] ?? null;
+            if ($paymentData) {
+                $sessionId = $paymentData['attributes']['checkout_session_id'] ?? null;
+                $ref = $paymentData['attributes']['metadata']['reference_number'] ?? ($paymentData['attributes']['description'] ?? null);
+
+                $transaction = SubscriptionTransaction::query()
+                    ->where(function ($q) use ($sessionId, $ref) {
+                        if ($sessionId) {
+                            $q->where('paymongo_session_id', $sessionId);
+                        }
+                        if ($ref) {
+                            $sessionId ? $q->orWhere('reference_number', $ref) : $q->where('reference_number', $ref);
+                        }
+                    })
+                    ->first();
+
+                if ($transaction) {
+                    if ($transaction->status !== SubscriptionTransaction::STATUS_PAID) {
+                        app(SubscriptionService::class)->activateSubscription($transaction, $paymentData);
+                        Log::info('Subscription renewed/paid via payment.paid Webhook', ['transaction_id' => $transaction->id]);
+                    }
+                    return response()->json(['status' => 'success']);
+                }
+            }
+        } elseif ($eventType === 'payment.failed' || $eventType === 'checkout_session.payment.failed') {
+            $failureData = $payload['data']['attributes']['data'] ?? null;
+            if ($failureData) {
+                $sessionId = $failureData['id'] ?? ($failureData['attributes']['checkout_session_id'] ?? null);
+                $ref = $failureData['attributes']['reference_number'] ?? ($failureData['attributes']['metadata']['reference_number'] ?? null);
+
+                $transaction = SubscriptionTransaction::query()
+                    ->where(function ($q) use ($sessionId, $ref) {
+                        if ($sessionId) {
+                            $q->where('paymongo_session_id', $sessionId);
+                        }
+                        if ($ref) {
+                            $sessionId ? $q->orWhere('reference_number', $ref) : $q->where('reference_number', $ref);
+                        }
+                    })
+                    ->first();
+
+                if ($transaction) {
+                    if ($transaction->status !== SubscriptionTransaction::STATUS_PAID) {
+                        app(SubscriptionService::class)->failSubscription($transaction, $failureData);
+                        Log::warning('Subscription marked as failed via Webhook', ['transaction_id' => $transaction->id]);
+                    }
                     return response()->json(['status' => 'success']);
                 }
             }

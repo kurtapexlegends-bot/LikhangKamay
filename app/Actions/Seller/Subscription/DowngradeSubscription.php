@@ -21,12 +21,14 @@ class DowngradeSubscription
     public function execute(User $user, string $newTier, ?array $keepActiveIds, string $previousUrl): array
     {
         $previousTier = $user->premium_tier;
-        $shouldSuspendStaffForPlan = $previousTier === 'super_premium' && $newTier === 'free';
+        $shouldSuspendStaffForPlan = in_array($previousTier, ['premium', 'super_premium'], true) && $newTier === 'free';
 
-        // Determine new limit from User model
-        $user->premium_tier = $newTier;
-        $newLimit = $user->getActiveProductLimit();
-        $user->premium_tier = $previousTier;
+        // Determine new limit directly from tier key to avoid expired state interference
+        $newLimit = match ($newTier) {
+            'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
+            'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
+            default => (int) \App\Facades\Settings::get('tier_free_limit', 3),
+        };
 
         $activeIds = $user->products()
             ->where('status', 'Active')
@@ -60,19 +62,51 @@ class DowngradeSubscription
                 'new_tier' => $newTier,
             ]);
 
-            $userRecord->update(['premium_tier' => $newTier]);
+            $userRecord->update([
+                'premium_tier' => $newTier,
+                'subscription_expires_at' => null,
+                'subscription_cancelled_at' => null,
+                'pending_downgrade_tier' => 'free',
+            ]);
 
             if ($shouldSuspendStaffForPlan) {
                 $this->suspendStaffForStandardDowngrade($userRecord);
             }
+
+            \Illuminate\Support\Facades\Cache::forget('shop_catalog_default_page_1');
+            \Illuminate\Support\Facades\Cache::forget("seller_{$userRecord->id}_products");
+            \Illuminate\Support\Facades\Cache::forget("seller_{$userRecord->id}_best_sellers");
+            \Illuminate\Support\Facades\Cache::forget("seller_{$userRecord->id}_stats");
+            \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
+            \Illuminate\Support\Facades\Cache::forget('home_featured_products_pool');
+            \Illuminate\Support\Facades\Cache::forget('home_sponsored_products');
+
+            \App\Models\SellerActivityLog::recordEvent([
+                'seller_owner_id' => $userRecord->id,
+                'actor_user_id' => $userRecord->id,
+                'actor_type' => 'owner',
+                'category' => 'operations',
+                'module' => 'shop_settings',
+                'event_type' => 'subscription_downgraded',
+                'severity' => 'info',
+                'status' => 'active',
+                'title' => 'Subscription Plan Downgraded',
+                'summary' => "Plan changed from {$previousTier} to {$newTier}.",
+                'target_url' => route('seller.subscription'),
+                'target_label' => 'View Subscription',
+            ]);
         });
 
         // Safe redirect
         $user->refresh();
         $redirectTo = $this->getSafePostDowngradeRedirect($user, $previousUrl);
-        $successMessage = $shouldSuspendStaffForPlan
-            ? 'Plan downgraded successfully. Excess products set to Draft. Elite-only features were suspended, and linked employee workspace accounts were suspended until you upgrade again.'
-            : 'Plan downgraded successfully. Excess products set to Draft.';
+        if ($previousTier === 'super_premium' && $newTier === 'free') {
+            $successMessage = 'Plan downgraded successfully. Excess products set to Draft. Elite-only features were suspended, and linked employee workspace accounts were suspended until you upgrade again.';
+        } elseif ($shouldSuspendStaffForPlan && $user->staffMembers()->exists()) {
+            $successMessage = 'Plan downgraded successfully. Excess products set to Draft, and linked employee workspace accounts were suspended until you upgrade again.';
+        } else {
+            $successMessage = 'Plan downgraded successfully. Excess products set to Draft.';
+        }
 
         return [
             'redirectTo' => $redirectTo,

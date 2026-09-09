@@ -84,7 +84,7 @@ export default function DowngradeWarningOverlay({
                             <button
                                 type="button"
                                 onClick={() => setShowImmediateOptions(true)}
-                                className="font-semibold text-stone-800 underline hover:text-orange-600 transition"
+                                className="font-semibold text-stone-800 underline hover:text-clay-600 transition"
                             >
                                 Downgrade now
                             </button>
@@ -113,20 +113,20 @@ export default function DowngradeWarningOverlay({
                     <div className="mt-4 space-y-3">
                         <div className="space-y-2.5 rounded-2xl border border-stone-200 bg-stone-50 p-4 text-xs">
                             <div className="flex items-start gap-2.5 text-stone-700">
-                                <ChevronRight size={14} className="mt-0.5 shrink-0 text-orange-600" />
+                                <ChevronRight size={14} className="mt-0.5 shrink-0 text-amber-700" />
                                 <p>Benefits and product limits will apply immediately.</p>
                             </div>
 
                             {draftCount > 0 && (
                                 <div className="flex items-start gap-2.5 text-stone-700">
-                                    <ChevronRight size={14} className="mt-0.5 shrink-0 text-orange-600" />
+                                    <ChevronRight size={14} className="mt-0.5 shrink-0 text-amber-700" />
                                     <p><strong>{draftCount}</strong> active product{draftCount === 1 ? '' : 's'} may be moved to Draft.</p>
                                 </div>
                             )}
 
                             {showsEliteStandardWarning && (
                                 <div className="flex items-start gap-2.5 text-stone-700">
-                                    <Users size={14} className="mt-0.5 shrink-0 text-orange-600" />
+                                    <Users size={14} className="mt-0.5 shrink-0 text-amber-700" />
                                     <p>Elite-only features and staff workspace accounts will be suspended.</p>
                                 </div>
                             )}
@@ -137,7 +137,7 @@ export default function DowngradeWarningOverlay({
                                 <button
                                     type="button"
                                     onClick={() => setShowImmediateOptions(false)}
-                                    className="font-semibold text-stone-800 underline hover:text-orange-600 transition"
+                                    className="font-semibold text-stone-800 underline hover:text-clay-600 transition"
                                 >
                                     &larr; Switch back to scheduled renewal
                                 </button>
@@ -157,7 +157,7 @@ export default function DowngradeWarningOverlay({
                                 onClick={confirmDowngrade}
                                 disabled={isDowngrading}
                                 className={`w-full sm:w-auto rounded-xl px-4 py-2 text-xs font-bold text-white transition-colors ${
-                                    isDowngrading ? 'cursor-not-allowed bg-stone-300' : 'bg-orange-600 hover:bg-orange-700'
+                                    isDowngrading ? 'cursor-not-allowed bg-stone-300' : 'bg-clay-600 hover:bg-clay-700'
                                 }`}
                             >
                                 {isDowngrading ? 'Processing...' : 'Yes, downgrade now'}

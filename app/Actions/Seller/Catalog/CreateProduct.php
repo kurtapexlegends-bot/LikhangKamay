@@ -43,6 +43,12 @@ class CreateProduct
             throw ValidationException::withMessages(['limit' => 'You have reached your active products limit. Please upgrade your plan to add more active products.']);
         }
 
+        if (!$sellerOwner->isPremiumTier()) {
+            if (!empty($validated['recipes']) || ($validated['production_method'] ?? null) === 'manufactured') {
+                throw ValidationException::withMessages(['recipes' => 'Material recipe tracking is only available on Premium and Elite plans. Please upgrade your plan to link raw materials to your products.']);
+            }
+        }
+
         $coverPath = null;
         if ($request->hasFile('cover_photo')) {
             $coverPath = $this->productMediaService->resizeAndSave($request->file('cover_photo'), 'products/covers');

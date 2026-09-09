@@ -12,32 +12,32 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
 
         return [
             {
-                category: 'Catalog & Listing Capacity',
+                category: 'Shop Catalog & Listings',
                 features: [
                     {
                         name: 'Monthly Subscription',
-                        subtext: 'Billing cycle fee processed via PayMongo',
+                        subtext: 'Monthly shop plan fee',
                         free: '₱0 (Free)',
                         premium: `₱${premiumPrice} / month`,
                         super_premium: `₱${superPremiumPrice} / month`,
                     },
                     {
                         name: 'Active Product Limit',
-                        subtext: 'Maximum published active product listings in marketplace',
+                        subtext: 'Active products displayed in your shop',
                         free: `${freeLimit} Products`,
                         premium: `${premiumLimit} Products`,
                         super_premium: `${superPremiumLimit} Products`,
                     },
                     {
                         name: 'Core Workspace Operations',
-                        subtext: 'Catalog management, order processing, live customer chat, reviews & shop settings',
+                        subtext: 'Catalog, order processing, customer chat, reviews, and shop settings',
                         free: { text: 'Full Access', status: 'unlocked' },
                         premium: { text: 'Full Access', status: 'unlocked' },
                         super_premium: { text: 'Full Access', status: 'unlocked' },
                     },
                     {
                         name: 'Automated Thank-You Messages',
-                        subtext: 'Automated buyer appreciation notes sent on order completion',
+                        subtext: 'Automatic thank-you messages sent when orders are completed',
                         free: { text: 'Locked', status: 'locked' },
                         premium: { text: 'Full Access', status: 'unlocked' },
                         super_premium: { text: 'Full Access', status: 'unlocked' },
@@ -45,25 +45,25 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                 ],
             },
             {
-                category: 'Inventory & Procurement',
+                category: 'Materials & Inventory',
                 features: [
                     {
-                        name: 'Material Supplies & Product Recipes',
-                        subtext: 'Raw material inventory, recipe requirements & automatic material deduction',
+                        name: 'Materials & Craft Recipes',
+                        subtext: 'Track materials used in each craft and deduct stock automatically',
                         free: { text: 'Locked (Ready-to-Sell Only)', status: 'locked' },
                         premium: { text: 'Full Access', status: 'unlocked' },
                         super_premium: { text: 'Full Access', status: 'unlocked' },
                     },
                     {
-                        name: 'Stock Requests & Warehousing',
-                        subtext: 'Inter-branch stock transfers and supplier order requests',
+                        name: 'Supply Requests',
+                        subtext: 'Order requests for crafting supplies and materials',
                         free: { text: 'Locked', status: 'locked' },
                         premium: { text: 'Full Access', status: 'unlocked' },
                         super_premium: { text: 'Full Access', status: 'unlocked' },
                     },
                     {
-                        name: 'Analytics Report Export',
-                        subtext: 'Downloadable CSV and PDF performance and sales reports',
+                        name: 'Download Sales Summary',
+                        subtext: 'Download spreadsheets with your sales and performance figures',
                         free: { text: 'Dashboard View Only', status: 'locked' },
                         premium: { text: 'CSV / PDF Export Unlocked', status: 'unlocked' },
                         super_premium: { text: 'CSV / PDF Export Unlocked', status: 'unlocked' },
@@ -71,25 +71,25 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                 ],
             },
             {
-                category: 'ERP Modules & Staff Management',
+                category: 'Staff & Management Tools',
                 features: [
                     {
-                        name: 'HR Payroll & Employee Management',
-                        subtext: 'Staff roster management, payroll runs & attendance logging',
+                        name: 'Staff & Payroll Tools',
+                        subtext: 'Employee work hours, attendance checks, and payroll summaries',
                         free: { text: 'Locked', status: 'locked' },
                         premium: { text: 'Toggleable Module', status: 'partial' },
                         super_premium: { text: 'Unlocked by Default', status: 'unlocked' },
                     },
                     {
-                        name: 'Accounting & Fund Release Tracking',
-                        subtext: 'Shop earnings tracking, fund approval pipelines & financial ledgers',
+                        name: 'Bookkeeping & Financial Records',
+                        subtext: 'Shop earnings, payout records, and expense tracking',
                         free: { text: 'Locked', status: 'locked' },
                         premium: { text: 'Toggleable Module', status: 'partial' },
                         super_premium: { text: 'Unlocked by Default', status: 'unlocked' },
                     },
                     {
-                        name: 'Staff Accounts & Workplace Chat',
-                        subtext: 'Multi-user staff access with role presets and internal team messaging',
+                        name: 'Employee Accounts & Team Messages',
+                        subtext: 'Add team members with custom permissions and internal shop chat',
                         free: { text: 'Owner Only', status: 'locked' },
                         premium: { text: 'Staff Accounts & Team Chat', status: 'unlocked' },
                         super_premium: { text: 'Staff Accounts & Team Chat', status: 'unlocked' },
@@ -97,18 +97,18 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                 ],
             },
             {
-                category: 'Marketing & Sponsorships',
+                category: 'Promotions & Featured Spots',
                 features: [
                     {
-                        name: 'Discounts & Campaign Engine',
-                        subtext: 'Promotional discount codes, percentage flash sales & stock limits',
+                        name: 'Discounts & Special Offers',
+                        subtext: 'Create promo discount codes, sales discounts, and purchase limits',
                         free: { text: 'Locked', status: 'locked' },
                         premium: { text: 'Locked', status: 'locked' },
                         super_premium: { text: 'Full Access', status: 'unlocked' },
                     },
                     {
-                        name: 'Platform Sponsorship Credits',
-                        subtext: 'Featured homepage banners, artisan spotlights & promotional event slots',
+                        name: 'Featured Shop Spotlights',
+                        subtext: 'Front-page banner placement and featured artisan spotlights',
                         free: { text: 'Locked', status: 'locked' },
                         premium: { text: 'Locked', status: 'locked' },
                         super_premium: { text: '5 Credits / 30 Days', status: 'unlocked' },
@@ -157,13 +157,13 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                     <div>
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-stone-200/80 text-stone-700 text-[10px] font-black uppercase tracking-widest mb-1">
                             <Layers size={12} />
-                            Feature Entitlements Matrix
+                            Plan Comparison
                         </div>
                         <h3 className="text-xl font-extrabold text-stone-900 tracking-tight">
-                            Detailed Plan Comparison
+                            Compare Shop Plans
                         </h3>
                         <p className="text-xs text-stone-500 mt-0.5 max-w-xl">
-                            Compare active listing limits, raw material recipe tracking, staff accounts, and ERP capabilities.
+                            Compare active listing limits, raw material tracking, employee accounts, and business features.
                         </p>
                     </div>
                     <button

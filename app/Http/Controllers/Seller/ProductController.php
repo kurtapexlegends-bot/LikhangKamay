@@ -19,6 +19,8 @@ use App\Actions\Seller\Catalog\BulkUpdateProductStatus;
 use App\Actions\Seller\Catalog\BulkActivateProducts;
 use App\Actions\Seller\Catalog\ImportProductsCsv;
 use App\Actions\Seller\Catalog\ResubmitProduct;
+use App\Http\Requests\Seller\StoreProductRequest;
+use App\Http\Requests\Seller\UpdateProductRequest;
 use App\Http\Resources\Seller\SellerProductResource;
 use App\Http\Resources\Consumer\ProductDetailResource;
 use Illuminate\Http\Request;
@@ -93,9 +95,16 @@ class ProductController extends Controller
                 'categories' => rescue(fn() => \App\Models\Category::pluck('name')->toArray(), []),
                 'supplies' => rescue(fn() => Supply::where('user_id', $seller->id)->where('category', '!=', 'Finished Goods')->get(), collect()),
                 'subscription' => [
-                    'plan' => $seller->premium_tier,
+                    'plan' => $seller->getEffectivePremiumTier(),
+                    'planLabel' => $seller->getSellerTierLabel(),
                     'activeCount' => rescue(fn() => $seller->products()->where('status', 'Active')->count(), 0),
                     'limit' => $seller->getActiveProductLimit(),
+                    'canAddMore' => $seller->canAddMoreProducts(),
+                    'tierLimits' => [
+                        'free' => (int) \App\Facades\Settings::get('tier_free_limit', 3),
+                        'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
+                        'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
+                    ],
                 ],
                 'metrics' => [
                     'lowStockCount' => rescue(fn() => $seller->products()->where('stock', '<', 10)->where('status', '!=', 'Archived')->count(), 0),
@@ -121,9 +130,16 @@ class ProductController extends Controller
                 'categories' => [],
                 'supplies' => collect(),
                 'subscription' => [
-                    'plan' => $seller->premium_tier,
+                    'plan' => $seller->getEffectivePremiumTier(),
+                    'planLabel' => $seller->getSellerTierLabel(),
                     'activeCount' => 0,
                     'limit' => $seller->getActiveProductLimit(),
+                    'canAddMore' => false,
+                    'tierLimits' => [
+                        'free' => (int) \App\Facades\Settings::get('tier_free_limit', 3),
+                        'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
+                        'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
+                    ],
                 ],
                 'metrics' => [
                     'lowStockCount' => 0,
@@ -134,48 +150,9 @@ class ProductController extends Controller
         }
     }
 
-    public function store(Request $request, CreateProduct $createProduct, ThreeDAssetService $threeDAssetService)
+    public function store(StoreProductRequest $request, CreateProduct $createProduct)
     {
-        Gate::authorize('create', Product::class);
-        /** @var \App\Models\User|null $seller */
-        $seller = $request->user()->getEffectiveSeller();
-        
-        if (!$seller || !$seller->isApproved()) {
-            return back()->with('error', 'Your artisan account is not yet approved. You cannot list products.');
-        }
-
-        $request->merge([
-            'category' => trim((string) $request->input('category')),
-        ]);
-
-        $validated = $request->validate([
-            'sku' => 'required|string|max:50|unique:products,sku',
-            'name' => 'required|string|min:10|max:60',
-            'category' => ['required', 'string', Rule::in(\App\Models\Category::pluck('name')->toArray())],
-            'price' => 'required|numeric|min:0',
-            'cost_price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'description' => 'nullable|string|max:5000',
-            'clay_type' => 'nullable|string|max:100',
-            'glaze_type' => 'nullable|string|max:100',
-            'firing_method' => 'nullable|string|max:100',
-            'colors' => 'nullable|array',
-            'height' => 'nullable|numeric|min:0',
-            'width' => 'nullable|numeric|min:0',
-            'weight' => 'nullable|numeric|min:0',
-            'lead_time' => 'nullable|integer|min:0',
-            'status' => 'required|string',
-            'production_method' => 'nullable|string|in:resell,manufactured',
-            'recipes' => 'nullable|array',
-            'recipes.*.supply_id' => 'required|exists:supplies,id',
-            'recipes.*.quantity_required' => 'required|numeric|min:0.01',
-            'cover_photo' => 'nullable|image|max:10240',
-            'gallery' => 'nullable|array|max:' . self::MAX_GALLERY_IMAGES,
-            'gallery.*' => 'nullable|image|max:10240',
-            'model_3d' => $threeDAssetService->getUploadRules(),
-            ...$threeDAssetService->getAssetRules(),
-        ]);
-
+        $validated = $request->validated();
         $result = $createProduct->execute($validated, $request, $this->sellerOwner());
         $isPendingReview = $result['product'] && $result['product']->status === 'pending_review';
 
@@ -186,41 +163,10 @@ class ProductController extends Controller
                 : 'Product created successfully!'));
     }
 
-    public function update(Request $request, int|string $id, UpdateProduct $updateProduct, ThreeDAssetService $threeDAssetService)
+    public function update(UpdateProductRequest $request, int|string $id, UpdateProduct $updateProduct)
     {
         $product = Product::findOrFail($id);
-        Gate::authorize('update', $product);
-
-        $request->merge([
-            'category' => trim((string) $request->input('category')),
-        ]);
-
-        $validated = $request->validate([
-            'name' => 'required|string|min:10|max:60',
-            'price' => 'required|numeric|min:0',
-            'cost_price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'status' => 'required|string',
-            'production_method' => 'nullable|string|in:resell,manufactured',
-            'recipes' => 'nullable|array',
-            'recipes.*.supply_id' => 'required|exists:supplies,id',
-            'recipes.*.quantity_required' => 'required|numeric|min:0.01',
-            'category' => ['required', 'string', Rule::in(\App\Models\Category::pluck('name')->toArray())],
-            'description' => 'nullable|string|max:5000',
-            'clay_type' => 'nullable|string|max:100',
-            'glaze_type' => 'nullable|string|max:100',
-            'firing_method' => 'nullable|string|max:100',
-            'cover_photo' => 'nullable|image|max:10240',
-            'gallery' => 'nullable|array|max:' . self::MAX_GALLERY_IMAGES,
-            'gallery.*' => 'nullable|image|max:10240',
-            'retained_gallery' => 'nullable|array',
-            'height' => 'nullable|numeric|min:0',
-            'width' => 'nullable|numeric|min:0',
-            'weight' => 'nullable|numeric|min:0',
-            'lead_time' => 'nullable|integer|min:0',
-            'model_3d' => $threeDAssetService->getUploadRules(),
-            ...$threeDAssetService->getAssetRules(),
-        ]);
+        $validated = $request->validated();
 
         $result = $updateProduct->execute($product, $validated, $request, $this->sellerOwner());
         $isPendingReview = $result['product']->status === 'pending_review';

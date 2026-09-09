@@ -1,3 +1,4 @@
+/* global route */
 import React from "react";
 import { usePage, Link } from "@inertiajs/react";
 import Checkbox from "@/Components/Checkbox";
@@ -151,11 +152,11 @@ export default function ProductFormRecipePanel({
                                         Material Recipes & Automatic Stock Deduction
                                     </h4>
                                     <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-100/80 text-amber-900 border border-amber-200/70 shadow-2xs">
-                                        Pro / Elite Feature
+                                        Premium & Elite Feature
                                     </span>
                                 </div>
                                 <p className="text-xs text-stone-500 leading-relaxed">
-                                    Track the exact raw materials needed to craft each product. Material recipe tracking and automated supply deductions require a Pro or Elite subscription.
+                                    Track the exact raw materials needed to craft each product. Material recipe tracking and automated supply deductions require a Premium or Elite subscription.
                                 </p>
                             </div>
                             <div className="pt-1">
