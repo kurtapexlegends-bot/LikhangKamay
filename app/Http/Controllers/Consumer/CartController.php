@@ -87,8 +87,11 @@ class CartController extends Controller
                     continue;
                 }
 
-                $effectivePrice = $liveProduct->effective_price;
-                if ($item['price'] != $effectivePrice) {
+                $effectivePrice = $liveProduct->is_b2b_supply
+                    ? $liveProduct->getEffectiveB2BPrice((int) ($item['qty'] ?? 1))
+                    : (float) $liveProduct->effective_price;
+
+                if ((float) ($item['price'] ?? 0) != (float) $effectivePrice) {
                     $item['price'] = $effectivePrice;
                     $updatedCart = true;
                 }
@@ -96,6 +99,11 @@ class CartController extends Controller
                 $item['original_price'] = (float) $liveProduct->price;
                 $item['discount_info'] = $liveProduct->discount_info;
                 $item['has_discount'] = $liveProduct->has_discount;
+                $item['is_b2b_supply'] = (bool) $liveProduct->is_b2b_supply;
+                $item['moq'] = (int) ($liveProduct->moq ?: 1);
+                $item['wholesale_price'] = $liveProduct->wholesale_price !== null ? (float) $liveProduct->wholesale_price : null;
+                $item['wholesale_min_qty'] = $liveProduct->wholesale_min_qty ? (int) $liveProduct->wholesale_min_qty : null;
+                $item['supply_unit'] = $liveProduct->supply_unit ?: 'pcs';
 
                 if (($item['sku'] ?? null) !== $liveProduct->sku) {
                     $item['sku'] = $liveProduct->sku;
@@ -175,22 +183,43 @@ class CartController extends Controller
         $product = Product::select($productColumns)
             ->with('user:id,name,shop_name,city')
             ->findOrFail($validated['product_id']);
-        $requestedQty = (int) ($validated['quantity'] ?? ($product->moq ?? 1));
+        $moq = (int) ($product->moq ?: 1);
+        $requestedQty = (int) ($validated['quantity'] ?? $moq);
         $variant = trim((string) ($validated['variant'] ?? 'Standard')) ?: 'Standard';
         $cartKey = $this->makeCartKey($product->id, $variant);
 
         $cart = $this->normalizeCart(Session::get('cart', []));
 
+        $currentQty = isset($cart[$cartKey]) ? (int) $cart[$cartKey]['qty'] : 0;
+        $newTotalQty = $currentQty + $requestedQty;
+
+        if ($product->is_b2b_supply && $newTotalQty < $moq) {
+            $unit = $product->supply_unit ?: 'pcs';
+            $msg = "Minimum order quantity for {$product->name} is {$moq} {$unit}.";
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
         if (isset($cart[$cartKey])) {
             $cart[$cartKey]['sku'] = $product->sku;
             $cart[$cartKey]['slug'] = $product->slug;
-            if ($cart[$cartKey]['qty'] + $requestedQty > $product->stock) {
+            if ($newTotalQty > $product->stock) {
                 if ($request->wantsJson() || $request->ajax()) {
                     return response()->json(['success' => false, 'message' => 'Not enough stock available.'], 422);
                 }
                 return redirect()->back()->with('error', 'Not enough stock available.');
             }
-            $cart[$cartKey]['qty'] += $requestedQty;
+            $cart[$cartKey]['qty'] = $newTotalQty;
+            $cart[$cartKey]['price'] = $product->is_b2b_supply
+                ? $product->getEffectiveB2BPrice($newTotalQty)
+                : (float) $product->effective_price;
+            $cart[$cartKey]['is_b2b_supply'] = (bool) $product->is_b2b_supply;
+            $cart[$cartKey]['moq'] = $moq;
+            $cart[$cartKey]['wholesale_price'] = $product->wholesale_price !== null ? (float) $product->wholesale_price : null;
+            $cart[$cartKey]['wholesale_min_qty'] = $product->wholesale_min_qty ? (int) $product->wholesale_min_qty : null;
+            $cart[$cartKey]['supply_unit'] = $product->supply_unit ?: 'pcs';
         } else {
             if ($product->stock < $requestedQty) {
                 if ($request->wantsJson() || $request->ajax()) {
@@ -200,6 +229,10 @@ class CartController extends Controller
             }
             $photo = $product->cover_photo_path ?: $product->img;
             $sellerName = $product->user->shop_name ?? $product->user->name ?? 'Shop';
+            $unitPrice = $product->is_b2b_supply
+                ? $product->getEffectiveB2BPrice($requestedQty)
+                : (float) $product->effective_price;
+
             $cart[$cartKey] = [
                 'id' => $product->id,
                 'cart_key' => $cartKey,
@@ -209,7 +242,7 @@ class CartController extends Controller
                 'variant' => $variant,
                 'sku' => $product->sku,
                 'slug' => $product->slug,
-                'price' => $product->price,
+                'price' => $unitPrice,
                 'qty' => $requestedQty,
                 'img' => $photo,
                 'image' => $photo,
@@ -219,12 +252,12 @@ class CartController extends Controller
                 'seller_name' => $sellerName,
                 'seller_city' => $product->user->city ?? 'Cavite',
                 'location' => $product->user->city ?? 'Cavite',
-                'moq' => $product->moq ?? 1,
-                'supply_unit' => $product->supply_unit ?? 'pcs',
-                'wholesale_price' => $product->wholesale_price,
-                'wholesale_min_qty' => $product->wholesale_min_qty,
-                'is_b2b_supply' => $product->is_b2b_supply,
-                'weight' => $product->weight ?? 1.0,
+                'moq' => $moq,
+                'supply_unit' => $product->supply_unit ?: 'pcs',
+                'wholesale_price' => $product->wholesale_price !== null ? (float) $product->wholesale_price : null,
+                'wholesale_min_qty' => $product->wholesale_min_qty ? (int) $product->wholesale_min_qty : null,
+                'is_b2b_supply' => (bool) $product->is_b2b_supply,
+                'weight' => (float) ($product->weight ?? 1.0),
             ];
         }
 
@@ -259,14 +292,38 @@ class CartController extends Controller
         
         if (isset($cart[$id])) {
             $product = Product::find($cart[$id]['id']);
-            if ($product && $qty > $product->stock) {
-                if ($request->wantsJson() || $request->ajax()) {
-                    return response()->json(['success' => false, 'message' => 'Only ' . $product->stock . ' items available in stock.'], 422);
+            if ($product) {
+                $moq = (int) ($product->moq ?: 1);
+                if ($product->is_b2b_supply && $qty < $moq) {
+                    $unit = $product->supply_unit ?: 'pcs';
+                    $msg = "Minimum order quantity for {$product->name} is {$moq} {$unit}.";
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return redirect()->back()->with('error', $msg);
                 }
-                return redirect()->back()->with('error', 'Only ' . $product->stock . ' items available in stock.');
+
+                if ($qty > $product->stock) {
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json(['success' => false, 'message' => 'Only ' . $product->stock . ' items available in stock.'], 422);
+                    }
+                    return redirect()->back()->with('error', 'Only ' . $product->stock . ' items available in stock.');
+                }
+
+                $cart[$id]['qty'] = max(1, $qty);
+                $cart[$id]['price'] = $product->is_b2b_supply
+                    ? $product->getEffectiveB2BPrice($cart[$id]['qty'])
+                    : (float) $product->effective_price;
+                $cart[$id]['is_b2b_supply'] = (bool) $product->is_b2b_supply;
+                $cart[$id]['moq'] = $moq;
+                $cart[$id]['wholesale_price'] = $product->wholesale_price !== null ? (float) $product->wholesale_price : null;
+                $cart[$id]['wholesale_min_qty'] = $product->wholesale_min_qty ? (int) $product->wholesale_min_qty : null;
+                $cart[$id]['supply_unit'] = $product->supply_unit ?: 'pcs';
+                Session::put('cart', $cart);
+            } else {
+                $cart[$id]['qty'] = max(1, $qty);
+                Session::put('cart', $cart);
             }
-            $cart[$id]['qty'] = max(1, $qty);
-            Session::put('cart', $cart);
         }
 
         if ($request->wantsJson() || $request->ajax()) {

@@ -639,4 +639,35 @@ class B2BSupplyHubController extends Controller
             return back()->with('error', $e->getMessage());
         }
     }
+
+    /**
+     * Download or view printable Purchase Order / Commercial Wholesale Invoice.
+     */
+    public function downloadInvoice(string $id)
+    {
+        /** @var User $actor */
+        $actor = Auth::user();
+
+        if (!$actor || !$actor->isArtisan()) {
+            abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
+        }
+
+        $order = Order::with([
+            'items' => function ($query) {
+                $query->select('id', 'order_id', 'product_id', 'product_name', 'variant', 'quantity', 'price', 'product_img', 'is_b2b_supply', 'supply_unit');
+            },
+            'user',
+            'artisan',
+            'delivery',
+        ])
+            ->where(function ($q) use ($id) {
+                $q->where('order_number', $id)->orWhere('id', $id);
+            })
+            ->where(function ($q) use ($actor) {
+                $q->where('user_id', $actor->id)->orWhere('artisan_id', $actor->id);
+            })
+            ->firstOrFail();
+
+        return view('pdf.receipt', ['order' => $order]);
+    }
 }

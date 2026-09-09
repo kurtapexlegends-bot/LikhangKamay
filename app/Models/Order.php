@@ -111,6 +111,38 @@ class Order extends Model
         return $this->hasOne(Dispute::class);
     }
 
+    /**
+     * Check if this order contains any wholesale B2B supply items.
+     */
+    public function isB2BOrder(): bool
+    {
+        if ($this->relationLoaded('items')) {
+            return $this->items->contains(fn($item) => (bool) $item->is_b2b_supply);
+        }
+
+        return $this->items()->where('is_b2b_supply', true)->exists();
+    }
+
+    /**
+     * Scope query to orders with B2B supply items.
+     */
+    public function scopeWhereB2B($query)
+    {
+        return $query->whereHas('items', function ($q) {
+            $q->where('is_b2b_supply', true);
+        });
+    }
+
+    /**
+     * Scope query to retail orders (excluding B2B supply items).
+     */
+    public function scopeWhereRetail($query)
+    {
+        return $query->whereDoesntHave('items', function ($q) {
+            $q->where('is_b2b_supply', true);
+        });
+    }
+
     protected static function boot()
     {
         parent::boot();

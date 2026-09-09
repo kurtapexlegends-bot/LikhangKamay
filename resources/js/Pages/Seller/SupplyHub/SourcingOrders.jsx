@@ -8,7 +8,7 @@ import {
     Search, Check, MapPin,
     MessageSquare, ShoppingCart, Boxes, X, Phone,
     ChevronDown, ChevronRight, Hash, Copy, CheckCheck,
-    CreditCard, ArrowRight, Store, Clock
+    CreditCard, ArrowRight, Store, Clock, Printer
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
@@ -672,6 +672,16 @@ export default function SourcingOrders({
                                                         <span>Supplier Preparing Order</span>
                                                     </div>
                                                 )}
+
+                                                <a
+                                                    href={route('seller.supply-hub.orders.invoice', order.order_number || order.id)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 shadow-2xs hover:bg-stone-50 hover:text-stone-900 transition active:scale-95"
+                                                >
+                                                    <Printer size={13} className="text-stone-500" />
+                                                    <span>View PO / Invoice</span>
+                                                </a>
                                             </div>
                                         </div>
                                     </div>

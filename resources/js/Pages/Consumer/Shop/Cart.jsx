@@ -87,9 +87,9 @@ export default function Cart({ cart }) {
         setSelectedItems(newSelected);
     };
 
-    const updateQty = (id, currentQty, change) => {
+    const updateQty = (id, currentQty, change, minQty = 1) => {
         const newQty = currentQty + change;
-        if (newQty < 1) return;
+        if (newQty < minQty) return;
         setUpdatingId(id);
         router.patch(route('cart.update'), { id, qty: newQty }, { 
             preserveScroll: true,
@@ -256,6 +256,23 @@ export default function Cart({ cart }) {
                                                             )}
                                                             <p className="text-xs text-gray-400 mt-1">SKU: {item.sku || 'Unavailable'}</p>
                                                             <p className="text-xs text-gray-400 mt-0.5">Variant: {item.variant || 'Standard'}</p>
+                                                            {item.is_b2b_supply && (
+                                                                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                                                        MOQ: {item.moq || 1} {item.supply_unit || 'pcs'}
+                                                                    </span>
+                                                                    {item.wholesale_price && item.wholesale_min_qty && (
+                                                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                                                            item.qty >= item.wholesale_min_qty
+                                                                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                                                                : 'bg-stone-50 text-stone-600 border border-stone-200'
+                                                                        }`}>
+                                                                            {item.qty >= item.wholesale_min_qty ? 'Wholesale rate applied: ' : 'Wholesale: '}
+                                                                            {currency.format(Number(item.wholesale_price))} for {item.wholesale_min_qty}+ {item.supply_unit || 'pcs'}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                             <button 
                                                                 onClick={() => removeItem(getCartKey(item))}
                                                                 disabled={removingId === getCartKey(item)}
@@ -286,9 +303,9 @@ export default function Cart({ cart }) {
                                                         <div className="flex justify-end sm:justify-center">
                                                         <div className="flex items-center border border-gray-200 rounded">
                                                             <button
-                                                                onClick={() => updateQty(getCartKey(item), item.qty, -1)}
-                                                                disabled={item.qty <= 1 || updatingId === getCartKey(item)}
-                                                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 disabled:opacity-30"
+                                                                onClick={() => updateQty(getCartKey(item), item.qty, -1, (item.is_b2b_supply && item.moq) ? Number(item.moq) : 1)}
+                                                                disabled={item.qty <= ((item.is_b2b_supply && item.moq) ? Number(item.moq) : 1) || updatingId === getCartKey(item)}
+                                                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
                                                             >
                                                                 <Minus size={12} />
                                                             </button>
@@ -296,7 +313,7 @@ export default function Cart({ cart }) {
                                                                 {updatingId === getCartKey(item) ? <Loader2 size={12} className="animate-spin mx-auto" /> : item.qty}
                                                             </span>
                                                             <button
-                                                                onClick={() => updateQty(getCartKey(item), item.qty, 1)}
+                                                                onClick={() => updateQty(getCartKey(item), item.qty, 1, (item.is_b2b_supply && item.moq) ? Number(item.moq) : 1)}
                                                                 disabled={updatingId === getCartKey(item)}
                                                                 className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50"
                                                             >

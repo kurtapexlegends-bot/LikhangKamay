@@ -53,7 +53,12 @@ export default function ProductCard({ product, sponsoredPlacement, previewOnly =
                 />
 
                 {/* Top Left Overlay: Countdown Badge (Compact Mode) or Status Badges */}
-                <div className="absolute top-2 left-2 z-10">
+                <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
+                    {product.is_b2b_supply && (
+                        <span className="bg-stone-900 text-stone-100 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm animate-in fade-in zoom-in-50 duration-300">
+                            Wholesale
+                        </span>
+                    )}
                     {hasActiveDiscount ? (
                         <DiscountCountdownBadge endAt={product.discount_info.end_at} compact />
                     ) : product.is_sponsored ? (
@@ -113,6 +118,20 @@ export default function ProductCard({ product, sponsoredPlacement, previewOnly =
                             </div>
                         )}
                     </div>
+                    {(product.is_b2b_supply || (product.moq && product.moq > 1) || (product.wholesale_price && product.wholesale_min_qty)) && (
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                            {product.moq && product.moq > 1 && (
+                                <span className="inline-flex items-center text-[9.5px] font-bold text-amber-900 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded">
+                                    MOQ: {product.moq} {product.supply_unit || 'pcs'}
+                                </span>
+                            )}
+                            {product.wholesale_price && product.wholesale_min_qty && (
+                                <span className="inline-flex items-center text-[9.5px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.5 rounded">
+                                    &#8369;{formatPrice(product.wholesale_price)} ({product.wholesale_min_qty}+)
+                                </span>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </Link>

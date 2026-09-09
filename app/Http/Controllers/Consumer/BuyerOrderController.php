@@ -247,10 +247,16 @@ class BuyerOrderController extends Controller
      */
     public function downloadReceipt(string $id)
     {
-        $order = Order::with(['items' => function ($query) {
-            $query->select('id', 'order_id', 'product_id', 'product_name', 'variant', 'quantity', 'price', 'product_img');
-        }])
-            ->where('id', $id)
+        $order = Order::with([
+            'items' => function ($query) {
+                $query->select('id', 'order_id', 'product_id', 'product_name', 'variant', 'quantity', 'price', 'product_img', 'is_b2b_supply', 'supply_unit');
+            },
+            'user:id,name,shop_name,city',
+            'artisan:id,name,shop_name,city',
+        ])
+            ->where(function ($q) use ($id) {
+                $q->where('id', $id)->orWhere('order_number', $id);
+            })
             ->where('user_id', Auth::id())
             ->firstOrFail();
 

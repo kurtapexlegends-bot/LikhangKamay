@@ -318,6 +318,11 @@ class CatalogService
             'slug' => $product->slug,
             'seller_slug' => $product->user->shop_slug ?? null,
             'seller_name' => $product->user->shop_name ?? $product->user->name ?? 'LikhangKamay Artisan',
+            'is_b2b_supply' => (bool) $product->is_b2b_supply,
+            'moq' => (int) ($product->moq ?: 1),
+            'wholesale_price' => $product->wholesale_price !== null ? (float) $product->wholesale_price : null,
+            'wholesale_min_qty' => $product->wholesale_min_qty ? (int) $product->wholesale_min_qty : null,
+            'supply_unit' => $product->supply_unit ?: 'pcs',
         ];
 
         if (!$shortMode) {
@@ -451,6 +456,11 @@ class CatalogService
             'clay_type' => $product->clay_type,
             'is_new' => $product->created_at ? $product->created_at->diffInDays(now()) < 7 : false,
             'is_sponsored' => $product->is_sponsored && $product->sponsored_until && \Carbon\Carbon::parse($product->sponsored_until)->isFuture(),
+            'is_b2b_supply' => (bool) $product->is_b2b_supply,
+            'moq' => (int) ($product->moq ?: 1),
+            'wholesale_price' => $product->wholesale_price !== null ? (float) $product->wholesale_price : null,
+            'wholesale_min_qty' => $product->wholesale_min_qty ? (int) $product->wholesale_min_qty : null,
+            'supply_unit' => $product->supply_unit ?: 'pcs',
         ];
     }
 }
