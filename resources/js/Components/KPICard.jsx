@@ -4,17 +4,31 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import AnimatedCounter from './AnimatedCounter';
 
 const Sparkline = ({ data, positive = true }) => {
-    if (!data || data.length < 2) return null;
-    const min = Math.min(...data);
-    const max = Math.max(...data);
-    const range = max - min || 1;
+    if (!data || !Array.isArray(data) || data.length < 2) return null;
+
+    // Convert values to finite numbers and filter out any NaN/null/undefined
+    const validData = data
+        .map(v => (v !== null && v !== undefined && v !== '' ? Number(v) : NaN))
+        .filter(v => !isNaN(v) && isFinite(v));
+
+    if (validData.length < 2) return null;
+
+    const min = Math.min(...validData);
+    const max = Math.max(...validData);
+    const range = (max - min) || 1;
     const width = 50;
     const height = 16;
     
-    const points = data.map((v, i) => ({
-        x: (i / (data.length - 1)) * width,
-        y: height - ((v - min) / range) * height
-    }));
+    const points = validData.map((v, i) => {
+        const x = (i / (validData.length - 1)) * width;
+        const y = height - ((v - min) / range) * height;
+        return {
+            x: isNaN(x) ? 0 : Number(x.toFixed(1)),
+            y: isNaN(y) ? height / 2 : Number(y.toFixed(1))
+        };
+    });
+
+    if (points.some(p => isNaN(p.x) || isNaN(p.y))) return null;
     
     const path = `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`;
     const strokeColor = positive ? '#10b981' : '#f43f5e';

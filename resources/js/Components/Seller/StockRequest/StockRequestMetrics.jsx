@@ -48,11 +48,11 @@ export default function StockRequestMetrics({ requests = [] }) {
     ];
 
     return (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="flex overflow-x-auto pb-2.5 gap-3.5 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
             {kpiCards.map((card, i) => (
                 <div 
                     key={i} 
-                    className="bg-white p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl border border-stone-200/80 shadow-2xs flex items-center justify-between gap-3 hover:shadow-xs transition-shadow"
+                    className="w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto sm:max-w-none bg-white p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl border border-stone-200/80 shadow-2xs flex items-center justify-between gap-3 hover:shadow-xs transition-shadow"
                 >
                     <div className="min-w-0 flex-1">
                         <p className="text-[10px] sm:text-[11px] font-bold text-stone-400 uppercase tracking-wider truncate">{card.label}</p>

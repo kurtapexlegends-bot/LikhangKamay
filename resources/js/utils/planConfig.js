@@ -1,13 +1,13 @@
-import { Zap, Crown, Sparkles } from 'lucide-react';
+import { Package, Crown, Sparkles } from 'lucide-react';
 
 export const PLAN_CONFIG = {
     free: {
         label: 'Standard',
-        icon: Zap,
+        icon: Package,
         bg: 'bg-stone-100',
         border: 'border-stone-200',
         text: 'text-stone-600',
-        iconColor: 'text-stone-400',
+        iconColor: 'text-stone-700',
         hoverBg: 'hover:bg-stone-200/80',
     },
     premium: {
@@ -37,10 +37,10 @@ export const PLANS = [
         price: 'Free',
         period: '',
         description: 'Start selling your craft to the world.',
-        icon: Zap,
+        icon: Package,
         limit: 3,
         color: 'stone',
-        gradient: 'from-stone-500 to-stone-600',
+        gradient: 'from-stone-100 to-stone-200',
         lightBg: 'bg-stone-50',
         lightBorder: 'border-stone-200',
         lightText: 'text-stone-700',

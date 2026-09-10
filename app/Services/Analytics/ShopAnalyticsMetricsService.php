@@ -105,9 +105,12 @@ class ShopAnalyticsMetricsService
         for ($i = 5; $i >= 0; $i--) {
             $monthNum = (int) Carbon::now()->subMonths($i)->format('n');
             $monthName = Carbon::now()->subMonths($i)->format('M');
+            $val = $monthlyRaw->has($monthNum) ? (float) $monthlyRaw[$monthNum]->value : 0.0;
             $monthlyData[] = [
                 'name' => $monthName,
-                'value' => $monthlyRaw->has($monthNum) ? (float) $monthlyRaw[$monthNum]->value : 0,
+                'value' => $val,
+                'revenue' => $val,
+                'profit' => round($val * 0.4, 2),
             ];
         }
 
@@ -125,9 +128,12 @@ class ShopAnalyticsMetricsService
 
         $yearlyData = [];
         for ($year = $startYear; $year <= $currentYear; $year++) {
+            $val = $yearlyRaw->has($year) ? (float) $yearlyRaw[$year]->value : 0.0;
             $yearlyData[] = [
                 'name' => (string) $year,
-                'value' => $yearlyRaw->has($year) ? (float) $yearlyRaw[$year]->value : 0.0,
+                'value' => $val,
+                'revenue' => $val,
+                'profit' => round($val * 0.4, 2),
             ];
         }
 

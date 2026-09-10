@@ -62,11 +62,11 @@ export default function Analytics({
     const salesHeatmap = insights?.sales_heatmap || [];
 
     const revenueTrend = useMemo(() => {
-        return (chartData.monthly || []).slice(-7).map(d => d.revenue);
+        return (chartData.monthly || []).slice(-7).map(d => Number(d.revenue ?? d.value ?? 0));
     }, [chartData.monthly]);
 
     const profitTrend = useMemo(() => {
-        return (chartData.monthly || []).slice(-7).map(d => d.profit || (d.revenue * 0.4));
+        return (chartData.monthly || []).slice(-7).map(d => Number(d.profit ?? ((d.revenue ?? d.value ?? 0) * 0.4)));
     }, [chartData.monthly]);
 
     return (
@@ -157,10 +157,11 @@ export default function Analytics({
                         >
                             <Suspense fallback={
                                 <div className="space-y-6 animate-pulse">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                        <div className="h-28 bg-white rounded-2xl border border-stone-200/80" />
-                                        <div className="h-28 bg-white rounded-2xl border border-stone-200/80" />
-                                        <div className="h-28 bg-white rounded-2xl border border-stone-200/80" />
+                                    <div className="flex overflow-x-auto pb-2.5 gap-3.5 sm:gap-4 lg:gap-5 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+                                        <div className="w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto h-28 bg-white rounded-2xl border border-stone-200/80" />
+                                        <div className="w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto h-28 bg-white rounded-2xl border border-stone-200/80" />
+                                        <div className="w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto h-28 bg-white rounded-2xl border border-stone-200/80" />
+                                        <div className="w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto h-28 bg-white rounded-2xl border border-stone-200/80" />
                                     </div>
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                         <div className="lg:col-span-2 h-80 bg-white rounded-2xl border border-stone-200/80" />

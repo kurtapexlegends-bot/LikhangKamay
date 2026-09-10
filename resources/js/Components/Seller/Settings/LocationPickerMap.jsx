@@ -44,7 +44,7 @@ export default function LocationPickerMap({
                 zoom: readOnly ? 15 : 16,
                 zoomControl: !readOnly,
                 attributionControl: false,
-                dragging: !readOnly,
+                dragging: !readOnly && !L.Browser.mobile,
                 scrollWheelZoom: !readOnly,
                 doubleClickZoom: !readOnly,
                 touchZoom: !readOnly,

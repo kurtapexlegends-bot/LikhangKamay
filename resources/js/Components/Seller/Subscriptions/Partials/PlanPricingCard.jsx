@@ -43,8 +43,18 @@ export default function PlanPricingCard({
             }}
         >
             <div className="mb-2.5 mt-0.5 flex items-start gap-2">
-                <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${plan.gradient} shadow-sm transition-transform duration-300 ${hoveredPlan === plan.id ? 'scale-110' : ''}`}>
-                    <PlanIcon size={15} className="text-white" />
+                <div
+                    className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm transition-transform duration-300 ${
+                        hoveredPlan === plan.id ? 'scale-110' : ''
+                    } ${
+                        plan.id === 'super_premium'
+                            ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white'
+                            : plan.id === 'premium'
+                                ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white'
+                                : 'bg-stone-100 text-stone-700 border border-stone-200'
+                    }`}
+                >
+                    <PlanIcon size={15} className={plan.id === 'free' ? 'text-stone-700' : 'text-white'} />
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">

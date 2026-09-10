@@ -54,7 +54,7 @@ export default function AddressLocationPicker({
                 zoom: hasCoordinates ? 16 : 14,
                 zoomControl: !readOnly,
                 attributionControl: false,
-                dragging: !readOnly,
+                dragging: !readOnly && !L.Browser.mobile,
                 scrollWheelZoom: !readOnly,
                 doubleClickZoom: !readOnly,
                 touchZoom: !readOnly,

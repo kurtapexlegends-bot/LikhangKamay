@@ -117,7 +117,7 @@ class InHouseDispatchTest extends TestCase
             'dispatch_notes' => 'Deliver before 5pm',
         ]);
 
-        $response->assertSessionHas('error');
+        $response->assertForbidden();
         $this->assertDatabaseMissing('order_deliveries', [
             'order_id' => $order->id,
             'provider' => OrderDelivery::PROVIDER_IN_HOUSE,

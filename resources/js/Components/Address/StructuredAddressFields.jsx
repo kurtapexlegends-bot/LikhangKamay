@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import AddressSelect from '@/Components/Address/AddressSelect';
-import AddressLocationPicker from '@/Components/Address/AddressLocationPicker';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
+
+const AddressLocationPicker = lazy(() => import('@/Components/Address/AddressLocationPicker'));
 import {
     CAVITE_CITY_OPTIONS,
     CAVITE_REGION,
@@ -162,17 +163,27 @@ export default function StructuredAddressFields({
                 </div>
             </div>
 
-            <AddressLocationPicker
-                latitude={rawValue('latitude')}
-                longitude={rawValue('longitude')}
-                city={matchedCity || rawValue('city')}
-                barangay={rawValue('barangay')}
-                onLocationSelect={({ latitude, longitude }) => {
-                    updateField('latitude', latitude);
-                    updateField('longitude', longitude);
-                }}
-                readOnly={readOnly}
-            />
+            <Suspense fallback={
+                <div className="rounded-2xl border border-stone-200/80 bg-stone-50/50 p-4 animate-pulse space-y-3">
+                    <div className="flex items-center justify-between">
+                        <div className="h-4 w-32 bg-stone-200 rounded-lg" />
+                        <div className="h-6 w-20 bg-stone-200 rounded-md" />
+                    </div>
+                    <div className="h-44 w-full bg-stone-200/70 rounded-xl" />
+                </div>
+            }>
+                <AddressLocationPicker
+                    latitude={rawValue('latitude')}
+                    longitude={rawValue('longitude')}
+                    city={matchedCity || rawValue('city')}
+                    barangay={rawValue('barangay')}
+                    onLocationSelect={({ latitude, longitude }) => {
+                        updateField('latitude', latitude);
+                        updateField('longitude', longitude);
+                    }}
+                    readOnly={readOnly}
+                />
+            </Suspense>
 
             {showPreview && (
                 <div className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">

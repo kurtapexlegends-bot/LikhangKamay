@@ -384,9 +384,9 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                 </div>
 
                 {/* ── 4 REFINED OPERATIONAL KPI STAT CARDS ── */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="flex overflow-x-auto pb-2.5 gap-3.5 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
                     {/* 1. Total Worked */}
-                    <div className="p-4 bg-white rounded-2xl border border-stone-200/80 shadow-xs flex flex-col justify-between">
+                    <div className="w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto sm:max-w-none p-4 bg-white rounded-2xl border border-stone-200/80 shadow-xs flex flex-col justify-between">
                         <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Total Worked</span>
                             <Clock size={16} className="text-stone-400" />
@@ -400,7 +400,7 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                     </div>
 
                     {/* 2. Overtime */}
-                    <div className="p-4 bg-white rounded-2xl border border-emerald-200/80 shadow-xs flex flex-col justify-between">
+                    <div className="w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto sm:max-w-none p-4 bg-white rounded-2xl border border-emerald-200/80 shadow-xs flex flex-col justify-between">
                         <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Approved Overtime</span>
                             <TrendingUp size={16} className="text-emerald-600" />
@@ -414,7 +414,7 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                     </div>
 
                     {/* 3. Undertime */}
-                    <div className="p-4 bg-white rounded-2xl border border-amber-200/80 shadow-xs flex flex-col justify-between">
+                    <div className="w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto sm:max-w-none p-4 bg-white rounded-2xl border border-amber-200/80 shadow-xs flex flex-col justify-between">
                         <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">Undertime Deduction</span>
                             <AlertTriangle size={16} className="text-amber-600" />
@@ -428,7 +428,7 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                     </div>
 
                     {/* 4. Action Needed / Review Queue (Replacing redundant Rest Day OT) */}
-                    <div className={`p-4 rounded-2xl border shadow-xs flex flex-col justify-between ${
+                    <div className={`w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto sm:max-w-none p-4 rounded-2xl border shadow-xs flex flex-col justify-between ${
                         pendingCount > 0 ? 'bg-amber-50/40 border-amber-300/80' : 'bg-white border-stone-200/80'
                     }`}>
                         <div className="flex items-center justify-between">

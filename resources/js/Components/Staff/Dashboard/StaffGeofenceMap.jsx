@@ -48,7 +48,7 @@ export default function StaffGeofenceMap({
                 zoom: 16,
                 zoomControl: false,
                 attributionControl: false,
-                dragging: false,
+                dragging: !L.Browser.mobile,
                 scrollWheelZoom: false,
                 doubleClickZoom: false,
                 touchZoom: false,

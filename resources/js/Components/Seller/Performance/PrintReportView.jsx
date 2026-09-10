@@ -42,11 +42,11 @@ export default function PrintReportView({
     }, [generatedAt]);
 
     const revenueTrend = useMemo(() => {
-        return (chartData.monthly || []).slice(-7).map(d => d.revenue);
+        return (chartData.monthly || []).slice(-7).map(d => Number(d.revenue ?? d.value ?? 0));
     }, [chartData.monthly]);
 
     const profitTrend = useMemo(() => {
-        return (chartData.monthly || []).slice(-7).map(d => d.profit || (d.revenue * 0.4));
+        return (chartData.monthly || []).slice(-7).map(d => Number(d.profit ?? ((d.revenue ?? d.value ?? 0) * 0.4)));
     }, [chartData.monthly]);
 
     return (

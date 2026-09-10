@@ -18,6 +18,10 @@ Sentry.init({
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration(),
   ],
+  ignoreErrors: [
+    "Cannot read properties of undefined (reading 'startTime')",
+    "reportAllChanges",
+  ],
   // Performance Monitoring
   tracesSampleRate: 1.0, 
   // Session Replay

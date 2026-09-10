@@ -3,7 +3,7 @@
  * Reduces high-res camera/phone photos to ~200-500KB JPEG blobs
  * to guarantee Vercel 4.5MB serverless payload limit is never exceeded.
  */
-export async function compressImage(file, maxWidth = 1600, maxHeight = 1600, quality = 0.8) {
+export async function compressImage(file, maxWidth = 1600, maxHeight = 1600, quality = 0.85) {
     if (!file || !(file instanceof File) || !file.type.startsWith('image/')) {
         return file;
     }

@@ -212,7 +212,102 @@ export default function SponsorshipRequestsTable({ requests }) {
 
             {/* Table wrapper */}
             <div className="bg-white rounded-2xl shadow-2xs border border-stone-200/80 overflow-hidden">
-                <div className="overflow-x-auto no-scrollbar">
+                {/* Mobile & Tablet Card View (lg:hidden) */}
+                <div className="block lg:hidden">
+                    {filteredRequests.length > 0 ? (
+                        <div className="bg-stone-50/30 p-3 sm:p-4 space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
+                            {filteredRequests.map((req) => (
+                                <div key={req.id} className="bg-white border border-stone-200/80 rounded-2xl p-4 shadow-2xs space-y-3 flex flex-col justify-between">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            {req.status === 'pending' && (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedRequestIds.includes(req.id)}
+                                                    onChange={() => handleSelectRequest(req.id)}
+                                                    className="rounded border-stone-300 text-clay-600 focus:ring-clay-500 shrink-0"
+                                                />
+                                            )}
+                                            <div className="w-12 h-12 rounded-xl border border-stone-200/80 bg-stone-50 shrink-0 flex items-center justify-center overflow-hidden">
+                                                {req.product?.img || req.product?.cover_photo_path ? (
+                                                    <img
+                                                        src={req.product.img || (req.product.cover_photo_path?.startsWith('http') ? req.product.cover_photo_path : `/storage/${req.product.cover_photo_path}`)}
+                                                        alt={req.product?.name || ''}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = '/images/placeholder.svg';
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <Package size={18} className="text-stone-300" />
+                                                )}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h4 className="text-xs font-bold text-stone-900 truncate">{req.product?.name || 'Unknown Product'}</h4>
+                                                <p className="text-[10px] text-stone-500 font-medium truncate mt-0.5">
+                                                    Shop: {req.user?.shop_name || req.user?.name || 'Unknown'}
+                                                </p>
+                                                <p className="text-[9px] text-stone-400 font-medium">
+                                                    {new Date(req.created_at).toLocaleDateString()} at {new Date(req.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="shrink-0">
+                                            {getStatusBadge(req.status)}
+                                        </div>
+                                    </div>
+
+                                    {req.status === 'rejected' && req.rejection_reason && (
+                                        <p className="text-[11px] leading-relaxed text-red-700 bg-red-50/50 p-2 rounded-lg border border-red-100/60">
+                                            <span className="font-bold">Reason:</span> {req.rejection_reason}
+                                        </p>
+                                    )}
+
+                                    {/* Action row */}
+                                    <div className="pt-2 border-t border-stone-100">
+                                        {req.status === 'pending' ? (
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSponsorshipAction(req, 'reject')}
+                                                    disabled={processingSponsorship && pendingActionId === req.id}
+                                                    className="flex-1 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200/60 disabled:opacity-50 min-h-[40px] flex items-center justify-center"
+                                                >
+                                                    {processingSponsorship && pendingActionId === req.id && modalData.type === 'reject' ? 'Rejecting...' : 'Reject'}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSponsorshipAction(req, 'approve')}
+                                                    disabled={processingSponsorship && pendingActionId === req.id}
+                                                    className="flex-1 py-2 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition shadow-xs rounded-xl disabled:opacity-50 min-h-[40px] flex items-center justify-center"
+                                                >
+                                                    {processingSponsorship && pendingActionId === req.id && modalData.type === 'approve' ? 'Approving...' : 'Approve'}
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <p className="text-right text-[10px] text-stone-400 font-medium">
+                                                Processed on {new Date(req.approved_at || req.updated_at).toLocaleDateString()}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="py-12">
+                            <EmptyState
+                                compact
+                                icon={Award}
+                                title="No requests found"
+                                description="No sponsorship requests match your search or tab filter."
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop Table (hidden below lg) */}
+                <div className="hidden lg:block overflow-x-auto no-scrollbar">
                     <table className="w-full min-w-[900px] text-left border-collapse">
                         <thead>
                             <tr className="bg-[#FDFBF9] border-b border-stone-200/80 text-[10px] font-extrabold uppercase tracking-wider text-stone-500">

@@ -253,6 +253,7 @@ class SellerEntitlementsTest extends TestCase
     {
         $owner = User::factory()->artisanApproved()->create([
             'setup_completed_at' => now(),
+            'premium_tier' => 'super_premium',
         ]);
 
         // Should access products without redirection loop

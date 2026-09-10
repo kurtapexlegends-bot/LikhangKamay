@@ -468,7 +468,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                                 <NavItem href={route('stock-requests.index')} icon={FileQuestion} active={active === 'stock-requests'} compact onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Restock Requests')} onMouseLeave={handleTooltipLeave}>Restock Requests</NavItem>
                                             )}
                                             {visibleModulesSet.has('supply_hub') && (
-                                                <NavItem href={route('seller.supply-hub.index')} icon={Truck} active={active === 'supply-hub'} compact onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Supply Hub', 'B2B Wholesale')} onMouseLeave={handleTooltipLeave} badge="Elite">Supply Hub</NavItem>
+                                                <NavItem href={route('seller.supply-hub.index')} icon={Truck} active={active === 'supply-hub'} compact onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Supply Hub', 'B2B Wholesale')} onMouseLeave={handleTooltipLeave}>Supply Hub</NavItem>
                                             )}
                                         </div>
                                     </div>

@@ -213,8 +213,137 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
                                 </p>
                             </div>
                         ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse min-w-[960px]">
+                            <>
+                                {/* Mobile & Tablet Card View (lg:hidden) */}
+                                <div className="block lg:hidden bg-stone-50/30 p-3 sm:p-4 space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
+                                    {filteredArtisans.map((artisan) => {
+                                        const isOwed = artisan.balance > 0;
+                                        const copyKey = `artisan-card-${artisan.id}`;
+                                        const isCopied = copiedKey === copyKey;
+                                        const hasAccount = Boolean(artisan.payout_account_number);
+
+                                        return (
+                                            <div key={artisan.id} className="bg-white border border-stone-200/80 rounded-2xl p-4 shadow-2xs space-y-3 flex flex-col justify-between">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <UserAvatar user={artisan} className="h-10 w-10 shrink-0 border border-stone-200/70" />
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <h4 className="font-bold text-stone-900 text-sm truncate">{artisan.shop_name}</h4>
+                                                                {artisan.shop_slug && (
+                                                                    <a
+                                                                        href={route('shop.seller', artisan.shop_slug)}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-stone-400 hover:text-stone-600 transition shrink-0"
+                                                                        title="View Storefront"
+                                                                    >
+                                                                        <ExternalLink size={12} />
+                                                                    </a>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-[11px] text-stone-500 font-medium truncate mt-0.5">
+                                                                {artisan.name !== artisan.shop_name ? `${artisan.name} • ` : ''}{artisan.email}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase shrink-0 border ${
+                                                        isOwed ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                    }`}>
+                                                        {isOwed ? 'Ready for Payout' : 'Settled'}
+                                                    </span>
+                                                </div>
+
+                                                {/* Payout Destination */}
+                                                <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/60 text-xs">
+                                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 block mb-1">Destination</span>
+                                                    {hasAccount ? (
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                                <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${
+                                                                    (artisan.payout_method || '').toLowerCase().includes('gcash')
+                                                                        ? 'bg-sky-50 text-sky-700 border-sky-200/70'
+                                                                        : (artisan.payout_method || '').toLowerCase().includes('maya')
+                                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/70'
+                                                                        : 'bg-stone-100 text-stone-700 border-stone-200'
+                                                                }`}>
+                                                                    {artisan.payout_method || 'GCash'}
+                                                                </span>
+                                                                <span className="font-bold text-stone-800 text-xs truncate">
+                                                                    {artisan.payout_account_name || '—'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1 shrink-0">
+                                                                <span className="font-mono text-[11px] font-semibold text-stone-600">
+                                                                    {formatDisplayAccount(artisan.payout_method, artisan.payout_account_number)}
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleCopy(artisan.payout_account_number, copyKey)}
+                                                                    className="p-1 rounded text-stone-400 hover:text-stone-700 transition"
+                                                                    title="Copy account number"
+                                                                >
+                                                                    {isCopied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-1 text-amber-700 text-[11px] font-medium">
+                                                            <AlertCircle size={12} />
+                                                            <span>No payout account linked</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Financial Breakdown */}
+                                                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-stone-100">
+                                                    <div>
+                                                        <span className="text-[10px] text-stone-400 uppercase font-bold tracking-wider block">Completed Sales</span>
+                                                        <span className="font-bold text-stone-800">{formatCurrency(artisan.gross_sales ?? artisan.revenue)}</span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className="text-[10px] text-stone-400 uppercase font-bold tracking-wider block">Ready for Payout</span>
+                                                        <span className={`font-black text-sm ${isOwed ? 'text-amber-700' : 'text-stone-400'}`}>
+                                                            {formatCurrency(artisan.balance)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Action Row */}
+                                                <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
+                                                    {isOwed ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDisbursingArtisan(artisan)}
+                                                            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-700 hover:bg-clay-800 text-white px-3 py-2 text-xs font-bold transition shadow-xs active:scale-95 min-h-[40px]"
+                                                        >
+                                                            <ArrowUpRight size={13} />
+                                                            <span>Log Payout</span>
+                                                        </button>
+                                                    ) : (
+                                                        <span className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-3 py-2 rounded-xl min-h-[40px]">
+                                                            <Check size={13} />
+                                                            Settled
+                                                        </span>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setViewingStatementArtisan(artisan)}
+                                                        title="View completed orders statement"
+                                                        className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl border border-stone-200/80 bg-white text-stone-600 hover:bg-stone-50 transition shadow-2xs min-h-[40px] text-xs font-bold"
+                                                    >
+                                                        <FileText size={14} />
+                                                        <span>Statement</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Desktop Table View (hidden below lg) */}
+                                <div className="hidden lg:block overflow-x-auto">
+                                    <table className="w-full text-left border-collapse min-w-[960px]">
                                     <thead>
                                         <tr className="bg-[#FDFBF9] border-b border-stone-200/80 text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
                                             <th className="py-3 px-5">Shop &amp; Artisan</th>
@@ -372,7 +501,8 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
                                     </tbody>
                                 </table>
                             </div>
-                        )
+                        </>
+                    )
                     ) : (
                         filteredHistory.length === 0 ? (
                             <div className="flex flex-col items-center justify-center p-16 text-center">
@@ -388,7 +518,71 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
                             </div>
                         ) : (
                             <div className="flex flex-col">
-                                <div className="overflow-x-auto">
+                                {/* Mobile & Tablet Card View (lg:hidden) */}
+                                <div className="block lg:hidden bg-stone-50/30 p-3 sm:p-4 space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
+                                    {filteredHistory.map((payout) => {
+                                        const refCopyKey = `ref-card-${payout.id}`;
+                                        const isRefCopied = copiedKey === refCopyKey;
+
+                                        return (
+                                            <div key={payout.id} className="bg-white border border-stone-200/80 rounded-2xl p-4 shadow-2xs space-y-3 flex flex-col justify-between">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <UserAvatar user={payout.user} className="h-9 w-9 shrink-0 border border-stone-200/60" />
+                                                        <div className="min-w-0">
+                                                            <h4 className="font-bold text-stone-900 text-xs truncate">{payout.shop_name}</h4>
+                                                            <p className="text-[10px] text-stone-500 font-medium truncate mt-0.5">Owner: {payout.artisan_name}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 text-[11px] font-medium text-stone-500 shrink-0">
+                                                        <Calendar size={12} className="text-stone-400" />
+                                                        <span>{payout.created_at}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/60 text-xs space-y-1.5">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <div className="flex items-center gap-1.5 min-w-0">
+                                                            <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-stone-100 text-stone-700 border border-stone-200">
+                                                                {payout.payout_method || 'GCash'}
+                                                            </span>
+                                                            <span className="font-bold text-stone-800 text-xs truncate">
+                                                                {payout.payout_account_name}
+                                                            </span>
+                                                        </div>
+                                                        <span className="font-mono text-[11px] font-semibold text-stone-600 shrink-0">
+                                                            {formatDisplayAccount(payout.payout_method, payout.payout_account_number)}
+                                                        </span>
+                                                    </div>
+                                                    {payout.reference_number && (
+                                                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-stone-200/40">
+                                                            <span className="text-[10px] text-stone-400 uppercase font-bold tracking-wider">Ref / Txn</span>
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="font-mono text-xs font-bold text-stone-900">{payout.reference_number}</span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleCopy(payout.reference_number, refCopyKey)}
+                                                                    className="p-0.5 text-stone-400 hover:text-stone-700 transition cursor-pointer"
+                                                                    title="Copy reference number"
+                                                                >
+                                                                    {isRefCopied ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex items-center justify-between pt-2 border-t border-stone-100">
+                                                    <span className="text-[10px] text-stone-400 uppercase font-bold tracking-wider">Amount Paid</span>
+                                                    <span className="font-black text-base text-emerald-700">{formatCurrency(payout.amount)}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Desktop Table View (hidden below lg) */}
+                                <div className="hidden lg:block overflow-x-auto">
                                     <table className="w-full text-left border-collapse min-w-[960px]">
                                         <thead>
                                             <tr className="bg-stone-50 border-b border-stone-200 text-[10px] font-bold uppercase tracking-widest text-stone-500">

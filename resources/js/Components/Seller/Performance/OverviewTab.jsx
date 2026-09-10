@@ -71,58 +71,72 @@ export default function OverviewTab({
             {/* Level 1: Key Performance Indicators */}
             <div>
                 <StaggerContainer 
-                    className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 lg:gap-5"
+                    className="flex overflow-x-auto pb-2.5 gap-3.5 sm:gap-4 lg:gap-5 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0"
                 >
                     {isLoading ? (
-                        <ArtisanSkeleton variant="stat" count={4} />
+                        <>
+                            {[...Array(4)].map((_, i) => (
+                                <div key={i} className="w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto sm:max-w-none">
+                                    <ArtisanSkeleton variant="stat" count={1} />
+                                </div>
+                            ))}
+                        </>
                     ) : (
                         <>
-                            <KPICard 
-                                title="Total Revenue" 
-                                value={metrics.total_revenue} 
-                                growth={metrics.growth?.revenue} 
-                                growthSuffix=" vs last 30 days"
-                                trendData={revenueTrend}
-                                icon={DollarSign} 
-                                bg="bg-clay-50" 
-                                color="text-clay-600" 
-                                animate={shouldAnimateKPI}
-                            />
-                            <KPICard 
-                                title="Gross Profit" 
-                                value={metrics.gross_profit} 
-                                growth={metrics.growth?.profit} 
-                                growthSuffix=" vs last 30 days"
-                                trendData={profitTrend}
-                                subtitle={`${Number(metrics.profit_margin || 0).toFixed(1)}% profit margin`}
-                                icon={TrendingUp} 
-                                bg="bg-emerald-50" 
-                                color="text-emerald-600" 
-                                animate={shouldAnimateKPI}
-                            />
-                            <KPICard 
-                                title="Completed Orders" 
-                                value={metrics.orders_count ?? 0} 
-                                growth={metrics.growth?.orders} 
-                                growthSuffix=" vs last 30 days"
-                                subtitle={metrics.avg_order_value ? `${formatPeso(metrics.avg_order_value)} avg order` : 'Store sales'}
-                                icon={Package} 
-                                bg="bg-stone-50" 
-                                color="text-stone-700" 
-                                animate={shouldAnimateKPI} 
-                            />
-                            <KPICard 
-                                title="Shop Reputation" 
-                                value={`${Number(metrics.average_rating || 0).toFixed(1)} / 5.0`} 
-                                growth={metrics.growth?.rating} 
-                                growthSuffix=" vs last 30 days"
-                                subtitle={`${metrics.review_stats?.total || 0} reviews • ${metrics.follower_metrics?.total ?? 0} followers`}
-                                icon={Star} 
-                                bg="bg-amber-50" 
-                                color="text-amber-600" 
-                                formatter={(v) => typeof v === 'number' ? v.toFixed(1) : v} 
-                                animate={shouldAnimateKPI} 
-                            />
+                            <div className="w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto sm:max-w-none">
+                                <KPICard 
+                                    title="Total Revenue" 
+                                    value={metrics.total_revenue} 
+                                    growth={metrics.growth?.revenue} 
+                                    growthSuffix=" vs last 30 days"
+                                    trendData={revenueTrend}
+                                    icon={DollarSign} 
+                                    bg="bg-clay-50" 
+                                    color="text-clay-600" 
+                                    animate={shouldAnimateKPI}
+                                />
+                            </div>
+                            <div className="w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto sm:max-w-none">
+                                <KPICard 
+                                    title="Gross Profit" 
+                                    value={metrics.gross_profit} 
+                                    growth={metrics.growth?.profit} 
+                                    growthSuffix=" vs last 30 days"
+                                    trendData={profitTrend}
+                                    subtitle={`${Number(metrics.profit_margin || 0).toFixed(1)}% profit margin`}
+                                    icon={TrendingUp} 
+                                    bg="bg-emerald-50" 
+                                    color="text-emerald-600" 
+                                    animate={shouldAnimateKPI}
+                                />
+                            </div>
+                            <div className="w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto sm:max-w-none">
+                                <KPICard 
+                                    title="Completed Orders" 
+                                    value={metrics.orders_count ?? 0} 
+                                    growth={metrics.growth?.orders} 
+                                    growthSuffix=" vs last 30 days"
+                                    subtitle={metrics.avg_order_value ? `${formatPeso(metrics.avg_order_value)} avg order` : 'Store sales'}
+                                    icon={Package} 
+                                    bg="bg-stone-50" 
+                                    color="text-stone-700" 
+                                    animate={shouldAnimateKPI} 
+                                />
+                            </div>
+                            <div className="w-[82vw] max-w-[280px] shrink-0 snap-center sm:w-auto sm:max-w-none">
+                                <KPICard 
+                                    title="Shop Reputation" 
+                                    value={`${Number(metrics.average_rating || 0).toFixed(1)} / 5.0`} 
+                                    growth={metrics.growth?.rating} 
+                                    growthSuffix=" vs last 30 days"
+                                    subtitle={`${metrics.review_stats?.total || 0} reviews • ${metrics.follower_metrics?.total ?? 0} followers`}
+                                    icon={Star} 
+                                    bg="bg-amber-50" 
+                                    color="text-amber-600" 
+                                    formatter={(v) => typeof v === 'number' ? v.toFixed(1) : v} 
+                                    animate={shouldAnimateKPI} 
+                                />
+                            </div>
                         </>
                     )}
                 </StaggerContainer>
