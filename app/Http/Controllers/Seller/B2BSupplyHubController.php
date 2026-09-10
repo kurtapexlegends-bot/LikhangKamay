@@ -56,6 +56,9 @@ class B2BSupplyHubController extends Controller
             abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
         }
 
+        $seller = $actor->getEffectiveSeller() ?? $actor;
+        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
+
         try {
             $catalogData = $this->fetchB2BCatalog->execute($request, $actor);
             return Inertia::render('Seller/SupplyHub/Index', $catalogData);
@@ -99,6 +102,9 @@ class B2BSupplyHubController extends Controller
         if (!$actor || !$actor->isArtisan()) {
             abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
         }
+
+        $seller = $actor->getEffectiveSeller() ?? $actor;
+        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
 
         $activeOrdersCount = Order::where('user_id', $actor->id)
             ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
@@ -156,7 +162,14 @@ class B2BSupplyHubController extends Controller
         /** @var User $actor */
         $actor = Auth::user();
 
-        if ($product->user_id !== $actor->id) {
+        if (!$actor || !$actor->isArtisan()) {
+            abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
+        }
+
+        $seller = $actor->getEffectiveSeller() ?? $actor;
+        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
+
+        if ($product->user_id !== $seller->id) {
             abort(403, 'Unauthorized product modification.');
         }
 
@@ -224,6 +237,9 @@ class B2BSupplyHubController extends Controller
             abort(403, 'The Supply Hub is strictly reserved for verified artisans.');
         }
 
+        $seller = $actor->getEffectiveSeller() ?? $actor;
+        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
+
         $myPublishedCount = Product::where('user_id', $actor->id)
             ->where('is_b2b_supply', DB::raw('true'))
             ->count();
@@ -255,6 +271,9 @@ class B2BSupplyHubController extends Controller
         if (!$actor || !$actor->isArtisan()) {
             abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
         }
+
+        $seller = $actor->getEffectiveSeller() ?? $actor;
+        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
 
         $items = $prepareCheckout->execute($request);
 
@@ -292,6 +311,9 @@ class B2BSupplyHubController extends Controller
         if (!$actor || !$actor->isArtisan()) {
             abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
         }
+
+        $seller = $actor->getEffectiveSeller() ?? $actor;
+        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
 
         try {
             $placeOrder->execute($request, $actor);

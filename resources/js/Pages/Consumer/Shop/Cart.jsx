@@ -256,23 +256,6 @@ export default function Cart({ cart }) {
                                                             )}
                                                             <p className="text-xs text-gray-400 mt-1">SKU: {item.sku || 'Unavailable'}</p>
                                                             <p className="text-xs text-gray-400 mt-0.5">Variant: {item.variant || 'Standard'}</p>
-                                                            {item.is_b2b_supply && (
-                                                                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                                                        MOQ: {item.moq || 1} {item.supply_unit || 'pcs'}
-                                                                    </span>
-                                                                    {item.wholesale_price && item.wholesale_min_qty && (
-                                                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                                                            item.qty >= item.wholesale_min_qty
-                                                                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                                                                                : 'bg-stone-50 text-stone-600 border border-stone-200'
-                                                                        }`}>
-                                                                            {item.qty >= item.wholesale_min_qty ? 'Wholesale rate applied: ' : 'Wholesale: '}
-                                                                            {currency.format(Number(item.wholesale_price))} for {item.wholesale_min_qty}+ {item.supply_unit || 'pcs'}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            )}
                                                             <button 
                                                                 onClick={() => removeItem(getCartKey(item))}
                                                                 disabled={removingId === getCartKey(item)}

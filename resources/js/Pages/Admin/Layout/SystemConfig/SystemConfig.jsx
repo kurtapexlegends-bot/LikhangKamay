@@ -15,6 +15,7 @@ import {
     CreditCard,
     ChevronDown,
     AlertCircle,
+    Info,
     Search,
     Server,
     FolderTree,
@@ -74,10 +75,33 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
 
         // Subscription Tier Settings
         tier_free_limit: settings?.tier_free_limit ?? 3,
+        tier_free_staff_limit: settings?.tier_free_staff_limit ?? 0,
+        tier_free_badge: settings?.tier_free_badge ?? 'Foundational',
+        tier_free_description: settings?.tier_free_description ?? 'Keep your shop live with essentials for catalog, orders, and seller workspace.',
+        tier_free_modules: settings?.tier_free_modules ?? {},
+        tier_free_feature_labels: settings?.tier_free_feature_labels ?? {},
+        tier_free_custom_features: settings?.tier_free_custom_features ?? [],
+        tier_free_features: settings?.tier_free_features ?? [],
+
         tier_premium_price: settings?.tier_premium_price ?? 199,
         tier_premium_limit: settings?.tier_premium_limit ?? 10,
+        tier_premium_staff_limit: settings?.tier_premium_staff_limit ?? 3,
+        tier_premium_badge: settings?.tier_premium_badge ?? 'Most Popular',
+        tier_premium_description: settings?.tier_premium_description ?? 'Add more shelf space and stronger operational tools for growing artisan shops.',
+        tier_premium_modules: settings?.tier_premium_modules ?? {},
+        tier_premium_feature_labels: settings?.tier_premium_feature_labels ?? {},
+        tier_premium_custom_features: settings?.tier_premium_custom_features ?? [],
+        tier_premium_features: settings?.tier_premium_features ?? [],
+
         tier_super_premium_price: settings?.tier_super_premium_price ?? 399,
         tier_super_premium_limit: settings?.tier_super_premium_limit ?? 50,
+        tier_super_premium_staff_limit: settings?.tier_super_premium_staff_limit ?? 15,
+        tier_super_premium_badge: settings?.tier_super_premium_badge ?? 'Full Access',
+        tier_super_premium_description: settings?.tier_super_premium_description ?? 'Unlock the complete seller suite, B2B wholesale access, and sponsored placements.',
+        tier_super_premium_modules: settings?.tier_super_premium_modules ?? {},
+        tier_super_premium_feature_labels: settings?.tier_super_premium_feature_labels ?? {},
+        tier_super_premium_custom_features: settings?.tier_super_premium_custom_features ?? [],
+        tier_super_premium_features: settings?.tier_super_premium_features ?? [],
 
         // Mail Engine & Dispatcher Settings
         mail_driver: settings?.mail_driver || 'resend',
@@ -413,84 +437,95 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 5 }}
                             transition={{ duration: 0.2 }}
+                            className="space-y-6 mt-6"
                         >
-                            <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                                {/* Left Column: Inputs */}
-                                <div className="lg:col-span-2 space-y-6">
-                                    <SubscriptionTiers 
-                                        data={data} 
-                                        setData={setData} 
-                                        errors={errors} 
-                                    />
-                                </div>
-
-                                {/* Right Column: Sticky actions */}
-                                <div className="space-y-6">
-                                    <div className="hidden lg:block bg-stone-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
-                                        <div className="relative z-10 space-y-4">
+                            <form onSubmit={submit} className="space-y-6">
+                                {/* Top Command Bar with Live Save & Status */}
+                                <div className="bg-white rounded-2xl border border-stone-200/80 p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div className="flex items-start gap-3.5">
+                                        <div className="w-10 h-10 rounded-xl bg-stone-900 text-white flex items-center justify-center shrink-0 shadow-sm">
+                                            <ShieldCheck size={20} className="text-clay-400" />
+                                        </div>
+                                        <div>
                                             <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
-                                                    <Save size={14} className="text-clay-400" />
-                                                </div>
-                                                <h3 className="text-sm font-bold">Apply Plan Changes</h3>
-                                            </div>
-                                            <p className="text-[11px] text-stone-400 leading-relaxed font-medium">
-                                                Plan tier modifications (limits and pricing) will apply immediately to all active artisan shops.
-                                            </p>
-                                            
-                                            <PrimaryButton 
-                                                disabled={processing}
-                                                className="w-full py-3 bg-clay-600 hover:bg-clay-700 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md group border-none text-[10px]"
-                                            >
-                                                <Save size={14} className="transition-transform duration-200 group-hover:scale-110" />
-                                                {processing ? 'Processing...' : 'Apply Tier Update'}
-                                            </PrimaryButton>
+                                                <h3 className="text-base font-black text-stone-900 tracking-tight">Subscription Plans & Entitlements</h3>
+                                                {isDirty && (
+                                                    <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-700 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                                                        Unsaved Changes
+                                                    </span>
+                                                )}
 
-                                            {recentlySuccessful && (
-                                                <div className="flex items-center gap-1.5 text-emerald-400 text-[10px] font-bold animate-in fade-in slide-in-from-top-1">
-                                                    <CheckCircle2 size={13} />
-                                                    <span>Tier settings updated!</span>
+                                                {/* Minimal Live Plan Sync Notice Tooltip */}
+                                                <div className="relative group/notice inline-flex items-center ml-0.5">
+                                                    <button
+                                                        type="button"
+                                                        aria-label="Live Plan Sync Notice"
+                                                        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-850 border border-stone-200/80 transition-colors text-[11px] font-bold cursor-help focus:outline-none focus:ring-2 focus:ring-stone-400"
+                                                    >
+                                                        <Info size={12} />
+                                                    </button>
+                                                    <div className="absolute left-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 hidden group-hover/notice:flex group-focus-within/notice:flex flex-col z-50 w-72 sm:w-80 p-3.5 bg-stone-900 text-white rounded-xl shadow-xl border border-stone-800 text-xs pointer-events-none animate-in fade-in duration-150">
+                                                        <div className="flex items-center gap-1.5 text-amber-400 font-bold text-[11px] uppercase tracking-wider mb-1">
+                                                            <Info size={13} />
+                                                            <span>Live Plan Sync Notice</span>
+                                                        </div>
+                                                        <p className="text-stone-300 leading-relaxed text-[11px] font-normal">
+                                                            Modifying product or staff quotas applies immediately to all active artisan shops. Lowering quotas moves excess active products to draft to keep catalogs compliant without deleting any artisan data.
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            )}
+                                            </div>
+                                            <p className="text-xs text-stone-500 font-medium mt-0.5">
+                                                Customize live pricing, product limits, staff quotas, badges, and feature benefits for each tier.
+                                            </p>
                                         </div>
-                                        <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-clay-600/10 rounded-full blur-3xl group-hover:bg-clay-600/20 transition-colors" />
                                     </div>
 
-                                    {/* Operational Warnings */}
-                                    <div className="bg-amber-50/40 rounded-2xl border border-amber-200/50 p-5 lg:p-6 space-y-4">
-                                        <div className="flex gap-2.5">
-                                            <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={16} />
-                                            <div>
-                                                <h4 className="text-[10px] font-black text-amber-800 uppercase tracking-wider">Warning: Plan Limit Changes</h4>
-                                                <p className="text-[9px] text-amber-700 font-medium leading-relaxed mt-1">
-                                                    Lowering product limits will automatically move excess active products to draft for affected artisans. Set limits carefully to avoid disruption.
-                                                </p>
+                                    <div className="flex flex-wrap items-center gap-3 self-end md:self-center">
+                                        {recentlySuccessful && (
+                                            <div className="flex items-center gap-1.5 text-emerald-700 text-xs font-bold bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl animate-in fade-in">
+                                                <CheckCircle2 size={14} className="text-emerald-600" />
+                                                <span>Tier changes synchronized!</span>
                                             </div>
-                                        </div>
+                                        )}
+                                        <PrimaryButton 
+                                            disabled={processing}
+                                            className="py-2.5 px-5 bg-stone-900 hover:bg-stone-850 text-white rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm border-none text-xs font-bold min-h-[42px] cursor-pointer"
+                                        >
+                                            <Save size={15} />
+                                            {processing ? 'Saving...' : 'Apply Tier Update'}
+                                        </PrimaryButton>
                                     </div>
                                 </div>
+
+                                {/* Full-Width 3-Column Tiers Configuration */}
+                                <SubscriptionTiers 
+                                    data={data} 
+                                    setData={setData} 
+                                    errors={errors} 
+                                    availableModules={settings?.available_plan_modules || []}
+                                />
                             </form>
 
                             {/* Sticky actions bar for Mobile (below lg) */}
-                            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))] z-40 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+                            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
                                 <div className="flex-1 min-w-0 pr-4">
-                                    {recentlySuccessful && (
-                                        <div className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-bold animate-in fade-in">
-                                            <CheckCircle2 size={12} />
-                                            <span>Saved successfully!</span>
+                                    {recentlySuccessful ? (
+                                        <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold">
+                                            <CheckCircle2 size={13} />
+                                            <span>Saved!</span>
                                         </div>
-                                    )}
-                                    {!recentlySuccessful && (
-                                        <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wider">Unsaved Changes</span>
+                                    ) : (
+                                        <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider">Unsaved Changes</span>
                                     )}
                                 </div>
                                 <PrimaryButton 
                                     disabled={processing}
                                     onClick={submit}
-                                    className="py-2.5 px-4 bg-clay-600 hover:bg-clay-700 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md border-none text-[10px] font-bold min-h-[44px]"
+                                    className="py-2.5 px-4 bg-stone-900 hover:bg-stone-850 text-white rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold min-h-[40px]"
                                 >
-                                    <Save size={12} />
-                                    {processing ? 'Saving...' : 'Apply Config'}
+                                    <Save size={13} />
+                                    {processing ? 'Saving...' : 'Apply Update'}
                                 </PrimaryButton>
                             </div>
                         </motion.div>

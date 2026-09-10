@@ -124,9 +124,9 @@ class AnalyticsController extends Controller
         $seller = $this->sellerOwner();
 
         abort_unless(
-            $seller->isPremiumTier(),
+            $seller->canExportAnalytics(),
             403,
-            'Analytics export is available on Premium and Elite plans.'
+            'Analytics report export is not included in your current subscription plan.'
         );
 
         abort_unless(

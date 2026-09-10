@@ -154,8 +154,8 @@ class RunSmokeTestsCommand extends Command
         );
 
         Category::firstOrCreate(
-            ['name' => 'Pottery & Ceramics'],
-            ['slug' => 'pottery-ceramics']
+            ['name' => 'Drinkware'],
+            ['slug' => 'drinkware', 'icon' => 'Coffee']
         );
 
         Product::$bypassReview = true;
@@ -165,7 +165,7 @@ class RunSmokeTestsCommand extends Command
                 'user_id' => $artisan->id,
                 'name' => 'Handcrafted Clay Mug',
                 'description' => 'A beautifully hand-thrown ceramic mug made from Cavite clay.',
-                'category' => 'Pottery & Ceramics',
+                'category' => 'Drinkware',
                 'status' => 'Active',
                 'price' => 350.00,
                 'stock' => 25,

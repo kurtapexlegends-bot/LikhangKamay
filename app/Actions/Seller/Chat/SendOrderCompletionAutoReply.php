@@ -37,8 +37,8 @@ class SendOrderCompletionAutoReply
             return null;
         }
 
-        // Only premium/super_premium sellers have automated thank-you messages
-        if (!$seller->isPremiumTier()) {
+        // Only sellers with chat_auto_reply enabled have automated thank-you messages
+        if (!$seller->canUseFeature('chat_auto_reply')) {
             return null;
         }
 

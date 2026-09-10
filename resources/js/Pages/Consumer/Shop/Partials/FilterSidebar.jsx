@@ -74,7 +74,7 @@ export default function FilterSidebar({
         <aside className={`space-y-4 ${className}`}>
             
             {/* Filter Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-stone-200/50">
+            <div className="sticky top-0 bg-white lg:bg-[#FDFBF9] z-10 flex items-center justify-between pb-3 pt-0.5 border-b border-stone-200/60">
                 <h2 className="font-serif font-black text-stone-900 flex items-center gap-2 text-sm uppercase tracking-wider">
                     <SlidersHorizontal size={14} className="text-clay-600" />
                     Filters
@@ -87,7 +87,7 @@ export default function FilterSidebar({
                 {activeFilterCount > 0 && (
                     <button 
                         onClick={onClearAll}
-                        className="text-xs font-bold text-clay-600 hover:text-clay-700 hover:underline transition-all active:scale-95"
+                        className="text-xs font-bold text-clay-600 hover:text-clay-700 hover:underline transition-all active:scale-95 cursor-pointer"
                     >
                         Clear All
                     </button>
@@ -129,7 +129,7 @@ export default function FilterSidebar({
                                 </div>
                             )}
 
-                            <ul className={`space-y-1 pr-0.5 transition-all duration-300 ${showAllCategories || categorySearch ? 'max-h-96 overflow-y-auto' : 'max-h-none'}`}>
+                            <ul className={`space-y-1 pr-0.5 transition-all duration-300 ${showAllCategories || categorySearch ? 'max-h-96 overflow-y-auto overscroll-contain' : 'max-h-none'}`}>
                                 {visibleCategories.map((cat) => (
                                     <li key={cat}>
                                         <button 
@@ -262,7 +262,7 @@ export default function FilterSidebar({
                                         />
                                     </div>
                                 )}
-                                <div className="space-y-2.5 max-h-40 overflow-y-auto pt-1 pr-0.5">
+                                <div className="space-y-2.5 max-h-48 overflow-y-auto overscroll-contain pt-1 pr-0.5">
                                     {filteredMaterials.map(material => {
                                         const count = materialCounts?.[material];
                                         return (
@@ -317,7 +317,7 @@ export default function FilterSidebar({
                                         />
                                     </div>
                                 )}
-                                <div className="space-y-2.5 max-h-40 overflow-y-auto pt-1 pr-0.5">
+                                <div className="space-y-2.5 max-h-48 overflow-y-auto overscroll-contain pt-1 pr-0.5">
                                     {filteredLocations.map(loc => {
                                         const count = locationCounts?.[loc];
                                         return (

@@ -29,6 +29,7 @@ class SearchController extends Controller
 
         // Fetch top 4 lightweight product matches
         $products = Product::approved()
+            ->retailOnly()
             ->search($search, ['name', 'category'])
             ->with(['user:id,shop_name,name,shop_slug'])
             ->select(['id', 'name', 'slug', 'price', 'cover_photo_path', 'user_id'])

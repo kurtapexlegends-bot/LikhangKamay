@@ -20,7 +20,7 @@ class InHouseDispatchController extends Controller
     public function getDrivers(Request $request, InHouseDispatchService $dispatchService): JsonResponse
     {
         $seller = $this->sellerOwner();
-        $isPremium = $seller->isPremiumTier();
+        $isPremium = $seller->canUseInHouseDispatch();
 
         $drivers = $dispatchService->getDriversWithLiveAvailability($seller);
 
@@ -41,19 +41,22 @@ class InHouseDispatchController extends Controller
             'dispatch_notes' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $seller = $this->sellerOwner();
+        abort_unless($seller->canUseInHouseDispatch(), 403, 'In-house studio driver dispatch is reserved for Premium and Elite shops.');
+
         $order = Order::query()
             ->with(['delivery', 'user', 'artisan'])
             ->where(function ($q) use ($id) {
                 $q->where('order_number', $id)->orWhere('id', $id);
             })
-            ->where('artisan_id', $this->sellerOwnerId())
+            ->where('artisan_id', $seller->id)
             ->firstOrFail();
 
         try {
             $dispatchService->dispatchOrderWithDriver(
                 $order,
                 (int) $request->input('employee_id'),
-                $this->sellerOwner(),
+                $seller,
                 $request->input('dispatch_notes')
             );
 
@@ -81,6 +84,8 @@ class InHouseDispatchController extends Controller
         $employeeId = (int) $request->input('employee_id');
         $notes = $request->input('dispatch_notes');
         $seller = $this->sellerOwner();
+
+        abort_unless($seller->canUseInHouseDispatch(), 403, 'In-house studio driver dispatch is reserved for Premium and Elite shops.');
 
         $orders = Order::query()
             ->with(['delivery', 'user', 'artisan'])

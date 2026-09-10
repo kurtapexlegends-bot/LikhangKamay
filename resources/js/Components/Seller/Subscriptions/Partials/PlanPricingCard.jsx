@@ -79,7 +79,7 @@ export default function PlanPricingCard({
                         <li key={featureIndex} className="flex items-start gap-2 text-[10.5px] font-medium leading-4 text-stone-600">
                             <Check
                                 size={12}
-                                className={`mt-0.5 shrink-0 ${isCurrent ? plan.lightText : 'text-green-500'}`}
+                                className={`mt-0.5 shrink-0 ${plan.lightText || 'text-stone-500'}`}
                                 strokeWidth={3}
                             />
                             <span>{renderedFeature}</span>

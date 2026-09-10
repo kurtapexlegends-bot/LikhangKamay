@@ -5,12 +5,42 @@ import { CheckCircle2, Lock, Sparkles, Crown, Package, Layers, ShieldCheck, X } 
 export default function SubscriptionComparisonModal({ isOpen, onClose, currentPlan, planSettings = {} }) {
     const comparisonGroups = useMemo(() => {
         const freeLimit = planSettings?.free_limit ?? 3;
+        const freeStaffLimit = planSettings?.free_staff_limit ?? 0;
         const premiumPrice = planSettings?.premium_price ?? 199;
         const premiumLimit = planSettings?.premium_limit ?? 10;
+        const premiumStaffLimit = planSettings?.premium_staff_limit ?? 3;
         const superPremiumPrice = planSettings?.super_premium_price ?? 399;
         const superPremiumLimit = planSettings?.super_premium_limit ?? 50;
+        const superPremiumStaffLimit = planSettings?.super_premium_staff_limit ?? 15;
 
-        return [
+        const isModuleEnabled = (tier, moduleId, fallback = false) => {
+            if (planSettings?.modules?.[tier]?.[moduleId] !== undefined) {
+                return Boolean(planSettings.modules[tier][moduleId]);
+            }
+            return fallback;
+        };
+
+        const getFeatureName = (moduleId, fallback) => {
+            return (
+                planSettings?.feature_labels?.super_premium?.[moduleId] ||
+                planSettings?.feature_labels?.premium?.[moduleId] ||
+                planSettings?.feature_labels?.free?.[moduleId] ||
+                fallback
+            );
+        };
+
+        const getTierStatus = (tier, moduleId, fallback = false, options = {}) => {
+            const enabled = isModuleEnabled(tier, moduleId, fallback);
+            if (!enabled) {
+                return { text: options.lockedText || 'Locked', status: 'locked' };
+            }
+            if (options.partial) {
+                return { text: options.unlockedText || 'Toggleable Module', status: 'partial' };
+            }
+            return { text: options.unlockedText || 'Full Access', status: 'unlocked' };
+        };
+
+        const groups = [
             {
                 category: 'Shop Catalog & Listings',
                 features: [
@@ -29,18 +59,70 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                         super_premium: `${superPremiumLimit} Products`,
                     },
                     {
+                        name: getFeatureName('viewer_3d', '3D Interactive Model Viewer'),
+                        subtext: 'Interactive 3D model viewport for customers on product pages',
+                        free: getTierStatus('free', 'viewer_3d', true),
+                        premium: getTierStatus('premium', 'viewer_3d', true),
+                        super_premium: getTierStatus('super_premium', 'viewer_3d', true),
+                    },
+                    {
                         name: 'Core Workspace Operations',
-                        subtext: 'Catalog, order processing, customer chat, reviews, and shop settings',
+                        subtext: 'Product management, basic orders, and shop profile settings',
                         free: { text: 'Full Access', status: 'unlocked' },
                         premium: { text: 'Full Access', status: 'unlocked' },
                         super_premium: { text: 'Full Access', status: 'unlocked' },
                     },
                     {
-                        name: 'Automated Thank-You Messages',
+                        name: getFeatureName('chat_auto_reply', 'Automated Thank-You Messages'),
                         subtext: 'Automatic thank-you messages sent when orders are completed',
-                        free: { text: 'Locked', status: 'locked' },
-                        premium: { text: 'Full Access', status: 'unlocked' },
-                        super_premium: { text: 'Full Access', status: 'unlocked' },
+                        free: getTierStatus('free', 'chat_auto_reply', false),
+                        premium: getTierStatus('premium', 'chat_auto_reply', true),
+                        super_premium: getTierStatus('super_premium', 'chat_auto_reply', true),
+                    },
+                ],
+            },
+            {
+                category: 'Orders & Deliveries',
+                features: [
+                    {
+                        name: getFeatureName('courier_booking', 'Courier Booking via Lalamove'),
+                        subtext: 'On-demand motorcycle, sedan, and MPV courier dispatch',
+                        free: getTierStatus('free', 'courier_booking', true),
+                        premium: getTierStatus('premium', 'courier_booking', true),
+                        super_premium: getTierStatus('super_premium', 'courier_booking', true),
+                    },
+                    {
+                        name: getFeatureName('in_house_dispatch', 'In-House Studio Driver Dispatch'),
+                        subtext: 'Assign orders to in-house studio drivers with mobile proof-of-delivery',
+                        free: getTierStatus('free', 'in_house_dispatch', false),
+                        premium: getTierStatus('premium', 'in_house_dispatch', true),
+                        super_premium: getTierStatus('super_premium', 'in_house_dispatch', true),
+                    },
+                    {
+                        name: getFeatureName('printable_documents', 'Printable Invoices & Receipts'),
+                        subtext: 'Downloadable PDF invoices, packing slips, and 58mm thermal receipts',
+                        free: getTierStatus('free', 'printable_documents', true),
+                        premium: getTierStatus('premium', 'printable_documents', true),
+                        super_premium: getTierStatus('super_premium', 'printable_documents', true),
+                    },
+                    {
+                        name: getFeatureName('customer_reviews', 'Customer Reviews & Ratings'),
+                        subtext: 'Customer ratings, seller replies, and review dispute resolution',
+                        free: getTierStatus('free', 'customer_reviews', true),
+                        premium: getTierStatus('premium', 'customer_reviews', true),
+                        super_premium: getTierStatus('super_premium', 'customer_reviews', true),
+                    },
+                ],
+            },
+            {
+                category: 'Wholesale & B2B',
+                features: [
+                    {
+                        name: getFeatureName('b2b_supply_hub', 'B2B Supply Hub & Wholesale Ordering'),
+                        subtext: 'Source raw materials from peer artisans and list wholesale tiers with MOQ',
+                        free: getTierStatus('free', 'b2b_supply_hub', false),
+                        premium: getTierStatus('premium', 'b2b_supply_hub', false),
+                        super_premium: getTierStatus('super_premium', 'b2b_supply_hub', true),
                     },
                 ],
             },
@@ -48,11 +130,11 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                 category: 'Materials & Inventory',
                 features: [
                     {
-                        name: 'Materials & Craft Recipes',
+                        name: getFeatureName('material_recipes', 'Materials & Craft Recipes'),
                         subtext: 'Track materials used in each craft and deduct stock automatically',
-                        free: { text: 'Locked (Ready-to-Sell Only)', status: 'locked' },
-                        premium: { text: 'Full Access', status: 'unlocked' },
-                        super_premium: { text: 'Full Access', status: 'unlocked' },
+                        free: getTierStatus('free', 'material_recipes', false, { lockedText: 'Locked (Ready-to-Sell Only)' }),
+                        premium: getTierStatus('premium', 'material_recipes', true),
+                        super_premium: getTierStatus('super_premium', 'material_recipes', true),
                     },
                     {
                         name: 'Supply Requests',
@@ -62,60 +144,93 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                         super_premium: { text: 'Full Access', status: 'unlocked' },
                     },
                     {
-                        name: 'Download Sales Summary',
+                        name: getFeatureName('analytics_export', 'Download Sales Summary'),
                         subtext: 'Download spreadsheets with your sales and performance figures',
-                        free: { text: 'Dashboard View Only', status: 'locked' },
-                        premium: { text: 'CSV / PDF Export Unlocked', status: 'unlocked' },
-                        super_premium: { text: 'CSV / PDF Export Unlocked', status: 'unlocked' },
+                        free: getTierStatus('free', 'analytics_export', false, { lockedText: 'Dashboard View Only' }),
+                        premium: getTierStatus('premium', 'analytics_export', true, { unlockedText: 'CSV / PDF Export Unlocked' }),
+                        super_premium: getTierStatus('super_premium', 'analytics_export', true, { unlockedText: 'CSV / PDF Export Unlocked' }),
                     },
                 ],
             },
             {
-                category: 'Staff & Management Tools',
+                category: 'Team & Business Operations',
                 features: [
                     {
-                        name: 'Staff & Payroll Tools',
-                        subtext: 'Employee work hours, attendance checks, and payroll summaries',
-                        free: { text: 'Locked', status: 'locked' },
-                        premium: { text: 'Toggleable Module', status: 'partial' },
-                        super_premium: { text: 'Unlocked by Default', status: 'unlocked' },
+                        name: 'Employee Accounts & Seats',
+                        subtext: 'Individual login seats for workshop staff with role permissions',
+                        free: isModuleEnabled('free', 'staff_management', false) && freeStaffLimit > 0
+                            ? `${freeStaffLimit} Staff Accounts`
+                            : 'Owner Only (0 Seats)',
+                        premium: isModuleEnabled('premium', 'staff_management', true) && premiumStaffLimit > 0
+                            ? `${premiumStaffLimit} Staff Accounts`
+                            : 'Locked',
+                        super_premium: isModuleEnabled('super_premium', 'staff_management', true) && superPremiumStaffLimit > 0
+                            ? `${superPremiumStaffLimit} Staff Accounts`
+                            : 'Locked',
                     },
                     {
-                        name: 'Bookkeeping & Financial Records',
-                        subtext: 'Shop earnings, payout records, and expense tracking',
+                        name: 'Internal Team Chat & Channels',
+                        subtext: 'Internal workshop messaging and driver coordination channels',
                         free: { text: 'Locked', status: 'locked' },
-                        premium: { text: 'Toggleable Module', status: 'partial' },
-                        super_premium: { text: 'Unlocked by Default', status: 'unlocked' },
-                    },
-                    {
-                        name: 'Employee Accounts & Team Messages',
-                        subtext: 'Add team members with custom permissions and internal shop chat',
-                        free: { text: 'Owner Only', status: 'locked' },
-                        premium: { text: 'Staff Accounts & Team Chat', status: 'unlocked' },
-                        super_premium: { text: 'Staff Accounts & Team Chat', status: 'unlocked' },
-                    },
-                ],
-            },
-            {
-                category: 'Promotions & Featured Spots',
-                features: [
-                    {
-                        name: 'Discounts & Special Offers',
-                        subtext: 'Create promo discount codes, sales discounts, and purchase limits',
-                        free: { text: 'Locked', status: 'locked' },
-                        premium: { text: 'Locked', status: 'locked' },
+                        premium: { text: 'Full Access', status: 'unlocked' },
                         super_premium: { text: 'Full Access', status: 'unlocked' },
                     },
                     {
-                        name: 'Featured Shop Spotlights',
+                        name: getFeatureName('staff_management', 'Staff & Payroll Tools'),
+                        subtext: 'Employee work hours, attendance checks, and payroll summaries',
+                        free: getTierStatus('free', 'staff_management', false),
+                        premium: getTierStatus('premium', 'staff_management', true, { partial: true }),
+                        super_premium: getTierStatus('super_premium', 'staff_management', true),
+                    },
+                    {
+                        name: getFeatureName('custom_modules', 'Bookkeeping & Financial Records'),
+                        subtext: 'Shop earnings, payout records, and expense tracking',
+                        free: getTierStatus('free', 'custom_modules', false),
+                        premium: getTierStatus('premium', 'custom_modules', true, { partial: true }),
+                        super_premium: getTierStatus('super_premium', 'custom_modules', true),
+                    },
+                ],
+            },
+            {
+                category: 'Marketing & Pricing',
+                features: [
+                    {
+                        name: getFeatureName('discounts', 'Discounts & Promo Codes'),
+                        subtext: 'Create promo discount codes, sales discounts, and purchase limits',
+                        free: getTierStatus('free', 'discounts', false),
+                        premium: getTierStatus('premium', 'discounts', false),
+                        super_premium: getTierStatus('super_premium', 'discounts', true),
+                    },
+                    {
+                        name: getFeatureName('sponsorships', 'Featured Shop Spotlights'),
                         subtext: 'Front-page banner placement and featured artisan spotlights',
-                        free: { text: 'Locked', status: 'locked' },
-                        premium: { text: 'Locked', status: 'locked' },
-                        super_premium: { text: '5 Credits / 30 Days', status: 'unlocked' },
+                        free: getTierStatus('free', 'sponsorships', false),
+                        premium: getTierStatus('premium', 'sponsorships', false),
+                        super_premium: getTierStatus('super_premium', 'sponsorships', true, { unlockedText: '5 Credits / 30 Days' }),
                     },
                 ],
             },
         ];
+
+        const customFree = planSettings?.custom_features?.free || [];
+        const customPremium = planSettings?.custom_features?.premium || [];
+        const customSuperPremium = planSettings?.custom_features?.super_premium || [];
+        const allCustomPerks = Array.from(new Set([...customFree, ...customPremium, ...customSuperPremium]));
+
+        if (allCustomPerks.length > 0) {
+            groups.push({
+                category: 'Exclusive Plan Highlights & Perks',
+                features: allCustomPerks.map((perk) => ({
+                    name: perk,
+                    subtext: 'Custom plan capability configured by administration',
+                    free: customFree.includes(perk) ? { text: 'Included', status: 'unlocked' } : { text: 'Locked', status: 'locked' },
+                    premium: customPremium.includes(perk) ? { text: 'Included', status: 'unlocked' } : { text: 'Locked', status: 'locked' },
+                    super_premium: customSuperPremium.includes(perk) ? { text: 'Included', status: 'unlocked' } : { text: 'Locked', status: 'locked' },
+                })),
+            });
+        }
+
+        return groups;
     }, [planSettings]);
 
     const renderValue = (val) => {

@@ -163,7 +163,7 @@ class InHouseDispatchService
      */
     public function dispatchOrderWithDriver(Order $order, int $employeeId, User $seller, ?string $notes = null): OrderDelivery
     {
-        if (!$seller->isPremiumTier()) {
+        if (!$seller->canUseInHouseDispatch()) {
             throw new RuntimeException('In-house studio fleet dispatch is exclusively available on Premium and Elite plans.');
         }
 

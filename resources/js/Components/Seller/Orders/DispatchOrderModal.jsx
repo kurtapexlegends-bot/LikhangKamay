@@ -23,6 +23,7 @@ import {
     Receipt,
     ChevronDown,
     ChevronUp,
+    Lock,
 } from "lucide-react";
 import { useToast } from "@/Components/ToastContext";
 
@@ -430,9 +431,13 @@ export default function DispatchOrderModal({
                     >
                         <UserCheck size={14} className="text-clay-600" />
                         <span>Studio Fleet (In-House)</span>
-                        {isPremium && (
+                        {isPremium ? (
                             <span className="rounded bg-clay-100 px-1.5 py-0.5 text-[9px] font-bold text-clay-700">
                                 Premium
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center gap-1 rounded bg-stone-200/80 px-1.5 py-0.5 text-[9px] font-bold text-stone-600">
+                                <Lock size={10} /> Locked
                             </span>
                         )}
                     </button>
@@ -455,21 +460,29 @@ export default function DispatchOrderModal({
             {activeTab === "in_house" && (
                 <>
                     {!isPremium ? (
-                        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-6 text-center">
-                            <ShieldAlert size={36} className="mx-auto text-amber-600 mb-2" />
-                            <h3 className="text-base font-bold text-amber-900 mb-1">
-                                Premium Tier Feature
+                        <div className="rounded-2xl border border-stone-200 bg-stone-50/70 p-6 text-center">
+                            <ShieldAlert size={36} className="mx-auto text-stone-600 mb-2" />
+                            <h3 className="text-base font-bold text-stone-900 mb-1">
+                                Studio Fleet Dispatch
                             </h3>
-                            <p className="text-xs text-amber-700 max-w-md mx-auto mb-4 leading-relaxed">
-                                In-House Studio Fleet dispatch with real-time driver tracking and proof-of-delivery is exclusively available on Premium and Elite plans.
+                            <p className="text-xs text-stone-600 max-w-md mx-auto mb-4 leading-relaxed">
+                                In-house driver dispatch with delivery tracking and proof-of-delivery photos is reserved for Premium and Elite shops.
                             </p>
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab("lalamove")}
-                                className="rounded-xl bg-amber-800 px-4 py-2 text-xs font-bold text-white hover:bg-amber-900 transition"
-                            >
-                                Use Lalamove Courier Instead
-                            </button>
+                            <div className="flex items-center justify-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab("lalamove")}
+                                    className="rounded-xl bg-stone-900 px-4 py-2 text-xs font-bold text-white hover:bg-stone-800 transition"
+                                >
+                                    Use Lalamove Courier Instead
+                                </button>
+                                <a
+                                    href={route("seller.subscription")}
+                                    className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 transition"
+                                >
+                                    View Upgrade Options
+                                </a>
+                            </div>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">

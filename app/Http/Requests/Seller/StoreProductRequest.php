@@ -87,8 +87,8 @@ class StoreProductRequest extends FormRequest
             $hasRecipes = $this->filled('recipes') && count($this->input('recipes', [])) > 0;
             $isManufactured = $this->input('production_method') === 'manufactured';
 
-            if (($hasRecipes || $isManufactured) && !$seller->isPremiumTier()) {
-                $error = 'Material recipe tracking is only available on Premium and Elite plans. Please upgrade your plan to link raw materials to your products.';
+            if (($hasRecipes || $isManufactured) && !$seller->canUseMaterialRecipes()) {
+                $error = 'Material recipe tracking is not included in your current subscription plan. Please upgrade your plan to link raw materials to your products.';
                 $validator->errors()->add('recipes', $error);
                 $validator->errors()->add('production_method', $error);
             }

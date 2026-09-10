@@ -75,48 +75,6 @@ export default function ProductDetailsCard({ product, productRating }) {
                 )}
             </div>
 
-            {/* Wholesale Sourcing Tier Card */}
-            {(product.is_b2b_supply || product.wholesale_price || (product.moq && product.moq > 1)) && (
-                <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-3.5 sm:p-4 mb-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded-md">
-                            Artisan Wholesale Supply
-                        </span>
-                        {product.supply_unit && (
-                            <span className="text-xs font-semibold text-stone-600">
-                                Unit: <strong className="text-stone-900">{product.supply_unit}</strong>
-                            </span>
-                        )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
-                        <div className="bg-white/80 border border-amber-100 rounded-xl p-2.5">
-                            <p className="text-[10px] font-extrabold uppercase text-stone-400">Minimum Order</p>
-                            <p className="text-sm font-black text-stone-900">
-                                {product.moq || 1} {product.supply_unit || 'pcs'}
-                            </p>
-                        </div>
-                        {product.wholesale_price && product.wholesale_min_qty ? (
-                            <div className="bg-white/80 border border-amber-100 rounded-xl p-2.5">
-                                <p className="text-[10px] font-extrabold uppercase text-stone-400">Wholesale Tier Rate</p>
-                                <p className="text-sm font-black text-emerald-700">
-                                    PHP {Number(product.wholesale_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                    <span className="text-[10px] font-medium text-stone-500 block">
-                                        For {product.wholesale_min_qty}+ {product.supply_unit || 'pcs'}
-                                    </span>
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="bg-white/80 border border-amber-100 rounded-xl p-2.5">
-                                <p className="text-[10px] font-extrabold uppercase text-stone-400">Standard Rate</p>
-                                <p className="text-sm font-black text-stone-900">
-                                    PHP {Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
             {/* Item Details & Dimensions - Premium Clay Card Tray */}
             <div className="bg-[#FAF8F5]/85 border border-stone-200/40 rounded-2xl p-4 sm:p-5 mb-5 space-y-3 shadow-sm">
                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 border-b border-stone-200/50 pb-2 mb-2">Item Details & Dimensions</h4>

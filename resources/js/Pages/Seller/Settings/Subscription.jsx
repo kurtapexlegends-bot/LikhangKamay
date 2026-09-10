@@ -39,25 +39,69 @@ export default function Subscription({
 
     const plans = useMemo(() => {
         const freeLimit = planSettings?.free_limit ?? 3;
+        const freeStaffLimit = planSettings?.free_staff_limit ?? 0;
+        const freeBadge = planSettings?.free_badge || 'Foundational';
+        const freeDescription = planSettings?.free_description || 'Keep your shop live with the essentials for catalog, orders, and seller workspace basics.';
+        const freeFeatures = planSettings?.free_features && planSettings.free_features.length > 0
+            ? planSettings.free_features
+            : [
+                'Core seller workspace',
+                'Basic analytics dashboard',
+                '3D interactive model viewer',
+                'Courier booking (Lalamove)',
+                'Printable invoices & receipts',
+                'Customer reviews',
+            ];
+
         const premiumPrice = planSettings?.premium_price ?? 199;
         const premiumLimit = planSettings?.premium_limit ?? 10;
+        const premiumStaffLimit = planSettings?.premium_staff_limit ?? 3;
+        const premiumBadge = planSettings?.premium_badge || 'Most Popular';
+        const premiumDescription = planSettings?.premium_description || 'Add more shelf space and stronger operational tools once your shop starts growing beyond the basics.';
+        const premiumFeatures = planSettings?.premium_features && planSettings.premium_features.length > 0
+            ? planSettings.premium_features
+            : [
+                'Premium badge visibility',
+                'In-house driver dispatch',
+                'Materials & craft recipes',
+                'Staff attendance & payroll',
+                'Analytics report export',
+                'Module customization',
+                'Automated thank-you messages',
+            ];
+
         const superPremiumPrice = planSettings?.super_premium_price ?? 399;
         const superPremiumLimit = planSettings?.super_premium_limit ?? 50;
+        const superPremiumStaffLimit = planSettings?.super_premium_staff_limit ?? 15;
+        const superPremiumBadge = planSettings?.super_premium_badge || 'Full Access';
+        const superPremiumDescription = planSettings?.super_premium_description || 'Unlock the complete seller suite for larger shops, staff workflows, and sponsorship-driven growth.';
+        const superPremiumFeatures = planSettings?.super_premium_features && planSettings.super_premium_features.length > 0
+            ? planSettings.super_premium_features
+            : [
+                'Elite badge',
+                'B2B supply hub & wholesale ordering',
+                '5 sponsorship credits every 30 days',
+                'Discounts module & marketing',
+                'All seller modules unlocked',
+                'Sponsored homepage & catalog placement',
+                'Priority search ranking',
+            ];
 
         return [
             {
                 id: 'free',
                 name: 'Standard',
-                eyebrow: 'Foundational',
+                eyebrow: freeBadge,
                 price: 'Free',
                 billingNote: 'No monthly fee',
-                description: 'Keep your shop live with the essentials for catalog, orders, and seller workspace basics.',
+                description: freeDescription,
                 limit: freeLimit,
+                staffLimit: freeStaffLimit,
                 icon: Package,
                 badgeClass: 'border-stone-200 bg-stone-100 text-stone-700',
-                iconClass: 'bg-stone-100 text-stone-600',
+                iconClass: 'bg-stone-100 text-stone-700 border border-stone-200',
                 cardClass: 'border-stone-200 bg-white',
-                currentClass: 'border-stone-300 ring-1 ring-stone-200',
+                currentClass: 'border-stone-300 ring-2 ring-stone-200',
                 featureIconClass: 'text-stone-500',
                 upgradeButtonClass: 'bg-stone-900 text-white hover:bg-stone-800',
                 downgradeButtonClass: 'border-stone-300 bg-white text-stone-700 hover:border-stone-400 hover:bg-stone-50',
@@ -65,65 +109,58 @@ export default function Subscription({
                 benefitCardClass: 'border-stone-200 bg-stone-50/70',
                 supportCopy: 'Best for new artisan shops keeping a focused active catalog.',
                 features: [
-                    `Up to ${freeLimit} active products`,
-                    'Core seller workspace',
-                    'Basic analytics dashboard',
+                    `Up to ${freeLimit} active products • ${freeStaffLimit} staff accounts`,
+                    ...freeFeatures,
                 ],
             },
             {
                 id: 'premium',
                 name: 'Premium',
-                eyebrow: 'Most Popular',
+                eyebrow: premiumBadge,
                 price: `PHP ${premiumPrice}`,
                 billingNote: 'per month',
-                description: 'Add more shelf space and stronger operational tools once your shop starts growing beyond the basics.',
+                description: premiumDescription,
                 limit: premiumLimit,
+                staffLimit: premiumStaffLimit,
                 icon: Crown,
-                badgeClass: 'border-amber-200 bg-amber-50 text-amber-700',
-                iconClass: 'bg-orange-100 text-orange-600',
-                cardClass: 'border-amber-200 bg-white',
-                currentClass: 'border-orange-500 ring-1 ring-orange-500',
-                featureIconClass: 'text-green-500',
-                upgradeButtonClass: 'bg-orange-600 text-white hover:bg-orange-700 shadow-md',
-                downgradeButtonClass: 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50 hover:border-orange-300',
-                heroStripeClass: 'from-[#F3D7BA] via-[#EBC8A4] to-[#FCF7F2]',
-                benefitCardClass: 'border-[#E7D8C9] bg-[#FCF7F2]',
-                supportCopy: 'A balanced plan for shops that need more products and stronger reporting.',
+                badgeClass: 'border-amber-200 bg-amber-50 text-amber-800',
+                iconClass: 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-sm',
+                cardClass: 'border-amber-200/90 bg-white ring-1 ring-amber-100',
+                currentClass: 'border-amber-300 ring-2 ring-amber-300',
+                featureIconClass: 'text-amber-600',
+                upgradeButtonClass: 'bg-amber-600 text-white hover:bg-amber-700 shadow-sm',
+                downgradeButtonClass: 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50 hover:border-amber-300',
+                heroStripeClass: 'from-amber-200 via-amber-100 to-stone-50',
+                benefitCardClass: 'border-amber-200/70 bg-amber-50/40',
+                supportCopy: 'A balanced plan for shops that need more products, staff dispatch, and stronger reporting.',
                 features: [
-                    `Up to ${premiumLimit} active products`,
-                    'Premium badge visibility',
-                    'Analytics report export',
-                    'Module customization',
-                    'Automated thank-you messages',
+                    `Up to ${premiumLimit} active products • ${premiumStaffLimit} staff accounts`,
+                    ...premiumFeatures,
                 ],
             },
             {
                 id: 'super_premium',
                 name: 'Elite',
-                eyebrow: 'Full Access',
+                eyebrow: superPremiumBadge,
                 price: `PHP ${superPremiumPrice}`,
                 billingNote: 'per month',
-                description: 'Unlock the complete seller suite for larger shops, staff workflows, and sponsorship-driven growth.',
+                description: superPremiumDescription,
                 limit: superPremiumLimit,
+                staffLimit: superPremiumStaffLimit,
                 icon: Sparkles,
-                badgeClass: 'border-violet-200 bg-violet-50 text-violet-700',
-                iconClass: 'bg-violet-100 text-violet-700',
-                cardClass: 'border-violet-200 bg-white',
-                currentClass: 'border-violet-500 ring-1 ring-violet-500',
-                featureIconClass: 'text-[#6D5EF6]',
-                upgradeButtonClass: 'bg-[#6D5EF6] text-white hover:bg-[#5C4DEA] shadow-sm',
-                downgradeButtonClass: 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50 hover:border-stone-400',
+                badgeClass: 'border-violet-200 bg-violet-50 text-violet-800',
+                iconClass: 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-sm',
+                cardClass: 'border-violet-200/90 bg-white ring-1 ring-violet-100',
+                currentClass: 'border-violet-300 ring-2 ring-violet-300',
+                featureIconClass: 'text-violet-600',
+                upgradeButtonClass: 'bg-violet-600 text-white hover:bg-violet-700 shadow-sm',
+                downgradeButtonClass: 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50 hover:border-violet-300',
                 heroStripeClass: 'from-violet-500 via-indigo-500 to-purple-500',
-                benefitCardClass: 'border-violet-100 bg-violet-50/40',
-                supportCopy: 'Built for artisan shops using advanced modules, staff accounts, and sponsored reach.',
+                benefitCardClass: 'border-violet-200/70 bg-violet-50/40',
+                supportCopy: 'Built for artisan shops using advanced modules, staff accounts, B2B wholesale, and sponsored reach.',
                 features: [
-                    `Up to ${superPremiumLimit} active products`,
-                    'Elite badge',
-                    '5 sponsorship credits every 30 days',
-                    'Discounts module & marketing',
-                    'Automated thank-you messages',
-                    'All seller modules unlocked',
-                    'Sponsored homepage and catalog placement',
+                    `Up to ${superPremiumLimit} active products • ${superPremiumStaffLimit} staff accounts`,
+                    ...superPremiumFeatures,
                 ],
             },
         ];

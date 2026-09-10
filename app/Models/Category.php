@@ -22,6 +22,16 @@ class Category extends Model
             \Illuminate\Support\Facades\Cache::forget('home_categories');
             \Illuminate\Support\Facades\Cache::forget('catalog_categories');
         });
+
+        static::restored(function () {
+            \Illuminate\Support\Facades\Cache::forget('home_categories');
+            \Illuminate\Support\Facades\Cache::forget('catalog_categories');
+        });
+
+        static::forceDeleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('home_categories');
+            \Illuminate\Support\Facades\Cache::forget('catalog_categories');
+        });
     }
 
     public function products()

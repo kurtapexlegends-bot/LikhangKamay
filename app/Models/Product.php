@@ -285,6 +285,9 @@ class Product extends Model
             \Illuminate\Support\Facades\Cache::forget('catalog_materials');
             \Illuminate\Support\Facades\Cache::forget('catalog_locations');
             \Illuminate\Support\Facades\Cache::forget('catalog_categories');
+            \Illuminate\Support\Facades\Cache::forget('catalog_category_counts');
+            \Illuminate\Support\Facades\Cache::forget('catalog_material_counts');
+            \Illuminate\Support\Facades\Cache::forget('catalog_location_counts');
             \Illuminate\Support\Facades\Cache::forget('home_sponsored_products');
             \Illuminate\Support\Facades\Cache::forget('home_featured_products_pool');
             \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
@@ -305,6 +308,9 @@ class Product extends Model
             \Illuminate\Support\Facades\Cache::forget('catalog_materials');
             \Illuminate\Support\Facades\Cache::forget('catalog_locations');
             \Illuminate\Support\Facades\Cache::forget('catalog_categories');
+            \Illuminate\Support\Facades\Cache::forget('catalog_category_counts');
+            \Illuminate\Support\Facades\Cache::forget('catalog_material_counts');
+            \Illuminate\Support\Facades\Cache::forget('catalog_location_counts');
             \Illuminate\Support\Facades\Cache::forget('home_sponsored_products');
             \Illuminate\Support\Facades\Cache::forget('home_featured_products_pool');
             \Illuminate\Support\Facades\Cache::forget('home_top_sellers');
@@ -389,6 +395,7 @@ class Product extends Model
     public function getRelatedProducts(): \Illuminate\Support\Collection
     {
         $preferredMatches = self::query()
+            ->retailOnly()
             ->where('status', 'Active')
             ->where('id', '!=', $this->id)
             ->where('category', $this->category)
@@ -418,6 +425,7 @@ class Product extends Model
 
         if ($preferredMatches->count() < 4) {
             $fallbackProducts = self::query()
+                ->retailOnly()
                 ->where('status', 'Active')
                 ->where('id', '!=', $this->id)
                 ->whereNotIn('id', $preferredMatches->pluck('id'))
@@ -459,6 +467,20 @@ class Product extends Model
                 ];
             })
             ->values();
+    }
+
+    /**
+     * Scope query to retail marketplace products (excluding wholesale B2B supplies).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeRetailOnly(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where(function ($q) {
+            $q->where('products.is_b2b_supply', false)
+              ->orWhereNull('products.is_b2b_supply');
+        });
     }
 
     /**

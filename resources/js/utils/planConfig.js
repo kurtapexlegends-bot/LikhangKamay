@@ -46,8 +46,10 @@ export const PLANS = [
         lightText: 'text-stone-700',
         features: [
             'Up to 3 Active Products',
-            'Core Seller Workspace',
-            'Basic Analytics Dashboard',
+            '3D Interactive Model Viewer',
+            'Courier Booking via Lalamove',
+            'Customer Reviews & Disputes',
+            'Printable Invoices & Receipts',
         ],
     },
     {
@@ -66,10 +68,12 @@ export const PLANS = [
         recommended: true,
         features: [
             'Up to 10 Active Products',
-            'Premium Badge (Crown Icon)',
-            'Analytics Report Export',
-            'Module Customization',
+            'In-House Driver Dispatch',
+            'Up to 3 Staff Accounts',
+            'Materials & Craft Recipes',
+            'Staff Attendance & Payroll',
             'Automated Thank-You Messages',
+            'Analytics CSV/PDF Export',
         ],
     },
     {
@@ -87,12 +91,12 @@ export const PLANS = [
         lightText: 'text-violet-700',
         features: [
             'Up to 50 Active Products',
-            'Elite Badge',
-            '5 Sponsorship Credits Every 30 Days',
-            'Discounts Module & Marketing',
-            'Automated Thank-You Messages',
+            'B2B Supply Hub & Wholesale',
+            'Up to 15 Staff Accounts',
+            'Discounts & Promo Codes',
+            '5 Sponsored Spotlights / 30 Days',
             'All Seller Modules Unlocked',
-            'Sponsored Homepage and Catalog Placement',
+            'Priority Artisan Placement',
         ],
     },
 ];

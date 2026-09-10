@@ -270,8 +270,8 @@ class ChatController extends Controller
         $this->directMessageService->ensureSellerMessagingWritable($request->user(), true);
 
         $seller = $this->sellerOwner();
-        if (!$seller->isPremiumTier()) {
-            return back()->with('error', 'Automated Thank-You Messages require a Premium or Elite seller plan.');
+        if (!$seller->canUseFeature('chat_auto_reply')) {
+            return back()->with('error', 'Automated Thank-You Messages are not included in your current subscription plan.');
         }
 
         $validated = $request->validate([
@@ -386,7 +386,7 @@ class ChatController extends Controller
             'currentOrderContext' => fn () => $currentOrderContext,
             'userOrders' => fn () => $userOrders,
             'chatTemplates' => $sellerPerspective ? fn () => \App\Models\ChatMessageTemplate::where('user_id', $this->sellerOwnerId())->get() : [],
-            'autoReplySettings' => ($sellerPerspective && $this->sellerOwner()->isPremiumTier()) ? fn () => [
+            'autoReplySettings' => ($sellerPerspective && $this->sellerOwner()->canUseFeature('chat_auto_reply')) ? fn () => [
                 'enabled' => (bool) ($this->sellerOwner()->auto_reply_on_completion ?? true),
                 'message' => (string) ($this->sellerOwner()->auto_reply_completion_message ?? ''),
             ] : null,

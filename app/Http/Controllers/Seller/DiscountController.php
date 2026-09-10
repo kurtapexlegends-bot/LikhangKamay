@@ -33,7 +33,9 @@ class DiscountController extends Controller
      */
     public function index(Request $request)
     {
-        $sellerId = $this->sellerOwnerId();
+        $seller = $this->sellerOwner();
+        abort_unless($seller->canAccessDiscounts(), 403, 'Discounts and promotional pricing are strictly reserved for Elite artisan shops.');
+        $sellerId = $seller->id;
         $now = now();
         $statusFilter = $request->query('status', 'ongoing');
 
@@ -134,6 +136,7 @@ class DiscountController extends Controller
     public function store(CreateDiscountRequest $request)
     {
         $seller = $this->sellerOwner();
+        abort_unless($seller->canAccessDiscounts(), 403, 'Discounts and promotional pricing are strictly reserved for Elite artisan shops.');
         $actor = $request->user();
         $validated = $request->validated();
         $isPrivileged = $actor->isSellerOwner() || $actor->isStaffManager();
@@ -175,9 +178,10 @@ class DiscountController extends Controller
      */
     public function update(CreateDiscountRequest $request, Discount $discount)
     {
-        $sellerId = $this->sellerOwnerId();
+        $seller = $this->sellerOwner();
+        abort_unless($seller->canAccessDiscounts(), 403, 'Discounts and promotional pricing are strictly reserved for Elite artisan shops.');
 
-        if ($discount->user_id !== $sellerId) {
+        if ($discount->user_id !== $seller->id) {
             abort(403, 'Unauthorized discount modification.');
         }
 

@@ -38,6 +38,8 @@ class HRController extends Controller
         $seller = $this->sellerOwner();
         $actor = $this->sellerActor();
 
+        abort_unless($seller->canManageStaff() || $seller->canAccessSellerModule('hr'), 403, 'Staff management is not included in your current subscription plan.');
+
         try {
             $activePeriod = HRWorkflowHelper::resolveActivePeriod($request);
             $employees = rescue(fn() => HRWorkflowHelper::getEmployeesWithAttendance($seller, $attendanceService, $activePeriod), collect());
@@ -59,11 +61,18 @@ class HRController extends Controller
                 'locations' => $locations,
                 'staffAccessAudits' => $recentAccessAudits,
                 'sellerSettings' => HRWorkflowHelper::buildSellerSettings($seller, $activePeriod),
-                'staffProvisioning' => HRWorkflowHelper::buildStaffProvisioningData(
-                    $actor,
-                    $entitlementService,
-                    $supportsProvisioning,
-                    $canEditHrRecords
+                'staffProvisioning' => array_merge(
+                    HRWorkflowHelper::buildStaffProvisioningData(
+                        $actor,
+                        $entitlementService,
+                        $supportsProvisioning,
+                        $canEditHrRecords
+                    ),
+                    [
+                        'staffCount' => $seller->staffMembers()->count(),
+                        'staffLimit' => $seller->getActiveStaffLimit(),
+                        'canAddMoreStaff' => $seller->canAddMoreStaff(),
+                    ]
                 ),
             ]);
         } catch (\Throwable $e) {
@@ -100,6 +109,9 @@ class HRController extends Controller
                     'rolePresets' => [],
                     'modules' => [],
                     'permissionLevels' => [],
+                    'staffCount' => 0,
+                    'staffLimit' => 0,
+                    'canAddMoreStaff' => false,
                 ],
             ]);
         }
@@ -127,6 +139,15 @@ class HRController extends Controller
             }
 
             abort_unless($actor->canCreateStaffAccounts(), 403, 'Only the shop owner or a user with editable People & Payroll access can create staff login accounts.');
+
+            if (!$seller->canAddMoreStaff()) {
+                $limit = $seller->getActiveStaffLimit();
+                return back()
+                    ->withErrors([
+                        'create_login_account' => "Your current plan allows up to {$limit} staff accounts. Upgrade to unlock more staff seats.",
+                    ])
+                    ->withInput();
+            }
         }
 
         $rules = HRWorkflowHelper::getProvisionValidationRules($seller, $entitlementService, null, null, $request->boolean('create_login_account'));
@@ -358,8 +379,19 @@ class HRController extends Controller
         if ($linkedLogin && $request->has('create_login_account') && !$canManageLoginSettings) {
             abort(403, 'Only the shop owner or a user with editable People & Payroll access can update seller login access.');
         }
-        if (!$linkedLogin && $wantsLoginAccount && !$canCreateLoginSettings) {
-            abort(403, 'Only the shop owner or a user with editable People & Payroll access can create staff login accounts.');
+        if (!$linkedLogin && $wantsLoginAccount) {
+            if (!$canCreateLoginSettings) {
+                abort(403, 'Only the shop owner or a user with editable People & Payroll access can create staff login accounts.');
+            }
+
+            if (!$seller->canAddMoreStaff()) {
+                $limit = $seller->getActiveStaffLimit();
+                return back()
+                    ->withErrors([
+                        'create_login_account' => "Your current plan allows up to {$limit} staff accounts. Upgrade to unlock more staff seats.",
+                    ])
+                    ->withInput();
+            }
         }
 
         // Self-elevation guard: Staff members cannot edit their own permission level or role preset

@@ -65,8 +65,8 @@ class SponsorshipController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        if (!$user->isEliteTier()) {
-             return back()->with('error', 'Upgrade to Elite to request product sponsorship.');
+        if (!$user->canAccessSponsorships()) {
+             return back()->with('error', 'Upgrade your plan to request product sponsorship.');
         }
 
         $creditsUsed = $this->getUsedCreditsForUser($user);

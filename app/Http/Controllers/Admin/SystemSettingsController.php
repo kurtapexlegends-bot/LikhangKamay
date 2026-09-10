@@ -73,7 +73,7 @@ class SystemSettingsController extends Controller
                     'seo_metadata' => ['title' => '', 'description' => '', 'keywords' => ''],
                     'contact_info' => ['email' => '', 'phone' => '', 'address' => ''],
                     'social_links' => ['facebook' => '', 'indigo_avatar' => '', 'twitter' => ''],
-                    'commission_rate' => 5.0,
+                    'commission_rate' => 0.0,
                     'convenience_fee' => 3.0,
                     'maintenance_mode' => false,
                     'paymongo_enabled' => true,
@@ -194,11 +194,35 @@ class SystemSettingsController extends Controller
             'paymongo_enabled' => $this->settings->get('paymongo_enabled', true),
 
             // Subscription Tier Settings
-            'tier_free_limit' => $this->settings->get('tier_free_limit', 3),
-            'tier_premium_price' => $this->settings->get('tier_premium_price', 199.00),
-            'tier_premium_limit' => $this->settings->get('tier_premium_limit', 10),
-            'tier_super_premium_price' => $this->settings->get('tier_super_premium_price', 399.00),
-            'tier_super_premium_limit' => $this->settings->get('tier_super_premium_limit', 50),
+            'available_plan_modules' => array_values(app(\App\Services\SubscriptionPlanService::class)->getAvailableModules()),
+            'tier_free_limit' => (int) $this->settings->get('tier_free_limit', 3),
+            'tier_free_staff_limit' => (int) $this->settings->get('tier_free_staff_limit', 0),
+            'tier_free_badge' => (string) $this->settings->get('tier_free_badge', 'Foundational'),
+            'tier_free_description' => (string) $this->settings->get('tier_free_description', 'Keep your shop live with essentials for catalog, orders, and seller workspace.'),
+            'tier_free_modules' => app(\App\Services\SubscriptionPlanService::class)->getTierModules('free'),
+            'tier_free_feature_labels' => app(\App\Services\SubscriptionPlanService::class)->getTierFeatureLabels('free'),
+            'tier_free_custom_features' => app(\App\Services\SubscriptionPlanService::class)->getTierCustomFeatures('free'),
+            'tier_free_features' => app(\App\Services\SubscriptionPlanService::class)->getTierFeaturesList('free'),
+
+            'tier_premium_price' => (float) $this->settings->get('tier_premium_price', 199.00),
+            'tier_premium_limit' => (int) $this->settings->get('tier_premium_limit', 10),
+            'tier_premium_staff_limit' => (int) $this->settings->get('tier_premium_staff_limit', 3),
+            'tier_premium_badge' => (string) $this->settings->get('tier_premium_badge', 'Most Popular'),
+            'tier_premium_description' => (string) $this->settings->get('tier_premium_description', 'Add more shelf space and stronger operational tools for growing artisan shops.'),
+            'tier_premium_modules' => app(\App\Services\SubscriptionPlanService::class)->getTierModules('premium'),
+            'tier_premium_feature_labels' => app(\App\Services\SubscriptionPlanService::class)->getTierFeatureLabels('premium'),
+            'tier_premium_custom_features' => app(\App\Services\SubscriptionPlanService::class)->getTierCustomFeatures('premium'),
+            'tier_premium_features' => app(\App\Services\SubscriptionPlanService::class)->getTierFeaturesList('premium'),
+
+            'tier_super_premium_price' => (float) $this->settings->get('tier_super_premium_price', 399.00),
+            'tier_super_premium_limit' => (int) $this->settings->get('tier_super_premium_limit', 50),
+            'tier_super_premium_staff_limit' => (int) $this->settings->get('tier_super_premium_staff_limit', 15),
+            'tier_super_premium_badge' => (string) $this->settings->get('tier_super_premium_badge', 'Full Access'),
+            'tier_super_premium_description' => (string) $this->settings->get('tier_super_premium_description', 'Unlock the complete seller suite, B2B wholesale access, and sponsored placements.'),
+            'tier_super_premium_modules' => app(\App\Services\SubscriptionPlanService::class)->getTierModules('super_premium'),
+            'tier_super_premium_feature_labels' => app(\App\Services\SubscriptionPlanService::class)->getTierFeatureLabels('super_premium'),
+            'tier_super_premium_custom_features' => app(\App\Services\SubscriptionPlanService::class)->getTierCustomFeatures('super_premium'),
+            'tier_super_premium_features' => app(\App\Services\SubscriptionPlanService::class)->getTierFeaturesList('super_premium'),
 
             // Mail Engine & Dispatcher Settings
             'mail_driver' => $this->settings->get('mail_driver', 'resend'),
@@ -373,10 +397,42 @@ class SystemSettingsController extends Controller
 
             // Subscription Tier Validation
             'tier_free_limit' => 'sometimes|required|integer|min:1',
+            'tier_free_staff_limit' => 'sometimes|required|integer|min:0',
+            'tier_free_badge' => 'nullable|string|max:50',
+            'tier_free_description' => 'nullable|string|max:255',
+            'tier_free_features' => 'nullable|array',
+            'tier_free_features.*' => 'nullable|string|max:255',
+            'tier_free_modules' => 'nullable|array',
+            'tier_free_feature_labels' => 'nullable|array',
+            'tier_free_feature_labels.*' => 'nullable|string|max:255',
+            'tier_free_custom_features' => 'nullable|array',
+            'tier_free_custom_features.*' => 'nullable|string|max:255',
+
             'tier_premium_price' => 'sometimes|required|numeric|min:0',
             'tier_premium_limit' => 'sometimes|required|integer|min:1',
+            'tier_premium_staff_limit' => 'sometimes|required|integer|min:1',
+            'tier_premium_badge' => 'nullable|string|max:50',
+            'tier_premium_description' => 'nullable|string|max:255',
+            'tier_premium_features' => 'nullable|array',
+            'tier_premium_features.*' => 'nullable|string|max:255',
+            'tier_premium_modules' => 'nullable|array',
+            'tier_premium_feature_labels' => 'nullable|array',
+            'tier_premium_feature_labels.*' => 'nullable|string|max:255',
+            'tier_premium_custom_features' => 'nullable|array',
+            'tier_premium_custom_features.*' => 'nullable|string|max:255',
+
             'tier_super_premium_price' => 'sometimes|required|numeric|min:0',
             'tier_super_premium_limit' => 'sometimes|required|integer|min:1',
+            'tier_super_premium_staff_limit' => 'sometimes|required|integer|min:1',
+            'tier_super_premium_badge' => 'nullable|string|max:50',
+            'tier_super_premium_description' => 'nullable|string|max:255',
+            'tier_super_premium_features' => 'nullable|array',
+            'tier_super_premium_features.*' => 'nullable|string|max:255',
+            'tier_super_premium_modules' => 'nullable|array',
+            'tier_super_premium_feature_labels' => 'nullable|array',
+            'tier_super_premium_feature_labels.*' => 'nullable|string|max:255',
+            'tier_super_premium_custom_features' => 'nullable|array',
+            'tier_super_premium_custom_features.*' => 'nullable|string|max:255',
 
             // Mail Engine Validation
             'mail_driver' => 'nullable|string|in:resend,smtp,log',
@@ -494,20 +550,84 @@ class SystemSettingsController extends Controller
         $this->settings->set('paymongo_enabled', $validated['paymongo_enabled'] ? 'true' : 'false', 'boolean');
 
         // Save Subscription Tier settings
+        $planService = app(\App\Services\SubscriptionPlanService::class);
+
         if (isset($validated['tier_free_limit'])) {
             $this->settings->set('tier_free_limit', $validated['tier_free_limit'], 'integer');
         }
+        if (isset($validated['tier_free_staff_limit'])) {
+            $this->settings->set('tier_free_staff_limit', $validated['tier_free_staff_limit'], 'integer');
+        }
+        if (array_key_exists('tier_free_badge', $validated)) {
+            $this->settings->set('tier_free_badge', $validated['tier_free_badge'] ?? 'Foundational', 'string');
+        }
+        if (array_key_exists('tier_free_description', $validated)) {
+            $this->settings->set('tier_free_description', $validated['tier_free_description'] ?? '', 'string');
+        }
+        if (array_key_exists('tier_free_modules', $validated) || array_key_exists('tier_free_feature_labels', $validated) || array_key_exists('tier_free_custom_features', $validated)) {
+            $planService->saveTierConfiguration(
+                'free',
+                $validated['tier_free_modules'] ?? [],
+                $validated['tier_free_feature_labels'] ?? [],
+                $validated['tier_free_custom_features'] ?? []
+            );
+        } elseif (isset($validated['tier_free_features']) && is_array($validated['tier_free_features'])) {
+            $cleanFeatures = array_values(array_filter(array_map('trim', $validated['tier_free_features'])));
+            $this->settings->set('tier_free_features', $cleanFeatures, 'json');
+        }
+
         if (isset($validated['tier_premium_price'])) {
             $this->settings->set('tier_premium_price', $validated['tier_premium_price'], 'float');
         }
         if (isset($validated['tier_premium_limit'])) {
             $this->settings->set('tier_premium_limit', $validated['tier_premium_limit'], 'integer');
         }
+        if (isset($validated['tier_premium_staff_limit'])) {
+            $this->settings->set('tier_premium_staff_limit', $validated['tier_premium_staff_limit'], 'integer');
+        }
+        if (array_key_exists('tier_premium_badge', $validated)) {
+            $this->settings->set('tier_premium_badge', $validated['tier_premium_badge'] ?? 'Most Popular', 'string');
+        }
+        if (array_key_exists('tier_premium_description', $validated)) {
+            $this->settings->set('tier_premium_description', $validated['tier_premium_description'] ?? '', 'string');
+        }
+        if (array_key_exists('tier_premium_modules', $validated) || array_key_exists('tier_premium_feature_labels', $validated) || array_key_exists('tier_premium_custom_features', $validated)) {
+            $planService->saveTierConfiguration(
+                'premium',
+                $validated['tier_premium_modules'] ?? [],
+                $validated['tier_premium_feature_labels'] ?? [],
+                $validated['tier_premium_custom_features'] ?? []
+            );
+        } elseif (isset($validated['tier_premium_features']) && is_array($validated['tier_premium_features'])) {
+            $cleanFeatures = array_values(array_filter(array_map('trim', $validated['tier_premium_features'])));
+            $this->settings->set('tier_premium_features', $cleanFeatures, 'json');
+        }
+
         if (isset($validated['tier_super_premium_price'])) {
             $this->settings->set('tier_super_premium_price', $validated['tier_super_premium_price'], 'float');
         }
         if (isset($validated['tier_super_premium_limit'])) {
             $this->settings->set('tier_super_premium_limit', $validated['tier_super_premium_limit'], 'integer');
+        }
+        if (isset($validated['tier_super_premium_staff_limit'])) {
+            $this->settings->set('tier_super_premium_staff_limit', $validated['tier_super_premium_staff_limit'], 'integer');
+        }
+        if (array_key_exists('tier_super_premium_badge', $validated)) {
+            $this->settings->set('tier_super_premium_badge', $validated['tier_super_premium_badge'] ?? 'Full Access', 'string');
+        }
+        if (array_key_exists('tier_super_premium_description', $validated)) {
+            $this->settings->set('tier_super_premium_description', $validated['tier_super_premium_description'] ?? '', 'string');
+        }
+        if (array_key_exists('tier_super_premium_modules', $validated) || array_key_exists('tier_super_premium_feature_labels', $validated) || array_key_exists('tier_super_premium_custom_features', $validated)) {
+            $planService->saveTierConfiguration(
+                'super_premium',
+                $validated['tier_super_premium_modules'] ?? [],
+                $validated['tier_super_premium_feature_labels'] ?? [],
+                $validated['tier_super_premium_custom_features'] ?? []
+            );
+        } elseif (isset($validated['tier_super_premium_features']) && is_array($validated['tier_super_premium_features'])) {
+            $cleanFeatures = array_values(array_filter(array_map('trim', $validated['tier_super_premium_features'])));
+            $this->settings->set('tier_super_premium_features', $cleanFeatures, 'json');
         }
 
         // Save Mail Dispatcher Config

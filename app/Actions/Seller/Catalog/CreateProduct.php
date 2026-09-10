@@ -43,9 +43,9 @@ class CreateProduct
             throw ValidationException::withMessages(['limit' => 'You have reached your active products limit. Please upgrade your plan to add more active products.']);
         }
 
-        if (!$sellerOwner->isPremiumTier()) {
+        if (!$sellerOwner->canUseMaterialRecipes()) {
             if (!empty($validated['recipes']) || ($validated['production_method'] ?? null) === 'manufactured') {
-                throw ValidationException::withMessages(['recipes' => 'Material recipe tracking is only available on Premium and Elite plans. Please upgrade your plan to link raw materials to your products.']);
+                throw ValidationException::withMessages(['recipes' => 'Material recipe tracking is not included in your current subscription plan. Please upgrade your plan to link raw materials to your products.']);
             }
         }
 

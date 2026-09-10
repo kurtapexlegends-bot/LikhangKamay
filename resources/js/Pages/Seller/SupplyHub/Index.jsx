@@ -223,7 +223,7 @@ export default function Index({
                 {/* Main 2-Column Desktop Layout: Sidebar + Catalog */}
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
                     {/* Left Sticky Filter Sidebar for Desktop */}
-                    <div className="hidden lg:block lg:col-span-1 sticky top-6">
+                    <div className="hidden lg:block lg:col-span-1 sticky top-6 max-h-[calc(100vh-2.5rem)] overflow-y-auto overscroll-contain pr-1 pb-6">
                         <B2BFilterSidebar
                             categories={categories}
                             categoryCounts={categoryCounts}

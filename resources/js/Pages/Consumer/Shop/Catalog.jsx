@@ -275,7 +275,7 @@ export default function Catalog(props) {
                     
                     {/* --- LEFT SIDEBAR (Desktop) --- */}
                     <FilterSidebar 
-                        className="hidden lg:block w-64 min-w-[16rem] flex-shrink-0 h-fit sticky top-24"
+                        className="hidden lg:block w-64 min-w-[16rem] flex-shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain pr-1.5 pb-6"
                         categories={categories}
                         availableLocations={availableLocations}
                         availableMaterials={availableMaterials}

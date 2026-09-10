@@ -78,7 +78,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
         return {
             tierLabel: isElite ? 'Elite' : isPremium ? 'Premium' : 'Standard',
             visibleModules: isElite
-                ? ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'sponsorships', 'hr', 'accounting', 'procurement', 'stock_requests']
+                ? ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'sponsorships', 'discounts', 'supply_hub', 'hr', 'accounting', 'procurement', 'stock_requests']
                 : isPremium
                     ? ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'procurement', 'stock_requests']
                     : ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings'],
@@ -239,9 +239,11 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
             ? ['messages', 'team_messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName))
             : ['orders', 'messages', 'team_messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName))
     );
-    const hasMarketing = (!isStaffActor || hasActiveAttendanceSession) && visibleModulesSet.has('sponsorships');
+    const hasMarketing = (!isStaffActor || hasActiveAttendanceSession) && (
+        visibleModulesSet.has('sponsorships') || visibleModulesSet.has('discounts')
+    );
     const hasAdvanced = (!isStaffActor || hasActiveAttendanceSession) && (
-        ['hr', 'accounting', 'procurement', 'stock_requests'].some(moduleName => visibleModulesSet.has(moduleName))
+        ['hr', 'accounting', 'procurement', 'stock_requests', 'supply_hub'].some(moduleName => visibleModulesSet.has(moduleName))
     );
     const activeModuleCount = [modules.hr, modules.accounting, modules.procurement].filter(Boolean).length;
 
@@ -425,8 +427,12 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 onToggle={() => toggleGroup('marketing')}
                                 isCollapsed={isCollapsed}
                             >
-                                <NavItem href={route('discounts.index')} icon={Tag} active={active === 'discounts'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Discounts')} onMouseLeave={handleTooltipLeave}>Discounts</NavItem>
-                                <NavItem href={route('seller.sponsorships')} icon={Award} active={active === 'sponsorships'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Sponsorships')} onMouseLeave={handleTooltipLeave}>Sponsorships</NavItem>
+                                {visibleModulesSet.has('discounts') && (
+                                    <NavItem href={route('discounts.index')} icon={Tag} active={active === 'discounts'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Discounts')} onMouseLeave={handleTooltipLeave}>Discounts</NavItem>
+                                )}
+                                {visibleModulesSet.has('sponsorships') && (
+                                    <NavItem href={route('seller.sponsorships')} icon={Award} active={active === 'sponsorships'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Sponsorships')} onMouseLeave={handleTooltipLeave}>Sponsorships</NavItem>
+                                )}
                             </CategoryGroup>
                         </div>
                     )}
@@ -445,7 +451,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 {visibleModulesSet.has('accounting') && (
                                     <NavItem href={route('accounting.index')} icon={Banknote} active={active === 'accounting'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Finance')} onMouseLeave={handleTooltipLeave}>Finance</NavItem>
                                 )}
-                                {(visibleModulesSet.has('procurement') || visibleModulesSet.has('stock_requests')) && (
+                                {(visibleModulesSet.has('procurement') || visibleModulesSet.has('stock_requests') || visibleModulesSet.has('supply_hub')) && (
                                     <div className="space-y-0.5">
                                         <div className={`overflow-hidden transition-[max-height,opacity] duration-300 ${
                                             isCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-8 opacity-100'
@@ -461,7 +467,9 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                             {visibleModulesSet.has('stock_requests') && (
                                                 <NavItem href={route('stock-requests.index')} icon={FileQuestion} active={active === 'stock-requests'} compact onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Restock Requests')} onMouseLeave={handleTooltipLeave}>Restock Requests</NavItem>
                                             )}
-                                            <NavItem href={route('seller.supply-hub.index')} icon={Truck} active={active === 'supply-hub'} compact onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Supply Hub')} onMouseLeave={handleTooltipLeave}>Supply Hub</NavItem>
+                                            {visibleModulesSet.has('supply_hub') && (
+                                                <NavItem href={route('seller.supply-hub.index')} icon={Truck} active={active === 'supply-hub'} compact onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Supply Hub', 'B2B Wholesale')} onMouseLeave={handleTooltipLeave} badge="Elite">Supply Hub</NavItem>
+                                            )}
                                         </div>
                                     </div>
                                 )}

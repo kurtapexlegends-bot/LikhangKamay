@@ -47,10 +47,10 @@ function NavItem({ href, icon: Icon, active, children, compact, onClick, isColla
                 }`}>
                     <span>{children}</span>
                     {hasBadge && (
-                        <span className={`inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold rounded-full leading-none transition-colors ml-2 ${
-                            active
-                                ? 'bg-white text-clay-700'
-                                : 'bg-clay-100 text-clay-700 group-hover:bg-clay-200'
+                        <span className={`inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-md leading-none transition-colors ml-2 ${
+                            badgeDisplay === 'Elite'
+                                ? (active ? 'bg-white text-violet-700' : 'bg-violet-100 text-violet-700 group-hover:bg-violet-200')
+                                : (active ? 'bg-white text-clay-700' : 'bg-clay-100 text-clay-700 group-hover:bg-clay-200')
                         }`}>
                             {badgeDisplay}
                         </span>

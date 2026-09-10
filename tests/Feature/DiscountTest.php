@@ -17,6 +17,7 @@ class DiscountTest extends TestCase
         $seller = User::factory()->create([
             'role' => 'artisan',
             'artisan_status' => 'approved',
+            'premium_tier' => 'super_premium',
             'setup_completed_at' => now(),
         ]);
 

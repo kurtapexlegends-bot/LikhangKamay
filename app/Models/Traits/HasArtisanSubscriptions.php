@@ -83,6 +83,65 @@ trait HasArtisanSubscriptions
         return $activeCount < $this->getActiveProductLimit();
     }
 
+    public function getActiveStaffLimit(): int
+    {
+        return match($this->getEffectivePremiumTier()) {
+            'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_staff_limit', 15),
+            'premium' => (int) \App\Facades\Settings::get('tier_premium_staff_limit', 3),
+            default => (int) \App\Facades\Settings::get('tier_free_staff_limit', 0),
+        };
+    }
+
+    public function canAddMoreStaff(): bool
+    {
+        if (!$this->canManageStaff()) {
+            return false;
+        }
+
+        $activeStaffCount = $this->staffMembers()->count();
+        return $activeStaffCount < $this->getActiveStaffLimit();
+    }
+
+    public function canUseFeature(string $featureKey): bool
+    {
+        return app(\App\Services\SubscriptionPlanService::class)->isFeatureEnabledForUser($this, $featureKey);
+    }
+
+    public function canAccessSupplyHub(): bool
+    {
+        return $this->canUseFeature('b2b_supply_hub');
+    }
+
+    public function canUseInHouseDispatch(): bool
+    {
+        return $this->canUseFeature('in_house_dispatch');
+    }
+
+    public function canAccessDiscounts(): bool
+    {
+        return $this->canUseFeature('discounts');
+    }
+
+    public function canUseMaterialRecipes(): bool
+    {
+        return $this->canUseFeature('material_recipes');
+    }
+
+    public function canExportAnalytics(): bool
+    {
+        return $this->canUseFeature('analytics_export');
+    }
+
+    public function canAccessSponsorships(): bool
+    {
+        return $this->canUseFeature('sponsorships');
+    }
+
+    public function canManageStaff(): bool
+    {
+        return $this->canUseFeature('staff_management');
+    }
+
     public function isPremiumTier(): bool
     {
         return in_array($this->getEffectivePremiumTier(), ['premium', 'super_premium'], true);

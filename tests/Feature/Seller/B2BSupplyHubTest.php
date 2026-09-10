@@ -32,6 +32,7 @@ class B2BSupplyHubTest extends TestCase
             'setup_completed_at' => now(),
             'shop_name' => 'Bulacan Clayworks',
             'city' => 'Bulacan',
+            'premium_tier' => 'super_premium',
         ]);
 
         $this->buyerArtisan = User::factory()->create([
@@ -41,6 +42,7 @@ class B2BSupplyHubTest extends TestCase
             'setup_completed_at' => now(),
             'shop_name' => 'Silang Pottery Studio',
             'city' => 'Cavite',
+            'premium_tier' => 'super_premium',
         ]);
 
         $this->regularBuyer = User::factory()->create([

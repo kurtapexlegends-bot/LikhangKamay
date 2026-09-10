@@ -71,28 +71,30 @@ export default function SubscriptionPlans({
 
                         const cardClass = current
                             ? isElitePlan
-                                ? 'border-[#C4B5FD] ring-2 ring-[#DDD6FE] shadow-[0_28px_50px_-42px_rgba(109,94,246,0.55)]'
+                                ? 'border-violet-300 ring-2 ring-violet-200 shadow-md'
                                 : isPremiumPlan
-                                    ? 'border-amber-300 ring-2 ring-amber-200 shadow-[0_28px_50px_-44px_rgba(255,138,28,0.45)]'
-                                    : 'border-stone-300 ring-2 ring-stone-200 shadow-[0_24px_40px_-42px_rgba(15,23,42,0.45)]'
-                            : isPremiumPlan
-                                ? 'border-stone-300 shadow-[0_28px_50px_-44px_rgba(255,138,28,0.45)]'
-                                : 'border-stone-200 shadow-[0_24px_40px_-42px_rgba(15,23,42,0.45)]';
+                                    ? 'border-amber-300 ring-2 ring-amber-200 shadow-md'
+                                    : 'border-stone-300 ring-2 ring-stone-200 shadow-sm'
+                            : isElitePlan
+                                ? 'border-violet-200/80 hover:border-violet-300 shadow-sm'
+                                : isPremiumPlan
+                                    ? 'border-amber-200/80 hover:border-amber-300 shadow-sm'
+                                    : 'border-stone-200 hover:border-stone-300 shadow-sm';
 
                         const iconClass = isElitePlan
-                            ? 'bg-[#6D5EF6] text-white'
+                            ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-sm'
                             : isPremiumPlan
-                                ? 'bg-gradient-to-br from-[#FFA426] to-[#FF7A00] text-white'
-                                : 'bg-[#6D625C] text-white';
+                                ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-sm'
+                                : 'bg-stone-100 text-stone-700 border border-stone-200';
 
                         const upgradeButtonClass = isElitePlan
-                            ? 'bg-[#6D5EF6] text-white hover:bg-[#5C4DEA]'
-                            : 'bg-orange-600 text-white hover:bg-orange-700';
+                            ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-sm'
+                            : 'bg-amber-600 text-white hover:bg-amber-700 shadow-sm';
 
                         return (
                             <article
                                 key={plan.id}
-                                className={`relative flex flex-col rounded-[1.7rem] border bg-white px-5 pb-5 pt-4 w-[85%] md:w-full shrink-0 snap-center ${cardClass}`}
+                                className={`relative flex flex-col rounded-[1.7rem] border bg-white px-5 pb-5 pt-4 w-[85%] md:w-full shrink-0 snap-center transition-all duration-200 ${cardClass}`}
                             >
                                 <div className="flex items-start gap-3">
                                     <div className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.95rem] ${iconClass}`}>
@@ -101,9 +103,9 @@ export default function SubscriptionPlans({
                                     <div className="flex-1 min-w-0">
                                         <div className="flex flex-wrap items-center gap-2">
                                              <h3 className="text-xl sm:text-[1.55rem] font-black leading-none tracking-tight text-stone-900">{plan.name}</h3>
-                                            {isPremiumPlan && (
-                                                <span className="rounded-full bg-gradient-to-r from-[#FFB432] to-[#FF8A1C] text-white shadow-sm px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap">
-                                                    Most Popular
+                                            {plan.eyebrow && (
+                                                <span className={`rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap border ${plan.badgeClass || 'bg-stone-100 text-stone-700 border-stone-200'}`}>
+                                                    {plan.eyebrow}
                                                 </span>
                                             )}
                                         </div>
@@ -123,7 +125,7 @@ export default function SubscriptionPlans({
                                 <ul className="mt-5 space-y-3">
                                     {plan.features.map((feature, index) => (
                                         <li key={index} className="flex items-start gap-3">
-                                            <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${isElitePlan ? 'text-[#6D5EF6]' : 'text-green-500'}`} />
+                                            <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${plan.featureIconClass || (isElitePlan ? 'text-violet-600' : isPremiumPlan ? 'text-amber-600' : 'text-stone-500')}`} />
                                             <span className="text-[13px] leading-6 text-stone-700">{feature}</span>
                                         </li>
                                     ))}

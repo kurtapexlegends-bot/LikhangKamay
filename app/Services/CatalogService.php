@@ -19,6 +19,7 @@ class CatalogService
         return Cache::remember('home_sponsored_products', 1800, function () {
             return Product::with(['user', 'discounts'])
                 ->approved()
+                ->retailOnly()
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
@@ -41,6 +42,7 @@ class CatalogService
         $pool = Cache::remember('home_featured_products_pool', 1800, function () {
             return Product::with(['user', 'discounts'])
                 ->approved()
+                ->retailOnly()
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
@@ -93,6 +95,7 @@ class CatalogService
     {
         return Cache::remember('home_top_sellers', 1800, function () {
             $topStores = Product::approved()
+                ->retailOnly()
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
@@ -116,6 +119,7 @@ class CatalogService
 
             // Load top products per seller cleanly without query-wide limit bugs
             $productsBySeller = Product::approved()
+                ->retailOnly()
                 ->whereIn('user_id', $storeIds)
                 ->with(['user', 'discounts'])
                 ->orderByDesc('sold')
@@ -176,6 +180,7 @@ class CatalogService
 
         return Product::with(['user', 'discounts'])
             ->approved()
+            ->retailOnly()
             ->whereIn('user_id', $followedShopIds)
             ->whereHas('user', function ($q) {
                 $q->where('role', 'artisan')
@@ -197,6 +202,7 @@ class CatalogService
     public function buildCatalogQuery(array $filters, ?User $user = null)
     {
         $query = Product::approved()
+            ->retailOnly()
             ->whereHas('user', function ($q) {
                 $q->where('role', 'artisan')
                   ->where('artisan_status', 'approved')
@@ -318,11 +324,6 @@ class CatalogService
             'slug' => $product->slug,
             'seller_slug' => $product->user->shop_slug ?? null,
             'seller_name' => $product->user->shop_name ?? $product->user->name ?? 'LikhangKamay Artisan',
-            'is_b2b_supply' => (bool) $product->is_b2b_supply,
-            'moq' => (int) ($product->moq ?: 1),
-            'wholesale_price' => $product->wholesale_price !== null ? (float) $product->wholesale_price : null,
-            'wholesale_min_qty' => $product->wholesale_min_qty ? (int) $product->wholesale_min_qty : null,
-            'supply_unit' => $product->supply_unit ?: 'pcs',
         ];
 
         if (!$shortMode) {
@@ -343,7 +344,7 @@ class CatalogService
     public function getCatalogMetadata(): array
     {
         $locations = Cache::remember('catalog_locations', 3600, function () {
-            return User::whereHas('products', fn ($q) => $q->approved())
+            return User::whereHas('products', fn ($q) => $q->approved()->retailOnly())
                 ->whereNotNull('city')
                 ->distinct()
                 ->pluck('city')
@@ -354,6 +355,7 @@ class CatalogService
 
         $materials = Cache::remember('catalog_materials', 3600, function () {
             return Product::approved()
+                ->retailOnly()
                 ->whereNotNull('clay_type')
                 ->distinct()
                 ->pluck('clay_type')
@@ -368,6 +370,7 @@ class CatalogService
 
         $categoryCounts = Cache::remember('catalog_category_counts', 3600, function () {
             $counts = Product::approved()
+                ->retailOnly()
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
@@ -386,6 +389,7 @@ class CatalogService
 
         $materialCounts = Cache::remember('catalog_material_counts', 3600, function () {
             return Product::approved()
+                ->retailOnly()
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
@@ -403,6 +407,7 @@ class CatalogService
 
         $locationCounts = Cache::remember('catalog_location_counts', 3600, function () {
             return Product::approved()
+                ->retailOnly()
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
@@ -456,11 +461,6 @@ class CatalogService
             'clay_type' => $product->clay_type,
             'is_new' => $product->created_at ? $product->created_at->diffInDays(now()) < 7 : false,
             'is_sponsored' => $product->is_sponsored && $product->sponsored_until && \Carbon\Carbon::parse($product->sponsored_until)->isFuture(),
-            'is_b2b_supply' => (bool) $product->is_b2b_supply,
-            'moq' => (int) ($product->moq ?: 1),
-            'wholesale_price' => $product->wholesale_price !== null ? (float) $product->wholesale_price : null,
-            'wholesale_min_qty' => $product->wholesale_min_qty ? (int) $product->wholesale_min_qty : null,
-            'supply_unit' => $product->supply_unit ?: 'pcs',
         ];
     }
 }

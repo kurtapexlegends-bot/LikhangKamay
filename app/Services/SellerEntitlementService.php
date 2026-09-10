@@ -23,7 +23,7 @@ class SellerEntitlementService
     {
         $seller = $user->getEffectiveSeller();
 
-        if (($user->isSellerOwner() || $user->isStaff()) && $seller?->isPremiumTier()) {
+        if (($user->isSellerOwner() || $user->isStaff()) && ($seller?->canUseFeature('staff_management') || $seller?->isPremiumTier())) {
             return ['team_messages', 'approvals'];
         }
 
@@ -202,6 +202,8 @@ class SellerEntitlementService
         $cancelledAt = $seller->subscription_cancelled_at;
         $daysRemaining = $expiresAt ? max(0, (int) ceil(now()->diffInSeconds($expiresAt, false) / 86400)) : null;
 
+        $planService = app(\App\Services\SubscriptionPlanService::class);
+
         return [
             'activeCount' => isset($seller->products_count) ? (int) $seller->products_count : $seller->products()->where('status', 'Active')->count(),
             'limit' => $seller->getActiveProductLimit(),
@@ -209,9 +211,14 @@ class SellerEntitlementService
             'tierLabel' => $entitlements['tierLabel'],
             'canManageSubscription' => $entitlements['canManageSubscription'],
             'showPlanPanel' => $entitlements['showPlanPanel'] ?? false,
-            'canExportAnalytics' => $seller->isPremiumTier(),
-            'canCustomizeModules' => $entitlements['canManageModuleSettings'],
-            'canRequestSponsorships' => $seller->isEliteTier(),
+            'canExportAnalytics' => $seller->canExportAnalytics(),
+            'canCustomizeModules' => $seller->canUseFeature('custom_modules'),
+            'canRequestSponsorships' => $seller->canAccessSponsorships(),
+            'canAccessSupplyHub' => $seller->canAccessSupplyHub(),
+            'canAccessDiscounts' => $seller->canAccessDiscounts(),
+            'canUseInHouseDispatch' => $seller->canUseInHouseDispatch(),
+            'canUseMaterialRecipes' => $seller->canUseMaterialRecipes(),
+            'canManageStaff' => $seller->canManageStaff(),
             'pendingDowngradeTier' => $seller->pending_downgrade_tier,
             'subscriptionExpiresAt' => $expiresAt?->toIso8601String(),
             'subscriptionCancelledAt' => $cancelledAt?->toIso8601String(),
@@ -222,11 +229,49 @@ class SellerEntitlementService
                 'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
                 'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
             ],
+            'tierStaffLimits' => [
+                'free' => (int) \App\Facades\Settings::get('tier_free_staff_limit', 0),
+                'premium' => (int) \App\Facades\Settings::get('tier_premium_staff_limit', 3),
+                'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_staff_limit', 15),
+            ],
+            'staffCount' => $seller->staffMembers()->count(),
+            'staffLimit' => $seller->getActiveStaffLimit(),
             'tierPrices' => [
                 'free' => 0.00,
                 'premium' => (float) \App\Facades\Settings::get('tier_premium_price', 199.00),
                 'super_premium' => (float) \App\Facades\Settings::get('tier_super_premium_price', 399.00),
             ],
+            'tierBadges' => [
+                'free' => (string) \App\Facades\Settings::get('tier_free_badge', 'Foundational'),
+                'premium' => (string) \App\Facades\Settings::get('tier_premium_badge', 'Most Popular'),
+                'super_premium' => (string) \App\Facades\Settings::get('tier_super_premium_badge', 'Full Access'),
+            ],
+            'tierDescriptions' => [
+                'free' => (string) \App\Facades\Settings::get('tier_free_description', 'Keep your shop live with essentials for catalog, orders, and seller workspace.'),
+                'premium' => (string) \App\Facades\Settings::get('tier_premium_description', 'Add more shelf space and stronger operational tools for growing artisan shops.'),
+                'super_premium' => (string) \App\Facades\Settings::get('tier_super_premium_description', 'Unlock the complete seller suite, B2B wholesale access, and sponsored placements.'),
+            ],
+            'tierModules' => [
+                'free' => $planService->getTierModules('free'),
+                'premium' => $planService->getTierModules('premium'),
+                'super_premium' => $planService->getTierModules('super_premium'),
+            ],
+            'tierFeatureLabels' => [
+                'free' => $planService->getTierFeatureLabels('free'),
+                'premium' => $planService->getTierFeatureLabels('premium'),
+                'super_premium' => $planService->getTierFeatureLabels('super_premium'),
+            ],
+            'tierCustomFeatures' => [
+                'free' => $planService->getTierCustomFeatures('free'),
+                'premium' => $planService->getTierCustomFeatures('premium'),
+                'super_premium' => $planService->getTierCustomFeatures('super_premium'),
+            ],
+            'tierFeatures' => [
+                'free' => $planService->getTierFeaturesList('free'),
+                'premium' => $planService->getTierFeaturesList('premium'),
+                'super_premium' => $planService->getTierFeaturesList('super_premium'),
+            ],
+            'availablePlanModules' => array_values($planService->getAvailableModules()),
         ];
     }
 
@@ -277,29 +322,48 @@ class SellerEntitlementService
     protected function buildOwnerEntitlements(User $seller): array
     {
         $standardModules = $seller->getStandardSellerModules();
-        $toggleableModules = $seller->isPremiumTier() ? $seller->getToggleableSellerModules() : [];
-        $enabledToggleableModules = $seller->getEnabledToggleableSellerModules();
+        $canCustomizeModules = $seller->canUseFeature('custom_modules');
+        $toggleableModules = $canCustomizeModules ? $seller->getToggleableSellerModules() : [];
+        $enabledToggleableModules = $canCustomizeModules ? $seller->getEnabledToggleableSellerModules() : [];
 
-        if ($seller->isEliteTier()) {
-            $visibleModules = $seller->getAllSellerModules();
-        } elseif ($seller->isPremiumTier()) {
+        $visibleModules = $standardModules;
+
+        if ($canCustomizeModules) {
             $visibleModules = [
-                ...$standardModules,
+                ...$visibleModules,
                 ...$enabledToggleableModules,
             ];
 
             if (in_array('procurement', $enabledToggleableModules, true)) {
                 $visibleModules[] = 'stock_requests';
             }
-        } else {
-            $visibleModules = $standardModules;
+        }
+
+        if ($seller->canManageStaff()) {
+            $visibleModules[] = 'hr';
+        }
+
+        if ($seller->canAccessSponsorships()) {
+            $visibleModules[] = 'sponsorships';
+        }
+
+        if ($seller->canAccessSupplyHub()) {
+            $visibleModules[] = 'supply_hub';
+        }
+
+        if ($seller->canAccessDiscounts()) {
+            $visibleModules[] = 'discounts';
+        }
+
+        if ($seller->isEliteTier()) {
+            $visibleModules = array_merge($visibleModules, $seller->getAllSellerModules());
         }
 
         return [
             'visibleModules' => array_values(array_unique($visibleModules)),
             'toggleableModules' => $toggleableModules,
             'enabledToggleableModules' => $enabledToggleableModules,
-            'showGear' => $seller->isPremiumTier(),
+            'showGear' => $canCustomizeModules,
             'allModulesUnlocked' => $seller->isEliteTier(),
         ];
     }

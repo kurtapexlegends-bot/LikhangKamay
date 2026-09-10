@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             return;
         }
 
+        $this->call(CategorySeeder::class);
+
         User::factory()->create([
             'name' => 'Test User',
             'first_name' => 'Test',
