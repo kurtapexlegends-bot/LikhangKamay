@@ -8,17 +8,19 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class VerifyEmailNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(
-        protected string $code,
-        protected Carbon $expiresAt
-    )
+    public string $code;
+    public Carbon $expiresAt;
+
+    public function __construct(string $code, Carbon $expiresAt)
     {
-        $this->afterCommit();
+        $this->code = $code;
+        $this->expiresAt = $expiresAt;
     }
 
     public function via($notifiable): array
@@ -28,7 +30,7 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
 
     public function toMail($notifiable): MailMessage
     {
-        $template = rescue(fn () => EmailTemplate::where('slug', 'verify_email')->first(), null, false);
+        $template = rescue(fn () => Cache::remember('email_template_verify_email', 3600, fn () => EmailTemplate::where('slug', 'verify_email')->first()), null, false);
         $isActive = $template && (bool) $template->is_active;
 
         $subject = ($template && $isActive && !empty($template->subject))

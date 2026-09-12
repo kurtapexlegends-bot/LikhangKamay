@@ -36,6 +36,7 @@ class OrderCancelled extends Mailable
             fallbackView: 'emails.orders.cancelled',
             fallbackData: [
                 'order' => $this->order,
+                'orderNumber' => $this->order->order_number,
                 'reason' => $this->reason,
             ]
         );

@@ -11,6 +11,7 @@ use App\Notifications\SystemBroadcastNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -86,6 +87,11 @@ class EmailStudioController extends Controller
             ]
         );
 
+        Cache::forget("email_template_{$template->slug}");
+        if (!empty($slug) && $slug !== $template->slug) {
+            Cache::forget("email_template_{$slug}");
+        }
+
         PlatformActivity::log(
             'EMAIL_TEMPLATE_SAVED',
             "Saved email template: {$template->name} ({$template->slug})"
@@ -120,7 +126,10 @@ class EmailStudioController extends Controller
         }
 
         $name = $template->name;
+        $slug = $template->slug;
         $template->delete();
+
+        Cache::forget("email_template_{$slug}");
 
         PlatformActivity::log(
             'EMAIL_TEMPLATE_DELETED',

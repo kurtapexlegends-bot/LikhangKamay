@@ -36,7 +36,9 @@ class ReturnRequestRejected extends Mailable
             fallbackView: 'emails.orders.return-rejected',
             fallbackData: [
                 'order' => $this->order,
+                'orderNumber' => $this->order->order_number,
                 'reason' => $this->reason,
+                'explanation' => $this->reason,
             ]
         );
     }

@@ -3,8 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ArtisanApplicationReceivedMail;
+use App\Mail\BuyerOrderConfirmationMail;
+use App\Mail\PaymentReceiptMail;
+use App\Mail\StaffWelcomeInviteMail;
+use App\Mail\SubscriptionBillingReceiptMail;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\SponsorshipRequest;
+use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\ProductModerationNotification;
@@ -28,7 +35,7 @@ class TestMailDispatchController extends Controller
 
         $validated = $request->validate([
             'email' => ['required', 'email'],
-            'template' => ['required', 'string', 'in:verify_email,reset_password,order_receipt,product_moderation,sponsorship_status,dispute_update,low_stock'],
+            'template' => ['required', 'string', 'in:verify_email,reset_password,order_receipt,product_moderation,sponsorship_status,dispute_update,low_stock,buyer_order_confirmation,artisan_application_received,payment_receipt,subscription_billing_receipt,staff_welcome_invite'],
         ]);
 
         $email = $validated['email'];
@@ -37,6 +44,67 @@ class TestMailDispatchController extends Controller
 
         try {
             switch ($template) {
+                case 'buyer_order_confirmation':
+                    $sampleOrder = Order::with(['items', 'artisan'])->first() ?? new Order([
+                        'id' => 99999,
+                        'order_number' => 'LK-SAMPLE-1001',
+                        'customer_name' => 'Maria Clara',
+                        'total_amount' => 1250.00,
+                        'payment_method' => 'GCash',
+                        'payment_status' => 'paid',
+                    ]);
+                    Mail::to($email)->send(new BuyerOrderConfirmationMail($sampleOrder));
+                    $templateLabel = 'Buyer Order Confirmation & Receipt';
+                    break;
+
+                case 'artisan_application_received':
+                    $sampleArtisan = User::where('role', 'artisan')->first() ?? new User([
+                        'id' => 99999,
+                        'name' => 'Maria Clara',
+                        'email' => $email,
+                        'shop_name' => 'Sampaguita Crafts Studio',
+                    ]);
+                    Mail::to($email)->send(new ArtisanApplicationReceivedMail($sampleArtisan));
+                    $templateLabel = 'Artisan Application Received Acknowledgment';
+                    break;
+
+                case 'payment_receipt':
+                    $sampleOrder = Order::with(['items', 'artisan'])->first() ?? new Order([
+                        'id' => 99999,
+                        'order_number' => 'LK-SAMPLE-1001',
+                        'customer_name' => 'Maria Clara',
+                        'total_amount' => 1250.00,
+                        'payment_id' => 'pay_sample_test_12345',
+                        'payment_method' => 'GCash (PayMongo)',
+                        'payment_status' => 'paid',
+                    ]);
+                    Mail::to($email)->send(new PaymentReceiptMail($sampleOrder));
+                    $templateLabel = 'Online Payment Receipt';
+                    break;
+
+                case 'subscription_billing_receipt':
+                    $sampleArtisan = User::where('role', 'artisan')->first() ?? new User([
+                        'id' => 99999,
+                        'name' => 'Maria Clara',
+                        'email' => $email,
+                        'shop_name' => 'Sampaguita Crafts Studio',
+                        'premium_tier' => 'premium',
+                    ]);
+                    Mail::to($email)->send(new SubscriptionBillingReceiptMail($sampleArtisan, null, 'Premium', 499.00));
+                    $templateLabel = 'Subscription Billing Receipt';
+                    break;
+
+                case 'staff_welcome_invite':
+                    $sampleStaff = new User([
+                        'id' => 99999,
+                        'name' => 'Juan Dela Cruz',
+                        'email' => $email,
+                        'role' => 'staff',
+                    ]);
+                    Mail::to($email)->send(new StaffWelcomeInviteMail($sampleStaff, null, 'Sampaguita Crafts Studio', 'TempPass@2026'));
+                    $templateLabel = 'Staff Account Welcome & Credentials Invite';
+                    break;
+
                 case 'verify_email':
                     Notification::route('mail', $email)->notify(
                         new VerifyEmailNotification('849204', now()->addMinutes(15))

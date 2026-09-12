@@ -447,7 +447,23 @@ export default function EmailStudioForm({ data, setData, errors, processing }) {
                                 
                                 {/* Placeholder Pills */}
                                 <div className="flex overflow-x-auto scrollbar-none no-scrollbar whitespace-nowrap gap-1.5 mb-2 py-1 scroll-smooth snap-x touch-pan-x min-w-0 max-w-full">
-                                    {['{user_name}', '{shop_name}', '{order_number}', '{verification_code}', '{site_name}', '{action_url}'].map((tag) => (
+                                    {[
+                                        '{user_name}', 
+                                        '{shop_name}', 
+                                        '{order_number}', 
+                                        '{total_amount}',
+                                        '{payment_id}',
+                                        '{payment_method}',
+                                        '{tier_label}',
+                                        '{amount_paid}',
+                                        '{reference_number}',
+                                        '{login_email}',
+                                        '{temporary_password}',
+                                        '{role_name}',
+                                        '{verification_code}', 
+                                        '{site_name}', 
+                                        '{action_url}'
+                                    ].map((tag) => (
                                         <button
                                             key={tag}
                                             type="button"

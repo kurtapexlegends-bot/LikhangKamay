@@ -2,12 +2,15 @@
 
 namespace App\Actions\Seller\HR;
 
+use App\Mail\StaffWelcomeInviteMail;
 use App\Models\Employee;
 use App\Models\OwnerApproval;
 use App\Models\User;
 use App\Services\OwnerApprovalService;
 use App\Support\HRWorkflowHelper;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class ProvisionStaffAccount
 {
@@ -95,6 +98,10 @@ class ProvisionStaffAccount
                 'email_verified_at' => null,
             ]);
         });
+
+        if ($staffAccount && $staffAccount->email) {
+            $this->sendWelcomeEmail($staffAccount, $employee, $seller, $validated['default_password'] ?? null);
+        }
 
         return [
             'employee' => $employee,
@@ -304,6 +311,10 @@ class ProvisionStaffAccount
             $auditAfter = HRWorkflowHelper::buildStaffAccessSnapshot($linkedLogin);
         });
 
+        if ($createdLogin && $linkedLogin && $linkedLogin->email) {
+            $this->sendWelcomeEmail($linkedLogin, $employee, $seller, $validated['default_password'] ?? null);
+        }
+
         return [
             'employee' => $employee,
             'linkedLogin' => $linkedLogin,
@@ -316,5 +327,28 @@ class ProvisionStaffAccount
             'auditAfter' => $auditAfter,
             'pendingRateApproval' => $pendingRateApproval,
         ];
+    }
+
+    /**
+     * Dispatch staff welcome credentials invite email safely across local & prod queues.
+     */
+    protected function sendWelcomeEmail(User $staffAccount, ?Employee $employee, User $seller, ?string $temporaryPassword): void
+    {
+        try {
+            $shopName = $seller->shop_name ?? 'Artisan Studio';
+            $mailer = Mail::to($staffAccount->email);
+
+            if (app()->environment('production') && config('queue.default') !== 'sync') {
+                $mailer->queue(new StaffWelcomeInviteMail($staffAccount, $employee, $shopName, $temporaryPassword));
+            } else {
+                $mailer->send(new StaffWelcomeInviteMail($staffAccount, $employee, $shopName, $temporaryPassword));
+            }
+        } catch (\Throwable $e) {
+            report($e);
+            Log::error("Failed to send staff welcome invite email: {$e->getMessage()}", [
+                'staff_id' => $staffAccount->id,
+                'email' => $staffAccount->email,
+            ]);
+        }
     }
 }

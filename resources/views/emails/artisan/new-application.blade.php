@@ -48,7 +48,7 @@
                 </tr>
                 <tr>
                     <td style="padding: 12px 16px; font-size: 14px; color: #8C827A; font-weight: 600; text-align: left;">Submitted At</td>
-                    <td style="padding: 12px 16px; font-size: 14px; color: #2E2520; text-align: right; font-weight: 500;">{{ $artisan->setup_completed_at->format('M d, Y h:i A') }}</td>
+                    <td style="padding: 12px 16px; font-size: 14px; color: #2E2520; text-align: right; font-weight: 500;">{{ $artisan->setup_completed_at ? $artisan->setup_completed_at->format('M d, Y h:i A') : now()->format('M d, Y h:i A') }}</td>
                 </tr>
             </table>
 

@@ -31,7 +31,10 @@ class ReviewReminder extends Mailable
             ],
             fallbackSubject: 'How was your order from LikhangKamay?',
             fallbackView: 'emails.reviews.reminder',
-            fallbackData: ['order' => $this->order]
+            fallbackData: [
+                'order' => $this->order,
+                'url' => url('/orders/' . $this->order->order_number),
+            ]
         );
     }
 }

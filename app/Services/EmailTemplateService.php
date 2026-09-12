@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\EmailTemplate;
 use Illuminate\Mail\Mailable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class EmailTemplateService
@@ -20,7 +21,9 @@ class EmailTemplateService
         array $fallbackData = []
     ): Mailable {
         try {
-            $template = EmailTemplate::where('slug', $slug)->first();
+            $template = Cache::remember("email_template_{$slug}", 3600, function () use ($slug) {
+                return EmailTemplate::where('slug', $slug)->first();
+            });
 
             if ($template && $template->is_active) {
                 // Ensure default fallback replacements are set if missing
@@ -35,17 +38,29 @@ class EmailTemplateService
                     '{product_name}' => 'Handcrafted Item',
                     '{rejection_reason}' => 'N/A',
                     '{refund_amount}' => 'N/A',
+                    '{total_amount}' => '₱0.00',
+                    '{payment_id}' => 'N/A',
+                    '{payment_method}' => 'Online Payment',
+                    '{tier_label}' => 'Premium',
+                    '{amount_paid}' => '₱0.00',
+                    '{reference_number}' => 'N/A',
+                    '{login_email}' => 'N/A',
+                    '{temporary_password}' => 'N/A',
+                    '{role_name}' => 'Staff Member',
                 ];
                 $mergedReplacements = array_merge($defaults, $replacements);
 
+                $viewData = array_merge($fallbackData, [
+                    'headline' => !empty($template->headline) ? strtr($template->headline, $mergedReplacements) : null,
+                    'body' => strtr($template->body, $mergedReplacements),
+                    'buttonLabel' => !empty($template->button_label) ? strtr($template->button_label, $mergedReplacements) : null,
+                    'buttonUrl' => !empty($template->button_url) ? strtr($template->button_url, $mergedReplacements) : null,
+                    'templateSlug' => $slug,
+                ]);
+
                 return $mailable
                     ->subject(strtr($template->subject, $mergedReplacements))
-                    ->view('emails.custom-dynamic', [
-                        'headline' => !empty($template->headline) ? strtr($template->headline, $mergedReplacements) : null,
-                        'body' => strtr($template->body, $mergedReplacements),
-                        'buttonLabel' => !empty($template->button_label) ? strtr($template->button_label, $mergedReplacements) : null,
-                        'buttonUrl' => !empty($template->button_url) ? strtr($template->button_url, $mergedReplacements) : null,
-                    ]);
+                    ->view('emails.custom-dynamic', $viewData);
             }
         } catch (\Throwable $e) {
             Log::error("EmailTemplateService resolution error for template '{$slug}': " . $e->getMessage());

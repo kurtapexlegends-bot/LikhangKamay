@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Consumer;
 use App\Http\Controllers\Controller;
 
 use App\Models\Order;
+use App\Mail\PaymentReceiptMail;
 use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -216,8 +217,9 @@ class PaymentController extends Controller
             }
 
             if ($isPaid || $hasPaidPayment) {
+                $wasUnpaid = $order->payment_status !== 'paid';
                 $updateData = [];
-                if ($order->payment_status !== 'paid') {
+                if ($wasUnpaid) {
                     $updateData['payment_status'] = 'paid';
                     $updateData['payment_method'] = $order->payment_method ?: 'GCash';
                 }
@@ -228,6 +230,10 @@ class PaymentController extends Controller
 
                 if (!empty($updateData)) {
                     $order->update($updateData);
+                }
+
+                if ($wasUnpaid) {
+                    $this->sendPaymentReceipt($order->fresh());
                 }
 
                 return $this->redirectAfterPaymentResolution(
@@ -313,5 +319,29 @@ class PaymentController extends Controller
         }
 
         return redirect('/')->with($flashKey, $guestMessage);
+    }
+
+    private function sendPaymentReceipt(Order $order): void
+    {
+        try {
+            $order->loadMissing('user');
+            $recipientEmail = $order->user?->email;
+
+            if (!empty($recipientEmail)) {
+                $mailer = \Illuminate\Support\Facades\Mail::to($recipientEmail);
+                $mailable = new PaymentReceiptMail($order);
+
+                if (app()->environment('production') && config('queue.default') !== 'sync') {
+                    $mailer->queue($mailable);
+                } else {
+                    $mailer->send($mailable);
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+            \Illuminate\Support\Facades\Log::error('Failed to send payment receipt email: ' . $e->getMessage(), [
+                'order_id' => $order->id,
+            ]);
+        }
     }
 }

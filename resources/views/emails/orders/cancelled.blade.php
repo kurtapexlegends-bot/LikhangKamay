@@ -23,9 +23,9 @@
         <div style="padding: 40px 32px;">
             <h1 style="font-family: Georgia, Times, serif; font-size: 24px; font-weight: normal; color: #C2783F; margin-top: 0; margin-bottom: 20px; text-align: center;">Order Cancelled</h1>
             <p style="margin-top: 0; margin-bottom: 24px; font-size: 16px; color: #5C524A; line-height: 1.6; text-align: center;">
-                Order <strong>#{{ $orderNumber }}</strong> has been cancelled.
+                Order <strong>#{{ $orderNumber ?? ($order?->order_number ?? 'N/A') }}</strong> has been cancelled.
             </p>
-            @if($reason)
+            @if(!empty($reason))
                 <div style="background-color: #F7F4F0; border: 1px solid #E7E1D8; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; font-size: 14px; color: #5C524A; line-height: 1.5;">
                     <strong style="color: #2E2520; display: block; margin-bottom: 4px;">Reason:</strong>
                     {{ $reason }}

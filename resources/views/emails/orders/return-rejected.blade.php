@@ -23,12 +23,12 @@
         <div style="padding: 40px 32px;">
             <h1 style="font-family: Georgia, Times, serif; font-size: 24px; font-weight: normal; color: #C2783F; margin-top: 0; margin-bottom: 20px; text-align: center;">Return Request Rejected</h1>
             <p style="margin-top: 0; margin-bottom: 24px; font-size: 16px; color: #5C524A; line-height: 1.6;">
-                The seller has declined your return/refund request for Order <strong>#{{ $orderNumber }}</strong>.
+                The seller has declined your return/refund request for Order <strong>#{{ $orderNumber ?? ($order->order_number ?? '') }}</strong>.
             </p>
-            @if($explanation)
+            @if(!empty($explanation) || !empty($reason))
                 <div style="background-color: #F7F4F0; border: 1px solid #E7E1D8; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; font-size: 14px; color: #5C524A; line-height: 1.5;">
                     <strong style="color: #2E2520; display: block; margin-bottom: 4px;">Seller's Explanation:</strong>
-                    {{ $explanation }}
+                    {{ $explanation ?? $reason }}
                 </div>
             @endif
             <p style="font-size: 14px; color: #A2582F; font-weight: bold; margin-bottom: 24px; text-align: center;">

@@ -4,7 +4,10 @@ namespace App\Services;
 
 use App\Models\SubscriptionTransaction;
 use App\Models\UserTierLog;
+use App\Mail\SubscriptionBillingReceiptMail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class SubscriptionService
 {
@@ -111,6 +114,32 @@ class SubscriptionService
 
             $lockedTransaction->update($updateData);
         });
+
+        $transaction->refresh();
+        $user = $transaction->user;
+        if ($user && !empty($user->email)) {
+            try {
+                $mailer = Mail::to($user->email);
+                $mailable = new SubscriptionBillingReceiptMail(
+                    user: $user,
+                    transaction: $transaction,
+                    tierLabel: $user->getSellerTierLabel(),
+                    amountPaid: (float) $transaction->amount
+                );
+
+                if (app()->environment('production') && config('queue.default') !== 'sync') {
+                    $mailer->queue($mailable);
+                } else {
+                    $mailer->send($mailable);
+                }
+            } catch (\Throwable $e) {
+                report($e);
+                Log::error('Failed to send subscription billing receipt: ' . $e->getMessage(), [
+                    'transaction_id' => $transaction->id,
+                    'user_id' => $user->id,
+                ]);
+            }
+        }
 
         return $resolution;
     }

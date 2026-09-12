@@ -23,7 +23,7 @@
         </div>
         <div style="padding: 40px 32px; text-align: center;">
             <h1 style="font-family: Georgia, Times, serif; font-size: 24px; font-weight: normal; color: #C2783F; margin-top: 0; margin-bottom: 20px;">Action Required: Ship Order</h1>
-            <p style="margin-top: 0; margin-bottom: 16px; font-size: 15px; color: #5C524A; text-align: left;">Hello Artisan,</p>
+            <p style="margin-top: 0; margin-bottom: 16px; font-size: 15px; color: #5C524A; text-align: left;">Hello <strong>{{ $order->artisan?->shop_name ?: ($order->artisan?->name ?: 'Artisan') }}</strong>,</p>
             <p style="margin-top: 0; margin-bottom: 16px; font-size: 15px; color: #5C524A; text-align: left; line-height: 1.6;">
                 This is a friendly reminder that Order <strong>#{{ $order->order_number }}</strong> has been waiting for shipment for over 3 days.
             </p>
@@ -31,7 +31,7 @@
                 Please ship this order as soon as possible to avoid auto-cancellation and to provide the best service to your customer.
             </p>
 
-            <a href="{{ $url }}" style="display: inline-block; background-color: #C2783F; color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 14px; padding: 12px 28px; border-radius: 8px; margin: 12px 0; text-align: center;">Manage Orders</a>
+            <a href="{{ $url ?? route('orders.index') }}" style="display: inline-block; background-color: #C2783F; color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 14px; padding: 12px 28px; border-radius: 8px; margin: 12px 0; text-align: center;">Manage Orders</a>
         </div>
         <div style="background-color: #F7F4F0; border-top: 1px solid #E7E1D8; padding: 28px; text-align: center; font-size: 12px; color: #8C827A; line-height: 1.5;">
             <p style="margin: 0;">This email was sent from LikhangKamay.</p>

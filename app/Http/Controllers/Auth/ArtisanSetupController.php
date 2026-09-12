@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use App\Mail\NewArtisanApplication;
+use App\Mail\ArtisanApplicationReceivedMail;
 use App\Models\ArtisanStatusLog;
 use App\Models\User as UserModel;
 use App\Notifications\NewArtisanApplicationNotification;
@@ -249,6 +250,23 @@ class ArtisanSetupController extends Controller
             } catch (\Throwable $e) {
                 report($e);
                 return 'failed_send';
+            }
+        }
+
+        // Send acknowledgment receipt to applying artisan
+        if (!empty($user->email)) {
+            try {
+                $artisanMailer = Mail::to($user->email);
+                if (app()->environment('production') && config('queue.default') !== 'sync') {
+                    $artisanMailer->queue(new ArtisanApplicationReceivedMail($user));
+                } else {
+                    $artisanMailer->send(new ArtisanApplicationReceivedMail($user));
+                }
+            } catch (\Throwable $e) {
+                report($e);
+                Log::error('Failed to send application confirmation email to artisan: ' . $e->getMessage(), [
+                    'artisan_id' => $user->id,
+                ]);
             }
         }
 

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Discount;
 use App\Models\PlatformActivity;
 use App\Mail\OrderPlaced;
+use App\Mail\BuyerOrderConfirmationMail;
 use App\Support\OrderWorkflowHelper;
 use App\Services\SponsorshipAnalyticsService;
 use App\Services\OrderFinanceService;
@@ -322,6 +323,16 @@ class PlaceOrder
                         ['order_id' => $order->id, 'order_number' => $order->order_number]
                     );
                     $seller->notifySellerWorkspace(new \App\Notifications\NewOrderNotification($order), 'orders');
+                }
+
+                if ($buyer && $buyer->email) {
+                    $order->loadMissing(['items', 'artisan']);
+                    $this->sendMailSilently(
+                        $buyer->email,
+                        new BuyerOrderConfirmationMail($order),
+                        'buyer_order_confirmation',
+                        ['order_id' => $order->id, 'order_number' => $order->order_number]
+                    );
                 }
 
                 PlatformActivity::create([

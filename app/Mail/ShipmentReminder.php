@@ -31,7 +31,10 @@ class ShipmentReminder extends Mailable
             ],
             fallbackSubject: 'Action Required: Ship Order #' . $this->order->order_number,
             fallbackView: 'emails.sellers.shipment_reminder',
-            fallbackData: ['order' => $this->order]
+            fallbackData: [
+                'order' => $this->order,
+                'url' => route('orders.index'),
+            ]
         );
     }
 }

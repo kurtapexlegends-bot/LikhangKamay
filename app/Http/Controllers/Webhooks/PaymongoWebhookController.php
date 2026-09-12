@@ -102,13 +102,18 @@ class PaymongoWebhookController extends Controller
                 if ($orders->isNotEmpty()) {
                     \Illuminate\Support\Facades\DB::transaction(function () use ($orders, $paymentId) {
                         foreach ($orders as $order) {
-                            if ($order->payment_status !== 'paid' || ($paymentId && empty($order->payment_id))) {
+                            $wasUnpaid = $order->payment_status !== 'paid';
+                            if ($wasUnpaid || ($paymentId && empty($order->payment_id))) {
                                 $updateData = ['payment_status' => 'paid'];
                                 if ($paymentId && empty($order->payment_id)) {
                                     $updateData['payment_id'] = $paymentId;
                                 }
                                 $order->update($updateData);
                                 Log::info('Order marked as paid via Webhook', ['order_id' => $order->id, 'order_number' => $order->order_number, 'payment_id' => $paymentId]);
+
+                                if ($wasUnpaid) {
+                                    $this->sendPaymentReceipt($order);
+                                }
                             }
                         }
                     });
@@ -189,5 +194,29 @@ class PaymongoWebhookController extends Controller
         }
 
         return response()->json(['status' => 'ignored']);
+    }
+
+    private function sendPaymentReceipt(Order $order): void
+    {
+        try {
+            $order->loadMissing('user');
+            $recipientEmail = $order->user?->email;
+
+            if (!empty($recipientEmail)) {
+                $mailer = \Illuminate\Support\Facades\Mail::to($recipientEmail);
+                $mailable = new \App\Mail\PaymentReceiptMail($order);
+
+                if (app()->environment('production') && config('queue.default') !== 'sync') {
+                    $mailer->queue($mailable);
+                } else {
+                    $mailer->send($mailable);
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+            Log::error('Failed to send payment receipt email: ' . $e->getMessage(), [
+                'order_id' => $order->id,
+            ]);
+        }
     }
 }
