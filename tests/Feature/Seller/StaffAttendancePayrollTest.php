@@ -216,8 +216,8 @@ class StaffAttendancePayrollTest extends TestCase
         \Carbon\CarbonInterface $clockOut,
         string $closeMode,
         ?string $closeReason = null
-    ): void {
-        StaffAttendanceSession::create([
+    ): StaffAttendanceSession {
+        return StaffAttendanceSession::create([
             'staff_user_id' => $staff->id,
             'seller_owner_id' => $owner->id,
             'employee_id' => $employee->id,
@@ -275,6 +275,68 @@ class StaffAttendancePayrollTest extends TestCase
             ->where('sellerSettings.standard_workday_hours', 6)
             ->where('staff.0.payroll_prefill.undertime_hours', 1)
             ->where('staff.0.payroll_prefill.overtime_hours', 2)
+        );
+    }
+
+    public function test_time_card_audit_can_approve_and_reject_shifts_and_include_them_in_audit(): void
+    {
+        [$owner, $employee] = $this->createOwnerWithHrAccessAndEmployee();
+        $staffLogin = User::factory()->staff($owner)->create([
+            'name' => $employee->name,
+            'email_verified_at' => now(config('app.timezone')),
+            'must_change_password' => false,
+            'employee_id' => $employee->id,
+            'staff_role_preset_key' => 'hr',
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(['hr' => true], true),
+        ]);
+
+        $monthStart = now(config('app.timezone'))->copy()->startOfMonth()->setTime(8, 0);
+
+        // Session 1: Flagged off-site session to approve
+        $sessionToApprove = $this->createClosedSession($staffLogin, $owner, $employee, $monthStart->copy(), $monthStart->copy()->addHours(8), 'clocked_out');
+        $sessionToApprove->update([
+            'is_flagged' => true,
+            'flag_reason' => 'Off-site clock in',
+            'approval_status' => 'pending',
+            'distance_meters' => 500,
+            'is_within_geofence' => false,
+        ]);
+
+        // Session 2: Session to reject
+        $sessionToReject = $this->createClosedSession($staffLogin, $owner, $employee, $monthStart->copy()->addDay(), $monthStart->copy()->addDay()->addHours(4), 'clocked_out');
+        $sessionToReject->update([
+            'is_flagged' => true,
+            'flag_reason' => 'Unverified shift',
+            'approval_status' => 'pending',
+        ]);
+
+        // Approve session 1
+        $approveRes = $this->actingAs($owner)->post(route('hr.attendance-sessions.approve', $sessionToApprove));
+        $approveRes->assertOk();
+        $this->assertEquals('approved', $sessionToApprove->fresh()->approval_status);
+
+        // Reject session 2
+        $rejectRes = $this->actingAs($owner)->post(route('hr.attendance-sessions.reject', $sessionToReject), [
+            'reason' => 'Unverified punch location',
+        ]);
+        $rejectRes->assertOk();
+        $this->assertEquals('rejected', $sessionToReject->fresh()->approval_status);
+        $this->assertEquals('Unverified punch location', $sessionToReject->fresh()->rejection_reason);
+
+        // Verify TimeCardAudit page payload includes both sessions with their accurate statuses
+        $auditRes = $this->actingAs($owner)->get(route('hr.employees.time-card', $employee->id));
+        $auditRes->assertOk();
+        $auditRes->assertInertia(fn (Assert $page) => $page
+            ->component('Seller/HR/TimeCardAudit')
+            ->has('summary.sessions', 2)
+            ->where('summary.sessions.0.id', $sessionToApprove->id)
+            ->where('summary.sessions.0.approval_status', 'approved')
+            ->where('summary.sessions.1.id', $sessionToReject->id)
+            ->where('summary.sessions.1.approval_status', 'rejected')
+            ->where('summary.sessions.1.rejection_reason', 'Unverified punch location')
+            // Only the approved 8h session should be counted in payroll calculation (480 minutes / 8 hours)
+            ->where('summary.total_worked_minutes', 480)
+            ->where('summary.total_worked_hours', 8)
         );
     }
 }

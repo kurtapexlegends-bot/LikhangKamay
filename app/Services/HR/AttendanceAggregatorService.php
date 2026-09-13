@@ -33,6 +33,7 @@ class AttendanceAggregatorService
 
         /** @var Collection<int, StaffAttendanceSession> $sessions */
         $sessions = StaffAttendanceSession::query()
+            ->with(['approver:id,name'])
             ->where(function ($query) use ($staffUserId, $employee) {
                 if ($staffUserId) {
                     $query->where('staff_user_id', $staffUserId);
@@ -42,10 +43,6 @@ class AttendanceAggregatorService
                 }
             })
             ->whereBetween('attendance_date', [$start->toDateString(), $end->toDateString()])
-            ->where(function ($q) {
-                $q->where('approval_status', '!=', 'rejected')
-                  ->orWhereNull('approval_status');
-            })
             ->orderBy('attendance_date', 'asc')
             ->orderBy('clock_in_at', 'asc')
             ->get();
@@ -66,8 +63,11 @@ class AttendanceAggregatorService
             ];
         }
 
-        // Group sessions by date
-        $groupedByDate = $sessions->groupBy(fn ($session) => $session->attendance_date->toDateString());
+        // Active sessions excluding rejected for payroll calculations
+        $activeSessions = $sessions->filter(fn ($s) => $s->approval_status !== 'rejected');
+
+        // Group active sessions by date
+        $groupedByDate = $activeSessions->groupBy(fn ($session) => $session->attendance_date->toDateString());
         
         $totalWorkedMinutes = 0;
         $totalOvertimeMinutes = 0;

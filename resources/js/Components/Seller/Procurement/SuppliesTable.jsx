@@ -124,7 +124,7 @@ export default function SuppliesTable({
     }, [supplies, searchTerm, selectedCategory, stockStatusFilter, unitTypeFilter]);
 
     return (
-        <div className="bg-white rounded-2xl border border-stone-200/80 overflow-hidden shadow-2xs">
+        <div className="bg-white rounded-2xl border border-stone-200/80 shadow-2xs relative min-h-[420px] flex flex-col">
             {/* Header & Filter Controls */}
             <div className="p-4 sm:p-5 border-b border-stone-200/80 bg-[#FDFBF9] flex flex-col md:flex-row gap-3 items-center justify-between">
                 {/* Search Bar */}

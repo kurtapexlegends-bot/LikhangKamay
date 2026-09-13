@@ -62,11 +62,10 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
     };
 
     const refreshLogs = () => {
-        router.get(
-            route('hr.employees.time-card', employee.id),
-            { month },
-            { preserveState: true, preserveScroll: true }
-        );
+        router.reload({
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     const handleApproveSession = (sessionId) => {
@@ -134,11 +133,11 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
             .filter((session) => {
                 // 1. Status tab filter
                 const isOffSite = session.distance_meters !== null && !session.is_within_geofence;
-                const isPending = session.approval_status === 'pending' || session.is_flagged;
-                const isApproved = session.approval_status === 'approved' && !session.is_flagged;
                 const isRejected = session.approval_status === 'rejected';
+                const isApproved = session.approval_status === 'approved';
+                const isPending = session.approval_status === 'pending' || (!session.approval_status && session.is_flagged);
 
-                if (activeTab === 'pending' && (!isPending || isRejected)) return false;
+                if (activeTab === 'pending' && !isPending) return false;
                 if (activeTab === 'offsite' && !isOffSite) return false;
                 if (activeTab === 'approved' && !isApproved) return false;
                 if (activeTab === 'rejected' && !isRejected) return false;
@@ -189,8 +188,10 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
             });
     }, [rawSessions, activeTab, anomalyFilter, workdayFilter, photoFilter, sortOrder, searchQuery]);
 
-    const pendingCount = rawSessions.filter((s) => (s.approval_status === 'pending' || s.is_flagged) && s.approval_status !== 'rejected').length;
+    const pendingCount = rawSessions.filter((s) => s.approval_status === 'pending' || (!s.approval_status && s.is_flagged)).length;
     const offSiteCount = rawSessions.filter((s) => s.distance_meters !== null && !s.is_within_geofence).length;
+    const approvedCount = rawSessions.filter((s) => s.approval_status === 'approved').length;
+    const rejectedCount = rawSessions.filter((s) => s.approval_status === 'rejected').length;
 
     // Advanced Popover Filter Form (Zero redundancy with tabs & header)
     const filterFieldsGrid = (
@@ -463,14 +464,14 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                 </div>
 
                 {/* ── UNIFIED TABLE & FILTER CARD ── */}
-                <div className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200/80 shadow-xs overflow-hidden">
+                <div className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200/80 shadow-xs relative min-h-[420px] flex flex-col">
                     <FilterToolbarHeader
                         tabs={[
                             { key: 'all', label: 'All Shifts' },
                             { key: 'pending', label: 'Pending Review', count: pendingCount },
                             { key: 'offsite', label: 'Off-Site', count: offSiteCount },
-                            { key: 'approved', label: 'Approved' },
-                            { key: 'rejected', label: 'Rejected' },
+                            { key: 'approved', label: 'Approved', count: approvedCount },
+                            { key: 'rejected', label: 'Rejected', count: rejectedCount },
                         ]}
                         activeTab={activeTab}
                         onTabChange={setActiveTab}
@@ -529,8 +530,8 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                                 <tbody className="divide-y divide-stone-100">
                                     {filteredSessions.map((session) => {
                                         const isRejected = session.approval_status === 'rejected';
-                                        const isPending = session.approval_status === 'pending' || session.is_flagged;
-                                        const isApproved = session.approval_status === 'approved' && !session.is_flagged;
+                                        const isApproved = session.approval_status === 'approved';
+                                        const isPending = session.approval_status === 'pending' || (!session.approval_status && session.is_flagged);
                                         const cleanFlag = getCleanOperationalFlag(session.flag_reason);
 
                                         return (
@@ -628,14 +629,14 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                                                             <span>Approved</span>
                                                         </span>
                                                     )}
-                                                    {isPending && !isRejected && (
+                                                    {isPending && (
                                                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full">
                                                             <AlertCircle size={10} className="text-amber-600 shrink-0" />
                                                             <span>Pending</span>
                                                         </span>
                                                     )}
                                                     {isRejected && (
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-2 py-0.5 rounded-full">
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-2 py-0.5 rounded-full" title={session.rejection_reason || 'Rejected'}>
                                                             <Ban size={10} className="text-rose-600 shrink-0" />
                                                             <span>Rejected</span>
                                                         </span>
@@ -649,7 +650,7 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
 
                                                 {/* Actions */}
                                                 <td className="py-2.5 pl-2 pr-4 text-right whitespace-nowrap">
-                                                    {canEdit && (session.is_flagged || session.approval_status === 'pending') && !isRejected ? (
+                                                    {canEdit && isPending ? (
                                                         <div className="inline-flex items-center justify-end gap-1.5">
                                                             <button
                                                                 type="button"
@@ -674,7 +675,9 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                                                             </button>
                                                         </div>
                                                     ) : (
-                                                        <span className="text-[11px] text-stone-400 font-medium">—</span>
+                                                        <span className="text-[11px] text-stone-400 font-medium">
+                                                            {session.approver_name ? `By ${session.approver_name}` : '—'}
+                                                        </span>
                                                     )}
                                                 </td>
                                             </tr>
@@ -696,8 +699,8 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                         {filteredSessions.length > 0 ? (
                             filteredSessions.map((session) => {
                                 const isRejected = session.approval_status === 'rejected';
-                                const isPending = session.approval_status === 'pending' || session.is_flagged;
-                                const isApproved = session.approval_status === 'approved' && !session.is_flagged;
+                                const isApproved = session.approval_status === 'approved';
+                                const isPending = session.approval_status === 'pending' || (!session.approval_status && session.is_flagged);
                                 const cleanFlag = getCleanOperationalFlag(session.flag_reason);
 
                                 return (
@@ -768,21 +771,21 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                                                     <span>Approved</span>
                                                 </span>
                                             )}
-                                            {isPending && !isRejected && (
+                                            {isPending && (
                                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full">
                                                     <AlertCircle size={10} className="text-amber-600" />
                                                     <span>Pending Review</span>
                                                 </span>
                                             )}
                                             {isRejected && (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-2 py-0.5 rounded-full">
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-2 py-0.5 rounded-full" title={session.rejection_reason || 'Rejected'}>
                                                     <Ban size={10} className="text-rose-600" />
                                                     <span>Rejected</span>
                                                 </span>
                                             )}
                                         </div>
 
-                                        {canEdit && (session.is_flagged || session.approval_status === 'pending') && !isRejected && (
+                                        {canEdit && isPending && (
                                             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-stone-100">
                                                 <button
                                                     type="button"

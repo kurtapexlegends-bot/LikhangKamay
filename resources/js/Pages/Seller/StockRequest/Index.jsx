@@ -176,7 +176,7 @@ export default function StockRequestIndex({ auth, requests }) {
                 <StockRequestMetrics requests={requests} />
 
                 {/* Restock Requests Table Container with Integrated Toolbar */}
-                <div className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200/80 shadow-xs overflow-hidden">
+                <div className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200/80 shadow-xs relative min-h-[420px] flex flex-col">
                     <FilterToolbarHeader
                         tabs={STATUS_TABS.map(tab => ({
                             key: tab.id,

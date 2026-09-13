@@ -231,7 +231,7 @@ export default function ApprovalManager({
                 )}
 
                 {/* Content Container */}
-                <div className="bg-white rounded-3xl border border-stone-200/80 shadow-xs relative overflow-hidden space-y-4 p-3 sm:p-5">
+                <div className="bg-white rounded-3xl border border-stone-200/80 shadow-xs relative min-h-[420px] space-y-4 p-3 sm:p-5">
                     {/* Standard Filter Toolbar Header */}
                     <FilterToolbarHeader
                         tabs={[
