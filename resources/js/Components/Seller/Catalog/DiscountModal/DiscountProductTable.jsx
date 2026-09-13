@@ -112,7 +112,8 @@ export default function DiscountProductTable({
 
             {/* Product Pricing Table */}
             <div className="flex-1 overflow-y-auto rounded-2xl border border-stone-200/80 bg-white">
-                <table className="w-full text-left border-collapse text-xs">
+                {/* Desktop Pricing Table (>= sm) */}
+                <table className="hidden sm:table w-full text-left border-collapse text-xs">
                     <thead className="sticky top-0 bg-stone-50 border-b border-stone-200/70 text-[10px] uppercase tracking-wider font-extrabold text-stone-400 z-10">
                         <tr>
                             <th className="py-2.5 px-3">Product</th>
@@ -259,6 +260,138 @@ export default function DiscountProductTable({
                         )}
                     </tbody>
                 </table>
+
+                {/* Mobile Card List View (< sm) */}
+                <div className="sm:hidden divide-y divide-stone-100">
+                    {filteredProducts.length > 0 ? (
+                        filteredProducts.map((product) => {
+                            const isChecked = targetProductIds.includes(product.id);
+                            const calc = getCalculatedPrice(product);
+                            const setting = individualMap[product.id] || { type: "percentage", value: "" };
+                            const valNum = parseFloat(setting.value);
+                            const origNum = Number(product.price);
+                            const isInvalidFixed = isChecked && mode !== "global" && setting.type === "fixed" && valNum >= origNum;
+
+                            return (
+                                <div
+                                    key={product.id}
+                                    className={`p-3.5 space-y-2.5 transition-colors ${
+                                        isInvalidFixed
+                                            ? "bg-rose-50/60"
+                                            : isChecked
+                                            ? "bg-amber-50/40"
+                                            : "hover:bg-stone-50/60"
+                                    }`}
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <input
+                                            type="checkbox"
+                                            checked={isChecked}
+                                            onChange={() => handleToggleProduct(product.id)}
+                                            className="mt-1 rounded border-stone-300 text-clay-600 focus:ring-clay-500 cursor-pointer h-4 w-4 shrink-0"
+                                        />
+                                        <img
+                                            src={product.img || "/images/no-image.png"}
+                                            alt={product.name}
+                                            className="w-11 h-11 rounded-xl object-cover bg-stone-100 border border-stone-200 shrink-0"
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="font-bold text-stone-900 text-xs truncate">{product.name}</p>
+                                            <p className="text-[10px] text-stone-400 font-mono mt-0.5">SKU: {product.sku || "N/A"}</p>
+                                            <p className="text-xs font-medium text-stone-500 mt-1">
+                                                Orig: ₱{Number(product.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {isChecked && (
+                                        <div className="pt-2 border-t border-stone-200/60 space-y-2">
+                                            {mode === "global" ? (
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-[10px] font-bold uppercase text-stone-400">Discount</span>
+                                                    <span className="inline-flex items-center gap-1 bg-amber-100/80 text-amber-800 font-bold px-2.5 py-0.5 rounded-md text-[10px]">
+                                                        {globalValue ? (globalType === "percentage" ? `-${globalValue}%` : `₱${globalValue}`) : "Set Value"}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <div className="inline-flex rounded-lg border border-stone-200/80 bg-stone-100 p-0.5 shrink-0">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => updateIndividualSetting(product.id, "type", "percentage")}
+                                                                className={`px-2.5 py-1 text-[11px] font-extrabold rounded-md transition-all ${
+                                                                    setting.type === "percentage"
+                                                                        ? "bg-white text-clay-700 shadow-sm"
+                                                                        : "text-stone-500 hover:text-stone-800"
+                                                                }`}
+                                                                title="Percentage OFF"
+                                                            >
+                                                                %
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => updateIndividualSetting(product.id, "type", "fixed")}
+                                                                className={`px-2.5 py-1 text-[11px] font-extrabold rounded-md transition-all ${
+                                                                    setting.type === "fixed"
+                                                                        ? "bg-white text-clay-700 shadow-sm"
+                                                                        : "text-stone-500 hover:text-stone-800"
+                                                                }`}
+                                                                title="Fixed Promo Price"
+                                                            >
+                                                                ₱
+                                                            </button>
+                                                        </div>
+                                                        <input
+                                                            type="number"
+                                                            step={setting.type === "percentage" ? "1" : "0.01"}
+                                                            min="0.01"
+                                                            max={setting.type === "percentage" ? "99" : undefined}
+                                                            value={setting.value}
+                                                            onChange={(e) => updateIndividualSetting(product.id, "value", e.target.value)}
+                                                            placeholder={setting.type === "percentage" ? "Rate (%)" : "Price (₱)"}
+                                                            className={`flex-1 text-xs font-bold rounded-xl border-stone-200 py-1.5 px-3 focus:ring-clay-500 text-right bg-white shadow-2xs h-9 ${
+                                                                isInvalidFixed || (isChecked && mode !== "global" && setting.type === "percentage" && valNum >= 100) ? "border-rose-400 text-rose-700 bg-rose-50" : ""
+                                                            }`}
+                                                        />
+                                                    </div>
+                                                    {isInvalidFixed && (
+                                                        <span className="block text-[10px] font-bold text-rose-600">Must be &lt; ₱{origNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                                    )}
+                                                    {isChecked && mode !== "global" && setting.type === "percentage" && valNum >= 100 && (
+                                                        <span className="block text-[10px] font-bold text-rose-600">Must be &lt; 100%</span>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-center justify-between pt-1">
+                                                <span className="text-[10px] font-bold uppercase text-stone-400">Promo Price</span>
+                                                {calc.saved > 0 ? (
+                                                    <div className="text-right">
+                                                        <span className="font-extrabold text-clay-700 text-sm block">
+                                                            ₱{calc.final.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        </span>
+                                                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">
+                                                            Save ₱{calc.saved.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="font-bold text-stone-700 text-sm">
+                                                        ₱{Number(product.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="py-8 text-center text-xs text-stone-400">
+                            No products match your search filter.
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

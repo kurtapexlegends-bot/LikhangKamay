@@ -950,28 +950,49 @@ function ArtisanStatementModal({ artisan, onClose, formatCurrency, onDisburse })
                             No completed orders recorded yet.
                         </div>
                     ) : (
-                        <table className="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr className="bg-stone-50 border-b border-stone-200 text-[10px] font-bold uppercase text-stone-500">
-                                    <th className="py-2.5 px-4">Order #</th>
-                                    <th className="py-2.5 px-4">Customer</th>
-                                    <th className="py-2.5 px-4 text-right">Gross</th>
-                                    <th className="py-2.5 px-4 text-right">Fee</th>
-                                    <th className="py-2.5 px-4 text-right">Seller Net</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-stone-100">
-                                {recentOrders.map((o) => (
-                                    <tr key={o.id} className="hover:bg-stone-50/50">
-                                        <td className="py-2.5 px-4 font-mono font-bold text-stone-900">#{o.order_number}</td>
-                                        <td className="py-2.5 px-4 text-stone-600">{o.customer_name}</td>
-                                        <td className="py-2.5 px-4 text-right font-medium text-stone-700">{formatCurrency(o.gross)}</td>
-                                        <td className="py-2.5 px-4 text-right font-medium text-stone-400">- {formatCurrency(o.fee)}</td>
-                                        <td className="py-2.5 px-4 text-right font-bold text-emerald-700">{formatCurrency(o.net)}</td>
+                        <>
+                            {/* Desktop Table View */}
+                            <table className="hidden sm:table w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="bg-stone-50 border-b border-stone-200 text-[10px] font-bold uppercase text-stone-500">
+                                        <th className="py-2.5 px-4">Order #</th>
+                                        <th className="py-2.5 px-4">Customer</th>
+                                        <th className="py-2.5 px-4 text-right">Gross</th>
+                                        <th className="py-2.5 px-4 text-right">Fee</th>
+                                        <th className="py-2.5 px-4 text-right">Seller Net</th>
                                     </tr>
+                                </thead>
+                                <tbody className="divide-y divide-stone-100">
+                                    {recentOrders.map((o) => (
+                                        <tr key={o.id} className="hover:bg-stone-50/50">
+                                            <td className="py-2.5 px-4 font-mono font-bold text-stone-900">#{o.order_number}</td>
+                                            <td className="py-2.5 px-4 text-stone-600">{o.customer_name}</td>
+                                            <td className="py-2.5 px-4 text-right font-medium text-stone-700">{formatCurrency(o.gross)}</td>
+                                            <td className="py-2.5 px-4 text-right font-medium text-stone-400">- {formatCurrency(o.fee)}</td>
+                                            <td className="py-2.5 px-4 text-right font-bold text-emerald-700">{formatCurrency(o.net)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+
+                            {/* Mobile Card List View (< sm) */}
+                            <div className="sm:hidden divide-y divide-stone-100">
+                                {recentOrders.map((o) => (
+                                    <div key={o.id} className="p-3 space-y-1.5 hover:bg-stone-50/50 transition-colors">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-mono font-bold text-xs text-stone-900">#{o.order_number}</span>
+                                            <span className="font-extrabold text-xs text-emerald-700">{formatCurrency(o.net)}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-[11px] text-stone-500">
+                                            <span className="truncate max-w-[140px] font-medium">{o.customer_name}</span>
+                                            <span className="text-[10px] text-stone-400 font-mono">
+                                                {formatCurrency(o.gross)} <span className="text-rose-400">(-{formatCurrency(o.fee)})</span>
+                                            </span>
+                                        </div>
+                                    </div>
                                 ))}
-                            </tbody>
-                        </table>
+                            </div>
+                        </>
                     )}
                 </div>
 

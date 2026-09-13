@@ -95,7 +95,7 @@ export default function PayrollReviewDetails({ item, inline = false }) {
                     )}
                 </div>
 
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto hidden sm:block">
                     {!item.line_items || item.line_items.length === 0 ? (
                         <div className="py-8">
                             <WorkspaceEmptyState
@@ -148,6 +148,60 @@ export default function PayrollReviewDetails({ item, inline = false }) {
                                 ))}
                             </tbody>
                         </table>
+                    )}
+                </div>
+
+                {/* Mobile Card List View (< sm) */}
+                <div className="sm:hidden divide-y divide-stone-100">
+                    {!item.line_items || item.line_items.length === 0 ? (
+                        <div className="py-8">
+                            <WorkspaceEmptyState
+                                compact
+                                icon={Users}
+                                title="No employees found"
+                                description="This payroll request contains no line items."
+                            />
+                        </div>
+                    ) : (
+                        item.line_items.map((line) => (
+                            <div key={line.id} className="p-4 space-y-3 hover:bg-stone-50/50 transition">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h5 className="text-xs font-bold text-stone-900">{line.employee_name}</h5>
+                                        <p className="text-[10px] text-stone-400 font-medium">Base: {formatMoney(line.base_salary)}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-xs font-extrabold text-stone-900 block">{formatMoney(line.net_pay)}</span>
+                                        <span className="text-[9px] text-stone-400 font-bold uppercase tracking-wider">Net Payout</span>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 text-xs bg-stone-50/60 rounded-xl p-2.5 border border-stone-150">
+                                    <div>
+                                        <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">Deductions</span>
+                                        <span className={`font-bold text-xs ${Number(line.deductions) > 0 ? 'text-rose-600' : 'text-stone-600'}`}>
+                                            {Number(line.deductions) > 0 ? `-${formatMoney(line.deductions)}` : formatMoney(0)}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">Overtime</span>
+                                        <span className={`font-bold text-xs ${Number(line.overtime_pay) > 0 ? 'text-emerald-700' : 'text-stone-600'}`}>
+                                            {Number(line.overtime_pay) > 0 ? `+${formatMoney(line.overtime_pay)}` : formatMoney(0)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedAuditItem(line)}
+                                    className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-bold text-stone-700 transition min-h-[38px] active:scale-95"
+                                    title="View calculation formula audit"
+                                >
+                                    <Calculator size={13} />
+                                    <span>View Calculation Formula</span>
+                                </button>
+                            </div>
+                        ))
                     )}
                 </div>
             </div>

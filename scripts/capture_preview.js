@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer-core';
 import fs from 'fs';
 import path from 'path';
 
-const defaultArtifactsDir = 'C:\\Users\\acost\\.gemini\\antigravity\\brain\\0736364b-906e-4032-9429-02496b0528ad';
+const defaultArtifactsDir = 'C:\\Users\\acost\\.gemini\\antigravity\\brain\\7d17bc62-5b56-4669-9ad2-1ed076c977e4';
 
 const chromePaths = [
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -53,13 +53,17 @@ function parseArgs() {
             parsed.width = parseInt(value, 10);
         } else if (key === '--height' && value) {
             parsed.height = parseInt(value, 10);
+        } else if (key === '--clickSelector' && value) {
+            parsed.clickSelector = value;
+        } else if (key === '--filename' && value) {
+            parsed.filename = value;
         }
     }
     return parsed;
 }
 
 async function capture() {
-    const { routes, outDir, role, width, height } = parseArgs();
+    const { routes, outDir, role, width, height, clickSelector, filename: customFilename } = parseArgs();
     const chromePath = getBrowserExecutable();
 
     if (!fs.existsSync(outDir)) {
@@ -74,21 +78,79 @@ async function capture() {
     });
 
     const page = await browser.newPage();
+    page.on('console', msg => console.log(`[PAGE LOG ${msg.type()}]:`, msg.text()));
+    page.on('pageerror', err => console.log('[PAGE ERROR]:', err.message));
+
     const results = [];
 
     for (const targetRoute of routes) {
         const cleanName = targetRoute.replace(/[^a-zA-Z0-9]/g, '_').replace(/^_+|_+$/g, '') || 'home';
-        const filename = `preview_${cleanName}.png`;
+        const filename = customFilename || `preview_${cleanName}.png`;
         const destPath = path.join(outDir, filename);
 
         const authUrl = `http://127.0.0.1:8000/dev/preview-auth?role=${encodeURIComponent(role)}&redirect=${encodeURIComponent(targetRoute)}`;
         console.log(`[Remote Preview] Establishing session as ${role}...`);
         await page.goto(authUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+        console.log('[Remote Preview] Current URL:', page.url());
+        console.log('[Remote Preview] Page Title:', await page.title());
 
-        const fullTarget = targetRoute.startsWith('http') ? targetRoute : `http://127.0.0.1:8000${targetRoute}`;
-        console.log(`[Remote Preview] Navigating directly to ${fullTarget}...`);
-        await page.goto(fullTarget, { waitUntil: 'networkidle2', timeout: 30000 });
-        await new Promise(r => setTimeout(r, 2500));
+        console.log(`[Remote Preview] Waiting for content on ${targetRoute}...`);
+        try {
+            await page.waitForSelector('#app, .header, .receipt-title', { timeout: 10000 });
+        } catch {
+            console.log('[Remote Preview] selector wait timed out');
+        }
+        await new Promise(r => setTimeout(r, 2000));
+
+        if (targetRoute === '/my-orders' || targetRoute.startsWith('/my-orders?')) {
+            try {
+                await page.evaluate(() => {
+                    const buttons = Array.from(document.querySelectorAll('button'));
+                    const toReceiveBtn = buttons.find(b => b.textContent && b.textContent.includes('To Receive'));
+                    if (toReceiveBtn) {
+                        toReceiveBtn.click();
+                    }
+                });
+                await new Promise(r => setTimeout(r, 2500));
+            } catch (e) {
+                console.log('[Remote Preview] Tab click notice:', e.message);
+            }
+        }
+
+        if (clickSelector) {
+            try {
+                await page.waitForSelector(clickSelector, { timeout: 5000 });
+                await page.click(clickSelector);
+                await new Promise(r => setTimeout(r, 1200));
+            } catch (e) {
+                console.log('[Remote Preview] clickSelector notice:', e.message);
+            }
+        }
+
+        if (targetRoute.includes('/cart')) {
+            try {
+                await page.evaluate(() => {
+                    localStorage.setItem('lk_cart_backup', JSON.stringify({
+                        items: [
+                            {
+                                id: 'backup-item-1',
+                                product_id: 1,
+                                name: 'Handmade Terracotta Planter',
+                                price: 450,
+                                quantity: 2,
+                                variant: 'Standard Natural',
+                                image: '/images/products/planter.jpg'
+                            }
+                        ],
+                        savedAt: Date.now()
+                    }));
+                });
+                await page.reload({ waitUntil: 'networkidle2' });
+                await new Promise(r => setTimeout(r, 1500));
+            } catch (e) {
+                console.log('[Remote Preview] Cart backup simulation notice:', e.message);
+            }
+        }
 
         await page.screenshot({ path: destPath, fullPage: false });
         console.log(`[Remote Preview] Saved: ${destPath}`);

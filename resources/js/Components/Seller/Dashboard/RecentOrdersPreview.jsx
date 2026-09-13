@@ -36,7 +36,7 @@ export default function RecentOrdersPreview({
     const renderOrderCard = (order) => (
         <div 
             key={order.id}
-            className="rounded-2xl border border-stone-150 bg-white p-4 shadow-sm hover:shadow-md transition-shadow shrink-0 snap-center w-[85vw] max-w-[290px] sm:w-auto sm:max-w-none"
+            className="rounded-2xl border border-stone-150 bg-white p-4 shadow-sm hover:shadow-md transition-shadow w-full"
         >
             <div className="flex items-center justify-between gap-3">
                 <span className="text-xs font-black text-stone-900">
@@ -140,8 +140,8 @@ export default function RecentOrdersPreview({
                     </div>
                 ) : null}
 
-                {/* Mobile View: Horizontal Scroll Card Deck (< 640px) */}
-                <div className="flex overflow-x-auto pb-4 gap-4 flex-nowrap no-scrollbar snap-x snap-mandatory sm:hidden p-4">
+                {/* Mobile View: Vertical Stacked Cards (< 640px) */}
+                <div className="space-y-3 p-4 sm:hidden">
                     {recentOrders.data.length > 0 ? (
                         recentOrders.data.map(renderOrderCard)
                     ) : (

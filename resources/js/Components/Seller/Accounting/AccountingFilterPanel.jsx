@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Filter, RotateCcw, X, ChevronDown, Calendar, Search, Download } from 'lucide-react';
-import SlideOverDrawer from '@/Components/SlideOverDrawer';
+/* global route */
+import React, { useState } from 'react';
+import { ChevronDown, Calendar, Download, FileText } from 'lucide-react';
 import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
 import ExportButton from '@/Components/ExportButton';
 
@@ -183,13 +183,31 @@ export default function AccountingFilterPanel({
             containerClassName="mb-6"
             extraActions={
                 <div className="flex items-center gap-2">
+                    <a
+                        href={route('accounting.settlement', {
+                            year: draftStartDate ? new Date(draftStartDate).getFullYear() : new Date().getFullYear(),
+                            month: draftStartDate ? (new Date(draftStartDate).getMonth() + 1) : (new Date().getMonth() + 1),
+                        })}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 h-[38px] min-h-[38px] px-3.5 rounded-xl border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 hover:text-stone-900 transition font-bold text-xs shadow-2xs cursor-pointer"
+                        title="View printable monthly settlement statement"
+                    >
+                        <FileText size={14} className="text-clay-600" />
+                        <span className="hidden sm:inline">Monthly Statement</span>
+                        <span className="sm:hidden">Statement</span>
+                    </a>
                     <ExportButton
-                        href={route('accounting.export')}
+                        href={route('accounting.settlement.export', {
+                            year: draftStartDate ? new Date(draftStartDate).getFullYear() : new Date().getFullYear(),
+                            month: draftStartDate ? (new Date(draftStartDate).getMonth() + 1) : (new Date().getMonth() + 1),
+                        })}
                         icon={Download}
                         variant="secondary"
                         className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs"
                     >
-                        <span className="hidden sm:inline">Export</span>
+                        <span className="hidden sm:inline">Export Breakdown</span>
+                        <span className="sm:hidden">CSV</span>
                     </ExportButton>
                 </div>
             }

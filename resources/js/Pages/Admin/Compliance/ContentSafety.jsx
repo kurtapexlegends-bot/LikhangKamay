@@ -94,9 +94,12 @@ export default function ContentSafety({ flags, disputes = [], defaultFilter = 'a
 
     // Track active selected ticket object from unified list
     const selectedTicket = useMemo(() => {
-        if (!selectedTicketId) return unifiedTickets[0] || null;
-        return unifiedTickets.find(t => t.id === selectedTicketId) || unifiedTickets[0] || null;
+        if (!selectedTicketId) return null;
+        return unifiedTickets.find(t => t.id === selectedTicketId) || null;
     }, [unifiedTickets, selectedTicketId]);
+
+    // Desktop default inspector fallback
+    const desktopInspectorTicket = selectedTicket || unifiedTickets[0] || null;
 
     useEffect(() => {
         const unbindStart = router.on('start', () => setIsNavigating(true));
@@ -212,10 +215,10 @@ export default function ContentSafety({ flags, disputes = [], defaultFilter = 'a
 
                     {/* Right: Rich Context-Aware Inspector & Action Card */}
                     <div className="hidden lg:flex flex-1 bg-white border border-stone-200/80 rounded-2xl shadow-2xs flex-col overflow-hidden h-full">
-                        {selectedTicket ? (
+                        {desktopInspectorTicket ? (
                             <div className="flex-1 flex flex-col overflow-hidden bg-white rounded-2xl">
                                 <ReportDetailsCard 
-                                    selectedTicket={selectedTicket} 
+                                    selectedTicket={desktopInspectorTicket} 
                                     handleFlagAction={handleFlagAction}
                                     openDisputeActionModal={openDisputeActionModal}
                                     setDisputeDeleteState={setDisputeDeleteState}

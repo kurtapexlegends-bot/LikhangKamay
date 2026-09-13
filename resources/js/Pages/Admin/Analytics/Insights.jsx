@@ -376,19 +376,63 @@ export default function Insights({
                     </div>
                     <div className="overflow-x-auto flex-1">
                         {topArtisans?.length > 0 ? (
-                            <table className="w-full text-left min-w-[420px] border-collapse">
-                                <thead className="bg-stone-50 border-b border-stone-100">
-                                    <tr>
-                                        <th className="px-5 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Rank &amp; Artisan</th>
-                                        <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Sales &amp; Orders</th>
-                                        <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Storefront</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-stone-100">
+                            <>
+                                {/* Desktop Table View */}
+                                <table className="hidden sm:table w-full text-left border-collapse">
+                                    <thead className="bg-stone-50 border-b border-stone-100">
+                                        <tr>
+                                            <th className="px-5 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Rank &amp; Artisan</th>
+                                            <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Sales &amp; Orders</th>
+                                            <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Storefront</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-stone-100">
+                                        {topArtisans.map((artisan, index) => (
+                                            <tr key={artisan.id} className="hover:bg-[#FCF7F2]/20 transition duration-150">
+                                                <td className="px-5 py-3.5">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold shrink-0 ${
+                                                            index === 0 ? 'bg-amber-100 text-amber-800' :
+                                                            index === 1 ? 'bg-stone-200 text-stone-700' :
+                                                            index === 2 ? 'bg-orange-100 text-orange-800' :
+                                                            'bg-stone-100 text-stone-500'
+                                                        }`}>
+                                                            {index + 1}
+                                                        </span>
+                                                        <UserAvatar user={artisan} className="w-8 h-8 shrink-0" />
+                                                        <div className="min-w-0">
+                                                            <p className="font-bold text-stone-900 text-xs tracking-tight truncate">{artisan.name}</p>
+                                                            <p className="text-[10px] font-medium text-stone-500 truncate">{artisan.shop_name}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-5 py-3.5 text-right">
+                                                    <p className="font-extrabold text-stone-900 text-xs">₱{Number(artisan.total_gmv).toLocaleString()}</p>
+                                                    <p className="text-[10px] text-stone-400 font-medium">{artisan.orders_count} {artisan.orders_count === 1 ? 'order' : 'orders'}</p>
+                                                </td>
+                                                <td className="px-5 py-3.5 text-right">
+                                                    <a
+                                                        href={artisan.shop_slug ? route('shop.seller', artisan.shop_slug) : '#'}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 rounded-lg bg-stone-50 hover:bg-stone-100 px-2.5 py-1 text-[10px] font-bold text-stone-700 transition border border-stone-200 shadow-sm"
+                                                        title="View Public Storefront"
+                                                    >
+                                                        <span>View</span>
+                                                        <ExternalLink size={10} />
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                {/* Mobile Stacked Card View */}
+                                <div className="sm:hidden divide-y divide-stone-100">
                                     {topArtisans.map((artisan, index) => (
-                                        <tr key={artisan.id} className="hover:bg-[#FCF7F2]/20 transition duration-150">
-                                            <td className="px-5 py-3.5">
-                                                <div className="flex items-center gap-3">
+                                        <div key={artisan.id} className="p-3.5 space-y-2.5 hover:bg-[#FCF7F2]/20 transition duration-150">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2.5 min-w-0">
                                                     <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold shrink-0 ${
                                                         index === 0 ? 'bg-amber-100 text-amber-800' :
                                                         index === 1 ? 'bg-stone-200 text-stone-700' :
@@ -403,27 +447,25 @@ export default function Insights({
                                                         <p className="text-[10px] font-medium text-stone-500 truncate">{artisan.shop_name}</p>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-5 py-3.5 text-right">
-                                                <p className="font-extrabold text-stone-900 text-xs">₱{Number(artisan.total_gmv).toLocaleString()}</p>
-                                                <p className="text-[10px] text-stone-400 font-medium">{artisan.orders_count} {artisan.orders_count === 1 ? 'order' : 'orders'}</p>
-                                            </td>
-                                            <td className="px-5 py-3.5 text-right">
                                                 <a
                                                     href={artisan.shop_slug ? route('shop.seller', artisan.shop_slug) : '#'}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="inline-flex items-center gap-1 rounded-lg bg-stone-50 hover:bg-stone-100 px-2.5 py-1 text-[10px] font-bold text-stone-700 transition border border-stone-200 shadow-sm"
+                                                    className="inline-flex items-center gap-1 rounded-lg bg-stone-50 hover:bg-stone-100 px-2.5 py-1 text-[10px] font-bold text-stone-700 transition border border-stone-200 shadow-sm shrink-0"
                                                     title="View Public Storefront"
                                                 >
                                                     <span>View</span>
                                                     <ExternalLink size={10} />
                                                 </a>
-                                            </td>
-                                        </tr>
+                                            </div>
+                                            <div className="flex items-center justify-between pt-1 border-t border-stone-100/80 text-xs">
+                                                <span className="text-[10px] text-stone-400 font-medium">{artisan.orders_count} {artisan.orders_count === 1 ? 'order' : 'orders'}</span>
+                                                <p className="font-extrabold text-stone-900 text-xs">₱{Number(artisan.total_gmv).toLocaleString()}</p>
+                                            </div>
+                                        </div>
                                     ))}
-                                </tbody>
-                            </table>
+                                </div>
+                            </>
                         ) : (
                             <div className="flex flex-col items-center justify-center p-12 text-center">
                                 <p className="text-sm font-bold text-stone-400">No sales recorded yet.</p>
@@ -462,46 +504,106 @@ export default function Insights({
                     </div>
                     <div className="overflow-x-auto flex-1">
                         {churn.atRiskList?.length > 0 ? (
-                            <table className="w-full text-left min-w-[420px] border-collapse">
-                                <thead className="bg-stone-50 border-b border-stone-100">
-                                    <tr>
-                                        <th className="px-5 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Artisan</th>
-                                        <th className="px-4 py-3 text-left text-[9px] font-bold text-stone-400 uppercase tracking-widest">Activity Status</th>
-                                        <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Outreach</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-stone-100">
+                            <>
+                                {/* Desktop Table View */}
+                                <table className="hidden sm:table w-full text-left border-collapse">
+                                    <thead className="bg-stone-50 border-b border-stone-100">
+                                        <tr>
+                                            <th className="px-5 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Artisan</th>
+                                            <th className="px-4 py-3 text-left text-[9px] font-bold text-stone-400 uppercase tracking-widest">Activity Status</th>
+                                            <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Outreach</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-stone-100">
+                                        {churn.atRiskList.map(artisan => (
+                                            <tr key={artisan.id} className="hover:bg-[#FCF7F2]/20 transition duration-150">
+                                                <td className="px-5 py-3.5">
+                                                    <div className="flex items-center gap-3">
+                                                        <UserAvatar user={artisan} className="w-8 h-8 shrink-0" />
+                                                        <div className="min-w-0">
+                                                            <p className="font-bold text-stone-900 text-xs tracking-tight truncate">{artisan.name}</p>
+                                                            <p className="text-[10px] font-medium text-stone-500 truncate">{artisan.shop_name}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3.5">
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className={`inline-flex self-start px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
+                                                            artisan.status === 'Needs Check-in' || artisan.status === 'At Risk'
+                                                                ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                                                                : 'bg-stone-100 text-stone-600 border border-stone-200'
+                                                        }`}>
+                                                            {artisan.status === 'At Risk' ? 'Needs Check-in' : (artisan.status || 'Inactive')}
+                                                        </span>
+                                                        <span className="text-[10px] text-stone-450 font-medium">
+                                                            {artisan.last_seen === 'Never' ? 'No recent activity' : artisan.last_seen}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-5 py-3.5 text-right">
+                                                    <button
+                                                        type="button"
+                                                        disabled={reengagingId === artisan.id}
+                                                        onClick={() => handleReengageArtisan(artisan)}
+                                                        className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[10px] font-bold transition border shadow-sm min-h-[30px] active:scale-95 disabled:opacity-60 ${
+                                                            contactedIds.has(artisan.id)
+                                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                                                : 'bg-stone-150 hover:bg-stone-200 text-stone-700 border-stone-200'
+                                                        }`}
+                                                        title={`Send friendly check-in reminder to ${artisan.email || artisan.name}`}
+                                                    >
+                                                        {reengagingId === artisan.id ? (
+                                                            <>
+                                                                <Loader2 size={11} className="animate-spin text-stone-500" />
+                                                                <span>Sending...</span>
+                                                            </>
+                                                        ) : contactedIds.has(artisan.id) ? (
+                                                            <>
+                                                                <Check size={12} className="text-emerald-600" />
+                                                                <span>Reminded</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Mail size={12} className="text-stone-500" />
+                                                                <span>Send Reminder</span>
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                {/* Mobile Stacked Card View */}
+                                <div className="sm:hidden divide-y divide-stone-100">
                                     {churn.atRiskList.map(artisan => (
-                                        <tr key={artisan.id} className="hover:bg-[#FCF7F2]/20 transition duration-150">
-                                            <td className="px-5 py-3.5">
-                                                <div className="flex items-center gap-3">
+                                        <div key={artisan.id} className="p-3.5 space-y-2.5 hover:bg-[#FCF7F2]/20 transition duration-150">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2.5 min-w-0">
                                                     <UserAvatar user={artisan} className="w-8 h-8 shrink-0" />
                                                     <div className="min-w-0">
                                                         <p className="font-bold text-stone-900 text-xs tracking-tight truncate">{artisan.name}</p>
                                                         <p className="text-[10px] font-medium text-stone-500 truncate">{artisan.shop_name}</p>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-4 py-3.5">
-                                                <div className="flex flex-col gap-0.5">
-                                                    <span className={`inline-flex self-start px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
-                                                        artisan.status === 'Needs Check-in' || artisan.status === 'At Risk'
-                                                            ? 'bg-amber-50 text-amber-700 border border-amber-200' 
-                                                            : 'bg-stone-100 text-stone-600 border border-stone-200'
-                                                    }`}>
-                                                        {artisan.status === 'At Risk' ? 'Needs Check-in' : (artisan.status || 'Inactive')}
-                                                    </span>
-                                                    <span className="text-[10px] text-stone-450 font-medium">
-                                                        {artisan.last_seen === 'Never' ? 'No recent activity' : artisan.last_seen}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-5 py-3.5 text-right">
+                                                <span className={`inline-flex shrink-0 px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
+                                                    artisan.status === 'Needs Check-in' || artisan.status === 'At Risk'
+                                                        ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                                                        : 'bg-stone-100 text-stone-600 border border-stone-200'
+                                                }`}>
+                                                    {artisan.status === 'At Risk' ? 'Needs Check-in' : (artisan.status || 'Inactive')}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between pt-1 border-t border-stone-100/80 gap-2">
+                                                <span className="text-[10px] text-stone-450 font-medium">
+                                                    {artisan.last_seen === 'Never' ? 'No recent activity' : artisan.last_seen}
+                                                </span>
                                                 <button
                                                     type="button"
                                                     disabled={reengagingId === artisan.id}
                                                     onClick={() => handleReengageArtisan(artisan)}
-                                                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[10px] font-bold transition border shadow-sm min-h-[30px] active:scale-95 disabled:opacity-60 ${
+                                                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[10px] font-bold transition border shadow-sm min-h-[30px] active:scale-95 disabled:opacity-60 shrink-0 ${
                                                         contactedIds.has(artisan.id)
                                                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                                             : 'bg-stone-150 hover:bg-stone-200 text-stone-700 border-stone-200'
@@ -521,15 +623,15 @@ export default function Insights({
                                                     ) : (
                                                         <>
                                                             <Mail size={12} className="text-stone-500" />
-                                                            <span>Send Reminder</span>
+                                                            <span>Reminder</span>
                                                         </>
                                                     )}
                                                 </button>
-                                            </td>
-                                        </tr>
+                                            </div>
+                                        </div>
                                     ))}
-                                </tbody>
-                            </table>
+                                </div>
+                            </>
                         ) : (
                             <div className="flex flex-col items-center justify-center p-12 text-center">
                                 <p className="text-sm font-bold text-stone-400">All sellers active.</p>

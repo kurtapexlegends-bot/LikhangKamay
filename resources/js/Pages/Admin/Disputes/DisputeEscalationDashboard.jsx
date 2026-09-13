@@ -18,11 +18,10 @@ import {
 export default function DisputeEscalationDashboard({ disputes = [] }) {
     const { addToast } = useToast();
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedId, setSelectedId] = useState(disputes.length > 0 ? disputes[0].id : null);
+    const [selectedId, setSelectedId] = useState(null);
     const [notes, setNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
-    const [showMobileDetail, setShowMobileDetail] = useState(false);
 
     // Deep-linking from Global Search or Direct Links
     useEffect(() => {
@@ -71,11 +70,15 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
         });
     }, [disputes, searchQuery]);
 
-    // Active Dispute
+    // Active Dispute: explicit selection or desktop fallback to first filtered item
     const selectedDispute = useMemo(() => {
-        if (!selectedId) return filteredDisputes[0] || null;
-        return disputes.find(d => d.id === selectedId) || filteredDisputes[0] || null;
-    }, [disputes, selectedId, filteredDisputes]);
+        if (selectedId) {
+            return disputes.find(d => d.id === selectedId) || null;
+        }
+        return null;
+    }, [disputes, selectedId]);
+
+    const activeInspectorDispute = selectedDispute || filteredDisputes[0] || null;
 
     const handleSelectDispute = (dispute) => {
         setSelectedId(dispute.id);
@@ -84,7 +87,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
     };
 
     const openConfirmModal = (decision) => {
-        if (!selectedDispute) return;
+        if (!activeInspectorDispute) return;
         if (!notes.trim()) {
             setError('Please provide resolution notes explaining your decision.');
             return;
@@ -94,14 +97,14 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
     };
 
     const executeArbitration = () => {
-        if (!selectedDispute || !confirmModal.decision) return;
+        if (!activeInspectorDispute || !confirmModal.decision) return;
 
         const decision = confirmModal.decision;
         setIsSubmitting(true);
         setError('');
 
         router.post(
-            route('admin.disputes.arbitrate', selectedDispute.id),
+            route('admin.disputes.arbitrate', activeInspectorDispute.id),
             {
                 decision,
                 admin_notes: notes.trim(),
@@ -116,9 +119,11 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                     setNotes('');
                     setConfirmModal({ open: false, decision: null });
 
-                    // Select next available dispute
-                    const remaining = disputes.filter(d => d.id !== selectedDispute.id);
-                    if (remaining.length > 0) {
+                    // On mobile, return to list; on desktop select next available
+                    const remaining = disputes.filter(d => d.id !== activeInspectorDispute.id);
+                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                        setSelectedId(null);
+                    } else if (remaining.length > 0) {
                         setSelectedId(remaining[0].id);
                     } else {
                         setSelectedId(null);
@@ -167,7 +172,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                 ) : (
                     <div className="flex-1 flex flex-col lg:flex-row gap-5 min-h-0 overflow-hidden">
                         {/* LEFT COLUMN: Queue List */}
-                        <div className={`w-full lg:w-[380px] xl:w-[420px] bg-white border border-stone-200/80 rounded-2xl shadow-2xs flex flex-col overflow-hidden ${selectedDispute ? 'hidden lg:flex' : 'flex'} h-full shrink-0`}>
+                        <div className={`w-full lg:w-[380px] xl:w-[420px] bg-white border border-stone-200/80 rounded-2xl shadow-2xs flex flex-col overflow-hidden ${selectedId ? 'hidden lg:flex' : 'flex'} h-full shrink-0`}>
                             {/* Queue Header */}
                             <div className="p-4 border-b border-stone-100 bg-[#FCFBF9] shrink-0 space-y-3">
                                 <div className="flex items-center justify-between">
@@ -217,7 +222,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                 ) : (
                                     <ul className="divide-y divide-stone-100">
                                         {filteredDisputes.map((dispute) => {
-                                            const isActive = dispute.id === selectedDispute?.id;
+                                            const isActive = dispute.id === (selectedId || activeInspectorDispute?.id);
                                             const buyerName = dispute.order?.user?.name || dispute.order?.customer_name || 'Buyer';
                                             const shopName = dispute.order?.artisan?.shop_name || dispute.order?.artisan?.name || 'Artisan Shop';
                                             const totalAmount = dispute.order?.total_amount ? Number(dispute.order.total_amount) : 0;
@@ -285,10 +290,10 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                         </div>
 
                         {/* RIGHT COLUMN: Case Detail & Arbitration Inspector */}
-                        <div className={`w-full lg:flex-1 min-w-0 bg-white border border-stone-200/80 rounded-2xl shadow-2xs flex flex-col overflow-hidden h-full ${selectedDispute ? 'flex' : 'hidden lg:flex'}`}>
-                            {selectedDispute ? (
+                        <div className={`w-full lg:flex-1 min-w-0 bg-white border border-stone-200/80 rounded-2xl shadow-2xs flex flex-col overflow-hidden h-full ${selectedId ? 'flex' : 'hidden lg:flex'}`}>
+                            {activeInspectorDispute ? (
                                 <DisputeInspectorContent 
-                                    dispute={selectedDispute}
+                                    dispute={activeInspectorDispute}
                                     notes={notes}
                                     setNotes={setNotes}
                                     error={error}
