@@ -33,7 +33,7 @@ class GetBuyerOrders
         $this->reconcilePendingOnlinePaymentsForUser($buyer);
 
         $rawOrders = Order::where('user_id', $buyer->id)
-            ->with(['items', 'user', 'artisan:id,name,shop_name', 'delivery', 'dispute'])
+            ->with(['items', 'user', 'artisan:id,name,shop_name,city,barangay,street_address', 'delivery', 'dispute'])
             ->latest()
             ->get();
 
@@ -144,6 +144,8 @@ class GetBuyerOrders
             'shipping_method' => $order->shipping_method,
             'shipping_address' => $order->shipping_address,
             'shipping_address_type' => $order->shipping_address_type,
+            'shipping_latitude' => $order->shipping_latitude !== null ? (float) $order->shipping_latitude : null,
+            'shipping_longitude' => $order->shipping_longitude !== null ? (float) $order->shipping_longitude : null,
             'shipping_recipient_name' => $order->shipping_recipient_name,
             'shipping_contact_phone' => $order->shipping_contact_phone,
             'merchandise_subtotal' => number_format((float) $order->merchandise_subtotal, 2),
@@ -154,6 +156,8 @@ class GetBuyerOrders
             'proof_of_delivery' => StorageUrl::url($order->proof_of_delivery),
             'seller_id' => $order->artisan_id,
             'seller_name' => $order->artisan?->shop_name ?? $order->artisan?->name ?? 'Shop',
+            'seller_address' => $order->artisan ? trim(($order->artisan->street_address ? $order->artisan->street_address . ', ' : '') . ($order->artisan->city ?: '')) : null,
+            'receipt_url' => route('my-orders.receipt', $order->id),
             'tracking_number' => $order->tracking_number,
             'shipping_notes' => $order->shipping_notes,
             'delivery' => OrderWorkflowHelper::serializeDelivery($order->delivery),

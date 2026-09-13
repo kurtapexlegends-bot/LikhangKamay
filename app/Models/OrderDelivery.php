@@ -52,6 +52,11 @@ class OrderDelivery extends Model
         'auto_cancelled_at',
         'failure_reason',
         'is_pod_enabled',
+        'current_latitude',
+        'current_longitude',
+        'location_updated_at',
+        'heading',
+        'speed_kph',
     ];
 
     protected $casts = [
@@ -64,6 +69,11 @@ class OrderDelivery extends Model
         'auto_cancelled_at' => 'datetime',
         'dispatched_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'location_updated_at' => 'datetime',
+        'current_latitude' => 'float',
+        'current_longitude' => 'float',
+        'heading' => 'integer',
+        'speed_kph' => 'float',
         'is_pod_enabled' => \App\Casts\PostgresCompatibleBoolean::class,
         'price_total' => 'decimal:2',
     ];

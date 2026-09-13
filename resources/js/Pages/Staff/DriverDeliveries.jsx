@@ -28,6 +28,7 @@ import {
     Car,
 } from "lucide-react";
 import { useToast } from "@/Components/ToastContext";
+import { useDriverTelemetry } from "@/hooks/useDriverTelemetry";
 
 export default function DriverDeliveries({
     auth,
@@ -38,6 +39,15 @@ export default function DriverDeliveries({
 }) {
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
+    const {
+        isSharing: isLocationSharing,
+        lastSyncTime: locationLastSync,
+        errorMessage: locationError,
+        toggleTracking: toggleLocationTracking,
+    } = useDriverTelemetry({
+        activeDeliveries,
+        isClockedIn: Boolean(driverProfile?.is_clocked_in),
+    });
     const [isClockInModalOpen, setIsClockInModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("active");
     const [completingDelivery, setCompletingDelivery] = useState(null);
@@ -229,16 +239,33 @@ export default function DriverDeliveries({
                 auth={auth}
                 onMenuClick={openSidebar}
                 actions={
-                    <button
-                        type="button"
-                        onClick={handleSync}
-                        disabled={isRefreshing}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-stone-50/90 px-3 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-100 active:scale-95 transition shadow-2xs"
-                        title="Sync recent dispatches"
-                    >
-                        <RefreshCw size={12} className={isRefreshing ? "animate-spin text-clay-600" : "text-stone-500"} />
-                        <span className="hidden sm:inline">{isRefreshing ? "Syncing..." : "Sync Runs"}</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {driverProfile.is_clocked_in && activeDeliveries.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={toggleLocationTracking}
+                                className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition shadow-2xs ${
+                                    isLocationSharing
+                                        ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                                        : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50"
+                                }`}
+                                title="Share live location with studio and customers"
+                            >
+                                <span className={`h-2 w-2 rounded-full ${isLocationSharing ? "bg-emerald-500 animate-ping" : "bg-stone-300"}`} />
+                                <span className="hidden sm:inline">{isLocationSharing ? "Live GPS Sharing" : "Share Location"}</span>
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={handleSync}
+                            disabled={isRefreshing}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-stone-50/90 px-3 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-100 active:scale-95 transition shadow-2xs"
+                            title="Sync recent dispatches"
+                        >
+                            <RefreshCw size={12} className={isRefreshing ? "animate-spin text-clay-600" : "text-stone-500"} />
+                            <span className="hidden sm:inline">{isRefreshing ? "Syncing..." : "Sync Runs"}</span>
+                        </button>
+                    </div>
                 }
                 badge={{
                     label: driverProfile.is_clocked_in ? "On Duty" : "Off Duty",
@@ -390,6 +417,31 @@ export default function DriverDeliveries({
                             {/* ACTIVE DELIVERIES TAB */}
                             {activeTab === "active" && (
                                 <div className="space-y-4">
+                                    {locationError && (
+                                        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900 flex items-start gap-2.5">
+                                            <ShieldAlert size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="font-bold">Location Permission Notice</p>
+                                                <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">{locationError}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {isLocationSharing && (
+                                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-2.5 text-xs text-emerald-900 flex items-center justify-between gap-2 shadow-2xs">
+                                            <div className="flex items-center gap-2">
+                                                <span className="relative flex h-2 w-2">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                                </span>
+                                                <span className="font-semibold text-emerald-800">
+                                                    Broadcasting live location to customer and workshop
+                                                </span>
+                                            </div>
+                                            <span className="text-[11px] text-emerald-700 font-mono">
+                                                {locationLastSync ? `Synced ${locationLastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : "GPS active"}
+                                            </span>
+                                        </div>
+                                    )}
                                     {activeDeliveries.length === 0 ? (
                                         !driverProfile.is_clocked_in ? (
                                             <div className="rounded-3xl border border-dashed border-stone-300 bg-white p-6 sm:p-10 text-center shadow-xs">

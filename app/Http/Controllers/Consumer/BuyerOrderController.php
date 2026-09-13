@@ -253,6 +253,7 @@ class BuyerOrderController extends Controller
             },
             'user:id,name,shop_name,city',
             'artisan:id,name,shop_name,city',
+            'delivery',
         ])
             ->where(function ($q) use ($id) {
                 $q->where('id', $id)->orWhere('order_number', $id);

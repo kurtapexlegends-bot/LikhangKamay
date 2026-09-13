@@ -56,12 +56,25 @@
             .no-print { display: none !important; }
         }
     </style>
+    @if(request()->boolean('download') || request()->boolean('print') || request()->boolean('auto_print'))
+        <script>
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    window.print();
+                }, 300);
+            });
+        </script>
+    @endif
 </head>
 <body>
-    <div class="no-print" style="text-align: center; margin-bottom: 20px;">
-        <button onclick="window.print()" style="background: #844d2d; color: white; padding: 10px 22px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">
-            {{ $isB2B ? 'Print / Export Purchase Order & Invoice' : 'Print / Export Order Receipt' }}
+    <div class="no-print" style="text-align: center; margin-bottom: 24px;">
+        <button onclick="window.print()" style="background: #844d2d; color: white; padding: 10px 24px; border: none; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 13px; box-shadow: 0 2px 8px rgba(132, 77, 45, 0.25); display: inline-flex; items-center; gap: 8px;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+            {{ $isB2B ? 'Print / Export Purchase Order & Invoice' : 'Print / Save Official Receipt' }}
         </button>
+        <p style="font-size: 11px; color: #78716c; margin-top: 8px; font-weight: 500;">
+            Tip: In your print window, select <strong>"Save as PDF"</strong> to save a digital copy to your device.
+        </p>
     </div>
 
     <div class="header">
@@ -114,11 +127,26 @@
             </div>
         </div>
     @else
-        <div class="address-card" style="margin-bottom: 20px;">
-            <h3>Shipping Destination</h3>
-            <div class="address-type">{{ $shippingAddressType }}</div>
-            <p style="margin-top: 4px;"><strong>{{ $order->shipping_method }}</strong></p>
-            <p style="color: #57534e; margin-top: 2px;">{{ $order->shipping_address }}</p>
+        <div class="parties-grid">
+            <div class="address-card">
+                <h3>Customer / Shipping Destination</h3>
+                <p class="party-name">{{ $order->customer_name ?: ($order->user?->name ?: 'Customer') }}</p>
+                <div class="address-type">{{ $shippingAddressType }}</div>
+                @if($order->shipping_contact_phone)
+                    <p style="color: #78716c; font-size: 11px;">Phone: {{ $order->shipping_contact_phone }}</p>
+                @endif
+                <p style="margin-top: 4px; color: #57534e;">{{ $order->shipping_address }}</p>
+            </div>
+
+            <div class="address-card">
+                <h3>Artisan Workshop & Creator</h3>
+                <p class="party-name">{{ $order->artisan?->shop_name ?: ($order->artisan?->name ?: 'Artisan Studio') }}</p>
+                <p style="color: #57534e;">Creator: <strong>{{ $order->artisan?->name ?: 'Artisan' }}</strong></p>
+                @if($order->artisan?->city)
+                    <p style="color: #78716c; font-size: 11px;">Studio Location: {{ $order->artisan->city }}</p>
+                @endif
+                <p style="margin-top: 4px; color: #57534e;">Logistics: <strong>{{ $order->shipping_method }}</strong></p>
+            </div>
         </div>
     @endif
 

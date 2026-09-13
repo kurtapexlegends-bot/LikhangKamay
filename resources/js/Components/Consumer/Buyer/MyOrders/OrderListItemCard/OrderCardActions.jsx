@@ -1,7 +1,8 @@
+/* global route */
 import React from 'react';
 import { router } from '@inertiajs/react';
 import { 
-    Printer, MessageCircle, CreditCard, XCircle, PackageCheck, 
+    Download, MessageCircle, CreditCard, XCircle, PackageCheck, 
     CheckCircle, ShoppingBag, Star, RotateCcw, AlertTriangle, EllipsisVertical 
 } from 'lucide-react';
 import Dropdown from '@/Components/Dropdown';
@@ -35,9 +36,9 @@ export default function OrderCardActions({
         
         // Receipt (Always available)
         actions.push({
-            label: 'Receipt',
-            icon: Printer,
-            href: `/my-orders/${order.id}/receipt`,
+            label: 'Download Receipt',
+            icon: Download,
+            href: `/my-orders/${order.id}/receipt?download=1`,
             type: 'link'
         });
 
@@ -114,12 +115,13 @@ export default function OrderCardActions({
             <div className="hidden sm:flex flex-row items-center gap-2 flex-wrap justify-end overflow-visible">
                 {/* Download Receipt */}
                 <a 
-                    href={`/my-orders/${order.id}/receipt`}
+                    href={`/my-orders/${order.id}/receipt?download=1`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-4 text-[12px] font-bold text-stone-600 shadow-sm transition hover:border-stone-300 hover:bg-stone-50 min-h-[38px] cursor-pointer"
+                    title="Download official order receipt"
+                    className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-4 text-[12px] font-bold text-stone-700 shadow-sm transition hover:border-clay-300 hover:bg-stone-50 min-h-[38px] cursor-pointer"
                 >
-                    <Printer size={15} /> Receipt
+                    <Download size={14} className="text-stone-500" /> Download Receipt
                 </a>
 
                 {/* Contact Seller */}

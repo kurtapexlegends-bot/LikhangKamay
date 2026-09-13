@@ -161,7 +161,7 @@ export const buyerDeliverySummary = (order) => {
         };
     }
 
-    if (order.delivery?.provider === 'lalamove') {
+    if (order.delivery) {
         return null;
     }
 

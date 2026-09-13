@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, PackageCheck, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
+import { MapPin, PackageCheck, AlertTriangle } from 'lucide-react';
 import CourierTrackingCard from '../CourierTrackingCard';
 import { buyerDeliverySummary, buyerIssueSummary, buyerProofLabel, humanizeAddressType } from '@/utils/orderHelpers';
 
@@ -19,8 +19,11 @@ export default function OrderListItemCard({
     onOpenEscalateModal,
     onOpenRatingModal,
 }) {
+    const isTransitDelivery = ['ON_GOING', 'PICKED_UP', 'IN_TRANSIT'].includes(
+        String(order.delivery?.status || '').toUpperCase()
+    );
     const [isTimelineExpanded, setIsTimelineExpanded] = useState(false);
-    const [isCourierTrackingExpanded, setIsCourierTrackingExpanded] = useState(false);
+    const [isCourierTrackingExpanded, setIsCourierTrackingExpanded] = useState(isTransitDelivery);
 
     const deliverySummary = buyerDeliverySummary(order);
     const issueSummary = buyerIssueSummary(order);
@@ -83,25 +86,25 @@ export default function OrderListItemCard({
                     {order.shipping_method !== 'Pick Up' && (
                     <>
                         {/* Address row */}
-                        <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
+                        <div className="rounded-xl border border-stone-200/80 bg-stone-50/60 px-3 py-2">
                             <div className="flex items-start gap-2">
-                                <div className="p-1 bg-white rounded shadow-sm text-blue-600 shrink-0 mt-0.5">
+                                <div className="p-1 bg-white rounded shadow-2xs text-clay-600 border border-stone-200/70 shrink-0 mt-0.5">
                                     <MapPin size={13} />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <div className="flex flex-wrap items-center gap-1.5">
-                                        <p className="text-[12px] font-bold text-gray-900">
+                                        <p className="text-[11px] font-bold text-stone-900">
                                             {order.delivery?.provider === 'lalamove' ? 'Lalamove Delivery' : 'Standard Delivery'}
                                         </p>
                                         {order.shipping_address_type && (
-                                            <span className="inline-flex rounded border border-blue-200 bg-white px-1.5 py-0 text-[9px] font-bold uppercase tracking-wide text-blue-700">
+                                            <span className="inline-flex rounded border border-stone-200 bg-white px-1.5 py-0 text-[9px] font-bold uppercase tracking-wide text-stone-600">
                                                 {humanizeAddressType(order.shipping_address_type)}
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-[10px] text-gray-500 leading-snug">{order.shipping_address}</p>
+                                    <p className="text-[10px] text-stone-600 leading-snug">{order.shipping_address}</p>
                                     {(order.shipping_recipient_name || order.shipping_contact_phone) && (
-                                        <p className="text-[10px] text-gray-400">
+                                        <p className="text-[10px] text-stone-400">
                                             {order.shipping_recipient_name}
                                             {order.shipping_recipient_name && order.shipping_contact_phone ? ' | ' : ''}
                                             {order.shipping_contact_phone}
@@ -109,12 +112,12 @@ export default function OrderListItemCard({
                                     )}
                                     <div className="flex flex-wrap gap-1 mt-1">
                                         {order.tracking_number && (
-                                            <span className="text-[9px] bg-white px-1.5 py-0 rounded border border-blue-200 text-blue-600 font-medium">
+                                            <span className="text-[9px] bg-white px-1.5 py-0 rounded border border-stone-200 text-stone-600 font-medium">
                                                 Tracker: {order.tracking_number}
                                             </span>
                                         )}
                                         {order.shipping_notes && (
-                                            <span className="text-[9px] bg-white px-1.5 py-0 rounded border border-blue-200 text-blue-600 font-medium">
+                                            <span className="text-[9px] bg-white px-1.5 py-0 rounded border border-stone-200 text-stone-600 font-medium">
                                                 Note: {order.shipping_notes}
                                             </span>
                                         )}
@@ -123,9 +126,9 @@ export default function OrderListItemCard({
                                                 href={order.proof_of_delivery} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer" 
-                                                className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-white px-2.5 py-1.5 text-[10px] font-bold text-blue-600 hover:bg-blue-50 transition shadow-sm min-h-[44px] sm:min-h-[28px] mt-1"
+                                                className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-[10px] font-bold text-stone-700 hover:bg-stone-100 transition shadow-2xs min-h-[28px] mt-1"
                                             >
-                                                <PackageCheck size={12} /> {buyerProofLabel(order)}
+                                                <PackageCheck size={11} className="text-clay-600" /> {buyerProofLabel(order)}
                                             </a>
                                         )}
                                     </div>

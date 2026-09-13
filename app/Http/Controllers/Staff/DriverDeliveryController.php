@@ -98,7 +98,7 @@ class DriverDeliveryController extends Controller
                 'delivery_fee_rate' => $feeRate,
                 'today_completed_count' => $todayCompletedCount,
                 'today_drop_earnings' => $todayDropEarnings,
-                'is_clocked_in' => $openSession !== null,
+                'is_clocked_in' => $isOwner || ($openSession !== null),
                 'is_owner_view' => $isOwner,
             ],
             'shopName' => $seller->shop_name ?: $seller->name,
@@ -215,6 +215,13 @@ class DriverDeliveryController extends Controller
                 'latitude' => $order?->shipping_latitude,
                 'longitude' => $order?->shipping_longitude,
             ],
+            'telemetry' => [
+                'latitude' => $delivery->current_latitude,
+                'longitude' => $delivery->current_longitude,
+                'location_updated_at' => $delivery->location_updated_at?->toIso8601String(),
+                'heading' => $delivery->heading,
+                'speed_kph' => $delivery->speed_kph,
+            ],
             'items' => $order?->items?->map(function ($item) {
                 return [
                     'id' => $item->id,
@@ -225,5 +232,107 @@ class DriverDeliveryController extends Controller
                 ];
             })->values()->all() ?? [],
         ];
+    }
+
+    /**
+     * Update live geolocation coordinates for an active delivery run.
+     */
+    public function updateTelemetry(Request $request, int $id): \Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'heading' => 'nullable|integer|between:0,360',
+            'speed_kph' => 'nullable|numeric|between:0,200',
+        ]);
+
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        $delivery = OrderDelivery::where('id', $id)
+            ->where('provider', OrderDelivery::PROVIDER_IN_HOUSE)
+            ->firstOrFail();
+
+        $isOwner = $user->isSellerOwner();
+        $isAssignedDriver = $delivery->driver_user_id === $user->id ||
+            ($user->employee && $delivery->driver_employee_id === $user->employee->id);
+
+        if (!$isOwner && !$isAssignedDriver) {
+            return response()->json(['error' => 'Unauthorized to broadcast telemetry for this delivery.'], 403);
+        }
+
+        if (!in_array($delivery->status, [OrderDelivery::STATUS_ON_GOING, OrderDelivery::STATUS_PICKED_UP], true)) {
+            return response()->json(['error' => 'Telemetry can only be updated for active deliveries.'], 422);
+        }
+
+        $now = now();
+        $delivery->update([
+            'current_latitude' => $validated['latitude'],
+            'current_longitude' => $validated['longitude'],
+            'heading' => $validated['heading'] ?? null,
+            'speed_kph' => $validated['speed_kph'] ?? null,
+            'location_updated_at' => $now,
+        ]);
+
+        \Illuminate\Support\Facades\Cache::put("driver_telemetry_{$delivery->id}", [
+            'latitude' => $validated['latitude'],
+            'longitude' => $validated['longitude'],
+            'heading' => $validated['heading'] ?? null,
+            'speed_kph' => $validated['speed_kph'] ?? null,
+            'updated_at' => $now->toIso8601String(),
+        ], 300);
+
+        return response()->json([
+            'success' => true,
+            'telemetry' => [
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
+                'location_updated_at' => $now->toIso8601String(),
+            ]
+        ]);
+    }
+
+    /**
+     * Get live telemetry coordinates for a delivery (for buyer or seller).
+     */
+    public function getTelemetry(Request $request, int $id): \Illuminate\Http\JsonResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        $delivery = OrderDelivery::with('order')->findOrFail($id);
+        $order = $delivery->order;
+
+        if (!$order) {
+            return response()->json(['error' => 'Order not found.'], 404);
+        }
+
+        $isBuyer = $order->user_id === $user->id;
+        $isSeller = $order->artisan_id === $user->id;
+        $isSuperAdmin = in_array($user->role, ['super_admin', 'admin'], true);
+
+        if (!$isBuyer && !$isSeller && !$isSuperAdmin) {
+            return response()->json(['error' => 'Unauthorized access to delivery telemetry.'], 403);
+        }
+
+        $cached = \Illuminate\Support\Facades\Cache::get("driver_telemetry_{$delivery->id}");
+
+        return response()->json([
+            'delivery_id' => $delivery->id,
+            'order_number' => $order->order_number,
+            'status' => $delivery->status,
+            'provider' => $delivery->provider,
+            'driver_name' => $delivery->driver_name,
+            'driver_phone' => $delivery->driver_phone,
+            'vehicle_type' => $delivery->vehicle_type,
+            'vehicle_plate_number' => $delivery->vehicle_plate_number,
+            'telemetry' => $cached ?: [
+                'latitude' => $delivery->current_latitude !== null ? (float) $delivery->current_latitude : null,
+                'longitude' => $delivery->current_longitude !== null ? (float) $delivery->current_longitude : null,
+                'heading' => $delivery->heading !== null ? (float) $delivery->heading : null,
+                'speed_kph' => $delivery->speed_kph !== null ? (float) $delivery->speed_kph : null,
+                'updated_at' => $delivery->location_updated_at?->toIso8601String(),
+            ]
+        ]);
     }
 }

@@ -1,3 +1,4 @@
+/* global route */
 import React, { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Search, ShoppingBag, CheckCircle, XCircle, Store, ArrowRight } from 'lucide-react';
@@ -36,10 +37,11 @@ export default function MyOrders({ auth, orders }) {
     const { props: { flash } } = usePage();
 
     const hasActiveCourierTracking = orders.some((order) => {
-        if (order?.delivery?.provider !== 'lalamove' || !order?.delivery?.external_order_id) {
+        if (!order?.delivery) {
             return false;
         }
-        return !['COMPLETED', 'CANCELED', 'REJECTED', 'EXPIRED'].includes(String(order?.delivery?.status || '').toUpperCase());
+        const status = String(order.delivery.status || '').toUpperCase();
+        return !['COMPLETED', 'CANCELED', 'REJECTED', 'EXPIRED'].includes(status);
     });
 
     useEffect(() => {
@@ -112,6 +114,7 @@ export default function MyOrders({ auth, orders }) {
     const itemsPerPage = 6;
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCurrentPage(1);
     }, [activeTab, searchQuery]);
 
