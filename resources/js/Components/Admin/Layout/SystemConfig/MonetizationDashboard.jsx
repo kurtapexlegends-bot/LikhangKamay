@@ -31,18 +31,21 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
             {/* Print Styles */}
             <style dangerouslySetInnerHTML={{__html: `
                 @media print {
-                    aside, nav, header, .no-print, .mobile-dock, #nprogress, .fixed, button, a {
+                    aside, nav, header, .no-print, .mobile-dock, #nprogress, .fixed, button, a, select, input {
                         display: none !important;
                     }
                     html, body, #app, .h-screen, .overflow-hidden, [scroll-region="true"], main {
                         background: white !important;
-                        color: black !important;
+                        color: #1c1917 !important;
                         height: auto !important;
                         min-height: 0 !important;
                         overflow: visible !important;
                         position: static !important;
                         margin: 0 !important;
                         padding: 0 !important;
+                    }
+                    .lg\\:ml-52 {
+                        margin-left: 0 !important;
                     }
                     .bg-white {
                         border: 1px solid #e7e5e4 !important;
@@ -56,11 +59,37 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                     }
                     @page {
                         size: portrait;
-                        margin: 12mm 15mm 12mm 15mm !important;
+                        margin: 8mm 10mm 8mm 10mm !important;
                     }
-                    .grid { display: grid !important; }
-                    .lg\\:grid-cols-5 { grid-template-columns: repeat(3, 1fr) !important; gap: 16px !important; }
-                    .lg\\:grid-cols-2 { grid-template-columns: 1fr !important; gap: 24px !important; }
+                    .kpi-print-grid {
+                        display: grid !important;
+                        grid-template-columns: repeat(4, 1fr) !important;
+                        gap: 12px !important;
+                        width: 100% !important;
+                    }
+                    .kpi-print-grid > * {
+                        width: 100% !important;
+                        max-width: none !important;
+                    }
+                    .print-avoid-break {
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                    }
+                    table {
+                        width: 100% !important;
+                        border-collapse: collapse !important;
+                    }
+                    tr {
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                    }
+                    thead {
+                        display: table-header-group !important;
+                    }
+                    * {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
                 }
             `}} />
 
@@ -82,26 +111,50 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                 </div>
             </div>
 
-            {/* Print Header */}
-            <div className="hidden print:block border-b border-stone-200 pb-4 mb-6">
-                <h1 className="text-xl font-bold text-stone-900">LikhangKamay Platform Monetization Report</h1>
-                <p className="text-xs text-stone-500 mt-1">Generated: {new Date().toLocaleString()}</p>
+            {/* Standardized LikhangKamay Print Header */}
+            <div className="hidden print:block border-b-2 border-stone-900 pb-3 mb-5">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-clay-700">LikhangKamay Platform Administration</span>
+                            <span className="text-stone-300">•</span>
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-stone-600 bg-stone-100 px-2 py-0.5 rounded">
+                                Executive Audit Report
+                            </span>
+                        </div>
+                        <h1 className="text-xl font-black text-stone-900 tracking-tight mt-0.5">
+                            Platform Monetization &amp; Revenue Report
+                        </h1>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[9px] text-stone-400 font-bold uppercase tracking-wider">Report Generated</p>
+                        <p className="text-xs font-bold text-stone-800">
+                            {new Date().toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-stone-100 text-[10px] text-stone-500 font-medium">
+                    <span className="font-bold text-stone-700">Active Scope:</span>
+                    <span className="bg-stone-50 px-2 py-0.5 rounded border border-stone-200 text-stone-700 font-bold">Platform-Wide</span>
+                    <span className="bg-stone-50 px-2 py-0.5 rounded border border-stone-200 text-stone-700 font-bold">Subscriptions &amp; Fees</span>
+                    <span className="ml-auto text-stone-400">Source: LikhangKamay Billing &amp; Revenue Ledger</span>
+                </div>
             </div>
 
             <div className="space-y-6 animate-in fade-in duration-200">
-                {/* SECTION 1: KEY METRICS ROW */}
-                <div className="flex overflow-x-auto gap-4 pb-2.5 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-5 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
+                {/* SECTION 1: KEY METRICS ROW (Standard 4-Column in Print) */}
+                <div className="flex overflow-x-auto gap-4 pb-2.5 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-5 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0 kpi-print-grid print:grid print:grid-cols-4 print:gap-3 print:w-full print:m-0 print:p-0">
                 {isLoadingMetrics ? (
                     <>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto"><StatSkeleton /></div>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto"><StatSkeleton /></div>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto"><StatSkeleton /></div>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto"><StatSkeleton /></div>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto"><StatSkeleton /></div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none"><StatSkeleton /></div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none"><StatSkeleton /></div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none"><StatSkeleton /></div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none"><StatSkeleton /></div>
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:hidden"><StatSkeleton /></div>
                     </>
                 ) : (
                     <>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
                             <KPICard
                                 title="Plan MRR"
                                 value={metrics.mrr?.value || 0}
@@ -114,7 +167,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                 subtitle={metrics.mrr?.basis || "Active artisan plan tiers."}
                             />
                         </div>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
                             <KPICard
                                 title="Transaction Fees"
                                 value={metrics.platform_fees?.value || 0}
@@ -127,17 +180,18 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                 subtitle="Convenience fees collected"
                             />
                         </div>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
                             <KPICard
                                 title="Paid Subs"
                                 value={metrics.subscribers?.total_paid || 0}
                                 icon={Users}
                                 bg="bg-stone-50"
                                 color="text-stone-600"
-                                subtitle={`${(metrics.subscribers?.premium || 0) + (metrics.subscribers?.elite || 0)} active tiers`}
+                                subtitle={metrics.subscribers?.elite ? `${(metrics.subscribers?.premium || 0) + metrics.subscribers.elite} active (${metrics.subscribers.elite} Elite)` : `${metrics.subscribers?.total_paid || 0} active tiers`}
                             />
                         </div>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                        {/* Elite Only card visible on desktop screen, hidden in print to preserve 4-card standard */}
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:hidden">
                             <KPICard
                                 title="Elite Only"
                                 value={metrics.subscribers?.elite || 0}
@@ -147,7 +201,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                 subtitle="Super Premium artisans"
                             />
                         </div>
-                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                        <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
                             <KPICard
                                 title="Sponsored"
                                 value={metrics.sponsorships?.value || 0}
@@ -220,10 +274,10 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
             )}
 
             {/* SECTION 4: TWO-COLUMN AUDIT LOGS */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print:grid print:grid-cols-2 print:gap-4">
                 
                 {/* Column A: Recent Plan Changes */}
-                <div className="flex flex-col overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-xs">
+                <div className="flex flex-col overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-xs print-avoid-break">
                     <div className="flex items-center justify-between border-b border-stone-100 px-5 py-4 bg-stone-50/40">
                         <h3 className="font-bold text-stone-900 text-sm">Recent Plan Changes</h3>
                         <Link
@@ -235,7 +289,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                         </Link>
                     </div>
                     <div className="overflow-x-auto flex-grow">
-                        <table className="hidden md:table w-full text-left min-w-[500px] border-collapse">
+                        <table className="hidden md:table print:table w-full text-left min-w-[500px] border-collapse">
                             <thead className="bg-stone-50/80 border-b border-stone-100 text-[9px] font-bold text-stone-400 uppercase tracking-widest">
                                 <tr>
                                     <th className="px-5 py-3">Artisan</th>
@@ -305,7 +359,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                         </table>
 
                         {/* Mobile View */}
-                        <div className="md:hidden divide-y divide-stone-100">
+                        <div className="md:hidden print:hidden divide-y divide-stone-100">
                             {isLoadingSubscribers ? (
                                 <>
                                     <div className="p-4 space-y-2 animate-pulse">
@@ -369,7 +423,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                 </div>
 
                 {/* Column B: Recent Sponsorships */}
-                <div className="flex flex-col overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-xs">
+                <div className="flex flex-col overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-xs print-avoid-break">
                     <div className="flex items-center justify-between border-b border-stone-100 px-5 py-4 bg-stone-50/40">
                         <h3 className="font-bold text-stone-900 text-sm">Recent Sponsorships</h3>
                         <Link
@@ -381,7 +435,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                         </Link>
                     </div>
                     <div className="overflow-x-auto flex-grow">
-                        <table className="hidden md:table w-full text-left min-w-[500px] border-collapse">
+                        <table className="hidden md:table print:table w-full text-left min-w-[500px] border-collapse">
                             <thead className="bg-stone-50/80 border-b border-stone-100 text-[9px] font-bold text-stone-400 uppercase tracking-widest">
                                 <tr>
                                     <th className="px-5 py-3">Product / Artisan</th>
@@ -441,7 +495,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                         </table>
 
                         {/* Mobile View */}
-                        <div className="md:hidden divide-y divide-stone-100">
+                        <div className="md:hidden print:hidden divide-y divide-stone-100">
                             {isLoadingSponsorships ? (
                                 <>
                                     <div className="p-4 space-y-2 animate-pulse">

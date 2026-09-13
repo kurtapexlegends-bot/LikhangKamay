@@ -15,6 +15,7 @@ import ErrorBoundary from '@/Components/ErrorBoundary';
 
 const AdminGmvChart = lazy(() => import('@/Components/Admin/Analytics/AdminGmvChart'));
 const AdminCategoryPieChart = lazy(() => import('@/Components/Admin/Analytics/AdminCategoryPieChart'));
+import AdminPrintReportView from '@/Components/Admin/Analytics/AdminPrintReportView';
 
 // Earthy & Premium Palette
 const PIE_COLORS = ['#c07251', '#d97706', '#10b981', '#78716c', '#a8a29e', '#d6d3d1'];
@@ -69,72 +70,6 @@ export default function Insights({
         <>
             <Head title="Platform Insights" />
 
-            <style dangerouslySetInnerHTML={{__html: `
-                @media print {
-                    /* Hide layout sidebar, header navigation, buttons, and system controls */
-                    aside,
-                    nav,
-                    header,
-                    .no-print,
-                    .mobile-dock,
-                    #nprogress,
-                    .fixed,
-                    button,
-                    a {
-                        display: none !important;
-                    }
-
-                    /* Reset layout containers margins, paddings, and heights to prevent page cutting */
-                    html, body, #app, .h-screen, .overflow-hidden, [scroll-region="true"], main {
-                        background: white !important;
-                        color: black !important;
-                        height: auto !important;
-                        min-height: 0 !important;
-                        overflow: visible !important;
-                        position: static !important;
-                        margin: 0 !important;
-                        padding: 0 !important;
-                    }
-
-                    /* Apply border styles to white boxes in print and avoid breaking */
-                    .bg-white {
-                        border: 1px solid #e5e7eb !important;
-                        box-shadow: none !important;
-                        page-break-inside: avoid !important;
-                        break-inside: avoid !important;
-                        border-radius: 12px !important;
-                    }
-
-                    @page {
-                        size: portrait;
-                        margin: 12mm 15mm 12mm 15mm !important;
-                    }
-
-                    /* Grid layouts preservation under print */
-                    .grid {
-                        display: grid !important;
-                    }
-                    .lg\\:grid-cols-4 {
-                        grid-template-columns: repeat(4, 1fr) !important;
-                        gap: 16px !important;
-                    }
-                    .lg\\:grid-cols-3 {
-                        grid-template-columns: 2fr 1fr !important;
-                        gap: 20px !important;
-                    }
-                    .lg\\:grid-cols-2 {
-                        grid-template-columns: repeat(2, 1fr) !important;
-                        gap: 20px !important;
-                    }
-
-                    /* Spacing & layout overrides */
-                    .space-y-6 > * {
-                        margin-top: 16px !important;
-                        margin-bottom: 0 !important;
-                    }
-                }
-            `}} />
-
             {/* Analytics Header & Actions */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/80 shadow-2xs print:hidden mb-6">
                 <div>
@@ -160,18 +95,11 @@ export default function Insights({
                 </div>
             </div>
 
-            {/* Print-Only Document Header */}
-            <div className="hidden print:block border-b-2 border-stone-200 pb-4 mb-6">
-                <h1 className="text-2xl font-bold text-stone-900">LikhangKamay Platform Insights Report</h1>
-                <p className="text-xs text-stone-500 mt-1">
-                    Generated on: {new Date().toLocaleString()}
-                </p>
-            </div>
-
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                {/* SECTION 1: TOP STAT CARDS */}
-                <div className="flex overflow-x-auto gap-4 pb-2.5 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-4 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
-                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+            {/* Interactive Screen Dashboard (Hidden during print) */}
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 print:hidden">
+                {/* SECTION 1: TOP STAT CARDS (Strict 4-Column in Print) */}
+                <div className="flex overflow-x-auto gap-4 pb-2.5 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-4 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0 kpi-print-grid print:grid print:grid-cols-4 print:gap-3 print:w-full print:m-0 print:p-0">
+                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
                     <KPICard
                         title="Active Sellers"
                         value={churn.active}
@@ -181,7 +109,7 @@ export default function Insights({
                         subtitle={`${churn.atRisk} needing check-in`}
                     />
                 </div>
-                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
                     <KPICard
                         title="Avg Order Value"
                         value={Number(health.aov)}
@@ -192,7 +120,7 @@ export default function Insights({
                         subtitle="Average spent per order"
                     />
                 </div>
-                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
                     <KPICard
                         title="Completion Rate"
                         value={`${health.completionRate}%`}
@@ -202,7 +130,7 @@ export default function Insights({
                         subtitle="Delivered order volume"
                     />
                 </div>
-                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
                     <KPICard
                         title="Refund Rate"
                         value={`${health.refundRate}%`}
@@ -215,7 +143,7 @@ export default function Insights({
             </div>
 
             {/* MASTER THREE-COLUMN GRID */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:grid print:grid-cols-2 print:gap-4 print-avoid-break">
                 
                 {/* Left 2 Columns - Marketplace Growth & Sales */}
                 <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col relative">
@@ -269,27 +197,6 @@ export default function Insights({
                                 <AdminGmvChart currentChartData={currentChartData} />
                             </Suspense>
                         </ErrorBoundary>
-                        {/* Print Fallback Table */}
-                        <div className="hidden print:block w-full">
-                            <table className="w-full text-xs text-left border border-stone-200">
-                                <thead>
-                                    <tr className="bg-stone-100 border-b border-stone-200">
-                                        <th className="p-2 font-bold text-stone-700">Period</th>
-                                        <th className="p-2 font-bold text-stone-700 text-right">Orders</th>
-                                        <th className="p-2 font-bold text-stone-700 text-right">GMV</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {currentChartData.map((d, i) => (
-                                        <tr key={i} className="border-b border-stone-100">
-                                            <td className="p-2 text-stone-800">{d.name}</td>
-                                            <td className="p-2 text-stone-800 text-right">{d.orders}</td>
-                                            <td className="p-2 text-stone-800 text-right">₱{Number(d.gmv || 0).toLocaleString()}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
                 </div>
 
@@ -376,16 +283,16 @@ export default function Insights({
                     </div>
                     <div className="overflow-x-auto flex-1">
                         {topArtisans?.length > 0 ? (
-                            <>
-                                {/* Desktop Table View */}
-                                <table className="hidden sm:table w-full text-left border-collapse">
-                                    <thead className="bg-stone-50 border-b border-stone-100">
-                                        <tr>
-                                            <th className="px-5 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Rank &amp; Artisan</th>
-                                            <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Sales &amp; Orders</th>
-                                            <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Storefront</th>
-                                        </tr>
-                                    </thead>
+                             <>
+                                 {/* Desktop Table View */}
+                                 <table className="hidden sm:table print:table w-full text-left border-collapse">
+                                     <thead className="bg-stone-50 border-b border-stone-100">
+                                         <tr>
+                                             <th className="px-5 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Rank &amp; Artisan</th>
+                                             <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Sales &amp; Orders</th>
+                                             <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest print:hidden">Storefront</th>
+                                         </tr>
+                                     </thead>
                                     <tbody className="divide-y divide-stone-100">
                                         {topArtisans.map((artisan, index) => (
                                             <tr key={artisan.id} className="hover:bg-[#FCF7F2]/20 transition duration-150">
@@ -410,7 +317,7 @@ export default function Insights({
                                                     <p className="font-extrabold text-stone-900 text-xs">₱{Number(artisan.total_gmv).toLocaleString()}</p>
                                                     <p className="text-[10px] text-stone-400 font-medium">{artisan.orders_count} {artisan.orders_count === 1 ? 'order' : 'orders'}</p>
                                                 </td>
-                                                <td className="px-5 py-3.5 text-right">
+                                                <td className="px-5 py-3.5 text-right print:hidden">
                                                     <a
                                                         href={artisan.shop_slug ? route('shop.seller', artisan.shop_slug) : '#'}
                                                         target="_blank"
@@ -428,7 +335,7 @@ export default function Insights({
                                 </table>
 
                                 {/* Mobile Stacked Card View */}
-                                <div className="sm:hidden divide-y divide-stone-100">
+                                <div className="sm:hidden print:hidden divide-y divide-stone-100">
                                     {topArtisans.map((artisan, index) => (
                                         <div key={artisan.id} className="p-3.5 space-y-2.5 hover:bg-[#FCF7F2]/20 transition duration-150">
                                             <div className="flex items-center justify-between gap-2">
@@ -475,7 +382,7 @@ export default function Insights({
                 </div>
 
                 {/* Seller Activity & Outreach */}
-                <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col">
+                <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col print-avoid-break">
                     <div className="px-5 py-4 border-b border-stone-100 bg-stone-50/30">
                         <h3 className="font-bold text-stone-900 text-sm sm:text-base flex items-center gap-2">
                             <AlertTriangle className="text-amber-500" size={16} />
@@ -506,12 +413,12 @@ export default function Insights({
                         {churn.atRiskList?.length > 0 ? (
                             <>
                                 {/* Desktop Table View */}
-                                <table className="hidden sm:table w-full text-left border-collapse">
+                                <table className="hidden sm:table print:table w-full text-left border-collapse">
                                     <thead className="bg-stone-50 border-b border-stone-100">
                                         <tr>
                                             <th className="px-5 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Artisan</th>
                                             <th className="px-4 py-3 text-left text-[9px] font-bold text-stone-400 uppercase tracking-widest">Activity Status</th>
-                                            <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest">Outreach</th>
+                                            <th className="px-5 py-3 text-right text-[9px] font-bold text-stone-400 uppercase tracking-widest print:hidden">Outreach</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-stone-100">
@@ -540,7 +447,7 @@ export default function Insights({
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td className="px-5 py-3.5 text-right">
+                                                <td className="px-5 py-3.5 text-right print:hidden">
                                                     <button
                                                         type="button"
                                                         disabled={reengagingId === artisan.id}
@@ -576,7 +483,7 @@ export default function Insights({
                                 </table>
 
                                 {/* Mobile Stacked Card View */}
-                                <div className="sm:hidden divide-y divide-stone-100">
+                                <div className="sm:hidden print:hidden divide-y divide-stone-100">
                                     {churn.atRiskList.map(artisan => (
                                         <div key={artisan.id} className="p-3.5 space-y-2.5 hover:bg-[#FCF7F2]/20 transition duration-150">
                                             <div className="flex items-center justify-between gap-2">
@@ -641,6 +548,18 @@ export default function Insights({
                 </div>
             </div>
         </div>
+
+        {/* Dedicated Executive Print Report (Standard 2-Page Layout) */}
+        <AdminPrintReportView
+            transactions={transactions}
+            churn={churn}
+            categories={categories}
+            health={health}
+            topArtisans={topArtisans}
+            chartFilter={chartFilter}
+            currentChartData={currentChartData}
+            pieData={pieData}
+        />
         </>
     );
 }
