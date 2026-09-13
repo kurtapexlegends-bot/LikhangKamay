@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
-import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, ChevronRight, Package, ShieldCheck, Store, Loader2, Check } from 'lucide-react';
+import StickyActionBar from '@/Components/StickyActionBar';
+import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, ChevronRight, Package, ShieldCheck, Store, Loader2, Check, RotateCcw } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
+import useCartPersistence from '@/hooks/useCartPersistence';
 
 export default function Cart({ cart }) {
     const [updatingId, setUpdatingId] = useState(null);
@@ -27,6 +29,9 @@ export default function Cart({ cart }) {
     // Convert the cart object (from PHP Session) into an array
     const cartItems = Object.values(cart || {});
     const getCartKey = (item) => item.cart_key || String(item.id);
+
+    // Client-side cart persistence & session recovery
+    const { savedBackup, isRestoring, restoreCart, dismissBackup } = useCartPersistence(cartItems);
 
     // Initialize selected items on first render
     useEffect(() => {
@@ -123,7 +128,7 @@ export default function Cart({ cart }) {
         <ShopLayout>
             <Head title="Shopping Cart" />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 sm:py-8">
                 
                 {/* Breadcrumb */}
                 <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-4">
@@ -414,7 +419,45 @@ export default function Cart({ cart }) {
                     </div>
                 ) : (
                     /* ========== EMPTY STATE ========== */
-                    <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
+                    <div className="space-y-4">
+                        {savedBackup && savedBackup.items?.length > 0 && (
+                            <div className="rounded-2xl border border-clay-200/80 bg-clay-50/50 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in duration-200">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2.5 bg-clay-100 text-clay-700 rounded-xl shrink-0">
+                                        <RotateCcw size={20} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-stone-900">
+                                            Restore {savedBackup.items.length} item{savedBackup.items.length > 1 ? 's' : ''} from your previous visit?
+                                        </h3>
+                                        <p className="text-xs text-stone-500 mt-0.5">
+                                            We saved your handcrafted pottery selections so you can pick up right where you left off.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={dismissBackup}
+                                        disabled={isRestoring}
+                                        className="px-3.5 py-2 text-xs font-semibold text-stone-500 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors min-h-[38px]"
+                                    >
+                                        Dismiss
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={restoreCart}
+                                        disabled={isRestoring}
+                                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-clay-600 hover:bg-clay-700 text-white text-xs font-bold rounded-xl shadow-sm transition active:scale-95 disabled:opacity-50 min-h-[38px]"
+                                    >
+                                        {isRestoring ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                                        <span>Restore Cart</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
                         <div className="flex flex-col items-center justify-center py-16 text-center">
                             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                                 <ShoppingBag size={36} className="text-gray-300" />
@@ -432,9 +475,44 @@ export default function Cart({ cart }) {
                             </Link>
                         </div>
                     </div>
-                )}
+                </div>
+            )}
 
             </div>
+
+            {/* Sticky Action Bar on Mobile */}
+            {cartItems.length > 0 && (
+                <StickyActionBar>
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-[11px] font-medium text-stone-500 truncate">
+                            Total ({selectedItems.size} {selectedItems.size === 1 ? 'item' : 'items'})
+                        </span>
+                        <span className="text-base font-bold text-clay-600 truncate">
+                            {currency.format(totalAmount)}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        {isPendingArtisan ? (
+                            <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
+                                Review Pending
+                            </span>
+                        ) : isAdmin ? (
+                            <span className="text-xs font-semibold text-stone-700 bg-stone-100 border border-stone-200 px-3 py-2 rounded-xl">
+                                Admin Account
+                            </span>
+                        ) : (
+                            <button
+                                onClick={proceedToCheckout}
+                                disabled={selectedItems.size === 0}
+                                className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-clay-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-clay-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 transition-all min-h-[44px]"
+                            >
+                                <span>Checkout</span>
+                                <ArrowRight size={14} />
+                            </button>
+                        )}
+                    </div>
+                </StickyActionBar>
+            )}
         </ShopLayout>
     );
 }

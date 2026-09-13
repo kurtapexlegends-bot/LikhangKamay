@@ -174,8 +174,11 @@ class SellerOrderController extends Controller
             },
             'user:id,name,shop_name,city',
             'artisan:id,name,shop_name,city',
+            'delivery',
         ])
-            ->where('order_number', $id)
+            ->where(function ($q) use ($id) {
+                $q->where('id', $id)->orWhere('order_number', $id);
+            })
             ->where('artisan_id', $this->sellerOwnerId())
             ->firstOrFail();
 

@@ -455,4 +455,56 @@ class CartController extends Controller
 
         return redirect()->back()->with('error', 'Unable to add items (Out of stock or unavailable).');
     }
+
+    /**
+     * Restore multiple items into cart from client-side persistent backup
+     */
+    public function restore(Request $request)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'required|integer|exists:products,id',
+            'items.*.qty' => 'required|integer|min:1',
+            'items.*.variant' => 'nullable|string|max:120',
+        ]);
+
+        $cart = $this->normalizeCart(Session::get('cart', []));
+        $restoredCount = 0;
+
+        foreach ($validated['items'] as $itemData) {
+            $product = Product::with('user:id,name,shop_name,city')->find($itemData['id']);
+            if (!$product || (int) $product->stock < 1) {
+                continue;
+            }
+
+            $variant = trim((string) ($itemData['variant'] ?? 'Standard')) ?: 'Standard';
+            $cartKey = $this->makeCartKey($product->id, $variant);
+            $qty = min((int) $itemData['qty'], (int) $product->stock);
+
+            $cart[$cartKey] = [
+                'id' => $product->id,
+                'cart_key' => $cartKey,
+                'artisan_id' => $product->user_id,
+                'name' => $product->name,
+                'variant' => $variant,
+                'sku' => $product->sku,
+                'slug' => $product->slug,
+                'price' => (float) $product->effective_price,
+                'qty' => $qty,
+                'img' => $product->cover_photo_path ?: $product->img,
+                'seller' => $product->user?->shop_name ?? $product->user?->name ?? 'Shop',
+                'shop_name' => $product->user?->shop_name ?? $product->user?->name ?? 'Shop',
+                'location' => $product->user?->city ?? 'Cavite',
+            ];
+            $restoredCount++;
+        }
+
+        Session::put('cart', $cart);
+
+        if ($restoredCount > 0) {
+            return redirect()->route('cart.index')->with('success', "Restored {$restoredCount} item(s) from your previous session.");
+        }
+
+        return redirect()->route('cart.index')->with('info', 'Saved items could not be restored (currently out of stock).');
+    }
 }

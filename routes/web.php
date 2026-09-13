@@ -114,6 +114,8 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::get('/staff/deliveries', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'index'])->name('staff.deliveries');
     Route::post('/staff/deliveries/{delivery}/complete', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'complete'])->name('staff.deliveries.complete');
     Route::post('/staff/deliveries/verify-vehicle', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'verifyVehicle'])->name('staff.deliveries.verify-vehicle');
+    Route::put('/staff/deliveries/{id}/telemetry', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'updateTelemetry'])->middleware('throttle:30,1')->name('staff.deliveries.telemetry');
+    Route::get('/deliveries/{id}/telemetry', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'getTelemetry'])->name('deliveries.telemetry');
     Route::middleware(['ensure.not.pending.artisan'])->group(function () {
         // PROFILE
         Route::get('/profile', [\App\Http\Controllers\Core\ProfileController::class, 'edit'])->name('profile.edit');
@@ -310,6 +312,8 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         // ACCOUNTING (Fund Release)
         Route::get('/accounting', [\App\Http\Controllers\Seller\AccountingController::class, 'index'])->middleware('seller.module:accounting')->name('accounting.index');
         Route::get('/accounting/export', [\App\Http\Controllers\Seller\AccountingController::class, 'export'])->middleware('seller.module:accounting')->name('accounting.export');
+        Route::get('/accounting/settlement', [\App\Http\Controllers\Seller\SettlementReportController::class, 'viewStatement'])->middleware('seller.module:accounting')->name('accounting.settlement');
+        Route::get('/accounting/settlement/export', [\App\Http\Controllers\Seller\SettlementReportController::class, 'downloadCsv'])->middleware('seller.module:accounting')->name('accounting.settlement.export');
         Route::post('/accounting/release/{stockRequest}', [\App\Http\Controllers\Seller\AccountingController::class, 'approveRelease'])->middleware('seller.module:accounting')->name('accounting.approve');
         Route::post('/accounting/reject/{stockRequest}', [\App\Http\Controllers\Seller\AccountingController::class, 'rejectRelease'])->middleware('seller.module:accounting')->name('accounting.reject');
         Route::post('/accounting/update-funds', [\App\Http\Controllers\Seller\AccountingController::class, 'updateBaseFunds'])->middleware('seller.module:accounting')->name('accounting.update-funds'); // <--- Added
@@ -376,6 +380,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::delete('/cart/remove', [\App\Http\Controllers\Consumer\CartController::class, 'destroy'])->name('cart.destroy');
         Route::match(['post', 'delete'], '/cart/clear', [\App\Http\Controllers\Consumer\CartController::class, 'clear'])->name('cart.clear');
         Route::post('/cart/buy-again/{id}', [\App\Http\Controllers\Consumer\CartController::class, 'buyAgain'])->name('cart.buy-again'); // New
+        Route::post('/cart/restore', [\App\Http\Controllers\Consumer\CartController::class, 'restore'])->name('cart.restore');
 
         // NOTIFICATIONS
         Route::get('/notifications', [\App\Http\Controllers\Core\NotificationController::class, 'index'])->name('notifications.index');

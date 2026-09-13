@@ -16,10 +16,14 @@ use Illuminate\Support\Facades\Mail;
 class UpdateOrderStatus
 {
     private OrderFinanceService $orderFinanceService;
+    private \App\Services\BOMDeductionService $bomDeductionService;
 
-    public function __construct(OrderFinanceService $orderFinanceService)
-    {
+    public function __construct(
+        OrderFinanceService $orderFinanceService,
+        \App\Services\BOMDeductionService $bomDeductionService
+    ) {
         $this->orderFinanceService = $orderFinanceService;
+        $this->bomDeductionService = $bomDeductionService;
     }
 
     /**
@@ -81,7 +85,7 @@ class UpdateOrderStatus
                 $updateData['accepted_at'] = now();
             } elseif ($status === 'Processing') {
                 // BOM Deduction Trigger
-                $this->deductSuppliesForOrder($lockedOrder);
+                $this->bomDeductionService->deductForOrder($lockedOrder);
             } elseif ($status === 'Completed') {
                 if ($lockedOrder->payment_method === 'COD') {
                     $updateData['payment_status'] = 'paid';
@@ -152,22 +156,7 @@ class UpdateOrderStatus
 
                 // Restore BOM Supplies if it was Processing, Shipped, or Ready for Pickup
                 if (in_array($lockedOrder->status, ['Processing', 'Shipped', 'Ready for Pickup'])) {
-                    foreach ($lockedOrder->items as $item) {
-                        $product = $products->get($item->product_id);
-                        if ($product && $product->production_method === 'manufactured') {
-                            foreach ($product->recipes as $recipe) {
-                                if ($recipe->supply) {
-                                    $restoreQty = $recipe->quantity_required * $item->quantity;
-                                    $recipe->supply->increment('quantity', $restoreQty);
-
-                                    if ($linkedSupplyProduct = $recipe->supply->product) {
-                                        $recipe->supply->refresh();
-                                        $linkedSupplyProduct->update(['stock' => $recipe->supply->quantity]);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    $this->bomDeductionService->restoreForOrder($lockedOrder);
                 }
             }
 
@@ -299,45 +288,6 @@ class UpdateOrderStatus
             'Refund/Return' => ['Completed'],
             default => [],
         };
-    }
-
-    private function deductSuppliesForOrder(Order $order)
-    {
-        foreach ($order->items as $item) {
-            $product = Product::with('recipes.supply')->find($item->product_id);
-            if ($product && $product->production_method === 'manufactured') {
-                foreach ($product->recipes as $recipe) {
-                    $supply = $recipe->supply;
-                    if (!$supply) continue;
-
-                    $totalRequired = $recipe->quantity_required * $item->quantity;
-
-                    if ($supply->quantity < $totalRequired) {
-                        throw new \Exception("Insufficient supply: {$supply->name}. Needed {$totalRequired} {$supply->unit}, but only {$supply->quantity} available.");
-                    }
-
-                    $supply->decrement('quantity', $totalRequired);
-
-                    // Log the deduction
-                    SellerActivityLog::recordEvent([
-                        'seller_owner_id' => $order->artisan_id,
-                        'actor_user_id' => $order->artisan_id,
-                        'category' => 'inventory',
-                        'module' => 'procurement',
-                        'event_type' => 'supply_deducted',
-                        'severity' => 'info',
-                        'status' => 'deducted',
-                        'title' => 'Supply Deducted',
-                        'summary' => "Deducted {$totalRequired} {$supply->unit} of {$supply->name} for order #{$order->order_number}",
-                        'details' => [
-                            'order_id' => $order->id,
-                            'supply_id' => $supply->id,
-                            'quantity' => $totalRequired,
-                        ],
-                    ]);
-                }
-            }
-        }
     }
 
     private function recordOrderAuditEvent(
