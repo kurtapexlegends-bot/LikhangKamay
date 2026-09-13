@@ -1,0 +1,668 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Admin;
+
+use App\Models\Category;
+use App\Models\Order;
+use App\Models\PlatformActivity;
+use App\Models\Product;
+use App\Models\SponsorshipRequest;
+use App\Models\User;
+use App\Models\UserTierLog;
+use App\Services\StorageUrl;
+use App\Services\SubscriptionPlanService;
+use App\Services\SystemSettingsService;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+class SystemSettingsOrchestratorService
+{
+    public function __construct(
+        protected SystemSettingsService $settings,
+        protected AdminMetricsService $metrics,
+        protected AdminAnalyticsService $analytics,
+        protected SubscriptionPlanService $planService
+    ) {}
+
+    /**
+     * Compile system configuration page props.
+     */
+    public function getConfigDashboardData(): array
+    {
+        $trashData = $this->getTrashQueueAndStats();
+
+        return [
+            'settings' => $this->getSystemSettings(),
+            'metrics' => $this->getMonetizationMetrics(),
+            'recentSubscribers' => $this->getRecentSubscribers(),
+            'categories' => Category::withCount('products')->orderBy('name')->get(),
+            'trashQueue' => $trashData['queue'],
+            'trashStats' => $trashData['stats'],
+        ];
+    }
+
+    /**
+     * Retrieve recent sponsorship requests for deferred loading.
+     */
+    public function getRecentSponsorships(): Collection
+    {
+        return SponsorshipRequest::with(['user:id,name,shop_name,avatar,premium_tier', 'product:id,name'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($req) {
+                return [
+                    'id' => $req->id,
+                    'user' => $req->user,
+                    'product_name' => $req->product->name ?? 'Unknown Product',
+                    'status' => $req->status,
+                    'date' => $req->created_at->format('M d, Y h:i A'),
+                ];
+            });
+    }
+
+    /**
+     * Fallback configuration dashboard dataset in case of database or service disruption.
+     */
+    public function getFallbackDashboardData(): array
+    {
+        return [
+            'settings' => [
+                'platform_name' => 'LikhangKamay',
+                'platform_logo' => null,
+                'favicon' => null,
+                'primary_color' => '#8B4513',
+                'seo_metadata' => ['title' => '', 'description' => '', 'keywords' => ''],
+                'contact_info' => ['email' => '', 'phone' => '', 'address' => ''],
+                'social_links' => ['facebook' => '', 'indigo_avatar' => '', 'twitter' => ''],
+                'commission_rate' => 0.0,
+                'convenience_fee' => 3.0,
+                'maintenance_mode' => false,
+                'paymongo_enabled' => true,
+                'mail_driver' => 'resend',
+                'resend_api_key' => '',
+                'mail_from_address' => 'noreply@likhangkamay.app',
+                'mail_from_name' => 'LikhangKamay',
+            ],
+            'metrics' => [
+                'mrr' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
+                'sponsorships' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
+                'platform_fees' => ['value' => 0, 'growth' => 0, 'trend' => 'neutral'],
+                'subscribers' => ['free' => 0, 'premium' => 0, 'elite' => 0, 'total_paid' => 0],
+                'pendingSponsorships' => 0,
+            ],
+            'recentSubscribers' => [],
+            'recentSponsorships' => [],
+            'categories' => [],
+            'trashQueue' => [],
+            'trashStats' => ['totalItems' => 0, 'products' => 0, 'categories' => 0, 'orders' => 0],
+            'db_error' => true,
+        ];
+    }
+
+    /**
+     * Export detailed monetization metrics, recent tier shifts, and sponsorships to CSV.
+     */
+    public function exportMonetizationReport(): StreamedResponse
+    {
+        $metrics = $this->getMonetizationMetrics();
+        $recentSubscribers = $this->getRecentSubscribers();
+        $sponsorshipRequests = SponsorshipRequest::with(['user:id,name,shop_name', 'product:id,name'])
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="monetization_report.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        $callback = function () use ($metrics, $recentSubscribers, $sponsorshipRequests) {
+            $file = fopen('php://output', 'w');
+
+            // SECTION 1: Monetization Overview Metrics
+            fputcsv($file, ['MONETIZATION OVERVIEW METRICS']);
+            fputcsv($file, ['Metric', 'Value']);
+            fputcsv($file, ['Plan MRR', 'PHP ' . number_format($metrics['mrr']['value'] ?? 0, 2)]);
+            fputcsv($file, ['Transaction Fees Collected', 'PHP ' . number_format($metrics['platform_fees']['value'] ?? 0, 2)]);
+            fputcsv($file, ['Total Paid Subscribers', $metrics['subscribers']['total_paid'] ?? 0]);
+            fputcsv($file, ['Premium Tier Subscribers', $metrics['subscribers']['premium'] ?? 0]);
+            fputcsv($file, ['Elite Tier Subscribers', $metrics['subscribers']['elite'] ?? 0]);
+            fputcsv($file, ['Free Tier Artisans', $metrics['subscribers']['free'] ?? 0]);
+            fputcsv($file, ['Active Sponsorships', $metrics['sponsorships']['value'] ?? 0]);
+            fputcsv($file, []);
+
+            // SECTION 2: Recent Plan Changes
+            fputcsv($file, ['RECENT PLAN CHANGES']);
+            fputcsv($file, ['Artisan', 'Shop Name', 'Previous Tier', 'New Tier', 'Direction', 'Date']);
+            foreach ($recentSubscribers as $sub) {
+                fputcsv($file, [
+                    $sub['name'] ?? '',
+                    $sub['shop_name'] ?? '',
+                    $sub['previous_tier_label'] ?? 'Free',
+                    $sub['tier'] === 'super_premium' ? 'Premium+' : ($sub['tier'] ?? ''),
+                    $sub['change_direction'] ?? '',
+                    $sub['date'] ?? '',
+                ]);
+            }
+            fputcsv($file, []);
+
+            // SECTION 3: Sponsored Campaigns
+            fputcsv($file, ['SPONSORED CAMPAIGNS']);
+            fputcsv($file, ['Artisan', 'Product', 'Status', 'Date']);
+            foreach ($sponsorshipRequests as $req) {
+                fputcsv($file, [
+                    $req->user->name ?? '',
+                    $req->product->name ?? 'Unknown Product',
+                    ucfirst($req->status),
+                    $req->created_at->format('M d, Y h:i A'),
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Persist validated platform settings, tiers, and file assets with audit logging.
+     */
+    public function updateSettings(array $validated, ?UploadedFile $logo = null, ?UploadedFile $favicon = null): void
+    {
+        // Audit Logging for critical changes
+        if (isset($validated['primary_color']) && $this->settings->get('primary_color') !== $validated['primary_color']) {
+            PlatformActivity::log(
+                'BRANDING_UPDATE',
+                "Updated primary brand color from " . $this->settings->get('primary_color') . " to " . $validated['primary_color'],
+                ['previous' => $this->settings->get('primary_color'), 'updated' => $validated['primary_color']]
+            );
+        }
+
+        if (array_key_exists('convenience_fee', $validated) && (float)$this->settings->get('convenience_fee') !== (float)$validated['convenience_fee']) {
+            PlatformActivity::log(
+                'CONVENIENCE_FEE_UPDATE',
+                "Changed site-wide convenience fee rate from " . $this->settings->get('convenience_fee') . "% to " . $validated['convenience_fee'] . "%",
+                ['previous' => $this->settings->get('convenience_fee') . '%', 'updated' => $validated['convenience_fee'] . '%']
+            );
+        }
+
+        if (array_key_exists('maintenance_mode', $validated) && (bool)$this->settings->get('maintenance_mode') !== (bool)$validated['maintenance_mode']) {
+            $status = $validated['maintenance_mode'] ? 'ENABLED' : 'DISABLED';
+            PlatformActivity::log(
+                'MAINTENANCE_TOGGLE',
+                "Maintenance mode was {$status} by the administrator.",
+                ['status' => $status]
+            );
+        }
+
+        if (array_key_exists('paymongo_enabled', $validated) && (bool)$this->settings->get('paymongo_enabled') !== (bool)$validated['paymongo_enabled']) {
+            $status = $validated['paymongo_enabled'] ? 'ONLINE' : 'OFFLINE';
+            PlatformActivity::log(
+                'GATEWAY_STATUS_CHANGE',
+                "PayMongo gateway status changed to {$status}.",
+                ['gateway_status' => $status]
+            );
+        }
+
+        // Audit Logging for subscription plan modifications
+        if (isset($validated['tier_free_limit']) && (int)$this->settings->get('tier_free_limit') !== (int)$validated['tier_free_limit']) {
+            PlatformActivity::log(
+                'TIER_LIMIT_UPDATE',
+                "Changed Free plan product limit from " . $this->settings->get('tier_free_limit') . " to " . $validated['tier_free_limit'],
+                ['plan' => 'Free', 'previous_limit' => $this->settings->get('tier_free_limit'), 'new_limit' => $validated['tier_free_limit']]
+            );
+        }
+        if (isset($validated['tier_premium_price']) && (float)$this->settings->get('tier_premium_price') !== (float)$validated['tier_premium_price']) {
+            PlatformActivity::log(
+                'TIER_PRICE_UPDATE',
+                "Changed Premium plan monthly price from ₱" . $this->settings->get('tier_premium_price') . " to ₱" . $validated['tier_premium_price'],
+                ['plan' => 'Premium', 'previous_price' => '₱' . $this->settings->get('tier_premium_price'), 'new_price' => '₱' . $validated['tier_premium_price']]
+            );
+        }
+        if (isset($validated['tier_premium_limit']) && (int)$this->settings->get('tier_premium_limit') !== (int)$validated['tier_premium_limit']) {
+            PlatformActivity::log(
+                'TIER_LIMIT_UPDATE',
+                "Changed Premium plan product limit from " . $this->settings->get('tier_premium_limit') . " to " . $validated['tier_premium_limit'],
+                ['plan' => 'Premium', 'previous_limit' => $this->settings->get('tier_premium_limit'), 'new_limit' => $validated['tier_premium_limit']]
+            );
+        }
+        if (isset($validated['tier_super_premium_price']) && (float)$this->settings->get('tier_super_premium_price') !== (float)$validated['tier_super_premium_price']) {
+            PlatformActivity::log(
+                'TIER_PRICE_UPDATE',
+                "Changed Elite plan monthly price from ₱" . $this->settings->get('tier_super_premium_price') . " to ₱" . $validated['tier_super_premium_price'],
+                ['plan' => 'Elite', 'previous_price' => '₱' . $this->settings->get('tier_super_premium_price'), 'new_price' => '₱' . $validated['tier_super_premium_price']]
+            );
+        }
+        if (isset($validated['tier_super_premium_limit']) && (int)$this->settings->get('tier_super_premium_limit') !== (int)$validated['tier_super_premium_limit']) {
+            PlatformActivity::log(
+                'TIER_LIMIT_UPDATE',
+                "Changed Elite plan product limit from " . $this->settings->get('tier_super_premium_limit') . " to " . $validated['tier_super_premium_limit'],
+                ['plan' => 'Elite', 'previous_limit' => $this->settings->get('tier_super_premium_limit'), 'new_limit' => $validated['tier_super_premium_limit']]
+            );
+        }
+
+        // Sanitization
+        if (isset($validated['platform_name'])) {
+            $validated['platform_name'] = strip_tags((string) $validated['platform_name']);
+            $this->settings->set('platform_name', $validated['platform_name']);
+        }
+        if (isset($validated['primary_color'])) {
+            $this->settings->set('primary_color', $validated['primary_color']);
+        }
+        if (isset($validated['seo_metadata'])) {
+            if (isset($validated['seo_metadata']['title'])) {
+                $validated['seo_metadata']['title'] = strip_tags((string) $validated['seo_metadata']['title']);
+            }
+            if (isset($validated['seo_metadata']['description'])) {
+                $validated['seo_metadata']['description'] = strip_tags((string) $validated['seo_metadata']['description']);
+            }
+            if (isset($validated['seo_metadata']['keywords'])) {
+                $validated['seo_metadata']['keywords'] = strip_tags((string) $validated['seo_metadata']['keywords']);
+            }
+            $this->settings->set('seo_metadata', $validated['seo_metadata'], 'json');
+        }
+        if (isset($validated['contact_info'])) {
+            if (isset($validated['contact_info']['address'])) {
+                $validated['contact_info']['address'] = strip_tags((string) $validated['contact_info']['address']);
+            }
+            $this->settings->set('contact_info', $validated['contact_info'], 'json');
+        }
+        if (isset($validated['social_links'])) {
+            $this->settings->set('social_links', $validated['social_links'], 'json');
+        }
+        
+        // Save Operational Settings
+        if (array_key_exists('convenience_fee', $validated)) {
+            $this->settings->set('convenience_fee', $validated['convenience_fee'], 'float');
+        }
+        if (array_key_exists('maintenance_mode', $validated)) {
+            $this->settings->set('maintenance_mode', $validated['maintenance_mode'] ? 'true' : 'false', 'boolean');
+        }
+        if (array_key_exists('paymongo_enabled', $validated)) {
+            $this->settings->set('paymongo_enabled', $validated['paymongo_enabled'] ? 'true' : 'false', 'boolean');
+        }
+
+        // Save Subscription Tier settings
+        if (isset($validated['tier_free_limit'])) {
+            $this->settings->set('tier_free_limit', $validated['tier_free_limit'], 'integer');
+        }
+        if (isset($validated['tier_free_staff_limit'])) {
+            $this->settings->set('tier_free_staff_limit', $validated['tier_free_staff_limit'], 'integer');
+        }
+        if (array_key_exists('tier_free_badge', $validated)) {
+            $this->settings->set('tier_free_badge', $validated['tier_free_badge'] ?? 'Foundational', 'string');
+        }
+        if (array_key_exists('tier_free_description', $validated)) {
+            $this->settings->set('tier_free_description', $validated['tier_free_description'] ?? '', 'string');
+        }
+        if (array_key_exists('tier_free_modules', $validated) || array_key_exists('tier_free_feature_labels', $validated) || array_key_exists('tier_free_custom_features', $validated)) {
+            $this->planService->saveTierConfiguration(
+                'free',
+                $validated['tier_free_modules'] ?? [],
+                $validated['tier_free_feature_labels'] ?? [],
+                $validated['tier_free_custom_features'] ?? []
+            );
+        } elseif (isset($validated['tier_free_features']) && is_array($validated['tier_free_features'])) {
+            $cleanFeatures = array_values(array_filter(array_map('trim', $validated['tier_free_features'])));
+            $this->settings->set('tier_free_features', $cleanFeatures, 'json');
+        }
+
+        if (isset($validated['tier_premium_price'])) {
+            $this->settings->set('tier_premium_price', $validated['tier_premium_price'], 'float');
+        }
+        if (isset($validated['tier_premium_limit'])) {
+            $this->settings->set('tier_premium_limit', $validated['tier_premium_limit'], 'integer');
+        }
+        if (isset($validated['tier_premium_staff_limit'])) {
+            $this->settings->set('tier_premium_staff_limit', $validated['tier_premium_staff_limit'], 'integer');
+        }
+        if (array_key_exists('tier_premium_badge', $validated)) {
+            $this->settings->set('tier_premium_badge', $validated['tier_premium_badge'] ?? 'Most Popular', 'string');
+        }
+        if (array_key_exists('tier_premium_description', $validated)) {
+            $this->settings->set('tier_premium_description', $validated['tier_premium_description'] ?? '', 'string');
+        }
+        if (array_key_exists('tier_premium_modules', $validated) || array_key_exists('tier_premium_feature_labels', $validated) || array_key_exists('tier_premium_custom_features', $validated)) {
+            $this->planService->saveTierConfiguration(
+                'premium',
+                $validated['tier_premium_modules'] ?? [],
+                $validated['tier_premium_feature_labels'] ?? [],
+                $validated['tier_premium_custom_features'] ?? []
+            );
+        } elseif (isset($validated['tier_premium_features']) && is_array($validated['tier_premium_features'])) {
+            $cleanFeatures = array_values(array_filter(array_map('trim', $validated['tier_premium_features'])));
+            $this->settings->set('tier_premium_features', $cleanFeatures, 'json');
+        }
+
+        if (isset($validated['tier_super_premium_price'])) {
+            $this->settings->set('tier_super_premium_price', $validated['tier_super_premium_price'], 'float');
+        }
+        if (isset($validated['tier_super_premium_limit'])) {
+            $this->settings->set('tier_super_premium_limit', $validated['tier_super_premium_limit'], 'integer');
+        }
+        if (isset($validated['tier_super_premium_staff_limit'])) {
+            $this->settings->set('tier_super_premium_staff_limit', $validated['tier_super_premium_staff_limit'], 'integer');
+        }
+        if (array_key_exists('tier_super_premium_badge', $validated)) {
+            $this->settings->set('tier_super_premium_badge', $validated['tier_super_premium_badge'] ?? 'Full Access', 'string');
+        }
+        if (array_key_exists('tier_super_premium_description', $validated)) {
+            $this->settings->set('tier_super_premium_description', $validated['tier_super_premium_description'] ?? '', 'string');
+        }
+        if (array_key_exists('tier_super_premium_modules', $validated) || array_key_exists('tier_super_premium_feature_labels', $validated) || array_key_exists('tier_super_premium_custom_features', $validated)) {
+            $this->planService->saveTierConfiguration(
+                'super_premium',
+                $validated['tier_super_premium_modules'] ?? [],
+                $validated['tier_super_premium_feature_labels'] ?? [],
+                $validated['tier_super_premium_custom_features'] ?? []
+            );
+        } elseif (isset($validated['tier_super_premium_features']) && is_array($validated['tier_super_premium_features'])) {
+            $cleanFeatures = array_values(array_filter(array_map('trim', $validated['tier_super_premium_features'])));
+            $this->settings->set('tier_super_premium_features', $cleanFeatures, 'json');
+        }
+
+        // Save Mail Dispatcher Config
+        $this->settings->set('mail_driver', $validated['mail_driver'] ?? 'resend');
+        $this->settings->set('resend_api_key', $validated['resend_api_key'] ?? '');
+        $this->settings->set('mail_from_address', $validated['mail_from_address'] ?? 'noreply@likhangkamay.app');
+        if (isset($validated['mail_from_name'])) {
+            $this->settings->set('mail_from_name', strip_tags((string) $validated['mail_from_name']));
+        }
+
+        if ($logo) {
+            $path = $logo->store('platform', 'public');
+            $this->settings->set('platform_logo', $path);
+        }
+
+        if ($favicon) {
+            $path = $favicon->store('platform', 'public');
+            $this->settings->set('favicon', $path);
+        }
+    }
+
+    public function getSystemSettings(): array
+    {
+        return [
+            'platform_name' => $this->settings->get('platform_name', 'LikhangKamay'),
+            'platform_logo' => StorageUrl::url($this->settings->get('platform_logo')),
+            'favicon' => StorageUrl::url($this->settings->get('favicon')),
+            'primary_color' => $this->settings->get('primary_color', '#8B4513'),
+            'seo_metadata' => $this->settings->get('seo_metadata', [
+                'title' => 'LikhangKamay | Artisan Marketplace',
+                'description' => 'A premium marketplace for Filipino artisans and handmade crafts.',
+                'keywords' => 'artisan, handmade, crafts, philippines, marketplace',
+            ]),
+            'contact_info' => $this->settings->get('contact_info', [
+                'email' => 'support@likhangkamay.app',
+                'phone' => '',
+                'address' => '',
+            ]),
+            'social_links' => $this->settings->get('social_links', [
+                'facebook' => '',
+                'instagram' => '',
+                'twitter' => '',
+            ]),
+            // Operational Settings
+            'convenience_fee' => $this->settings->get('convenience_fee', 3.0),
+            'maintenance_mode' => $this->settings->get('maintenance_mode', false),
+            'paymongo_enabled' => $this->settings->get('paymongo_enabled', true),
+
+            // Subscription Tier Settings
+            'available_plan_modules' => array_values($this->planService->getAvailableModules()),
+            'tier_free_limit' => (int) $this->settings->get('tier_free_limit', 3),
+            'tier_free_staff_limit' => (int) $this->settings->get('tier_free_staff_limit', 0),
+            'tier_free_badge' => (string) $this->settings->get('tier_free_badge', 'Foundational'),
+            'tier_free_description' => (string) $this->settings->get('tier_free_description', 'Keep your shop live with essentials for catalog, orders, and seller workspace.'),
+            'tier_free_modules' => $this->planService->getTierModules('free'),
+            'tier_free_feature_labels' => $this->planService->getTierFeatureLabels('free'),
+            'tier_free_custom_features' => $this->planService->getTierCustomFeatures('free'),
+            'tier_free_features' => $this->planService->getTierFeaturesList('free'),
+
+            'tier_premium_price' => (float) $this->settings->get('tier_premium_price', 199.00),
+            'tier_premium_limit' => (int) $this->settings->get('tier_premium_limit', 10),
+            'tier_premium_staff_limit' => (int) $this->settings->get('tier_premium_staff_limit', 3),
+            'tier_premium_badge' => (string) $this->settings->get('tier_premium_badge', 'Most Popular'),
+            'tier_premium_description' => (string) $this->settings->get('tier_premium_description', 'Add more shelf space and stronger operational tools for growing artisan shops.'),
+            'tier_premium_modules' => $this->planService->getTierModules('premium'),
+            'tier_premium_feature_labels' => $this->planService->getTierFeatureLabels('premium'),
+            'tier_premium_custom_features' => $this->planService->getTierCustomFeatures('premium'),
+            'tier_premium_features' => $this->planService->getTierFeaturesList('premium'),
+
+            'tier_super_premium_price' => (float) $this->settings->get('tier_super_premium_price', 399.00),
+            'tier_super_premium_limit' => (int) $this->settings->get('tier_super_premium_limit', 50),
+            'tier_super_premium_staff_limit' => (int) $this->settings->get('tier_super_premium_staff_limit', 15),
+            'tier_super_premium_badge' => (string) $this->settings->get('tier_super_premium_badge', 'Full Access'),
+            'tier_super_premium_description' => (string) $this->settings->get('tier_super_premium_description', 'Unlock the complete seller suite, B2B wholesale access, and sponsored placements.'),
+            'tier_super_premium_modules' => $this->planService->getTierModules('super_premium'),
+            'tier_super_premium_feature_labels' => $this->planService->getTierFeatureLabels('super_premium'),
+            'tier_super_premium_custom_features' => $this->planService->getTierCustomFeatures('super_premium'),
+            'tier_super_premium_features' => $this->planService->getTierFeaturesList('super_premium'),
+
+            // Mail Engine & Dispatcher Settings
+            'mail_driver' => $this->settings->get('mail_driver', 'resend'),
+            'resend_api_key' => $this->settings->get('resend_api_key', ''),
+            'mail_from_address' => $this->settings->get('mail_from_address', 'noreply@likhangkamay.app'),
+            'mail_from_name' => $this->settings->get('mail_from_name', 'LikhangKamay'),
+        ];
+    }
+
+    public function getMonetizationMetrics(): array
+    {
+        $premiumPrice = (float) $this->settings->get('tier_premium_price', 199.00);
+        $elitePrice = (float) $this->settings->get('tier_super_premium_price', 399.00);
+
+        $premiumUsersCount = User::where('role', 'artisan')->where('premium_tier', 'premium')->count();
+        $eliteUsersCount = User::where('role', 'artisan')->where('premium_tier', 'super_premium')->count();
+        $freeUsersCount = User::where('role', 'artisan')->where(function($q) {
+            $q->where('premium_tier', 'free')->orWhereNull('premium_tier');
+        })->count();
+
+        $projectedMrr = ($premiumUsersCount * $premiumPrice) + ($eliteUsersCount * $elitePrice);
+        $previousPremiumUsersCount = $this->metrics->getHistoricalTierCount('premium', 30);
+        $previousEliteUsersCount = $this->metrics->getHistoricalTierCount('super_premium', 30);
+        $previousProjectedMrr = ($previousPremiumUsersCount * $premiumPrice) + ($previousEliteUsersCount * $elitePrice);
+
+        $mrrGrowth = 0;
+        if ($previousProjectedMrr > 0) {
+            $mrrGrowth = (($projectedMrr - $previousProjectedMrr) / $previousProjectedMrr) * 100;
+        } elseif ($projectedMrr > 0) {
+            $mrrGrowth = 100;
+        }
+
+        $mrrMetric = [
+            'value' => $projectedMrr,
+            'growth' => round($mrrGrowth, 1),
+            'trend' => $mrrGrowth > 0 ? 'up' : ($mrrGrowth < 0 ? 'down' : 'neutral'),
+            'is_projected' => true,
+            'basis' => 'Based on current active artisan plan tiers.',
+        ];
+
+        $activeSponsorships = SponsorshipRequest::where('status', 'approved')->count();
+        $pendingSponsorships = SponsorshipRequest::where('status', 'pending')->count();
+        $previousActiveSponsorships = SponsorshipRequest::where('status', 'approved')
+            ->where('approved_at', '<', now()->subDays(30))
+            ->count();
+        
+        $sponsorshipGrowth = 0;
+        if ($previousActiveSponsorships > 0) {
+            $sponsorshipGrowth = (($activeSponsorships - $previousActiveSponsorships) / $previousActiveSponsorships) * 100;
+        } elseif ($activeSponsorships > 0) {
+            $sponsorshipGrowth = 100;
+        }
+
+        $sponsorshipMetric = [
+            'value' => $activeSponsorships,
+            'growth' => round($sponsorshipGrowth, 1),
+            'trend' => $sponsorshipGrowth > 0 ? 'up' : ($sponsorshipGrowth < 0 ? 'down' : 'neutral'),
+        ];
+
+        $totalCommission = Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->sum('platform_commission_amount');
+        $totalConvenience = Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->sum('convenience_fee_amount');
+        $totalPlatformFees = (float) $totalCommission + (float) $totalConvenience;
+
+        $previousCommission = Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])
+            ->where('created_at', '<', now()->subDays(30))
+            ->sum('platform_commission_amount');
+        $previousConvenience = Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])
+            ->where('created_at', '<', now()->subDays(30))
+            ->sum('convenience_fee_amount');
+        $previousPlatformFees = (float) $previousCommission + (float) $previousConvenience;
+
+        $feesGrowth = 0;
+        if ($previousPlatformFees > 0) {
+            $feesGrowth = (($totalPlatformFees - $previousPlatformFees) / $previousPlatformFees) * 100;
+        } elseif ($totalPlatformFees > 0) {
+            $feesGrowth = 100;
+        }
+
+        $platformFeesMetric = [
+            'value' => $totalPlatformFees,
+            'growth' => round($feesGrowth, 1),
+            'trend' => $feesGrowth > 0 ? 'up' : ($feesGrowth < 0 ? 'down' : 'neutral'),
+            'basis' => 'Cumulative commission and convenience fees collected from successful orders.',
+        ];
+
+        return [
+            'mrr' => $mrrMetric,
+            'sponsorships' => $sponsorshipMetric,
+            'platform_fees' => $platformFeesMetric,
+            'subscribers' => [
+                'free' => $freeUsersCount,
+                'premium' => $premiumUsersCount,
+                'elite' => $eliteUsersCount,
+                'total_paid' => $premiumUsersCount + $eliteUsersCount,
+            ],
+            'pendingSponsorships' => $pendingSponsorships,
+        ];
+    }
+
+    public function getRecentSubscribers(): array
+    {
+        return UserTierLog::query()
+            ->with('user:id,name,shop_name,avatar,premium_tier')
+            ->whereNotNull('new_tier')
+            ->latest()
+            ->limit(5)
+            ->get()
+            ->map(function ($log) {
+                $user = $log->user;
+                if (!$user) return null;
+
+                $formatTierLabel = fn (?string $tier) => match ($tier) {
+                    'super_premium' => 'Elite',
+                    'premium' => 'Premium',
+                    'free', null, '' => 'Free',
+                    default => ucfirst(str_replace('_', ' ', (string) $tier)),
+                };
+
+                $newTierLabel = $formatTierLabel($log->new_tier);
+                $previousTierLabel = $formatTierLabel($log->previous_tier);
+                $changeDirection = match ([$log->previous_tier, $log->new_tier]) {
+                    ['premium', 'super_premium'], ['free', 'premium'], ['free', 'super_premium'], [null, 'premium'], [null, 'super_premium'] => 'upgrade',
+                    ['super_premium', 'premium'], ['premium', 'free'], ['super_premium', 'free'] => 'downgrade',
+                    default => 'change',
+                };
+
+                return [
+                    'id' => $log->id,
+                    'user_id' => $user->id,
+                    'name' => $user->name,
+                    'shop_name' => $user->shop_name,
+                    'avatar' => $user->avatar,
+                    'avatar_url' => $user->avatar_url,
+                    'premium_tier' => $log->new_tier,
+                    'previous_tier' => $log->previous_tier,
+                    'previous_tier_label' => $previousTierLabel,
+                    'tier' => $newTierLabel,
+                    'change_label' => "{$previousTierLabel} to {$newTierLabel}",
+                    'change_direction' => $changeDirection,
+                    'date' => $log->created_at->format('M d, Y h:i A'),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    public function getTrashQueueAndStats(): array
+    {
+        $deletedProducts = $this->getDeletedProducts();
+        $deletedCategories = $this->getDeletedCategories();
+        $deletedOrders = $this->getDeletedOrders();
+
+        $queue = collect([])
+            ->concat($deletedProducts)
+            ->concat($deletedCategories)
+            ->concat($deletedOrders)
+            ->sortByDesc('deleted_at')
+            ->values();
+
+        $stats = [
+            'totalItems' => $queue->count(),
+            'products' => count($deletedProducts),
+            'categories' => count($deletedCategories),
+            'orders' => count($deletedOrders),
+        ];
+
+        return [
+            'queue' => $queue,
+            'stats' => $stats,
+        ];
+    }
+
+    public function getDeletedProducts(): Collection
+    {
+        return Product::onlyTrashed()
+            ->with('user:id,name,shop_name')
+            ->orderBy('deleted_at', 'desc')
+            ->limit(100)
+            ->get()
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'type' => 'Product',
+                'context' => $p->user?->shop_name ?? $p->user?->name ?? 'Unknown Shop',
+                'deleted_at' => $p->deleted_at->toIso8601String(),
+                'expires_at' => $p->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+    }
+
+    public function getDeletedCategories(): Collection
+    {
+        return Category::onlyTrashed()
+            ->orderBy('deleted_at', 'desc')
+            ->get()
+            ->map(fn($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'type' => 'Category',
+                'context' => 'Global Taxonomy',
+                'deleted_at' => $c->deleted_at->toIso8601String(),
+                'expires_at' => $c->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+    }
+
+    public function getDeletedOrders(): Collection
+    {
+        return Order::onlyTrashed()
+            ->with('user:id,name')
+            ->orderBy('deleted_at', 'desc')
+            ->limit(100)
+            ->get()
+            ->map(fn($o) => [
+                'id' => $o->id,
+                'name' => "Order #{$o->order_number}",
+                'type' => 'Order',
+                'context' => $o->user?->name ?? 'Unknown Customer',
+                'deleted_at' => $o->deleted_at->toIso8601String(),
+                'expires_at' => $o->deleted_at->addDays(30)->toIso8601String(),
+            ]);
+    }
+}

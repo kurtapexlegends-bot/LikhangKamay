@@ -7,41 +7,31 @@ namespace App\Http\Controllers\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\SellerActivityLog;
 use App\Models\User;
 use App\Http\Requests\CheckoutRequest;
-use App\Services\OrderFinanceService;
 use App\Actions\Seller\SupplyHub\FetchB2BCatalog;
 use App\Actions\Consumer\PrepareCheckout;
 use App\Actions\Consumer\PlaceOrder;
 use App\Actions\Consumer\ReceiveOrder;
 use App\Actions\Seller\Orders\UpdateOrderStatus;
+use App\Http\Requests\Seller\ToggleWholesaleSupplyRequest;
 use App\Http\Requests\Seller\UpdateOrderStatusRequest;
-use App\Services\StorageUrl;
-use App\Support\OrderWorkflowHelper;
+use App\Services\B2BSupplyHubService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class B2BSupplyHubController extends Controller
 {
-    public const SUPPLY_CATEGORIES = FetchB2BCatalog::SUPPLY_CATEGORIES;
-
-    public const SUPPLY_UNITS = [
-        'pcs' => 'Pieces (pcs)',
-        'kg' => 'Kilograms (kg)',
-        'bag' => 'Bags (e.g. 25kg sack)',
-        'box' => 'Boxes / Cartons',
-        'bundle' => 'Bundles (e.g. wood planks)',
-        'liters' => 'Liters / Liquid bottles',
-        'set' => 'Sets',
-    ];
+    public const SUPPLY_CATEGORIES = B2BSupplyHubService::SUPPLY_CATEGORIES;
+    public const SUPPLY_UNITS = B2BSupplyHubService::SUPPLY_UNITS;
 
     public function __construct(
-        private readonly FetchB2BCatalog $fetchB2BCatalog
+        private readonly FetchB2BCatalog $fetchB2BCatalog,
+        private readonly B2BSupplyHubService $supplyHubService
     ) {}
 
     /**
@@ -49,7 +39,7 @@ class B2BSupplyHubController extends Controller
      */
     public function index(Request $request): Response
     {
-        /** @var User $actor */
+        /** @var User|null $actor */
         $actor = Auth::user();
 
         if (!$actor || !$actor->isArtisan()) {
@@ -63,8 +53,8 @@ class B2BSupplyHubController extends Controller
             $catalogData = $this->fetchB2BCatalog->execute($request, $actor);
             return Inertia::render('Seller/SupplyHub/Index', $catalogData);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('B2BSupplyHubController index error: ' . $e->getMessage(), [
-                'exception' => $e
+            Log::error('B2BSupplyHubController index error: ' . $e->getMessage(), [
+                'exception' => $e,
             ]);
 
             return Inertia::render('Seller/SupplyHub/Index', [
@@ -96,7 +86,7 @@ class B2BSupplyHubController extends Controller
      */
     public function myListings(): Response
     {
-        /** @var User $actor */
+        /** @var User|null $actor */
         $actor = Auth::user();
 
         if (!$actor || !$actor->isArtisan()) {
@@ -106,121 +96,18 @@ class B2BSupplyHubController extends Controller
         $seller = $actor->getEffectiveSeller() ?? $actor;
         abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
 
-        $activeOrdersCount = Order::where('user_id', $actor->id)
-            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
-            ->count();
-
-        $wholesaleSalesCount = Order::where('artisan_id', $actor->id)
-            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
-            ->count();
-
-        $products = Product::where('user_id', $actor->id)
-            ->select([
-                'id', 'name', 'sku', 'category', 'price', 'stock',
-                'weight', 'is_b2b_supply', 'moq', 'wholesale_price',
-                'wholesale_min_qty', 'supply_unit', 'cover_photo_path',
-                'gallery_paths', 'created_at',
-            ])
-            ->orderByDesc('is_b2b_supply')
-            ->latest()
-            ->get()
-            ->map(function (Product $product) {
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'sku' => $product->sku,
-                    'category' => $product->category,
-                    'price' => (float) $product->price,
-                    'stock' => (int) $product->stock,
-                    'weight' => (float) ($product->weight ?? 1.0),
-                    'is_b2b_supply' => (bool) $product->is_b2b_supply,
-                    'moq' => (int) ($product->moq ?: 1),
-                    'wholesale_price' => $product->wholesale_price !== null ? (float) $product->wholesale_price : null,
-                    'wholesale_min_qty' => $product->wholesale_min_qty ? (int) $product->wholesale_min_qty : null,
-                    'supply_unit' => $product->supply_unit ?: 'pcs',
-                    'img' => $product->img,
-                ];
-            });
-
-        return Inertia::render('Seller/SupplyHub/MyListings', [
-            'products' => $products,
-            'availableCategories' => self::SUPPLY_CATEGORIES,
-            'availableUnits' => self::SUPPLY_UNITS,
-            'activeOrdersCount' => $activeOrdersCount,
-            'openOrdersCount' => $activeOrdersCount,
-            'wholesaleSalesCount' => $wholesaleSalesCount,
-        ]);
+        return Inertia::render('Seller/SupplyHub/MyListings', $this->supplyHubService->getMyListingsData($actor));
     }
 
     /**
      * Publish or unpublish a product to/from the B2B Supply Hub.
      */
-    public function toggle(Request $request, Product $product)
+    public function toggle(ToggleWholesaleSupplyRequest $request, Product $product)
     {
-        /** @var User $actor */
+        /** @var User|null $actor */
         $actor = Auth::user();
 
-        if (!$actor || !$actor->isArtisan()) {
-            abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
-        }
-
-        $seller = $actor->getEffectiveSeller() ?? $actor;
-        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
-
-        if ($product->user_id !== $seller->id) {
-            abort(403, 'Unauthorized product modification.');
-        }
-
-        $validated = $request->validate([
-            'is_b2b_supply' => ['required', 'boolean'],
-            'moq' => ['nullable', 'integer', 'min:1', 'max:10000'],
-            'wholesale_price' => ['nullable', 'numeric', 'min:0'],
-            'wholesale_min_qty' => ['nullable', 'integer', 'min:2', 'max:10000'],
-            'supply_unit' => ['nullable', 'string', 'max:50'],
-        ]);
-
-        $product->update([
-            'is_b2b_supply' => $validated['is_b2b_supply'],
-            'moq' => $validated['moq'] ?? 1,
-            'wholesale_price' => $validated['wholesale_price'] ?? null,
-            'wholesale_min_qty' => $validated['wholesale_min_qty'] ?? null,
-            'supply_unit' => $validated['supply_unit'] ?? ($product->supply_unit ?: 'pcs'),
-        ]);
-
-        $isListed = (bool) $validated['is_b2b_supply'];
-
-        SellerActivityLog::recordEvent([
-            'seller_owner_id' => $actor->id,
-            'actor_user_id' => $actor->id,
-            'actor_type' => SellerActivityLog::resolveActorType($actor, 'owner'),
-            'category' => 'operations',
-            'module' => 'supply_hub',
-            'event_type' => $isListed ? 'supply_listed' : 'supply_unlisted',
-            'severity' => 'info',
-            'status' => $isListed ? 'published' : 'unlisted',
-            'title' => $isListed ? 'Material Listed on Supply Hub' : 'Material Delisted from Supply Hub',
-            'summary' => $isListed
-                ? "Published \"{$product->name}\" to peer studio supplies."
-                : "Unpublished \"{$product->name}\" from peer studio supplies.",
-            'subject_type' => Product::class,
-            'subject_id' => $product->id,
-            'subject_label' => $product->name,
-            'reference' => $product->sku,
-            'amount_label' => isset($validated['wholesale_price']) && $validated['wholesale_price'] !== null ? 'PHP ' . number_format((float) $validated['wholesale_price'], 2) : null,
-            'details' => [
-                'is_b2b_supply' => $isListed,
-                'moq' => $product->moq,
-                'wholesale_price' => $product->wholesale_price,
-            ],
-            'target_url' => route('seller.supply-hub.my-listings'),
-            'target_label' => 'View Listings',
-        ]);
-
-        $msg = $validated['is_b2b_supply']
-            ? "Published \"{$product->name}\" to peer studio supplies."
-            : "Unpublished \"{$product->name}\" from peer studio supplies.";
+        $msg = $this->supplyHubService->updateProductWholesaleSettings($actor, $product, $request->validated());
 
         return redirect()->back()->with('success', $msg);
     }
@@ -230,7 +117,7 @@ class B2BSupplyHubController extends Controller
      */
     public function cart(Request $request): Response
     {
-        /** @var User $actor */
+        /** @var User|null $actor */
         $actor = Auth::user();
 
         if (!$actor || !$actor->isArtisan()) {
@@ -240,24 +127,7 @@ class B2BSupplyHubController extends Controller
         $seller = $actor->getEffectiveSeller() ?? $actor;
         abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
 
-        $myPublishedCount = Product::where('user_id', $actor->id)
-            ->where('is_b2b_supply', DB::raw('true'))
-            ->count();
-
-        $activeOrdersCount = Order::where('user_id', $actor->id)
-            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
-            ->count();
-
-        $cart = (array) Session::get('cart', []);
-
-        return Inertia::render('Seller/SupplyHub/Cart', [
-            'cart' => $cart,
-            'myPublishedCount' => $myPublishedCount,
-            'activeOrdersCount' => $activeOrdersCount,
-            'openOrdersCount' => $activeOrdersCount,
-            'pricing' => OrderFinanceService::getPricingData(),
-        ]);
+        return Inertia::render('Seller/SupplyHub/Cart', $this->supplyHubService->getCartData($actor));
     }
 
     /**
@@ -265,7 +135,7 @@ class B2BSupplyHubController extends Controller
      */
     public function checkout(Request $request, PrepareCheckout $prepareCheckout): Response|\Illuminate\Http\RedirectResponse
     {
-        /** @var User $actor */
+        /** @var User|null $actor */
         $actor = Auth::user();
 
         if (!$actor || !$actor->isArtisan()) {
@@ -281,23 +151,7 @@ class B2BSupplyHubController extends Controller
             return redirect()->route('seller.supply-hub.index')->with('error', 'Your procurement cart is empty.');
         }
 
-        $myPublishedCount = Product::where('user_id', $actor->id)
-            ->where('is_b2b_supply', DB::raw('true'))
-            ->count();
-
-        $activeOrdersCount = Order::where('user_id', $actor->id)
-            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
-            ->count();
-
-        return Inertia::render('Seller/SupplyHub/ProcurementCheckout', [
-            'items' => $items,
-            'pricing' => OrderFinanceService::getPricingData(),
-            'myPublishedCount' => $myPublishedCount,
-            'activeOrdersCount' => $activeOrdersCount,
-            'openOrdersCount' => $activeOrdersCount,
-            'userAddresses' => $actor->addresses,
-        ]);
+        return Inertia::render('Seller/SupplyHub/ProcurementCheckout', $this->supplyHubService->getCheckoutData($actor, $items));
     }
 
     /**
@@ -305,7 +159,7 @@ class B2BSupplyHubController extends Controller
      */
     public function storeOrder(CheckoutRequest $request, PlaceOrder $placeOrder)
     {
-        /** @var User $actor */
+        /** @var User|null $actor */
         $actor = Auth::user();
 
         if (!$actor || !$actor->isArtisan()) {
@@ -330,127 +184,14 @@ class B2BSupplyHubController extends Controller
      */
     public function sourcingOrders(Request $request): Response
     {
-        /** @var User $actor */
+        /** @var User|null $actor */
         $actor = Auth::user();
 
         if (!$actor || !$actor->isArtisan()) {
             abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
         }
 
-        $statusFilter = $request->input('status', 'all');
-        $search = $request->input('search', '');
-
-        $query = Order::with(['items.product', 'seller', 'delivery'])
-            ->where('user_id', $actor->id)
-            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
-            ->latest();
-
-        if ($search) {
-            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
-            $query->where(function ($q) use ($search, $like) {
-                $q->where('order_number', $like, "%{$search}%")
-                  ->orWhereHas('items', function ($iq) use ($search, $like) {
-                      $iq->where('product_name', $like, "%{$search}%");
-                  });
-            });
-        }
-
-        if ($statusFilter !== 'all') {
-            if ($statusFilter === 'active') {
-                $query->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup']);
-            } elseif ($statusFilter === 'delivered') {
-                $query->where('status', 'Delivered');
-            } elseif ($statusFilter === 'completed') {
-                $query->where('status', 'Completed');
-            } elseif ($statusFilter === 'cancelled') {
-                $query->whereIn('status', ['Cancelled', 'Refunded']);
-            }
-        }
-
-        $orders = $query->paginate(8)->withQueryString();
-
-        $orders->through(function ($order) {
-            $merchandiseSubtotal = (float) ($order->merchandise_subtotal ?? $order->items->sum(fn($i) => ($i->price ?? $i->unit_price ?? 0) * $i->quantity));
-            $shippingFee = $order->getResolvedShippingFeeAmount();
-            $convenienceFee = (float) ($order->convenience_fee_amount ?? 0);
-            $totalAmount = (float) ($order->total_amount ?? ($merchandiseSubtotal + $shippingFee + $convenienceFee));
-
-            return [
-                'id' => $order->order_number ?: (string)$order->id,
-                'db_id' => $order->id,
-                'order_number' => $order->order_number ?: (string)$order->id,
-                'date' => $order->created_at ? $order->created_at->format('M d, Y - h:i A') : 'Recent',
-                'supplier_name' => $order->seller?->shop_name ?: ($order->seller?->name ?: 'Peer Artisan Studio'),
-                'supplier_shop_name' => $order->seller?->shop_name,
-                'supplier_avatar' => $order->seller?->avatar_url,
-                'supplier_city' => $order->seller?->city,
-                'supplier_id' => $order->artisan_id ?: $order->seller_id ?: $order->seller?->id,
-                'status' => $order->status,
-                'payment_status' => $order->payment_status ?? 'paid',
-                'payment_method' => $order->payment_method ?? 'Direct Payout',
-                'total' => number_format($totalAmount, 2),
-                'total_amount' => $totalAmount,
-                'merchandise_subtotal' => $merchandiseSubtotal,
-                'shipping_fee_amount' => $shippingFee,
-                'convenience_fee_amount' => $convenienceFee,
-                'shipping_address' => $order->shipping_address,
-                'shipping_contact_phone' => $order->shipping_contact_phone,
-                'shipping_method' => $order->shipping_method,
-                'shipping_notes' => $order->shipping_notes,
-                'tracking_number' => $order->tracking_number ?: $order->delivery?->tracking_number,
-                'delivery' => OrderWorkflowHelper::serializeDelivery($order->delivery),
-                'timeline' => OrderWorkflowHelper::buildOrderTimeline($order),
-                'items' => $order->items->map(fn($item) => [
-                    'id' => $item->id,
-                    'name' => $item->product_name ?: $item->name,
-                    'variant' => $item->variant ?? 'Standard',
-                    'qty' => $item->quantity,
-                    'price' => (float) ($item->price ?? $item->unit_price ?? 0),
-                    'supply_unit' => $item->supply_unit ?: ($item->product?->supply_unit ?: 'pcs'),
-                    'img' => StorageUrl::url($item->product_img ?: $item->product?->cover_photo_path, '/images/placeholder.svg'),
-                ])->all(),
-            ];
-        });
-
-        $statusCounts = Order::where('user_id', $actor->id)
-            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
-            ->selectRaw("
-                SUM(CASE WHEN status IN ('Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup') THEN 1 ELSE 0 END) as active_count,
-                SUM(CASE WHEN status = 'Delivered' THEN 1 ELSE 0 END) as delivered_count,
-                SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed_count,
-                SUM(CASE WHEN status IN ('Cancelled', 'Refunded') THEN 1 ELSE 0 END) as cancelled_count
-            ")
-            ->first();
-
-        $activeOrdersCount = (int) ($statusCounts->active_count ?? 0);
-        $deliveredOrdersCount = (int) ($statusCounts->delivered_count ?? 0);
-        $completedOrdersCount = (int) ($statusCounts->completed_count ?? 0);
-        $cancelledOrdersCount = (int) ($statusCounts->cancelled_count ?? 0);
-        $openOrdersCount = $activeOrdersCount + $deliveredOrdersCount;
-
-        $myPublishedCount = Product::where('user_id', $actor->id)
-            ->where('is_b2b_supply', DB::raw('true'))
-            ->count();
-
-        $wholesaleSalesCount = Order::where('artisan_id', $actor->id)
-            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
-            ->count();
-
-        return Inertia::render('Seller/SupplyHub/SourcingOrders', [
-            'orders' => $orders,
-            'activeOrdersCount' => $activeOrdersCount,
-            'deliveredOrdersCount' => $deliveredOrdersCount,
-            'completedOrdersCount' => $completedOrdersCount,
-            'cancelledOrdersCount' => $cancelledOrdersCount,
-            'openOrdersCount' => $openOrdersCount,
-            'myPublishedCount' => $myPublishedCount,
-            'wholesaleSalesCount' => $wholesaleSalesCount,
-            'filters' => [
-                'search' => $search,
-                'status' => $statusFilter,
-            ],
-        ]);
+        return Inertia::render('Seller/SupplyHub/SourcingOrders', $this->supplyHubService->getSourcingOrdersData($actor, $request));
     }
 
     /**
@@ -458,7 +199,7 @@ class B2BSupplyHubController extends Controller
      */
     public function confirmDelivery(string|int $id, ReceiveOrder $receiveOrder)
     {
-        /** @var User $actor */
+        /** @var User|null $actor */
         $actor = Auth::user();
 
         if (!$actor || !$actor->isArtisan()) {
@@ -478,149 +219,14 @@ class B2BSupplyHubController extends Controller
      */
     public function wholesaleSales(Request $request): Response
     {
-        /** @var User $actor */
+        /** @var User|null $actor */
         $actor = Auth::user();
 
         if (!$actor || !$actor->isArtisan()) {
             abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
         }
 
-        $statusFilter = $request->input('status', 'all');
-        $search = $request->input('search', '');
-
-        $query = Order::with(['items.product', 'user', 'delivery'])
-            ->where('artisan_id', $actor->id)
-            ->whereHas('items', function ($iq) {
-                $iq->where('is_b2b_supply', DB::raw('true'));
-            })
-            ->latest();
-
-        if ($search) {
-            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
-            $query->where(function ($q) use ($search, $like) {
-                $q->where('order_number', $like, "%{$search}%")
-                  ->orWhere('customer_name', $like, "%{$search}%")
-                  ->orWhereHas('items', function ($iq) use ($search, $like) {
-                      $iq->where('product_name', $like, "%{$search}%");
-                  })
-                  ->orWhereHas('user', function ($uq) use ($search, $like) {
-                      $uq->where('name', $like, "%{$search}%")
-                         ->orWhere('shop_name', $like, "%{$search}%");
-                  });
-            });
-        }
-
-        if ($statusFilter !== 'all') {
-            if ($statusFilter === 'pending') {
-                $query->where('status', 'Pending');
-            } elseif ($statusFilter === 'processing') {
-                $query->whereIn('status', ['Accepted', 'Processing']);
-            } elseif ($statusFilter === 'shipped') {
-                $query->whereIn('status', ['Shipped', 'Ready for Pickup']);
-            } elseif ($statusFilter === 'delivered') {
-                $query->where('status', 'Delivered');
-            } elseif ($statusFilter === 'completed') {
-                $query->where('status', 'Completed');
-            } elseif ($statusFilter === 'cancelled') {
-                $query->whereIn('status', ['Cancelled', 'Refunded']);
-            }
-        }
-
-        $orders = $query->paginate(8)->withQueryString();
-
-        $orders->through(function ($order) use ($actor) {
-            $bookingRequirements = OrderWorkflowHelper::lalamoveBookingRequirements($order, $actor);
-            $vehicleInfo = app(\App\Services\VehicleTypeResolver::class)->resolveForItems($order->items);
-            return [
-                'id' => $order->order_number,
-                'db_id' => $order->id,
-                'date' => $order->created_at->format('M d, Y - h:i A'),
-                'customer' => $order->customer_name,
-                'customer_avatar' => $order->user?->avatar_url,
-                'buyer_shop_name' => $order->user?->shop_name,
-                'user_id' => $order->user_id,
-                'status' => $order->status,
-                'payment_status' => $order->payment_status ?? 'pending',
-                'payment_method' => $order->payment_method,
-                'total' => number_format((float) $order->total_amount, 2),
-                'total_amount' => (float) $order->total_amount,
-                'merchandise_subtotal' => (float) $order->merchandise_subtotal,
-                'shipping_fee_amount' => $order->getResolvedShippingFeeAmount(),
-                'vehicle_info' => $vehicleInfo,
-                'total_weight_kg' => (float) ($vehicleInfo['total_weight_kg'] ?? 0),
-                'recommended_vehicle' => $vehicleInfo['label'] ?? 'Motorcycle',
-                'convenience_fee_amount' => (float) $order->convenience_fee_amount,
-                'seller_net_amount' => $order->getResolvedSellerNetAmount(),
-                'shipping_address' => $order->shipping_address,
-                'shipping_contact_phone' => $order->shipping_contact_phone,
-                'shipping_method' => $order->shipping_method,
-                'shipping_notes' => $order->shipping_notes,
-                'tracking_number' => $order->tracking_number,
-                'delivery' => OrderWorkflowHelper::serializeDelivery($order->delivery),
-                'timeline' => OrderWorkflowHelper::buildOrderTimeline($order),
-                'can_book_lalamove' => in_array($order->status, ['Accepted', 'Processing'], true)
-                    && $order->shipping_method === 'Delivery'
-                    && $order->delivery?->external_order_id === null,
-                'lalamove_booking_ready' => empty($bookingRequirements),
-                'items' => $order->items->map(fn($item) => [
-                    'name' => $item->product_name,
-                    'variant' => $item->variant ?? 'Standard',
-                    'qty' => $item->quantity,
-                    'price' => $item->price,
-                    'weight' => $item->product?->weight ? (float) $item->product->weight : null,
-                    'is_b2b_supply' => true,
-                    'supply_unit' => $item->supply_unit ?: ($item->product?->supply_unit ?: 'pcs'),
-                    'img' => StorageUrl::url($item->product_img, '/images/placeholder.svg'),
-                ]),
-            ];
-        });
-
-        $statusCounts = Order::where('artisan_id', $actor->id)
-            ->whereHas('items', fn($iq) => $iq->where('is_b2b_supply', DB::raw('true')))
-            ->selectRaw("
-                SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending_count,
-                SUM(CASE WHEN status IN ('Accepted', 'Processing') THEN 1 ELSE 0 END) as processing_count,
-                SUM(CASE WHEN status IN ('Shipped', 'Ready for Pickup') THEN 1 ELSE 0 END) as shipped_count,
-                SUM(CASE WHEN status = 'Delivered' THEN 1 ELSE 0 END) as delivered_count,
-                SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed_count,
-                SUM(CASE WHEN status IN ('Cancelled', 'Refunded') THEN 1 ELSE 0 END) as cancelled_count
-            ")
-            ->first();
-
-        $myPublishedCount = Product::where('user_id', $actor->id)
-            ->where('is_b2b_supply', DB::raw('true'))
-            ->count();
-
-        $inboundOrdersCount = Order::where('user_id', $actor->id)
-            ->whereHas('items', fn($q) => $q->where('is_b2b_supply', DB::raw('true')))
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered'])
-            ->count();
-
-        $activeSalesCount = (int) (
-            ($statusCounts->pending_count ?? 0) +
-            ($statusCounts->processing_count ?? 0) +
-            ($statusCounts->shipped_count ?? 0) +
-            ($statusCounts->delivered_count ?? 0)
-        );
-
-        return Inertia::render('Seller/SupplyHub/WholesaleSales', [
-            'orders' => $orders,
-            'activeSalesCount' => $activeSalesCount,
-            'pendingSalesCount' => (int) ($statusCounts->pending_count ?? 0),
-            'processingSalesCount' => (int) ($statusCounts->processing_count ?? 0),
-            'shippedSalesCount' => (int) ($statusCounts->shipped_count ?? 0),
-            'deliveredSalesCount' => (int) ($statusCounts->delivered_count ?? 0),
-            'completedSalesCount' => (int) ($statusCounts->completed_count ?? 0),
-            'cancelledSalesCount' => (int) ($statusCounts->cancelled_count ?? 0),
-            'myPublishedCount' => $myPublishedCount,
-            'activeOrdersCount' => $inboundOrdersCount,
-            'openOrdersCount' => $inboundOrdersCount,
-            'wholesaleSalesCount' => $activeSalesCount,
-            'filters' => [
-                'search' => $search,
-                'status' => $statusFilter,
-            ],
-        ]);
+        return Inertia::render('Seller/SupplyHub/WholesaleSales', $this->supplyHubService->getWholesaleSalesData($actor, $request));
     }
 
     /**
@@ -631,7 +237,7 @@ class B2BSupplyHubController extends Controller
         string $id,
         UpdateOrderStatus $updateOrderStatus
     ) {
-        /** @var User $actor */
+        /** @var User|null $actor */
         $actor = Auth::user();
 
         if (!$actor || !$actor->isArtisan()) {
@@ -667,28 +273,14 @@ class B2BSupplyHubController extends Controller
      */
     public function downloadInvoice(string $id)
     {
-        /** @var User $actor */
+        /** @var User|null $actor */
         $actor = Auth::user();
 
         if (!$actor || !$actor->isArtisan()) {
             abort(403, 'The B2B Supply Hub is strictly reserved for verified artisans.');
         }
 
-        $order = Order::with([
-            'items' => function ($query) {
-                $query->select('id', 'order_id', 'product_id', 'product_name', 'variant', 'quantity', 'price', 'product_img', 'is_b2b_supply', 'supply_unit');
-            },
-            'user',
-            'artisan',
-            'delivery',
-        ])
-            ->where(function ($q) use ($id) {
-                $q->where('order_number', $id)->orWhere('id', $id);
-            })
-            ->where(function ($q) use ($actor) {
-                $q->where('user_id', $actor->id)->orWhere('artisan_id', $actor->id);
-            })
-            ->firstOrFail();
+        $order = $this->supplyHubService->getInvoiceOrder($actor, $id);
 
         return view('pdf.receipt', ['order' => $order]);
     }

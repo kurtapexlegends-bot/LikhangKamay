@@ -14,6 +14,10 @@ use App\Services\SellerEntitlementService;
 use App\Services\OwnerApprovalService;
 use App\Services\HR\PayrollCalculatorService;
 use App\Actions\Seller\HR\ProvisionStaffAccount;
+use App\Actions\Seller\HR\ApproveAttendanceSession;
+use App\Actions\Seller\HR\RejectAttendanceSession;
+use App\Actions\Seller\HR\SubmitPayrollRun;
+use App\Http\Requests\Seller\HR\RejectAttendanceSessionRequest;
 use App\Support\HRWorkflowHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -596,51 +600,19 @@ class HRController extends Controller
         ]);
     }
 
-    public function submitPayrollRun(Payroll $payroll)
+    public function submitPayrollRun(Payroll $payroll, SubmitPayrollRun $action)
     {
         Gate::authorize('manage', $payroll);
 
-        $seller = $this->sellerOwner();
+        $result = $action->execute($payroll, $this->sellerOwner(), $this->sellerActor());
 
-        if ($payroll->status !== 'Draft') {
-            return back()->with('error', 'Only draft payroll runs can be submitted.');
-        }
-
-        $payroll->update(Payroll::filterSchemaCompatibleAttributes([
-            'status' => 'Pending',
-            'submitted_at' => now(config('app.timezone')),
-        ]));
-
-        HRWorkflowHelper::notifyAccountingOfPayrollRun($payroll->fresh(['requester']), $seller, $payroll->month, $this->sellerActor());
-
-        $actor = $this->sellerActor();
-        if ($actor->isStaff() || $actor->id !== $seller->id) {
-            $approvalService = app(OwnerApprovalService::class);
-            $alreadyExists = OwnerApproval::query()
-                ->where('seller_id', $seller->id)
-                ->where('domain', OwnerApproval::DOMAIN_HR_PAYROLL)
-                ->where('approvable_type', Payroll::class)
-                ->where('approvable_id', $payroll->id)
-                ->where('status', OwnerApproval::STATUS_PENDING)
-                ->exists();
-
-            if (!$alreadyExists) {
-                $payload = $approvalService->buildPayrollPayload($payroll, $seller);
-                $approvalService->submitRequest(
-                    $seller,
-                    $actor,
-                    OwnerApproval::DOMAIN_HR_PAYROLL,
-                    "Payroll Run: {$payroll->month}",
-                    "Payroll run for {$payroll->month} ({$payroll->employee_count} employees, ₱" . number_format((float) $payroll->total_amount, 2) . ") submitted for owner review.",
-                    $payroll,
-                    $payload
-                );
-            }
+        if (!$result['success']) {
+            return back()->with('error', $result['message']);
         }
 
         return redirect()
             ->route('hr.payroll.show', $payroll)
-            ->with('success', 'Payroll request sent to Accounting.');
+            ->with('success', $result['message']);
     }
 
     public function showTimeCardAudit(
@@ -677,36 +649,26 @@ class HRController extends Controller
 
     public function approveAttendanceSession(
         \App\Models\StaffAttendanceSession $session,
-        StaffAttendanceService $attendanceService
+        ApproveAttendanceSession $action
     ) {
-        $actor = $this->sellerActor();
-        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Only HR managers can approve attendance sessions.');
-
-        $attendanceService->approveSession($session, $actor);
+        $session = $action->execute($session, $this->sellerActor());
 
         return response()->json([
             'message' => 'Attendance session approved successfully.',
-            'session' => $session->fresh(['approver:id,name']),
+            'session' => $session,
         ]);
     }
 
     public function rejectAttendanceSession(
-        Request $request,
+        RejectAttendanceSessionRequest $request,
         \App\Models\StaffAttendanceSession $session,
-        StaffAttendanceService $attendanceService
+        RejectAttendanceSession $action
     ) {
-        $actor = $this->sellerActor();
-        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Only HR managers can reject attendance sessions.');
-
-        $request->validate([
-            'reason' => 'nullable|string|max:255',
-        ]);
-
-        $attendanceService->rejectSession($session, $actor, $request->input('reason'));
+        $session = $action->execute($session, $this->sellerActor(), $request->validated('reason'));
 
         return response()->json([
             'message' => 'Attendance session rejected.',
-            'session' => $session->fresh(['approver:id,name']),
+            'session' => $session,
         ]);
     }
 }

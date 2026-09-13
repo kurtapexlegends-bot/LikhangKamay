@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
 
+use App\Events\ShopSettingsUpdated;
+use App\Http\Requests\Seller\UpdateShopSettingsRequest;
 use App\Models\Product;
-use App\Models\SellerActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -143,7 +144,7 @@ class ShopController extends Controller
         ]);
     }
 
-    public function updateSettings(Request $request)
+    public function updateSettings(UpdateShopSettingsRequest $request)
     {
         $user = $request->user()->getEffectiveSeller();
         abort_unless($user && $user->isArtisan(), 403, 'Seller workspace access only.');
@@ -154,11 +155,7 @@ class ShopController extends Controller
             'has_avatar' => filled($user->avatar),
         ];
 
-        $validated = $request->validate([
-            'bio' => 'nullable|string|max:500',
-            'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
-        ]);
+        $validated = $request->validated();
 
         $user->bio = $validated['bio'] ?? null;
 
@@ -180,36 +177,13 @@ class ShopController extends Controller
 
         $user->save();
 
-        SellerActivityLog::recordEvent([
-            'seller_owner_id' => $user->id,
-            'actor_user_id' => $request->user()?->id,
-            'actor_type' => SellerActivityLog::resolveActorType($request->user(), 'owner'),
-            'category' => 'operations',
-            'module' => 'shop_settings',
-            'event_type' => 'settings_updated',
-            'severity' => 'info',
-            'status' => 'updated',
-            'title' => 'Shop Settings Updated',
-            'summary' => 'Seller workspace profile details were updated.',
-            'subject_type' => User::class,
-            'subject_id' => $user->id,
-            'subject_label' => $user->shop_name ?: $user->name,
-            'details' => [
-                'before' => $before,
-                'after' => [
-                    'bio' => (string) ($user->bio ?? ''),
-                    'has_banner' => filled($user->banner_image),
-                    'has_avatar' => filled($user->avatar),
-                ],
-                'lines' => array_values(array_filter([
-                    $request->hasFile('banner_image') ? 'Updated shop banner image' : null,
-                    $request->hasFile('avatar') ? 'Updated shop avatar image' : null,
-                    array_key_exists('bio', $validated) ? 'Updated shop bio' : null,
-                ])),
-            ],
-            'target_url' => route('shop.settings'),
-            'target_label' => 'Open Shop Settings',
-        ]);
+        $lines = array_values(array_filter([
+            $request->hasFile('banner_image') ? 'Updated shop banner image' : null,
+            $request->hasFile('avatar') ? 'Updated shop avatar image' : null,
+            array_key_exists('bio', $validated) ? 'Updated shop bio' : null,
+        ]));
+
+        ShopSettingsUpdated::dispatch($user, $request->user(), $before, $lines);
 
         return redirect()->back()->with('success', 'Shop settings updated successfully.');
     }

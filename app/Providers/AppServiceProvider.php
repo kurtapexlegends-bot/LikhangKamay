@@ -98,6 +98,15 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\Review::observe(\App\Observers\ReviewObserver::class);
         \App\Models\ReviewDispute::observe(\App\Observers\ReviewDisputeObserver::class);
 
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\ShopSettingsUpdated::class,
+            \App\Listeners\LogShopSettingsUpdated::class
+        );
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\ProductWholesaleSettingsUpdated::class,
+            \App\Listeners\LogProductWholesaleSettingsUpdated::class
+        );
+
         // --- PASSWORD COMPLEXITY DEFAULTS ---
         \Illuminate\Validation\Rules\Password::defaults(function () {
             return \App\Support\PasswordRules::buyer();
