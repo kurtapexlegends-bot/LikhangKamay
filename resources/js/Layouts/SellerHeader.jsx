@@ -61,7 +61,7 @@ export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuCl
                 {/* Right: Actions, Search, Notifications & Profile */}
                 <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
                     {actions && <div className="flex items-center gap-2">{actions}</div>}
-                    <GlobalSearch />
+                    <GlobalSearch scope="seller" />
                     <NotificationDropdown />
                     <div className="h-6 sm:h-8 w-px bg-gray-200 hidden sm:block"></div>
 

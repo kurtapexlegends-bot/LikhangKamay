@@ -371,7 +371,7 @@ export default function AdminLayout({ title, children }) {
                     </div>
 
                     <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-6">
-                        <GlobalSearch />
+                        <GlobalSearch scope="admin" />
                         
                         {/* Notifications */}
                         <div className="flex items-center gap-2">

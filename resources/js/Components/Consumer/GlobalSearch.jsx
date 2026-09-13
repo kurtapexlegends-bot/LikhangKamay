@@ -9,9 +9,21 @@ import {
 import { router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 
-export default function GlobalSearch() {
+export default function GlobalSearch({ scope = null }) {
     const { auth, sellerSidebar } = usePage().props;
-    const isAdmin = auth?.user?.role === 'super_admin' || auth?.user?.role === 'admin';
+    const userRole = auth?.user?.role;
+    const isSuperAdmin = userRole === 'super_admin' || userRole === 'admin';
+    const isAdmin = isSuperAdmin;
+    const isSeller = userRole === 'artisan' || userRole === 'staff';
+
+    // Strictly resolve effective scope based on role and active workspace
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+    const requestedScope = scope || (currentPath.startsWith('/admin') ? 'admin' : (isSeller ? 'seller' : null));
+    const effectiveScope = (requestedScope === 'admin' && isSuperAdmin) 
+        ? 'admin' 
+        : ((requestedScope === 'seller' && isSeller) ? 'seller' : null);
+    const showAdminShortcuts = effectiveScope === 'admin';
+
     const visibleModules = sellerSidebar?.visibleModules || [];
 
     const getSafeRoute = (name, params = {}) => {
@@ -86,7 +98,10 @@ export default function GlobalSearch() {
 
             const timer = setTimeout(async () => {
                 try {
-                    const response = await axios.get(route('api.global-search', { query: query.trim() }), {
+                    const response = await axios.get(route('api.global-search', { 
+                        query: query.trim(),
+                        scope: effectiveScope,
+                    }), {
                         signal: controller.signal,
                     });
                     setResults(response.data.results || []);
@@ -107,11 +122,11 @@ export default function GlobalSearch() {
             setResults([]);
             setIsLoading(false);
         }
-    }, [query]);
+    }, [query, effectiveScope]);
 
-    // Define Role-based Commands
+    // Define Role-based Commands strictly isolated by effective scope
     const commands = useMemo(() => {
-        if (isAdmin) {
+        if (effectiveScope === 'admin') {
             return [
                 { label: 'Go to User Manager', cmd: '> users', url: getSafeRoute('admin.users.manager'), icon: Users, color: 'text-indigo-600 bg-indigo-50' },
                 { label: 'Go to Artisan Applications', cmd: '> applications', url: getSafeRoute('admin.users.manager', { tab: 'approvals' }), icon: Award, color: 'text-amber-600 bg-amber-50' },
@@ -132,30 +147,34 @@ export default function GlobalSearch() {
             ];
         }
 
-        return [
-            { label: 'Go to Product Catalog', cmd: '> products', url: getSafeRoute('products.index'), icon: Package, color: 'text-rose-600 bg-rose-50', module: 'products' },
-            { label: 'Go to Marketing Discounts', cmd: '> discounts', url: getSafeRoute('discounts.index'), icon: Tag, color: 'text-amber-600 bg-amber-50', module: 'products' },
-            { label: 'Go to 3D Model Manager', cmd: '> 3d', url: getSafeRoute('3d.index'), icon: Box, color: 'text-indigo-600 bg-indigo-50', module: 'products' },
-            { label: 'Go to Order Manager', cmd: '> orders', url: getSafeRoute('orders.index'), icon: ShoppingBag, color: 'text-emerald-600 bg-emerald-50', module: 'orders' },
-            { label: 'Go to Materials Inventory & Supplies', cmd: '> inventory', url: getSafeRoute('procurement.index'), icon: Box, color: 'text-blue-600 bg-blue-50', module: 'procurement' },
-            { label: 'Go to Stock Requests Queue', cmd: '> stock-requests', url: getSafeRoute('stock-requests.index'), icon: ClipboardList, color: 'text-clay-600 bg-clay-50', module: 'stock_requests' },
-            { label: 'Go to Customer Reviews & Feedback', cmd: '> reviews', url: getSafeRoute('reviews.index'), icon: Star, color: 'text-amber-600 bg-amber-50', module: 'reviews' },
-            { label: 'Go to Team Messages & Channels', cmd: '> team-messages', url: getSafeRoute('team-messages.index'), icon: MessageSquare, color: 'text-sky-600 bg-sky-50', module: 'team_messages' },
-            { label: 'Go to Sponsorship Campaigns', cmd: '> sponsorships', url: getSafeRoute('seller.sponsorships'), icon: Award, color: 'text-indigo-600 bg-indigo-50', module: 'sponsorships', ownerOnly: true },
-            { label: 'Go to HR Employee Directory', cmd: '> hr', url: getSafeRoute('hr.index'), icon: Users, color: 'text-purple-600 bg-purple-50', module: 'hr' },
-            { label: 'Go to Attendance & Time Card Audit', cmd: '> attendance', url: getSafeRoute('hr.index', { tab: 'timecard_audit' }), icon: Clock, color: 'text-purple-600 bg-purple-50', module: 'hr' },
-            { label: 'Go to Payroll Runs & Ledger', cmd: '> payroll', url: getSafeRoute('hr.index', { tab: 'payroll' }), icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50', module: 'accounting' },
-            { label: 'Go to Accounting & Financial Release', cmd: '> accounting', url: getSafeRoute('accounting.index'), icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50', module: 'accounting' },
-            { label: 'Go to Performance Analytics', cmd: '> analytics', url: getSafeRoute('analytics.index'), icon: BarChart2, color: 'text-stone-600 bg-stone-50', module: 'analytics' },
-            { label: 'Go to Shop Settings & Storefront', cmd: '> settings', url: getSafeRoute('shop.settings'), icon: Settings, color: 'text-stone-600 bg-stone-50', ownerOnly: true },
-            { label: 'Go to Activity History & Audit Log', cmd: '> audit-log', url: getSafeRoute('audit-log.index'), icon: Shield, color: 'text-stone-600 bg-stone-50', ownerOnly: true },
-            { label: 'Go to Subscription & Plan Quota', cmd: '> subscription', url: getSafeRoute('seller.subscription'), icon: Award, color: 'text-amber-600 bg-amber-50', ownerOnly: true },
-        ].filter(cmd => {
-            if (cmd.ownerOnly && auth?.user?.role !== 'artisan') return false;
-            if (cmd.module && !visibleModules.includes(cmd.module)) return false;
-            return true;
-        });
-    }, [isAdmin, visibleModules, auth?.user?.role]);
+        if (effectiveScope === 'seller') {
+            return [
+                { label: 'Go to Product Catalog', cmd: '> products', url: getSafeRoute('products.index'), icon: Package, color: 'text-rose-600 bg-rose-50', module: 'products' },
+                { label: 'Go to Marketing Discounts', cmd: '> discounts', url: getSafeRoute('discounts.index'), icon: Tag, color: 'text-amber-600 bg-amber-50', module: 'products' },
+                { label: 'Go to 3D Model Manager', cmd: '> 3d', url: getSafeRoute('3d.index'), icon: Box, color: 'text-indigo-600 bg-indigo-50', module: 'products' },
+                { label: 'Go to Order Manager', cmd: '> orders', url: getSafeRoute('orders.index'), icon: ShoppingBag, color: 'text-emerald-600 bg-emerald-50', module: 'orders' },
+                { label: 'Go to Materials Inventory & Supplies', cmd: '> inventory', url: getSafeRoute('procurement.index'), icon: Box, color: 'text-blue-600 bg-blue-50', module: 'procurement' },
+                { label: 'Go to Stock Requests Queue', cmd: '> stock-requests', url: getSafeRoute('stock-requests.index'), icon: ClipboardList, color: 'text-clay-600 bg-clay-50', module: 'stock_requests' },
+                { label: 'Go to Customer Reviews & Feedback', cmd: '> reviews', url: getSafeRoute('reviews.index'), icon: Star, color: 'text-amber-600 bg-amber-50', module: 'reviews' },
+                { label: 'Go to Team Messages & Channels', cmd: '> team-messages', url: getSafeRoute('team-messages.index'), icon: MessageSquare, color: 'text-sky-600 bg-sky-50', module: 'team_messages' },
+                { label: 'Go to Sponsorship Campaigns', cmd: '> sponsorships', url: getSafeRoute('seller.sponsorships'), icon: Award, color: 'text-indigo-600 bg-indigo-50', module: 'sponsorships', ownerOnly: true },
+                { label: 'Go to HR Employee Directory', cmd: '> hr', url: getSafeRoute('hr.index'), icon: Users, color: 'text-purple-600 bg-purple-50', module: 'hr' },
+                { label: 'Go to Attendance & Time Card Audit', cmd: '> attendance', url: getSafeRoute('hr.index', { tab: 'timecard_audit' }), icon: Clock, color: 'text-purple-600 bg-purple-50', module: 'hr' },
+                { label: 'Go to Payroll Runs & Ledger', cmd: '> payroll', url: getSafeRoute('hr.index', { tab: 'payroll' }), icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50', module: 'accounting' },
+                { label: 'Go to Accounting & Financial Release', cmd: '> accounting', url: getSafeRoute('accounting.index'), icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50', module: 'accounting' },
+                { label: 'Go to Performance Analytics', cmd: '> analytics', url: getSafeRoute('analytics.index'), icon: BarChart2, color: 'text-stone-600 bg-stone-50', module: 'analytics' },
+                { label: 'Go to Shop Settings & Storefront', cmd: '> settings', url: getSafeRoute('shop.settings'), icon: Settings, color: 'text-stone-600 bg-stone-50', ownerOnly: true },
+                { label: 'Go to Activity History & Audit Log', cmd: '> audit-log', url: getSafeRoute('audit-log.index'), icon: Shield, color: 'text-stone-600 bg-stone-50', ownerOnly: true },
+                { label: 'Go to Subscription & Plan Quota', cmd: '> subscription', url: getSafeRoute('seller.subscription'), icon: Award, color: 'text-amber-600 bg-amber-50', ownerOnly: true },
+            ].filter(cmd => {
+                if (cmd.ownerOnly && userRole !== 'artisan') return false;
+                if (cmd.module && !visibleModules.includes(cmd.module)) return false;
+                return true;
+            });
+        }
+
+        return [];
+    }, [effectiveScope, visibleModules, userRole]);
 
     const isCommandMode = query.startsWith('>');
     const cleanQuery = query.replace('>', '').trim().toLowerCase();
@@ -266,7 +285,7 @@ export default function GlobalSearch() {
                     <input
                         ref={inputRef}
                         type="text"
-                        placeholder={isCommandMode ? "Type a command..." : "Search platform or type '>' for shortcuts..."}
+                        placeholder={isCommandMode ? "Type a command..." : effectiveScope === 'admin' ? "Search admin records or type '>'..." : effectiveScope === 'seller' ? "Search store records or type '>'..." : "Search platform..."}
                         className={`w-full rounded-xl border pl-10 pr-10 py-2 text-xs font-semibold text-stone-900 transition placeholder:text-stone-400 focus:outline-none ${
                             isOpen 
                                 ? 'border-clay-300 bg-white ring-4 ring-clay-500/10' 
@@ -397,7 +416,7 @@ export default function GlobalSearch() {
                                 <div className="p-3 space-y-3">
                                     <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-2">Quick Access</h3>
                                     <div className="grid grid-cols-1 gap-1">
-                                        {(isAdmin ? [
+                                        {(showAdminShortcuts ? [
                                             { label: 'User Directory & Approvals', sub: 'Manage user profiles, accounts, and artisan vetting.', icon: Users, color: 'text-indigo-600 bg-indigo-50', url: getSafeRoute('admin.users.manager') },
                                             { label: 'Catalog & Categories', sub: 'Inspect product listings, flags, and store categories.', icon: FolderTree, color: 'text-rose-600 bg-rose-50', url: getSafeRoute('admin.catalog.index') },
                                             { label: 'Disputes & Compliance', sub: 'Order disputes, review reports, and moderation queue.', icon: ShieldAlert, color: 'text-red-600 bg-red-50', url: getSafeRoute('admin.compliance') },
@@ -463,7 +482,7 @@ export default function GlobalSearch() {
                             <input
                                 ref={mobileInputRef}
                                 type="text"
-                                placeholder={isCommandMode ? "Type a command..." : "Search platform or type '>'..."}
+                                placeholder={isCommandMode ? "Type a command..." : effectiveScope === 'admin' ? "Search admin records or type '>'..." : effectiveScope === 'seller' ? "Search store records or type '>'..." : "Search platform..."}
                                 className="w-full rounded-xl border border-stone-200 bg-stone-50 pl-9 pr-9 py-2 text-xs font-semibold text-stone-900 focus:outline-none focus:bg-white focus:ring-2 focus:ring-clay-500/20 focus:border-clay-400"
                                 value={query}
                                 onChange={(e) => {
@@ -528,7 +547,7 @@ export default function GlobalSearch() {
                             <div className="p-2 space-y-2">
                                 <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-2">Quick Shortcuts</p>
                                 <div className="grid grid-cols-1 gap-1">
-                                    {(isAdmin ? [
+                                    {(showAdminShortcuts ? [
                                         { label: 'User Directory', url: getSafeRoute('admin.users.manager'), icon: Users },
                                         { label: 'Artisan Approvals', url: getSafeRoute('admin.users.manager', { tab: 'approvals' }), icon: Award },
                                         { label: 'Catalog Moderation', url: getSafeRoute('admin.catalog.index'), icon: FolderTree },
