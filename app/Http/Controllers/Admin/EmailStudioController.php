@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreEmailTemplateRequest;
+use App\Http\Requests\Admin\UpdateEmailTemplateRequest;
 use App\Models\EmailTemplate;
 use App\Models\User;
 use App\Models\PlatformActivity;
@@ -53,20 +55,11 @@ class EmailStudioController extends Controller
     /**
      * Create or update a custom email template.
      */
-    public function store(Request $request)
+    public function store(StoreEmailTemplateRequest $request)
     {
         Gate::authorize('admin-action');
 
-        $validated = $request->validate([
-            'id' => ['nullable', 'integer', 'exists:email_templates,id'],
-            'name' => ['required', 'string', 'max:255'],
-            'subject' => ['required', 'string', 'max:255'],
-            'headline' => ['nullable', 'string', 'max:255'],
-            'body' => ['required', 'string'],
-            'button_label' => ['nullable', 'string', 'max:100'],
-            'button_url' => ['nullable', 'string', 'max:500'],
-            'category' => ['required', 'string', 'in:system,custom'],
-        ]);
+        $validated = $request->validated();
 
         $slug = isset($validated['id']) 
             ? EmailTemplate::where('id', $validated['id'])->value('slug')
@@ -95,6 +88,42 @@ class EmailStudioController extends Controller
         PlatformActivity::log(
             'EMAIL_TEMPLATE_SAVED',
             "Saved email template: {$template->name} ({$template->slug})"
+        );
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Email template \"{$template->name}\" saved successfully.",
+                'template' => $template,
+            ]);
+        }
+
+        return back()->with('success', "Email template \"{$template->name}\" saved successfully.");
+    }
+
+    /**
+     * Update an existing email template.
+     */
+    public function update(UpdateEmailTemplateRequest $request, EmailTemplate $template)
+    {
+        Gate::authorize('admin-action');
+
+        $validated = $request->validated();
+        $template->update(array_filter([
+            'name' => $validated['name'] ?? $template->name,
+            'subject' => $validated['subject'] ?? $template->subject,
+            'headline' => array_key_exists('headline', $validated) ? $validated['headline'] : $template->headline,
+            'body' => $validated['body'] ?? $template->body,
+            'button_label' => array_key_exists('button_label', $validated) ? $validated['button_label'] : $template->button_label,
+            'button_url' => array_key_exists('button_url', $validated) ? $validated['button_url'] : $template->button_url,
+            'category' => $validated['category'] ?? $template->category,
+        ]));
+
+        Cache::forget("email_template_{$template->slug}");
+
+        PlatformActivity::log(
+            'EMAIL_TEMPLATE_SAVED',
+            "Updated email template: {$template->name} ({$template->slug})"
         );
 
         if ($request->wantsJson() || $request->ajax()) {

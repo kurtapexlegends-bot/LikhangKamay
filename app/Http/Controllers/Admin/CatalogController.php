@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ModerateCatalogItemRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\PlatformActivity;
@@ -279,25 +280,15 @@ class CatalogController extends Controller
     }
 
     /**
-     * Bulk moderate products (approve, reject, flag)
+     * Moderate catalog items (approve, reject, flag)
      */
-    public function bulkModerateProducts(Request $request)
+    public function moderate(ModerateCatalogItemRequest $request)
     {
         Gate::authorize('admin-action');
 
-        $validated = $request->validate([
-            'ids' => 'required|array|min:1',
-            'ids.*' => 'exists:products,id',
-            'action' => 'required|string|in:approve,reject,flag',
-            'feedback' => 'nullable|string|max:1000',
-        ]);
-
+        $validated = $request->validated();
         $action = $validated['action'];
         $feedback = $validated['feedback'] ?? null;
-
-        if (in_array($action, ['reject', 'flag']) && empty(trim($feedback ?? ''))) {
-            return back()->withErrors(['feedback' => 'Feedback/reason is required when rejecting or flagging products.']);
-        }
 
         $products = Product::with('user')->whereIn('id', $validated['ids'])->get();
 
@@ -313,7 +304,7 @@ class CatalogController extends Controller
 
                 $product->update([
                     'status' => $status,
-                    'rejection_reason' => $action === 'approve' ? null : strip_tags($feedback),
+                    'rejection_reason' => $action === 'approve' ? null : strip_tags((string) $feedback),
                 ]);
 
                 // Notify seller
@@ -343,5 +334,13 @@ class CatalogController extends Controller
         );
 
         return back()->with('success', count($validated['ids']) . " product(s) successfully {$actionLabel}.");
+    }
+
+    /**
+     * Bulk moderate products (approve, reject, flag) - backward compatibility alias
+     */
+    public function bulkModerateProducts(ModerateCatalogItemRequest $request)
+    {
+        return $this->moderate($request);
     }
 }

@@ -210,6 +210,8 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         // SHOP SETTINGS & WORKPLACE LOCATIONS
         Route::get('/shop-settings', [\App\Http\Controllers\Seller\ShopController::class, 'settings'])->middleware('seller.module:shop_settings')->name('shop.settings');
         Route::post('/shop-settings', [\App\Http\Controllers\Seller\ShopController::class, 'updateSettings'])->middleware('seller.module:shop_settings')->name('shop.settings.update');
+        Route::post('/shop-settings/presign', [\App\Http\Controllers\Seller\ShopController::class, 'presign'])->middleware('seller.module:shop_settings')->name('shop.settings.presign');
+        Route::put('/shop-settings/local-upload', [\App\Http\Controllers\Seller\ShopController::class, 'localUpload'])->middleware('seller.module:shop_settings')->name('shop.settings.local-upload');
         Route::get('/shop/analytics/rollup', [\App\Http\Controllers\Seller\ShopController::class, 'analyticsRollup'])->name('shop.analytics.rollup');
         Route::get('/shop-locations', [\App\Http\Controllers\Seller\SellerLocationController::class, 'index'])->middleware('seller.module:shop_settings')->name('shop.locations.index');
         Route::post('/shop-locations', [\App\Http\Controllers\Seller\SellerLocationController::class, 'store'])->middleware('seller.module:shop_settings')->name('shop.locations.store');
@@ -496,6 +498,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     // Email Studio & Audience Broadcast
     Route::get('/settings/email-templates', [\App\Http\Controllers\Admin\EmailStudioController::class, 'index'])->name('admin.email-templates.index');
     Route::post('/settings/email-templates', [\App\Http\Controllers\Admin\EmailStudioController::class, 'store'])->name('admin.email-templates.store');
+    Route::put('/settings/email-templates/{template}', [\App\Http\Controllers\Admin\EmailStudioController::class, 'update'])->name('admin.email-templates.update');
     Route::delete('/settings/email-templates/{template}', [\App\Http\Controllers\Admin\EmailStudioController::class, 'destroy'])->name('admin.email-templates.destroy');
     Route::post('/settings/email-templates/dispatch', [\App\Http\Controllers\Admin\EmailStudioController::class, 'dispatch'])->middleware('throttle:admin.heavy')->name('admin.email-templates.dispatch');
         Route::get('/monetization', fn() => redirect()->route('admin.settings.index', ['tab' => 'monetization']))->name('admin.monetization');
@@ -532,7 +535,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     
     // Consolidated Product Catalog
     Route::get('/catalog', [\App\Http\Controllers\Admin\CatalogController::class, 'index'])->name('admin.catalog.index');
-    Route::post('/catalog/moderate', [\App\Http\Controllers\Admin\CatalogController::class, 'bulkModerateProducts'])->name('admin.catalog.moderate');
+    Route::post('/catalog/moderate', [\App\Http\Controllers\Admin\CatalogController::class, 'moderate'])->name('admin.catalog.moderate');
     Route::get('/sponsorships', fn() => redirect()->route('admin.catalog.index', ['tab' => 'sponsorships']))->name('admin.sponsorships');
     Route::post('/sponsorships/{sponsorshipRequest}/approve', [\App\Http\Controllers\Admin\CatalogController::class, 'approveSponsorship'])->name('admin.sponsorships.approve');
     Route::post('/sponsorships/{sponsorshipRequest}/reject', [\App\Http\Controllers\Admin\CatalogController::class, 'rejectSponsorship'])->name('admin.sponsorships.reject');

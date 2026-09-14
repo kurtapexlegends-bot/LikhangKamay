@@ -16,6 +16,7 @@ use App\Actions\Consumer\ReceiveOrder;
 use App\Actions\Seller\Orders\UpdateOrderStatus;
 use App\Http\Requests\Seller\ToggleWholesaleSupplyRequest;
 use App\Http\Requests\Seller\UpdateOrderStatusRequest;
+use App\Http\Requests\Seller\UpdateWholesaleOrderStatusRequest;
 use App\Services\B2BSupplyHubService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -233,7 +234,7 @@ class B2BSupplyHubController extends Controller
      * Update status on a wholesale supply order.
      */
     public function updateWholesaleOrderStatus(
-        UpdateOrderStatusRequest $request,
+        UpdateWholesaleOrderStatusRequest $request,
         string $id,
         UpdateOrderStatus $updateOrderStatus
     ) {
@@ -266,6 +267,17 @@ class B2BSupplyHubController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Alias for updateWholesaleOrderStatus.
+     */
+    public function updateStatus(
+        UpdateWholesaleOrderStatusRequest $request,
+        string $id,
+        UpdateOrderStatus $updateOrderStatus
+    ) {
+        return $this->updateWholesaleOrderStatus($request, $id, $updateOrderStatus);
     }
 
     /**

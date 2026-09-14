@@ -280,4 +280,160 @@ class RefactoredControllersVerificationTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.settings.index'));
         $response->assertOk();
     }
+
+    public function test_admin_can_moderate_catalog_items_with_moderate_request(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $artisan = User::factory()->artisanApproved()->create();
+
+        $product = Product::create([
+            'user_id' => $artisan->id,
+            'name' => 'Handwoven Banig Mat',
+            'sku' => 'BANIG-001',
+            'category' => 'Home & Living',
+            'price' => 800.00,
+            'stock' => 10,
+            'status' => 'pending_review',
+        ]);
+
+        // 1. Rejection requires non-empty feedback
+        $failResponse = $this->actingAs($admin)->post(route('admin.catalog.moderate'), [
+            'ids' => [$product->id],
+            'action' => 'reject',
+            'feedback' => '   ',
+        ]);
+        $failResponse->assertSessionHasErrors('feedback');
+
+        // 2. Successful approval
+        $successResponse = $this->actingAs($admin)->post(route('admin.catalog.moderate'), [
+            'ids' => [$product->id],
+            'action' => 'approve',
+        ]);
+        $successResponse->assertSessionHas('success');
+        $this->assertSame('Active', $product->fresh()->status);
+    }
+
+    public function test_admin_can_store_and_update_email_templates_with_form_requests(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        // 1. Store
+        $storeResponse = $this->actingAs($admin)->post(route('admin.email-templates.store'), [
+            'name' => 'Artisan Welcome Email',
+            'subject' => 'Welcome to LikhangKamay!',
+            'headline' => 'Your artisan shop is ready',
+            'body' => '<p>Welcome aboard our artisan cooperative!</p>',
+            'category' => 'custom',
+        ]);
+        $storeResponse->assertSessionHas('success');
+
+        $template = \App\Models\EmailTemplate::where('name', 'Artisan Welcome Email')->firstOrFail();
+        $this->assertSame('Welcome to LikhangKamay!', $template->subject);
+
+        // 2. Update via extracted UpdateEmailTemplateRequest
+        $updateResponse = $this->actingAs($admin)->put(route('admin.email-templates.update', $template), [
+            'name' => 'Artisan Welcome Email Updated',
+            'subject' => 'Welcome to LikhangKamay Cooperative!',
+            'body' => '<p>Updated content</p>',
+            'category' => 'custom',
+        ]);
+        $updateResponse->assertSessionHas('success');
+        $template->refresh();
+        $this->assertSame('Artisan Welcome Email Updated', $template->name);
+        $this->assertSame('Welcome to LikhangKamay Cooperative!', $template->subject);
+    }
+
+    public function test_artisan_can_presign_and_upload_shop_media_direct_to_storage(): void
+    {
+        $artisan = User::factory()->artisanApproved()->create();
+
+        // 1. Presign endpoint
+        $response = $this->actingAs($artisan)->postJson(route('shop.settings.presign'), [
+            'filename' => 'banner_photo.webp',
+            'contentType' => 'image/webp',
+            'type' => 'banner',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonStructure(['url', 'key']);
+        $key = $response->json('key');
+        $this->assertStringStartsWith('shop_banners/', $key);
+
+        // 2. Direct upload simulation
+        $uploadResponse = $this->actingAs($artisan)
+            ->call('PUT', route('shop.settings.local-upload') . '?key=' . urlencode($key), [], [], [], [], 'fake-image-bytes');
+        $uploadResponse->assertOk();
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($key);
+
+        // 3. Save shop settings with presigned key
+        $updateResponse = $this->actingAs($artisan)->post(route('shop.settings.update'), [
+            'banner_key' => $key,
+        ]);
+        $updateResponse->assertSessionHas('success');
+        $this->assertSame($key, $artisan->fresh()->banner_image);
+    }
+
+    public function test_wholesale_controller_update_status_executes_with_form_request(): void
+    {
+        $supplier = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'super_premium',
+        ]);
+        $buyer = User::factory()->create();
+
+        $order = \App\Models\Order::create([
+            'order_number' => 'ORD-WS-TEST-999',
+            'user_id' => $buyer->id,
+            'artisan_id' => $supplier->id,
+            'customer_name' => $buyer->name,
+            'shipping_address' => 'Silang, Cavite',
+            'merchandise_subtotal' => 2500.00,
+            'total_amount' => 2500.00,
+            'status' => 'Pending',
+            'payment_status' => 'paid',
+            'payment_method' => 'paymongo',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        $this->actingAs($supplier);
+        $request = \App\Http\Requests\Seller\UpdateWholesaleOrderStatusRequest::create(
+            '/seller/wholesale/status',
+            'POST',
+            ['status' => 'Accepted']
+        );
+        $request->setUserResolver(fn() => $supplier);
+
+        $controller = new \App\Http\Controllers\Seller\WholesaleController();
+        $action = app(\App\Actions\Seller\Orders\UpdateOrderStatus::class);
+
+        $response = $controller->updateStatus($request, (string) $order->id, $action);
+        $this->assertTrue($response->isRedirection());
+        $this->assertSame('Accepted', $order->fresh()->status);
+    }
+
+    public function test_global_search_service_caches_queries_for_sixty_seconds(): void
+    {
+        $artisan = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'super_premium',
+        ]);
+
+        Product::create([
+            'user_id' => $artisan->id,
+            'name' => 'Cache Test Ceramic Mug',
+            'sku' => 'CACHE-MUG-01',
+            'category' => 'Pottery',
+            'price' => 450.00,
+            'stock' => 15,
+            'status' => 'Active',
+        ]);
+
+        $service = app(\App\Services\Search\GlobalSearchService::class);
+        $cacheKey = sprintf('global_search:%d:seller:%s', $artisan->id, md5('cache test'));
+
+        \Illuminate\Support\Facades\Cache::forget($cacheKey);
+        $this->assertFalse(\Illuminate\Support\Facades\Cache::has($cacheKey));
+
+        $results = $service->search($artisan, 'Cache Test', 'seller');
+        $this->assertNotEmpty($results);
+        $this->assertTrue(\Illuminate\Support\Facades\Cache::has($cacheKey));
+    }
 }
