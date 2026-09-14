@@ -23,7 +23,7 @@ export default function OrderManagerModals({
     submitDisputeResponse,
     dispatchModal,
     setDispatchModal,
-    isPremium = true,
+    isPremium = false,
 }) {
     return (
         <>

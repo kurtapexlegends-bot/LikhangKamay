@@ -21,11 +21,18 @@ export default function DispatchOrderModal({
     onClose,
     order,
     canEditOrders = true,
-    isPremium = true,
+    isPremium = false,
 }) {
     const { addToast } = useToast();
     const [isMobile, setIsMobile] = useState(false);
     const [activeTab, setActiveTab] = useState(isPremium ? "in_house" : "lalamove");
+
+    useEffect(() => {
+        if (isOpen) {
+            setActiveTab(isPremium ? "in_house" : "lalamove");
+        }
+    }, [isOpen, isPremium]);
+
     const [drivers, setDrivers] = useState([]);
     const [isLoadingDrivers, setIsLoadingDrivers] = useState(false);
     const [selectedDriverId, setSelectedDriverId] = useState(null);
@@ -312,7 +319,7 @@ export default function DispatchOrderModal({
                         <span>Studio Fleet (In-House)</span>
                         {isPremium ? (
                             <span className="rounded bg-clay-100 px-1.5 py-0.5 text-[9px] font-bold text-clay-700">
-                                Premium
+                                Premium &amp; Elite
                             </span>
                         ) : (
                             <span className="inline-flex items-center gap-1 rounded bg-stone-200/80 px-1.5 py-0.5 text-[9px] font-bold text-stone-600">
@@ -445,7 +452,7 @@ export default function DispatchOrderModal({
                 </div>
 
                 {/* Modal Body */}
-                <div ref={modalBodyRef} className="min-h-0 flex-1 overflow-y-auto p-6 custom-scrollbar">
+                <div ref={modalBodyRef} className="min-h-0 flex-1 overflow-y-auto p-6 pb-10 custom-scrollbar">
                     {renderContent()}
                 </div>
 

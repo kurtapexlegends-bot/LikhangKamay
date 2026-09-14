@@ -26,7 +26,7 @@ export default function WholesaleSales({
     filters = {},
 }) {
     const { auth, flash, cartCount = 0, sellerSidebar } = usePage().props;
-    const isPremium = sellerSidebar?.isPremium ?? true;
+    const isPremium = sellerSidebar?.canUseInHouseDispatch ?? sellerSidebar?.isPremium ?? (sellerSidebar?.tierKey ? sellerSidebar.tierKey !== 'free' : false);
     const sellerShopName = sellerSidebar?.shopName || auth?.user?.shop_name || 'Studio Workshop';
     const sellerName = auth?.user?.name || '';
     const { addToast } = useToast();

@@ -388,7 +388,7 @@ export default function OrderManager({ auth, orders = [], tabCounts, filters: pr
                 submitDisputeResponse={submitDisputeResponse}
                 dispatchModal={dispatchModal}
                 setDispatchModal={setDispatchModal}
-                isPremium={sellerSidebar?.isPremium ?? true}
+                isPremium={sellerSidebar?.canUseInHouseDispatch ?? sellerSidebar?.isPremium ?? (sellerSidebar?.tierKey ? sellerSidebar.tierKey !== 'free' : false)}
             />
 
             {/* Floating Bulk Actions Bar */}
