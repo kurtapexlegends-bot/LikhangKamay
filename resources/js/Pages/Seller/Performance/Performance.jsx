@@ -1,14 +1,16 @@
+/* global route */
 import React, { useMemo, useState, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Head, usePage } from '@inertiajs/react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
 import {
-    DollarSign,
     Download,
+    Lock,
     Printer
 } from 'lucide-react';
 import ExportButton from '@/Components/ExportButton';
+import PrintReportUpgradeModal from '@/Components/Seller/Performance/PrintReportUpgradeModal';
 
 // Modular UI Components
 import OperationsControl from '@/Components/Seller/Performance/OperationsControl';
@@ -31,12 +33,16 @@ export default function Analytics({
     sponsorshipAnalyticsAvailability,
     financials_masked,
 }) {
-    const { sellerSubscription } = usePage().props;
+    const { sellerSubscription, sellerSidebar } = usePage().props;
     const { openSidebar } = useSellerWorkspaceShell();
     const [chartFilter, setChartFilter] = useState('Monthly');
     const [isLoading] = useState(false);
     const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
     const [isPrinting, setIsPrinting] = useState(false);
+    const [showPrintUpgradeModal, setShowPrintUpgradeModal] = useState(false);
+
+    const isPremium = sellerSidebar?.canUseInHouseDispatch ?? sellerSidebar?.isPremium ?? (sellerSidebar?.tierKey && sellerSidebar?.tierKey !== 'free') ?? false;
+    const canPrintReport = Boolean(sellerSubscription?.canPrintAnalyticsReport ?? sellerSidebar?.canPrintAnalyticsReport ?? isPremium);
 
     const handlePrint = async () => {
         setIsPrinting(true);
@@ -58,6 +64,7 @@ export default function Analytics({
     }, []);
 
     const currentChartData = chartData[chartFilter.toLowerCase()] || [];
+
     const stats = metrics.review_stats;
     const salesHeatmap = insights?.sales_heatmap || [];
 
@@ -82,29 +89,40 @@ export default function Analytics({
             <main className="flex-1 w-full p-4 sm:p-6 lg:p-8 overflow-y-auto space-y-6">
                 {/* Page Action Bar */}
                 <div className="flex items-center justify-end gap-2 print:hidden">
-                    <ExportButton 
-                        onClick={handlePrint} 
-                        disabled={isPrinting}
-                        icon={Printer} 
-                        variant="secondary" 
-                        className="h-9 min-h-[36px] px-3.5 rounded-xl shadow-2xs font-bold text-xs"
-                    >
-                        <span className="hidden sm:inline">{isPrinting ? 'Preparing Print...' : 'Print Report'}</span>
-                        <span className="sm:hidden">{isPrinting ? 'Preparing...' : 'Print'}</span>
-                    </ExportButton>
+                    {canPrintReport ? (
+                        <ExportButton 
+                            onClick={handlePrint} 
+                            disabled={isPrinting}
+                            icon={Printer} 
+                            variant="secondary" 
+                            className="h-9 min-h-[36px] px-3.5 rounded-xl shadow-2xs font-bold text-xs"
+                        >
+                            <span className="hidden sm:inline">{isPrinting ? 'Preparing Print...' : 'Print Report'}</span>
+                            <span className="sm:hidden">{isPrinting ? 'Preparing...' : 'Print'}</span>
+                        </ExportButton>
+                    ) : (
+                        <ExportButton 
+                            onClick={() => setShowPrintUpgradeModal(true)} 
+                            icon={Printer} 
+                            variant="secondary" 
+                            className="h-9 min-h-[36px] px-3.5 rounded-xl shadow-2xs font-bold text-xs"
+                        >
+                            <span className="hidden sm:inline">Print Report</span>
+                            <span className="sm:hidden">Print</span>
+                            <span className="ml-1 inline-flex items-center gap-0.5 rounded bg-stone-200/80 px-1.5 py-0.5 text-[9px] font-bold text-stone-600">
+                                <Lock size={9} /> Locked
+                            </span>
+                        </ExportButton>
+                    )}
 
                     {financials_masked ? (
                         <ExportButton icon={Download} disabled className="h-9 min-h-[36px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
                             Revenue Masked
                         </ExportButton>
-                    ) : sellerSubscription?.canExportAnalytics ? (
+                    ) : (
                         <ExportButton href={route('analytics.export')} icon={Download} variant="primary" className="h-9 min-h-[36px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
                             <span className="hidden sm:inline">Export CSV</span>
                             <span className="sm:hidden">Export</span>
-                        </ExportButton>
-                    ) : (
-                        <ExportButton icon={DollarSign} disabled className="h-9 min-h-[36px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
-                            Premium Export
                         </ExportButton>
                     )}
                 </div>
@@ -282,6 +300,12 @@ export default function Analytics({
                         shouldAnimateKPI={shouldAnimateKPI}
                     />
                 </Suspense>
+
+                {/* Print Report Upgrade Modal */}
+                <PrintReportUpgradeModal
+                    isOpen={showPrintUpgradeModal}
+                    onClose={() => setShowPrintUpgradeModal(false)}
+                />
 
             </main>
         </>

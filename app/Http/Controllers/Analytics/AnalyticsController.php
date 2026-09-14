@@ -124,12 +124,6 @@ class AnalyticsController extends Controller
         $seller = $this->sellerOwner();
 
         abort_unless(
-            $seller->canExportAnalytics(),
-            403,
-            'Analytics report export is not included in your current subscription plan.'
-        );
-
-        abort_unless(
             $request->user()->hasStaffCapability(User::CAP_VIEW_REVENUE),
             403,
             'You do not have permission to view or export financial analytics data.'

@@ -15,22 +15,34 @@ class SubscriptionTierEnforcementTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_standard_seller_cannot_export_analytics_report(): void
+    public function test_standard_seller_can_export_analytics_csv_report(): void
     {
         $seller = User::factory()->artisanApproved()->create([
             'premium_tier' => 'free',
         ]);
 
-        $this->actingAs($seller)
-            ->get(route('analytics.export'))
-            ->assertForbidden();
+        $response = $this->actingAs($seller)->get(route('analytics.export'));
+
+        $response->assertOk();
+        $this->assertStringStartsWith('text/csv', (string) $response->headers->get('content-type'));
     }
 
-    public function test_premium_seller_can_export_analytics_report(): void
+    public function test_standard_seller_cannot_print_analytics_report(): void
+    {
+        $seller = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'free',
+        ]);
+
+        $this->assertFalse($seller->canPrintAnalyticsReport());
+    }
+
+    public function test_premium_seller_can_print_and_export_analytics_report(): void
     {
         $seller = User::factory()->artisanApproved()->create([
             'premium_tier' => 'premium',
         ]);
+
+        $this->assertTrue($seller->canPrintAnalyticsReport());
 
         $response = $this->actingAs($seller)->get(route('analytics.export'));
 
