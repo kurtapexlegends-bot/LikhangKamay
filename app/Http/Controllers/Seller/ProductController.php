@@ -198,8 +198,12 @@ class ProductController extends Controller
             'status' => ['required', Rule::in(['Active', 'Draft', 'Archived'])],
         ]);
 
-        foreach ($validated['ids'] as $id) {
-            $product = Product::findOrFail($id);
+        $products = Product::whereIn('id', $validated['ids'])->get();
+        if ($products->count() !== count(array_unique($validated['ids']))) {
+            abort(404, 'One or more selected products were not found.');
+        }
+
+        foreach ($products as $product) {
             Gate::authorize('update', $product);
         }
 
@@ -386,7 +390,7 @@ class ProductController extends Controller
         $product->load([
             'user',
             'discounts',
-            'reviews' => fn ($query) => $query->visibleToMarketplace()->with('user'),
+            'reviews' => fn ($query) => $query->visibleToMarketplace()->with('user:id,name,avatar'),
         ]);
 
         $relatedProducts = $product->getRelatedProducts();

@@ -7,16 +7,20 @@ use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Employee;
 use App\Models\OwnerApproval;
 use App\Models\Payroll;
-use App\Models\StaffAccessAudit;
 use App\Models\User;
 use App\Services\StaffAttendanceService;
 use App\Services\SellerEntitlementService;
 use App\Services\OwnerApprovalService;
 use App\Services\HR\PayrollCalculatorService;
-use App\Actions\Seller\HR\ProvisionStaffAccount;
+use App\Services\HR\AttendanceAggregatorService;
+use App\Actions\Seller\HR\CreateEmployeeAction;
+use App\Actions\Seller\HR\UpdateEmployeeAction;
+use App\Actions\Seller\HR\TerminateEmployeeAction;
 use App\Actions\Seller\HR\ApproveAttendanceSession;
 use App\Actions\Seller\HR\RejectAttendanceSession;
 use App\Actions\Seller\HR\SubmitPayrollRun;
+use App\Http\Requests\Seller\StoreEmployeeRequest;
+use App\Http\Requests\Seller\UpdateEmployeeRequest;
 use App\Http\Requests\Seller\HR\RejectAttendanceSessionRequest;
 use App\Support\HRWorkflowHelper;
 use Illuminate\Http\Request;
@@ -24,11 +28,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Gate;
-use Throwable;
 
 class HRController extends Controller
 {
@@ -122,76 +124,24 @@ class HRController extends Controller
     }
 
     public function store(
-        Request $request,
-        SellerEntitlementService $entitlementService,
-        ProvisionStaffAccount $provisioner
+        StoreEmployeeRequest $request,
+        CreateEmployeeAction $createEmployeeAction
     ) {
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
 
-        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
+        $result = $createEmployeeAction->execute(
+            $seller,
+            $actor,
+            $request->validated(),
+            $request->input('employee_id')
+        );
 
-        HRWorkflowHelper::sanitizeAndPrepareProvisionRequest($request);
-
-        if ($request->boolean('create_login_account')) {
-            if (!HRWorkflowHelper::supportsStaffProvisioningSchema()) {
-                return back()
-                    ->withErrors([
-                        'create_login_account' => 'Staff login provisioning needs the latest database migration before it can be used.',
-                    ])
-                    ->withInput();
-            }
-
-            abort_unless($actor->canCreateStaffAccounts(), 403, 'Only the shop owner or a user with editable People & Payroll access can create staff login accounts.');
-
-            if (!$seller->canAddMoreStaff()) {
-                $limit = $seller->getActiveStaffLimit();
-                return back()
-                    ->withErrors([
-                        'create_login_account' => "Your current plan allows up to {$limit} staff accounts. Upgrade to unlock more staff seats.",
-                    ])
-                    ->withInput();
-            }
+        if ($result['emailFailed']) {
+            return redirect()->back()->with('error', $result['message']);
         }
 
-        $rules = HRWorkflowHelper::getProvisionValidationRules($seller, $entitlementService, null, null, $request->boolean('create_login_account'));
-
-        $validated = $request->validate($rules, [
-            'email.regex' => 'Staff login accounts must use a Gmail address.',
-        ]);
-
-        $supportedModules = $entitlementService->getSupportedStaffModules();
-        $employeeId = $request->input('employee_id');
-
-        $result = $provisioner->create($validated, $supportedModules, $seller, $actor, $employeeId);
-        $employee = $result['employee'];
-        $staffAccount = $result['staffAccount'];
-
-        if ($staffAccount && $employee instanceof Employee) {
-            HRWorkflowHelper::recordStaffAccessAudit($seller, $actor, 'login_created', $employee, $staffAccount, [
-                'changes' => [
-                    'Created seller portal login',
-                    'Assigned module-specific access levels',
-                ],
-                'after' => HRWorkflowHelper::buildStaffAccessSnapshot($staffAccount),
-            ]);
-
-            try {
-                $staffAccount->sendEmailVerificationNotification();
-            } catch (Throwable $exception) {
-                Log::error('Staff verification code email failed to send.', [
-                    'staff_user_id' => $staffAccount->id,
-                    'email' => $staffAccount->email,
-                    'message' => $exception->getMessage(),
-                ]);
-
-                return redirect()->back()->with('error', 'Employee and staff login were created, but the verification code could not be sent right now.');
-            }
-
-            return redirect()->back()->with('success', 'Employee and staff login created. A verification code was sent.');
-        }
-
-        return redirect()->back()->with('success', 'Employee added successfully.');
+        return redirect()->back()->with('success', $result['message']);
     }
 
     public function destroyPayroll(Request $request, string $id)
@@ -215,7 +165,7 @@ class HRController extends Controller
     public function attendanceLogs(
         Request $request,
         Employee $employee,
-        \App\Services\HR\AttendanceAggregatorService $aggregator
+        AttendanceAggregatorService $aggregator
     ) {
         $seller = $this->sellerOwner();
 
@@ -235,52 +185,14 @@ class HRController extends Controller
         ]);
     }
 
-    public function destroy(int $id)
+    public function destroy(int $id, TerminateEmployeeAction $terminateEmployeeAction)
     {
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
-        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
-        $supportsEmployeeLoginLinks = rescue(fn() => Schema::hasColumn('users', 'employee_id'), false);
-        $employeeQuery = Employee::query()
-            ->where('user_id', $this->sellerOwnerId())
-            ->where('id', $id);
 
-        if ($supportsEmployeeLoginLinks) {
-            $employeeQuery->with('loginAccount');
-        }
+        $result = $terminateEmployeeAction->execute($seller, $actor, $id);
 
-        $employee = $employeeQuery->firstOrFail();
-        $linkedLogin = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
-        $linkedLoginSnapshot = $linkedLogin ? HRWorkflowHelper::buildStaffAccessSnapshot($linkedLogin) : null;
-
-        if ($linkedLogin && !$actor->canDeleteStaffAccounts()) {
-            abort(403, 'Only the shop owner or a user with editable People & Payroll access can remove staff login accounts.');
-        }
-
-        if ($actor->isStaff() && $linkedLogin && $linkedLogin->id === $actor->id) {
-            abort(403, 'You cannot delete your own staff account.');
-        }
-
-        if ($actor->isStaff() && $linkedLogin && $linkedLogin->isSellerOwner()) {
-            abort(403, 'Only the Shop Owner can manage owner accounts.');
-        }
-
-        DB::transaction(function () use ($employee, $linkedLogin) {
-            if ($linkedLogin) {
-                $linkedLogin->delete();
-            }
-
-            $employee->delete();
-        });
-
-        if ($linkedLoginSnapshot !== null) {
-            HRWorkflowHelper::recordStaffAccessAudit($seller, $actor, 'login_removed', $employee, null, [
-                'changes' => ['Removed seller portal login'],
-                'before' => $linkedLoginSnapshot,
-            ]);
-        }
-
-        return redirect()->back()->with('success', 'Employee record removed.');
+        return redirect()->back()->with('success', $result['message']);
     }
 
     public function toggleSuspension(int $id, StaffAttendanceService $attendanceService)
@@ -303,12 +215,10 @@ class HRController extends Controller
         $employee = $employeeQuery->firstOrFail();
         $linkedLogin = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
 
-        // Guardrail 1: Self-suspension protection
         if ($actor->isStaff() && $linkedLogin && $linkedLogin->id === $actor->id) {
             abort(403, 'You cannot suspend your own staff account.');
         }
 
-        // Guardrail 2: Owner protection
         if ($actor->isStaff() && $linkedLogin && $linkedLogin->isSellerOwner()) {
             abort(403, 'Only the Shop Owner can manage owner accounts.');
         }
@@ -330,14 +240,12 @@ class HRController extends Controller
                     'staff_module_permissions' => $permissions,
                 ]);
 
-                // If suspending, close any open attendance session immediately
                 if (!$workspaceAccessEnabled) {
                     $attendanceService->closeOpenSession($linkedLogin, StaffAttendanceService::MODE_PAUSED);
                 }
             }
         });
 
-        // Audit logging
         $auditAction = $isCurrentlySuspended ? 'employee_reactivated' : 'employee_suspended';
         HRWorkflowHelper::recordStaffAccessAudit($seller, $actor, $auditAction, $employee, $linkedLogin, [
             'changes' => [
@@ -354,123 +262,31 @@ class HRController extends Controller
     }
 
     public function update(
-        Request $request,
+        UpdateEmployeeRequest $request,
         int $id,
-        SellerEntitlementService $entitlementService,
-        ProvisionStaffAccount $provisioner
+        UpdateEmployeeAction $updateEmployeeAction
     ) {
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
-        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
-        $supportsEmployeeLoginLinks = rescue(fn() => Schema::hasColumn('users', 'employee_id'), false);
-        $employeeQuery = Employee::query()
-            ->where('user_id', $this->sellerOwnerId())
-            ->where('id', $id);
+        $employee = $request->getEmployee();
+        $linkedLogin = $request->getLinkedLogin();
 
-        if ($supportsEmployeeLoginLinks) {
-            $employeeQuery->with('loginAccount');
-        }
-
-        $employee = $employeeQuery->firstOrFail();
-        $linkedLogin = $supportsEmployeeLoginLinks ? $employee->loginAccount : null;
-        $supportsProvisioning = HRWorkflowHelper::supportsStaffProvisioningSchema();
-        $canManageLoginSettings = $actor->canUpdateStaffAccounts() && $supportsProvisioning;
-        $canCreateLoginSettings = $actor->canCreateStaffAccounts() && $supportsProvisioning;
-        $wantsLoginAccount = $linkedLogin
-            ? ($canManageLoginSettings ? $request->boolean('create_login_account', $linkedLogin->isWorkspaceAccessEnabled()) : $linkedLogin->isWorkspaceAccessEnabled())
-            : $request->boolean('create_login_account');
-
-        if ($linkedLogin && $request->has('create_login_account') && !$canManageLoginSettings) {
-            abort(403, 'Only the shop owner or a user with editable People & Payroll access can update seller login access.');
-        }
-        if (!$linkedLogin && $wantsLoginAccount) {
-            if (!$canCreateLoginSettings) {
-                abort(403, 'Only the shop owner or a user with editable People & Payroll access can create staff login accounts.');
-            }
-
-            if (!$seller->canAddMoreStaff()) {
-                $limit = $seller->getActiveStaffLimit();
-                return back()
-                    ->withErrors([
-                        'create_login_account' => "Your current plan allows up to {$limit} staff accounts. Upgrade to unlock more staff seats.",
-                    ])
-                    ->withInput();
-            }
-        }
-
-        // Self-elevation guard: Staff members cannot edit their own permission level or role preset
-        if ($actor->isStaff() && $linkedLogin && $linkedLogin->id === $actor->id) {
-            if ($request->has('staff_role_preset_key') && $request->input('staff_role_preset_key') !== $linkedLogin->staff_role_preset_key) {
-                abort(403, 'You cannot modify your own staff permission level or role preset.');
-            }
-        }
-
-        // Owner protection guard: Staff members cannot edit or delete the Shop Owner account
-        if ($actor->isStaff() && $linkedLogin && $linkedLogin->isSellerOwner()) {
-            abort(403, 'Only the Shop Owner can manage owner accounts.');
-        }
-
-        $shouldManageLoginSettings = $linkedLogin
-            ? $canManageLoginSettings
-            : ($wantsLoginAccount && $canCreateLoginSettings);
-
-        HRWorkflowHelper::sanitizeAndPrepareProvisionRequest($request);
-
-        $rules = HRWorkflowHelper::getProvisionValidationRules($seller, $entitlementService, $employee, $linkedLogin, $shouldManageLoginSettings);
-
-        $validated = $request->validate($rules, [
-            'email.regex' => 'Staff login accounts must use a Gmail address.',
-        ]);
-
-        $supportedModules = $entitlementService->getSupportedStaffModules();
-        $employeeId = $request->input('employee_id');
-
-        $auditBefore = $linkedLogin ? HRWorkflowHelper::buildStaffAccessSnapshot($linkedLogin) : null;
-
-        $result = $provisioner->update(
-            $employee,
-            $validated,
-            $supportedModules,
+        $result = $updateEmployeeAction->execute(
             $seller,
             $actor,
+            $employee,
+            $request->validated(),
+            $request->shouldManageLoginSettings(),
+            $request->wantsLoginAccount(),
             $linkedLogin,
-            $shouldManageLoginSettings,
-            $wantsLoginAccount,
-            $employeeId
+            $request->input('employee_id')
         );
 
-        $employee = $result['employee'];
-        $linkedLogin = $result['linkedLogin'];
-
-        HRWorkflowHelper::handleUpdateAuditLog($seller, $actor, $employee, $linkedLogin, $auditBefore, $result);
-
-        if ($result['sendVerification'] && $linkedLogin?->exists) {
-            try {
-                $linkedLogin->sendEmailVerificationNotification();
-            } catch (Throwable $exception) {
-                Log::error('Updated staff verification code email failed to send.', [
-                    'staff_user_id' => $linkedLogin->id,
-                    'email' => $linkedLogin->email,
-                    'message' => $exception->getMessage(),
-                ]);
-
-                return redirect()->back()->with('error', 'Employee details were updated, but the verification code could not be sent right now.');
-            }
+        if ($result['emailFailed']) {
+            return redirect()->back()->with('error', $result['message']);
         }
 
-        $message = HRWorkflowHelper::buildEmployeeUpdateSuccessMessage(
-            $result['createdLogin'],
-            $result['workspaceSuspended'],
-            $result['workspaceRestored'],
-            $result['emailChanged'],
-            $result['passwordReset']
-        );
-
-        if (!empty($result['pendingRateApproval'])) {
-            $message .= ' The salary adjustment was submitted for owner review.';
-        }
-
-        return redirect()->back()->with('success', $message);
+        return redirect()->back()->with('success', $result['message']);
     }
 
     public function updateSettings(Request $request)
@@ -618,7 +434,7 @@ class HRController extends Controller
     public function showTimeCardAudit(
         Request $request,
         Employee $employee,
-        \App\Services\HR\AttendanceAggregatorService $aggregator
+        AttendanceAggregatorService $aggregator
     ): Response {
         $seller = $this->sellerOwner();
         $actor = $this->sellerActor();

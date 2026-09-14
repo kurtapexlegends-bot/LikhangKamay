@@ -1,39 +1,22 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useToast } from '@/Components/ToastContext';
-import PrimaryButton from '@/Components/PrimaryButton';
 import { 
-    Save, 
-    Mail, 
     Settings, 
-    CircleDollarSign, 
     ShieldCheck, 
-    CheckCircle2, 
-    Percent, 
-    CreditCard,
-    ChevronDown,
-    AlertCircle,
-    Info,
-    Search,
-    Server,
-    FolderTree,
-    RotateCcw,
-    Plus
+    FolderTree, 
+    RotateCcw
 } from 'lucide-react';
 
-import ContactSocialsForm from '@/Components/Admin/Layout/SystemConfig/ContactSocialsForm';
-import PlatformOpsForm from '@/Components/Admin/Layout/SystemConfig/PlatformOpsForm';
-import MonetizationDashboard from '@/Components/Admin/Layout/SystemConfig/MonetizationDashboard';
-import SubscriptionTiers from '@/Components/Admin/Layout/SystemConfig/SubscriptionTiers';
-import EmailStudioForm from '@/Components/Admin/Layout/SystemConfig/EmailStudioForm';
+import GeneralPlatformTab from './GeneralPlatformTab';
+import SystemOperationsTab from './SystemOperationsTab';
 import CategoryManager from '@/Components/Admin/Catalog/CategoryManager';
 import TrashRestorationTable from '@/Components/Admin/Compliance/TrashRestorationTable';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 
 export default function SystemConfig({ auth, settings, metrics, recentSubscribers, recentSponsorships, categories = [], trashQueue = [], trashStats }) {
-    const { flash } = usePage().props;
     const { addToast } = useToast();
 
     const [activeTab, setActiveTab] = useState(() => {
@@ -44,8 +27,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         return 'branding';
     });
 
-    const [activeSubTab, setActiveSubTab] = useState('branding_contact');
-    const [showMobileNotes, setShowMobileNotes] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
     const handleTabChange = (tabId) => {
@@ -159,60 +140,38 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         }
     }, [settings]);
 
-    const updateNested = (category, field, value) => {
-        setData(category, {
-            ...data[category],
-            [field]: value
-        });
+    const updateNested = (parent, field, value) => {
+        setData(prev => ({
+            ...prev,
+            [parent]: {
+                ...prev[parent],
+                [field]: value
+            }
+        }));
     };
 
-    const mainTabs = [
-        { id: 'branding', name: 'System Config', icon: Settings },
-        { id: 'plans', name: 'Subscription Plans', icon: ShieldCheck },
-        { id: 'taxonomy', name: 'Category Manager', icon: FolderTree },
-        { id: 'trash', name: 'Restoration Center', icon: RotateCcw },
+    const tabs = [
+        { id: 'branding', name: 'General & Platform', icon: Settings },
+        { id: 'plans', name: 'Subscription Tiers', icon: ShieldCheck },
+        { id: 'taxonomy', name: 'Categories & Taxonomy', icon: FolderTree },
+        { id: 'trash', name: 'Trash & Retention', icon: RotateCcw, count: trashQueue?.length || 0 },
     ];
-
-    const subTabs = [
-        { id: 'branding_contact', name: 'Contact & Socials', icon: Mail },
-        { id: 'branding_ops', name: 'Platform Ops', icon: Settings },
-        { id: 'branding_smtp', name: 'Mail Studio & Broadcast', icon: Server },
-    ];
-
-    if (activeTab === 'monetization') {
-        return (
-            <>
-                <Head title="Monetization" />
-                <div className="pb-24 lg:pb-6">
-                    {flash?.success || flash?.error ? (
-                        <div className={`mb-6 rounded-xl border px-4 py-3 text-xs font-medium ${
-                            flash?.success
-                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                : 'border-red-200 bg-red-50 text-red-700'
-                        }`}>
-                            {flash?.success || flash?.error}
-                        </div>
-                    ) : null}
-                    <MonetizationDashboard 
-                        metrics={metrics} 
-                        recentSubscribers={recentSubscribers} 
-                        recentSponsorships={recentSponsorships} 
-                    />
-                </div>
-            </>
-        );
-    }
 
     return (
         <>
-            <Head title="System Config" />
+            <Head title="System Configuration" />
 
-            <div className="max-w-6xl mx-auto space-y-6 pb-24 lg:pb-6">
-                
-                {/* --- TABS NAVIGATION --- */}
-                <div className="bg-stone-100/80 p-1.5 rounded-2xl border border-stone-200/70 shadow-2xs">
-                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth snap-x touch-pan-x min-w-0 w-full">
-                        {mainTabs.map((tab) => {
+            <div className="space-y-6 pb-20">
+                {/* Header Profile Title */}
+                <div>
+                    <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">System Configuration</h1>
+                    <p className="text-xs sm:text-sm text-stone-500 font-medium">Manage platform operations, subscription plans, email automation, and global taxonomy.</p>
+                </div>
+
+                {/* Main Tabs Navigation Bar */}
+                <div className="border-b border-stone-200/80 -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <nav className="flex space-x-2 sm:space-x-4 overflow-x-auto no-scrollbar scroll-smooth">
+                        {tabs.map((tab) => {
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
                             return (
@@ -220,315 +179,52 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                     key={tab.id}
                                     type="button"
                                     onClick={() => handleTabChange(tab.id)}
-                                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap outline-none min-h-[42px] shrink-0 snap-start active:scale-95 ${
-                                        isActive
-                                            ? 'bg-white text-stone-900 shadow-sm ring-1 ring-stone-900/5'
-                                            : 'text-stone-500 hover:text-stone-700 hover:bg-stone-200/50'
-                                    }`}
+                                    className={`
+                                        flex items-center gap-2 py-3 px-3 sm:px-4 border-b-2 font-bold text-xs sm:text-sm whitespace-nowrap transition-all outline-none cursor-pointer
+                                        ${isActive 
+                                            ? 'border-clay-700 text-clay-700' 
+                                            : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300'}
+                                    `}
                                 >
                                     <Icon size={16} className={isActive ? 'text-clay-700' : 'text-stone-400'} />
                                     <span>{tab.name}</span>
+                                    {tab.count !== undefined && tab.count > 0 && (
+                                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${isActive ? 'bg-clay-100 text-clay-800' : 'bg-stone-100 text-stone-600'}`}>
+                                            {tab.count}
+                                        </span>
+                                    )}
                                 </button>
                             );
                         })}
-                    </div>
+                    </nav>
                 </div>
 
-                {/* Tab Contents */}
+                {/* Tab Content Panels */}
                 <AnimatePresence mode="wait">
                     {activeTab === 'branding' && (
-                        <motion.div
-                            key="branding-tab"
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 5 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            {/* Inner Sub Tabs bar */}
-                            <div className="bg-stone-100/60 p-1 rounded-xl border border-stone-200/60 flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth snap-x touch-pan-x min-w-0 w-full">
-                                {subTabs.map((subTab) => (
-                                    <button
-                                        key={subTab.id}
-                                        type="button"
-                                        onClick={() => setActiveSubTab(subTab.id)}
-                                        className={`
-                                            flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap outline-none min-h-[38px] shrink-0 snap-start active:scale-95
-                                            ${activeSubTab === subTab.id 
-                                                ? 'bg-white text-stone-900 shadow-2xs font-bold ring-1 ring-stone-900/5' 
-                                                : 'text-stone-500 hover:text-stone-700 hover:bg-stone-200/50'}
-                                        `}
-                                    >
-                                        <subTab.icon size={13} className={activeSubTab === subTab.id ? 'text-clay-700' : 'text-stone-400'} />
-                                        <span>{subTab.name}</span>
-                                    </button>
-                                ))}
-                            </div>
-
-                            {activeSubTab === 'branding_smtp' ? (
-                                <div className="mt-6">
-                                    <EmailStudioForm
-                                        data={data}
-                                        setData={setData}
-                                        errors={errors}
-                                        processing={processing}
-                                    />
-                                </div>
-                            ) : (
-                                <>
-                                    <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                                        {/* Left Column: Inputs */}
-                                        <div className="lg:col-span-2 space-y-6">
-                                            {activeSubTab === 'branding_contact' && (
-                                                <ContactSocialsForm 
-                                                    data={data} 
-                                                    updateNested={updateNested} 
-                                                />
-                                            )}
-
-                                            {activeSubTab === 'branding_ops' && (
-                                                <PlatformOpsForm 
-                                                    data={data} 
-                                                    setData={setData} 
-                                                />
-                                            )}
-                                        </div>
-
-                                        {/* Right Column: Sticky actions (Desktop only) */}
-                                        <div className="space-y-6">
-                                            <div className="hidden lg:block bg-stone-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden group border border-stone-850">
-                                                <div className="relative z-10 space-y-4">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2.5">
-                                                            <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
-                                                                <Save size={15} className="text-clay-400" />
-                                                            </div>
-                                                            <h3 className="text-sm font-bold">Apply Changes</h3>
-                                                        </div>
-                                                        {isDirty && (
-                                                            <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full animate-pulse">
-                                                                Unsaved
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                    <p className="text-[11px] text-stone-400 leading-relaxed font-medium">
-                                                        System parameters and SMTP rules sync across live processes.
-                                                    </p>
-                                                    
-                                                    <PrimaryButton 
-                                                        disabled={processing}
-                                                        className="w-full py-3 bg-clay-600 hover:bg-clay-500 text-white rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md group border-none text-xs font-bold min-h-[44px]"
-                                                    >
-                                                        <Save size={15} className="transition-transform duration-200 group-hover:scale-110" />
-                                                        {processing ? 'Saving...' : 'Apply Config Update'}
-                                                    </PrimaryButton>
-
-                                                    {recentlySuccessful && (
-                                                        <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-bold animate-in fade-in slide-in-from-top-1 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl">
-                                                            <CheckCircle2 size={15} />
-                                                            <span>Settings updated successfully!</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-clay-600/10 rounded-full blur-3xl group-hover:bg-clay-600/20 transition-colors" />
-                                            </div>
-
-                                            <div className="bg-white rounded-2xl border border-clay-100 p-5 lg:p-6 space-y-4 shadow-sm select-none">
-                                                <div 
-                                                    onClick={() => {
-                                                        if (window.innerWidth < 1024) {
-                                                            setShowMobileNotes(!showMobileNotes);
-                                                        }
-                                                    }}
-                                                    className="flex items-center justify-between cursor-pointer lg:cursor-default"
-                                                >
-                                                    <h4 className="text-[9px] font-black text-stone-400 uppercase tracking-wider">Operational Notes</h4>
-                                                    <div className="lg:hidden text-stone-400 hover:text-stone-600 p-1">
-                                                        <motion.span
-                                                            animate={{ rotate: showMobileNotes ? 180 : 0 }}
-                                                            transition={{ duration: 0.2 }}
-                                                            className="inline-block"
-                                                        >
-                                                            <ChevronDown size={14} />
-                                                        </motion.span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Desktop Notes */}
-                                                <div className="hidden lg:block">
-                                                    <ul className="space-y-3">
-                                                        {[
-                                                            { title: 'Zero Commission Policy', desc: 'Sellers keep 100% of sales revenue without percentage commission deductions.', icon: Percent },
-                                                            { title: 'PayMongo Gateway', desc: 'Disable this toggle to set checkout offline during technical maintenance.', icon: CreditCard },
-                                                        ].map((tip, idx) => (
-                                                            <li key={idx} className="flex gap-2.5">
-                                                                <tip.icon size={14} className="text-clay-600 shrink-0 mt-0.5" />
-                                                                <div>
-                                                                    <p className="text-[10px] font-bold text-stone-900">{tip.title}</p>
-                                                                    <p className="text-[9px] text-stone-500 font-medium leading-relaxed">{tip.desc}</p>
-                                                                </div>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-
-                                                {/* Mobile Notes */}
-                                                <AnimatePresence initial={false}>
-                                                    {showMobileNotes && (
-                                                        <motion.div
-                                                            initial={{ height: 0, opacity: 0 }}
-                                                            animate={{ height: 'auto', opacity: 1 }}
-                                                            exit={{ height: 0, opacity: 0 }}
-                                                            transition={{ duration: 0.2 }}
-                                                            className="lg:hidden overflow-hidden"
-                                                        >
-                                                            <ul className="space-y-3 pt-2">
-                                                                {[
-                                                                    { title: 'Zero Commission Policy', desc: 'Sellers keep 100% of sales revenue without percentage commission deductions.', icon: Percent },
-                                                                    { title: 'PayMongo Gateway', desc: 'Disable this toggle to set checkout offline during technical maintenance.', icon: CreditCard },
-                                                                ].map((tip, idx) => (
-                                                                    <li key={idx} className="flex gap-2.5">
-                                                                        <tip.icon size={14} className="text-clay-600 shrink-0 mt-0.5" />
-                                                                        <div>
-                                                                            <p className="text-[10px] font-bold text-stone-900">{tip.title}</p>
-                                                                            <p className="text-[9px] text-stone-500 font-medium leading-relaxed">{tip.desc}</p>
-                                                                        </div>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
-                                        </div>
-                                    </form>
-
-                                    {/* Sticky actions bar for Mobile (below lg) */}
-                                    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-stone-200 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
-                                        <div className="flex-1 min-w-0 pr-4">
-                                            {recentlySuccessful && (
-                                                <div className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-bold animate-in fade-in">
-                                                    <CheckCircle2 size={12} />
-                                                    <span>Settings updated!</span>
-                                                </div>
-                                            )}
-                                            {!recentlySuccessful && (
-                                                <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wider">Unsaved Changes</span>
-                                            )}
-                                        </div>
-                                        <PrimaryButton 
-                                            disabled={processing}
-                                            onClick={submit}
-                                            className="py-2.5 px-5 bg-clay-600 hover:bg-clay-700 active:scale-95 text-white rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-md border-none text-[11px] font-bold min-h-[44px]"
-                                        >
-                                            <Save size={13} />
-                                            {processing ? 'Saving...' : 'Apply Config'}
-                                        </PrimaryButton>
-                                    </div>
-                                </>
-                            )}
-                        </motion.div>
+                        <GeneralPlatformTab
+                            data={data}
+                            setData={setData}
+                            updateNested={updateNested}
+                            errors={errors}
+                            processing={processing}
+                            recentlySuccessful={recentlySuccessful}
+                            isDirty={isDirty}
+                            onSubmit={submit}
+                        />
                     )}
 
                     {activeTab === 'plans' && (
-                        <motion.div
-                            key="plans-tab"
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 5 }}
-                            transition={{ duration: 0.2 }}
-                            className="space-y-6 mt-6"
-                        >
-                            <form onSubmit={submit} className="space-y-6">
-                                {/* Top Command Bar with Live Save & Status */}
-                                <div className="bg-white rounded-2xl border border-stone-200/80 p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div className="flex items-start gap-3.5">
-                                        <div className="w-10 h-10 rounded-xl bg-stone-900 text-white flex items-center justify-center shrink-0 shadow-sm">
-                                            <ShieldCheck size={20} className="text-clay-400" />
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="text-base font-black text-stone-900 tracking-tight">Subscription Plans & Entitlements</h3>
-                                                {isDirty && (
-                                                    <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-700 border border-amber-500/20 px-2 py-0.5 rounded-full">
-                                                        Unsaved Changes
-                                                    </span>
-                                                )}
-
-                                                {/* Minimal Live Plan Sync Notice Tooltip */}
-                                                <div className="relative group/notice inline-flex items-center ml-0.5">
-                                                    <button
-                                                        type="button"
-                                                        aria-label="Live Plan Sync Notice"
-                                                        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-850 border border-stone-200/80 transition-colors text-[11px] font-bold cursor-help focus:outline-none focus:ring-2 focus:ring-stone-400"
-                                                    >
-                                                        <Info size={12} />
-                                                    </button>
-                                                    <div className="absolute left-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 hidden group-hover/notice:flex group-focus-within/notice:flex flex-col z-50 w-72 sm:w-80 p-3.5 bg-stone-900 text-white rounded-xl shadow-xl border border-stone-800 text-xs pointer-events-none animate-in fade-in duration-150">
-                                                        <div className="flex items-center gap-1.5 text-amber-400 font-bold text-[11px] uppercase tracking-wider mb-1">
-                                                            <Info size={13} />
-                                                            <span>Live Plan Sync Notice</span>
-                                                        </div>
-                                                        <p className="text-stone-300 leading-relaxed text-[11px] font-normal">
-                                                            Modifying product or staff quotas applies immediately to all active artisan shops. Lowering quotas moves excess active products to draft to keep catalogs compliant without deleting any artisan data.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <p className="text-xs text-stone-500 font-medium mt-0.5">
-                                                Customize live pricing, product limits, staff quotas, badges, and feature benefits for each tier.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center gap-3 self-end md:self-center">
-                                        {recentlySuccessful && (
-                                            <div className="flex items-center gap-1.5 text-emerald-700 text-xs font-bold bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl animate-in fade-in">
-                                                <CheckCircle2 size={14} className="text-emerald-600" />
-                                                <span>Tier changes synchronized!</span>
-                                            </div>
-                                        )}
-                                        <PrimaryButton 
-                                            disabled={processing}
-                                            className="py-2.5 px-5 bg-stone-900 hover:bg-stone-850 text-white rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm border-none text-xs font-bold min-h-[42px] cursor-pointer"
-                                        >
-                                            <Save size={15} />
-                                            {processing ? 'Saving...' : 'Apply Tier Update'}
-                                        </PrimaryButton>
-                                    </div>
-                                </div>
-
-                                {/* Full-Width 3-Column Tiers Configuration */}
-                                <SubscriptionTiers 
-                                    data={data} 
-                                    setData={setData} 
-                                    errors={errors} 
-                                    availableModules={settings?.available_plan_modules || []}
-                                />
-                            </form>
-
-                            {/* Sticky actions bar for Mobile (below lg) */}
-                            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
-                                <div className="flex-1 min-w-0 pr-4">
-                                    {recentlySuccessful ? (
-                                        <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold">
-                                            <CheckCircle2 size={13} />
-                                            <span>Saved!</span>
-                                        </div>
-                                    ) : (
-                                        <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider">Unsaved Changes</span>
-                                    )}
-                                </div>
-                                <PrimaryButton 
-                                    disabled={processing}
-                                    onClick={submit}
-                                    className="py-2.5 px-4 bg-stone-900 hover:bg-stone-850 text-white rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold min-h-[40px]"
-                                >
-                                    <Save size={13} />
-                                    {processing ? 'Saving...' : 'Apply Update'}
-                                </PrimaryButton>
-                            </div>
-                        </motion.div>
+                        <SystemOperationsTab
+                            data={data}
+                            setData={setData}
+                            errors={errors}
+                            processing={processing}
+                            recentlySuccessful={recentlySuccessful}
+                            isDirty={isDirty}
+                            availablePlanModules={settings?.available_plan_modules || []}
+                            onSubmit={submit}
+                        />
                     )}
 
                     {activeTab === 'taxonomy' && (

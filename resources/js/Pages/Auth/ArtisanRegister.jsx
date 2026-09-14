@@ -1,14 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
+import axios from 'axios';
 import GuestLayout from '@/Layouts/GuestLayout';
-import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import Checkbox from '@/Components/Checkbox';
 import SellerTermsModal from '@/Components/SellerTermsModal';
-import PasswordStrengthIndicator from '@/Components/PasswordStrengthIndicator';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Store, Eye, EyeOff, Loader2, Mail, Lock, User, Briefcase, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, User } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ArtisanBusinessStep from './Partials/ArtisanBusinessStep';
+import ArtisanDocumentsStep from './Partials/ArtisanDocumentsStep';
 
 export default function ArtisanRegister() {
     const { data, setData, post, processing, errors, reset, setError, clearErrors } = useForm({
@@ -314,220 +313,36 @@ export default function ArtisanRegister() {
                     onSubmit={submit} 
                     className="space-y-5"
                 >
-                    {/* Name Fields Grid */}
-                    <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <TextInput
-                                ref={firstNameRef}
-                                id="first_name"
-                                name="first_name"
-                                value={data.first_name}
-                                className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
-                                autoComplete="given-name"
-                                isFocused={true}
-                                onChange={(e) => setData('first_name', e.target.value)}
-                                onKeyDown={(e) => handleKeyDown(e, lastNameRef)}
-                                hasError={!!errors.first_name}
-                                required
-                                floatingLabel="First Name"
-                                icon={User}
-                            />
-                            <InputError message={errors.first_name} className="mt-2" />
-                        </div>
+                    {/* Personal and Business Details */}
+                    <ArtisanBusinessStep
+                        data={data}
+                        setData={setData}
+                        errors={errors}
+                        handleKeyDown={handleKeyDown}
+                        firstNameRef={firstNameRef}
+                        lastNameRef={lastNameRef}
+                        shopNameRef={shopNameRef}
+                        emailRef={emailRef}
+                        passwordRef={passwordRef}
+                        shopNameValidation={shopNameValidation}
+                        emailValidation={emailValidation}
+                        itemVariants={itemVariants}
+                    />
 
-                        <div>
-                            <TextInput
-                                ref={lastNameRef}
-                                id="last_name"
-                                name="last_name"
-                                value={data.last_name}
-                                className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
-                                autoComplete="family-name"
-                                onChange={(e) => setData('last_name', e.target.value)}
-                                onKeyDown={(e) => handleKeyDown(e, shopNameRef)}
-                                hasError={!!errors.last_name}
-                                floatingLabel="Last Name"
-                                icon={User}
-                            />
-                            <InputError message={errors.last_name} className="mt-2" />
-                        </div>
-                    </motion.div>
-
-                    {/* Shop Name Field */}
-                    <motion.div variants={itemVariants}>
-                        <TextInput
-                            ref={shopNameRef}
-                            id="shop_name"
-                            name="shop_name"
-                            value={data.shop_name}
-                            className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
-                            autoComplete="organization"
-                            onChange={(e) => setData('shop_name', e.target.value)}
-                            onKeyDown={(e) => handleKeyDown(e, emailRef)}
-                            hasError={!!errors.shop_name}
-                            required
-                            floatingLabel="Shop Name"
-                            icon={Briefcase}
-                        />
-                        {shopNameValidation.isValid !== null && (
-                            <div className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border animate-in fade-in slide-in-from-top-1 duration-300 ${
-                                shopNameValidation.isValid 
-                                    ? 'text-emerald-700 bg-emerald-50 border-emerald-100/60' 
-                                    : 'text-rose-700 bg-rose-50 border-rose-100/60'
-                            }`}>
-                                {shopNameValidation.isValid ? (
-                                    <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
-                                ) : (
-                                    <AlertCircle size={14} className="shrink-0 text-rose-500" />
-                                )}
-                                <span>{shopNameValidation.message}</span>
-                            </div>
-                        )}
-                        <InputError message={errors.shop_name} className="mt-2" />
-                    </motion.div>
-
-                    {/* Email Field */}
-                    <motion.div variants={itemVariants}>
-                        <TextInput
-                            ref={emailRef}
-                            id="email"
-                            type="email"
-                            name="email"
-                            value={data.email}
-                            className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
-                            autoComplete="username"
-                            onChange={(e) => setData('email', e.target.value)}
-                            onKeyDown={(e) => handleKeyDown(e, passwordRef)}
-                            hasError={!!errors.email}
-                            required
-                            floatingLabel="Business Email"
-                            icon={Mail}
-                        />
-                        {emailValidation.isValid !== null && (
-                            <div className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border animate-in fade-in slide-in-from-top-1 duration-300 ${
-                                emailValidation.isValid 
-                                    ? 'text-emerald-700 bg-emerald-50 border-emerald-100/60' 
-                                    : 'text-rose-700 bg-rose-50 border-rose-100/60'
-                            }`}>
-                                {emailValidation.isValid ? (
-                                    <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
-                                ) : (
-                                    <AlertCircle size={14} className="shrink-0 text-rose-500" />
-                                )}
-                                <span>{emailValidation.message}</span>
-                            </div>
-                        )}
-                        <InputError message={errors.email} className="mt-2" />
-                    </motion.div>
-
-                    {/* Password Fields */}
-                    <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <TextInput
-                                ref={passwordRef}
-                                id="password"
-                                type="password"
-                                name="password"
-                                value={data.password}
-                                className="block w-full"
-                                autoComplete="new-password"
-                                onChange={(e) => {
-                                    setData('password', e.target.value);
-                                    if (errors.password) clearErrors('password');
-                                }}
-                                onKeyDown={(e) => handleKeyDown(e, confirmPasswordRef)}
-                                hasError={!!errors.password}
-                                required
-                                floatingLabel="Password"
-                                icon={Lock}
-                            />
-                        </div>
-                        <div>
-                            <TextInput
-                                ref={confirmPasswordRef}
-                                id="password_confirmation"
-                                type="password"
-                                name="password_confirmation"
-                                value={data.password_confirmation}
-                                className="block w-full"
-                                autoComplete="new-password"
-                                onChange={(e) => {
-                                    setData('password_confirmation', e.target.value);
-                                    if (errors.password_confirmation) clearErrors('password_confirmation');
-                                }}
-                                hasError={!!errors.password_confirmation}
-                                required
-                                floatingLabel="Confirm Password"
-                                icon={Lock}
-                            />
-                        </div>
-                    </motion.div>
-                    <InputError message={errors.password} className="mt-2" />
-
-                    {/* Real-time Password Matching status indicator */}
-                    {data.password && data.password_confirmation && (
-                        <motion.div 
-                            variants={itemVariants}
-                            className={`flex items-center gap-2 text-xs font-semibold px-3 py-2.5 rounded-xl border transition-all duration-300 ${
-                                data.password === data.password_confirmation
-                                    ? 'text-emerald-700 bg-emerald-50/80 border-emerald-100/60 shadow-sm shadow-emerald-500/5'
-                                    : 'text-amber-700 bg-amber-50/80 border-amber-100/60 shadow-sm shadow-amber-500/5'
-                            }`}
-                        >
-                            {data.password === data.password_confirmation ? (
-                                <>
-                                    <CheckCircle2 size={15} className="shrink-0 text-emerald-600 animate-pulse" />
-                                    <span>Passwords match successfully.</span>
-                                </>
-                            ) : (
-                                <>
-                                    <AlertCircle size={15} className="shrink-0 text-amber-600 animate-pulse" />
-                                    <span>Passwords do not match yet.</span>
-                                </>
-                            )}
-                        </motion.div>
-                    )}
-
-                    {/* Password Strength Indicator */}
-                    {data.password && (
-                        <motion.div variants={itemVariants}>
-                            <PasswordStrengthIndicator password={data.password} />
-                        </motion.div>
-                    )}
-
-                    {/* Terms Checkbox Row */}
-                    <motion.div 
-                        variants={itemVariants}
-                        className="block"
-                    >
-                        <div className="flex items-start bg-stone-50/60 p-4 rounded-xl border border-stone-100/80">
-                            <Checkbox
-                                name="terms"
-                                checked={data.terms}
-                                onChange={handleTermsCheckboxChange}
-                                className="mt-0.5 text-clay-600 focus:ring-clay-500 rounded border-stone-300 hover:border-clay-400 transition cursor-pointer"
-                            />
-                            <span className="ms-3 text-xs text-stone-500 leading-relaxed select-none">
-                                I accept the{' '}
-                                <button 
-                                    type="button"
-                                    onClick={() => openLegalModal('seller')}
-                                    className="font-bold text-clay-600 hover:text-clay-700 hover:underline transition-colors uppercase tracking-wider text-[10px]"
-                                >
-                                    Seller Agreement
-                                </button>
-                                {' '}and{' '}
-                                <button 
-                                    type="button"
-                                    onClick={() => openLegalModal('sellerPrivacy')}
-                                    className="font-bold text-clay-600 hover:text-clay-700 hover:underline transition-colors uppercase tracking-wider text-[10px]"
-                                >
-                                    Data Privacy Policy
-                                </button>.
-                            </span>
-                        </div>
-                        <InputError message={errors.terms} className="mt-2" />
-                    </motion.div>
+                    {/* Credentials and Legal Consent */}
+                    <ArtisanDocumentsStep
+                        data={data}
+                        setData={setData}
+                        errors={errors}
+                        clearErrors={clearErrors}
+                        handleKeyDown={handleKeyDown}
+                        passwordRef={passwordRef}
+                        confirmPasswordRef={confirmPasswordRef}
+                        handleTermsCheckboxChange={handleTermsCheckboxChange}
+                        onChange={handleTermsCheckboxChange}
+                        openLegalModal={openLegalModal}
+                        itemVariants={itemVariants}
+                    />
 
                     {/* Launch Your Studio Submit Button */}
                     <motion.div variants={itemVariants}>

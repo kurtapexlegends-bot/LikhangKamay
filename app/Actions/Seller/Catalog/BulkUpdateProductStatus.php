@@ -38,6 +38,9 @@ class BulkUpdateProductStatus
                 ->whereIn('id', $products->pluck('id'))
                 ->update(['status' => $targetStatus]);
 
+            \Illuminate\Support\Facades\Cache::forget("seller_{$seller->id}_products");
+            \Illuminate\Support\Facades\Cache::forget("seller_{$seller->id}_best_sellers");
+
             SellerActivityLog::recordEvent([
                 'seller_owner_id' => $seller->id,
                 'actor_user_id' => $actor->id,

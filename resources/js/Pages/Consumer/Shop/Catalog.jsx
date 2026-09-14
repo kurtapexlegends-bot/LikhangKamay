@@ -1,17 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { motion } from 'framer-motion';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import {
-    ChevronDown, SlidersHorizontal, MapPin, Search, X, ArrowUpDown, Store, Loader2
+    ChevronDown, SlidersHorizontal, MapPin, X, ArrowUpDown, Store
 } from 'lucide-react';
-import SlideOverDrawer from '@/Components/SlideOverDrawer';
-import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { normalizeRating } from '@/utils/rating';
 import { useSponsoredImpressionTracking } from '@/utils/sponsorshipTracking';
-import FilterSidebar from './Partials/FilterSidebar';
-import ProductCard from '@/Pages/Consumer/Shop/Partials/ProductCard';
-import CatalogSkeleton from '@/Components/Consumer/CatalogSkeleton';
+import CatalogFilterSidebar from './Partials/CatalogFilterSidebar';
+import CatalogProductGrid from './Partials/CatalogProductGrid';
+import CatalogActiveFilterChips from './Partials/CatalogActiveFilterChips';
 import { getFollowedShopIds } from '@/utils/buyerSignals';
 
 export default function Catalog(props) {
@@ -270,12 +267,12 @@ export default function Catalog(props) {
             <BuyerNavbar />
 
             <main className="w-full max-w-7xl mx-auto px-4 lg:px-8 py-6 min-w-0 flex-1">
-                
                 <div className="w-full flex flex-col lg:flex-row gap-8 items-start">
                     
-                    {/* --- LEFT SIDEBAR (Desktop) --- */}
-                    <FilterSidebar 
-                        className="hidden lg:block w-64 min-w-[16rem] flex-shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain pr-1.5 pb-6"
+                    {/* --- FILTER SIDEBAR (Desktop & Mobile Drawer) --- */}
+                    <CatalogFilterSidebar
+                        isFilterOpen={isFilterOpen}
+                        setIsFilterOpen={setIsFilterOpen}
                         categories={categories}
                         availableLocations={availableLocations}
                         availableMaterials={availableMaterials}
@@ -283,8 +280,10 @@ export default function Catalog(props) {
                         materialCounts={materialCounts}
                         locationCounts={locationCounts}
                         activeCategory={activeCategory}
-                        minPrice={minPrice} setMinPrice={setMinPrice}
-                        maxPrice={maxPrice} setMaxPrice={setMaxPrice}
+                        minPrice={minPrice}
+                        setMinPrice={setMinPrice}
+                        maxPrice={maxPrice}
+                        setMaxPrice={setMaxPrice}
                         minRating={minRating}
                         selectedLocations={selectedLocations}
                         selectedMaterials={selectedMaterials}
@@ -296,48 +295,6 @@ export default function Catalog(props) {
                         onLocationChange={handleLocationChange}
                         onClearAll={clearAllFilters}
                     />
-
-                    {/* --- MOBILE FILTER SIDE PANEL --- */}
-                    <SlideOverDrawer 
-                        show={isFilterOpen} 
-                        onClose={() => setIsFilterOpen(false)}
-                        title="Filters"
-                        widthClass="max-w-[280px]"
-                        position="right"
-                        footer={
-                            <button 
-                                onClick={() => setIsFilterOpen(false)}
-                                className="w-full py-2.5 bg-stone-900 hover:bg-stone-850 text-white rounded-xl font-black text-xs uppercase tracking-wider transition active:scale-95 shadow-md border border-stone-900"
-                            >
-                                Show Results
-                            </button>
-                        }
-                    >
-                        <div className="custom-sidebar-wrap pb-8">
-                            <FilterSidebar 
-                                className="block w-full"
-                                categories={categories}
-                                availableLocations={availableLocations}
-                                availableMaterials={availableMaterials}
-                                categoryCounts={categoryCounts}
-                                materialCounts={materialCounts}
-                                locationCounts={locationCounts}
-                                activeCategory={activeCategory}
-                                minPrice={minPrice} setMinPrice={setMinPrice}
-                                maxPrice={maxPrice} setMaxPrice={setMaxPrice}
-                                minRating={minRating}
-                                selectedLocations={selectedLocations}
-                                selectedMaterials={selectedMaterials}
-                                activeFilterCount={activeFilterCount}
-                                onCategoryClick={(cat) => { handleCategoryClick(cat); setIsFilterOpen(false); }}
-                                onApplyPrice={() => { applyFilters({ price_min: minPrice, price_max: maxPrice }); setIsFilterOpen(false); }}
-                                onRatingChange={(rating) => { handleRatingChange(rating); setIsFilterOpen(false); }}
-                                onMaterialChange={(mat) => { handleMaterialChange(mat); }}
-                                onLocationChange={(loc) => { handleLocationChange(loc); }}
-                                onClearAll={() => { clearAllFilters(); setIsFilterOpen(false); }}
-                            />
-                        </div>
-                    </SlideOverDrawer>
 
                     {/* --- RIGHT SIDE: GRID --- */}
                     <div className="w-full lg:flex-1 min-w-0">
@@ -406,94 +363,30 @@ export default function Catalog(props) {
                         </div>
 
                         {/* --- ACTIVE FILTER CHIPS BAR --- */}
-                        {(activeFilterCount > 0 || searchTerm) && (
-                            <div className="flex flex-wrap items-center gap-2 mb-5 p-3 bg-stone-50 border border-stone-200/70 rounded-xl text-xs">
-                                <span className="font-bold text-stone-500 text-[10px] uppercase tracking-wider mr-1">Active Filters:</span>
-
-                                {/* Followed Only Chip */}
-                                {followedOnly && (
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-clay-50 border border-clay-200 text-clay-800 font-bold rounded-lg shadow-2xs">
-                                        <Store size={12} />
-                                        Studios You Follow
-                                        <button onClick={() => { setFollowedOnly(false); applyFilters({ followed_only: undefined }); }} className="hover:text-clay-900 transition" title="Clear followed filter">
-                                            <X size={12} />
-                                        </button>
-                                    </span>
-                                )}
-
-                                {/* Search Term Chip */}
-                                {searchTerm && (
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-stone-200 text-stone-800 font-bold rounded-lg shadow-2xs">
-                                        Search: &ldquo;{searchTerm}&rdquo;
-                                        <button onClick={clearSearch} className="hover:text-red-600 transition" title="Remove search">
-                                            <X size={12} />
-                                        </button>
-                                    </span>
-                                )}
-
-                                {/* Category Chip */}
-                                {activeCategory !== 'All' && (
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-clay-50 border border-clay-200 text-clay-800 font-bold rounded-lg shadow-2xs">
-                                        Category: {activeCategory}
-                                        <button onClick={() => handleCategoryClick('All')} className="hover:text-clay-900 transition" title="Clear category">
-                                            <X size={12} />
-                                        </button>
-                                    </span>
-                                )}
-
-                                {/* Price Chip */}
-                                {(minPrice || maxPrice) && (
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-stone-200 text-stone-800 font-bold rounded-lg shadow-2xs">
-                                        Price: ₱{minPrice || '0'} – {maxPrice ? `₱${maxPrice}` : 'Any'}
-                                        <button onClick={() => { setMinPrice(''); setMaxPrice(''); applyFilters({ price_min: '', price_max: '' }); }} className="hover:text-red-600 transition" title="Clear price filter">
-                                            <X size={12} />
-                                        </button>
-                                    </span>
-                                )}
-
-                                {/* Rating Chip */}
-                                {minRating && (
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-900 font-bold rounded-lg shadow-2xs">
-                                        Rating: {minRating}★ & Up
-                                        <button onClick={() => handleRatingChange('')} className="hover:text-amber-950 transition" title="Clear rating filter">
-                                            <X size={12} />
-                                        </button>
-                                    </span>
-                                )}
-
-                                {/* Selected Materials Chips */}
-                                {selectedMaterials.map((mat) => (
-                                    <span key={mat} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-stone-200 text-stone-800 font-bold capitalize rounded-lg shadow-2xs">
-                                        Material: {mat}
-                                        <button onClick={() => handleMaterialChange(mat)} className="hover:text-red-600 transition" title={`Remove ${mat}`}>
-                                            <X size={12} />
-                                        </button>
-                                    </span>
-                                ))}
-
-                                {/* Selected Locations Chips */}
-                                {selectedLocations.map((loc) => (
-                                    <span key={loc} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-stone-200 text-stone-800 font-bold rounded-lg shadow-2xs">
-                                        Location: {loc}
-                                        <button onClick={() => handleLocationChange(loc)} className="hover:text-red-600 transition" title={`Remove ${loc}`}>
-                                            <X size={12} />
-                                        </button>
-                                    </span>
-                                ))}
-
-                                {/* Clear All Action */}
-                                <button 
-                                    onClick={clearAllFilters}
-                                    className="ml-auto text-xs font-bold text-clay-600 hover:text-clay-800 hover:underline transition px-1"
-                                >
-                                    Clear All
-                                </button>
-                            </div>
-                        )}
+                        <CatalogActiveFilterChips
+                            activeFilterCount={activeFilterCount}
+                            searchTerm={searchTerm}
+                            followedOnly={followedOnly}
+                            setFollowedOnly={setFollowedOnly}
+                            activeCategory={activeCategory}
+                            minPrice={minPrice}
+                            maxPrice={maxPrice}
+                            setMinPrice={setMinPrice}
+                            setMaxPrice={setMaxPrice}
+                            minRating={minRating}
+                            selectedMaterials={selectedMaterials}
+                            selectedLocations={selectedLocations}
+                            applyFilters={applyFilters}
+                            clearSearch={clearSearch}
+                            handleCategoryClick={handleCategoryClick}
+                            handleRatingChange={handleRatingChange}
+                            handleMaterialChange={handleMaterialChange}
+                            handleLocationChange={handleLocationChange}
+                            clearAllFilters={clearAllFilters}
+                        />
 
                         {/* Mobile Sticky Category & Filter Header */}
                         <div className="flex lg:hidden sticky top-16 z-30 bg-[#FDFBF9] py-3 -mx-4 px-4 border-b border-stone-100/80 items-center gap-3 mb-4">
-                            {/* Fixed Circular Filter Trigger */}
                             <button 
                                 onClick={() => setIsFilterOpen(true)}
                                 className="flex-shrink-0 flex items-center justify-center bg-white border border-stone-200 text-stone-700 h-9 w-9 rounded-full hover:border-clay-300 transition active:scale-95 shadow-sm relative"
@@ -507,7 +400,6 @@ export default function Catalog(props) {
                                 )}
                             </button>
                             
-                            {/* Scrolling Category Swiper */}
                             <div className="flex-1 overflow-x-auto scrollbar-hide flex gap-2">
                                 {categories.map((cat) => {
                                     const isActive = activeCategory === cat;
@@ -528,9 +420,9 @@ export default function Catalog(props) {
                             </div>
                         </div>
 
-                        {/* Active Filters Chips */}
+                        {/* Active Filters Chips (Mobile) */}
                         {activeFilterCount > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-4">
+                            <div className="flex lg:hidden flex-wrap gap-2 mb-4">
                                 {selectedMaterials.map(material => (
                                     <span key={material} className="inline-flex items-center gap-1 bg-clay-50 text-clay-700 text-xs font-medium px-2.5 py-1 rounded-full">
                                         {material}
@@ -549,7 +441,7 @@ export default function Catalog(props) {
                                 ))}
                                 {minRating && (
                                     <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                                        {minRating}★ & Up
+                                        {minRating}★ &amp; Up
                                         <button onClick={() => handleRatingChange('')} className="hover:text-red-500 active:scale-95 transition-all">
                                             <X size={12} />
                                         </button>
@@ -558,64 +450,22 @@ export default function Catalog(props) {
                             </div>
                         )}
 
-                        {/* --- PRODUCT GRID --- */}
-                        {isLoading ? (
-                            <CatalogSkeleton />
-                        ) : products.length > 0 ? (
-                            <div>
-                                <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                                    {products.map((product) => (
-                                        <motion.div layout key={product.id}>
-                                            <ProductCard
-                                                product={product}
-                                                sponsoredPlacement={sponsoredGridPlacement}
-                                            />
-                                        </motion.div>
-                                    ))}
-                                </motion.div>
-                                {/* Infinite scroll sentinel & subtle loading indicator */}
-                                {nextPageUrl && (
-                                    <div ref={observerRef} className="h-16 w-full flex items-center justify-center py-4">
-                                        {isLoadingMore && (
-                                            <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 bg-white/90 backdrop-blur px-4 py-2 rounded-full border border-stone-200 shadow-xs animate-in fade-in">
-                                                <Loader2 size={14} className="animate-spin text-clay-600" />
-                                                <span>Loading more items...</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            /* Empty State */
-                            <div className="font-normal space-y-4 rounded-xl border border-gray-100 bg-white py-10">
-                                <WorkspaceEmptyState
-                                    icon={Search}
-                                    title="No products found"
-                                    description={safeFilters.search
-                                        ? `No matches for "${safeFilters.search}". Try a simpler keyword or reset your filters.`
-                                        : 'No products match your current filters. Try widening your search.'}
-                                    actionLabel="Clear all filters"
-                                    onAction={clearAllFilters}
-                                />
-                                {safeFilters.search && (
-                                    <div className="flex flex-wrap items-center justify-center gap-2 px-4">
-                                        {quickRecoverySearches.map((term) => (
-                                            <button
-                                                key={term}
-                                                type="button"
-                                                onClick={() => {
-                                                    setSearchTerm(term);
-                                                    applyFilters({ search: term });
-                                                }}
-                                                className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-[11px] font-bold text-stone-600 transition hover:border-clay-300 hover:text-clay-700 active:scale-95 transition-all"
-                                            >
-                                                Try “{term}”
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                        {/* --- PRODUCT GRID & EMPTY STATE --- */}
+                        <CatalogProductGrid
+                            isLoading={isLoading}
+                            products={products}
+                            sponsoredGridPlacement={sponsoredGridPlacement}
+                            nextPageUrl={nextPageUrl}
+                            isLoadingMore={isLoadingMore}
+                            observerRef={observerRef}
+                            searchFilter={safeFilters.search || ''}
+                            onClearAllFilters={clearAllFilters}
+                            onQuickSearch={(term) => {
+                                setSearchTerm(term);
+                                applyFilters({ search: term });
+                            }}
+                            quickRecoverySearches={quickRecoverySearches}
+                        />
                     </div>
                 </div>
             </main>

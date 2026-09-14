@@ -3,151 +3,28 @@
 namespace App\Http\Controllers\Consumer;
 
 use App\Http\Controllers\Controller;
-
-use App\Models\Product;
+use App\Services\Cart\CartService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class CartController extends Controller
 {
-    private function makeCartKey(int $productId, string $variant): string
-    {
-        $normalizedVariant = strtolower(trim($variant)) ?: 'standard';
-
-        return $productId . ':' . md5($normalizedVariant);
-    }
+    public function __construct(
+        protected CartService $cartService
+    ) {}
 
     /**
-     * @param  array<string|int, mixed>  $cart
-     * @return array<string, array<string, mixed>>
+     * Display Cart Page.
      */
-    private function normalizeCart(array $cart): array
+    public function index(Request $request): Response|JsonResponse
     {
-        $normalized = [];
+        $cart = $this->cartService->getCart();
 
-        foreach ($cart as $key => $item) {
-            if (!is_array($item)) {
-                continue;
-            }
-
-            $productId = (int) ($item['id'] ?? $key);
-            if ($productId <= 0) {
-                continue;
-            }
-
-            $variant = trim((string) ($item['variant'] ?? 'Standard')) ?: 'Standard';
-            $cartKey = (string) ($item['cart_key'] ?? $this->makeCartKey($productId, $variant));
-            $quantity = max(1, (int) ($item['qty'] ?? 1));
-
-            $normalizedItem = [
-                ...$item,
-                'id' => $productId,
-                'variant' => $variant,
-                'cart_key' => $cartKey,
-                'qty' => $quantity,
-            ];
-
-            if (isset($normalized[$cartKey])) {
-                $normalized[$cartKey]['qty'] += $quantity;
-                continue;
-            }
-
-            $normalized[$cartKey] = $normalizedItem;
-        }
-
-        return $normalized;
-    }
-
-    // 1. Display Cart Page (This is what was missing!)
-    public function index()
-    {
-        $cart = $this->normalizeCart(Session::get('cart', []));
-
-        if (!empty($cart)) {
-            $productIds = collect($cart)
-                ->pluck('id')
-                ->filter()
-                ->unique()
-                ->values()
-                ->all();
-
-            $liveProducts = Product::with(['user:id,name,shop_name,city', 'discounts'])
-                ->whereIn('id', $productIds)
-                ->get()
-                ->keyBy('id');
-            
-            $updatedCart = false;
-            foreach ($cart as &$item) {
-                $liveProduct = $liveProducts->get($item['id']);
-
-                if (!$liveProduct) {
-                    continue;
-                }
-
-                $effectivePrice = $liveProduct->is_b2b_supply
-                    ? $liveProduct->getEffectiveB2BPrice((int) ($item['qty'] ?? 1))
-                    : (float) $liveProduct->effective_price;
-
-                if ((float) ($item['price'] ?? 0) != (float) $effectivePrice) {
-                    $item['price'] = $effectivePrice;
-                    $updatedCart = true;
-                }
-
-                $item['original_price'] = (float) $liveProduct->price;
-                $item['discount_info'] = $liveProduct->discount_info;
-                $item['has_discount'] = $liveProduct->has_discount;
-                $item['is_b2b_supply'] = (bool) $liveProduct->is_b2b_supply;
-                $item['moq'] = (int) ($liveProduct->moq ?: 1);
-                $item['wholesale_price'] = $liveProduct->wholesale_price !== null ? (float) $liveProduct->wholesale_price : null;
-                $item['wholesale_min_qty'] = $liveProduct->wholesale_min_qty ? (int) $liveProduct->wholesale_min_qty : null;
-                $item['supply_unit'] = $liveProduct->supply_unit ?: 'pcs';
-
-                if (($item['sku'] ?? null) !== $liveProduct->sku) {
-                    $item['sku'] = $liveProduct->sku;
-                    $updatedCart = true;
-                }
-
-                if (($item['slug'] ?? null) !== $liveProduct->slug) {
-                    $item['slug'] = $liveProduct->slug;
-                    $updatedCart = true;
-                }
-
-                $shopName = $liveProduct->user?->shop_name ?? $liveProduct->user?->name ?? 'Shop';
-                $location = $liveProduct->user?->city ?? 'Cavite';
-
-                if (($item['seller'] ?? null) !== $shopName) {
-                    $item['seller'] = $shopName;
-                    $updatedCart = true;
-                }
-
-                if (($item['shop_name'] ?? null) !== $shopName) {
-                    $item['shop_name'] = $shopName;
-                    $updatedCart = true;
-                }
-
-                if (($item['location'] ?? null) !== $location) {
-                    $item['location'] = $location;
-                    $updatedCart = true;
-                }
-
-                $photo = $liveProduct->cover_photo_path ?: $liveProduct->img;
-                if (($item['image'] ?? null) !== $photo || ($item['cover_photo_path'] ?? null) !== $photo) {
-                    $item['image'] = $photo;
-                    $item['img'] = $photo;
-                    $item['cover_photo_path'] = $photo;
-                    $updatedCart = true;
-                }
-            }
-            
-            if ($updatedCart) {
-                Session::put('cart', $cart);
-            }
-        }
-
-        if (request()->wantsJson() && !request()->header('X-Inertia')) {
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
             return response()->json(['cart' => $cart]);
         }
 
@@ -156,14 +33,17 @@ class CartController extends Controller
         ]);
     }
 
-    // 2. Add Item
-    public function store(Request $request)
+    /**
+     * Add an item to the shopping cart.
+     */
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         if (Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
+            $msg = 'Administrators are not permitted to make purchases.';
             if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Administrators are not permitted to make purchases.'], 403);
+                return response()->json(['success' => false, 'message' => $msg], 403);
             }
-            return redirect()->back()->with('error', 'Administrators are not permitted to make purchases.');
+            return redirect()->back()->with('error', $msg);
         }
 
         $validated = $request->validate([
@@ -172,283 +52,128 @@ class CartController extends Controller
             'variant' => 'nullable|string|max:120',
         ]);
 
-        $productColumns = [
-            'id', 'user_id', 'sku', 'name', 'slug', 'price', 'stock', 'cover_photo_path',
-            'moq', 'supply_unit', 'wholesale_price', 'wholesale_min_qty', 'weight'
-        ];
-        if (rescue(fn() => Schema::hasColumn('products', 'is_b2b_supply'), false)) {
-            $productColumns[] = 'is_b2b_supply';
+        $result = $this->cartService->addItem($validated);
+
+        if (!$result['success']) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $result['message']], $result['status'] ?? 422);
+            }
+            return redirect()->back()->with('error', $result['message']);
         }
 
-        $product = Product::select($productColumns)
-            ->with('user:id,name,shop_name,city')
-            ->findOrFail($validated['product_id']);
-        $moq = (int) ($product->moq ?: 1);
-        $requestedQty = (int) ($validated['quantity'] ?? $moq);
-        $variant = trim((string) ($validated['variant'] ?? 'Standard')) ?: 'Standard';
-        $cartKey = $this->makeCartKey($product->id, $variant);
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'],
+                'cart' => $result['cart'],
+                'cart_count' => $result['cart_count'],
+            ]);
+        }
 
-        $cart = $this->normalizeCart(Session::get('cart', []));
+        return redirect()->back()->with('success', $result['message']);
+    }
 
-        $currentQty = isset($cart[$cartKey]) ? (int) $cart[$cartKey]['qty'] : 0;
-        $newTotalQty = $currentQty + $requestedQty;
+    /**
+     * Update quantity of a cart item.
+     */
+    public function update(Request $request): RedirectResponse|JsonResponse
+    {
+        $id = $request->input('id') ?? $request->input('cart_key');
+        $qty = (int) ($request->input('qty') ?? $request->input('quantity') ?? 1);
 
-        if ($product->is_b2b_supply && $newTotalQty < $moq) {
-            $unit = $product->supply_unit ?: 'pcs';
-            $msg = "Minimum order quantity for {$product->name} is {$moq} {$unit}.";
+        if (!$id) {
+            $msg = 'Cart item identifier is required.';
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $msg], 422);
             }
             return redirect()->back()->with('error', $msg);
         }
 
-        if (isset($cart[$cartKey])) {
-            $cart[$cartKey]['sku'] = $product->sku;
-            $cart[$cartKey]['slug'] = $product->slug;
-            if ($newTotalQty > $product->stock) {
-                if ($request->wantsJson() || $request->ajax()) {
-                    return response()->json(['success' => false, 'message' => 'Not enough stock available.'], 422);
-                }
-                return redirect()->back()->with('error', 'Not enough stock available.');
-            }
-            $cart[$cartKey]['qty'] = $newTotalQty;
-            $cart[$cartKey]['price'] = $product->is_b2b_supply
-                ? $product->getEffectiveB2BPrice($newTotalQty)
-                : (float) $product->effective_price;
-            $cart[$cartKey]['is_b2b_supply'] = (bool) $product->is_b2b_supply;
-            $cart[$cartKey]['moq'] = $moq;
-            $cart[$cartKey]['wholesale_price'] = $product->wholesale_price !== null ? (float) $product->wholesale_price : null;
-            $cart[$cartKey]['wholesale_min_qty'] = $product->wholesale_min_qty ? (int) $product->wholesale_min_qty : null;
-            $cart[$cartKey]['supply_unit'] = $product->supply_unit ?: 'pcs';
-        } else {
-            if ($product->stock < $requestedQty) {
-                if ($request->wantsJson() || $request->ajax()) {
-                    return response()->json(['success' => false, 'message' => 'Product is out of stock.'], 422);
-                }
-                return redirect()->back()->with('error', 'Product is out of stock.');
-            }
-            $photo = $product->cover_photo_path ?: $product->img;
-            $sellerName = $product->user->shop_name ?? $product->user->name ?? 'Shop';
-            $unitPrice = $product->is_b2b_supply
-                ? $product->getEffectiveB2BPrice($requestedQty)
-                : (float) $product->effective_price;
+        $result = $this->cartService->updateQuantity((string) $id, $qty);
 
-            $cart[$cartKey] = [
-                'id' => $product->id,
-                'cart_key' => $cartKey,
-                'artisan_id' => $product->user_id, // Seller ID for grouping
-                'seller_id' => $product->user_id,
-                'name' => $product->name,
-                'variant' => $variant,
-                'sku' => $product->sku,
-                'slug' => $product->slug,
-                'price' => $unitPrice,
-                'qty' => $requestedQty,
-                'img' => $photo,
-                'image' => $photo,
-                'cover_photo_path' => $photo,
-                'seller' => $sellerName,
-                'shop_name' => $sellerName,
-                'seller_name' => $sellerName,
-                'seller_city' => $product->user->city ?? 'Cavite',
-                'location' => $product->user->city ?? 'Cavite',
-                'moq' => $moq,
-                'supply_unit' => $product->supply_unit ?: 'pcs',
-                'wholesale_price' => $product->wholesale_price !== null ? (float) $product->wholesale_price : null,
-                'wholesale_min_qty' => $product->wholesale_min_qty ? (int) $product->wholesale_min_qty : null,
-                'is_b2b_supply' => (bool) $product->is_b2b_supply,
-                'weight' => (float) ($product->weight ?? 1.0),
-            ];
-        }
-
-        Session::put('cart', $cart);
-
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Added to cart!',
-                'cart' => $cart,
-                'cart_count' => collect($cart)->sum('qty'),
-            ]);
-        }
-
-        return redirect()->back()->with('success', 'Added to cart!');
-    }
-
-    // 3. Update Quantity
-    public function update(Request $request)
-    {
-        $id = $request->input('id') ?? $request->input('cart_key');
-        $qty = (int) ($request->input('qty') ?? $request->input('quantity') ?? 1);
-
-        if (!$id) {
+        if (!$result['success']) {
             if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Cart item identifier is required.'], 422);
+                return response()->json(['success' => false, 'message' => $result['message']], $result['status'] ?? 422);
             }
-            return redirect()->back()->with('error', 'Cart item identifier is required.');
-        }
-
-        $cart = $this->normalizeCart(Session::get('cart', []));
-        
-        if (isset($cart[$id])) {
-            $product = Product::find($cart[$id]['id']);
-            if ($product) {
-                $moq = (int) ($product->moq ?: 1);
-                if ($product->is_b2b_supply && $qty < $moq) {
-                    $unit = $product->supply_unit ?: 'pcs';
-                    $msg = "Minimum order quantity for {$product->name} is {$moq} {$unit}.";
-                    if ($request->wantsJson() || $request->ajax()) {
-                        return response()->json(['success' => false, 'message' => $msg], 422);
-                    }
-                    return redirect()->back()->with('error', $msg);
-                }
-
-                if ($qty > $product->stock) {
-                    if ($request->wantsJson() || $request->ajax()) {
-                        return response()->json(['success' => false, 'message' => 'Only ' . $product->stock . ' items available in stock.'], 422);
-                    }
-                    return redirect()->back()->with('error', 'Only ' . $product->stock . ' items available in stock.');
-                }
-
-                $cart[$id]['qty'] = max(1, $qty);
-                $cart[$id]['price'] = $product->is_b2b_supply
-                    ? $product->getEffectiveB2BPrice($cart[$id]['qty'])
-                    : (float) $product->effective_price;
-                $cart[$id]['is_b2b_supply'] = (bool) $product->is_b2b_supply;
-                $cart[$id]['moq'] = $moq;
-                $cart[$id]['wholesale_price'] = $product->wholesale_price !== null ? (float) $product->wholesale_price : null;
-                $cart[$id]['wholesale_min_qty'] = $product->wholesale_min_qty ? (int) $product->wholesale_min_qty : null;
-                $cart[$id]['supply_unit'] = $product->supply_unit ?: 'pcs';
-                Session::put('cart', $cart);
-            } else {
-                $cart[$id]['qty'] = max(1, $qty);
-                Session::put('cart', $cart);
-            }
+            return redirect()->back()->with('error', $result['message']);
         }
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Cart updated.',
-                'cart' => $cart,
-                'cart_count' => collect($cart)->sum('qty'),
+                'message' => $result['message'],
+                'cart' => $result['cart'],
+                'cart_count' => $result['cart_count'],
             ]);
         }
 
-        return redirect()->back()->with('success', 'Cart updated.');
+        return redirect()->back()->with('success', $result['message']);
     }
 
-    // 4. Remove Item
-    public function destroy(Request $request)
+    /**
+     * Remove an item from the cart.
+     */
+    public function destroy(Request $request): RedirectResponse|JsonResponse
     {
         $id = $request->input('id') ?? $request->input('cart_key');
 
         if (!$id) {
+            $msg = 'Cart item identifier is required.';
             if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Cart item identifier is required.'], 422);
+                return response()->json(['success' => false, 'message' => $msg], 422);
             }
-            return redirect()->back()->with('error', 'Cart item identifier is required.');
+            return redirect()->back()->with('error', $msg);
         }
 
-        $cart = $this->normalizeCart(Session::get('cart', []));
-        
-        if (isset($cart[$id])) {
-            unset($cart[$id]);
-            Session::put('cart', $cart);
-        }
+        $result = $this->cartService->removeItem((string) $id);
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Item removed.',
-                'cart' => $cart,
-                'cart_count' => collect($cart)->sum('qty'),
+                'message' => $result['message'],
+                'cart' => $result['cart'],
+                'cart_count' => $result['cart_count'],
             ]);
         }
 
-        return redirect()->back()->with('success', 'Item removed.');
+        return redirect()->back()->with('success', $result['message']);
     }
 
-    // 5. Clear Entire Cart
-    public function clear(Request $request)
+    /**
+     * Clear all cart contents.
+     */
+    public function clear(Request $request): RedirectResponse|JsonResponse
     {
-        Session::forget('cart');
+        $result = $this->cartService->clearCart();
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Cart cleared.',
-                'cart' => [],
+                'message' => $result['message'],
+                'cart' => $result['cart'],
                 'cart_count' => 0,
             ]);
         }
 
-        return redirect()->back()->with('success', 'Cart cleared.');
+        return redirect()->back()->with('success', $result['message']);
     }
 
-    public function buyAgain(int|string $orderId)
+    /**
+     * Re-order items from a previous order into current cart.
+     */
+    public function buyAgain(int|string $orderId): RedirectResponse
     {
         if (Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
             return redirect()->back()->with('error', 'Administrators are not permitted to make purchases.');
         }
 
-        $order = \App\Models\Order::with('items')->where('user_id', Auth::id())->findOrFail($orderId);
-        $cart = $this->normalizeCart(Session::get('cart', []));
-        $addedCount = 0;
-        $outOfStockCount = 0;
-
-        $productIds = $order->items()->pluck('product_id')->filter()->unique()->values()->all();
-        $products = Product::with('user')->whereIn('id', $productIds)->get()->keyBy('id');
-
-        foreach ($order->items as $item) {
-            $product = $products->get($item->product_id);
-            
-            if (!$product || $product->stock < 1) {
-                $outOfStockCount++;
-                continue;
-            }
-
-            $variant = trim((string) ($item->variant ?? 'Standard')) ?: 'Standard';
-            $cartKey = $this->makeCartKey($product->id, $variant);
-
-            // Add to cart logic (simplified from store method)
-            if (isset($cart[$cartKey])) {
-                // If already in cart, just ensure we don't exceed stock?
-                // Or just add 1? Or add original qty?
-                // Let's add 1 for now to be safe, or min(original_qty, stock).
-                // Usually "Buy Again" adds 1 of each unless specified.
-                // Let's add 1.
-                if ($cart[$cartKey]['qty'] + 1 <= $product->stock) {
-                    $cart[$cartKey]['qty']++;
-                    $addedCount++;
-                } else {
-                    $outOfStockCount++;
-                }
-            } else {
-                $cart[$cartKey] = [
-                    'id' => $product->id,
-                    'cart_key' => $cartKey,
-                    'artisan_id' => $product->user_id,
-                    'name' => $product->name,
-                    'variant' => $variant,
-                    'sku' => $product->sku,
-                    'slug' => $product->slug,
-                    'price' => $product->price,
-                    'qty' => 1, // Start with 1
-                    'img' => $product->img, 
-                    'seller' => $product->user->shop_name ?? $product->user->name ?? 'Shop',
-                    'shop_name' => $product->user->shop_name ?? $product->user->name ?? 'Shop',
-                    'location' => $product->user->city ?? 'Cavite'
-                ];
-                $addedCount++;
-            }
-        }
-
-        Session::put('cart', $cart);
+        $result = $this->cartService->buyAgain($orderId, (int) Auth::id());
+        $addedCount = $result['addedCount'];
+        $outOfStockCount = $result['outOfStockCount'];
 
         if ($addedCount > 0) {
             if ($outOfStockCount > 0) {
-                return redirect()->route('cart.index')->with('warning', "$addedCount items added to cart. $outOfStockCount items were out of stock.");
+                return redirect()->route('cart.index')->with('warning', "{$addedCount} items added to cart. {$outOfStockCount} items were out of stock.");
             }
             return redirect()->route('cart.index')->with('success', 'Items added to cart!');
         }
@@ -457,9 +182,9 @@ class CartController extends Controller
     }
 
     /**
-     * Restore multiple items into cart from client-side persistent backup
+     * Restore multiple items into cart from client-side persistent backup.
      */
-    public function restore(Request $request)
+    public function restore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'items' => 'required|array|min:1',
@@ -468,38 +193,7 @@ class CartController extends Controller
             'items.*.variant' => 'nullable|string|max:120',
         ]);
 
-        $cart = $this->normalizeCart(Session::get('cart', []));
-        $restoredCount = 0;
-
-        foreach ($validated['items'] as $itemData) {
-            $product = Product::with('user:id,name,shop_name,city')->find($itemData['id']);
-            if (!$product || (int) $product->stock < 1) {
-                continue;
-            }
-
-            $variant = trim((string) ($itemData['variant'] ?? 'Standard')) ?: 'Standard';
-            $cartKey = $this->makeCartKey($product->id, $variant);
-            $qty = min((int) $itemData['qty'], (int) $product->stock);
-
-            $cart[$cartKey] = [
-                'id' => $product->id,
-                'cart_key' => $cartKey,
-                'artisan_id' => $product->user_id,
-                'name' => $product->name,
-                'variant' => $variant,
-                'sku' => $product->sku,
-                'slug' => $product->slug,
-                'price' => (float) $product->effective_price,
-                'qty' => $qty,
-                'img' => $product->cover_photo_path ?: $product->img,
-                'seller' => $product->user?->shop_name ?? $product->user?->name ?? 'Shop',
-                'shop_name' => $product->user?->shop_name ?? $product->user?->name ?? 'Shop',
-                'location' => $product->user?->city ?? 'Cavite',
-            ];
-            $restoredCount++;
-        }
-
-        Session::put('cart', $cart);
+        $restoredCount = $this->cartService->restoreItems($validated['items']);
 
         if ($restoredCount > 0) {
             return redirect()->route('cart.index')->with('success', "Restored {$restoredCount} item(s) from your previous session.");

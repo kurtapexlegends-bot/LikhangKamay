@@ -24,7 +24,7 @@ class ReviewController extends Controller
         $reviews = Review::whereHas('product', function ($query) use ($sellerId) {
             $query->where('user_id', $sellerId);
         })
-            ->with(['user', 'product', 'disputes.reporter'])
+            ->with(['user:id,name,avatar', 'product', 'disputes.reporter'])
             ->latest()
             ->get()
             ->map(function ($review) {

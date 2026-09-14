@@ -97,6 +97,7 @@ class AppServiceProvider extends ServiceProvider
 
         \App\Models\Review::observe(\App\Observers\ReviewObserver::class);
         \App\Models\ReviewDispute::observe(\App\Observers\ReviewDisputeObserver::class);
+        \App\Models\Product::observe(\App\Observers\ProductObserver::class);
 
         \Illuminate\Support\Facades\Event::listen(
             \App\Events\ShopSettingsUpdated::class,
