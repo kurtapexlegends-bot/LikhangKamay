@@ -162,12 +162,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
             <Head title="System Configuration" />
 
             <div className="space-y-6 pb-20">
-                {/* Header Profile Title */}
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">System Configuration</h1>
-                    <p className="text-xs sm:text-sm text-stone-500 font-medium">Manage platform operations, subscription plans, email automation, and global taxonomy.</p>
-                </div>
-
                 {/* Main Tabs Navigation Bar */}
                 <div className="border-b border-stone-200/80 -mx-4 px-4 sm:mx-0 sm:px-0">
                     <nav className="flex space-x-2 sm:space-x-4 overflow-x-auto no-scrollbar scroll-smooth">

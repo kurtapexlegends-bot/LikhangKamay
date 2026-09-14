@@ -364,7 +364,7 @@ export default function AdminLayout({ title, children }) {
                                     'Content Safety': "Review user-reported flags, safety queues, and disputed reviews.",
                                     'Order Disputes': "Arbitrate return and refund claims between customers and artisans.",
                                     'Restoration Center': "Restore or permanently delete removed database records.",
-                                    'System Config': "Configure platform settings, payment gateways, and fees."
+                                    'System Config': "Manage platform operations, subscription plans, email automation, and global taxonomy."
                                 }[resolvedTitle] || ""}
                             </p>
                         </div>
