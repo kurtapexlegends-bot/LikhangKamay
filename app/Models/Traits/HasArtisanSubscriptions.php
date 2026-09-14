@@ -68,6 +68,45 @@ trait HasArtisanSubscriptions
         return $this->premium_tier ?? 'free';
     }
 
+    /**
+     * Enforce graceful downgrade on-the-fly if artisan subscription has expired.
+     */
+    public function enforceSubscriptionExpirationIfDue(): bool
+    {
+        if (
+            $this->isArtisan()
+            && $this->subscription_expires_at !== null
+            && $this->subscription_expires_at->isPast()
+            && in_array($this->premium_tier, ['premium', 'super_premium'], true)
+        ) {
+            try {
+                $targetTier = $this->pending_downgrade_tier ?? 'free';
+                if (!in_array($targetTier, ['free', 'premium'], true) || $targetTier === $this->premium_tier) {
+                    $targetTier = 'free';
+                }
+
+                $downgradeAction = app(\App\Actions\Seller\Subscription\DowngradeSubscription::class);
+                $fallbackUrl = rescue(fn() => request()?->url(), null) ?: route('dashboard');
+
+                $downgradeAction->execute(
+                    $this,
+                    $targetTier,
+                    null,
+                    $fallbackUrl
+                );
+
+                $this->refresh();
+                return true;
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error("Failed JIT subscription downgrade for artisan {$this->id}: " . $e->getMessage(), [
+                    'exception' => $e,
+                ]);
+            }
+        }
+
+        return false;
+    }
+
     public function getActiveProductLimit(): int
     {
         return match($this->getEffectivePremiumTier()) {
@@ -128,6 +167,11 @@ trait HasArtisanSubscriptions
     }
 
     public function canExportAnalytics(): bool
+    {
+        return true;
+    }
+
+    public function canPrintAnalyticsReport(): bool
     {
         return $this->canUseFeature('analytics_export');
     }

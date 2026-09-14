@@ -20,6 +20,8 @@ class EnsureArtisan
             abort(403, 'Unauthorized action. Artisan access only.');
         }
 
+        Auth::user()->enforceSubscriptionExpirationIfDue();
+
         return $next($request);
     }
 }

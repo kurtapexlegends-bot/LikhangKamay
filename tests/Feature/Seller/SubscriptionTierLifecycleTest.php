@@ -820,6 +820,40 @@ class SubscriptionTierLifecycleTest extends TestCase
         $response->assertSessionHasErrors(['recipes', 'production_method']);
     }
 
+    public function test_jit_subscription_expiration_downgrades_on_seller_workspace_request(): void
+    {
+        $seller = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'super_premium',
+            'subscription_expires_at' => now()->subHour(),
+            'pending_downgrade_tier' => 'free',
+        ]);
+
+        $products = collect(range(1, 6))->map(function ($index) use ($seller) {
+            return $this->createActiveProduct($seller, [
+                'name' => "Craft {$index}",
+                'sold' => $index * 5,
+                'created_at' => now()->subDays(10 - $index),
+            ]);
+        });
+
+        $this->assertEquals(6, $seller->products()->where('status', 'Active')->count());
+
+        // Hit the products index route as the artisan (no manual artisan command run)
+        $response = $this->actingAs($seller)->get(route('products.index'));
+
+        $response->assertOk();
+
+        $seller->refresh();
+
+        // Tier transitioned to free on-the-fly
+        $this->assertSame('free', $seller->premium_tier);
+        $this->assertNull($seller->subscription_expires_at);
+
+        // Top 3 selling products stay Active, others moved to Draft
+        $this->assertEquals(3, $seller->products()->where('status', 'Active')->count());
+        $this->assertEquals(3, $seller->products()->where('status', 'Draft')->count());
+    }
+
     // ==========================================
     // HELPERS
     // ==========================================

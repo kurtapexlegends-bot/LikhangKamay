@@ -20,6 +20,16 @@ class EnsureSellerWorkspaceAccess
             return redirect()->route('artisan.pending');
         }
 
+        if ($user) {
+            if ($user->isArtisan()) {
+                $user->enforceSubscriptionExpirationIfDue();
+            } elseif ($user->isStaff() && $user->sellerOwner) {
+                if ($user->sellerOwner->enforceSubscriptionExpirationIfDue()) {
+                    $user->refresh();
+                }
+            }
+        }
+
         if (!$user || !$user->canAccessSellerWorkspace()) {
             abort(403, 'Unauthorized action. Seller workspace access only.');
         }

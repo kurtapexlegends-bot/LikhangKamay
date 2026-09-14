@@ -38,6 +38,8 @@ class ShopController extends Controller
             abort(404);
         }
 
+        $seller->enforceSubscriptionExpirationIfDue();
+
         $products = Cache::remember("seller_{$seller->id}_products", 1800, function() use ($seller) {
             return Product::query()
                 ->where('user_id', $seller->id)
