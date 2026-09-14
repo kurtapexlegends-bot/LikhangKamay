@@ -14,7 +14,7 @@ const DOMAIN_CONFIG = {
     staff_rate: {
         label: 'Salary & Rate Update',
         icon: User,
-        badgeClass: 'bg-indigo-50 text-indigo-800 border-indigo-200/80',
+        badgeClass: 'bg-clay-50 text-clay-800 border-clay-200/80',
     },
     procurement: {
         label: 'Materials & Supplies',

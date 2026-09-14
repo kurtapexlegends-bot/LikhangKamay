@@ -1,18 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as faceapi from '@vladmandic/face-api';
-import { Camera, CheckCircle2, RefreshCw, AlertCircle, Sparkles, Eye, Check, ArrowLeft, ArrowRight, ArrowUp, Smile, ShieldCheck } from 'lucide-react';
-
-const CHALLENGE_POOL = [
-    { id: 'turn_left', label: 'Turn your face LEFT', instruction: 'Turn gently to your left', icon: ArrowLeft },
-    { id: 'turn_right', label: 'Turn your face RIGHT', instruction: 'Turn gently to your right', icon: ArrowRight },
-    { id: 'smile', label: 'Smile at the camera', instruction: 'Show a gentle smile', icon: Smile },
-    { id: 'nod', label: 'Nod or tilt head UP', instruction: 'Tilt your chin upward', icon: ArrowUp },
-];
-
-function generateChallengeSequence() {
-    const shuffled = [...CHALLENGE_POOL].sort(() => 0.5 - Math.random());
-    return [shuffled[0], shuffled[1]];
-}
+import { RefreshCw, AlertCircle, Check } from 'lucide-react';
+import { generateChallengeSequence } from './livenessChallengeConfig';
+import LivenessChallengePrompt from './LivenessChallengePrompt';
 
 export default function LivenessFaceScanner({ onVerified, onError }) {
     const videoRef = useRef(null);
@@ -93,7 +83,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
             ctx.font = '12px sans-serif';
             ctx.fillStyle = '#FFFFFF';
             const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            ctx.fillText(`LikhangKamay • 3D Biometric Verified • ${now}`, 20, captureCanvas.height - 18);
+            ctx.fillText(`LikhangKamay • Face Check Verified • ${now}`, 20, captureCanvas.height - 18);
 
             const photoData = captureCanvas.toDataURL('image/jpeg', 0.88);
 
@@ -395,7 +385,6 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
     };
 
     const currentChallenge = activeChallenges[currentStep] || activeChallenges[0];
-    const ChallengeIcon = currentChallenge?.icon || Sparkles;
 
     return (
         <div className="flex flex-col items-center w-full">
@@ -481,70 +470,15 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
             </div>
 
             {/* Interactive Challenge Prompter */}
-            <div className="mt-3 w-full max-w-[310px] space-y-2">
-                {scanPhase === 'align' && (
-                    <div className={`rounded-xl border py-2 px-3 flex items-center justify-center gap-2 text-center transition ${
-                        isInsideOval
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-900 font-bold text-xs'
-                            : faceDetected
-                            ? 'border-amber-200 bg-amber-50 text-amber-900 font-medium text-xs'
-                            : 'border-stone-200 bg-stone-50 text-stone-700 font-medium text-xs'
-                    }`}>
-                        <Eye size={15} className={isInsideOval ? 'text-emerald-700' : 'text-stone-500'} />
-                        <span>{isInsideOval ? 'Face aligned! Getting ready...' : 'Fit your face inside the oval'}</span>
-                    </div>
-                )}
-
-                {(scanPhase === 'challenge' || scanPhase === 'calibrating') && (
-                    <div className="rounded-xl border border-amber-300 bg-amber-50/95 p-3 space-y-2 shadow-2xs animate-fade-in">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1">
-                                <ShieldCheck size={12} className="text-amber-700" />
-                                Face Check Step {currentStep + 1} of 2
-                            </span>
-                            <div className="flex items-center gap-1.5">
-                                <span className={`w-2 h-2 rounded-full transition-all ${step1Passed ? 'bg-emerald-600 ring-2 ring-emerald-300' : 'bg-amber-600'}`} />
-                                <span className={`w-2 h-2 rounded-full transition-all ${currentStep >= 2 ? 'bg-emerald-600' : 'bg-stone-300'}`} />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2.5 bg-white/80 rounded-lg p-2 border border-amber-200/80">
-                            <div className={`w-8 h-8 rounded-lg text-white flex items-center justify-center shrink-0 shadow-2xs transition-colors ${
-                                scanPhase === 'calibrating' ? 'bg-stone-600 animate-pulse' : 'bg-amber-500'
-                            }`}>
-                                <ChallengeIcon size={18} />
-                            </div>
-                            <div className="text-left">
-                                <h5 className="text-xs font-black text-stone-900 leading-tight">
-                                    {scanPhase === 'calibrating' ? `Get ready for Step ${currentStep + 1}...` : currentChallenge.label}
-                                </h5>
-                                <p className="text-[10px] text-stone-500 font-medium">
-                                    {scanPhase === 'calibrating' ? currentChallenge.instruction : currentChallenge.instruction}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {scanPhase === 'completed' && (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-2.5 px-3 flex items-center justify-between gap-2 shadow-2xs">
-                        <div className="flex items-center gap-2">
-                            <CheckCircle2 size={16} className="text-emerald-700" />
-                            <div>
-                                <h6 className="text-xs font-bold text-emerald-950">Face Check Completed</h6>
-                                <p className="text-[10px] text-emerald-700 font-medium">Photo ready for clock-in</p>
-                            </div>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handleRestart}
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-stone-500 hover:text-stone-800 cursor-pointer bg-white px-2 py-1 rounded-lg border border-stone-200"
-                        >
-                            <RefreshCw size={11} /> Retake
-                        </button>
-                    </div>
-                )}
-            </div>
+            <LivenessChallengePrompt
+                scanPhase={scanPhase}
+                isInsideOval={isInsideOval}
+                faceDetected={faceDetected}
+                currentStep={currentStep}
+                step1Passed={step1Passed}
+                currentChallenge={currentChallenge}
+                onRestart={handleRestart}
+            />
         </div>
     );
 }
