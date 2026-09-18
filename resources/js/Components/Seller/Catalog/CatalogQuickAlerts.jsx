@@ -35,10 +35,19 @@ export default function CatalogQuickAlerts({
                     </button>
                 )}
                 {remainingActivationSlots === 0 ? (
-                    <span className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2.5 md:px-3 md:py-1 text-xs md:text-[11px] font-bold text-rose-700 shrink-0 min-h-[44px] md:min-h-[28px]">
+                    <button
+                        type="button"
+                        onClick={() => applyQuickFilter("all", "Active")}
+                        className={`inline-flex items-center gap-2 rounded-full border bg-white px-4.5 py-2.5 md:px-3 md:py-1 text-xs md:text-[11px] font-bold transition-colors shrink-0 min-h-[44px] md:min-h-[28px] cursor-pointer ${
+                            activeTab === "Active" && quickFilter === "all"
+                                ? "border-rose-300 bg-rose-50 text-rose-800"
+                                : "border-rose-200 text-rose-700 hover:bg-rose-50"
+                        }`}
+                        title="View your active products"
+                    >
                         <Archive size={14} className="md:w-3 md:h-3" />
                         <span>Active limit reached</span>
-                    </span>
+                    </button>
                 ) : (
                     <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2.5 md:px-3 md:py-1 text-xs md:text-[11px] font-bold text-emerald-700 shrink-0 min-h-[44px] md:min-h-[28px]">
                         <CheckCircle size={14} className="md:w-3 md:h-3" />

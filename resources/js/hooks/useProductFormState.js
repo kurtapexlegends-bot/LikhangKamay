@@ -385,9 +385,17 @@ export default function useProductFormState({
     };
 
     const handleStatusChange = (nextStatus) => {
-        if (nextStatus === "Active" && !activationReadiness.canActivate) {
-            addToast(`Add ${activationReadiness.missingLabels.join(", ")} before listing this product as Active.`, "info");
-            return;
+        if (nextStatus === "Active") {
+            if (!activationReadiness.canActivate) {
+                addToast(`Add ${activationReadiness.missingLabels.join(", ")} before listing this product as Active.`, "info");
+                return;
+            }
+            const isAlreadyActive = selectedProduct?.status === "Active";
+            if (!isAlreadyActive && subscription && subscription.limit && (subscription.activeCount >= subscription.limit)) {
+                addToast(`Product limit reached (${subscription.activeCount}/${subscription.limit}). Upgrade your plan or move another product to Draft.`, "error");
+                setLimitModalOpen(true);
+                return;
+            }
         }
         setData("status", nextStatus);
     };

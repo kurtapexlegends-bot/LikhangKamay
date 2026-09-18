@@ -62,7 +62,33 @@ class ProductController extends Controller
                 $query->search($request->search, ['name', 'sku', 'category', 'description']);
             }
 
-            if ($request->filled('status') && $request->status !== 'All') {
+            if ($request->filled('quick_filter') && $request->quick_filter !== 'all') {
+                if ($request->quick_filter === 'needs_readiness') {
+                    $query->where('status', 'Draft')
+                        ->where(function($q) {
+                            $q->whereNull('cover_photo_path')
+                              ->orWhere('cover_photo_path', '')
+                              ->orWhereNull('model_3d_path')
+                              ->orWhere('model_3d_path', '')
+                              ->orWhereNull('gallery_paths')
+                              ->orWhere(function($sq) {
+                                  $sq->whereNotNull('gallery_paths')
+                                     ->whereJsonLength('gallery_paths', '<', 3);
+                              });
+                        });
+                } elseif ($request->quick_filter === 'ready_drafts') {
+                    $query->where('status', 'Draft')
+                        ->whereNotNull('cover_photo_path')
+                        ->where('cover_photo_path', '!=', '')
+                        ->whereNotNull('model_3d_path')
+                        ->where('model_3d_path', '!=', '')
+                        ->whereNotNull('gallery_paths')
+                        ->where(function($sq) {
+                            $sq->whereNotNull('gallery_paths')
+                               ->whereJsonLength('gallery_paths', '>=', 3);
+                        });
+                }
+            } elseif ($request->filled('status') && $request->status !== 'All') {
                 if ($request->status === 'Low Stock') {
                     $query->where('stock', '<', 10)->where('status', '!=', 'Archived');
                 } else {
@@ -94,6 +120,13 @@ class ProductController extends Controller
                 'products' => $paginator,
                 'categories' => rescue(fn() => \App\Models\Category::pluck('name')->toArray(), []),
                 'supplies' => rescue(fn() => Supply::where('user_id', $seller->id)->where('category', '!=', 'Finished Goods')->get(), collect()),
+                'filters' => [
+                    'search' => (string) $request->input('search', ''),
+                    'status' => (string) $request->input('status', 'All'),
+                    'quick_filter' => (string) $request->input('quick_filter', 'all'),
+                    'sort_key' => $sortKey,
+                    'sort_dir' => $sortDir,
+                ],
                 'subscription' => [
                     'plan' => $seller->getEffectivePremiumTier(),
                     'planLabel' => $seller->getSellerTierLabel(),

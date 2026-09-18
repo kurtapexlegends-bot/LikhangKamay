@@ -97,6 +97,104 @@ class ProductActivationRequirementsTest extends TestCase
         $this->assertSame('Draft', $readyProduct->fresh()->status);
     }
 
+    public function test_seller_can_filter_low_stock_products(): void
+    {
+        $seller = User::factory()->artisanApproved()->create();
+
+        $lowStockProduct = $this->makeProduct($seller, [
+            'name' => 'Low Stock Vase',
+            'stock' => 3,
+            'status' => 'Active',
+            'cover_photo_path' => 'products/covers/low.jpg',
+            'gallery_paths' => ['products/gallery/1.jpg', 'products/gallery/2.jpg', 'products/gallery/3.jpg'],
+            'model_3d_path' => 'products/models/low.glb',
+        ]);
+
+        $normalStockProduct = $this->makeProduct($seller, [
+            'name' => 'High Stock Vase',
+            'stock' => 50,
+            'status' => 'Active',
+            'cover_photo_path' => 'products/covers/high.jpg',
+            'gallery_paths' => ['products/gallery/1.jpg', 'products/gallery/2.jpg', 'products/gallery/3.jpg'],
+            'model_3d_path' => 'products/models/high.glb',
+        ]);
+
+        $response = $this->actingAs($seller)
+            ->get(route('products.index', ['status' => 'Low Stock']));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Seller/Catalog/ProductManager')
+            ->has('products.data', 1)
+            ->where('products.data.0.id', $lowStockProduct->id)
+            ->where('filters.status', 'Low Stock')
+        );
+    }
+
+    public function test_seller_can_filter_drafts_needing_media(): void
+    {
+        $seller = User::factory()->artisanApproved()->create();
+
+        $incompleteDraft = $this->makeProduct($seller, [
+            'name' => 'Incomplete Draft',
+            'status' => 'Draft',
+            'cover_photo_path' => null,
+            'gallery_paths' => null,
+            'model_3d_path' => null,
+        ]);
+
+        $readyDraft = $this->makeProduct($seller, [
+            'name' => 'Ready Draft',
+            'status' => 'Draft',
+            'cover_photo_path' => 'products/covers/ready.jpg',
+            'gallery_paths' => ['products/gallery/1.jpg', 'products/gallery/2.jpg', 'products/gallery/3.jpg'],
+            'model_3d_path' => 'products/models/ready.glb',
+        ]);
+
+        $response = $this->actingAs($seller)
+            ->get(route('products.index', ['quick_filter' => 'needs_readiness']));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Seller/Catalog/ProductManager')
+            ->has('products.data', 1)
+            ->where('products.data.0.id', $incompleteDraft->id)
+            ->where('filters.quick_filter', 'needs_readiness')
+        );
+    }
+
+    public function test_seller_can_filter_ready_drafts(): void
+    {
+        $seller = User::factory()->artisanApproved()->create();
+
+        $incompleteDraft = $this->makeProduct($seller, [
+            'name' => 'Incomplete Draft',
+            'status' => 'Draft',
+            'cover_photo_path' => null,
+            'gallery_paths' => null,
+            'model_3d_path' => null,
+        ]);
+
+        $readyDraft = $this->makeProduct($seller, [
+            'name' => 'Ready Draft',
+            'status' => 'Draft',
+            'cover_photo_path' => 'products/covers/ready.jpg',
+            'gallery_paths' => ['products/gallery/1.jpg', 'products/gallery/2.jpg', 'products/gallery/3.jpg'],
+            'model_3d_path' => 'products/models/ready.glb',
+        ]);
+
+        $response = $this->actingAs($seller)
+            ->get(route('products.index', ['quick_filter' => 'ready_drafts']));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Seller/Catalog/ProductManager')
+            ->has('products.data', 1)
+            ->where('products.data.0.id', $readyDraft->id)
+            ->where('filters.quick_filter', 'ready_drafts')
+        );
+    }
+
     private function makeProduct(User $seller, array $overrides = []): Product
     {
         return Product::create(array_merge([

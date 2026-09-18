@@ -37,6 +37,7 @@ export default function ProductFormModal({
     removeRecipeItem,
     updateRecipeItem,
     selectedProduct,
+    subscription,
 }) {
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="2xl">
@@ -129,6 +130,8 @@ export default function ProductFormModal({
                             activationReadiness={activationReadiness}
                             handleStatusChange={handleStatusChange}
                             selectedProduct={selectedProduct}
+                            subscription={subscription}
+                            setActiveFormTab={setActiveFormTab}
                         />
                     )}
 

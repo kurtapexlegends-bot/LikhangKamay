@@ -11,20 +11,37 @@ export default function useProductFiltersState({
     const safeDbProducts = dbProducts || {};
     const safeStoredView = storedView || {};
 
-    const [activeTab, setActiveTab] = useState(safeStoredView.activeTab || "All");
-    const [searchQuery, setSearchQuery] = useState(safeUrlFilters.search || safeStoredView.searchQuery || "");
-    const [quickFilter, setQuickFilter] = useState(safeStoredView.quickFilter || "all");
-    const [sortConfig, setSortConfig] = useState(
-        safeStoredView.sortConfig || { key: "name", direction: "asc" },
-    );
+    const initialStatus = safeUrlFilters.status ?? safeStoredView.activeTab ?? "All";
+    const initialSearch = safeUrlFilters.search ?? safeStoredView.searchQuery ?? "";
+    const initialQuickFilter = safeUrlFilters.quick_filter ?? safeStoredView.quickFilter ?? "all";
+    const initialSort = safeUrlFilters.sort_key
+        ? { key: safeUrlFilters.sort_key, direction: safeUrlFilters.sort_dir || "asc" }
+        : (safeStoredView.sortConfig || { key: "name", direction: "asc" });
+
+    const [activeTab, setActiveTab] = useState(initialStatus);
+    const [searchQuery, setSearchQuery] = useState(initialSearch);
+    const [quickFilter, setQuickFilter] = useState(initialQuickFilter);
+    const [sortConfig, setSortConfig] = useState(initialSort);
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Sync search from URL
+    // Sync state from URL filters
     useEffect(() => {
-        if (safeUrlFilters.search && safeUrlFilters.search !== searchQuery) {
+        if (safeUrlFilters.status && safeUrlFilters.status !== activeTab) {
+            setActiveTab(safeUrlFilters.status);
+        }
+        if (safeUrlFilters.quick_filter && safeUrlFilters.quick_filter !== quickFilter) {
+            setQuickFilter(safeUrlFilters.quick_filter);
+        }
+        if (safeUrlFilters.search !== undefined && safeUrlFilters.search !== searchQuery) {
             setSearchQuery(safeUrlFilters.search);
         }
-    }, [safeUrlFilters.search]);
+        if (safeUrlFilters.sort_key && (safeUrlFilters.sort_key !== sortConfig.key || safeUrlFilters.sort_dir !== sortConfig.direction)) {
+            setSortConfig({
+                key: safeUrlFilters.sort_key,
+                direction: safeUrlFilters.sort_dir || "asc",
+            });
+        }
+    }, [safeUrlFilters.status, safeUrlFilters.quick_filter, safeUrlFilters.search, safeUrlFilters.sort_key, safeUrlFilters.sort_dir]);
 
     const totalPages = safeDbProducts.last_page || 1;
     const totalItems = safeDbProducts.total || 0;
@@ -55,9 +72,10 @@ export default function useProductFiltersState({
     const updateFilters = (newFilters) => {
         const queryParams = {
             search: Object.prototype.hasOwnProperty.call(newFilters, 'search') ? newFilters.search : searchQuery,
-            status: activeTab,
-            sort_key: sortConfig.key,
-            sort_dir: sortConfig.direction,
+            status: Object.prototype.hasOwnProperty.call(newFilters, 'status') ? newFilters.status : activeTab,
+            quick_filter: Object.prototype.hasOwnProperty.call(newFilters, 'quick_filter') ? newFilters.quick_filter : quickFilter,
+            sort_key: Object.prototype.hasOwnProperty.call(newFilters, 'sort_key') ? newFilters.sort_key : sortConfig.key,
+            sort_dir: Object.prototype.hasOwnProperty.call(newFilters, 'sort_dir') ? newFilters.sort_dir : sortConfig.direction,
             page: 1,
             ...newFilters,
         };
@@ -65,13 +83,14 @@ export default function useProductFiltersState({
             preserveState: true,
             preserveScroll: true,
             showProgress: false,
-            only: ["products", "filters"],
+            only: ["products", "filters", "metrics", "subscription"],
         });
     };
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);
-        updateFilters({ status: tab });
+        setQuickFilter("all");
+        updateFilters({ status: tab, quick_filter: "all", page: 1 });
     };
 
     const handleSearch = (query) => {
@@ -104,6 +123,7 @@ export default function useProductFiltersState({
         router.get(route("products.index"), {
             search: searchQuery,
             status: activeTab,
+            quick_filter: quickFilter,
             sort_key: sortConfig.key,
             sort_dir: sortConfig.direction,
             page: page
@@ -111,7 +131,7 @@ export default function useProductFiltersState({
             preserveState: true,
             preserveScroll: true,
             showProgress: false,
-            only: ["products", "filters"],
+            only: ["products", "filters", "metrics", "subscription"],
         });
     };
 
@@ -120,6 +140,7 @@ export default function useProductFiltersState({
         setActiveTab(nextTab);
         setSearchQuery("");
         setCurrentPage(1);
+        updateFilters({ status: nextTab, quick_filter: filterKey, search: "", page: 1 });
     };
 
     const resetSavedView = () => {
@@ -129,7 +150,11 @@ export default function useProductFiltersState({
         setSortConfig({ key: "name", direction: "asc" });
         setCurrentPage(1);
 
-        router.get(route("products.index"), {}, {
+        router.get(route("products.index"), {
+            status: "All",
+            quick_filter: "all",
+            page: 1,
+        }, {
             preserveState: false,
             preserveScroll: true,
         });

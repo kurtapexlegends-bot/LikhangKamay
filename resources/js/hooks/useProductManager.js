@@ -18,6 +18,7 @@ export default function useProductManager({
     supplies = [],
     subscription,
     metrics = {},
+    filters: propFilters,
 }) {
     const { canEdit: canEditProducts, isReadOnly: isProductsReadOnly } =
         useSellerModuleAccess("products");
@@ -41,7 +42,9 @@ export default function useProductManager({
     );
     const defaultCategory = categories[0] || STANDARD_PRODUCT_CATEGORIES[0];
 
-    const { flash, filters = {} } = usePage().props;
+    const pageProps = usePage()?.props || {};
+    const flash = pageProps.flash || {};
+    const filters = (propFilters && Object.keys(propFilters).length > 0) ? propFilters : (pageProps.filters || {});
     const { addToast } = useToast();
 
     // Flash Messages

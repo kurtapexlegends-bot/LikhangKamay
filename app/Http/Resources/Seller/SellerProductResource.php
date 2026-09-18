@@ -65,6 +65,7 @@ class SellerProductResource extends JsonResource
             'discount_info' => $this->discount_info,
             'effective_price' => $this->effective_price,
             'has_discount' => $this->has_discount,
+            'activation_readiness' => $this->evaluateActivationReadiness(),
         ];
     }
 }

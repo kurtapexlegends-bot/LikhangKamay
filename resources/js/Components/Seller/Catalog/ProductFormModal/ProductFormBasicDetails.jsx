@@ -3,6 +3,7 @@ import TextInput from "@/Components/TextInput";
 import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
 import TextAreaWithCounter from "@/Components/TextAreaWithCounter";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 const modalFieldClass =
     "w-full mt-1 rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-none focus:border-clay-500 focus:ring-clay-500";
@@ -18,6 +19,8 @@ export default function ProductFormBasicDetails({
     activationReadiness,
     handleStatusChange,
     selectedProduct,
+    subscription,
+    setActiveFormTab,
 }) {
     return (
         <div className="space-y-6 animate-fadeIn">
@@ -76,35 +79,94 @@ export default function ProductFormBasicDetails({
 
                 <div>
                     <InputLabel value="Status" />
-                    <select
-                        className={modalSelectClass}
-                        value={data.status}
-                        onChange={(e) => handleStatusChange(e.target.value)}
-                    >
-                        <option value="Active" disabled={!activationReadiness.canActivate}>
-                            Active
-                        </option>
-                        <option value="Draft">Draft</option>
-                        <option value="Archived">Archived</option>
-                        {data.status === "pending_review" && (
-                            <option value="pending_review">Pending Review</option>
-                        )}
-                        {data.status === "rejected" && (
-                            <option value="rejected">Rejected</option>
-                        )}
-                        {data.status === "flagged" && (
-                            <option value="flagged">Flagged</option>
-                        )}
-                    </select>
-                    {data.status === "Active" && (
-                        <div className={`mt-2 rounded-xl border px-3 py-2 ${activationReadiness.canActivate ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
-                            <p className={`text-[11px] font-bold ${activationReadiness.canActivate ? "text-emerald-700" : "text-amber-700"}`}>
-                                {activationReadiness.canActivate
-                                    ? "Ready for Active listing"
-                                    : `Missing for Active: ${activationReadiness.missingLabels.join(", ")}`}
-                            </p>
-                        </div>
-                    )}
+                    {(() => {
+                        const isAlreadyActive = selectedProduct?.status === "Active";
+                        const isOverPlanLimit = !isAlreadyActive && Boolean(subscription && subscription.limit && (subscription.activeCount >= subscription.limit));
+                        const cannotBeActive = !activationReadiness.canActivate || isOverPlanLimit;
+
+                        return (
+                            <>
+                                <select
+                                    id="status"
+                                    className={modalSelectClass}
+                                    value={data.status}
+                                    onChange={(e) => handleStatusChange(e.target.value)}
+                                >
+                                    <option value="Active" disabled={cannotBeActive}>
+                                        {isOverPlanLimit
+                                            ? "Active (Plan limit reached)"
+                                            : !activationReadiness.canActivate
+                                            ? "Active (Missing required media)"
+                                            : "Active"}
+                                    </option>
+                                    <option value="Draft">Draft</option>
+                                    <option value="Archived">Archived</option>
+                                    {data.status === "pending_review" && (
+                                        <option value="pending_review">Pending Review</option>
+                                    )}
+                                    {data.status === "rejected" && (
+                                        <option value="rejected">Rejected</option>
+                                    )}
+                                    {data.status === "flagged" && (
+                                        <option value="flagged">Flagged</option>
+                                    )}
+                                </select>
+
+                                {/* Explanatory notification when Active cannot be selected */}
+                                {cannotBeActive && data.status !== "Active" && (
+                                    <div className="mt-2.5 rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-900 space-y-1.5 animate-fadeIn">
+                                        <div className="flex items-center gap-1.5 font-bold text-amber-900">
+                                            <AlertCircle size={14} className="shrink-0 text-amber-600" />
+                                            <span>Why can't this product be active?</span>
+                                        </div>
+                                        <ul className="list-disc list-inside space-y-1 text-[11px] text-amber-800/90 pl-0.5 font-medium">
+                                            {!activationReadiness.canActivate && (
+                                                <li>
+                                                    <span>Missing required listing media: </span>
+                                                    <span className="font-semibold text-amber-950">
+                                                        {activationReadiness.missingLabels.join(", ")}
+                                                    </span>
+                                                    {setActiveFormTab && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setActiveFormTab("Media")}
+                                                            className="ml-1.5 inline font-bold text-clay-700 underline hover:text-clay-900"
+                                                        >
+                                                            Go to Media tab &rarr;
+                                                        </button>
+                                                    )}
+                                                </li>
+                                            )}
+                                            {isOverPlanLimit && (
+                                                <li>
+                                                    <span>Active product limit reached: </span>
+                                                    <span className="font-semibold text-amber-950">
+                                                        {subscription.activeCount} of {subscription.limit} active slots used
+                                                    </span>
+                                                    . Move another active item to Draft or upgrade your plan to activate this product.
+                                                </li>
+                                            )}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {data.status === "Active" && (
+                                    <div className={`mt-2 rounded-xl border px-3 py-2 flex items-center gap-2 ${activationReadiness.canActivate ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
+                                        {activationReadiness.canActivate ? (
+                                            <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                                        ) : (
+                                            <AlertCircle size={15} className="text-amber-600 shrink-0" />
+                                        )}
+                                        <p className={`text-[11px] font-bold ${activationReadiness.canActivate ? "text-emerald-700" : "text-amber-700"}`}>
+                                            {activationReadiness.canActivate
+                                                ? "Ready for Active listing"
+                                                : `Missing for Active: ${activationReadiness.missingLabels.join(", ")}`}
+                                        </p>
+                                    </div>
+                                )}
+                            </>
+                        );
+                    })()}
                     {(data.status === 'rejected' || data.status === 'flagged') && (
                         <div className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
                             <p className="text-[11px] font-bold text-red-700">

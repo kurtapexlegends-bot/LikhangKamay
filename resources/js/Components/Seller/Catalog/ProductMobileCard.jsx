@@ -81,6 +81,14 @@ export default function ProductMobileCard({
                                                 ? "Flagged"
                                                 : product.status}
                                         </span>
+                                        {product.status === "Draft" && product.activation_readiness && (
+                                            <span
+                                                className={`text-[9px] font-semibold ${product.activation_readiness.canBeActive ? "text-emerald-700" : "text-stone-600"}`}
+                                                title={!product.activation_readiness.canBeActive ? `Missing: ${product.activation_readiness.missing?.join(', ')}` : "All media ready"}
+                                            >
+                                                {product.activation_readiness.canBeActive ? "• Ready" : "• Needs media"}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
 

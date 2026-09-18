@@ -33,6 +33,7 @@ export default function ProductManager({
     supplies = [],
     subscription,
     metrics = {},
+    filters = {},
 }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const state = useProductManager({
@@ -41,6 +42,7 @@ export default function ProductManager({
         supplies,
         subscription,
         metrics,
+        filters,
     });
 
     return (
@@ -239,6 +241,7 @@ export default function ProductManager({
                 removeRecipeItem={state.removeRecipeItem}
                 updateRecipeItem={state.updateRecipeItem}
                 selectedProduct={state.selectedProduct}
+                subscription={subscription}
             />
 
             {/* Resubmit Modal / Drawer */}
