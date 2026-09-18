@@ -49,10 +49,10 @@ export default function SlideOverDrawer({
                         }`}>
                             <TransitionChild
                                 as={Fragment}
-                                enter="transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                enter="transform transition-transform duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
                                 enterFrom={isRight ? 'translate-x-full' : 'translate-y-full lg:translate-y-0 lg:translate-x-full'}
                                 enterTo={isRight ? 'translate-x-0' : 'translate-y-0 lg:translate-x-0'}
-                                leave="transform transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                leave="transform transition-transform duration-400 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
                                 leaveFrom={isRight ? 'translate-x-0' : 'translate-y-0 lg:translate-x-0'}
                                 leaveTo={isRight ? 'translate-x-full' : 'translate-y-full lg:translate-y-0 lg:translate-x-full'}
                             >

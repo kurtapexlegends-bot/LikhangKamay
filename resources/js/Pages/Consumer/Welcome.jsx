@@ -26,7 +26,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
             <BuyerNavbar />
 
             {/* --- MAIN CONTENT --- */}
-            <main className="w-full min-w-0 max-w-7xl mx-auto px-4 lg:px-8 py-5 sm:py-6 flex flex-col gap-6 sm:gap-8 overflow-x-hidden">
+            <main id="main-content" tabIndex={-1} className="w-full min-w-0 max-w-7xl mx-auto px-4 lg:px-8 py-5 sm:py-6 flex flex-col gap-6 sm:gap-8 overflow-x-hidden focus:outline-none">
                 
                 <HeroSection />
 

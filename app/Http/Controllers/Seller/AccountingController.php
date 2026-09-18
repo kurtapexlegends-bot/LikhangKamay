@@ -174,7 +174,7 @@ class AccountingController extends Controller
             $lockedUser = User::where('id', $this->sellerOwnerId())->lockForUpdate()->first();
             
             if (!$lockedUser) {
-                throw new \Exception("Seller owner not found during fund release.");
+                return "Seller owner not found during fund release.";
             }
 
             $currentBalance = $this->ledgerService->buildFinancialSnapshot($lockedUser)['balance'];
@@ -273,7 +273,7 @@ class AccountingController extends Controller
             $lockedUser = User::where('id', $this->sellerOwnerId())->lockForUpdate()->first();
             
             if (!$lockedUser) {
-                throw new \Exception("Seller owner not found during payroll approval.");
+                return "Seller owner not found during payroll approval.";
             }
 
             $currentBalance = $this->ledgerService->buildFinancialSnapshot($lockedUser)['balance'];

@@ -38,7 +38,7 @@ export default function Edit({ mustVerifyEmail, status, addresses }) {
             <Head title="My Profile" />
             <BuyerNavbar />
 
-            <main className="pt-4 pb-28 sm:py-12">
+            <main id="main-content" tabIndex={-1} className="pt-4 pb-28 sm:py-12 focus:outline-none">
                 <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
                     <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
                         

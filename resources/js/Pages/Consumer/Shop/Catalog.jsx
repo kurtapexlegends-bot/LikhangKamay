@@ -266,7 +266,7 @@ export default function Catalog(props) {
             <Head title="Shop Collection" />
             <BuyerNavbar />
 
-            <main className="w-full max-w-7xl mx-auto px-4 lg:px-8 py-6 min-w-0 flex-1">
+            <main id="main-content" tabIndex={-1} className="w-full max-w-7xl mx-auto px-4 lg:px-8 py-6 min-w-0 flex-1 focus:outline-none">
                 <div className="w-full flex flex-col lg:flex-row gap-8 items-start">
                     
                     {/* --- FILTER SIDEBAR (Desktop & Mobile Drawer) --- */}

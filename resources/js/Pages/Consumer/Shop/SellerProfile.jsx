@@ -102,7 +102,7 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
             <Head title={`${seller.name} - LikhangKamay Store`} />
             <BuyerNavbar hideMobileDock={true} />
 
-            <main className="max-w-7xl mx-auto px-4 lg:px-8 py-8 pb-24 md:pb-8">
+            <main id="main-content" tabIndex={-1} className="max-w-7xl mx-auto px-4 lg:px-8 py-8 pb-24 md:pb-8 focus:outline-none">
                 
                 {/* BACK BUTTON */}
                 <Link href={route('shop.index')} className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-clay-600 mb-6 transition">

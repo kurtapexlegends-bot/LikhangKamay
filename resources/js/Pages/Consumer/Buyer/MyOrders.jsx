@@ -185,7 +185,7 @@ export default function MyOrders({ auth, orders }) {
             <Head title="My Purchases" />
             <BuyerNavbar />
 
-            <main className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 min-w-0 flex-1">
+            <main id="main-content" tabIndex={-1} className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 min-w-0 flex-1 focus:outline-none">
                 
                 {/* --- FLASH MESSAGES --- */}
                 {flash?.success && (

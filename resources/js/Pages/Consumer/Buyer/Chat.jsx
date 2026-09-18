@@ -430,7 +430,7 @@ export default function BuyerChat({ auth, conversations = [], activeMessages = [
             </div>
 
             {/* Chat Workspace Container */}
-            <main className={`flex-1 min-h-0 overflow-hidden max-w-7xl w-full mx-auto sm:px-6 lg:px-8 sm:py-6 ${!showMobileList ? 'p-0 sm:px-4' : 'p-4'}`}>
+            <main id="main-content" tabIndex={-1} className={`flex-1 min-h-0 overflow-hidden max-w-7xl w-full mx-auto sm:px-6 lg:px-8 sm:py-6 focus:outline-none ${!showMobileList ? 'p-0 sm:px-4' : 'p-4'}`}>
                 <div className="bg-white border border-gray-100 shadow-lg overflow-hidden flex flex-col sm:flex-row w-full h-full sm:rounded-2xl">
                     
                     {/* Contacts sidebar pane */}
