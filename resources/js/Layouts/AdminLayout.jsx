@@ -7,6 +7,7 @@ import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import GlobalSearch from '@/Components/Consumer/GlobalSearch';
 import ActivityHistoryDrawer from '@/Components/ActivityHistoryDrawer';
+import ScrollToTop from '@/Components/ScrollToTop';
 import { useRealtime } from '@/hooks/useRealtime';
 import {
     LayoutDashboard,
@@ -243,6 +244,12 @@ export default function AdminLayout({ title, children }) {
 
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans flex flex-col text-stone-800">
+            <a
+                href="#admin-main-content"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 z-[110] px-4 py-2 bg-clay-700 text-white text-xs font-semibold rounded-lg shadow-lg ring-2 ring-clay-500 focus:outline-none transition-transform"
+            >
+                Skip to main content
+            </a>
             <div className="flex-1 flex">
                 <Head title={resolvedTitle ? `${resolvedTitle} - Admin` : 'Admin Panel'} />
 
@@ -410,13 +417,19 @@ export default function AdminLayout({ title, children }) {
                 </header>
 
                 {/* Scrollable Content */}
-                <main className="flex-1 w-full px-4 pt-4 pb-8 sm:px-6 lg:px-8 animate-page-enter">
+                <main 
+                    id="admin-main-content"
+                    tabIndex={-1}
+                    className="flex-1 w-full px-4 pt-4 pb-8 sm:px-6 lg:px-8 animate-page-enter focus:outline-none"
+                >
                     <div className="max-w-[90rem] mx-auto w-full">
                         {children}
                     </div>
                 </main>
             </div>
             </div>
+
+            <ScrollToTop />
 
             {/* Self-contained CSS Keyframes for smooth tooltip fade-in/slide-in */}
             <style>{`

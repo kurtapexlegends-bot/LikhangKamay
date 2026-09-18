@@ -3,6 +3,7 @@ import { usePage, router } from '@inertiajs/react';
 import SellerSidebar from '@/Layouts/SellerSidebar';
 import DisciplinaryStatusBanner from '@/Components/DisciplinaryStatusBanner';
 import SellerTermsModal from '@/Components/SellerTermsModal';
+import ScrollToTop from '@/Components/ScrollToTop';
 
 const SellerWorkspaceShellContext = createContext({
     openSidebar: () => {},
@@ -76,6 +77,12 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
 
     return (
         <SellerWorkspaceShellContext.Provider value={shell}>
+            <a
+                href="#seller-main-content"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 z-[100] px-4 py-2 bg-clay-700 text-white text-xs font-semibold rounded-lg shadow-lg ring-2 ring-clay-500 focus:outline-none transition-transform"
+            >
+                Skip to main content
+            </a>
             <DisciplinaryStatusBanner />
             <div className="h-screen overflow-hidden bg-[#FDFBF9] flex font-sans text-gray-800 relative">
                 {/* Clean Subtle Background (No infinite heavy GPU blur repaints) */}
@@ -95,7 +102,9 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
 
                 <div 
                     scroll-region="true" 
-                    className={`flex min-w-0 flex-1 flex-col overscroll-contain transition-[margin] duration-200 ease-out ${
+                    id="seller-main-content"
+                    tabIndex={-1}
+                    className={`flex min-w-0 flex-1 flex-col overscroll-contain transition-[margin] duration-200 ease-out focus:outline-none ${
                         overflowHidden ? 'overflow-hidden' : 'overflow-y-auto [scrollbar-gutter:stable]'
                     } ${
                         isCollapsed ? 'lg:ml-16' : 'lg:ml-52'
@@ -108,6 +117,8 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
                     </div>
                 </div>
             </div>
+
+            <ScrollToTop targetSelector='[scroll-region="true"]' />
 
             {!auth?.hasAcceptedCompliance && (
                 <SellerTermsModal

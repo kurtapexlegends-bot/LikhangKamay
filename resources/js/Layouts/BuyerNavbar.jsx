@@ -1,3 +1,4 @@
+/* global route */
 import React, { useState, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import axios from 'axios';
@@ -12,6 +13,7 @@ import BuyerUserMenu from '@/Components/Buyer/BuyerUserMenu';
 import BuyerCartDropdown from '@/Components/Buyer/BuyerCartDropdown';
 import BuyerSearchSuggestions from '@/Components/Buyer/BuyerSearchSuggestions';
 import BuyerMobileSearchSheet from '@/Components/Buyer/BuyerMobileSearchSheet';
+import ScrollToTop from '@/Components/ScrollToTop';
 
 export default function BuyerNavbar({ hideMobileDock = false }) {
     // Enable Real-time synchronization
@@ -175,6 +177,13 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
 
     return (
         <>
+        {/* WCAG Skip to Main Content Link */}
+        <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:inline-flex focus:items-center focus:gap-2 focus:px-4 focus:py-2.5 focus:bg-stone-900 focus:text-white focus:text-xs focus:font-bold focus:rounded-xl focus:shadow-xl focus:ring-2 focus:ring-clay-500 focus:outline-none transition-all duration-200"
+        >
+            Skip to main content
+        </a>
         <DisciplinaryStatusBanner />
         <nav className={`bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-md py-1' : 'shadow-sm/50 py-3'}`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -347,6 +356,9 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
         />
 
         {!hideMobileDock && <MobileDock />}
+
+        {/* Floating Scroll Back to Top Button */}
+        <ScrollToTop />
         </>
     );
 }

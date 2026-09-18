@@ -33,6 +33,18 @@ if (app()->environment('local')) {
         }
         return redirect($target);
     });
+
+    Route::get('/dev/preview-error-404', function () {
+        return response()->view('errors.404', [], 404);
+    });
+
+    Route::get('/dev/preview-error-500', function () {
+        return response()->view('errors.500', [], 500);
+    });
+
+    Route::get('/dev/preview-error-403', function () {
+        return response()->view('errors.403', [], 403);
+    });
 }
 
 // --- PUBLIC ROUTES ---

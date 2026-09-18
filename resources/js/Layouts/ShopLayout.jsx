@@ -9,7 +9,7 @@ export default function ShopLayout({ children }) {
             <BuyerNavbar />
 
             {/* --- MAIN PAGE CONTENT --- */}
-            <main className="flex-1 animate-page-enter">
+            <main id="main-content" tabIndex={-1} className="flex-1 animate-page-enter focus:outline-none">
                 {children}
             </main>
 
