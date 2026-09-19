@@ -21,7 +21,7 @@ export default function PlatformOpsForm({ data, setData }) {
                 <div className="grid grid-cols-1 gap-4">
                     <div className="bg-stone-50/50 p-4 rounded-xl border border-stone-200/70 focus-within:ring-2 focus-within:ring-clay-500/20 focus-within:border-clay-500 transition-all">
                         <div className="flex items-center justify-between mb-2">
-                            <InputLabel value="Convenience Fee (%)" className="text-[10px] font-bold text-stone-600 uppercase tracking-wider" />
+                            <InputLabel value="Service Fee (%)" className="text-[10px] font-bold text-stone-600 uppercase tracking-wider" />
                             <span className="text-[9.5px] font-bold text-stone-400">Checkout Service Fee</span>
                         </div>
                         <div className="relative">

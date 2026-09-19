@@ -77,7 +77,7 @@ export function StaffResumePromptCard({ prompt = null, compact = false, onResume
                 Inactivity Timeout
             </h2>
             <p className="mt-1 text-xs text-stone-500 font-medium leading-relaxed">
-                No workspace activity was detected for {timeoutLabel}. Resume work to reopen your attendance session.
+                No workspace activity was detected for {timeoutLabel}. Resume work to reopen your shift.
             </p>
 
             {/* Session Stats Drawer */}

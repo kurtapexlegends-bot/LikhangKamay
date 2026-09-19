@@ -348,7 +348,7 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                                     }`}
                                                 >
                                                     {user.artisan_status === "approved" && "Verified"}
-                                                    {user.artisan_status === "rejected" && "Rejected"}
+                                                    {user.artisan_status === "rejected" && "Declined"}
                                                     {user.artisan_status === "pending" && "Pending"}
                                                 </span>
                                             ) : user.role === "staff" ? (

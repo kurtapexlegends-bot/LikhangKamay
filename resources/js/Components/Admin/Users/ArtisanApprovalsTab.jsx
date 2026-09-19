@@ -368,13 +368,13 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                 setViewingArtisan(null);
                 setRejectingArtisan(null);
                 setRejectReason('');
-                addToast('Artisan application has been rejected.', 'success');
+                addToast('Application returned to artisan for revision.', 'success');
             },
             onFinish: () => {
                 setProcessing(false);
             },
             onError: (errors) => {
-                addToast(errors.reason ?? 'Rejection failed. Please review the form and try again.', 'error');
+                addToast(errors.reason ?? 'Failed to send revision request. Please review and try again.', 'error');
             },
         });
     };

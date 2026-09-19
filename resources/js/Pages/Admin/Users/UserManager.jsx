@@ -266,7 +266,7 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                 title={statusToggleTarget?.banned_at ? "Reactivate Account" : "Suspend Account"}
                 message={statusToggleTarget?.banned_at 
                     ? `Are you sure you want to reactivate the account for ${statusToggleTarget?.name}? They will immediately recover access to their account and workspace.` 
-                    : `Are you sure you want to suspend the account for ${statusToggleTarget?.name}? They will be logged out and blocked from logging back into the platform.`}
+                    : `Are you sure you want to suspend the account for ${statusToggleTarget?.name}? They will be logged out and their platform access will be paused.`}
                 icon={Users}
                 iconBg={statusToggleTarget?.banned_at ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}
                 confirmText={statusToggleTarget?.banned_at ? "Reactivate User" : "Suspend User"}
@@ -318,7 +318,7 @@ export default function UserManager({ users, filters, unlinkedStaffGroup = null,
                 onClose={() => setDisciplinaryTarget(null)}
                 onSuccess={() => {
                     setDisciplinaryTarget(null);
-                    addToast('Disciplinary action applied successfully.', 'success');
+                    addToast('Account action applied successfully.', 'success');
                 }}
             />
         </>

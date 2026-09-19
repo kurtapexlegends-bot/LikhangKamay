@@ -73,7 +73,7 @@ export default function EarlyClockOutModal({
                             Scheduled shift ends at {shiftEndTime} ({formatUndertime(undertimeMinutes)}).
                         </div>
                         <p className="mt-0.5 text-[11px] text-amber-800/80">
-                            Please record your departure reason for HR timecard audit and payroll tracking.
+                            Please record your departure reason for shift review and payroll tracking.
                         </p>
                     </div>
                 </div>

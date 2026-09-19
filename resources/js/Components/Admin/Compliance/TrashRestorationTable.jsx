@@ -50,10 +50,10 @@ export default function TrashRestorationTable({
                 <div>
                     <h3 className="text-sm sm:text-base font-bold text-stone-900 flex items-center gap-2">
                         <History size={16} className="text-clay-700" />
-                        Restoration Center (Trash Queue)
+                        Deleted Items
                     </h3>
                     <p className="text-xs text-stone-500 font-medium mt-0.5">
-                        Deleted items are held for 30 days before permanent automatic purge.
+                        Deleted items are held for 30 days before permanent removal.
                     </p>
                 </div>
                 
@@ -162,7 +162,7 @@ export default function TrashRestorationTable({
                                                     {daysLeft} {daysLeft === 1 ? 'day' : 'days'} left
                                                 </span>
                                                 <span className="text-[10px] text-stone-400 font-medium">
-                                                    (Purges {new Date(item.expires_at).toLocaleDateString()})
+                                                    (Expires {new Date(item.expires_at).toLocaleDateString()})
                                                 </span>
                                             </div>
                                         </td>
@@ -230,7 +230,7 @@ export default function TrashRestorationTable({
                                 <div>
                                     <h4 className="text-xs font-bold text-stone-900 leading-snug">{item.name}</h4>
                                     <p className="text-[11px] text-stone-500 font-medium mt-0.5">{item.context}</p>
-                                    <p className="text-[9px] text-stone-400 font-medium mt-0.5">Purges: {new Date(item.expires_at).toLocaleDateString()}</p>
+                                    <p className="text-[9px] text-stone-400 font-medium mt-0.5">Expires: {new Date(item.expires_at).toLocaleDateString()}</p>
                                 </div>
 
                                 {/* Card Footer Actions Row */}

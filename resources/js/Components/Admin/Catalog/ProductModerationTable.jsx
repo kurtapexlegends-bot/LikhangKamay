@@ -172,7 +172,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
     const statusLabels = {
         pending_review: `Pending Review (${statusCounts?.pending_review || 0})`,
         Active: `Approved / Active (${statusCounts?.Active || 0})`,
-        rejected: `Rejected (${statusCounts?.rejected || 0})`,
+        rejected: `Needs Revision (${statusCounts?.rejected || 0})`,
         flagged: `Flagged (${statusCounts?.flagged || 0})`,
         all: `All Listings (${statusCounts?.all || 0})`,
     };
@@ -242,7 +242,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                 </div>
                 <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
                     <ModerationMetricCard 
-                        title="Rejected Listings" 
+                        title="Needs Revision" 
                         value={statusCounts?.rejected || 0} 
                         icon={XCircle} 
                         tone="stone" 

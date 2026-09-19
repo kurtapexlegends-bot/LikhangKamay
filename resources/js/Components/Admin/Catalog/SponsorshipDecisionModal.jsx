@@ -89,25 +89,25 @@ export default function SponsorshipDecisionModal({
                         <XCircle size={22} />
                     </div>
                     <div>
-                        <h2 className="text-sm font-bold text-stone-900">Provide Rejection Reason</h2>
+                        <h2 className="text-sm font-bold text-stone-900">Reason for Declining</h2>
                         <p className="text-xs text-stone-500 mt-1">
                             {request
-                                ? `Explain why the request for "${request.product?.name}" was rejected. The seller will see this note.`
-                                : `Explain why the selected sponsorship requests are rejected. The sellers will see this note.`}
+                                ? `Explain why the request for "${request.product?.name}" was declined. The seller will see this note.`
+                                : `Explain why the selected sponsorship requests are declined. The sellers will see this note.`}
                         </p>
                     </div>
                 </div>
 
                 <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-2">
-                        Rejection Reason
+                        Decline Reason
                     </label>
                     <textarea
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
                         rows={5}
                         className="w-full rounded-xl border border-stone-200 focus:border-rose-400 focus:ring-rose-200 text-sm"
-                        placeholder="Explain why the request was rejected so the seller knows what to improve."
+                        placeholder="Explain why the request was declined so the seller knows what to improve."
                         autoFocus
                     />
                 </div>
@@ -145,7 +145,7 @@ export default function SponsorshipDecisionModal({
                         disabled={processing || verifying || !rejectionReason.trim() || !password}
                         className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition disabled:opacity-50 min-h-[44px]"
                     >
-                        {processing || verifying ? 'Verifying...' : 'Reject Request'}
+                        {processing || verifying ? 'Verifying...' : 'Decline Request'}
                     </button>
                 </div>
             </form>
@@ -156,7 +156,7 @@ export default function SponsorshipDecisionModal({
                 <SlideOverDrawer
                     show={isOpen && type === 'reject'}
                     onClose={onClose}
-                    title="Reject Sponsorship Request"
+                    title="Decline Sponsorship Request"
                     widthClass="max-w-md"
                 >
                     {renderRejectForm()}
@@ -167,7 +167,7 @@ export default function SponsorshipDecisionModal({
         return (
             <Modal show={isOpen && type === 'reject'} onClose={onClose} maxWidth="md">
                 <div className="p-6">
-                    <h2 className="text-lg font-bold text-stone-900 mb-1">Reject Sponsorship Request</h2>
+                    <h2 className="text-lg font-bold text-stone-900 mb-1">Decline Sponsorship Request</h2>
                     {renderRejectForm()}
                 </div>
             </Modal>

@@ -118,7 +118,7 @@ export default function UserManagerFilters({
                     >
                         <option value="all">All Account Statuses</option>
                         <option value="active">Active Accounts</option>
-                        <option value="suspended">Suspended / Banned Accounts</option>
+                        <option value="suspended">Suspended Accounts</option>
                         <option value="pending_artisan">Pending Artisan Applications</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />
@@ -150,7 +150,7 @@ export default function UserManagerFilters({
         const tags = [];
         if (filters.status && filters.status !== 'all') {
             tags.push({
-                label: `Status: ${filters.status === 'active' ? 'Active' : filters.status === 'suspended' ? 'Suspended / Banned' : 'Pending Artisan'}`,
+                label: `Status: ${filters.status === 'active' ? 'Active' : filters.status === 'suspended' ? 'Suspended' : 'Pending Artisan'}`,
                 onRemove: () => {
                     setDraftStatus('all');
                     router.get(

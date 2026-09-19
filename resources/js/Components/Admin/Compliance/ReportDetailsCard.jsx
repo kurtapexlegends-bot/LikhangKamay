@@ -74,7 +74,7 @@ export default function ReportDetailsCard({
                     )}
                     {selectedTicket.status === 'rejected' && (
                         <span className="inline-flex items-center gap-1.5 rounded-lg bg-stone-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-700 border border-stone-200">
-                            <X size={11} className="text-stone-500" /> Rejected / Kept Visible
+                            <X size={11} className="text-stone-500" /> Declined / Kept Visible
                         </span>
                     )}
                     {selectedTicket.status === 'dismissed' && (
@@ -92,7 +92,7 @@ export default function ReportDetailsCard({
                     <div className="flex items-center gap-1.5 mb-1.5">
                         <ShieldAlert size={13} className={isDispute ? 'text-indigo-700' : 'text-amber-700'} />
                         <h4 className={`text-[10px] font-black uppercase tracking-wider ${isDispute ? 'text-indigo-800' : 'text-amber-800'}`}>
-                            {isDispute ? 'Seller Dispute Claim' : 'Reported Violation Reason'}
+                            {isDispute ? 'Seller Dispute Claim' : 'Report Reason'}
                         </h4>
                     </div>
                     <p className="text-xs sm:text-sm font-bold text-stone-900 leading-relaxed">
@@ -346,7 +346,7 @@ export default function ReportDetailsCard({
                                     className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition shadow-2xs min-h-[38px] cursor-pointer"
                                 >
                                     <ShieldOff size={13} />
-                                    <span>Takedown Listing</span>
+                                    <span>Unpublish Listing</span>
                                 </button>
                             )}
 
@@ -357,7 +357,7 @@ export default function ReportDetailsCard({
                                     className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold hover:bg-rose-700 transition shadow-2xs min-h-[38px] cursor-pointer"
                                 >
                                     <UserX size={13} />
-                                    <span>Suspend User Account</span>
+                                    <span>Suspend User</span>
                                 </button>
                             )}
 

@@ -88,10 +88,10 @@ export default function DriverVehicleVerifyModal({
                         </div>
                         <div>
                             <h3 className="text-sm font-bold text-stone-900">
-                                Rider Vehicle &amp; License Verification
+                                Vehicle &amp; License Check
                             </h3>
                             <p className="text-[11px] text-stone-500">
-                                Verify your vehicle and driver&apos;s license / ID card
+                                Verify your vehicle and driver&apos;s license or ID card
                             </p>
                         </div>
                     </div>

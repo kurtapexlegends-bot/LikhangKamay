@@ -45,11 +45,11 @@ export default function ModerationActionModal({
 
     // --- Inner content for dispute update decision ---
     const updateModalTitle = disputeModalState.status === 'under_review' ? 'Start Dispute Review' : 
-                             disputeModalState.status === 'resolved' ? 'Approve Moderation Request' : 'Reject Moderation Request';
+                             disputeModalState.status === 'resolved' ? 'Approve Moderation Request' : 'Decline Moderation Request';
                              
     const updateModalDescription = disputeModalState.status === 'under_review' ? 'Mark this dispute as active under_review so other staff are informed.' : 
                                    disputeModalState.status === 'resolved' ? 'Approve this request. The review will be hidden from the product page.' : 
-                                   'Reject this request. The review comment will remain visible on the product catalog.';
+                                   'Decline this request. The review comment will remain visible on the product catalog.';
 
     const renderUpdateContent = () => (
         <form onSubmit={handleSubmitDisputeUpdate} className={`space-y-4 ${isMobile ? '' : 'p-6 bg-white'}`}>

@@ -57,7 +57,7 @@ export default function ProductInspectionDrawer({
 
     const handleReject = () => {
         if (!feedback.trim()) {
-            setActionError('Please provide a rejection reason so the seller can revise their listing.');
+            setActionError('Please provide revision notes so the seller can update their listing.');
             return;
         }
         setActionError('');
@@ -104,7 +104,7 @@ export default function ProductInspectionDrawer({
                             onClick={handleReject}
                             className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-rose-650/10 hover:shadow-lg hover:shadow-rose-650/15 active:scale-95 disabled:opacity-50 transition-all"
                         >
-                            <XCircle size={15} /> Reject Listing
+                            <XCircle size={15} /> Request Revision
                         </button>
                         <button
                             type="button"
@@ -125,7 +125,7 @@ export default function ProductInspectionDrawer({
                             onClick={handleReject}
                             className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-rose-650/10 hover:shadow-lg hover:shadow-rose-650/15 active:scale-95 disabled:opacity-50 transition-all"
                         >
-                            <XCircle size={15} /> Reject Listing
+                            <XCircle size={15} /> Request Revision
                         </button>
                         <button
                             type="button"
@@ -206,7 +206,7 @@ export default function ProductInspectionDrawer({
                             </span>
                         ) : product.status === 'rejected' ? (
                             <span className="inline-flex items-center gap-1.5 bg-red-50 text-red-700 px-3 py-1 rounded-full text-xs font-bold border border-red-200/60">
-                                <XCircle size={14} /> Rejected
+                                <XCircle size={14} /> Needs Revision
                             </span>
                         ) : product.status === 'flagged' ? (
                             <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 px-3 py-1 rounded-full text-xs font-bold border border-rose-200/60">
@@ -390,7 +390,7 @@ export default function ProductInspectionDrawer({
                 {product.rejection_reason && (
                     <div className="p-4 bg-red-55/10 rounded-2xl border border-red-250/15">
                         <p className="text-xs font-bold text-red-900 flex items-center gap-1.5">
-                            <XCircle size={14} className="text-red-700" /> Current Rejection Feedback:
+                            <XCircle size={14} className="text-red-700" /> Current Revision Feedback:
                         </p>
                         <p className="text-xs text-red-800 mt-1.5 font-medium">"{product.rejection_reason}"</p>
                     </div>
@@ -409,7 +409,7 @@ export default function ProductInspectionDrawer({
                         }}
                         rows={3}
                         className="w-full rounded-2xl border border-stone-200 focus:border-clay-500 focus:ring focus:ring-clay-500/10 text-xs p-3.5 transition-all"
-                        placeholder="Provide details or feedback if rejecting or flagging this product..."
+                        placeholder="Provide details or feedback if requesting revisions or flagging this product..."
                     />
                     {actionError && (
                         <p className="text-xs font-bold text-rose-600 mt-2">{actionError}</p>

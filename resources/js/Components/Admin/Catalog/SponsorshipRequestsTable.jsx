@@ -76,7 +76,7 @@ export default function SponsorshipRequestsTable({ requests }) {
         const routeName = type === 'approve' ? 'admin.sponsorships.approve' : 'admin.sponsorships.reject';
 
         if (type === 'reject' && !rejectionReason.trim()) {
-            addToast('A rejection reason is required.', 'error');
+            addToast('A decline reason is required.', 'error');
             return;
         }
 
@@ -175,7 +175,7 @@ export default function SponsorshipRequestsTable({ requests }) {
             case 'rejected':
                 return (
                     <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-rose-200/60">
-                        <XCircle size={12} /> Rejected
+                        <XCircle size={12} /> Declined
                     </span>
                 );
             default:
@@ -191,7 +191,7 @@ export default function SponsorshipRequestsTable({ requests }) {
         { key: 'all', label: 'All Requests', count: requestRows.length },
         { key: 'pending', label: 'Pending', count: requestRows.filter(r => r.status === 'pending').length },
         { key: 'approved', label: 'Approved', count: requestRows.filter(r => r.status === 'approved').length },
-        { key: 'rejected', label: 'Rejected', count: requestRows.filter(r => r.status === 'rejected').length },
+        { key: 'rejected', label: 'Declined', count: requestRows.filter(r => r.status === 'rejected').length },
     ];
 
     return (
@@ -274,7 +274,7 @@ export default function SponsorshipRequestsTable({ requests }) {
                                                     disabled={processingSponsorship && pendingActionId === req.id}
                                                     className="flex-1 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200/60 disabled:opacity-50 min-h-[40px] flex items-center justify-center"
                                                 >
-                                                    {processingSponsorship && pendingActionId === req.id && modalData.type === 'reject' ? 'Rejecting...' : 'Reject'}
+                                                    {processingSponsorship && pendingActionId === req.id && modalData.type === 'reject' ? 'Declining...' : 'Decline'}
                                                 </button>
                                                 <button
                                                     type="button"
@@ -402,7 +402,7 @@ export default function SponsorshipRequestsTable({ requests }) {
                                                         disabled={processingSponsorship && pendingActionId === req.id}
                                                         className="px-3.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200/60 hover:border-rose-300 disabled:opacity-50 min-h-[36px]"
                                                     >
-                                                        {processingSponsorship && pendingActionId === req.id && modalData.type === 'reject' ? 'Rejecting...' : 'Reject'}
+                                                        {processingSponsorship && pendingActionId === req.id && modalData.type === 'reject' ? 'Declining...' : 'Decline'}
                                                     </button>
                                                     <button
                                                         type="button"
@@ -475,7 +475,7 @@ export default function SponsorshipRequestsTable({ requests }) {
                     </button>
                 </ActionTooltip>
 
-                <ActionTooltip text="Reject Selected">
+                <ActionTooltip text="Decline Selected">
                     <button
                         onClick={() => {
                             setRejectionReason('');

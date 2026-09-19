@@ -69,7 +69,7 @@ export default function DisciplinaryActionModal({ user, onClose, onSuccess }) {
                             <ShieldAlert size={20} />
                         </div>
                         <div>
-                            <h3 className="text-base font-bold text-stone-900">Disciplinary Enforcement</h3>
+                            <h3 className="text-base font-bold text-stone-900">Account Notices & Restrictions</h3>
                             <p className="text-xs text-stone-500 font-medium mt-0.5">
                                 {user.name} ({user.email}) &bull; <span className="capitalize font-semibold text-stone-700">{user.role || 'Buyer'}</span>
                             </p>
@@ -89,7 +89,7 @@ export default function DisciplinaryActionModal({ user, onClose, onSuccess }) {
                     <div className="flex items-center gap-2.5">
                         {isBanned ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200/70">
-                                <Ban size={13} /> Permanently Banned
+                                <Ban size={13} /> Deactivated
                             </span>
                         ) : isSuspended ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/70">
@@ -166,7 +166,7 @@ export default function DisciplinaryActionModal({ user, onClose, onSuccess }) {
                                     }`}
                                 >
                                     <div className="flex items-center gap-2 text-rose-950 font-bold text-xs">
-                                        <Ban size={14} /> Strike 3: Ban
+                                        <Ban size={14} /> Strike 3: Deactivate
                                     </div>
                                     <span className="text-[11px] text-stone-500 mt-1">
                                         Permanent deactivation
@@ -204,7 +204,7 @@ export default function DisciplinaryActionModal({ user, onClose, onSuccess }) {
                                     }`}
                                 >
                                     <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs">
-                                        <CheckCircle2 size={14} /> Unban Account
+                                        <CheckCircle2 size={14} /> Reactivate Account
                                     </div>
                                     <span className="text-[11px] text-stone-500 mt-1">
                                         Reinstate platform access
@@ -255,7 +255,7 @@ export default function DisciplinaryActionModal({ user, onClose, onSuccess }) {
                                     : activeAction === 'suspension'
                                     ? "State why the account is suspended and expectations upon return..."
                                     : activeAction === 'ban'
-                                    ? "State the grounds for permanent account termination..."
+                                    ? "State reason for permanent account deactivation..."
                                     : "Optional note for reinstating the account..."
                             }
                             required
@@ -270,7 +270,7 @@ export default function DisciplinaryActionModal({ user, onClose, onSuccess }) {
                             <details className="rounded-xl border border-stone-200 bg-white p-3 text-xs">
                                 <summary className="cursor-pointer font-bold text-stone-700 flex items-center gap-1.5 select-none">
                                     <History size={13} className="text-stone-400" />
-                                    <span>Past Disciplinary History ({user.disciplinary_logs.length})</span>
+                                    <span>Past Notice History ({user.disciplinary_logs.length})</span>
                                 </summary>
                                 <div className="mt-3 space-y-2 max-h-36 overflow-y-auto">
                                     {user.disciplinary_logs.map((log) => (

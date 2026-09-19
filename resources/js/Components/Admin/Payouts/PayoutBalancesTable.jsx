@@ -191,7 +191,7 @@ export default function PayoutBalancesTable({
                             <th className="py-3 px-5">Shop &amp; Artisan</th>
                             <th className="py-3 px-5">Payout Destination</th>
                             <th className="py-3 px-5 text-right">Completed Sales</th>
-                            <th className="py-3 px-5 text-right">Platform Fee</th>
+                            <th className="py-3 px-5 text-right">Commission</th>
                             <th className="py-3 px-5 text-right">Total Paid Out</th>
                             <th className="py-3 px-5 text-right">Ready for Payout</th>
                             <th className="py-3 px-5 text-right">Action</th>
@@ -291,7 +291,7 @@ export default function PayoutBalancesTable({
                                         {formatCurrency(artisan.gross_sales ?? artisan.revenue)}
                                     </td>
 
-                                    {/* Platform Fee */}
+                                    {/* Commission */}
                                     <td className="py-3.5 px-5 text-right font-medium text-stone-400">
                                         {(artisan.platform_fees ?? 0) > 0 ? `- ${formatCurrency(artisan.platform_fees)}` : '₱0.00'}
                                     </td>

@@ -188,7 +188,7 @@ export default function AdminLayout({ title, children }) {
             items: [
                 { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: isTabActive('admin.dashboard', null, url) },
                 { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: isTabActive('admin.insights', null, url) },
-                { name: 'Monetization', href: route('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, current: isTabActive('admin.settings.index', 'monetization', url) },
+                { name: 'Subscriptions & Billing', href: route('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, current: isTabActive('admin.settings.index', 'monetization', url) },
                 { name: 'Payouts', href: route('admin.payouts.index'), icon: CreditCard, current: route().current('admin.payouts.*') },
             ]
         },
@@ -360,18 +360,18 @@ export default function AdminLayout({ title, children }) {
                                 {{
                                     'Overview': "Monitor platform metrics and performance.",
                                     'Insights': "View revenue forecasts and platform analytics.",
-                                    'Monetization': "View platform subscriptions, sponsorships, and financial performance.",
+                                    'Subscriptions & Billing': "View platform subscriptions, sponsorships, and financial performance.",
                                     'Payouts': "Review seller earnings and disburse weekly payouts to artisans.",
-                                    'Activity History': "Track background jobs, logs, and system SLAs.",
-                                    'User Directory': "Manage platform users, staff profiles, and disciplinary actions.",
-                                    'Artisan Applications': "Approve or reject artisan registration applications.",
+                                    'Activity History': "Track background jobs, logs, and system health.",
+                                    'User Directory': "Manage platform users, staff profiles, and account notices.",
+                                    'Artisan Applications': "Review and approve artisan registration applications or request revisions.",
                                     'Product Approvals': "Review and approve new handmade product submissions before they go live.",
-                                    'Category Manager': "Manage product categories, tags, and taxonomy.",
+                                    'Category Manager': "Manage product categories and tags.",
                                     'Sponsorships': "Manage sponsored product campaigns.",
                                     'Content Safety': "Review user-reported flags, safety queues, and disputed reviews.",
-                                    'Order Disputes': "Arbitrate return and refund claims between customers and artisans.",
-                                    'Restoration Center': "Restore or permanently delete removed database records.",
-                                    'System Config': "Manage platform operations, subscription plans, email automation, and global taxonomy."
+                                    'Order Disputes': "Review and resolve return and refund claims between customers and artisans.",
+                                    'Deleted Items': "Restore or permanently delete removed database records.",
+                                    'System Config': "Manage platform operations, subscription plans, email automation, and categories."
                                 }[resolvedTitle] || ""}
                             </p>
                         </div>

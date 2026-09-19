@@ -30,14 +30,14 @@ export default function ModerationRejectModal({
     if (!isOpen || !product) return null;
 
     const isFlag = actionType === 'flag';
-    const title = isFlag ? 'Flag Product Listing' : 'Reject Product Listing';
-    const actionVerb = isFlag ? 'Flag Listing' : 'Confirm Rejection';
+    const title = isFlag ? 'Flag Product Listing' : 'Request Listing Revision';
+    const actionVerb = isFlag ? 'Flag Listing' : 'Send Revision Request';
 
     const handleSubmit = (e) => {
         e.preventDefault();
         const trimmed = reason.trim();
         if (!trimmed) {
-            setError(`Please provide a ${isFlag ? 'flagging' : 'rejection'} reason so the seller can revise their listing.`);
+            setError(`Please provide feedback so the seller knows what to update in their listing.`);
             return;
         }
         setError('');

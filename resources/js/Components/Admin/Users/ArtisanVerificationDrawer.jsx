@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { X, CheckCircle, XCircle, FileText, Eye, AlertTriangle, Download, LoaderCircle } from 'lucide-react';
+import { X, CheckCircle, XCircle, FileText, Eye, AlertTriangle, Download, LoaderCircle, RotateCcw } from 'lucide-react';
 import Modal from '@/Components/Modal';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import WorkspaceLoadingState from '@/Components/WorkspaceLoadingState';
@@ -33,9 +33,9 @@ export default function ArtisanVerificationDrawer({
                 <button
                     onClick={() => setRejectingArtisan(viewingArtisan)}
                     disabled={processing}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white py-3 text-sm font-bold text-stone-600 hover:bg-red-50 hover:text-red-700 hover:border-red-100 transition min-h-[44px]"
+                    className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white py-3 text-sm font-bold text-stone-600 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-200 transition min-h-[44px]"
                 >
-                    <XCircle size={18} /> Reject
+                    <RotateCcw size={16} /> Request Revision
                 </button>
                 <button
                     onClick={confirmApprove}
@@ -235,7 +235,7 @@ export default function ArtisanVerificationDrawer({
                 )}
             </Modal>
 
-            {/* Rejection Reasons Modal */}
+            {/* Rejection / Revision Request Modal */}
             <Modal
                 show={!!rejectingArtisan}
                 onClose={() => setRejectingArtisan(null)}
@@ -246,12 +246,12 @@ export default function ArtisanVerificationDrawer({
                     <div className="p-5 sm:p-6 bg-[#FDFBF9]">
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-red-50 text-red-600 border border-red-100 rounded-xl flex items-center justify-center shrink-0">
+                                <div className="w-10 h-10 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl flex items-center justify-center shrink-0">
                                     <AlertTriangle size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="text-[15px] font-bold text-stone-900 leading-tight">Reject Application</h3>
-                                    <p className="text-stone-500 text-[11px]">Specify a reason for <span className="font-bold text-stone-700">{rejectingArtisan.shop_name}</span></p>
+                                    <h3 className="text-[15px] font-bold text-stone-900 leading-tight">Request Application Revision</h3>
+                                    <p className="text-stone-500 text-[11px]">Specify revision feedback for <span className="font-bold text-stone-700">{rejectingArtisan.shop_name}</span></p>
                                 </div>
                             </div>
                             <button onClick={() => setRejectingArtisan(null)} className="rounded border border-stone-200 bg-white p-2 text-stone-400 transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 min-h-[36px] min-w-[36px] flex items-center justify-center">
@@ -260,16 +260,16 @@ export default function ArtisanVerificationDrawer({
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-[11px] font-bold uppercase tracking-wider text-stone-600 ml-1">Rejection Reason</label>
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-stone-600 ml-1">Revision Notes & Feedback</label>
                             <textarea
                                 value={rejectReason}
                                 onChange={(e) => setRejectReason(e.target.value)}
-                                placeholder="E.g., The uploaded business permit belongs to a different entity. Please upload..."
-                                className="h-28 w-full resize-none rounded-xl border border-stone-200 bg-white p-3 text-[13px] focus:border-red-400 focus:ring-2 focus:ring-red-500/20"
+                                placeholder="E.g., The uploaded business permit details are unclear or belong to a different entity. Please upload a clear copy under your registered business name..."
+                                className="h-28 w-full resize-none rounded-xl border border-stone-200 bg-white p-3 text-[13px] focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20"
                             />
                             <div className="flex justify-between items-center px-1">
-                                <p className="text-[10px] text-stone-400">This will be shared with the artisan.</p>
-                                <span className={`text-[10px] font-bold ${rejectReason.length < 10 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                <p className="text-[10px] text-stone-400">This feedback will be shared with the artisan so they can update and resubmit.</p>
+                                <span className={`text-[10px] font-bold ${rejectReason.length < 10 ? 'text-amber-600' : 'text-emerald-600'}`}>
                                     {rejectReason.length} chars (min 10)
                                 </span>
                             </div>
@@ -278,8 +278,8 @@ export default function ArtisanVerificationDrawer({
                         <div className="flex justify-end gap-2 mt-5">
                             {processing && (
                                 <WorkspaceLoadingState
-                                    label="Submitting rejection"
-                                    detail="Sending reason to applicant"
+                                    label="Sending revision request"
+                                    detail="Delivering feedback to applicant"
                                     className="mr-auto"
                                 />
                             )}
@@ -293,10 +293,10 @@ export default function ArtisanVerificationDrawer({
                             <button
                                 onClick={handleRejectArtisan}
                                 disabled={processing || rejectReason.length < 10}
-                                className="flex items-center gap-1.5 rounded-lg bg-red-600 px-5 py-2.5 text-[12px] font-bold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
+                                className="flex items-center gap-1.5 rounded-lg bg-stone-900 px-5 py-2.5 text-[12px] font-bold text-white transition hover:bg-stone-850 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500/20 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
                             >
-                                {processing ? <LoaderCircle size={14} className="animate-spin" /> : <XCircle size={14} />}
-                                {processing ? 'Rejecting...' : 'Confirm'}
+                                {processing ? <LoaderCircle size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                                {processing ? 'Sending...' : 'Send Revision Request'}
                             </button>
                         </div>
                     </div>

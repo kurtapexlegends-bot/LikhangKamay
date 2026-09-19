@@ -36,7 +36,7 @@ export default function ArtisanStatementModal({
                         <p className="text-sm font-bold text-stone-900 mt-0.5">{formatCurrency(artisan.gross_sales)}</p>
                     </div>
                     <div className="p-3 rounded-xl bg-white border border-stone-200">
-                        <p className="text-[10px] font-bold uppercase text-stone-400">Platform Fees</p>
+                        <p className="text-[10px] font-bold uppercase text-stone-400">Commission</p>
                         <p className="text-sm font-bold text-stone-500 mt-0.5">- {formatCurrency(artisan.platform_fees)}</p>
                     </div>
                     <div className="p-3 rounded-xl bg-white border border-stone-200">

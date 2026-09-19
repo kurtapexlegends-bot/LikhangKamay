@@ -231,7 +231,7 @@ export default function DisputeInspectorContent({
                                 Artisan Action
                             </span>
                             <span className="inline-flex rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] font-bold uppercase text-stone-700">
-                                {dispute.seller_response_type === 'replacement' ? 'Proposed Replacement' : dispute.seller_response_type === 'reject' ? 'Rejected Request' : dispute.seller_response_type || 'No Response'}
+                                {dispute.seller_response_type === 'replacement' ? 'Proposed Replacement' : dispute.seller_response_type === 'reject' ? 'Declined Request' : dispute.seller_response_type || 'No Response'}
                             </span>
                         </div>
 

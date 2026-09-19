@@ -128,7 +128,7 @@ export default function ModerationFilterToolbar({
                                             >
                                                 <option value="pending_review">Pending Review ({statusCounts?.pending_review || 0})</option>
                                                 <option value="Active">Approved / Active ({statusCounts?.Active || 0})</option>
-                                                <option value="rejected">Rejected ({statusCounts?.rejected || 0})</option>
+                                                <option value="rejected">Needs Revision ({statusCounts?.rejected || 0})</option>
                                                 <option value="flagged">Flagged ({statusCounts?.flagged || 0})</option>
                                                 <option value="all">All Listings ({statusCounts?.all || 0})</option>
                                             </select>
@@ -276,7 +276,7 @@ export default function ModerationFilterToolbar({
                             >
                                 <option value="pending_review">Pending Review ({statusCounts?.pending_review || 0})</option>
                                 <option value="Active">Approved / Active ({statusCounts?.Active || 0})</option>
-                                <option value="rejected">Rejected ({statusCounts?.rejected || 0})</option>
+                                <option value="rejected">Needs Revision ({statusCounts?.rejected || 0})</option>
                                 <option value="flagged">Flagged ({statusCounts?.flagged || 0})</option>
                                 <option value="all">All Listings ({statusCounts?.all || 0})</option>
                             </select>

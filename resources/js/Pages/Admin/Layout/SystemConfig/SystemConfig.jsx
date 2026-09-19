@@ -153,8 +153,8 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     const tabs = [
         { id: 'branding', name: 'General & Platform', icon: Settings },
         { id: 'plans', name: 'Subscription Tiers', icon: ShieldCheck },
-        { id: 'taxonomy', name: 'Categories & Taxonomy', icon: FolderTree },
-        { id: 'trash', name: 'Trash & Retention', icon: RotateCcw, count: trashQueue?.length || 0 },
+        { id: 'taxonomy', name: 'Categories & Tags', icon: FolderTree },
+        { id: 'trash', name: 'Deleted Items', icon: RotateCcw, count: trashQueue?.length || 0 },
     ];
 
     return (

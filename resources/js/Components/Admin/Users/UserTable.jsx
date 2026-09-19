@@ -128,7 +128,7 @@ export default function UserTable({
                                         </span>
                                         {user.is_banned ? (
                                             <span className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-wider">
-                                                Banned
+                                                Deactivated
                                             </span>
                                         ) : user.is_suspended ? (
                                             <span className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-wider">
@@ -172,7 +172,7 @@ export default function UserTable({
                                             type="button"
                                             onClick={() => handleDiscipline(user)}
                                             className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700 shadow-2xs active:scale-95 transition-all hover:bg-amber-100 shrink-0"
-                                            title={`Discipline ${user.name}`}
+                                            title={`Account Actions for ${user.name}`}
                                         >
                                             <ShieldAlert size={14} />
                                         </button>
@@ -295,7 +295,7 @@ export default function UserTable({
                                              <div className="flex flex-col items-center gap-1">
                                                  {user.is_banned ? (
                                                      <span className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 text-rose-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                                                         Banned
+                                                         Deactivated
                                                      </span>
                                                  ) : user.is_suspended ? (
                                                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 text-amber-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
@@ -324,9 +324,9 @@ export default function UserTable({
                                                           type="button"
                                                           onClick={(e) => { e.stopPropagation(); handleDiscipline(user); }}
                                                           className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-900 px-3 py-2 text-[10px] font-bold shadow-2xs transition hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-500/20 min-h-[40px]"
-                                                          title="Manage Disciplinary Strikes (Warning / Suspension / Ban)"
+                                                          title="Manage Account Status (Warning / Suspension / Deactivation)"
                                                       >
-                                                          <ShieldAlert size={12} className="text-amber-700" /> Discipline
+                                                          <ShieldAlert size={12} className="text-amber-700" /> Account Action
                                                       </button>
                                                   )}
                                               </div>

@@ -177,7 +177,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                 bg="bg-clay-50"
                                 color="text-clay-600"
                                 formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
-                                subtitle="Convenience fees collected"
+                                subtitle="Service fees collected"
                             />
                         </div>
                         <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
@@ -472,7 +472,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                                 {req.status === "approved" && <CheckCircle size={10} />}
                                                 {(req.status === "rejected" || req.status === "cancelled") && <XCircle size={10} />}
                                                 {req.status === "pending" && <Clock size={10} />}
-                                                {req.status}
+                                                {req.status === 'rejected' ? 'Declined' : req.status}
                                             </span>
                                         </td>
                                         <td className="px-5 py-3.5 text-[10px] text-stone-500 text-right font-medium">
@@ -527,7 +527,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                             {req.status === "approved" && <CheckCircle size={10} />}
                                             {(req.status === "rejected" || req.status === "cancelled") && <XCircle size={10} />}
                                             {req.status === "pending" && <Clock size={10} />}
-                                            {req.status}
+                                            {req.status === 'rejected' ? 'Declined' : req.status}
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center text-[10px] text-stone-500 font-medium pt-2 border-t border-stone-100">

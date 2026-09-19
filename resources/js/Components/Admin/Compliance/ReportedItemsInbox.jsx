@@ -119,7 +119,7 @@ export default function ReportedItemsInbox({
             case 'resolved':
                 return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60">Resolved</span>;
             case 'rejected':
-                return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-stone-50 text-stone-600 border border-stone-200/60">Rejected</span>;
+                return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-stone-50 text-stone-600 border border-stone-200/60">Declined</span>;
             case 'dismissed':
                 return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-stone-50 text-stone-500 border border-stone-200/60">Dismissed</span>;
             default:

@@ -14,7 +14,7 @@ export function StatusPill({ status, rejectionReason, sellerNotes }) {
                 </span>
             ) : status === 'rejected' ? (
                 <span className="inline-flex items-center gap-1.5 bg-red-55/10 text-red-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-red-100/40">
-                    <XCircle size={12} /> Rejected
+                    <XCircle size={12} /> Needs Revision
                 </span>
             ) : status === 'flagged' ? (
                 <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-rose-200/40">
@@ -27,7 +27,7 @@ export function StatusPill({ status, rejectionReason, sellerNotes }) {
             )}
             {rejectionReason && (
                 <p className="text-[10px] text-red-550 mt-1.5 max-w-[180px] truncate font-bold mx-auto text-left w-fit" title={rejectionReason}>
-                    Reason: {rejectionReason}
+                    Revision Note: {rejectionReason}
                 </p>
             )}
             {status === 'pending_review' && sellerNotes && (

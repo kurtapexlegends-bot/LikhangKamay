@@ -166,7 +166,7 @@ export default function ContentSafety({ flags, disputes = [], defaultFilter = 'a
                     disputeModalState.status === 'resolved'
                         ? 'Request approved. The review is now hidden from the marketplace.'
                         : disputeModalState.status === 'rejected'
-                            ? 'Request rejected. The review remains visible.'
+                            ? 'Request declined. The review remains visible.'
                             : 'Moderation request moved into active review.',
                     'success'
                 );
@@ -232,7 +232,7 @@ export default function ContentSafety({ flags, disputes = [], defaultFilter = 'a
                                 </div>
                                 <h3 className="text-sm font-bold text-stone-900 mb-1">Select a Moderation Ticket</h3>
                                 <p className="text-xs text-stone-500 max-w-xs leading-relaxed">
-                                    Select a ticket from the inbox to inspect evidence, preview live content, and enforce disciplinary actions.
+                                    Select a ticket from the inbox to inspect evidence, preview live content, and take account actions.
                                 </p>
                             </div>
                         )}
@@ -281,13 +281,13 @@ export default function ContentSafety({ flags, disputes = [], defaultFilter = 'a
                     isOpen={confirmingFlagAction.id !== null}
                     onClose={() => setConfirmingFlagAction({ id: null, action: null })}
                     onConfirm={() => submitFlagAction(confirmingFlagAction.id, confirmingFlagAction.action)}
-                    title={confirmingFlagAction.action === 'suspend' ? 'Suspend User Account?' : 'Take Down Product Listing?'}
+                    title={confirmingFlagAction.action === 'suspend' ? 'Suspend User?' : 'Unpublish Product Listing?'}
                     message={confirmingFlagAction.action === 'suspend' 
-                        ? 'Are you sure you want to suspend this user account? This will block platform access and reject seller permissions.' 
-                        : 'Are you sure you want to take down this product listing? It will immediately be hidden from the marketplace.'}
+                        ? 'Are you sure you want to suspend this user account? This will pause platform access and revoke seller permissions.' 
+                        : 'Are you sure you want to unpublish this product listing? It will immediately be hidden from the marketplace.'}
                     icon={confirmingFlagAction.action === 'suspend' ? UserX : ShieldOff}
                     iconBg={confirmingFlagAction.action === 'suspend' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}
-                    confirmText={confirmingFlagAction.action === 'suspend' ? 'Suspend User' : 'Take Down Listing'}
+                    confirmText={confirmingFlagAction.action === 'suspend' ? 'Suspend User' : 'Unpublish Listing'}
                     confirmColor={confirmingFlagAction.action === 'suspend' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-amber-600 hover:bg-amber-700'}
                     isVeryHighRisk={confirmingFlagAction.action === 'suspend'}
                     isHighRisk={confirmingFlagAction.action === 'takedown'}

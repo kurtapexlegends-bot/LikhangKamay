@@ -266,7 +266,7 @@ export default function StaffDashboard({ auth, hub }) {
                                             <div className="flex items-center gap-2 mb-1">
                                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-wider border border-amber-200">
                                                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                                                    {isPaused ? 'Shift Paused' : 'Workspace Offline'}
+                                                    {isPaused ? 'Shift Paused' : 'Clocked Out (Off Duty)'}
                                                 </span>
                                             </div>
                                             <h2 className="text-xl font-extrabold text-stone-900 tracking-tight">
@@ -280,7 +280,7 @@ export default function StaffDashboard({ auth, hub }) {
 
                                             <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-bold text-stone-600">
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100/80 border border-stone-200/70">
-                                                    <Camera size={13} className="text-clay-600" /> Webcam Selfie Proof
+                                                    <Camera size={13} className="text-clay-600" /> Quick Face Photo
                                                 </span>
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100/80 border border-stone-200/70">
                                                     <MapPin size={13} className="text-clay-600" /> Store Location Check
