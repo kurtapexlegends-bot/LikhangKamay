@@ -309,15 +309,16 @@ export default function useProductFormState({
                 try {
                     addToast("Uploading 3D model directly to storage...", "info");
                     
+                    const uploadContentType = extension === 'glb' ? 'model/gltf-binary' : (data.model_3d.type || 'application/octet-stream');
                     const presignResponse = await axios.post(route('3d.presign'), {
                         filename: data.model_3d.name,
-                        contentType: data.model_3d.type || 'application/octet-stream'
+                        contentType: uploadContentType
                     });
-                    const { url, key } = presignResponse.data;
+                    const { url, key, contentType } = presignResponse.data;
                     
                     await axios.put(url, data.model_3d, {
                         headers: {
-                            'Content-Type': data.model_3d.type || 'application/octet-stream'
+                            'Content-Type': contentType || uploadContentType
                         }
                     });
                     

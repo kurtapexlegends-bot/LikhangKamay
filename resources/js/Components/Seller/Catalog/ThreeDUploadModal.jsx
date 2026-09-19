@@ -64,13 +64,13 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
                     filename: data.model.name,
                     contentType: uploadContentType
                 });
-                const { url, key } = presignResponse.data;
+                const { url, key, contentType } = presignResponse.data;
                 setUploadProgress(20);
 
                 // 2. Upload file directly using PUT request
                 await axios.put(url, data.model, {
                     headers: {
-                        'Content-Type': uploadContentType
+                        'Content-Type': contentType || uploadContentType
                     },
                     onUploadProgress: (progressEvent) => {
                         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

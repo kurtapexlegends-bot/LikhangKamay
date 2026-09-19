@@ -39,11 +39,36 @@ export default function ProductFormModal({
     selectedProduct,
     subscription,
 }) {
+    React.useEffect(() => {
+        if (!isOpen) return;
+
+        const handleGlobalShortcut = (e) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (canEditProducts && !processing) {
+                    submitProduct(e);
+                }
+            }
+        };
+
+        window.addEventListener("keydown", handleGlobalShortcut, true);
+        return () => window.removeEventListener("keydown", handleGlobalShortcut, true);
+    }, [isOpen, canEditProducts, processing, submitProduct]);
+
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="2xl">
             <form
                 onSubmit={submitProduct}
                 onKeyDown={(e) => {
+                    if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (canEditProducts && !processing) {
+                            submitProduct(e);
+                        }
+                        return;
+                    }
                     if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
                         e.preventDefault();
                         if (activeFormTab !== "Media") {

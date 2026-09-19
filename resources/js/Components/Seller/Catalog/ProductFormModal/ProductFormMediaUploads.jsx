@@ -205,7 +205,7 @@ export default function ProductFormMediaUploads({
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-sm font-bold text-emerald-800 truncate max-w-[150px]">
-                                            {data.model_3d.name}
+                                            {data.model_3d instanceof File ? data.model_3d.name : (typeof data.model_3d === 'string' ? data.model_3d.split('/').pop() : '3D Model')}
                                         </p>
                                         <p className="text-[10px] text-emerald-600">
                                             Ready to upload
