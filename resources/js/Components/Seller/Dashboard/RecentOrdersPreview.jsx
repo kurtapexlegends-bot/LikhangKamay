@@ -113,7 +113,7 @@ export default function RecentOrdersPreview({
                             <option value="Shipped">Shipped</option>
                             <option value="Delivered">Delivered</option>
                             <option value="Completed">Completed</option>
-                            <option value="Rejected">Rejected</option>
+                            <option value="Rejected">Declined</option>
                             <option value="Cancelled">Cancelled</option>
                         </select>
                         <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />

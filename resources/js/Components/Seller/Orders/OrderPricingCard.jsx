@@ -48,7 +48,7 @@ export default function OrderPricingCard({
                 <div className="space-y-2 text-[10.5px] mt-2.5 px-2 border-t border-stone-100 pt-2.5">
                     <div className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-1">Your Revenue Calculation</div>
                     <div className="flex justify-between text-stone-600">
-                        <span>Merchandise Subtotal:</span>
+                        <span>Items Subtotal:</span>
                         <span className="font-semibold text-stone-800">
                             PHP {Number(order.merchandise_subtotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
@@ -73,7 +73,7 @@ export default function OrderPricingCard({
                             </span>
                         </div>
                         <div className="flex justify-between">
-                            <span>Convenience Fee (3%):</span>
+                            <span>Service Fee (3%):</span>
                             <span className="font-medium text-stone-600">
                                 PHP {Number(order.convenience_fee_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </span>

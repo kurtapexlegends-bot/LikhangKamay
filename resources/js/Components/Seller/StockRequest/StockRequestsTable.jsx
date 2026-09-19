@@ -25,7 +25,7 @@ export default function StockRequestsTable({
             'partially_received': 'No requests with "Partially Received" status.',
             'received': 'No requests with "In Buffer" status.',
             'completed': 'No requests with "Completed" status.',
-            'rejected': 'No requests with "Rejected" status.',
+            'rejected': 'No declined requests.',
         };
         return (
             <div className="p-6 sm:p-12">
@@ -70,7 +70,7 @@ export default function StockRequestsTable({
                             <div className="rounded-xl border border-red-200/80 bg-red-50/60 p-3 shadow-2xs">
                                 <div className="flex items-center gap-1.5 mb-1 text-red-600">
                                     <AlertTriangle size={12} strokeWidth={2.5} />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider">Rejection Reason</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider">Decline Reason</span>
                                 </div>
                                 <span className="block text-xs font-medium leading-relaxed text-red-800">{req.rejection_reason}</span>
                             </div>

@@ -54,10 +54,10 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
 
     return (
         <>
-            <Head title="3D Asset Manager" />
+            <Head title="3D Models" />
             <SellerHeader
-                title="3D Asset Manager"
-                subtitle="Manage 3D models and augmented reality assets."
+                title="3D Models"
+                subtitle="Manage 3D models for your handcrafted products."
                 auth={auth}
                 onMenuClick={openSidebar}
             />
@@ -120,7 +120,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                             <div className="p-3.5 border-b border-stone-100 bg-stone-50/50 space-y-2.5">
                                 <div className="flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-1.5 min-w-0">
-                                        <h3 className="text-xs font-bold text-stone-900 truncate">Asset Library</h3>
+                                        <h3 className="text-xs font-bold text-stone-900 truncate">Model Library</h3>
                                         <span className="inline-flex items-center justify-center rounded-full bg-stone-200/70 px-2 py-0.5 text-[10px] font-bold text-stone-600">
                                             {models.length}
                                         </span>
@@ -139,7 +139,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                                     <input
                                         type="text"
-                                        placeholder="Search assets..."
+                                        placeholder="Search models..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className="w-full pl-9 pr-8 py-2 bg-white border border-stone-200 rounded-xl text-xs font-medium focus:ring-1 focus:ring-clay-500 focus:border-clay-500 transition-all shadow-2xs placeholder:text-stone-300 h-[36px]"

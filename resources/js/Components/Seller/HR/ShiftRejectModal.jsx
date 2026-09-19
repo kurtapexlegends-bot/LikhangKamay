@@ -22,7 +22,7 @@ export default function ShiftRejectModal({
             <div className="p-6 space-y-4 bg-white rounded-3xl">
                 <div className="flex justify-between items-center pb-2 border-b border-stone-100">
                     <div>
-                        <h3 className="text-sm font-extrabold text-stone-900">Reject Attendance Shift</h3>
+                        <h3 className="text-sm font-extrabold text-stone-900">Decline Attendance Shift</h3>
                         <p className="text-[11px] text-stone-500 font-medium">Flag and exclude from payroll computation</p>
                     </div>
                     <button
@@ -40,13 +40,13 @@ export default function ShiftRejectModal({
                         <span>Excluded from Monthly Payroll</span>
                     </p>
                     <p className="text-[11px] text-rose-700/90 leading-relaxed">
-                        Rejecting this shift removes its logged work hours from this period&apos;s automated payroll calculations and hourly adjustments.
+                        Declining this shift removes its logged work hours from this period&apos;s automated payroll calculations and hourly adjustments.
                     </p>
                 </div>
 
                 <div>
                     <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
-                        Rejection Note &amp; Adjustment Reason (Optional)
+                        Decline Note &amp; Adjustment Reason (Optional)
                     </label>
                     <input
                         type="text"
@@ -71,7 +71,7 @@ export default function ShiftRejectModal({
                         onClick={onConfirm}
                         className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-xl transition shadow-xs disabled:opacity-50 min-h-[38px]"
                     >
-                        {isSubmitting ? 'Rejecting...' : 'Confirm Rejection'}
+                        {isSubmitting ? 'Declining...' : 'Confirm Decline'}
                     </button>
                 </div>
             </div>

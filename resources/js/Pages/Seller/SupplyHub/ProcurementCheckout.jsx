@@ -157,7 +157,7 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
                     <div className="space-y-0.5">
                         <span className="font-bold text-stone-900 block">Direct Workshop Delivery & Inventory Sync</span>
                         <p className="text-stone-500 leading-relaxed">
-                            Purchased raw materials are delivered directly from peer artisan workshops. When you confirm delivery receipt, LikhangKamay automatically records the items into your Studio Inventory.
+                            Purchased raw materials are delivered directly from peer artisan workshops. When you confirm delivery receipt, LikhangKamay automatically records the items into your Inventory.
                         </p>
                     </div>
                 </div>
@@ -253,7 +253,7 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
                                     <span className="font-bold text-stone-800">{formatCurrency(merchandiseSubtotal)}</span>
                                 </div>
                                 <div className="flex justify-between text-stone-500">
-                                    <span>Platform Fee (4%):</span>
+                                    <span>Service Fee (4%):</span>
                                     <span className="font-bold text-stone-800">{formatCurrency(platformFee)}</span>
                                 </div>
                                 <div className="flex justify-between items-baseline pt-2 border-t border-stone-200">

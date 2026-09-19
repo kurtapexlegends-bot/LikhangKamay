@@ -150,7 +150,7 @@ export default function PayrollRunShow({ payroll }) {
                         <div>
                             <h2 className="text-lg font-bold text-stone-900">{payroll?.run_number || 'Payroll Run'}</h2>
                             <p className="mt-1 text-sm text-stone-500">
-                                Status: <span className="font-semibold text-stone-700">{payroll?.status || 'Pending'}</span>
+                                Status: <span className="font-semibold text-stone-700">{payroll?.status === 'Rejected' ? 'Declined' : (payroll?.status || 'Pending')}</span>
                             </p>
                             {payroll?.notes && (
                                 <p className="mt-2 text-sm leading-6 text-stone-600">{payroll.notes}</p>
@@ -462,7 +462,7 @@ export default function PayrollRunShow({ payroll }) {
 
                     {payroll?.rejection_reason && (
                         <div className="border-t border-red-100 bg-red-50 px-5 py-4 text-sm text-red-700">
-                            <span className="font-bold">Rejection reason:</span> {payroll.rejection_reason}
+                            <span className="font-bold">Decline reason:</span> {payroll.rejection_reason}
                         </div>
                     )}
                 </div>

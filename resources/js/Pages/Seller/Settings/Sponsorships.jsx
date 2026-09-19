@@ -81,7 +81,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                     </span>
                 );
             case 'rejected': 
-                return <span className="bg-rose-50 text-rose-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Rejected</span>;
+                return <span className="bg-rose-50 text-rose-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Declined</span>;
             default: 
                 return <span className="bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Pending</span>;
         }
@@ -89,11 +89,11 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
 
     return (
         <>
-            <Head title="Product Sponsorships - Seller Dashboard" />
+            <Head title="Featured Items - Seller Dashboard" />
 
             <SellerHeader 
-                title="Sponsorships"
-                subtitle="Promote your products and manage active sponsorships."
+                title="Featured Items"
+                subtitle="Feature your products to boost storefront discovery."
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-amber-400' }}
@@ -122,7 +122,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                     <div className="w-[85vw] max-w-[280px] shrink-0 snap-center sm:w-auto bg-white rounded-2xl p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
                         <div className="flex items-start justify-between">
                             <div>
-                                <h4 className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1">Active Campaigns</h4>
+                                <h4 className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1">Active Featured Items</h4>
                                 <h3 className="text-3xl font-bold text-stone-950 tracking-tight">{activeSponsorshipCount}</h3>
                             </div>
                             <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-100 shrink-0">
@@ -142,7 +142,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                 <Clock className="text-amber-500" size={20} />
                             </div>
                         </div>
-                        <p className="text-[10px] text-stone-500 mt-4 leading-normal font-medium">Sponsorship requests awaiting moderation.</p>
+                        <p className="text-[10px] text-stone-500 mt-4 leading-normal font-medium">Requests awaiting review.</p>
                     </div>
                 </div>
 

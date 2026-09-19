@@ -146,7 +146,7 @@ export default function TimeCardSessionsTable({
                                     <td className="py-3 px-4 whitespace-nowrap">
                                         {isRejected ? (
                                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                                                <Ban size={11} /> Rejected
+                                                <Ban size={11} /> Declined
                                             </span>
                                         ) : isApproved ? (
                                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -184,7 +184,7 @@ export default function TimeCardSessionsTable({
                                                         onClick={() => onOpenRejectModal(session.id)}
                                                         className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2.5 py-1 rounded-lg transition active:scale-95 disabled:opacity-50"
                                                     >
-                                                        <Ban size={12} /> Reject
+                                                        <Ban size={12} /> Decline
                                                     </button>
                                                 )}
                                             </div>
@@ -263,7 +263,7 @@ export default function TimeCardSessionsTable({
 
                                 {isRejected ? (
                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                                        <Ban size={10} /> Rejected
+                                        <Ban size={10} /> Declined
                                     </span>
                                 ) : isApproved ? (
                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -302,7 +302,7 @@ export default function TimeCardSessionsTable({
                                             onClick={() => onOpenRejectModal(session.id)}
                                             className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 py-2 rounded-xl transition min-h-[38px] active:scale-[0.98]"
                                         >
-                                            <Ban size={13} /> Reject
+                                            <Ban size={13} /> Decline
                                         </button>
                                     )}
                                 </div>

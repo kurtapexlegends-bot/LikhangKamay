@@ -53,7 +53,7 @@ export function TimeCardFilterFields({
                         <option value="pending">Pending Review</option>
                         <option value="offsite">Off-Site Shifts</option>
                         <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
+                        <option value="rejected">Declined</option>
                     </select>
                 </div>
             )}

@@ -81,13 +81,13 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                 reason: rejectionReason,
             })
             .then(() => {
-                addToast('Shift rejected and excluded from payroll calculation.', 'info');
+                addToast('Shift declined and excluded from payroll calculation.', 'info');
                 setRejectingSessionId(null);
                 setRejectionReason('');
                 refreshLogs();
             })
             .catch((err) => {
-                addToast(err.response?.data?.message || 'Failed to reject shift.', 'error');
+                addToast(err.response?.data?.message || 'Failed to decline shift.', 'error');
             })
             .finally(() => setSubmittingActionId(null));
     };
@@ -231,9 +231,9 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
 
     return (
         <>
-            <Head title={`${employee.name} - Time-Card Audit - Artisan Dashboard`} />
+            <Head title={`${employee.name} - Shift Review - Artisan Dashboard`} />
             <SellerHeader
-                title="Time-Card Audit"
+                title="Shift Review"
                 subtitle={`Work logs, shift verification, and attendance reviews for ${employee.name}.`}
                 auth={auth}
                 onMenuClick={openSidebar}
@@ -246,7 +246,7 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                         People &amp; Payroll
                     </Link>
                     <ChevronRight size={12} className="text-stone-400 shrink-0" />
-                    <span className="text-stone-400 font-medium shrink-0">Time-Card Audit</span>
+                    <span className="text-stone-400 font-medium shrink-0">Shift Review</span>
                     <ChevronRight size={12} className="text-stone-400 shrink-0" />
                     <span className="text-stone-900 font-bold tracking-tight truncate">{employee.name}</span>
                 </nav>
@@ -380,7 +380,7 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                             { key: 'pending', label: 'Pending Review', count: pendingCount },
                             { key: 'offsite', label: 'Off-Site', count: offSiteCount },
                             { key: 'approved', label: 'Approved', count: approvedCount },
-                            { key: 'rejected', label: 'Rejected', count: rejectedCount },
+                            { key: 'rejected', label: 'Declined', count: rejectedCount },
                         ]}
                         activeTab={activeTab}
                         onTabChange={setActiveTab}
@@ -408,7 +408,7 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                         onResetFilters={resetFilters}
                         activeFilterTags={[
                             activeTab !== 'all' && {
-                                label: `Status: ${activeTab === 'pending' ? 'Pending Review' : activeTab === 'offsite' ? 'Off-Site' : activeTab === 'approved' ? 'Approved' : 'Rejected'}`,
+                                label: `Status: ${activeTab === 'pending' ? 'Pending Review' : activeTab === 'offsite' ? 'Off-Site' : activeTab === 'approved' ? 'Approved' : 'Declined'}`,
                                 onRemove: () => { setActiveTab('all'); setDraftStatus('all'); },
                             },
                             anomalyFilter !== 'all' && {

@@ -375,7 +375,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                     <NavItem href={route('analytics.index')} icon={BarChart3} active={active === 'analytics'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Analytics')} onMouseLeave={handleTooltipLeave}>Analytics</NavItem>
                                 )}
                                 {visibleModulesSet.has('3d') && (
-                                    <NavItem href={route('3d.index')} icon={Box} active={active === '3d'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, '3D Manager')} onMouseLeave={handleTooltipLeave}>3D Manager</NavItem>
+                                    <NavItem href={route('3d.index')} icon={Box} active={active === '3d'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, '3D Models')} onMouseLeave={handleTooltipLeave}>3D Models</NavItem>
                                 )}
                                 {(!isStaffActor || visibleModulesSet.has('approvals')) && (user?.role === 'artisan' || user?.is_workspace_owner) && (
                                     <NavItem
@@ -384,11 +384,11 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                         active={active === 'approvals'}
                                         onClick={onClose}
                                         isCollapsed={isCollapsed}
-                                        onMouseEnter={(e) => handleTooltipShow(e, 'Approvals', pendingApprovalsCount > 0 ? `${pendingApprovalsCount} pending` : null)}
+                                        onMouseEnter={(e) => handleTooltipShow(e, 'Team Requests', pendingApprovalsCount > 0 ? `${pendingApprovalsCount} pending` : null)}
                                         onMouseLeave={handleTooltipLeave}
                                         badge={pendingApprovalsCount}
                                     >
-                                        Approvals
+                                        Team Requests
                                     </NavItem>
                                 )}
                             </CategoryGroup>
@@ -431,7 +431,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                     <NavItem href={route('discounts.index')} icon={Tag} active={active === 'discounts'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Discounts')} onMouseLeave={handleTooltipLeave}>Discounts</NavItem>
                                 )}
                                 {visibleModulesSet.has('sponsorships') && (
-                                    <NavItem href={route('seller.sponsorships')} icon={Award} active={active === 'sponsorships'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Sponsorships')} onMouseLeave={handleTooltipLeave}>Sponsorships</NavItem>
+                                    <NavItem href={route('seller.sponsorships')} icon={Award} active={active === 'sponsorships'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Featured Items')} onMouseLeave={handleTooltipLeave}>Featured Items</NavItem>
                                 )}
                             </CategoryGroup>
                         </div>
@@ -440,7 +440,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     {hasAdvanced && (
                         <div>
                             <CategoryGroup
-                                title="Business Capabilities"
+                                title="Store Operations"
                                 open={expandedGroups.advanced}
                                 onToggle={() => toggleGroup('advanced')}
                                 isCollapsed={isCollapsed}

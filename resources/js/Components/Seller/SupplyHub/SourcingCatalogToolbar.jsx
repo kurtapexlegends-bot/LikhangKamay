@@ -22,13 +22,13 @@ function SourcingCatalogToolbar({
                 <div className="relative group shrink-0">
                     <div
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition cursor-help"
-                        title="Direct Workshop Delivery: Materials delivered from peer studios automatically sync to your Studio Inventory."
+                        title="Direct Workshop Delivery: Materials delivered from peer studios automatically sync to your Inventory."
                     >
                         <Info size={16} />
                     </div>
                     <div className="pointer-events-none absolute left-0 top-full mt-1.5 hidden w-64 rounded-xl border border-stone-800 bg-stone-900 px-3 py-2 text-[11px] font-medium text-stone-200 shadow-xl group-hover:block z-30">
                         <span className="font-bold text-white block mb-0.5">Direct Workshop Delivery</span>
-                        Materials delivered from peer studios automatically sync to your Studio Inventory. Verified Artisans Only.
+                        Materials delivered from peer studios automatically sync to your Inventory. Verified Artisans Only.
                     </div>
                 </div>
 

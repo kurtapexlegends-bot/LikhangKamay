@@ -78,7 +78,7 @@ export default function FulfillmentActionGroup({
                             className="flex-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-bold text-red-600 transition-all hover:bg-red-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] flex items-center justify-center"
                             type="button"
                         >
-                            <XCircle size={14} className="inline mr-1" /> Reject
+                            <XCircle size={14} className="inline mr-1" /> Decline
                         </button>
                         <button
                             disabled={!canEditOrders}
@@ -129,7 +129,7 @@ export default function FulfillmentActionGroup({
                             className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-200/80 bg-red-50/60 px-3 py-1.5 text-xs font-bold text-red-600 transition-all hover:bg-red-100/60 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[34px]"
                             type="button"
                         >
-                            <XCircle size={13} /> Reject Order
+                            <XCircle size={13} /> Decline Order
                         </button>
                     </div>
                 </div>
@@ -328,7 +328,7 @@ export default function FulfillmentActionGroup({
                                     className="w-full px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-[10px] font-bold hover:bg-red-100 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
                                     type="button"
                                 >
-                                    Reject Return Request
+                                    Decline Return Request
                                 </button>
                             </>
                         )}

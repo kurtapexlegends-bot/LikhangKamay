@@ -232,13 +232,13 @@ export default function WholesaleOrderCard({
                             <div className="space-y-1.5 text-[10.5px] mt-2 px-2.5 pb-1.5">
                                 <div className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-1">Your Revenue Breakdown</div>
                                 <div className="flex justify-between text-stone-600">
-                                    <span>Merchandise Subtotal:</span>
+                                    <span>Items Subtotal:</span>
                                     <span className="font-semibold text-stone-800">
                                         PHP {Number(order.merchandise_subtotal ?? order.total ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </span>
                                 </div>
                                 <div className="flex justify-between text-stone-500">
-                                    <span>Platform Fee:</span>
+                                    <span>Commission:</span>
                                     <span className="font-semibold text-emerald-600">0% (₱0.00)</span>
                                 </div>
                                 <div className="flex justify-between font-bold pt-1.5 border-t border-stone-100/80 mb-2">
@@ -257,7 +257,7 @@ export default function WholesaleOrderCard({
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span>Convenience Fee:</span>
+                                        <span>Service Fee:</span>
                                         <span className="font-medium text-stone-600">
                                             PHP {Number(order.convenience_fee_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </span>

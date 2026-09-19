@@ -210,7 +210,7 @@ export default function SellerTermsModal({ show, onClose, onAccept, onBack, type
                             <section>
                                 <h4 className="font-bold text-stone-900 mb-2">8. Disciplinary Policy & Termination</h4>
                                 <p>8.1. LikhangKamay enforces a <strong>3-Step Disciplinary System</strong>: <em>Strike 1: Formal Warning</em> with policy advisory; <em>Strike 2: Temporary Studio Suspension (3 to 30 days)</em> where storefront listings are paused while existing customer orders must still be fulfilled; <em>Strike 3: Permanent Account Deactivation</em>.</p>
-                                <p>8.2. Zero-tolerance violations (such as mass fraud, counterfeit items, or harassment) bypass progressive strikes and trigger immediate permanent bans.</p>
+                                <p>8.2. Zero-tolerance violations (such as mass fraud, counterfeit items, or harassment) bypass progressive strikes and trigger immediate permanent account deactivation.</p>
                             </section>
 
                             <section>

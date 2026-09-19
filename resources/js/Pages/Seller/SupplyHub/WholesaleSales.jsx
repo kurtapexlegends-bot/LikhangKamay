@@ -222,10 +222,10 @@ export default function WholesaleSales({
                         <Link
                             href={route('procurement.index')}
                             className="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition shadow-2xs"
-                            title="Studio Inventory"
+                            title="Inventory"
                         >
                             <Boxes size={14} className="text-stone-500" />
-                            <span>Studio Inventory</span>
+                            <span>Inventory</span>
                         </Link>
                         <Link
                             href={route('seller.supply-hub.cart')}

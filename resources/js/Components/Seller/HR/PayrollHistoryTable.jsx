@@ -69,7 +69,7 @@ export default function PayrollHistoryTable({
                             <option value="all">All Statuses</option>
                             <option value="pending">Pending Review</option>
                             <option value="paid">Paid Disbursed</option>
-                            <option value="rejected">Rejected</option>
+                            <option value="rejected">Declined</option>
                         </select>
                     </div>
                 }
@@ -124,7 +124,7 @@ export default function PayrollHistoryTable({
                                         payroll.status === 'Rejected' ? 'bg-rose-100 text-rose-700 border border-rose-200' :
                                         'bg-[#F8EEE6] text-clay-700 border border-[#E7D8C9]'
                                     }`}>
-                                        {payroll.status}
+                                        {payroll.status === 'Rejected' ? 'Declined' : payroll.status}
                                     </span>
                                 </div>
 
@@ -228,7 +228,7 @@ export default function PayrollHistoryTable({
                                             payroll.status === 'Rejected' ? 'bg-red-100 text-red-700' :
                                             'bg-[#F8EEE6] text-clay-700'
                                         }`}>
-                                            {payroll.status}
+                                            {payroll.status === 'Rejected' ? 'Declined' : payroll.status}
                                         </span>
                                     </td>
                                     <td className="px-5 py-4">

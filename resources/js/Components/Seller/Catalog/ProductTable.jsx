@@ -169,7 +169,7 @@ export default function ProductTable({
                                         {product.status === "pending_review"
                                             ? "Pending Review"
                                             : product.status === "rejected"
-                                            ? "Rejected"
+                                            ? "Needs Revision"
                                             : product.status === "flagged"
                                             ? "Flagged"
                                             : product.status}

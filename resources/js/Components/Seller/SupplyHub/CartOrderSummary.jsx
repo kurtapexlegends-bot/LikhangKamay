@@ -71,7 +71,7 @@ export default function CartOrderSummary({
 
             <div className="pt-2 border-t border-stone-150 flex items-center gap-2 text-[11px] text-stone-500 justify-center font-medium">
                 <ShieldCheck size={14} className="text-clay-600" />
-                <span>Automatic Studio Inventory Sync upon Delivery</span>
+                <span>Syncs to Inventory upon delivery</span>
             </div>
         </div>
     );

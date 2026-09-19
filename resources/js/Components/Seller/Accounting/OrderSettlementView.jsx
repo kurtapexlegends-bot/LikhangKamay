@@ -6,7 +6,7 @@ export default function OrderSettlementView({ item }) {
         <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-stone-100 bg-[#FDFBF9]">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-stone-800">Financial Ledger Breakdown</p>
-                <p className="mt-1 text-[11px] font-medium text-stone-500">Gross Sales - Platform Fees - Shipping = Net Payout</p>
+                <p className="mt-1 text-[11px] font-medium text-stone-500">Gross Sales - Commission - Shipping = Net Payout</p>
             </div>
             <div className="p-5 bg-white space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -31,11 +31,11 @@ export default function OrderSettlementView({ item }) {
                                 <td className="py-2.5 text-right font-bold text-stone-900 whitespace-nowrap">{formatMoney(item.financials?.shipping_fee)}</td>
                             </tr>
                             <tr>
-                                <td className="py-2.5 text-rose-600">Platform Commission Fee</td>
+                                <td className="py-2.5 text-rose-600">Platform Commission</td>
                                 <td className="py-2.5 text-right font-bold text-rose-600 whitespace-nowrap">{formatSignedMoney(item.financials?.platform_fee, 'deduction')}</td>
                             </tr>
                             <tr>
-                                <td className="py-2.5 text-rose-600">Transaction & Convenience Fee</td>
+                                <td className="py-2.5 text-rose-600">Payment Processing Fee</td>
                                 <td className="py-2.5 text-right font-bold text-rose-600 whitespace-nowrap">{formatSignedMoney(item.financials?.convenience_fee, 'deduction')}</td>
                             </tr>
                             <tr className="bg-emerald-50/50">

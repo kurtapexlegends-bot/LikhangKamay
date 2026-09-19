@@ -157,10 +157,10 @@ export default function ApprovalManager({
 
     return (
         <>
-            <Head title="Executive Approvals - Artisan Workspace" />
+            <Head title="Team Requests - Artisan Workspace" />
 
             <SellerHeader
-                title="Executive Approvals"
+                title="Team Requests"
                 subtitle="Review staff requests, salary rate updates, purchase orders, and payroll."
                 auth={auth}
                 onMenuClick={openSidebar}

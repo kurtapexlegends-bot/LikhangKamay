@@ -116,11 +116,11 @@ export default function ReleaseRequestDetails({
                                 <td class="text-right">PHP ${Number(item.financials?.shipping_fee || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                             </tr>
                             <tr>
-                                <td style="color:#ef4444;">Platform Commission Fee</td>
+                                <td style="color:#ef4444;">Platform Commission</td>
                                 <td class="text-right" style="color:#ef4444;">- PHP ${Number(item.financials?.platform_fee || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                             </tr>
                             <tr>
-                                <td style="color:#ef4444;">Transaction / Convenience Fee</td>
+                                <td style="color:#ef4444;">Payment Processing Fee</td>
                                 <td class="text-right" style="color:#ef4444;">- PHP ${Number(item.financials?.convenience_fee || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                             </tr>
                             <tr class="total-row">
@@ -186,7 +186,7 @@ export default function ReleaseRequestDetails({
                         {isSale
                             ? `Breakdown for ${item.order_number}`
                             : isPendingReview
-                            ? 'Review the breakdown before approving or rejecting.'
+                            ? 'Review the breakdown before approving or declining.'
                             : 'Review the stored breakdown.'}
                     </p>
                 </div>
@@ -216,10 +216,10 @@ export default function ReleaseRequestDetails({
                         type="text"
                         disabled={!canEditAccounting || !!reviewProcessing}
                         className="w-full sm:w-72 rounded-xl border border-stone-200 bg-white py-2 px-3 text-xs font-medium text-stone-800 placeholder-stone-400 focus:border-stone-400 focus:ring-0 disabled:bg-stone-50 disabled:text-stone-400 shadow-2xs"
-                        placeholder="Reason required to reject..."
+                        placeholder="Reason required to decline..."
                         value={rejectReason}
                         onChange={(event) => setRejectReason(event.target.value)}
-                        title="A note is required to reject this release."
+                        title="A note is required to decline this release."
                     />
                     <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                         <button
@@ -229,7 +229,7 @@ export default function ReleaseRequestDetails({
                             className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
                         >
                             {reviewProcessing === 'reject' && <LoaderCircle size={14} className="animate-spin" />}
-                            Reject
+                            Decline
                         </button>
                         <button
                             type="button"
@@ -321,7 +321,7 @@ export default function ReleaseRequestDetails({
             {/* Stored Rejection Reason */}
             {item.rejection_reason && (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-red-500">Stored Rejection Reason</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-red-500">Decline Reason</p>
                     <p className="mt-1 text-xs font-bold text-red-800">{item.rejection_reason}</p>
                 </div>
             )}

@@ -76,7 +76,7 @@ export default function ProductMobileCard({
                                             {product.status === "pending_review"
                                                 ? "Pending Review"
                                                 : product.status === "rejected"
-                                                ? "Rejected"
+                                                ? "Needs Revision"
                                                 : product.status === "flagged"
                                                 ? "Flagged"
                                                 : product.status}

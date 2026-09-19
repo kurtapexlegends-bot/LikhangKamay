@@ -100,7 +100,7 @@ export default function AccountingFilterPanel({
                         <option value="payroll">Staff &amp; Payroll Runs</option>
                         <option value="stock_request">Material Supplies &amp; Restocks</option>
                         <option value="refund">Refund Deductions</option>
-                        <option value="subscription">Subscription &amp; Platform Fees</option>
+                        <option value="subscription">Subscription &amp; Commission Fees</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />
                 </div>
@@ -120,7 +120,7 @@ export default function AccountingFilterPanel({
                         <option value="all">All Statuses (Pending, Settled, Failed)</option>
                         <option value="completed">Completed / Settled / Paid</option>
                         <option value="pending">Pending Review / Orders in Progress</option>
-                        <option value="failed">Failed / Rejected / Cancelled</option>
+                        <option value="failed">Failed / Declined / Cancelled</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />
                 </div>
@@ -151,7 +151,7 @@ export default function AccountingFilterPanel({
                     ? 'Settled / Paid'
                     : ledgerStatusFilter === 'pending'
                     ? 'Pending Escrow'
-                    : 'Failed / Rejected'
+                    : 'Failed / Declined'
             }`,
             onRemove: () => applyFilters({ ledger_status: 'all' }),
         },

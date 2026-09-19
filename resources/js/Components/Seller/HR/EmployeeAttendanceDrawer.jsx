@@ -37,11 +37,11 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
         window.axios
             .post(route('hr.attendance-sessions.approve', { session: sessionId }))
             .then(() => {
-                addToast('Attendance session approved.', 'success');
+                addToast('Work shift approved.', 'success');
                 fetchAttendanceLogs();
             })
             .catch((err) => {
-                addToast(err.response?.data?.message || 'Failed to approve session.', 'error');
+                addToast(err.response?.data?.message || 'Failed to approve shift.', 'error');
             })
             .finally(() => setSubmittingActionId(null));
     };
@@ -54,7 +54,7 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
                 reason: rejectionReason,
             })
             .then(() => {
-                addToast('Attendance session rejected and excluded from payroll.', 'info');
+                addToast('Work shift declined and excluded from payroll.', 'info');
                 setRejectingSessionId(null);
                 setRejectionReason('');
                 fetchAttendanceLogs();
@@ -274,7 +274,7 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
                                                                                 )}
                                                                                 {isRejected && (
                                                                                     <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-800 bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-full">
-                                                                                        <Ban size={10} /> Rejected
+                                                                                        <Ban size={10} /> Declined
                                                                                     </span>
                                                                                 )}
                                                                             </div>
@@ -307,7 +307,7 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
                                                                                         }}
                                                                                         className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-100/80 hover:bg-rose-200/80 border border-rose-200 px-3 py-1 rounded-xl transition disabled:opacity-50 min-h-[30px]"
                                                                                     >
-                                                                                        <Ban size={12} /> Reject
+                                                                                        <Ban size={12} /> Decline
                                                                                     </button>
                                                                                 </div>
                                                                             </div>
@@ -318,7 +318,7 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
                                                         </div>
                                                     ) : (
                                                         <div className="p-8 bg-stone-50 rounded-2xl border border-stone-200/70 text-center text-stone-400 text-xs font-medium">
-                                                            No attendance sessions recorded for this employee.
+                                                            No work shifts recorded for this employee.
                                                         </div>
                                                     )}
                                                 </div>
@@ -331,7 +331,7 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
                                         <div
                                             className="fixed inset-0 z-60 bg-stone-900/80 backdrop-blur-sm flex items-center justify-center p-4"
                                             onClick={() => setSelectedPhoto(null)}
-                                        >
+                                         >
                                             <div className="bg-white rounded-3xl p-4 max-w-sm w-full space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                                                 <div className="flex justify-between items-center pb-2 border-b border-stone-100">
                                                     <span className="text-xs font-bold text-stone-900">Attendance Selfie Verification Proof</span>
@@ -352,17 +352,17 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
                                         >
                                             <div className="bg-white rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                                                 <div className="flex justify-between items-center pb-2 border-b border-stone-100">
-                                                    <h3 className="text-sm font-bold text-stone-900">Reject Attendance Session</h3>
+                                                    <h3 className="text-sm font-bold text-stone-900">Decline Work Shift</h3>
                                                     <button type="button" onClick={() => setRejectingSessionId(null)} className="text-stone-400 hover:text-stone-700 p-1">
                                                         <X size={16} />
                                                     </button>
                                                 </div>
                                                 <p className="text-xs text-stone-500 font-medium leading-relaxed">
-                                                    Rejecting this session will exclude its logged worked hours from payroll calculations.
+                                                    Declining this shift will exclude its logged worked hours from payroll calculations.
                                                 </p>
                                                 <div>
                                                     <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
-                                                        Rejection Reason (Optional)
+                                                        Decline Reason (Optional)
                                                     </label>
                                                     <input
                                                         type="text"
@@ -386,7 +386,7 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
                                                         onClick={handleRejectSession}
                                                         className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-xs disabled:opacity-50"
                                                     >
-                                                        Confirm Rejection
+                                                        Confirm Decline
                                                     </button>
                                                 </div>
                                             </div>

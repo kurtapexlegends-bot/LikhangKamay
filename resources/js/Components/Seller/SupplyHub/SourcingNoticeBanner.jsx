@@ -11,7 +11,7 @@ export default function SourcingNoticeBanner() {
             <div className="flex items-center gap-2 min-w-0">
                 <Info size={14} className="text-clay-600 shrink-0" />
                 <p className="text-xs text-stone-600 truncate sm:whitespace-normal font-medium">
-                    <span className="font-bold text-stone-800">Direct Workshop Delivery:</span> Materials delivered from peer studios automatically sync to your Studio Inventory.
+                    <span className="font-bold text-stone-800">Direct Workshop Delivery:</span> Materials delivered from peer studios automatically sync to your Inventory.
                 </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">

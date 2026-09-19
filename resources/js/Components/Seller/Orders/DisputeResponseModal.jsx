@@ -62,7 +62,7 @@ export default function DisputeResponseModal({
                                     className="mt-0.5 text-clay-600 focus:ring-clay-500 h-5 w-5"
                                 />
                                 <div>
-                                    <p className="text-sm font-bold text-stone-800">Suggest replacement exchange</p>
+                                    <p className="text-sm font-bold text-stone-800">Offer Replacement Item</p>
                                     <p className="text-xs text-stone-500">Offer to replace the items. Buyer must accept/confirm.</p>
                                 </div>
                             </label>
@@ -76,8 +76,8 @@ export default function DisputeResponseModal({
                                     className="mt-0.5 text-clay-600 focus:ring-clay-500 h-5 w-5"
                                 />
                                 <div>
-                                    <p className="text-sm font-bold text-stone-800">Reject return request</p>
-                                    <p className="text-xs text-stone-500">Deny return request. Buyer can escalate to admin support.</p>
+                                    <p className="text-sm font-bold text-stone-800">Decline Return Request</p>
+                                    <p className="text-xs text-stone-500">Decline return request. Buyer can ask support for help.</p>
                                 </div>
                             </label>
                         </div>
@@ -98,13 +98,13 @@ export default function DisputeResponseModal({
 
                     {disputeModalState.responseType === "reject" && (
                         <div>
-                            <InputLabel value="Rejection Explanation" />
+                            <InputLabel value="Decline Reason" />
                             <textarea
                                 rows={4}
                                 value={disputeModalState.sellerExplanation}
                                 onChange={(e) => setDisputeModalState(prev => ({ ...prev, sellerExplanation: e.target.value, error: "" }))}
                                 className="w-full rounded-xl border-stone-200 text-sm shadow-sm focus:border-clay-500 focus:ring-clay-500 resize-none"
-                                placeholder="Explain the reasons why the return request is rejected..."
+                                placeholder="Explain why you cannot accept this return request..."
                             />
                         </div>
                     )}

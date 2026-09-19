@@ -80,11 +80,11 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                                         </span>
                                         {loc.enforce_strict_geofence ? (
                                             <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-100 uppercase tracking-wider">
-                                                Strict Block
+                                                Must Be On Site
                                             </span>
                                         ) : (
                                             <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 uppercase tracking-wider">
-                                                Soft Audit
+                                                Flag if Away
                                             </span>
                                         )}
                                     </h4>

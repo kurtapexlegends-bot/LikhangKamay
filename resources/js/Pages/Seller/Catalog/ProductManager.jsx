@@ -248,13 +248,11 @@ export default function ProductManager({
             {state.resubmitModalOpen && (
                 (() => {
                     const isFlagged = state.selectedResubmitProduct?.status === "flagged";
-                    const titleText = isFlagged ? "Resolve Flagged Listing" : "Resubmit Rejected Listing";
-                    const reasonLabel = isFlagged ? "Flag Reason" : "Rejection Reason";
-                    const notesLabel = isFlagged ? "Clarification Notes (Explain flagged issues resolved)" : "Resubmit Notes (Explain corrections made)";
-                    const notesPlaceholder = isFlagged 
-                        ? "Provide explanation or detail changes made to address the flagged issues so administrators can approve the listing."
-                        : "Detail the corrections you have made to address the rejection reason so administrators can approve the listing.";
-                    const buttonText = isFlagged ? "Resolve Flag & Resubmit" : "Resubmit Product";
+                    const titleText = isFlagged ? "Resolve Flagged Listing" : "Update Listing for Review";
+                    const reasonLabel = isFlagged ? "Flag Reason" : "Feedback / Needed Changes";
+                    const notesLabel = isFlagged ? "Clarification Notes" : "Update Notes";
+                    const notesPlaceholder = "Explain changes made to address the feedback...";
+                    const buttonText = "Submit Revision";
                     const getResetDate = () => {
                         const d = new Date();
                         d.setMonth(d.getMonth() + 1);
@@ -289,21 +287,21 @@ export default function ProductManager({
                                     <div className="rounded-xl border border-stone-250 bg-stone-50 p-4 space-y-2">
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="font-bold text-stone-600 uppercase tracking-wider">
-                                                Monthly Resubmission Limit
+                                                Monthly Revisions
                                             </span>
                                             <span className={`font-extrabold ${limitReached ? "text-rose-600" : "text-stone-700"}`}>
-                                                {count} / 3 resubmitted
+                                                {count} / 3 submitted
                                             </span>
                                         </div>
                                         <p className="text-[11px] text-stone-500 leading-normal">
-                                            You can only resubmit this product 3 times per calendar month.
+                                            You can submit revisions up to 3 times per month.
                                             {limitReached 
                                                 ? " You have reached the limit for this month." 
-                                                : ` You have ${remaining} resubmission(s) remaining for this month.`}
+                                                : ` You have ${remaining} revision(s) remaining for this month.`}
                                         </p>
                                         {count > 0 && (
                                             <p className="text-[11px] text-amber-700 font-semibold mt-1 flex items-center gap-1">
-                                                <span>•</span> Resubmission limit resets on {getResetDate()}.
+                                                <span>•</span> Resets on {getResetDate()}.
                                             </p>
                                         )}
                                     </div>

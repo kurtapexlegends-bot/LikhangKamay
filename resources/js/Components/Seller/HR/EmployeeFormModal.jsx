@@ -407,7 +407,7 @@ export default function EmployeeFormModal({
                                     <div className="mt-1.5 space-y-0.5 leading-relaxed font-medium text-red-700 text-[11px]">
                                         <p>• The employee record stays in HR and payroll history.</p>
                                         <p>• The linked seller login, email, and role setup stay in place.</p>
-                                        <p>• Seller workspace access stays blocked until you restore it here.</p>
+                                        <p>• Seller workspace access is paused until you restore it here.</p>
                                     </div>
                                 </div>
                             </div>

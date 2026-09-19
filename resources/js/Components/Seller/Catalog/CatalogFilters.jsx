@@ -30,7 +30,7 @@ export default function CatalogFilters({
                     "All",
                     "Active",
                     "Pending Review",
-                    "Rejected",
+                    "Needs Revision",
                     "Flagged",
                     "Draft",
                     "Archived",

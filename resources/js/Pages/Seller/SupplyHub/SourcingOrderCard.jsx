@@ -253,7 +253,7 @@ export default function SourcingOrderCard({
 
                         {isPricingExpanded && (
                             <div className="space-y-1.5 text-[10.5px] mt-2 px-2.5 pb-1.5">
-                                <div className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-1">Procurement Cost Breakdown</div>
+                                <div className="text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-1">Materials Cost Breakdown</div>
                                 <div className="flex justify-between text-stone-600">
                                     <span>Materials Subtotal:</span>
                                     <span className="font-semibold text-stone-800">
@@ -261,14 +261,14 @@ export default function SourcingOrderCard({
                                     </span>
                                 </div>
                                 <div className="flex justify-between text-stone-600">
-                                    <span>Courier Delivery Fee:</span>
+                                    <span>Shipping Fee:</span>
                                     <span className="font-semibold text-stone-800">
                                         PHP {Number(order.shipping_fee_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </span>
                                 </div>
                                 {order.convenience_fee_amount > 0 && (
                                     <div className="flex justify-between text-stone-500">
-                                        <span>Payment Convenience Fee:</span>
+                                        <span>Service Fee:</span>
                                         <span className="font-semibold text-stone-700">
                                             PHP {Number(order.convenience_fee_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </span>
@@ -347,7 +347,7 @@ export default function SourcingOrderCard({
                         {isCompleted && (
                             <div className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800 border border-emerald-200 shadow-2xs">
                                 <Check size={13} className="text-emerald-600" />
-                                <span>Synced to Studio Inventory</span>
+                                <span>Synced to Inventory</span>
                             </div>
                         )}
 

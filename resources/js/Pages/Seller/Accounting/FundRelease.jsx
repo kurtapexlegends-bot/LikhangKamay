@@ -256,7 +256,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
             <Head title={reviewModal.item ? `Review: ${reviewModal.item.order_number || ('Request #' + reviewModal.item.id)}` : "Finance & Approvals"} />
             <SellerHeader
                 title={reviewModal.item ? `Review Request #${reviewModal.item.id}` : "Finance & Fund Approvals"}
-                subtitle={reviewModal.item ? `Audit details for request #${reviewModal.item.id}` : "Track enterprise balances, capital adjustments, and approve release requests."}
+                subtitle={reviewModal.item ? `Audit details for request #${reviewModal.item.id}` : "Track shop balances, available funds, and review payout requests."}
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
@@ -298,7 +298,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                 ) : (
                     <>
                         {isAccountingReadOnly && (
-                            <ReadOnlyCapabilityNotice label="Finance review is read only for your account. Approval and fund actions are disabled." />
+                            <ReadOnlyCapabilityNotice label="Finance is in view-only mode for your role." />
                         )}
 
                         {/* Metrics Cards */}

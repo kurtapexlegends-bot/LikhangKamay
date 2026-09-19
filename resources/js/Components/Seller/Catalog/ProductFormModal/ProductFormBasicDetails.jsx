@@ -105,7 +105,7 @@ export default function ProductFormBasicDetails({
                                         <option value="pending_review">Pending Review</option>
                                     )}
                                     {data.status === "rejected" && (
-                                        <option value="rejected">Rejected</option>
+                                        <option value="rejected">Needs Revision</option>
                                     )}
                                     {data.status === "flagged" && (
                                         <option value="flagged">Flagged</option>
@@ -170,7 +170,7 @@ export default function ProductFormBasicDetails({
                     {(data.status === 'rejected' || data.status === 'flagged') && (
                         <div className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
                             <p className="text-[11px] font-bold text-red-700">
-                                Listing {data.status === 'rejected' ? 'Rejected' : 'Flagged'}
+                                Listing {data.status === 'rejected' ? 'Needs Revision' : 'Flagged'}
                             </p>
                             {selectedProduct?.rejection_reason && (
                                 <p className="mt-1 text-[10px] text-red-600 font-semibold">
@@ -178,7 +178,7 @@ export default function ProductFormBasicDetails({
                                 </p>
                             )}
                             <p className="mt-1 text-[10px] text-stone-500 font-medium">
-                                Saving updates will keep the listing as {data.status === 'rejected' ? 'Rejected' : 'Flagged'}. You must explicitly click the status in the products table to resubmit it.
+                                Saving updates will keep this listing as {data.status === 'rejected' ? 'Needs Revision' : 'Flagged'}. Resubmit the listing once your changes are ready.
                             </p>
                         </div>
                     )}
