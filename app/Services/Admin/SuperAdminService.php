@@ -292,7 +292,7 @@ class SuperAdminService
         if ($user->isArtisan()) {
             return match ($user->artisan_status) {
                 'approved' => ['Approved', 'success'],
-                'rejected' => ['Rejected', 'danger'],
+                'rejected' => ['Declined', 'danger'],
                 default => ['Pending', 'warning'],
             };
         }

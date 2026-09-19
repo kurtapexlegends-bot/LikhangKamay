@@ -232,7 +232,7 @@ class RefactoredControllersVerificationTest extends TestCase
         ]);
 
         $response->assertOk();
-        $response->assertJsonPath('message', 'Attendance session rejected.');
+        $response->assertJsonPath('message', 'Attendance session declined.');
 
         $session->refresh();
         $this->assertSame('rejected', $session->approval_status);

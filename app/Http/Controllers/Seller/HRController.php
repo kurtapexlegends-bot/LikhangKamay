@@ -483,7 +483,7 @@ class HRController extends Controller
         $session = $action->execute($session, $this->sellerActor(), $request->validated('reason'));
 
         return response()->json([
-            'message' => 'Attendance session rejected.',
+            'message' => 'Attendance session declined.',
             'session' => $session,
         ]);
     }

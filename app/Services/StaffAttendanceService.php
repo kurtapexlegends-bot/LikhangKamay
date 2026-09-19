@@ -334,7 +334,7 @@ class StaffAttendanceService
             'approval_status' => 'rejected',
             'approved_by_user_id' => $manager->id,
             'approved_at' => now(),
-            'rejection_reason' => $reason ?: 'Rejected by manager',
+            'rejection_reason' => $reason ?: 'Declined by manager',
         ]);
 
         $session->loadMissing('staffUser', 'employee');
@@ -350,8 +350,8 @@ class StaffAttendanceService
             'event_type' => 'attendance_rejected',
             'severity' => 'warning',
             'status' => 'rejected',
-            'title' => 'Attendance Session Rejected',
-            'summary' => "Manager {$manager->name} rejected work session for {$staffName}" . ($reason ? ": {$reason}" : '.'),
+            'title' => 'Attendance Session Declined',
+            'summary' => "Manager {$manager->name} declined work session for {$staffName}" . ($reason ? ": {$reason}" : '.'),
             'subject_type' => StaffAttendanceSession::class,
             'subject_id' => $session->id,
             'subject_label' => "{$staffName} Attendance",

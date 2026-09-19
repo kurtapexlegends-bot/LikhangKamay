@@ -227,12 +227,12 @@ class OrderWorkflowHelper
             'flow_type' => $flowType,
             'flow_label' => $isReplacementExchange ? 'Replacement Exchange' : 'Standard Delivery',
             'flow_summary' => $isReplacementExchange
-                ? 'Courier will deliver the replacement item to the buyer, collect the rejected item, and return it to the seller.'
+                ? 'Courier will deliver the replacement item to the buyer, collect the original item, and return it to the seller.'
                 : 'Courier will move the order from the seller to the buyer.',
             'route_legs' => $isReplacementExchange
                 ? [
                     ['label' => 'Replacement delivery', 'from' => 'Seller', 'to' => 'Buyer'],
-                    ['label' => 'Rejected item return', 'from' => 'Buyer', 'to' => 'Seller'],
+                    ['label' => 'Item return exchange', 'from' => 'Buyer', 'to' => 'Seller'],
                 ]
                 : [
                     ['label' => 'Delivery', 'from' => 'Seller', 'to' => 'Buyer'],
@@ -413,7 +413,7 @@ class OrderWorkflowHelper
             $eventType === 'ORDER_STATUS_CHANGED' && $payloadStatus === 'PICKED_UP' => 'Courier picked up parcel',
             $eventType === 'ORDER_STATUS_CHANGED' && $payloadStatus === 'ON_GOING' => 'Courier started trip',
             $eventType === 'ORDER_STATUS_CHANGED' && $payloadStatus === 'CANCELED' => 'Courier cancelled booking',
-            $eventType === 'ORDER_STATUS_CHANGED' && $payloadStatus === 'REJECTED' => 'Courier rejected booking',
+            $eventType === 'ORDER_STATUS_CHANGED' && $payloadStatus === 'REJECTED' => 'Courier declined booking',
             $eventType === 'ORDER_STATUS_CHANGED' && $payloadStatus === 'EXPIRED' => 'Courier booking expired',
             $eventType === 'POLL_SYNC' => 'Courier status synced',
             default => str_replace('_', ' ', ucfirst(strtolower($eventType ?: 'delivery update'))),

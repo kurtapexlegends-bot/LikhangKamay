@@ -21,18 +21,18 @@
             </a>
         </div>
         <div style="padding: 40px 32px;">
-            <h1 style="font-family: Georgia, Times, serif; font-size: 24px; font-weight: normal; color: #C2783F; margin-top: 0; margin-bottom: 20px; text-align: center;">Return Request Rejected</h1>
+            <h1 style="font-family: Georgia, Times, serif; font-size: 24px; font-weight: normal; color: #C2783F; margin-top: 0; margin-bottom: 20px; text-align: center;">Return Request Declined</h1>
             <p style="margin-top: 0; margin-bottom: 24px; font-size: 16px; color: #5C524A; line-height: 1.6;">
                 The seller has declined your return/refund request for Order <strong>#{{ $orderNumber ?? ($order->order_number ?? '') }}</strong>.
             </p>
             @if(!empty($explanation) || !empty($reason))
                 <div style="background-color: #F7F4F0; border: 1px solid #E7E1D8; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; font-size: 14px; color: #5C524A; line-height: 1.5;">
-                    <strong style="color: #2E2520; display: block; margin-bottom: 4px;">Seller's Explanation:</strong>
+                    <strong style="color: #2E2520; display: block; margin-bottom: 4px;">Shop Explanation:</strong>
                     {{ $explanation ?? $reason }}
                 </div>
             @endif
             <p style="font-size: 14px; color: #A2582F; font-weight: bold; margin-bottom: 24px; text-align: center;">
-                If you believe this decision is incorrect, you may escalate this issue to the platform administrators for arbitration.
+                If you believe this decision was made in error, you can ask platform support for help.
             </p>
             <div style="text-align: center;">
                 <a href="{{ route('my-orders.index') }}" style="display: inline-block; background-color: #A2582F; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: bold; text-decoration: none; padding: 12px 28px; border-radius: 6px; letter-spacing: 0.5px;">Go to My Orders</a>

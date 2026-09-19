@@ -44,7 +44,7 @@ class RejectArtisan
         // Log Activity
         PlatformActivity::log(
             'artisan_rejected',
-            "Rejected artisan application for: {$artisan->name}",
+            "Requested application revision for: {$artisan->name}",
             ['artisan_id' => $artisan->id, 'reason' => $reason]
         );
 

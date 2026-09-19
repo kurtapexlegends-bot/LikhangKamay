@@ -85,7 +85,7 @@
             <ol style="margin: 0; padding-left: 20px; color: #5C524A; font-size: 14px; line-height: 1.6;">
                 <li style="margin-bottom: 8px;">Chat with the buyer to understand the reason for return</li>
                 <li style="margin-bottom: 8px;">Arrange return shipping or pickup</li>
-                <li style="margin-bottom: 8px;">Once the item is received, approve/reject the refund request</li>
+                <li style="margin-bottom: 8px;">Once the item is received, approve or decline the refund request</li>
                 <li>Update the order status accordingly</li>
             </ol>
 

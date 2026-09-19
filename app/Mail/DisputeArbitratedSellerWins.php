@@ -28,10 +28,10 @@ class DisputeArbitratedSellerWins extends Mailable
             slug: 'dispute_arbitrated',
             replacements: [
                 '{order_number}' => $this->orderNumber,
-                '{rejection_reason}' => $this->notes ?? 'Claim rejected upon admin review.',
+                '{rejection_reason}' => $this->notes ?? 'Claim declined upon admin review.',
                 '{action_url}' => url('/orders/' . $this->orderNumber),
             ],
-            fallbackSubject: 'Dispute Resolved: Claim Rejected for Order #' . $this->orderNumber,
+            fallbackSubject: 'Dispute Resolved: Claim Declined for Order #' . $this->orderNumber,
             fallbackView: 'emails.orders.dispute-arbitrated-seller-wins',
             fallbackData: [
                 'orderNumber' => $this->orderNumber,

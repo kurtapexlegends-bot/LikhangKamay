@@ -94,6 +94,7 @@ class ProductController extends Controller
                 } else {
                     $statusMap = [
                         'Pending Review' => 'pending_review',
+                        'Needs Revision' => 'rejected',
                         'Rejected' => 'rejected',
                         'Flagged' => 'flagged',
                     ];
@@ -389,7 +390,7 @@ class ProductController extends Controller
         Gate::authorize('update', $product);
 
         if ($product->status !== 'rejected' && $product->status !== 'flagged') {
-            return back()->with('error', 'Only rejected or flagged products can be resubmitted.');
+            return back()->with('error', 'Only listings needing revision or flagged can be resubmitted.');
         }
 
         $monthlyCount = DB::table('product_resubmissions')

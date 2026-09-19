@@ -271,12 +271,12 @@ class CatalogController extends Controller
         $sponsorshipRequest->user?->notify(new SponsorshipStatusNotification($sponsorshipRequest));
 
         PlatformActivity::log(
-            'sponsorship_rejected',
-            "Administrator rejected sponsorship for '{$sponsorshipRequest->product?->name}'.",
+            'sponsorship_declined',
+            "Administrator declined sponsorship for '{$sponsorshipRequest->product?->name}'.",
             ['sponsorship_id' => $sponsorshipRequest->id, 'product_id' => $sponsorshipRequest->product_id, 'reason' => $validated['rejection_reason']]
         );
 
-        return back()->with('success', 'Sponsorship rejected.');
+        return back()->with('success', 'Sponsorship request declined.');
     }
 
     /**

@@ -95,7 +95,7 @@ class PendingArtisanApprovalTest extends TestCase
                 'reason' => 'The uploaded permit details do not match the seller profile yet.',
             ])
             ->assertSessionHasNoErrors()
-            ->assertSessionHas('success', 'Artisan application rejected.');
+            ->assertSessionHas('success', 'Artisan application returned for revision.');
 
         $artisan->refresh();
 

@@ -164,7 +164,7 @@ class UserDisciplinaryService
                 'ban_reason' => null,
             ]);
 
-            $reasonText = $note ?: 'Ban lifted by administrator.';
+            $reasonText = $note ?: 'Account reactivated by administrator.';
 
             $log = UserDisciplinaryLog::create([
                 'user_id' => $target->id,

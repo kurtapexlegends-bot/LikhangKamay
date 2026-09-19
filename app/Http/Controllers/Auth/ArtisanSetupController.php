@@ -382,7 +382,7 @@ class ArtisanSetupController extends Controller
         $user = $request->user();
 
         if (!$user->isRejected()) {
-            abort(403, 'Only rejected applications can be converted.');
+            abort(403, 'Only declined applications can be converted.');
         }
 
         // Delete uploaded files

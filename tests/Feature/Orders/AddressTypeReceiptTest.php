@@ -61,7 +61,7 @@ class AddressTypeReceiptTest extends TestCase
 
         $receiptResponse
             ->assertOk()
-            ->assertSee('Convenience Fee', false)
+            ->assertSee('Service Fee', false)
             ->assertSee('Office', false)
             ->assertSee('PHP 27.00', false)
             ->assertSee('Total Paid', false);

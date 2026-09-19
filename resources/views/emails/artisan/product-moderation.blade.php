@@ -29,7 +29,7 @@
             @elseif($status === 'rejected')
                 <h1 style="font-family: Georgia, Times, serif; font-size: 24px; font-weight: normal; color: #C2783F; margin-top: 0; margin-bottom: 20px;">Listing Needs Attention</h1>
                 <p style="margin-top: 0; margin-bottom: 24px; font-size: 16px; color: #5C524A; line-height: 1.6;">
-                    Your product listing <strong>{{ $productName }}</strong> was rejected. You can make adjustments and resubmit it for review.
+                    Your product listing <strong>{{ $productName }}</strong> needs revision. You can make adjustments and resubmit it for review.
                 </p>
                 @if($reason)
                     <div style="background-color: #F7F4F0; border: 1px solid #E7E1D8; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; text-align: left; font-size: 14px; color: #5C524A; line-height: 1.5;">

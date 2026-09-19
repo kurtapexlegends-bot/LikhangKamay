@@ -132,7 +132,7 @@ class AdminSearchService
                 return [
                     'id' => "user-{$u->id}",
                     'title' => $u->name,
-                    'subtitle' => "{$u->email} • {$roleLabel}" . ($u->banned_at ? ' • [BANNED]' : ''),
+                    'subtitle' => "{$u->email} • {$roleLabel}" . ($u->banned_at ? ' • [DEACTIVATED]' : ''),
                     'type' => 'User',
                     'url' => route('admin.users.manager', ['tab' => 'directory', 'search' => $u->email]),
                     'icon' => 'user',

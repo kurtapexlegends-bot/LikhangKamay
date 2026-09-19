@@ -33,7 +33,7 @@
                 </p>
                 @if($reason)
                     <div style="background-color: #F7F4F0; border: 1px solid #E7E1D8; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; text-align: left; font-size: 14px; color: #5C524A; line-height: 1.5;">
-                        <strong style="color: #2E2520; display: block; margin-bottom: 4px;">Reason for Rejection:</strong>
+                        <strong style="color: #2E2520; display: block; margin-bottom: 4px;">Decline Reason:</strong>
                         {{ $reason }}
                     </div>
                 @endif

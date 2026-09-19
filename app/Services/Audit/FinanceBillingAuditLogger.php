@@ -44,12 +44,12 @@ class FinanceBillingAuditLogger
                     eventType: 'payroll_' . ($status ?: 'updated'),
                     title: match ($status) {
                         'paid' => 'Payroll Approved',
-                        'rejected' => 'Payroll Rejected',
+                        'rejected' => 'Payroll Declined',
                         default => 'Payroll Submitted for Review',
                     },
                     summary: match ($status) {
                         'paid' => "Payroll for {$payroll->month} was approved and released.",
-                        'rejected' => "Payroll for {$payroll->month} was rejected during accounting review.",
+                        'rejected' => "Payroll for {$payroll->month} was declined during accounting review.",
                         default => "Payroll for {$payroll->month} is waiting for accounting approval.",
                     },
                     status: $status,
@@ -118,7 +118,7 @@ class FinanceBillingAuditLogger
                     module: 'stock_requests',
                     eventType: 'procurement_' . ($status ?: 'updated'),
                     title: match ($status) {
-                        StockRequest::STATUS_REJECTED => 'Procurement Request Rejected',
+                        StockRequest::STATUS_REJECTED => 'Procurement Request Declined',
                         StockRequest::STATUS_PENDING => 'Procurement Request Submitted',
                         StockRequest::STATUS_ACCOUNTING_APPROVED => 'Procurement Funds Released',
                         StockRequest::STATUS_ORDERED => 'Procurement Marked Ordered',
@@ -126,7 +126,7 @@ class FinanceBillingAuditLogger
                         default => 'Procurement Request Updated',
                     },
                     summary: match ($status) {
-                        StockRequest::STATUS_REJECTED => "{$supplyName} request was rejected.",
+                        StockRequest::STATUS_REJECTED => "{$supplyName} request was declined.",
                         StockRequest::STATUS_PENDING => "{$supplyName} request is waiting for accounting review.",
                         StockRequest::STATUS_ACCOUNTING_APPROVED => "{$supplyName} request was approved for procurement.",
                         StockRequest::STATUS_ORDERED => "{$supplyName} request was marked as ordered.",

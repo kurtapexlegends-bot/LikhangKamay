@@ -169,7 +169,7 @@ class BuyerReactToDispute
             $admin->notify(new DisputeStatusNotification(
                 'dispute_escalated',
                 'New Escalation Queue',
-                "Order #{$order->order_number} has been escalated for dispute arbitration.",
+                "Order #{$order->order_number} has been escalated for dispute resolution.",
                 route('admin.disputes.index')
             ));
             if ($admin->email) {

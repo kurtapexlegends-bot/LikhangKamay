@@ -189,12 +189,12 @@
 
     <div class="totals">
         <div class="totals-row">
-            <span>{{ $isB2B ? 'Materials Subtotal' : 'Merchandise Subtotal' }}</span>
+            <span>{{ $isB2B ? 'Materials Subtotal' : 'Items Subtotal' }}</span>
             <span>PHP {{ number_format($merchandiseSubtotal, 2) }}</span>
         </div>
         @if($convenienceFee > 0)
         <div class="totals-row">
-            <span>Payment Convenience Fee</span>
+            <span>Service Fee</span>
             <span>PHP {{ number_format($convenienceFee, 2) }}</span>
         </div>
         @endif

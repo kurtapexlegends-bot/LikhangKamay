@@ -50,10 +50,10 @@ class SponsorshipStatusNotification extends Notification
 
         return [
             'type' => 'sponsorship_status',
-            'title' => $isApproved ? 'Sponsorship Approved' : 'Sponsorship Rejected',
+            'title' => $isApproved ? 'Sponsorship Approved' : 'Sponsorship Declined',
             'message' => $isApproved
                 ? "Your sponsorship request for {$productName} has been approved for 7 days."
-                : "Your sponsorship request for {$productName} was rejected. {$this->requestRecord->rejection_reason}",
+                : "Your sponsorship request for {$productName} was declined. {$this->requestRecord->rejection_reason}",
             'url' => route('seller.sponsorships') . '#request-' . $this->requestRecord->id,
             'sponsorship_request_id' => $this->requestRecord->id,
             'status' => $this->requestRecord->status,

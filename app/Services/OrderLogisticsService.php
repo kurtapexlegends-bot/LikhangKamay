@@ -284,7 +284,7 @@ class OrderLogisticsService
         }
 
         $replacementExchangeRemark = trim(implode(' ', array_filter([
-            'Deliver the replacement item and collect the rejected item from the buyer.',
+            'Deliver the replacement item and collect the original item from the buyer.',
             trim((string) $order->shipping_notes),
         ])));
 
@@ -307,7 +307,7 @@ class OrderLogisticsService
                     'stopId' => $quotationStops[2]['stopId'],
                     'name' => $seller->shop_name ?: $seller->name,
                     'phone' => $this->lalamoveService->normalizePhone((string) $seller->getPreferredCourierContactPhone()),
-                    'remarks' => 'Return the rejected item collected from the buyer to the seller.',
+                    'remarks' => 'Return the original item collected from the buyer to the seller.',
                 ],
             ],
             'metadata' => [
@@ -329,7 +329,7 @@ class OrderLogisticsService
             $persistedOrderPayload,
             $quotationId,
             'Replacement courier booked',
-            'Your replacement is now booked with Lalamove. The courier will deliver the replacement and bring the rejected item back to the seller.',
+            'Your replacement is now booked with Lalamove. The courier will deliver the replacement and bring the original item back to the seller.',
         );
     }
 

@@ -166,7 +166,7 @@ class AccountingController extends Controller
 
         $actor = $this->sellerActor();
         if ($stockRequest->requested_by_user_id && $stockRequest->requested_by_user_id === $actor->id) {
-            return back()->with('error', 'Governance Control: Maker-Checker rule violation. You cannot approve a request you initiated.');
+            return back()->with('error', 'For security, you cannot approve a request that you submitted yourself.');
         }
 
         $error = DB::transaction(function () use ($stockRequest, $actor) {
@@ -212,7 +212,7 @@ class AccountingController extends Controller
         Gate::authorize('reject', $stockRequest);
 
         if ($stockRequest->status !== StockRequest::STATUS_PENDING) {
-            return back()->with('error', 'Only pending stock requests can be rejected.');
+            return back()->with('error', 'Only pending stock requests can be declined.');
         }
 
         $validated = $request->validate([
@@ -243,8 +243,8 @@ class AccountingController extends Controller
             $supplyName = $stockRequest->supply?->name ?? 'the requested supply';
 
             $recipient->notify(new AccountingRejectedNotification(
-                'Stock Request Rejected',
-                "Accounting rejected stock request #{$stockRequest->id} for {$supplyName}. Reason: {$validated['reason']}",
+                'Stock Request Declined',
+                "Accounting declined stock request #{$stockRequest->id} for {$supplyName}. Reason: {$validated['reason']}",
                 route('stock-requests.index'),
                 'stock_request',
                 $stockRequest->id,
@@ -252,7 +252,7 @@ class AccountingController extends Controller
             ));
         }
 
-        return back()->with('success', 'Fund release rejected.');
+        return back()->with('success', 'Fund release request declined.');
     }
 
     public function approvePayroll(Payroll $payroll)
@@ -265,7 +265,7 @@ class AccountingController extends Controller
 
         $actor = $this->sellerActor();
         if ($payroll->requested_by_user_id && $payroll->requested_by_user_id === $actor->id) {
-            return back()->with('error', 'Governance Control: Maker-Checker rule violation. You cannot approve a request you initiated.');
+            return back()->with('error', 'For security, you cannot approve a request that you submitted yourself.');
         }
 
         $error = DB::transaction(function () use ($payroll, $actor) {
@@ -311,7 +311,7 @@ class AccountingController extends Controller
         Gate::authorize('reject', $payroll);
 
         if ($payroll->status !== 'Pending') {
-            return back()->with('error', 'Only pending payroll requests can be rejected.');
+            return back()->with('error', 'Only pending payroll requests can be declined.');
         }
 
         $validated = $request->validate([
@@ -340,8 +340,8 @@ class AccountingController extends Controller
 
         if ($recipient = $this->resolveRequester($payroll)) {
             $recipient->notify(new AccountingRejectedNotification(
-                'Payroll Request Rejected',
-                "Accounting rejected the payroll request for {$payroll->month}. Reason: {$validated['reason']}",
+                'Payroll Request Declined',
+                "Accounting declined the payroll request for {$payroll->month}. Reason: {$validated['reason']}",
                 route('hr.index'),
                 'payroll',
                 $payroll->id,
@@ -349,7 +349,7 @@ class AccountingController extends Controller
             ));
         }
 
-        return back()->with('success', 'Payroll rejected.');
+        return back()->with('success', 'Payroll request declined.');
     }
 
     public function updateBaseFunds(Request $request) 

@@ -23,7 +23,7 @@ class EnsureNotBanned
                 $request->session()->regenerateToken();
 
                 return redirect()->route('login')->withErrors([
-                    'email' => 'This account has been suspended or banned by an administrator.'
+                    'email' => 'This account has been suspended or deactivated.'
                 ]);
             }
         }

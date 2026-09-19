@@ -37,7 +37,7 @@
             </div>
 
             <p style="font-size: 12px; color: #8C827A; margin-top: 24px; line-height: 1.4;">
-                Do not share this OTP with anyone. It is strictly for your individual staff attendance session.
+                Do not share this security code with anyone. It is strictly for your individual staff attendance session.
             </p>
         </div>
         <div style="background-color: #F7F4F0; border-top: 1px solid #E7E1D8; padding: 28px; text-align: center; font-size: 12px; color: #8C827A; line-height: 1.5;">

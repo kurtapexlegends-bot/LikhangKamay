@@ -308,7 +308,7 @@ class AccountingTransparencyTest extends TestCase
         $this->actingAs($procurementStaff)
             ->post(route('accounting.approve', $stockRequest))
             ->assertRedirect()
-            ->assertSessionHas('error', 'Governance Control: Maker-Checker rule violation. You cannot approve a request you initiated.');
+            ->assertSessionHas('error', 'For security, you cannot approve a request that you submitted yourself.');
 
         $this->assertSame(StockRequest::STATUS_PENDING, $stockRequest->fresh()->status);
 
@@ -333,7 +333,7 @@ class AccountingTransparencyTest extends TestCase
         $this->actingAs($hrStaff)
             ->post(route('accounting.approvePayroll', $payroll))
             ->assertRedirect()
-            ->assertSessionHas('error', 'Governance Control: Maker-Checker rule violation. You cannot approve a request you initiated.');
+            ->assertSessionHas('error', 'For security, you cannot approve a request that you submitted yourself.');
 
         $this->assertSame('Pending', $payroll->fresh()->status);
 

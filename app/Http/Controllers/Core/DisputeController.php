@@ -158,7 +158,7 @@ class DisputeController extends Controller
                 $validated['admin_notes'],
                 $actor
             );
-            return back()->with('success', 'Arbitration decision registered successfully.');
+            return back()->with('success', 'Dispute decision registered successfully.');
         } catch (\Throwable $e) {
             Log::error("Admin arbitration failed: " . $e->getMessage());
             return back()->withErrors(['message' => $e->getMessage()]);

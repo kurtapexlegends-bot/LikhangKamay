@@ -56,21 +56,21 @@ class ProductModerationNotification extends Notification
 
         $statusLabel = match($statusKey) {
             'approved' => 'Approved',
-            'rejected' => 'Rejected',
+            'rejected' => 'Needs Revision',
             'flagged' => 'Flagged',
             default => ucfirst($statusKey),
         };
 
         $message = match($statusKey) {
             'approved' => "Your product listing for '{$this->product->name}' has been approved and is now active in the marketplace.",
-            'rejected' => "Your product listing for '{$this->product->name}' was rejected. Feedback: " . ($this->feedback ?: 'No feedback provided.'),
+            'rejected' => "Your product listing for '{$this->product->name}' needs revision. Feedback: " . ($this->feedback ?: 'No feedback provided.'),
             'flagged' => "Your product listing for '{$this->product->name}' has been flagged. Feedback: " . ($this->feedback ?: 'Please review marketplace guidelines.'),
             default => "Your product listing for '{$this->product->name}' status updated to {$statusLabel}.",
         };
 
         return [
             'type' => 'product_moderation',
-            'title' => "Listing {$statusLabel}",
+            'title' => $statusKey === 'rejected' ? 'Listing Needs Revision' : "Listing {$statusLabel}",
             'message' => $message,
             'url' => route('products.index'),
             'product_id' => $this->product->id,

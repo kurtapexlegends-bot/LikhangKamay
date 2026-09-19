@@ -401,7 +401,7 @@
             <td class="totals-box">
                 <table class="totals-table">
                     <tr>
-                        <td class="label">Merchandise Subtotal:</td>
+                        <td class="label">Items Subtotal:</td>
                         <td class="value">&#8369;{{ number_format($order->merchandise_subtotal, 2) }}</td>
                     </tr>
                     <tr>
@@ -409,7 +409,7 @@
                         <td class="value">&#8369;{{ number_format($order->shipping_fee_amount, 2) }}</td>
                     </tr>
                     <tr>
-                        <td class="label">Convenience Fee:</td>
+                        <td class="label">Service Fee:</td>
                         <td class="value">&#8369;{{ number_format($order->convenience_fee_amount, 2) }}</td>
                     </tr>
                     <tr class="total-row">

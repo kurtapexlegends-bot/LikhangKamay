@@ -151,8 +151,8 @@ class SellerRespondToDispute
                     'event_type' => 'dispute_rejected',
                     'severity' => 'warning',
                     'status' => 'refund_return',
-                    'title' => 'Dispute Rejected by Seller',
-                    'summary' => "Seller rejected return request for Order #{$order->order_number}.",
+                    'title' => 'Return Request Declined',
+                    'summary' => "The shop declined the return request for Order #{$order->order_number}.",
                     'subject_type' => Order::class,
                     'subject_id' => $order->id,
                     'subject_label' => $order->order_number,
@@ -165,8 +165,8 @@ class SellerRespondToDispute
                 if ($buyer) {
                     $buyer->notify(new DisputeStatusNotification(
                         'dispute_rejected',
-                        'Dispute Request Rejected',
-                        "Seller rejected the return request for Order #{$order->order_number}. You can escalate to admin support.",
+                        'Return Request Declined',
+                        "The shop declined the return request for Order #{$order->order_number}. You can ask support for help.",
                         route('my-orders.index')
                     ));
                     $this->sendMailSilently($buyer->email, new \App\Mail\ReturnRequestRejected($order, $sellerExplanation));

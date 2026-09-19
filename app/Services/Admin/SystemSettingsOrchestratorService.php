@@ -188,7 +188,7 @@ class SystemSettingsOrchestratorService
         if (array_key_exists('convenience_fee', $validated) && (float)$this->settings->get('convenience_fee') !== (float)$validated['convenience_fee']) {
             PlatformActivity::log(
                 'CONVENIENCE_FEE_UPDATE',
-                "Changed site-wide convenience fee rate from " . $this->settings->get('convenience_fee') . "% to " . $validated['convenience_fee'] . "%",
+                "Changed site-wide service fee rate from " . $this->settings->get('convenience_fee') . "% to " . $validated['convenience_fee'] . "%",
                 ['previous' => $this->settings->get('convenience_fee') . '%', 'updated' => $validated['convenience_fee'] . '%']
             );
         }
@@ -526,7 +526,7 @@ class SystemSettingsOrchestratorService
             'value' => $totalPlatformFees,
             'growth' => round($feesGrowth, 1),
             'trend' => $feesGrowth > 0 ? 'up' : ($feesGrowth < 0 ? 'down' : 'neutral'),
-            'basis' => 'Cumulative commission and convenience fees collected from successful orders.',
+            'basis' => 'Cumulative commission and service fees collected from successful orders.',
         ];
 
         return [

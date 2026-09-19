@@ -27,7 +27,7 @@ class ProductModerationResult extends Mailable
     {
         $statusLabel = match($this->status) {
             'approve', 'approved' => 'Approved',
-            'reject', 'rejected' => 'Rejected',
+            'reject', 'rejected' => 'Needs Revision',
             'flag', 'flagged' => 'Flagged',
             default => ucfirst($this->status),
         };

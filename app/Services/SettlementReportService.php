@@ -189,7 +189,7 @@ class SettlementReportService
 
             // 3. Itemized Completed Orders
             fputcsv($handle, ['COMPLETED RETAIL & B2B ORDERS']);
-            fputcsv($handle, ['Order Number', 'Date', 'Customer Name', 'Payment Method', 'Gross (PHP)', 'Shipping Fee', 'Platform Fee', 'Seller Net (PHP)']);
+            fputcsv($handle, ['Order Number', 'Date', 'Customer Name', 'Payment Method', 'Gross (PHP)', 'Shipping Fee', 'Commission', 'Seller Net (PHP)']);
             foreach ($data['orders'] as $order) {
                 fputcsv($handle, [
                     $order['order_number'],

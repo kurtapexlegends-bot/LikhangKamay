@@ -126,7 +126,7 @@ class SuperAdminController extends Controller
     {
         $rejectArtisan->execute($id, strip_tags((string) $request->validated('reason')));
 
-        return back()->with('success', 'Artisan application rejected.');
+        return back()->with('success', 'Artisan application returned for revision.');
     }
 
     /**
@@ -188,7 +188,7 @@ class SuperAdminController extends Controller
         UserDisciplinaryService $disciplinaryService
     ) {
         if ($user->isAdmin()) {
-            return back()->withErrors(['error' => 'You cannot discipline an administrator account.']);
+            return back()->withErrors(['error' => 'You cannot modify an administrator account status.']);
         }
 
         $validated = $request->validated();
@@ -233,7 +233,7 @@ class SuperAdminController extends Controller
         Gate::authorize('admin-action');
 
         if ($user->isAdmin()) {
-            return back()->withErrors(['error' => 'You cannot suspend or ban an administrator account.']);
+            return back()->withErrors(['error' => 'You cannot suspend or deactivate an administrator account.']);
         }
 
         $this->superAdminService->toggleUserStatus($user, (int) Auth::id());
