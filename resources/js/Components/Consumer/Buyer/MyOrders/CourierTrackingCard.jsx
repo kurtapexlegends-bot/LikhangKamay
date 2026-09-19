@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Truck, ExternalLink, ChevronDown, ChevronRight, Hash, Clock, AlertTriangle, Map, Phone, MessageSquare } from 'lucide-react';
-import { buyerCourierTrackingState } from '@/utils/orderHelpers';
+import { Truck, ExternalLink, ChevronDown, ChevronRight, Hash, Clock, AlertTriangle, Map, Phone, MessageSquare, PackageCheck } from 'lucide-react';
+import { buyerCourierTrackingState, humanizeAddressType, buyerProofLabel } from '@/utils/orderHelpers';
 import BuyerDeliveryTrackingMap from './BuyerDeliveryTrackingMap';
 
 export default function CourierTrackingCard({ order, isExpanded, onToggle }) {
@@ -19,43 +19,84 @@ export default function CourierTrackingCard({ order, isExpanded, onToggle }) {
     const driverPhone = delivery.driver_phone;
 
     return (
-        <div className="rounded-2xl border border-stone-200/80 bg-stone-50/70 overflow-hidden shadow-2xs transition-colors hover:border-clay-300 mt-2.5">
+        <div className="rounded-xl border border-stone-200/80 bg-stone-50/70 overflow-hidden shadow-2xs transition-colors hover:border-clay-300">
             {/* Header / Summary Bar */}
-            <div className="p-2.5 sm:p-3 flex items-center justify-between gap-2.5 flex-wrap sm:flex-nowrap">
+            <div className="p-2.5 sm:p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                 <div 
                     onClick={onToggle}
-                    className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer select-none"
+                    className="flex items-start gap-2.5 min-w-0 flex-1 cursor-pointer select-none"
                 >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-clay-100 text-clay-700 border border-clay-200/80">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-clay-100 text-clay-700 border border-clay-200/80 mt-0.5 shadow-2xs">
                         <Truck size={15} />
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 space-y-0.5">
                         <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[11px] font-extrabold text-stone-900 truncate">
-                                {isExpanded && isMapVisible ? 'Courier Tracking' : driverName}
+                                {delivery.provider === 'lalamove' ? 'Lalamove Delivery' : driverName}
                             </span>
+                            {order.shipping_address_type && (
+                                <span className="inline-flex rounded border border-stone-200 bg-white px-1.5 py-0 text-[9px] font-bold uppercase tracking-wide text-stone-600">
+                                    {humanizeAddressType(order.shipping_address_type)}
+                                </span>
+                            )}
                             {vehiclePlate && !(isExpanded && isMapVisible) && (
-                                <span className="rounded bg-white border border-stone-200 px-1.5 py-0.2 text-[9px] font-mono font-bold text-stone-600">
+                                <span className="rounded bg-white border border-stone-200 px-1.5 py-0 text-[9px] font-mono font-bold text-stone-600">
                                     {vehiclePlate}
                                 </span>
                             )}
-                            <span className={`inline-flex items-center rounded-md border px-1.5 py-0.2 text-[9px] font-bold shadow-2xs ${trackingState.tone}`}>
+                            <span className={`inline-flex items-center rounded-md border px-1.5 py-0 text-[9px] font-bold shadow-2xs ${trackingState.tone}`}>
                                 {trackingState.label}
                             </span>
                             {isReplacementExchange && (
-                                <span className="inline-flex rounded-md border border-teal-200 bg-teal-50 px-1.5 py-0.2 text-[9px] font-bold text-teal-700">
+                                <span className="inline-flex rounded-md border border-teal-200 bg-teal-50 px-1.5 py-0 text-[9px] font-bold text-teal-700">
                                     {delivery.flow_label || 'Replacement'}
                                 </span>
                             )}
                         </div>
-                        <p className="text-[10px] text-stone-500 truncate mt-0.5">
-                            {trackingState.detail}
+
+                        {/* Address and recipient line */}
+                        <p className="text-[10px] text-stone-600 leading-snug truncate sm:max-w-xl">
+                            {order.shipping_address}
+                            {(order.shipping_recipient_name || order.shipping_contact_phone) && (
+                                <span className="text-stone-400">
+                                    {' • '}
+                                    {order.shipping_recipient_name}
+                                    {order.shipping_recipient_name && order.shipping_contact_phone ? ' (' : ''}
+                                    {order.shipping_contact_phone}
+                                    {order.shipping_recipient_name && order.shipping_contact_phone ? ')' : ''}
+                                </span>
+                            )}
                         </p>
+
+                        {/* Tracking metadata and proof link */}
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                            {order.tracking_number && (
+                                <span className="text-[9.5px] text-stone-500 font-medium">
+                                    Tracker: <strong className="font-mono text-stone-700">{order.tracking_number}</strong>
+                                </span>
+                            )}
+                            {order.shipping_notes && (
+                                <span className="text-[9.5px] text-stone-500">
+                                    • Note: <span className="text-stone-700">{order.shipping_notes}</span>
+                                </span>
+                            )}
+                            {order.proof_of_delivery && (
+                                <a 
+                                    href={order.proof_of_delivery} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-0.5 text-[9.5px] font-bold text-stone-700 hover:bg-stone-100 transition shadow-2xs"
+                                >
+                                    <PackageCheck size={10} className="text-clay-600" /> {buyerProofLabel(order)}
+                                </a>
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 {/* Header Action Controls */}
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 self-end md:self-center">
                     <button
                         type="button"
                         onClick={() => {

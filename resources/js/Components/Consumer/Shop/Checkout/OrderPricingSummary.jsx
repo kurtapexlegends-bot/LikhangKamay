@@ -64,12 +64,12 @@ export default function OrderPricingSummary({
                             {!showAggregateBreakdown && (
                                 <>
                                     <div className="flex justify-between">
-                                        <span>Merchandise</span>
+                                        <span>Items</span>
                                         <span className="font-semibold text-stone-800">{peso(group.subtotal)}</span>
                                     </div>
                                     {shippingMethod === 'Delivery' && (
                                         <div className="flex justify-between">
-                                            <span>Platform Fee ({parseFloat((convenienceFeeRate * 100).toFixed(2))}%)</span>
+                                            <span>Delivery & Handling Care ({parseFloat((convenienceFeeRate * 100).toFixed(2))}%)</span>
                                             <span className="font-semibold text-stone-800">{peso(group.platformFee)}</span>
                                         </div>
                                     )}
@@ -142,11 +142,11 @@ export default function OrderPricingSummary({
                 {showAggregateBreakdown && (
                     <>
                         <div className="flex justify-between">
-                            <span>Merchandise Subtotal</span>
+                            <span>Items Subtotal</span>
                             <span className="font-semibold text-stone-900">{peso(summary.merchandiseSubtotal)}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span>Platform Fee ({parseFloat((convenienceFeeRate * 100).toFixed(2))}%)</span>
+                            <span>Delivery & Handling Care ({parseFloat((convenienceFeeRate * 100).toFixed(2))}%)</span>
                             <span className="font-semibold text-stone-900">{peso(summary.platformFeeTotal)}</span>
                         </div>
                         <div className="flex justify-between">

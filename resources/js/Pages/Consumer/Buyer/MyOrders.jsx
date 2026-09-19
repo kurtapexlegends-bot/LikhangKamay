@@ -207,8 +207,8 @@ export default function MyOrders({ auth, orders }) {
                         <div className="flex items-center gap-2.5">
                             <Store size={18} className="text-clay-600 shrink-0" />
                             <div>
-                                <span className="font-bold text-stone-900 block">Artisan Workshop Procurement & Purchases</span>
-                                <span className="text-stone-500">Confirming delivery receipt of raw materials will automatically restock your Studio Materials Inventory.</span>
+                                <span className="font-bold text-stone-900 block">Workshop Materials & Supplies</span>
+                                <span className="text-stone-500">Confirming delivery of supplies will automatically add them to your inventory.</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -223,7 +223,7 @@ export default function MyOrders({ auth, orders }) {
                                 href={route('procurement.index')}
                                 className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-50 shrink-0 transition-colors"
                             >
-                                <span>Studio Inventory</span>
+                                <span>Inventory</span>
                             </Link>
                         </div>
                     </div>
@@ -356,7 +356,7 @@ export default function MyOrders({ auth, orders }) {
                         </div>
 
                         {/* --- ORDER LIST --- */}
-                        <div className="space-y-8">
+                        <div className="space-y-4 sm:space-y-5">
                             {filteredOrders.length > 0 ? (
                                 paginatedOrders.map((order) => (
                                     <OrderListItemCard

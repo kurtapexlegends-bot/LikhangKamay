@@ -58,14 +58,14 @@ export default function useOrderManagerActions({
             message = "This will cancel the order and approve the refund. This action cannot be undone.";
             isDestructive = true;
         } else if (newStatus === "Rejected") {
-            title = "Reject Order";
-            message = "Are you sure you want to reject this order?";
+            title = "Decline Order";
+            message = "Are you sure you want to decline this order?";
             isDestructive = true;
         } else if (newStatus === "Completed") {
             const order = paginatedOrders.find(o => o.id === orderId);
             if (order && order.status === "Refund/Return") {
-                title = "Reject Return Request";
-                message = "This will reject the buyer's return request and mark the order as completed.";
+                title = "Decline Return Request";
+                message = "This will decline the buyer's return request and mark the order as completed.";
                 isDestructive = true;
             } else {
                 title = "Complete Transaction";
@@ -171,7 +171,7 @@ export default function useOrderManagerActions({
         if (!canEditOrders) return;
         const { disputeId, responseType, sellerExplanation, sellerProposedDescription } = disputeModalState;
         if (responseType === 'reject' && !sellerExplanation.trim()) {
-            setDisputeModalState(prev => ({ ...prev, error: "Please provide an explanation for rejecting the dispute." }));
+            setDisputeModalState(prev => ({ ...prev, error: "Please provide an explanation for declining the dispute." }));
             return;
         }
         if (responseType === 'replacement' && !sellerProposedDescription.trim()) {

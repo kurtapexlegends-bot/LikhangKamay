@@ -47,7 +47,7 @@ export const typeTone = (type) => {
 export const reviewLabel = (status) => {
     const normalized = String(status || '').toLowerCase();
 
-    if (normalized === 'rejected') return 'Rejected';
+    if (normalized === 'rejected') return 'Declined';
     if (['paid', 'completed', 'accounting_approved', 'ordered', 'received', 'partially_received'].includes(normalized)) return 'Approved';
 
     return 'Pending Review';

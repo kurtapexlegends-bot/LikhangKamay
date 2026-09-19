@@ -3,6 +3,11 @@ import { Activity, ExternalLink } from 'lucide-react';
 import OrderTimeline from '@/Components/Consumer/Buyer/MyOrders/OrderTimeline';
 
 export default function OrderCardTimeline({ order, isTimelineExpanded, toggleOrderExpansion }) {
+    // Suppress timeline banner during refund/replacement/terminal states - already cleanly badged in header and dispute card
+    if (['Refund/Return', 'Refunded', 'Replaced', 'Cancelled', 'Rejected'].includes(order.status)) {
+        return null;
+    }
+
     return (
         <div className="border-b border-stone-50">
             <button 

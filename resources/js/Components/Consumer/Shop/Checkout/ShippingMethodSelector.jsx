@@ -41,7 +41,7 @@ export default function ShippingMethodSelector({ shippingMethod, setShippingMeth
                     />
                     <div>
                         <p className="font-bold text-stone-900 text-sm">Standard Delivery</p>
-                        <p className="text-xs text-stone-500 mt-1 leading-relaxed">Convenience fee applies per seller order subtotal.</p>
+                        <p className="text-xs text-stone-500 mt-1 leading-relaxed">Service fee applies per seller order subtotal.</p>
                     </div>
                 </label>
                 
@@ -60,7 +60,7 @@ export default function ShippingMethodSelector({ shippingMethod, setShippingMeth
                     />
                     <div>
                         <p className="font-bold text-stone-900 text-sm">Store Pick Up</p>
-                        <p className="text-xs text-stone-500 mt-1 leading-relaxed">No convenience fee. COD only. Coordinate physical pickup details directly.</p>
+                        <p className="text-xs text-stone-500 mt-1 leading-relaxed">No service fee. COD only. Coordinate physical pickup details directly.</p>
                     </div>
                 </label>
             </div>

@@ -48,7 +48,7 @@ export default function OrderTimeline({ status, isPickup }) {
             <div className="flex items-center justify-center py-4 bg-gray-50 border-t border-b border-gray-100">
                 <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full">
                     <XCircle size={16} className="text-gray-500" />
-                    <span className="text-sm font-bold text-gray-600">Order {status}</span>
+                    <span className="text-sm font-bold text-gray-600">Order {status === 'Rejected' ? 'Declined' : status}</span>
                 </div>
             </div>
         );

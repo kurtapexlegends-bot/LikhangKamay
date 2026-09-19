@@ -5,7 +5,7 @@
 export const moderationStatusLabel = (status) => {
     if (status === 'resolved') return 'Request approved';
     if (status === 'under_review') return 'Under review';
-    if (status === 'rejected') return 'Request rejected';
+    if (status === 'rejected') return 'Request declined';
     return 'Pending review';
 };
 

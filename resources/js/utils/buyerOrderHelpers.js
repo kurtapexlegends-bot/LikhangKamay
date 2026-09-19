@@ -57,9 +57,9 @@ export const deliveryStatusConfig = (status) => {
             detail: 'Courier canceled the delivery.',
         },
         REJECTED: {
-            label: 'Rejected',
+            label: 'Declined',
             tone: 'border-red-200 bg-red-50 text-red-700',
-            detail: 'Lalamove rejected the delivery request.',
+            detail: 'Courier could not accept the delivery request.',
         },
         EXPIRED: {
             label: 'Expired',
@@ -85,7 +85,7 @@ export const buyerCourierTrackingState = (order) => {
             label: isReplacementExchange ? 'Exchange Completed' : 'Awaiting Your Confirmation',
             tone: 'border-emerald-200 bg-emerald-50 text-emerald-700',
             detail: isReplacementExchange
-                ? 'Courier completed the replacement exchange. Confirm receipt once the replacement item is safely with you.'
+                ? 'Courier completed the item exchange. Confirm receipt once the replacement item is safely with you.'
                 : 'Courier completed delivery. Confirm receipt once the order is safely with you.',
         };
     }
@@ -96,7 +96,7 @@ export const buyerCourierTrackingState = (order) => {
             label: isReplacementExchange ? 'Exchange Resolved' : 'Delivered',
             tone: 'border-green-200 bg-green-50 text-green-700',
             detail: isReplacementExchange
-                ? 'Courier completed the replacement exchange and you already confirmed receipt.'
+                ? 'Courier completed the item exchange and you already confirmed receipt.'
                 : 'Courier completed delivery and you already confirmed receipt.',
         };
     }
@@ -104,7 +104,8 @@ export const buyerCourierTrackingState = (order) => {
     if (isReplacementExchange) {
         return {
             ...base,
-            detail: 'Replacement exchange is in progress. Courier will deliver the replacement item and return the rejected item to the seller.',
+            label: 'Exchanging Item',
+            detail: 'Item exchange in progress. Courier will deliver the replacement item and return the original item to the seller.',
         };
     }
 
@@ -205,6 +206,26 @@ export const buyerDeliverySummary = (order) => {
         };
     }
 
+    if (order.status === 'Pending') {
+        const isPaid = String(order.payment_status || '').toLowerCase() === 'paid';
+        if (!isPaid) {
+            return {
+                tone: 'border-amber-100 bg-amber-50',
+                title: 'Awaiting payment',
+                detail: 'Please complete your payment so the artisan shop can confirm and prepare your order.',
+                latestEvent,
+                latestEventTime,
+            };
+        }
+        return {
+            tone: 'border-amber-100 bg-amber-50',
+            title: 'Order placed',
+            detail: 'Payment received. Awaiting seller confirmation.',
+            latestEvent,
+            latestEventTime,
+        };
+    }
+
     return {
         tone: 'border-stone-100 bg-stone-50',
         title: 'Order update pending',
@@ -253,7 +274,7 @@ export const buyerIssueSummary = (order) => {
             tone = 'border-stone-200 bg-stone-50';
             badgeTone = 'border-stone-200 bg-white text-stone-700';
         } else if (dispute.status === 'resolved_replacement') {
-            title = 'Replacement Exchange Started';
+            title = 'Item Exchange Started';
             detail = 'You accepted the replacement offer. The seller is preparing your replacement item.';
             tone = 'border-teal-200 bg-teal-50';
             badgeTone = 'border-teal-200 bg-white text-teal-700';
@@ -297,7 +318,7 @@ export const buyerIssueSummary = (order) => {
             icon: PackageCheck,
             title: 'Replacement approved',
             detail: order.delivery?.flow_type === 'replacement_exchange'
-                ? 'Courier will deliver the replacement to you and return the rejected item to the seller.'
+                ? 'Courier will deliver the replacement to you and return the original item to the seller.'
                 : 'The seller approved a replacement. Wait for the replacement item, then confirm receipt once it arrives.',
             timestampLabel: 'Approved',
             timestampValue: order.replacement_started_at,

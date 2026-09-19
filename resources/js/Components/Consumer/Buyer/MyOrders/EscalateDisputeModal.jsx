@@ -33,11 +33,11 @@ export default function EscalateDisputeModal({ isOpen, onClose, disputeId }) {
     const renderFormContent = () => (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-                <label className="block text-sm font-bold text-stone-700 mb-1">Reason for Escalation</label>
+                <label className="block text-sm font-bold text-stone-700 mb-1">Reason for Support Help</label>
                 <textarea
                     className="w-full border-stone-300 rounded-xl focus:ring-amber-500 focus:border-amber-500 shadow-sm text-sm"
                     rows="4"
-                    placeholder="Explain the situation clearly (e.g., seller proposed replacement but I prefer refund, or seller rejected but product is damaged)..."
+                    placeholder="Explain the situation clearly (e.g., seller proposed replacement but I prefer refund, or item arrived damaged)..."
                     value={data.escalation_reason}
                     onChange={(e) => setData('escalation_reason', e.target.value)}
                     required
@@ -59,7 +59,7 @@ export default function EscalateDisputeModal({ isOpen, onClose, disputeId }) {
                     disabled={processing}
                     className="flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-6 py-2 font-bold text-white shadow-lg shadow-amber-200 transition hover:bg-amber-700 disabled:opacity-50 min-h-[44px] sm:min-h-[38px]"
                 >
-                    {processing ? 'Escalating...' : 'Confirm Escalation'}
+                    {processing ? 'Submitting...' : 'Ask Support'}
                 </button>
             </div>
         </form>
@@ -70,11 +70,11 @@ export default function EscalateDisputeModal({ isOpen, onClose, disputeId }) {
             <SlideOverDrawer
                 show={isOpen}
                 onClose={onClose}
-                title="Escalate Dispute"
+                title="Ask Support"
                 widthClass="max-w-md"
             >
                 <div className="space-y-4">
-                    <p className="text-sm text-stone-500">Provide details on why you are escalating this dispute.</p>
+                    <p className="text-sm text-stone-500">Explain what happened so our team can help resolve this fairly.</p>
                     {renderFormContent()}
                 </div>
             </SlideOverDrawer>
@@ -89,8 +89,8 @@ export default function EscalateDisputeModal({ isOpen, onClose, disputeId }) {
                         <AlertTriangle size={24} />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-stone-900">Escalate Dispute</h2>
-                        <p className="text-sm text-stone-500">Provide details on why you are escalating this dispute.</p>
+                        <h2 className="text-xl font-bold text-stone-900">Ask Support</h2>
+                        <p className="text-sm text-stone-500">Explain what happened so our team can help resolve this fairly.</p>
                     </div>
                 </div>
                 {renderFormContent()}

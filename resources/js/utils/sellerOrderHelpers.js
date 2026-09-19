@@ -39,9 +39,9 @@ export const lalamoveStatusConfig = (status) => {
             detail: "Courier canceled the delivery.",
         },
         REJECTED: {
-            label: "Rejected",
+            label: "Declined",
             tone: "border-red-200 bg-red-50 text-red-700",
-            detail: "Lalamove rejected the delivery request.",
+            detail: "Courier could not accept the delivery request.",
         },
         EXPIRED: {
             label: "Expired",
@@ -75,7 +75,7 @@ export const sellerCourierTrackingState = (order) => {
                 : "Awaiting Buyer",
             tone: "border-emerald-200 bg-emerald-50 text-emerald-700",
             detail: isReplacementExchange
-                ? "Courier completed the replacement exchange. Waiting for the buyer to confirm receipt of the replacement item."
+                ? "Courier completed the item exchange. Waiting for the buyer to confirm receipt of the replacement item."
                 : "Courier completed delivery. Waiting for the buyer to confirm receipt.",
         };
     }
@@ -91,7 +91,7 @@ export const sellerCourierTrackingState = (order) => {
                 : "Buyer Confirmed",
             tone: "border-green-200 bg-green-50 text-green-700",
             detail: isReplacementExchange
-                ? "Courier completed the replacement exchange and the buyer already confirmed receipt."
+                ? "Courier completed the item exchange and the buyer already confirmed receipt."
                 : "Courier completed delivery and the buyer already confirmed receipt.",
         };
     }
@@ -99,7 +99,8 @@ export const sellerCourierTrackingState = (order) => {
     if (isReplacementExchange) {
         return {
             ...base,
-            detail: "Replacement exchange is in progress. Courier will deliver the replacement and return the rejected item to the seller.",
+            label: "Exchanging Item",
+            detail: "Item exchange in progress. Courier will deliver the replacement and return the original item to the seller.",
         };
     }
 

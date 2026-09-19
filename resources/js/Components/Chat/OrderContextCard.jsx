@@ -404,7 +404,7 @@ export function SellerOrderActionBar({ order, onApprove, onReject }) {
                             className="flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 shadow-sm transition-all hover:bg-red-50 hover:text-red-700 active:scale-[0.98]"
                         >
                             <XCircle size={18} />
-                            Reject Order
+                            Decline Order
                         </button>
                     </div>
                 ) : (

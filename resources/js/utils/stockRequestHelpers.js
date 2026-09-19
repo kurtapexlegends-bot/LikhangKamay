@@ -11,7 +11,7 @@ export const STATUS_TABS = [
     { id: 'partially_received', label: 'Partially Received', icon: PackageCheck },
     { id: 'received', label: 'In Buffer', icon: Inbox },
     { id: 'completed', label: 'Completed', icon: CheckCircle },
-    { id: 'rejected', label: 'Rejected', icon: XCircle },
+    { id: 'rejected', label: 'Declined', icon: XCircle },
 ];
 
 const pesoFormatter = new Intl.NumberFormat('en-PH', {
@@ -42,7 +42,7 @@ export const STATUS_LABELS = {
     'partially_received': 'Partially Received',
     'received': 'In Buffer',
     'completed': 'Completed',
-    'rejected': 'Rejected',
+    'rejected': 'Declined',
 };
 
 export const getStatusBadgeDotColor = (status) => {

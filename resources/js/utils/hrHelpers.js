@@ -25,7 +25,7 @@ export const FALLBACK_MODULES = [
     { key: 'overview', label: 'Overview', description: 'Seller dashboard overview.' },
     { key: 'products', label: 'Products', description: 'Product manager and stock actions.' },
     { key: 'analytics', label: 'Analytics', description: 'Sales and product performance reports.' },
-    { key: '3d', label: '3D Manager', description: '3D asset uploads and management.' },
+    { key: '3d', label: '3D Models', description: '3D model uploads and management.' },
     { key: 'orders', label: 'Orders', description: 'Order processing and status updates.' },
     { key: 'messages', label: 'Messages', description: 'Buyer inbox and seller order conversations.' },
     { key: 'team_messages', label: 'Team Inbox', description: 'Internal seller workspace conversations.' },

@@ -35,7 +35,7 @@ export default function TermsOfService() {
         {
             title: "Purchases and Payments",
             icon: CreditCard,
-            content: "All prices are displayed in Philippine Peso (₱) and are inclusive of applicable taxes unless otherwise stated. We accept secure payment methods including Cash on Delivery (COD) and digital payments (GCash, Maya, cards via PayMongo). A transparent platform convenience fee applies to checkout orders to cover secure payment gateway processing and infrastructure. Once an order is confirmed, it constitutes a binding agreement between buyer and artisan."
+            content: "All prices are displayed in Philippine Peso (₱) and are inclusive of applicable taxes unless otherwise stated. We accept secure payment methods including Cash on Delivery (COD) and digital payments (GCash, Maya, cards via PayMongo). A transparent service fee applies to checkout orders to cover payment gateway processing and platform support. Once an order is confirmed, it constitutes a binding agreement between buyer and artisan."
         },
         {
             title: "Shipping and Delivery",
@@ -55,7 +55,7 @@ export default function TermsOfService() {
         {
             title: "User Conduct & Disciplinary Action",
             icon: AlertOctagon,
-            content: "Users agree not to post fraudulent information, harass others, manipulate reviews, or conduct off-platform fee circumvention. LikhangKamay enforces a 3-step disciplinary model: (1) Formal Warning with educational notice, (2) Temporary Suspension (3–30 days) pausing checkout, review submissions, or storefront discovery, and (3) Permanent Ban. Zero-tolerance offenses (payment fraud, severe harassment, counterfeit goods) bypass progressive strikes and result in immediate permanent termination."
+            content: "Users agree not to post fraudulent information, harass others, manipulate reviews, or conduct off-platform fee circumvention. LikhangKamay enforces a 3-step disciplinary model: (1) Formal Warning with educational notice, (2) Temporary Suspension (3–30 days) pausing checkout, review submissions, or storefront discovery, and (3) Permanent Deactivation. Zero-tolerance offenses (payment fraud, severe harassment, counterfeit goods) bypass progressive strikes and result in immediate permanent account deactivation."
         },
         {
             title: "Intellectual Property",

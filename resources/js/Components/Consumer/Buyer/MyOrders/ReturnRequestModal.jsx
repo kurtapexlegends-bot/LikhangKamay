@@ -77,7 +77,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
             <div>
                 <label className="block text-sm font-bold text-stone-700 mb-1">Reason for Return</label>
                 <textarea
-                    className="w-full border-stone-300 rounded-xl focus:ring-orange-500 focus:border-orange-500 shadow-sm text-sm"
+                    className="w-full border-stone-300 rounded-xl focus:ring-clay-500 focus:border-clay-500 shadow-sm text-sm"
                     rows="3"
                     placeholder="Describe what is wrong with the item (damaged, wrong item sent)..."
                     value={data.reason}
@@ -94,7 +94,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
                     <div className="space-y-1 text-center">
                         <UploadCloud className="mx-auto h-10 w-10 text-stone-400" />
                         <div className="flex text-sm text-stone-600 justify-center">
-                            <span className="relative rounded-md font-medium text-orange-600 hover:text-orange-500 focus-within:outline-none">
+                            <span className="relative rounded-md font-medium text-clay-600 hover:text-clay-500 focus-within:outline-none">
                                 <span>Upload images</span>
                                 <input 
                                     type="file" 
@@ -142,9 +142,9 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
                 <button
                     type="submit"
                     disabled={processing}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-2 font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600 disabled:opacity-50 min-h-[44px] sm:min-h-[38px]"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-clay-600 px-6 py-2 font-bold text-white shadow-md shadow-clay-200 transition hover:bg-clay-700 disabled:opacity-50 min-h-[44px] sm:min-h-[38px]"
                 >
-                    {processing ? 'Submitting...' : 'Submit Dispute'}
+                    {processing ? 'Submitting...' : 'Submit Return Request'}
                 </button>
             </div>
         </form>
@@ -155,7 +155,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
             <SlideOverDrawer
                 show={isOpen}
                 onClose={onClose}
-                title="Initiate Return Dispute"
+                title="Request Item Return"
                 widthClass="max-w-md"
             >
                 <div className="space-y-4">
@@ -170,11 +170,11 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
         <Modal show={isOpen} onClose={onClose} maxWidth="md">
             <div className="p-6">
                 <div className="flex items-center gap-3 mb-6">
-                    <div className="p-3 bg-orange-100 text-orange-600 rounded-full">
+                    <div className="p-3 bg-clay-100 text-clay-700 rounded-2xl">
                         <RotateCcw size={24} />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-stone-900">Initiate Return Dispute</h2>
+                        <h2 className="text-xl font-bold text-stone-900">Request Item Return</h2>
                         <p className="text-sm text-stone-500">Provide details and photos of the damaged item.</p>
                     </div>
                 </div>

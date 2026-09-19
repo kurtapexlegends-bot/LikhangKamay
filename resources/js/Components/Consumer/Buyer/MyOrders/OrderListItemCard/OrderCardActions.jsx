@@ -3,7 +3,7 @@ import React from 'react';
 import { router } from '@inertiajs/react';
 import { 
     Download, MessageCircle, CreditCard, XCircle, PackageCheck, 
-    CheckCircle, ShoppingBag, Star, RotateCcw, AlertTriangle, EllipsisVertical 
+    CheckCircle, ShoppingBag, Star, RotateCcw, AlertTriangle, EllipsisVertical, Clock 
 } from 'lucide-react';
 import Dropdown from '@/Components/Dropdown';
 
@@ -42,8 +42,8 @@ export default function OrderCardActions({
             type: 'link'
         });
 
-        // Chat (Only if order is not completed)
-        if (order.status !== 'Completed') {
+        // Chat (Only if order is not completed and not in Refund/Return)
+        if (order.status !== 'Completed' && order.status !== 'Refund/Return') {
             actions.push({
                 label: 'Chat',
                 icon: MessageCircle,
@@ -64,7 +64,7 @@ export default function OrderCardActions({
         }
 
         // Buy Again
-        if (order.status === 'Completed') {
+        if (['Completed', 'Cancelled', 'Rejected', 'Refunded', 'Replaced'].includes(order.status)) {
             actions.push({
                 label: 'Buy Again',
                 icon: ShoppingBag,
@@ -84,10 +84,10 @@ export default function OrderCardActions({
             });
         }
 
-        // Escalate to Admin
+        // Ask Support
         if (order.status === 'Refund/Return' && ['seller_proposed_replacement', 'seller_rejected'].includes(order.dispute?.status)) {
             actions.push({
-                label: 'Escalate to Admin',
+                label: 'Ask Support',
                 icon: AlertTriangle,
                 onClick: () => onOpenEscalateModal(order.dispute.id),
                 type: 'button',
@@ -113,19 +113,21 @@ export default function OrderCardActions({
         <div className="flex flex-row items-center justify-end gap-2 border-t border-stone-200/60 bg-stone-50/50 px-4 py-3 w-full">
             {/* --- DESKTOP FOOTER ACTIONS (Strictly Preserved) --- */}
             <div className="hidden sm:flex flex-row items-center gap-2 flex-wrap justify-end overflow-visible">
-                {/* Download Receipt */}
-                <a 
-                    href={`/my-orders/${order.id}/receipt?download=1`}
-                    target="_blank"
-                    rel="noreferrer"
-                    title="Download official order receipt"
-                    className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-4 text-[12px] font-bold text-stone-700 shadow-sm transition hover:border-clay-300 hover:bg-stone-50 min-h-[38px] cursor-pointer"
-                >
-                    <Download size={14} className="text-stone-500" /> Download Receipt
-                </a>
+                {/* Download Receipt (Desktop header already has receipt; footer only shows if not in active dispute) */}
+                {order.status !== 'Refund/Return' && (
+                    <a 
+                        href={`/my-orders/${order.id}/receipt?download=1`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="Download official order receipt"
+                        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3.5 text-[11px] font-bold text-stone-700 shadow-2xs transition hover:border-clay-300 hover:bg-stone-50 min-h-[36px] cursor-pointer"
+                    >
+                        <Download size={13} className="text-stone-500" /> Download Receipt
+                    </a>
+                )}
 
-                {/* Contact Seller */}
-                {order.status !== 'Completed' && (
+                {/* Contact Seller (Suppressed during Refund/Return to prevent duplicate with Negotiate Return) */}
+                {order.status !== 'Completed' && order.status !== 'Refund/Return' && (
                     <button 
                         onClick={() => onContactSeller(order.seller_id)}
                         className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-stone-200 bg-white rounded-lg text-[12px] font-bold text-stone-600 hover:bg-stone-50 hover:border-stone-300 transition shadow-sm min-h-[38px]"
@@ -169,16 +171,19 @@ export default function OrderCardActions({
                     </button>
                 )}
 
+                {/* Buy Again (Available for Completed, Cancelled, Declined, Refunded, Replaced) */}
+                {['Completed', 'Cancelled', 'Rejected', 'Refunded', 'Replaced'].includes(order.status) && (
+                    <button 
+                        onClick={() => onBuyAgain(order.id)}
+                        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-stone-200 bg-white text-stone-700 rounded-lg text-[12px] font-bold hover:bg-stone-50 hover:border-clay-300 transition shadow-2xs min-h-[38px]"
+                    >
+                        <ShoppingBag size={15} className="text-clay-600" /> Buy Again
+                    </button>
+                )}
+
                 {/* COMPLETED: Rate & Return */}
                 {order.status === 'Completed' && (
                     <>
-                        <button 
-                            onClick={() => onBuyAgain(order.id)}
-                            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-clay-200 bg-clay-50 text-clay-700 rounded-lg text-[12px] font-bold hover:bg-clay-100 transition shadow-sm min-h-[38px]"
-                        >
-                            <ShoppingBag size={15} /> Buy Again
-                        </button>
-
                         {(!order.replacement_in_progress && (
                             order.items.some(item => !item.is_rated) ||
                             order.items.some(item => item.review?.can_manage_review)
@@ -208,7 +213,7 @@ export default function OrderCardActions({
                         {order.dispute?.status === 'seller_proposed_replacement' && (
                             <button 
                                 onClick={() => router.post(route('disputes.react', order.dispute.id), { action: 'accept_replacement' })}
-                                className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-teal-600 text-white rounded-lg text-[12px] font-bold hover:bg-teal-700 shadow-md shadow-teal-200 transition-all hover:-translate-y-0.5 min-h-[38px] animate-pulse"
+                                className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-teal-700 text-white rounded-lg text-[12px] font-bold hover:bg-teal-800 shadow-md shadow-teal-200 transition-all hover:-translate-y-0.5 min-h-[38px]"
                             >
                                 <CheckCircle size={15} /> Accept Replacement
                             </button>
@@ -217,21 +222,27 @@ export default function OrderCardActions({
                         {['seller_proposed_replacement', 'seller_rejected'].includes(order.dispute?.status) && (
                             <button 
                                 onClick={() => onOpenEscalateModal(order.dispute.id)}
-                                className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-amber-200 bg-amber-50 text-amber-700 rounded-lg text-[12px] font-bold hover:bg-amber-100 transition shadow-sm min-h-[38px] animate-pulse"
+                                className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-amber-200 bg-amber-50 text-amber-800 rounded-lg text-[12px] font-bold hover:bg-amber-100 transition shadow-2xs min-h-[38px]"
                             >
-                                <AlertTriangle size={15} /> Escalate to Admin
+                                <AlertTriangle size={15} /> Ask Support
                             </button>
+                        )}
+
+                        {order.dispute?.status === 'escalated' && (
+                            <span className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-3.5 rounded-lg bg-stone-100 border border-stone-200 text-stone-500 text-[11px] font-bold shadow-2xs">
+                                <Clock size={13} /> Under Platform Review
+                            </span>
                         )}
 
                         <button 
                             onClick={() => onOpenModal('cancelReturn', order.id)}
-                            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-red-200 bg-red-50 text-red-600 rounded-lg text-[12px] font-bold hover:bg-red-100 transition shadow-sm min-h-[38px]"
+                            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-4 border border-rose-200 bg-rose-50 text-rose-700 rounded-lg text-[12px] font-bold hover:bg-rose-100 transition shadow-2xs min-h-[38px]"
                         >
                             <XCircle size={15} /> Cancel Return
                         </button>
                         <button 
                             onClick={() => onContactSeller(order.seller_id)}
-                            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-orange-500 text-white rounded-lg text-[12px] font-bold hover:bg-orange-600 shadow-md shadow-orange-200 transition-all hover:-translate-y-0.5 min-h-[38px]"
+                            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-clay-600 text-white rounded-lg text-[12px] font-bold hover:bg-clay-700 shadow-md shadow-clay-200 transition-all hover:-translate-y-0.5 min-h-[38px]"
                         >
                             <MessageCircle size={15} /> Negotiate Return
                         </button>
@@ -294,7 +305,7 @@ export default function OrderCardActions({
                 {(order.status === 'Refund/Return') && (
                     <button 
                         onClick={() => onContactSeller(order.seller_id)}
-                        className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-5 bg-orange-500 text-white rounded-lg text-[12px] font-bold hover:bg-orange-600 shadow-md shadow-orange-200 transition-all active:scale-95 min-h-[44px]"
+                        className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-5 bg-clay-600 text-white rounded-lg text-[12px] font-bold hover:bg-clay-700 shadow-md shadow-clay-200 transition-all active:scale-95 min-h-[44px]"
                     >
                         <MessageCircle size={15} /> Negotiate Return
                     </button>
@@ -316,13 +327,13 @@ export default function OrderCardActions({
                 )}
 
                 {/* Promoting Buy Again */}
-                {(order.status === 'Completed' && 
+                {(['Completed', 'Cancelled', 'Rejected', 'Refunded', 'Replaced'].includes(order.status) && 
                   !(order.status === 'Completed' && !order.replacement_in_progress && (order.items.some(item => !item.is_rated) || order.items.some(item => item.review?.can_manage_review)))) && (
                     <button 
                         onClick={() => onBuyAgain(order.id)}
-                        className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-4 border border-clay-200 bg-clay-50 text-clay-700 rounded-lg text-[12px] font-bold hover:bg-clay-100 transition shadow-sm active:scale-95 min-h-[44px]"
+                        className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-4 border border-stone-200 bg-white text-stone-700 rounded-lg text-[12px] font-bold hover:bg-stone-50 hover:border-clay-300 transition shadow-2xs active:scale-95 min-h-[44px]"
                     >
-                        <ShoppingBag size={15} /> Buy Again
+                        <ShoppingBag size={15} className="text-clay-600" /> Buy Again
                     </button>
                 )}
 
@@ -334,7 +345,7 @@ export default function OrderCardActions({
                          !(order.status === 'Refund/Return') &&
                          order.status !== 'Completed';
 
-                    const isBuyAgainPromoted = order.status === 'Completed' && 
+                    const isBuyAgainPromoted = ['Completed', 'Cancelled', 'Rejected', 'Refunded', 'Replaced'].includes(order.status) && 
                          !(order.status === 'Completed' && !order.replacement_in_progress && (order.items.some(item => !item.is_rated) || order.items.some(item => item.review?.can_manage_review)));
 
                     const finalMobileSecondaryActions = getMobileSecondaryActions().filter(act => {

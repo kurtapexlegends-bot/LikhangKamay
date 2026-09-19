@@ -79,6 +79,12 @@ const OrderStatusBadge = ({ status }) => {
             border: "border-red-200",
             icon: XCircle,
         },
+        Declined: {
+            bg: "bg-red-100",
+            text: "text-red-700",
+            border: "border-red-200",
+            icon: XCircle,
+        },
         Cancelled: {
             bg: "bg-gray-100",
             text: "text-gray-500",
@@ -100,7 +106,7 @@ const OrderStatusBadge = ({ status }) => {
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${bg} ${text} ${border} ${isUrgent ? "animate-pulse shadow-sm shadow-current/20" : ""}`}
         >
             <Icon size={12} />
-            {status}
+            {status === "Rejected" ? "Declined" : status}
         </span>
     );
 };

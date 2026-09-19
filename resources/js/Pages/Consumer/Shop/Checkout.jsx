@@ -325,10 +325,10 @@ export default function Checkout({ auth, pricing }) {
                         <img src="/images/logo.png" alt="Logo" className="h-9 w-9 object-contain transition group-hover:scale-105" />
                         <div>
                             <h1 className="font-serif text-xl font-bold text-stone-900 sm:text-2xl tracking-tight">
-                                {isArtisan ? 'Procurement Checkout' : 'Checkout'}
+                                {isArtisan ? 'Materials Checkout' : 'Checkout'}
                             </h1>
                             <p className="text-xs text-stone-500 mt-0.5">
-                                {isArtisan ? 'Artisan Workshop Sourcing & Raw Materials' : 'LikhangKamay Artisan Marketplace'}
+                                {isArtisan ? 'Workshop Supplies & Craft Materials' : 'LikhangKamay Artisan Marketplace'}
                             </p>
                         </div>
                     </Link>
@@ -339,9 +339,9 @@ export default function Checkout({ auth, pricing }) {
                     <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-4 text-xs text-stone-700 shadow-2xs flex items-start gap-3">
                         <Store size={18} className="text-clay-600 shrink-0 mt-0.5" />
                         <div className="space-y-0.5">
-                            <span className="font-bold text-stone-900 block">Artisan Workshop Procurement</span>
+                            <span className="font-bold text-stone-900 block">Workshop Materials Order</span>
                             <p className="text-stone-500">
-                                You are procuring supplies from peer artisan studios. Confirming delivery receipt will automatically record these items into your <strong className="text-stone-700 font-semibold">Studio Materials Inventory</strong>.
+                                You are buying supplies from fellow artisan studios. Confirming delivery receipt will automatically record these items into your <strong className="text-stone-700 font-semibold">Inventory</strong>.
                             </p>
                         </div>
                     </div>
@@ -371,10 +371,10 @@ export default function Checkout({ auth, pricing }) {
                                 <div className="flex items-start gap-3.5">
                                     <div className="rounded-xl bg-blue-100/60 p-2.5 text-blue-600"><Store size={20} /></div>
                                     <div>
-                                        <h3 className="text-base font-bold text-blue-900">Store Pick Up Selected</h3>
+                                        <h3 className="text-base font-bold text-blue-900">Store Pickup</h3>
                                         <p className="mt-1 text-sm text-blue-800">No delivery address is required. Coordinate pickup details with the artisan in chat after placing your order.</p>
                                         <div className="mt-3 flex flex-wrap gap-2">
-                                            <span className="rounded-lg bg-blue-100/50 px-2.5 py-1 text-xs font-semibold text-blue-800">No Platform Fee</span>
+                                            <span className="rounded-lg bg-blue-100/50 px-2.5 py-1 text-xs font-semibold text-blue-800">Zero Handling Fee</span>
                                             <span className="rounded-lg bg-blue-100/50 px-2.5 py-1 text-xs font-semibold text-blue-800">COD Only</span>
                                         </div>
                                     </div>

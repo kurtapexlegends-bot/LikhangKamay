@@ -11,7 +11,7 @@ export const statusLabels = {
     pending: 'Pending',
     under_review: 'Under Review',
     resolved: 'Approved',
-    rejected: 'Rejected',
+    rejected: 'Declined',
 };
 
 export const outcomeClasses = {

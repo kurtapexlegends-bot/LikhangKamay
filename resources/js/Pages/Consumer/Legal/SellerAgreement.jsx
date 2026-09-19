@@ -67,7 +67,7 @@ export default function SellerAgreement() {
         {
             title: "Prohibited Activities",
             icon: ShieldAlert,
-            content: "Sellers may not: sell counterfeit or mass-produced items, manipulate reviews, create fake transactions, circumvent platform fees with off-platform deals, share customer information, or engage in fraudulent or illegal activities."
+            content: "Sellers may not: sell counterfeit or mass-produced items, manipulate reviews, create fake transactions, circumvent commission with off-platform deals, share customer information, or engage in fraudulent or illegal activities."
         },
         {
             title: "Disciplinary Framework & Termination",

@@ -143,8 +143,8 @@ export default function Cart({ cart }) {
                         <div className="flex items-center gap-2.5">
                             <Store size={18} className="text-clay-600 shrink-0" />
                             <div>
-                                <span className="font-bold text-stone-900 block">Artisan Studio Procurement Mode</span>
-                                <span className="text-stone-500">You are logged into your artisan studio account. Sourcing peer materials will auto-sync to your Studio Materials Inventory.</span>
+                                <span className="font-bold text-stone-900 block">Workshop Materials Mode</span>
+                                <span className="text-stone-500">You are logged in as an artisan. Sourcing materials will auto-sync directly to your inventory.</span>
                             </div>
                         </div>
                         <Link
