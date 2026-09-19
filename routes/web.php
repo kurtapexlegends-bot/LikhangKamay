@@ -210,9 +210,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::delete('/discounts/{discount}', [\App\Http\Controllers\Seller\DiscountController::class, 'destroy'])->middleware('seller.module:products')->name('discounts.destroy');
         
         Route::get('/3d-manager', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'index'])->middleware('seller.module:3d')->name('3d.index');
-        Route::post('/3d-manager/upload', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'upload'])->middleware('seller.module:3d')->name('3d.upload');
-        Route::post('/3d-manager/presign', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'presign'])->middleware('seller.module:3d')->name('3d.presign');
-        Route::put('/3d-manager/local-upload', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'localUpload'])->middleware('seller.module:3d')->name('3d.local-upload');
+        Route::post('/3d-manager/upload', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'upload'])->middleware('seller.module:3d,products')->name('3d.upload');
+        Route::post('/3d-manager/presign', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'presign'])->middleware('seller.module:3d,products')->name('3d.presign');
+        Route::put('/3d-manager/local-upload', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'localUpload'])->middleware('seller.module:3d,products')->name('3d.local-upload');
         Route::delete('/3d-manager/{product:id}', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'destroy'])->middleware('seller.module:3d')->name('3d.destroy');
 
         Route::get('/audit-log', [\App\Http\Controllers\Seller\AuditLogController::class, 'index'])->name('audit-log.index');

@@ -124,4 +124,58 @@ class ThreeDModelUploadValidationTest extends TestCase
         $this->assertNotNull($product->model_3d_path);
         $this->assertTrue(Storage::disk('public')->exists($product->model_3d_path));
     }
+
+    public function test_three_d_manager_presign_returns_url_key_and_content_type(): void
+    {
+        Storage::fake('public');
+
+        $seller = User::factory()->artisanApproved()->create();
+
+        $response = $this->actingAs($seller)->postJson(route('3d.presign'), [
+            'filename' => 'custom-vase.glb',
+            'contentType' => 'model/gltf-binary',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonStructure(['url', 'key', 'contentType']);
+        $this->assertSame('model/gltf-binary', $response->json('contentType'));
+        $this->assertStringEndsWith('.glb', $response->json('key'));
+    }
+
+    public function test_three_d_manager_upload_accepts_stored_model_key_string(): void
+    {
+        Storage::fake('public');
+
+        $seller = User::factory()->artisanApproved()->create();
+        \App\Models\Category::create(['name' => 'Vases & Jars', 'slug' => 'vases-jars']);
+
+        $storedKey = 'products/models/test-direct-upload.glb';
+        Storage::disk('public')->put($storedKey, 'binary-3d-data');
+
+        $product = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'LK-3DM2',
+            'name' => 'Direct Upload Test Vase',
+            'description' => '',
+            'category' => 'Vases & Jars',
+            'price' => 300,
+            'cost_price' => 150,
+            'stock' => 10,
+            'lead_time' => 3,
+            'status' => 'Draft',
+        ]);
+
+        $response = $this->actingAs($seller)->post(route('3d.upload'), [
+            'product_id' => $product->id,
+            'model' => $storedKey,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionDoesntHaveErrors(['model']);
+
+        $product->refresh();
+
+        $this->assertSame($storedKey, $product->model_3d_path);
+    }
 }
+

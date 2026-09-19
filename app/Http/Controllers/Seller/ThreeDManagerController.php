@@ -76,8 +76,14 @@ class ThreeDManagerController extends Controller
         $product = Product::where('id', $request->product_id)
             ->where('user_id', $this->sellerOwnerId())
             ->firstOrFail();
-        $this->validateThreeDModelBundle($request, 'model', 'model_assets', 'model_asset_paths');
-        $incomingBytes = $this->getThreeDModelUploadSizeBytes($request, 'model', 'model_assets');
+
+        if (is_string($request->input('model')) && filled($request->input('model'))) {
+            $incomingBytes = $this->getFileSizeBytes($request->input('model'));
+        } else {
+            $this->validateThreeDModelBundle($request, 'model', 'model_assets', 'model_asset_paths');
+            $incomingBytes = $this->getThreeDModelUploadSizeBytes($request, 'model', 'model_assets');
+        }
+
         $existingBytes = $this->getFileSizeBytes($product->model_3d_path);
         $currentUsage = Product::where('user_id', $this->sellerOwnerId())
             ->whereNotNull('model_3d_path')
@@ -94,7 +100,11 @@ class ThreeDManagerController extends Controller
             $this->deleteStoredThreeDModel($product->model_3d_path);
         }
 
-        $path = $this->storeThreeDModelBundle($request, 'model', 'model_assets', 'model_asset_paths');
+        if (is_string($request->input('model')) && filled($request->input('model'))) {
+            $path = $request->input('model');
+        } else {
+            $path = $this->storeThreeDModelBundle($request, 'model', 'model_assets', 'model_asset_paths');
+        }
         $product->update(['model_3d_path' => $path]);
 
         return back()->with('success', '3D model uploaded successfully!');
@@ -182,14 +192,15 @@ class ThreeDManagerController extends Controller
         return response()->json([
             'url' => $url,
             'key' => $key,
+            'contentType' => $contentType,
         ]);
     }
 
     public function localUpload(Request $request)
     {
         $key = $request->query('key');
-        if (!$key) {
-            return response()->json(['error' => 'Missing key parameter'], 400);
+        if (!$key || (!str_starts_with($key, 'products/models/') && !str_starts_with($key, 'shops/'))) {
+            return response()->json(['error' => 'Missing or invalid key parameter'], 400);
         }
 
         $content = $request->getContent();
