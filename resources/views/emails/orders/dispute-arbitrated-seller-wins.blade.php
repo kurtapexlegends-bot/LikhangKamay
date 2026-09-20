@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Order Dispute Resolution</title>
+    <title>Order Review Concluded</title>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #FDFBF9; color: #2E2520; line-height: 1.6; -webkit-text-size-adjust: none;">
     <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border: 1px solid #E7E1D8; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(46, 37, 32, 0.03);">
@@ -21,9 +21,9 @@
             </a>
         </div>
         <div style="padding: 40px 32px;">
-            <h1 style="font-family: Georgia, Times, serif; font-size: 24px; font-weight: normal; color: #C2783F; margin-top: 0; margin-bottom: 20px; text-align: center;">Dispute Resolved</h1>
+            <h1 style="font-family: Georgia, Times, serif; font-size: 24px; font-weight: normal; color: #C2783F; margin-top: 0; margin-bottom: 20px; text-align: center;">Order Review Concluded</h1>
             <p style="margin-top: 0; margin-bottom: 24px; font-size: 16px; color: #5C524A; line-height: 1.6;">
-                Platform support reviewed the dispute for Order <strong>#{{ $orderNumber }}</strong> and released the funds to the seller.
+                Platform support reviewed the return request for Order <strong>#{{ $orderNumber }}</strong> and released the funds to the seller.
             </p>
             @if($notes)
                 <div style="background-color: #F7F4F0; border: 1px solid #E7E1D8; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; font-size: 14px; color: #5C524A; line-height: 1.5;">

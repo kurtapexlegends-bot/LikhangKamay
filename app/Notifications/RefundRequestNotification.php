@@ -24,7 +24,7 @@ class RefundRequestNotification extends Notification
         return [
             'type' => 'refund_request',
             'title' => 'Action Required: Refund Request',
-            'message' => "{$this->order->customer_name} has requested a refund/return for Order #{$this->order->order_number}. Please review the dispute.",
+            'message' => "{$this->order->customer_name} has requested a refund/return for Order #{$this->order->order_number}. Please review the request.",
             'order_id' => $this->order->id,
             'url' => route('orders.index'), // Link to order management
         ];

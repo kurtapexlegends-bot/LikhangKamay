@@ -69,10 +69,10 @@ class NotificationPresenter
         return [
             'id' => $notification->id,
             'type' => $data['type'] ?? 'general',
-            'title' => $data['title'] ?? 'Notification',
-            'message' => $data['message'] ?? '',
+            'title' => self::humanizeNotificationText($data['title'] ?? 'Notification'),
+            'message' => self::humanizeNotificationText($data['message'] ?? ''),
             'sender_id' => $data['sender_id'] ?? null,
-            'reason' => $data['reason'] ?? null,
+            'reason' => self::humanizeNotificationText($data['reason'] ?? null),
             'request_type' => $data['request_type'] ?? null,
             'request_id' => $data['request_id'] ?? null,
             'url' => self::resolveUrl($data, $user),
@@ -80,6 +80,48 @@ class NotificationPresenter
             'created_at_raw' => $notification->created_at?->toIso8601String(),
             'created_at' => $notification->created_at?->diffForHumans(),
         ];
+    }
+
+    /**
+     * Normalize notification copy to ban engineering jargon and 'rejected' across all users.
+     */
+    public static function humanizeNotificationText(?string $text): ?string
+    {
+        if ($text === null || $text === '') {
+            return $text;
+        }
+
+        $dictionary = [
+            'Dispute Request Rejected' => 'Return Request Declined',
+            'Dispute Resolved: Claim Rejected' => 'Return Review Closed: Claim Declined',
+            'Dispute Resolved: Refunded' => 'Return Review Concluded: Refund Approved',
+            'Dispute Request Approved' => 'Refund Request Approved',
+            'Dispute Escalated' => 'Order Review Requested',
+            'New Escalation Queue' => 'Order Review Requested',
+            'Review Dispute Approved' => 'Review Report Approved',
+            'Review Dispute Declined' => 'Review Report Declined',
+            'Payroll Request Rejected' => 'Payroll Request Declined',
+            'Stock Request Rejected' => 'Stock Request Declined',
+            'Delivery entered failure hold' => 'Delivery Problem Reported',
+            'geofence perimeter' => 'store location boundary',
+            'geofence' => 'store location',
+            'terminal failure' => 'delivery issue',
+            'failure hold' => 'delivery issue hold',
+            'escalate to admin support' => 'ask platform support for help',
+            'ruled in favor of refund' => 'approved a refund',
+            'rejected the return claim' => 'declined the return claim',
+            'rejected the return request' => 'declined the return request',
+            'rejected the payroll request' => 'declined the payroll request',
+            'rejected the stock request' => 'declined the stock request',
+            'Please review the dispute.' => 'Please review the return request.',
+            'rejected' => 'declined',
+            'Rejected' => 'Declined',
+            'dispute resolution' => 'order review',
+            'dispute' => 'return request',
+            'Dispute' => 'Return Request',
+        ];
+
+        return str_ireplace(array_keys($dictionary), array_values($dictionary), $text);
     }
 
     /**

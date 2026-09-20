@@ -439,8 +439,8 @@ class OrderLogisticsService
 
             $order->artisan?->notify(new OrderDeliveryUpdateNotification(
                 $order,
-                'Delivery auto-cancelled',
-                'This order was automatically cancelled after an unresolved courier failure.',
+                'Delivery Auto-Cancelled',
+                'This order was automatically cancelled after an unresolved delivery issue.',
                 $sellerUrl
             ));
 

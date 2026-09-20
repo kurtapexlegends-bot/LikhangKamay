@@ -174,10 +174,10 @@ class ModerationController extends Controller
                 $productName = $review->product?->name ?? 'your product';
                 $artisanReporter->notify(new DisputeStatusNotification(
                     'review_dispute_status',
-                    $isApproved ? 'Review Dispute Approved' : 'Review Dispute Declined',
+                    $isApproved ? 'Review Report Approved' : 'Review Report Declined',
                     $isApproved 
-                        ? "Your dispute for the review on \"{$productName}\" was approved. The review is now hidden from the marketplace."
-                        : "Your dispute for the review on \"{$productName}\" was declined. The review remains visible.",
+                        ? "Your report for the review on \"{$productName}\" was approved. The review is now hidden from the marketplace."
+                        : "Your report for the review on \"{$productName}\" was declined. The review remains visible.",
                     route('reviews.index')
                 ));
             }

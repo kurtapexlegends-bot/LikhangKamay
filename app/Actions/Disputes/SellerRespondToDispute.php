@@ -90,7 +90,7 @@ class SellerRespondToDispute
                 if ($buyer) {
                     $buyer->notify(new DisputeStatusNotification(
                         'dispute_accepted',
-                        'Dispute Request Approved',
+                        'Refund Request Approved',
                         "Seller approved refund for Order #{$order->order_number}.",
                         route('my-orders.index')
                     ));
@@ -128,7 +128,7 @@ class SellerRespondToDispute
                 if ($buyer) {
                     $buyer->notify(new DisputeStatusNotification(
                         'dispute_replacement_proposed',
-                        'Replacement Exchange Proposed',
+                        'Replacement Offer Proposed',
                         "Seller proposed a replacement option for Order #{$order->order_number}.",
                         route('my-orders.index')
                     ));
@@ -166,7 +166,7 @@ class SellerRespondToDispute
                     $buyer->notify(new DisputeStatusNotification(
                         'dispute_rejected',
                         'Return Request Declined',
-                        "The shop declined the return request for Order #{$order->order_number}. You can ask support for help.",
+                        "The shop declined the return request for Order #{$order->order_number}. You can ask platform support for help.",
                         route('my-orders.index')
                     ));
                     $this->sendMailSilently($buyer->email, new \App\Mail\ReturnRequestRejected($order, $sellerExplanation));

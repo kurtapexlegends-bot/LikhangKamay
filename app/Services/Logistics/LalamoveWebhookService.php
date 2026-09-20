@@ -307,14 +307,14 @@ class LalamoveWebhookService
                 $order->user?->notify(new OrderDeliveryUpdateNotification(
                     $order,
                     'Delivery issue detected',
-                    'The courier reported a delivery problem. The system will auto-cancel the order if it does not recover within 24 hours.',
+                    'The courier reported a delivery problem. The order will automatically be cancelled if unresolved within 24 hours.',
                     route('my-orders.index')
                 ));
 
                 $order->artisan?->notify(new OrderDeliveryUpdateNotification(
                     $order,
-                    'Delivery entered failure hold',
-                    'Lalamove reported a terminal failure. The order will auto-cancel if it stays unresolved for 24 hours.',
+                    'Delivery Problem Reported',
+                    'The courier reported an unresolved delivery issue. The order will automatically be cancelled if unresolved within 24 hours.',
                     route('orders.index')
                 ));
             }

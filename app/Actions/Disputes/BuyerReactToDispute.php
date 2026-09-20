@@ -168,8 +168,8 @@ class BuyerReactToDispute
         foreach ($admins as $admin) {
             $admin->notify(new DisputeStatusNotification(
                 'dispute_escalated',
-                'New Escalation Queue',
-                "Order #{$order->order_number} has been escalated for dispute resolution.",
+                'Order Review Requested',
+                "Order #{$order->order_number} has been submitted for platform review.",
                 route('admin.disputes.index')
             ));
             if ($admin->email) {

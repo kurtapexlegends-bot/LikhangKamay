@@ -156,8 +156,8 @@ class AdminArbitrateDispute
                 if ($buyer) {
                     $buyer->notify(new DisputeStatusNotification(
                         'dispute_arbitrated_rejected',
-                        "Dispute Closed: Order #{$order->order_number}",
-                        "Platform support reviewed Order #{$order->order_number} and closed the dispute. Funds have been released to the artisan.",
+                        "Return Request Closed: Order #{$order->order_number}",
+                        "Platform support reviewed Order #{$order->order_number} and concluded the return request. Funds have been released to the artisan.",
                         route('my-orders.index')
                     ));
                     $this->sendMailSilently($buyer->email, new \App\Mail\DisputeArbitratedSellerWins($order, $adminNotes));
@@ -167,8 +167,8 @@ class AdminArbitrateDispute
                 if ($seller) {
                     $seller->notify(new DisputeStatusNotification(
                         'dispute_arbitrated_rejected',
-                        "Dispute Closed: Funds Released",
-                        "Platform support closed the dispute for Order #{$order->order_number} in your favor. Funds have been released to your shop balance.",
+                        "Return Review Concluded: Funds Released",
+                        "Platform support closed the return review for Order #{$order->order_number} in your favor. Funds have been released to your shop balance.",
                         route('orders.index')
                     ));
                 }
