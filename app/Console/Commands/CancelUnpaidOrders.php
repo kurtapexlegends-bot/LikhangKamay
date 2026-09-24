@@ -7,17 +7,17 @@ use Illuminate\Console\Command;
 class CancelUnpaidOrders extends Command
 {
     protected $signature = 'orders:cancel-unpaid';
-    protected $description = 'Cancel unpaid online orders older than 24 hours';
+    protected $description = 'Cancel unpaid online orders older than 2 hours';
 
     public function handle()
     {
         $this->info('Checking for unpaid orders...');
 
-        // Find non-COD orders that are still pending and older than 24 hours.
+        // Find non-COD orders that are still pending and older than 2 hours.
         $orders = \App\Models\Order::where('status', 'Pending')
             ->where('payment_status', 'pending')
             ->where('payment_method', '!=', 'COD') // Only affects non-COD
-            ->where('created_at', '<', now()->subHours(24))
+            ->where('created_at', '<', now()->subHours(2))
             ->get();
 
         if ($orders->isEmpty()) {
@@ -58,12 +58,18 @@ class CancelUnpaidOrders extends Command
                     'status' => 'Cancelled',
                     'shipping_notes' => 'Auto-cancelled due to non-payment.'
                 ]);
-
-                // 3. Notify User
-                if ($order->user && $order->user->email) {
-                    \Illuminate\Support\Facades\Mail::to($order->user->email)->send(new \App\Mail\OrderCancelled($order, 'Auto-cancelled due to non-payment.'));
-                }
             });
+
+            // 3. Notify User outside of transaction
+            if ($order->user && $order->user->email) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($order->user->email)->send(new \App\Mail\OrderCancelled($order, 'Auto-cancelled due to non-payment.'));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('Failed to send auto-cancellation email: ' . $e->getMessage(), [
+                        'order_id' => $order->id,
+                    ]);
+                }
+            }
 
             $this->info("Cancelled Order #{$order->order_number}");
         }

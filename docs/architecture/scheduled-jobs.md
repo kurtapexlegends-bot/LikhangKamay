@@ -22,7 +22,7 @@ This document maps all Artisan Console Commands (`app/Console/Commands/`) and cr
 *   **Cancel Unpaid Orders**:
     *   Command Class: [CancelUnpaidOrders.php](file:///c:/laragon/www/LikhangKamay/app/Console/Commands/CancelUnpaidOrders.php)
     *   Signature: `orders:cancel-unpaid`
-    *   Logic: Cancels checkout orders that remained in `pending` payment status past the session expiration window.
+    *   Logic: Cancels non-COD checkout orders that remained in `pending` payment status past the 2-hour expiration window and promptly restores product inventory and promo allowances.
 *   **Verify PayMongo Payments**:
     *   Command Class: [VerifyPaymongoPayments.php](file:///c:/laragon/www/LikhangKamay/app/Console/Commands/VerifyPaymongoPayments.php)
     *   Signature: `paymongo:verify`

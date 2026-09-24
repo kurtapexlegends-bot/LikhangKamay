@@ -98,10 +98,12 @@ class PaymongoWebhookController extends Controller
                 }
 
                 // Check if it's one or more Orders
-                $orders = Order::where('paymongo_session_id', $sessionId)->get();
-                if ($orders->isNotEmpty()) {
-                    \Illuminate\Support\Facades\DB::transaction(function () use ($orders, $paymentId) {
-                        foreach ($orders as $order) {
+                $orderIds = Order::where('paymongo_session_id', $sessionId)->pluck('id');
+                if ($orderIds->isNotEmpty()) {
+                    $receiptOrders = [];
+                    \Illuminate\Support\Facades\DB::transaction(function () use ($orderIds, $paymentId, &$receiptOrders) {
+                        $lockedOrders = Order::whereIn('id', $orderIds)->lockForUpdate()->get();
+                        foreach ($lockedOrders as $order) {
                             $wasUnpaid = $order->payment_status !== 'paid';
                             if ($wasUnpaid || ($paymentId && empty($order->payment_id))) {
                                 $updateData = ['payment_status' => 'paid'];
@@ -112,11 +114,16 @@ class PaymongoWebhookController extends Controller
                                 Log::info('Order marked as paid via Webhook', ['order_id' => $order->id, 'order_number' => $order->order_number, 'payment_id' => $paymentId]);
 
                                 if ($wasUnpaid) {
-                                    $this->sendPaymentReceipt($order);
+                                    $receiptOrders[] = $order;
                                 }
                             }
                         }
                     });
+
+                    foreach ($receiptOrders as $receiptOrder) {
+                        $this->sendPaymentReceipt($receiptOrder->fresh());
+                    }
+
                     return response()->json(['status' => 'success']);
                 }
 

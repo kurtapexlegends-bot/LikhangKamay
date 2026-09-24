@@ -445,4 +445,55 @@ class PayoutManagementTest extends TestCase
         // Ready for payout = 50,000 (online only) - 25,000 (expenses) = 25,000
         $this->assertEquals(25000.00, $snapshot['ready_for_payout']);
     }
+
+    public function test_manual_payout_rejects_duplicate_reference_number(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $admin = User::factory()->superAdmin()->create();
+        $artisan = User::factory()->create([
+            'role' => 'artisan',
+            'artisan_status' => 'approved',
+            'payout_method' => 'GCash',
+            'payout_account_name' => 'Jane Doe',
+            'payout_account_number' => '09123456789',
+        ]);
+        $buyer = User::factory()->create(['role' => 'buyer']);
+
+        Order::create([
+            'order_number' => 'ORD-PAYOUT-DUP-01',
+            'artisan_id' => $artisan->id,
+            'user_id' => $buyer->id,
+            'customer_name' => $buyer->name,
+            'status' => 'Completed',
+            'payment_method' => 'GCash',
+            'payment_status' => 'paid',
+            'total_amount' => 5000.00,
+            'seller_net_amount' => 5000.00,
+            'shipping_method' => 'Delivery',
+            'shipping_address' => '123 Main St',
+        ]);
+
+        Payout::create([
+            'user_id' => $artisan->id,
+            'amount' => 1000.00,
+            'payout_method' => 'GCash',
+            'payout_account_name' => 'Jane Doe',
+            'payout_account_number' => '09123456789',
+            'reference_number' => 'REF-UNIQUE-12345',
+            'status' => 'Completed',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->post(route('admin.payouts.store'), [
+                'user_id' => $artisan->id,
+                'amount' => 500.00,
+                'payout_method' => 'GCash',
+                'payout_account_name' => 'Jane Doe',
+                'payout_account_number' => '09123456789',
+                'reference_number' => 'REF-UNIQUE-12345',
+            ]);
+
+        $response->assertSessionHasErrors(['reference_number']);
+    }
 }

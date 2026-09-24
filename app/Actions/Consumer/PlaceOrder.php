@@ -188,6 +188,9 @@ class PlaceOrder
             $grandTotal += $financeBySeller[(string) $artisanId]['total_amount'];
         }
 
+        $createdOrders = [];
+        $lowStockNotifications = [];
+
         DB::transaction(function () use (
             $request,
             $buyer,
@@ -207,7 +210,9 @@ class PlaceOrder
             $financeBySeller,
             $supportsWasSponsored,
             $supportsSponsorshipRequestId,
-            $supportsSponsoredAtCheckout
+            $supportsSponsoredAtCheckout,
+            &$createdOrders,
+            &$lowStockNotifications
         ) {
             foreach ($groupedItems as $artisanId => $items) {
                 $finance = $financeBySeller[(string) $artisanId];
@@ -275,10 +280,10 @@ class PlaceOrder
                     }
 
                     if ($product->stock <= 5) {
-                        $seller = User::find($product->user_id);
-                        if ($seller) {
-                            $seller->notifySellerWorkspace(new \App\Notifications\LowStockNotification($product), 'products');
-                        }
+                        $lowStockNotifications[] = [
+                            'seller_id' => $product->user_id,
+                            'product' => clone $product,
+                        ];
                     }
 
                     $orderItemData = [
@@ -313,36 +318,53 @@ class PlaceOrder
                     $order->items()->create($orderItemData);
                 }
 
-                $seller = User::find($artisanId);
-                if ($seller && $seller->email) {
-                    $order->load('items');
-                    $this->sendMailSilently(
-                        $seller->email,
-                        new OrderPlaced($order),
-                        'order_placed',
-                        ['order_id' => $order->id, 'order_number' => $order->order_number]
-                    );
-                    $seller->notifySellerWorkspace(new \App\Notifications\NewOrderNotification($order), 'orders');
-                }
-
-                if ($buyer && $buyer->email) {
-                    $order->loadMissing(['items', 'artisan']);
-                    $this->sendMailSilently(
-                        $buyer->email,
-                        new BuyerOrderConfirmationMail($order),
-                        'buyer_order_confirmation',
-                        ['order_id' => $order->id, 'order_number' => $order->order_number]
-                    );
-                }
-
-                PlatformActivity::create([
-                    'user_id' => $buyer->id,
-                    'action' => 'order_placed',
-                    'description' => 'A buyer placed an order (#' . $order->order_number . ').',
-                    'metadata' => ['order_id' => $order->id]
-                ]);
+                $createdOrders[] = [
+                    'order' => $order,
+                    'artisan_id' => $artisanId,
+                ];
             }
         });
+
+        foreach ($createdOrders as $entry) {
+            $order = $entry['order'];
+            $artisanId = $entry['artisan_id'];
+
+            $seller = User::find($artisanId);
+            if ($seller && $seller->email) {
+                $order->loadMissing('items');
+                $this->sendMailSilently(
+                    $seller->email,
+                    new OrderPlaced($order),
+                    'order_placed',
+                    ['order_id' => $order->id, 'order_number' => $order->order_number]
+                );
+                $seller->notifySellerWorkspace(new \App\Notifications\NewOrderNotification($order), 'orders');
+            }
+
+            if ($buyer && $buyer->email) {
+                $order->loadMissing(['items', 'artisan']);
+                $this->sendMailSilently(
+                    $buyer->email,
+                    new BuyerOrderConfirmationMail($order),
+                    'buyer_order_confirmation',
+                    ['order_id' => $order->id, 'order_number' => $order->order_number]
+                );
+            }
+
+            PlatformActivity::create([
+                'user_id' => $buyer->id,
+                'action' => 'order_placed',
+                'description' => 'A buyer placed an order (#' . $order->order_number . ').',
+                'metadata' => ['order_id' => $order->id]
+            ]);
+        }
+
+        foreach ($lowStockNotifications as $notif) {
+            $seller = User::find($notif['seller_id']);
+            if ($seller) {
+                $seller->notifySellerWorkspace(new \App\Notifications\LowStockNotification($notif['product']), 'products');
+            }
+        }
 
         $cart = Session::get('cart', []);
         foreach ($request->items as $item) {

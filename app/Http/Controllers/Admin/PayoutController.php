@@ -7,7 +7,9 @@ use App\Models\Order;
 use App\Models\Payout;
 use App\Models\User;
 use App\Services\AccountingLedgerService;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -253,54 +255,60 @@ class PayoutController extends Controller
             'payout_method' => 'required|string|max:50',
             'payout_account_name' => 'required|string|max:100',
             'payout_account_number' => 'required|string|max:100',
-            'reference_number' => 'nullable|string|max:100',
+            'reference_number' => 'nullable|string|max:100|unique:payouts,reference_number',
         ]);
 
         $artisan = null;
+        $lockKey = "admin-payout-disburse:{$validated['user_id']}";
+        $lock = Cache::lock($lockKey, 15);
 
         try {
-            $payout = DB::transaction(function () use ($validated, &$artisan) {
-                $artisan = User::where('id', $validated['user_id'])->lockForUpdate()->firstOrFail();
+            $payout = $lock->block(10, function () use ($validated, &$artisan) {
+                return DB::transaction(function () use ($validated, &$artisan) {
+                    $artisan = User::where('id', $validated['user_id'])->lockForUpdate()->firstOrFail();
 
-                // Ensure artisan is approved
-                if ($artisan->artisan_status !== 'approved') {
-                    throw new \DomainException('Cannot disburse payout to an unapproved artisan.');
-                }
+                    // Ensure artisan is approved
+                    if ($artisan->artisan_status !== 'approved') {
+                        throw new \DomainException('Cannot disburse payout to an unapproved artisan.');
+                    }
 
-                // Validate that disbursement amount does not exceed available unpaid balance
-                $snapshot = $this->ledgerService->buildFinancialSnapshot($artisan);
-                $availableBalance = max(0.00, round((float) ($snapshot['ready_for_payout'] ?? 0), 2));
+                    // Validate that disbursement amount does not exceed available unpaid balance
+                    $snapshot = $this->ledgerService->buildFinancialSnapshot($artisan);
+                    $availableBalance = max(0.00, round((float) ($snapshot['ready_for_payout'] ?? 0), 2));
 
-                if ((float) $validated['amount'] > $availableBalance) {
-                    throw new \DomainException("Disbursement amount (PHP " . number_format($validated['amount'], 2) . ") exceeds the artisan's available balance of PHP " . number_format($availableBalance, 2) . ".");
-                }
+                    if ((float) $validated['amount'] > $availableBalance) {
+                        throw new \DomainException("Disbursement amount (PHP " . number_format($validated['amount'], 2) . ") exceeds the artisan's available balance of PHP " . number_format($availableBalance, 2) . ".");
+                    }
 
-                $payout = Payout::create([
-                    'user_id' => $validated['user_id'],
-                    'amount' => $validated['amount'],
-                    'payout_method' => $validated['payout_method'],
-                    'payout_account_name' => $validated['payout_account_name'],
-                    'payout_account_number' => $validated['payout_account_number'],
-                    'reference_number' => $validated['reference_number'] ?? null,
-                    'status' => 'Completed',
-                ]);
-
-                \App\Models\PlatformActivity::create([
-                    'user_id' => \Illuminate\Support\Facades\Auth::id(),
-                    'action' => 'payout_disbursed',
-                    'description' => "Disbursed payout of PHP " . number_format($validated['amount'], 2) . " to {$artisan->shop_name}",
-                    'metadata' => [
-                        'artisan_id' => $artisan->id,
-                        'shop_name' => $artisan->shop_name,
+                    $payout = Payout::create([
+                        'user_id' => $validated['user_id'],
                         'amount' => $validated['amount'],
+                        'payout_method' => $validated['payout_method'],
+                        'payout_account_name' => $validated['payout_account_name'],
+                        'payout_account_number' => $validated['payout_account_number'],
                         'reference_number' => $validated['reference_number'] ?? null,
-                    ]
-                ]);
+                        'status' => 'Completed',
+                    ]);
 
-                return $payout;
+                    \App\Models\PlatformActivity::create([
+                        'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                        'action' => 'payout_disbursed',
+                        'description' => "Disbursed payout of PHP " . number_format($validated['amount'], 2) . " to {$artisan->shop_name}",
+                        'metadata' => [
+                            'artisan_id' => $artisan->id,
+                            'shop_name' => $artisan->shop_name,
+                            'amount' => $validated['amount'],
+                            'reference_number' => $validated['reference_number'] ?? null,
+                        ]
+                    ]);
+
+                    return $payout;
+                });
             });
         } catch (\DomainException $e) {
             return back()->with('error', $e->getMessage());
+        } catch (LockTimeoutException $e) {
+            return back()->with('error', 'A payout for this artisan is currently being processed. Please wait a moment.');
         }
 
         // Dispatch in-app & email notification to artisan

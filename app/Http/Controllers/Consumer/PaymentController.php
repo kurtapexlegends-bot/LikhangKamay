@@ -217,22 +217,34 @@ class PaymentController extends Controller
             }
 
             if ($isPaid || $hasPaidPayment) {
-                $wasUnpaid = $order->payment_status !== 'paid';
-                $updateData = [];
-                if ($wasUnpaid) {
-                    $updateData['payment_status'] = 'paid';
-                    $updateData['payment_method'] = $order->payment_method ?: 'GCash';
-                }
+                $shouldSendReceipt = false;
 
-                if ($paymentId && empty($order->payment_id)) {
-                    $updateData['payment_id'] = $paymentId;
-                }
+                DB::transaction(function () use ($paymentId, &$order, &$shouldSendReceipt) {
+                    $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
+                    if (!$lockedOrder) {
+                        return;
+                    }
 
-                if (!empty($updateData)) {
-                    $order->update($updateData);
-                }
+                    $order = $lockedOrder;
+                    $wasUnpaid = $lockedOrder->payment_status !== 'paid';
+                    $updateData = [];
 
-                if ($wasUnpaid) {
+                    if ($wasUnpaid) {
+                        $updateData['payment_status'] = 'paid';
+                        $updateData['payment_method'] = $lockedOrder->payment_method ?: 'GCash';
+                        $shouldSendReceipt = true;
+                    }
+
+                    if ($paymentId && empty($lockedOrder->payment_id)) {
+                        $updateData['payment_id'] = $paymentId;
+                    }
+
+                    if (!empty($updateData)) {
+                        $lockedOrder->update($updateData);
+                    }
+                });
+
+                if ($shouldSendReceipt) {
                     $this->sendPaymentReceipt($order->fresh());
                 }
 
