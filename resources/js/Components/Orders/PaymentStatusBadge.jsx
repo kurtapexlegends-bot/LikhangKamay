@@ -15,6 +15,12 @@ const PaymentStatusBadge = ({ status, method }) => {
             border: "border-green-200",
             label: "Paid",
         },
+        refund_pending: {
+            bg: "bg-amber-100",
+            text: "text-amber-800",
+            border: "border-amber-200",
+            label: "Refund Pending",
+        },
         refunded: {
             bg: "bg-purple-100",
             text: "text-purple-700",

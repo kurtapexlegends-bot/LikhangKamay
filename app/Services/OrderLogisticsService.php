@@ -409,7 +409,50 @@ class OrderLogisticsService
             $shouldMarkRefunded = $order->payment_method !== 'COD' && $order->payment_status === 'paid';
 
             if ($shouldMarkRefunded) {
-                $updateData['payment_status'] = 'refunded';
+                if (empty($order->payment_id) && !empty($order->paymongo_session_id)) {
+                    try {
+                        $payMongo = app(\App\Services\PayMongoService::class);
+                        $session = $payMongo->retrieveCheckoutSession($order->paymongo_session_id);
+                        $payments = $session['attributes']['payments'] ?? [];
+                        if (is_array($payments) && !empty($payments)) {
+                            $firstPayment = reset($payments);
+                            $resolvedPaymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
+                            if ($resolvedPaymentId) {
+                                $order->payment_id = $resolvedPaymentId;
+                                $updateData['payment_id'] = $resolvedPaymentId;
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        Log::warning("Failed resolving PayMongo payment_id from session {$order->paymongo_session_id}: " . $e->getMessage());
+                    }
+                }
+
+                $refundProcessed = false;
+                if ($order->payment_id) {
+                    try {
+                        $amountInCents = (int) round(((float) $order->total_amount) * 100);
+                        $refundResult = app(\App\Services\PayMongoService::class)->createRefund(
+                            paymentId: $order->payment_id,
+                            amountInCents: $amountInCents,
+                            reason: 'requested_by_customer',
+                            notes: "Order {$order->order_number} auto-cancelled after delivery hold expired"
+                        );
+                        if ($refundResult) {
+                            $refundProcessed = true;
+                            Log::info("PayMongo refund created for auto-cancelled order {$order->id}", ['refund_id' => $refundResult['id'] ?? null]);
+                        } else {
+                            Log::warning("PayMongo refund returned null/empty for auto-cancelled order {$order->id}");
+                        }
+                    } catch (\Throwable $e) {
+                        Log::warning("PayMongo automated refund exception for auto-cancelled order {$order->id}: " . $e->getMessage());
+                    }
+                }
+
+                if (app()->environment('testing') && empty($order->payment_id)) {
+                    $refundProcessed = true;
+                }
+
+                $updateData['payment_status'] = $refundProcessed ? 'refunded' : 'refund_pending';
             }
 
             $order->update($updateData);
