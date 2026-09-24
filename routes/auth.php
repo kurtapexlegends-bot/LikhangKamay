@@ -71,6 +71,7 @@ Route::middleware(['auth', 'staff.security'])->group(function () {
         ->name('staff.attendance.break');
 
     Route::post('staff/attendance/heartbeat', [StaffSecurityController::class, 'heartbeat'])
+        ->middleware('throttle:60,1')
         ->name('staff.attendance.heartbeat');
 
     Route::get('verify-email', EmailVerificationPromptController::class)

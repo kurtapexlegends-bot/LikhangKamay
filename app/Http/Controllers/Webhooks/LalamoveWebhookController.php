@@ -17,11 +17,14 @@ class LalamoveWebhookController extends Controller
     {
         Log::info('Lalamove Webhook received', $request->all());
 
-        $token = $request->query('token');
+        $token = $request->bearerToken() ?: $request->header('X-Webhook-Token', $request->query('token'));
         $expectedToken = config('services.lalamove.webhook_secret');
 
-        if (!$token || $token !== $expectedToken) {
-            Log::warning('Lalamove Webhook: Unauthorized access attempt', ['received_token' => $token]);
+        if (empty($expectedToken) || empty($token) || !hash_equals((string) $expectedToken, (string) $token)) {
+            Log::warning('Lalamove Webhook: Unauthorized access attempt', [
+                'ip' => $request->ip(),
+                'has_token' => !empty($token),
+            ]);
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 

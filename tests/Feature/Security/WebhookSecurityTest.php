@@ -92,4 +92,52 @@ class WebhookSecurityTest extends TestCase
             ->assertStatus(200)
             ->assertJson(['status' => 'success']);
     }
+
+    public function test_lalamove_webhook_authentication_modes_and_rejections(): void
+    {
+        config(['services.lalamove.webhook_secret' => 'secure_lalamove_token_7788']);
+
+        $payload = [
+            'meta' => ['requestId' => 'req-auth-test'],
+            'eventType' => 'DRIVER_ASSIGNED',
+            'data' => [
+                'orderId' => 'llm_test_nonexistent',
+                'status' => 'ON_GOING',
+            ],
+        ];
+
+        // 1. Missing token
+        $this->postJson('/webhooks/lalamove', $payload)
+            ->assertStatus(401);
+
+        // 2. Invalid token query param
+        $this->postJson('/webhooks/lalamove?token=wrong_token', $payload)
+            ->assertStatus(401);
+
+        // 3. Invalid header
+        $this->postJson('/webhooks/lalamove', $payload, ['X-Webhook-Token' => 'wrong_token'])
+            ->assertStatus(401);
+
+        // 4. Misconfigured empty secret rejects even if blank token provided
+        config(['services.lalamove.webhook_secret' => '']);
+        $this->postJson('/webhooks/lalamove?token=', $payload)
+            ->assertStatus(401);
+
+        // Restore valid secret
+        config(['services.lalamove.webhook_secret' => 'secure_lalamove_token_7788']);
+
+        // 5. Valid query param
+        $this->postJson('/webhooks/lalamove?token=secure_lalamove_token_7788', $payload)
+            ->assertStatus(200);
+
+        // 6. Valid X-Webhook-Token header
+        $this->postJson('/webhooks/lalamove', $payload, [
+            'X-Webhook-Token' => 'secure_lalamove_token_7788',
+        ])->assertStatus(200);
+
+        // 7. Valid Bearer Token header
+        $this->postJson('/webhooks/lalamove', $payload, [
+            'Authorization' => 'Bearer secure_lalamove_token_7788',
+        ])->assertStatus(200);
+    }
 }
