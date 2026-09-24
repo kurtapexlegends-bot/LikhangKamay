@@ -38,7 +38,7 @@ return [
             'report' => false,
         ],
 
-        'public' => env('PUBLIC_DISK_DRIVER', 'local') === 's3' ? [
+        'public' => env('PUBLIC_DISK_DRIVER', env('FILESYSTEM_DISK', 'local')) === 's3' ? [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),

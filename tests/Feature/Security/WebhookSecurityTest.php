@@ -80,7 +80,7 @@ class WebhookSecurityTest extends TestCase
         Artisan::shouldReceive('call')->with('schedule:run')->once();
         Artisan::shouldReceive('call')->with('queue:work', [
             '--stop-when-empty' => true,
-            '--max-time' => 50,
+            '--max-time' => 10,
         ])->once();
         Artisan::shouldReceive('output')->andReturn('Ran scheduled tasks.');
 

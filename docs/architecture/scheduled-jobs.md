@@ -93,3 +93,17 @@ The background execution intervals are consolidated within the console router: [
 | `system:prune-trash` | `daily()` | Soft-delete rows pruning checks |
 | `orders:remind-shipping` | `dailyAt('09:00')` | Shipment emails checks |
 | `reviews:remind` | `dailyAt('10:00')` | Buyer review email reminders checks |
+
+---
+
+## 6. Serverless Queue & Production Webhook Runners
+
+In serverless production environments (Vercel / AWS Lambda), daemon workers (`queue:work` without flags) cannot run indefinitely. The platform offloads queue execution to atomic, short-lived HTTP webhook runners:
+
+*   **Queue Worker Webhook**: `GET /webhooks/cron/queue`
+    *   **Execution**: Invokes `php artisan queue:work --stop-when-empty --max-time=10`.
+    *   **Timeout Budget**: Capped at 10 seconds to remain strictly below Vercel's 15s function execution cutoff, preventing abrupt process termination mid-job.
+    *   **External Scheduler**: External monitoring services (Cron-Job.org, Cloudflare Workers, Better Uptime) send authenticated requests every 1–2 minutes using `Authorization: Bearer <CRON_SECRET>` or `X-Vercel-Cron-Secret`.
+*   **Console Scheduler Webhook**: `GET /webhooks/cron`
+    *   **Execution**: Invokes `php artisan schedule:run`.
+    *   **Vercel Integration**: Pinged daily via `vercel.json` cron schedules and supplemented by external recurring monitors for sub-daily sweeps.

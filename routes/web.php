@@ -418,6 +418,14 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/report', [\App\Http\Controllers\Compliance\FlaggedContentController::class, 'store'])->name('report.store');
     });
 
+    // DIRECT UPLOADS (Bypasses serverless 4.5MB payload limit)
+    Route::post('/api/uploads/presign', [\App\Http\Controllers\Core\UploadPresignController::class, 'presign'])
+        ->middleware('throttle:30,1')
+        ->name('api.uploads.presign');
+    Route::put('/api/uploads/local', [\App\Http\Controllers\Core\UploadPresignController::class, 'localUpload'])
+        ->middleware('throttle:30,1')
+        ->name('api.uploads.local');
+
     // GLOBAL SEARCH (Accessible to pending artisans for browsing)
     Route::get('/api/global-search', [\App\Http\Controllers\Consumer\GlobalSearchController::class, 'search'])->name('api.global-search');
 });
@@ -428,9 +436,11 @@ Route::get('/subscription/payment/success', [\App\Http\Controllers\Seller\Subscr
 Route::get('/subscription/payment/cancel', [\App\Http\Controllers\Seller\SubscriptionController::class, 'cancel'])->middleware('signed')->name('seller.subscription.payment.cancel');
 Route::post('/webhooks/lalamove', \App\Http\Controllers\Webhooks\LalamoveWebhookController::class)->middleware('throttle:120,1')->name('webhooks.lalamove');
 Route::post('/webhooks/paymongo', [\App\Http\Controllers\Webhooks\PaymongoWebhookController::class, 'handle'])->middleware('throttle:120,1')->name('webhooks.paymongo');
-Route::get('/webhooks/cron', function () {
+Route::get('/webhooks/cron', function (\Illuminate\Http\Request $request) {
     $cronSecret = config('app.cron_secret') ?: env('CRON_SECRET');
-    $provided = request()->header('X-Vercel-Cron-Secret');
+    $provided = $request->header('X-Vercel-Cron-Secret')
+        ?: ($request->bearerToken() ?: $request->query('secret'));
+
     if (!$cronSecret || empty($provided) || !hash_equals((string) $cronSecret, (string) $provided)) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
@@ -441,15 +451,17 @@ Route::get('/webhooks/cron', function () {
     ]);
 })->name('webhooks.cron');
 
-Route::get('/webhooks/cron/queue', function () {
+Route::get('/webhooks/cron/queue', function (\Illuminate\Http\Request $request) {
     $cronSecret = config('app.cron_secret') ?: env('CRON_SECRET');
-    $provided = request()->header('X-Vercel-Cron-Secret');
+    $provided = $request->header('X-Vercel-Cron-Secret')
+        ?: ($request->bearerToken() ?: $request->query('secret'));
+
     if (!$cronSecret || empty($provided) || !hash_equals((string) $cronSecret, (string) $provided)) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
     \Illuminate\Support\Facades\Artisan::call('queue:work', [
         '--stop-when-empty' => true,
-        '--max-time' => 50
+        '--max-time' => 10,
     ]);
     return response()->json([
         'status' => 'success',

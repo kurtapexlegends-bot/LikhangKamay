@@ -85,9 +85,9 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            'url' => env('PGSQL_URL', env('DB_URL')),
+            'url' => env('PGSQL_URL', env('DATABASE_POOLER_URL', env('DB_POOLER_URL', env('DB_URL')))),
             'host' => env('PGSQL_HOST', env('DB_HOST', '127.0.0.1')),
-            'port' => env('PGSQL_PORT', env('DB_CONNECTION') === 'pgsql' ? env('DB_PORT', '5432') : '5432'),
+            'port' => env('PGSQL_PORT', env('DB_CONNECTION') === 'pgsql' ? env('DB_PORT', env('DB_POOLER_PORT', '5432')) : '5432'),
             'database' => env('PGSQL_DATABASE', env('DB_CONNECTION') === 'pgsql' ? env('DB_DATABASE', 'laravel') : 'postgres'),
             'username' => env('PGSQL_USERNAME', env('DB_CONNECTION') === 'pgsql' ? env('DB_USERNAME', 'postgres') : 'postgres'),
             'password' => env('PGSQL_PASSWORD', env('DB_CONNECTION') === 'pgsql' ? env('DB_PASSWORD', '') : ''),
@@ -95,7 +95,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => env('PGSQL_SEARCH_PATH', 'public'),
-            'sslmode' => env('PGSQL_SSLMODE', 'prefer'),
+            'sslmode' => env('PGSQL_SSLMODE', env('DB_SSLMODE', 'prefer')),
             'options' => [
                 \PDO::ATTR_EMULATE_PREPARES => true,
             ],
