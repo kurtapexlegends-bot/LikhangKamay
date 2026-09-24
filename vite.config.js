@@ -62,9 +62,6 @@ export default defineConfig({
                     if (normalizedId.includes('node_modules/framer-motion')) {
                         return 'vendor-framer-motion';
                     }
-                    if (normalizedId.includes('node_modules/@xenova/transformers')) {
-                        return 'vendor-transformers';
-                    }
                     if (normalizedId.includes('node_modules/lucide-react')) {
                         return 'vendor-lucide';
                     }

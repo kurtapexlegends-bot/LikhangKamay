@@ -179,6 +179,34 @@ class AttendanceShiftPolicyTest extends TestCase
         $service->ensureClockedIn($staff);
     }
 
+    public function test_spoofed_liveness_assertion_without_photo_throws_validation_exception(): void
+    {
+        [$owner, $employee, $staff] = $this->createStaffWithShiftPolicy();
+        Carbon::setTestNow(Carbon::parse('2026-08-24', config('app.timezone'))->startOfDay()->setTime(8, 5));
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $service = app(StaffAttendanceService::class);
+        $service->ensureClockedIn($staff, [
+            'liveness_verified' => true,
+        ]);
+    }
+
+    public function test_valid_photo_and_liveness_assertion_succeeds_and_marks_verified(): void
+    {
+        [$owner, $employee, $staff] = $this->createStaffWithShiftPolicy();
+        Carbon::setTestNow(Carbon::parse('2026-08-24', config('app.timezone'))->startOfDay()->setTime(8, 5));
+
+        $service = app(StaffAttendanceService::class);
+        $session = $service->ensureClockedIn($staff, [
+            'photo_data' => 'data:image/jpeg;base64,samplephoto',
+            'liveness_verified' => true,
+        ]);
+
+        $this->assertTrue($session->liveness_verified);
+        $this->assertNotNull($session->clock_in_photo_path);
+        $this->assertSame('approved', $session->approval_status);
+    }
+
     /**
      * @return array{0: \App\Models\User, 1: \App\Models\Employee, 2: \App\Models\User}
      */

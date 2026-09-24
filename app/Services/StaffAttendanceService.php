@@ -226,18 +226,33 @@ class StaffAttendanceService
             }
         }
 
-        $livenessVerified = !empty($payload['liveness_verified']) || !empty($photoPath);
+        $hasPhoto = !empty($photoPath);
+
+        // Security check: Reject spoofed assertion where client claims liveness without submitting photo proof
+        if (!empty($payload['liveness_verified']) && !$hasPhoto) {
+            throw ValidationException::withMessages([
+                'photo_data' => ['Face verification requires a valid captured photo proof.'],
+            ]);
+        }
+
+        $livenessVerified = !empty($payload['liveness_verified']) && $hasPhoto;
 
         $isRemoteWorker = (bool) ($staff->employee?->allow_remote_clock_in ?? false);
         $isGeofenceViolation = !$isWithinGeofence && !$isRemoteWorker;
 
-        $isFlagged = $isGeofenceViolation || $isOutOfShiftWindow;
+        $requiresPhoto = (bool) ($shiftPolicy['require_clock_in_photo'] ?? ($sellerOwner?->require_clock_in_photo ?? false));
+        $isMissingRequiredPhoto = $requiresPhoto && !$hasPhoto;
+
+        $isFlagged = $isGeofenceViolation || $isOutOfShiftWindow || $isMissingRequiredPhoto;
         $flagReasons = [];
         if ($isGeofenceViolation) {
             $flagReasons[] = "Off-Site Clock In ({$distanceMeters}m from assigned workplace)";
         }
         if ($isOutOfShiftWindow && $outOfShiftReason) {
             $flagReasons[] = $outOfShiftReason;
+        }
+        if ($isMissingRequiredPhoto) {
+            $flagReasons[] = "Missing Required Clock-In Photo";
         }
         $flagReason = !empty($flagReasons) ? implode(' • ', $flagReasons) : null;
         $approvalStatus = $isFlagged ? 'pending' : 'approved';
