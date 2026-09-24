@@ -12,10 +12,9 @@ class LocalImageTransformer
     /** @var \Intervention\Image\ImageManager */
     protected $manager;
 
-    public function __construct()
+    public function __construct(?ImageManager $manager = null)
     {
-        // Intervention Image v3/v4 static factory
-        $this->manager = ImageManager::gd();
+        $this->manager = $manager ?? new ImageManager(new Driver());
     }
 
     /**
@@ -27,14 +26,15 @@ class LocalImageTransformer
      */
     public function transform(string $path, array $params)
     {
-        $fullPath = storage_path('app/public/' . $path);
+        $sanitizedPath = ltrim(str_replace(['\\', '..'], ['/', ''], $path), '/');
+        $baseDir = storage_path('app/public');
+        $fullPath = $baseDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $sanitizedPath);
 
-        if (!File::exists($fullPath)) {
-            // Try absolute path if relative fails
-            $fullPath = $path;
-            if (!File::exists($fullPath)) {
-                throw new \Exception("Image not found at: {$fullPath}");
-            }
+        $realBase = realpath($baseDir);
+        $realPath = realpath($fullPath);
+
+        if ($realBase === false || $realPath === false || !str_starts_with($realPath, $realBase) || !File::exists($realPath)) {
+            throw new \DomainException("Image not found or access restricted: {$sanitizedPath}");
         }
 
         /** @var \Intervention\Image\ImageManager $manager */

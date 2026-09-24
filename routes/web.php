@@ -581,52 +581,5 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::delete('/taxonomy/{category}', [\App\Http\Controllers\Admin\CatalogController::class, 'destroyTaxonomy'])->name('admin.taxonomy.destroy');
 });
 
-Route::get('/categories-debug', function() {
-    $service = new \App\Services\CatalogService();
-    
-    $sponsoredError = null;
-    $sponsored = [];
-    try {
-        $sponsored = $service->getSponsoredProducts();
-    } catch (\Exception $e) {
-        $sponsoredError = $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine();
-    }
-
-    $featuredError = null;
-    $featured = [];
-    try {
-        $featured = $service->getFeaturedProducts(collect($sponsored)->pluck('id')->all());
-    } catch (\Exception $e) {
-        $featuredError = $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine();
-    }
-
-    $topSellersError = null;
-    $topSellers = [];
-    try {
-        $topSellers = $service->getTopSellers();
-    } catch (\Exception $e) {
-        $topSellersError = $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine();
-    }
-
-    $categoriesError = null;
-    $categories = [];
-    try {
-        $categories = $service->getCategories();
-    } catch (\Exception $e) {
-        $categoriesError = $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine();
-    }
-
-    return response()->json([
-        'sponsored_products' => $sponsored,
-        'sponsored_error' => $sponsoredError,
-        'featured_products' => $featured,
-        'featured_error' => $featuredError,
-        'top_sellers' => $topSellers,
-        'top_sellers_error' => $topSellersError,
-        'categories' => $categories,
-        'categories_error' => $categoriesError,
-        'all_database_categories' => \App\Models\Category::all()->toArray()
-    ]);
-});
-
 require __DIR__.'/auth.php';
+
