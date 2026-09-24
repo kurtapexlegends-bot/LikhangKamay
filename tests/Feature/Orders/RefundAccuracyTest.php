@@ -193,4 +193,84 @@ class RefundAccuracyTest extends TestCase
         $this->assertSame('Cancelled', $order->status);
         $this->assertSame('refund_pending', $order->payment_status);
     }
+
+    public function test_buyer_cancel_executes_paymongo_refund_and_sets_refunded_on_success(): void
+    {
+        $seller = User::factory()->create(['role' => 'artisan', 'artisan_status' => 'approved']);
+        $buyer = User::factory()->create(['role' => 'buyer']);
+        $product = $this->createProduct($seller, stock: 10, price: 500);
+
+        $order = Order::create([
+            'order_number' => 'ORD-REF-TEST-004',
+            'user_id' => $buyer->id,
+            'artisan_id' => $seller->id,
+            'customer_name' => $buyer->name,
+            'total_amount' => 500.00,
+            'merchandise_subtotal' => 500.00,
+            'status' => 'Pending',
+            'payment_method' => 'GCash',
+            'payment_status' => 'paid',
+            'payment_id' => 'pay_cancel_order_success',
+            'shipping_method' => 'Pick Up',
+            'shipping_address' => 'Store Pick-up',
+        ]);
+
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'price' => 500.00,
+            'quantity' => 1,
+        ]);
+
+        $paymongoMock = Mockery::mock(PayMongoService::class);
+        $paymongoMock->shouldReceive('createRefund')
+            ->once()
+            ->with('pay_cancel_order_success', 50000, 'requested_by_customer', Mockery::any())
+            ->andReturn(['id' => 'ref_buyer_cancel_123', 'status' => 'succeeded']);
+
+        $cancelOrderAction = new CancelOrder($paymongoMock);
+        $cancelOrderAction->execute((string) $order->id, $buyer, 'ordered_by_mistake', 'Cancelled accidentally');
+
+        $order->refresh();
+        $this->assertSame('Cancelled', $order->status);
+        $this->assertSame('refunded', $order->payment_status);
+    }
+
+    public function test_buyer_cancel_cod_order_skips_paymongo_refund(): void
+    {
+        $seller = User::factory()->create(['role' => 'artisan', 'artisan_status' => 'approved']);
+        $buyer = User::factory()->create(['role' => 'buyer']);
+        $product = $this->createProduct($seller, stock: 10, price: 350);
+
+        $order = Order::create([
+            'order_number' => 'ORD-REF-TEST-005',
+            'user_id' => $buyer->id,
+            'artisan_id' => $seller->id,
+            'customer_name' => $buyer->name,
+            'total_amount' => 350.00,
+            'merchandise_subtotal' => 350.00,
+            'status' => 'Pending',
+            'payment_method' => 'COD',
+            'payment_status' => 'pending',
+            'shipping_method' => 'Delivery',
+            'shipping_address' => '123 Main St, Dasmarinas City',
+        ]);
+
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'price' => 350.00,
+            'quantity' => 1,
+        ]);
+
+        $paymongoMock = Mockery::mock(PayMongoService::class);
+        $paymongoMock->shouldNotReceive('createRefund');
+
+        $cancelOrderAction = new CancelOrder($paymongoMock);
+        $cancelOrderAction->execute((string) $order->id, $buyer, 'found_better_price', 'Found better deal');
+
+        $order->refresh();
+        $this->assertSame('Cancelled', $order->status);
+        $this->assertSame('pending', $order->payment_status);
+    }
 }
