@@ -27,16 +27,25 @@ trait Searchable
 
         if ($driver === 'pgsql') {
             // High-performance PostgreSQL Full-Text Search with prefix matching & ILIKE fallback
-            $columnsString = implode(", ' ', ", array_map(fn($col) => "COALESCE($col, '')", $columns));
             $terms = array_values(array_filter(
                 array_map(fn($t) => preg_replace('/[^a-zA-Z0-9]/', '', $t), explode(' ', $search)),
                 fn($t) => $t !== ''
             ));
             $prefixQuery = !empty($terms) ? implode(' & ', array_map(fn($t) => $t . ':*', $terms)) : null;
 
-            return $query->where(function ($q) use ($columns, $search, $columnsString, $prefixQuery) {
+            return $query->where(function ($q) use ($columns, $search, $prefixQuery) {
                 if (!empty($prefixQuery)) {
-                    $q->whereRaw("to_tsvector('english', CONCAT($columnsString)) @@ to_tsquery('english', ?)", [$prefixQuery]);
+                    $model = $q->getModel();
+                    // On Product model when standard catalog search columns are queried,
+                    // leverage the pre-computed GIN-indexed search_vector column.
+                    $useSearchVector = ($model instanceof \App\Models\Product && empty(array_diff($columns, ['name', 'description', 'category'])));
+
+                    if ($useSearchVector) {
+                        $q->whereRaw("search_vector @@ to_tsquery('english', ?)", [$prefixQuery]);
+                    } else {
+                        $columnsString = implode(" || ' ' || ", array_map(fn($col) => "COALESCE($col, '')", $columns));
+                        $q->whereRaw("to_tsvector('english', $columnsString) @@ to_tsquery('english', ?)", [$prefixQuery]);
+                    }
                 }
                 foreach ($columns as $column) {
                     $q->orWhere($column, 'ILIKE', "%{$search}%");

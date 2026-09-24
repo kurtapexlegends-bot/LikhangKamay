@@ -25,17 +25,45 @@ export default function GLTFModel({
     const { actions } = useAnimations(animations, groupRef);
 
     useEffect(() => {
-        if (scene) {
+        if (!scene) return;
+
+        scene.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+                if (child.material) {
+                    child.material.needsUpdate = true;
+                }
+            }
+        });
+
+        return () => {
             scene.traverse((child) => {
                 if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
+                    if (child.geometry && typeof child.geometry.dispose === 'function') {
+                        child.geometry.dispose();
+                    }
                     if (child.material) {
-                        child.material.needsUpdate = true;
+                        const materials = Array.isArray(child.material) ? child.material : [child.material];
+                        materials.forEach((mat) => {
+                            const textureKeys = [
+                                'map', 'lightMap', 'bumpMap', 'normalMap', 'specularMap',
+                                'envMap', 'alphaMap', 'aoMap', 'displacementMap',
+                                'emissiveMap', 'gradientMap', 'metalnessMap', 'roughnessMap'
+                            ];
+                            textureKeys.forEach((key) => {
+                                if (mat[key] && typeof mat[key].dispose === 'function') {
+                                    mat[key].dispose();
+                                }
+                            });
+                            if (typeof mat.dispose === 'function') {
+                                mat.dispose();
+                            }
+                        });
                     }
                 }
             });
-        }
+        };
     }, [scene]);
     
     useEffect(() => {
@@ -50,7 +78,7 @@ export default function GLTFModel({
     if (!scene) return null;
 
     return (
-        <group ref={groupRef} {...props} dispose={null}>
+        <group ref={groupRef} {...props}>
             <primitive 
                 object={scene} 
                 scale={scale} 

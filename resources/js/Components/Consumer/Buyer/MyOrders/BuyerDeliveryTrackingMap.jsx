@@ -124,7 +124,31 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
         return () => clearInterval(interval);
     }, [delivery?.status, delivery?.id, fetchLatestTelemetry]);
 
-    // Initialize & Update Leaflet Map
+    // Helpers for driver pin and popup
+    const getDriverPopupHtml = useCallback((t) => `
+        <div style="font-size: 11px; font-family: sans-serif; line-height: 1.4;">
+            <b style="color: #10b981; text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em;">Studio Courier Driver</b><br/>
+            <strong>${t.driver_name || 'Studio Courier'}</strong><br/>
+            <span style="color: #78716c;">${t.vehicle_plate_number ? 'Plate: ' + t.vehicle_plate_number : (t.vehicle_type || 'Courier')}</span><br/>
+            ${t.speed_kph ? `<span style="display: inline-block; margin-top: 2px; background: #ecfdf5; color: #047857; font-weight: bold; padding: 1px 5px; border-radius: 4px;">Speed: ${Math.round(t.speed_kph)} km/h</span>` : ''}
+        </div>
+    `, []);
+
+    const createDriverIcon = useCallback(() => L.divIcon({
+        className: 'custom-driver-pin',
+        html: `
+            <div style="position: relative; width: 34px; height: 34px;">
+                <div style="position: absolute; inset: 0; border-radius: 50%; background-color: rgba(16, 185, 129, 0.35); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                <div style="position: relative; width: 34px; height: 34px; border-radius: 50%; background-color: #0f172a; color: white; display: flex; align-items: center; justify-content: center; border: 2.5px solid #10b981; box-shadow: 0 3px 8px rgba(0,0,0,0.35);">
+                    <svg style="width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5a2 2 0 0 0-2 2v7h3m10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0zm-10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/></svg>
+                </div>
+            </div>
+        `,
+        iconSize: [34, 34],
+        iconAnchor: [17, 17],
+    }), []);
+
+    // 1. Initialize Map DOM (only re-runs when pickup/dropoff locations or order addresses change)
     useEffect(() => {
         if (!mapContainerRef.current) return;
 
@@ -132,6 +156,8 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
         if (mapInstanceRef.current) {
             mapInstanceRef.current.remove();
             mapInstanceRef.current = null;
+            driverMarkerRef.current = null;
+            polylineRef.current = null;
         }
 
         const map = L.map(mapContainerRef.current, {
@@ -187,41 +213,19 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
             </div>
         `);
 
-        // 3. Live Driver Marker (if coordinates available)
+        // 3. Initial Route & Driver Marker if available
         const routePoints = [[pickupLat, pickupLng]];
 
         if (activeDriverLat && activeDriverLng) {
             routePoints.push([activeDriverLat, activeDriverLng]);
 
-            const driverIcon = L.divIcon({
-                className: 'custom-driver-pin',
-                html: `
-                    <div style="position: relative; width: 34px; height: 34px;">
-                        <div style="position: absolute; inset: 0; border-radius: 50%; background-color: rgba(16, 185, 129, 0.35); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-                        <div style="position: relative; width: 34px; height: 34px; border-radius: 50%; background-color: #0f172a; color: white; display: flex; align-items: center; justify-content: center; border: 2.5px solid #10b981; box-shadow: 0 3px 8px rgba(0,0,0,0.35);">
-                            <svg style="width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5a2 2 0 0 0-2 2v7h3m10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0zm-10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/></svg>
-                        </div>
-                    </div>
-                `,
-                iconSize: [34, 34],
-                iconAnchor: [17, 17],
-            });
-
-            const driverMarker = L.marker([activeDriverLat, activeDriverLng], { icon: driverIcon }).addTo(map);
-            driverMarker.bindPopup(`
-                <div style="font-size: 11px; font-family: sans-serif; line-height: 1.4;">
-                    <b style="color: #10b981; text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em;">Studio Courier Driver</b><br/>
-                    <strong>${telemetry.driver_name}</strong><br/>
-                    <span style="color: #78716c;">${telemetry.vehicle_plate_number ? 'Plate: ' + telemetry.vehicle_plate_number : telemetry.vehicle_type}</span><br/>
-                    ${telemetry.speed_kph ? `<span style="display: inline-block; margin-top: 2px; background: #ecfdf5; color: #047857; font-weight: bold; padding: 1px 5px; border-radius: 4px;">Speed: ${Math.round(telemetry.speed_kph)} km/h</span>` : ''}
-                </div>
-            `);
+            const driverMarker = L.marker([activeDriverLat, activeDriverLng], { icon: createDriverIcon() }).addTo(map);
+            driverMarker.bindPopup(getDriverPopupHtml(telemetry));
             driverMarkerRef.current = driverMarker;
         }
 
         routePoints.push([dropoffLat, dropoffLng]);
 
-        // 4. Connecting Route Polyline
         const polyline = L.polyline(routePoints, {
             color: '#89432d',
             weight: 3.5,
@@ -236,20 +240,48 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
 
         mapInstanceRef.current = map;
 
-        // Invalidate size once rendered to prevent blank tile artifacts
-        setTimeout(() => {
+        const timer = setTimeout(() => {
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.invalidateSize();
             }
         }, 200);
 
         return () => {
+            clearTimeout(timer);
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.remove();
                 mapInstanceRef.current = null;
+                driverMarkerRef.current = null;
+                polylineRef.current = null;
             }
         };
-    }, [pickupLat, pickupLng, dropoffLat, dropoffLng, activeDriverLat, activeDriverLng, order.seller_name, order.seller_address, order.shipping_recipient_name, order.shipping_address, telemetry.driver_name, telemetry.vehicle_plate_number, telemetry.vehicle_type, telemetry.speed_kph]);
+    }, [pickupLat, pickupLng, dropoffLat, dropoffLng, order?.seller_name, order?.seller_address, order?.shipping_recipient_name, order?.shipping_address]);
+
+    // 2. Telemetry Updates: Move marker & polyline without tearing down Leaflet map
+    useEffect(() => {
+        if (!mapInstanceRef.current) return;
+
+        if (activeDriverLat && activeDriverLng) {
+            const popupContent = getDriverPopupHtml(telemetry);
+
+            if (driverMarkerRef.current) {
+                driverMarkerRef.current.setLatLng([activeDriverLat, activeDriverLng]);
+                driverMarkerRef.current.setPopupContent(popupContent);
+            } else {
+                const driverMarker = L.marker([activeDriverLat, activeDriverLng], { icon: createDriverIcon() }).addTo(mapInstanceRef.current);
+                driverMarker.bindPopup(popupContent);
+                driverMarkerRef.current = driverMarker;
+            }
+
+            if (polylineRef.current) {
+                polylineRef.current.setLatLngs([
+                    [pickupLat, pickupLng],
+                    [activeDriverLat, activeDriverLng],
+                    [dropoffLat, dropoffLng]
+                ]);
+            }
+        }
+    }, [activeDriverLat, activeDriverLng, telemetry.driver_name, telemetry.vehicle_plate_number, telemetry.vehicle_type, telemetry.speed_kph, pickupLat, pickupLng, dropoffLat, dropoffLng, getDriverPopupHtml, createDriverIcon]);
 
     // Handle center map on route bounds
     const handleCenterMap = () => {
