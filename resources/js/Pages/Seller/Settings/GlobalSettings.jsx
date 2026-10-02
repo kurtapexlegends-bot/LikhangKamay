@@ -7,15 +7,26 @@ import ShopStorefrontTab from '@/Components/Seller/Settings/Tabs/ShopStorefrontT
 import WorkplaceLocationsTab from '@/Components/Seller/Settings/Tabs/WorkplaceLocationsTab';
 import PayrollRulesTab from '@/Components/Seller/Settings/Tabs/PayrollRulesTab';
 import FinancePayoutsTab from '@/Components/Seller/Settings/Tabs/FinancePayoutsTab';
+import PickupScheduleSettings from '@/Components/Seller/Settings/PickupScheduleSettings';
 
-export default function GlobalSettings({ auth, sellerOwner, stats, locations = [], products = [], permissions = {} }) {
+export default function GlobalSettings({ auth, sellerOwner, stats, locations = [], products = [], permissions = {}, pickupSchedule }) {
     const { openSidebar } = useSellerWorkspaceShell();
-    const [activeTab, setActiveTab] = useState('storefront');
+    const [activeTab, setActiveTab] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const requestedTab = params.get('tab');
+            if (requestedTab && ['storefront', 'pickup', 'locations', 'payroll', 'finance'].includes(requestedTab)) {
+                return requestedTab;
+            }
+        }
+        return 'storefront';
+    });
 
     const isPremiumOrElite = permissions.is_premium_tier ?? (sellerOwner?.premium_tier === 'premium' || sellerOwner?.premium_tier === 'super_premium');
 
     const tabs = [
         { id: 'storefront', label: 'Shop Storefront', show: Boolean(permissions.can_edit_shop_settings) },
+        { id: 'pickup', label: 'Store Pickup & Hours', show: Boolean(permissions.can_edit_shop_settings) },
         { id: 'locations', label: 'Workplace Locations', show: Boolean(permissions.can_edit_shop_settings && isPremiumOrElite) },
         { id: 'payroll', label: 'People & Payroll', show: Boolean(permissions.can_edit_hr_settings && isPremiumOrElite) },
         { id: 'finance', label: 'Finance & Payouts', show: Boolean(permissions.can_edit_shop_settings) },
@@ -48,6 +59,13 @@ export default function GlobalSettings({ auth, sellerOwner, stats, locations = [
                             stats={stats}
                             products={products}
                             permissions={permissions}
+                        />
+                    )}
+                    {activeTab === 'pickup' && (
+                        <PickupScheduleSettings
+                            schedule={pickupSchedule}
+                            locations={locations}
+                            canEdit={Boolean(permissions.can_edit_shop_settings)}
                         />
                     )}
                     {activeTab === 'locations' && <WorkplaceLocationsTab locations={locations} permissions={permissions} />}

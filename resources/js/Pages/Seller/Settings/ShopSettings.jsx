@@ -12,12 +12,31 @@ import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/Seller
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import { compressImage } from '@/utils/imageCompressor';
 import WorkplaceLocationsManager from '@/Components/Seller/Settings/WorkplaceLocationsManager';
+import PickupScheduleSettings from '@/Components/Seller/Settings/PickupScheduleSettings';
+import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
 
-export default function ShopSettings({ auth, user, stats, locations = [] }) {
+export default function ShopSettings({ auth, user, stats, locations = [], pickupSchedule }) {
     const bannerInputRef = useRef(null);
     const { openSidebar } = useSellerWorkspaceShell();
     const { addToast } = useToast();
     const { canEdit: canEditShopSettings, isReadOnly: isShopSettingsReadOnly } = useSellerModuleAccess('shop_settings');
+
+    const [activeTab, setActiveTab] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const requestedTab = params.get('tab');
+            if (requestedTab && ['storefront', 'pickup', 'locations'].includes(requestedTab)) {
+                return requestedTab;
+            }
+        }
+        return 'storefront';
+    });
+
+    const tabs = [
+        { id: 'storefront', label: 'Shop Storefront' },
+        { id: 'pickup', label: 'Store Pickup & Hours' },
+        { id: 'locations', label: 'Workplace Locations' },
+    ];
 
     const [bannerPreview, setBannerPreview] = useState(
         user?.banner_image_url || (user?.banner_image
@@ -102,8 +121,17 @@ export default function ShopSettings({ auth, user, stats, locations = [] }) {
                 onMenuClick={openSidebar}
             />
 
-            <form onSubmit={submit} className="flex-1">
-                <div className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+            <div className="w-full px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8">
+                <FilterToolbarHeader
+                    tabs={tabs}
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                />
+            </div>
+
+            {activeTab === 'storefront' && (
+                <form onSubmit={submit} className="flex-1">
+                    <div className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
                         {isShopSettingsReadOnly && (
                             <ReadOnlyCapabilityNotice label="Shop settings are read only for your account. Profile updates and media changes are disabled." />
                         )}
@@ -363,45 +391,55 @@ export default function ShopSettings({ auth, user, stats, locations = [] }) {
                             </div>
                         )}
 
-                        <div className="mt-8">
-                            <WorkplaceLocationsManager locations={locations} canEdit={canEditShopSettings} />
-                        </div>
-                </div>
-
-                {/* ── Floating Save Bar ── */}
-                <div className="sticky bottom-0 z-30 border-t border-stone-100 bg-white/80 shadow-lg backdrop-blur-xl">
-                    <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
-                        <p className="text-xs text-stone-400 hidden sm:block">
-                            {errors.banner_image && (
-                                <span className="text-red-500 flex items-center gap-1">
-                                    <AlertCircle className="w-3.5 h-3.5" /> {errors.banner_image}
-                                </span>
-                            )}
-                            {!errors.banner_image && 'Changes stay local until you save.'}
-                        </p>
-                        <button
-                            type="submit"
-                            disabled={processing || !canEditShopSettings}
-                            className="ml-auto flex items-center gap-2 rounded-xl bg-orange-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-orange-700 active:bg-orange-800 disabled:cursor-not-allowed disabled:opacity-70 min-h-[44px] sm:min-h-[40px]"
-                        >
-                            {processing ? (
-                                <>
-                                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                                    </svg>
-                                    Saving...
-                                </>
-                            ) : (
-                                <>
-                                    <Save className="w-4 h-4" />
-                                    Save Changes
-                                </>
-                            )}
-                        </button>
                     </div>
+
+                    {/* ── Floating Save Bar ── */}
+                    <div className="sticky bottom-0 z-30 border-t border-stone-100 bg-white/80 shadow-lg backdrop-blur-xl">
+                        <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
+                            <p className="text-xs text-stone-400 hidden sm:block">
+                                {errors.banner_image && (
+                                    <span className="text-red-500 flex items-center gap-1">
+                                        <AlertCircle className="w-3.5 h-3.5" /> {errors.banner_image}
+                                    </span>
+                                )}
+                                {!errors.banner_image && 'Changes stay local until you save.'}
+                            </p>
+                            <button
+                                type="submit"
+                                disabled={processing || !canEditShopSettings}
+                                className="ml-auto flex items-center gap-2 rounded-xl bg-orange-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-orange-700 active:bg-orange-800 disabled:cursor-not-allowed disabled:opacity-70 min-h-[44px] sm:min-h-[40px]"
+                            >
+                                {processing ? (
+                                    <>
+                                        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                                        </svg>
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="w-4 h-4" />
+                                        Save Changes
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            )}
+
+            {activeTab === 'pickup' && (
+                <div className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+                    <PickupScheduleSettings schedule={pickupSchedule} locations={locations} canEdit={canEditShopSettings} />
                 </div>
-            </form>
+            )}
+
+            {activeTab === 'locations' && (
+                <div className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+                    <WorkplaceLocationsManager locations={locations} canEdit={canEditShopSettings} />
+                </div>
+            )}
         </>
     );
 }

@@ -1,7 +1,7 @@
 import React from "react";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
-import { Hash, Camera as CameraIcon, CheckCircle2 } from "lucide-react";
+import { Hash, Camera as CameraIcon, CheckCircle2, KeyRound } from "lucide-react";
 
 export default function ManualDeliveryForm({
     shippingModal,
@@ -12,6 +12,31 @@ export default function ManualDeliveryForm({
 }) {
     return (
         <>
+            {shippingModal.isPickup && shippingModal.status === "Delivered" && (
+                <div className="mb-6 p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
+                    <InputLabel className="text-amber-900 font-bold flex items-center gap-1.5">
+                        <KeyRound size={15} className="text-amber-700" />
+                        Enter Buyer 4-Digit Pickup PIN
+                    </InputLabel>
+                    <p className="text-xs text-amber-800 mt-1 mb-3">
+                        Ask the customer for the 4-digit verification code displayed on their LikhangKamay order receipt to verify handoff.
+                    </p>
+                    <TextInput
+                        disabled={!canEditOrders}
+                        type="text"
+                        maxLength={4}
+                        value={shippingModal.pickupPin || ""}
+                        onChange={(e) =>
+                            setShippingModal(prev => ({
+                                ...prev,
+                                pickupPin: e.target.value.replace(/\D/g, "")
+                            }))
+                        }
+                        placeholder="e.g. 4829"
+                        className="w-full text-center text-xl tracking-[0.3em] font-black rounded-xl border-amber-300 bg-white focus:border-amber-600 focus:ring-amber-600"
+                    />
+                </div>
+            )}
             {config.allowTracking && (
                 <div className="mb-6">
                     <InputLabel>

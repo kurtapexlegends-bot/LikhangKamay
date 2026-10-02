@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { MapPin, Hash, PackageCheck, DollarSign, Route } from "lucide-react";
+import { MapPin, Hash, PackageCheck, DollarSign, Route, Clock } from "lucide-react";
 import { sellerProofLabel } from "@/utils/orderHelpers";
 import OrderRoutePreview from "@/Components/Seller/Orders/OrderRoutePreview";
 
@@ -23,6 +23,13 @@ export default function OrderLogistics({ order, canEditOrders, markAsPaidAction 
                 <span className="inline-flex rounded-md border border-stone-200 bg-white px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-stone-600 tracking-tight shadow-2xs">
                     {order.shipping_method}
                 </span>
+
+                {order.shipping_method === "Pick Up" && order.pickup_date && (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-clay-200 bg-clay-50 px-1.5 py-0.5 text-[9px] font-extrabold text-clay-800 tracking-tight shadow-2xs">
+                        <Clock size={9} className="text-clay-600" />
+                        {order.pickup_date} • {order.pickup_time_slot || "Scheduled"}
+                    </span>
+                )}
 
                 {order.shipping_method === "Delivery" && (
                     <button

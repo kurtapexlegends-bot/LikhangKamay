@@ -109,6 +109,7 @@ export default function useOrderManagerActions({
             processing: false,
             mode,
             status: mode === "pickup-ready" ? "Ready for Pickup" : (mode === "deliver" ? "Delivered" : "Shipped"),
+            pickupPin: "",
             error: "",
         });
     };
@@ -119,6 +120,7 @@ export default function useOrderManagerActions({
         proofOfDelivery: null,
         previewUrl: null,
         existingProofUrl: null,
+        pickupPin: "",
         processing: false,
         error: "",
     }));
@@ -130,6 +132,7 @@ export default function useOrderManagerActions({
         if (shippingModal.trackingNumber) formData.append("tracking_number", shippingModal.trackingNumber);
         if (shippingModal.shippingNotes) formData.append("shipping_notes", shippingModal.shippingNotes);
         if (shippingModal.proofOfDelivery) formData.append("proof_of_delivery", shippingModal.proofOfDelivery);
+        if (shippingModal.pickupPin) formData.append("pickup_pin", shippingModal.pickupPin);
 
         router.post(route("orders.update", shippingModal.orderId), formData, {
             preserveScroll: true,
