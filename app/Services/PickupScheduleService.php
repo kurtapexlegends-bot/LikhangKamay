@@ -111,7 +111,7 @@ class PickupScheduleService
 
         if ($leadTimeDays <= 0) {
             // If today is operating day and has slots remaining
-            if (in_array($current->dayOfWeekIso, $operatingDays, true)) {
+            if ($schedule->isOperatingOnDay($current->dayOfWeekIso)) {
                 $todaySlots = $this->getAvailableSlotsForDate($seller, $current);
                 $hasAvailableSlot = collect($todaySlots)->contains('is_available', true);
                 if ($hasAvailableSlot) {
@@ -121,7 +121,7 @@ class PickupScheduleService
 
             // Move to next operating day
             $next = $current->copy()->addDay()->startOfDay();
-            while (!in_array($next->dayOfWeekIso, $operatingDays, true)) {
+            while (!$schedule->isOperatingOnDay($next->dayOfWeekIso)) {
                 $next->addDay();
             }
 
@@ -134,13 +134,13 @@ class PickupScheduleService
 
         while ($daysAccumulated < $leadTimeDays) {
             $target->addDay();
-            if (in_array($target->dayOfWeekIso, $operatingDays, true)) {
+            if ($schedule->isOperatingOnDay($target->dayOfWeekIso)) {
                 $daysAccumulated++;
             }
         }
 
         // Ensure target is an operating day
-        while (!in_array($target->dayOfWeekIso, $operatingDays, true)) {
+        while (!$schedule->isOperatingOnDay($target->dayOfWeekIso)) {
             $target->addDay();
         }
 
@@ -160,10 +160,9 @@ class PickupScheduleService
         $isToday = $carbonDate->isSameDay($now);
 
         $schedule = $this->getEffectiveSchedule($seller);
-        $operatingDays = $schedule->getEffectiveOperatingDays();
 
         // Not an operating day
-        if (!in_array($carbonDate->dayOfWeekIso, $operatingDays, true)) {
+        if (!$schedule->isOperatingOnDay($carbonDate->dayOfWeekIso)) {
             return [];
         }
 
@@ -178,7 +177,7 @@ class PickupScheduleService
             ->pluck('aggregate', 'pickup_time_slot')
             ->all();
 
-        $slots = $schedule->getEffectiveTimeSlots();
+        $slots = $schedule->getEffectiveTimeSlotsForDay($carbonDate->dayOfWeekIso);
         $results = [];
 
         foreach ($slots as $slot) {
@@ -251,7 +250,7 @@ class PickupScheduleService
         for ($i = 0; $i < $effectiveDaysAhead; $i++) {
             $dateStr = $cursor->toDateString();
             $dayOfWeek = $cursor->dayOfWeekIso;
-            $isOperating = in_array($dayOfWeek, $operatingDays, true);
+            $isOperating = $schedule->isOperatingOnDay($dayOfWeek);
             $isBeforeEarliest = $cursor->lessThan($earliestDate);
             $slots = $isOperating ? $this->getAvailableSlotsForDate($seller, $cursor) : [];
             $hasAvailableSlot = collect($slots)->contains('is_available', true);

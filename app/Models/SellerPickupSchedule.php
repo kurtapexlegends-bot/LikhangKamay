@@ -23,19 +23,26 @@ class SellerPickupSchedule extends Model
 {
     use HasFactory;
 
+    public const MODE_UNIFORM = 'uniform';
+    public const MODE_PER_DAY = 'per_day';
+
     protected $fillable = [
         'user_id',
         'is_enabled',
+        'schedule_mode',
         'operating_days',
         'time_slots',
+        'daily_time_slots',
         'pickup_location_id',
         'max_advance_days',
     ];
 
     protected $casts = [
         'is_enabled' => 'boolean',
+        'schedule_mode' => 'string',
         'operating_days' => 'array',
         'time_slots' => 'array',
+        'daily_time_slots' => 'array',
         'pickup_location_id' => 'integer',
         'max_advance_days' => 'integer',
     ];
@@ -76,12 +83,56 @@ class SellerPickupSchedule extends Model
     }
 
     /**
+     * Check if schedule is configured per day of the week.
+     */
+    public function isPerDayMode(): bool
+    {
+        return ($this->schedule_mode ?? self::MODE_UNIFORM) === self::MODE_PER_DAY;
+    }
+
+    /**
+     * Determine if store pickup is active on a specific ISO day of the week (1=Mon ... 7=Sun).
+     */
+    public function isOperatingOnDay(int $isoDayOfWeek): bool
+    {
+        if (!$this->is_enabled) {
+            return false;
+        }
+
+        if ($this->isPerDayMode() && is_array($this->daily_time_slots)) {
+            $key = (string) $isoDayOfWeek;
+            $dayConfig = $this->daily_time_slots[$key] ?? null;
+
+            if (is_array($dayConfig)) {
+                if (isset($dayConfig['is_open'])) {
+                    return (bool) $dayConfig['is_open'] && !empty($dayConfig['slots'] ?? []);
+                }
+                return !empty($dayConfig);
+            }
+
+            return false;
+        }
+
+        return in_array($isoDayOfWeek, $this->getEffectiveOperatingDays(), true);
+    }
+
+    /**
      * Get configured operating days or system defaults.
      *
      * @return array<int>
      */
     public function getEffectiveOperatingDays(): array
     {
+        if ($this->isPerDayMode() && is_array($this->daily_time_slots)) {
+            $activeDays = [];
+            for ($day = 1; $day <= 7; $day++) {
+                if ($this->isOperatingOnDay($day)) {
+                    $activeDays[] = $day;
+                }
+            }
+            return $activeDays;
+        }
+
         if (is_array($this->operating_days) && !empty($this->operating_days)) {
             return array_values(array_map('intval', $this->operating_days));
         }
@@ -101,5 +152,29 @@ class SellerPickupSchedule extends Model
         }
 
         return self::DEFAULT_TIME_SLOTS;
+    }
+
+    /**
+     * Get effective time slots for a specific ISO day of the week (1=Mon ... 7=Sun).
+     *
+     * @return array<array<string, mixed>>
+     */
+    public function getEffectiveTimeSlotsForDay(int $isoDayOfWeek): array
+    {
+        if ($this->isPerDayMode() && is_array($this->daily_time_slots)) {
+            $key = (string) $isoDayOfWeek;
+            $dayConfig = $this->daily_time_slots[$key] ?? null;
+
+            if (is_array($dayConfig)) {
+                if (isset($dayConfig['slots']) && is_array($dayConfig['slots'])) {
+                    return ($dayConfig['is_open'] ?? true) ? $dayConfig['slots'] : [];
+                }
+                return $dayConfig;
+            }
+
+            return [];
+        }
+
+        return $this->getEffectiveTimeSlots();
     }
 }

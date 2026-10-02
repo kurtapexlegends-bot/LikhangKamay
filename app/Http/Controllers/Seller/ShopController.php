@@ -161,8 +161,10 @@ class ShopController extends Controller
 
         $schedule->update([
             'is_enabled' => (bool) $validated['is_enabled'],
+            'schedule_mode' => $validated['schedule_mode'] ?? 'uniform',
             'operating_days' => $validated['operating_days'],
             'time_slots' => $validated['time_slots'],
+            'daily_time_slots' => $validated['daily_time_slots'] ?? null,
             'pickup_location_id' => $validated['pickup_location_id'] ?? null,
             'max_advance_days' => $validated['max_advance_days'] ?? 30,
         ]);

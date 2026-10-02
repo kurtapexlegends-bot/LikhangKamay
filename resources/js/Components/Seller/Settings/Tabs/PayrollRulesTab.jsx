@@ -66,6 +66,8 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
         standard_workday_hours: sellerOwner.standard_workday_hours || 8.0,
         shift_start_time: sellerOwner.shift_start_time || '08:00',
         shift_end_time: sellerOwner.shift_end_time || '17:00',
+        shift_schedule_mode: sellerOwner.shift_schedule_mode || 'uniform',
+        daily_shifts: sellerOwner.daily_shifts || null,
         grace_period_minutes: sellerOwner.grace_period_minutes ?? 15,
         earliest_clock_in_minutes: sellerOwner.earliest_clock_in_minutes ?? 30,
         enforce_strict_shift_window: sellerOwner.enforce_strict_shift_window !== undefined ? Boolean(sellerOwner.enforce_strict_shift_window) : true,

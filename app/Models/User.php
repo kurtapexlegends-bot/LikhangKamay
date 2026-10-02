@@ -183,6 +183,8 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'auto_reply_completion_message',
         'shift_start_time',
         'shift_end_time',
+        'shift_schedule_mode',
+        'daily_shifts',
         'grace_period_minutes',
         'earliest_clock_in_minutes',
         'enforce_strict_shift_window',
@@ -226,6 +228,8 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'earliest_clock_in_minutes' => 'integer',
             'enforce_strict_shift_window' => \App\Casts\PostgresCompatibleBoolean::class,
             'break_allowance_minutes' => 'integer',
+            'shift_schedule_mode' => 'string',
+            'daily_shifts' => 'array',
             'document_flags' => 'array',
             'banned_at' => 'datetime',
             'warning_count' => 'integer',
@@ -384,6 +388,81 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         }
 
         return $schedule;
+    }
+
+    public const SHIFT_MODE_UNIFORM = 'uniform';
+    public const SHIFT_MODE_PER_DAY = 'per_day';
+
+    public function isDailyShiftMode(): bool
+    {
+        return ($this->shift_schedule_mode ?? self::SHIFT_MODE_UNIFORM) === self::SHIFT_MODE_PER_DAY;
+    }
+
+    /**
+     * Resolve effective shift policy for a specific date (or general fallback).
+     *
+     * @param \Carbon\CarbonInterface|string|null $date
+     * @return array<string, mixed>
+     */
+    public function getEffectiveShiftPolicy(\Carbon\CarbonInterface|string|null $date = null): array
+    {
+        $isPerDay = $this->isDailyShiftMode();
+        $dayKey = null;
+        if ($date) {
+            $carbonDate = is_string($date) ? \Carbon\Carbon::parse($date) : $date;
+            $dayKey = strtolower($carbonDate->format('D'));
+        }
+
+        $startTime = $this->shift_start_time ?? '08:00';
+        $endTime = $this->shift_end_time ?? '17:00';
+        $breakStart = $this->break_window_start ?? '11:30';
+        $breakEnd = $this->break_window_end ?? '13:30';
+        $breakAllowance = (int) ($this->break_allowance_minutes ?? 60);
+        $hasBreak = true;
+        $isWork = true;
+
+        if ($isPerDay && $dayKey && is_array($this->daily_shifts) && isset($this->daily_shifts[$dayKey])) {
+            $dayConfig = $this->daily_shifts[$dayKey];
+            $isWork = (bool) ($dayConfig['is_work'] ?? true);
+            if (!empty($dayConfig['start'])) {
+                $startTime = $dayConfig['start'];
+            }
+            if (!empty($dayConfig['end'])) {
+                $endTime = $dayConfig['end'];
+            }
+            $hasBreak = (bool) ($dayConfig['has_break'] ?? true);
+            if ($hasBreak) {
+                if (!empty($dayConfig['break_start'])) {
+                    $breakStart = $dayConfig['break_start'];
+                }
+                if (!empty($dayConfig['break_end'])) {
+                    $breakEnd = $dayConfig['break_end'];
+                }
+                if (isset($dayConfig['break_minutes'])) {
+                    $breakAllowance = (int) $dayConfig['break_minutes'];
+                }
+            } else {
+                $breakStart = null;
+                $breakEnd = null;
+                $breakAllowance = 0;
+            }
+        }
+
+        return [
+            'shift_schedule_mode' => $this->shift_schedule_mode ?? self::SHIFT_MODE_UNIFORM,
+            'is_per_day' => $isPerDay,
+            'is_work' => $isWork,
+            'shift_start_time' => $startTime,
+            'shift_end_time' => $endTime,
+            'grace_period_minutes' => (int) ($this->grace_period_minutes ?? 15),
+            'earliest_clock_in_minutes' => (int) ($this->earliest_clock_in_minutes ?? 30),
+            'enforce_strict_shift_window' => (bool) ($this->enforce_strict_shift_window ?? true),
+            'has_break' => $hasBreak,
+            'break_window_start' => $breakStart,
+            'break_window_end' => $breakEnd,
+            'break_allowance_minutes' => $breakAllowance,
+            'daily_shifts' => $this->daily_shifts,
+        ];
     }
 
     public function sponsorshipRequests()

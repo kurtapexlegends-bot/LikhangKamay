@@ -21,6 +21,7 @@ class UpdatePickupScheduleRequest extends FormRequest
     {
         return [
             'is_enabled' => ['required', 'boolean'],
+            'schedule_mode' => ['nullable', 'string', 'in:uniform,per_day'],
             'operating_days' => ['present', 'array'],
             'operating_days.*' => ['integer', 'between:1,7'],
             'time_slots' => ['present', 'array'],
@@ -29,6 +30,7 @@ class UpdatePickupScheduleRequest extends FormRequest
             'time_slots.*.start_time' => ['required', 'string', 'regex:/^\d{2}:\d{2}$/'],
             'time_slots.*.end_time' => ['required', 'string', 'regex:/^\d{2}:\d{2}$/'],
             'time_slots.*.max_capacity' => ['required', 'integer', 'min:1', 'max:100'],
+            'daily_time_slots' => ['nullable', 'array'],
             'pickup_location_id' => ['nullable', 'integer', 'exists:seller_locations,id'],
             'max_advance_days' => ['nullable', 'integer', 'between:7,90'],
         ];

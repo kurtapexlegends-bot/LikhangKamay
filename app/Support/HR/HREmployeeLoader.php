@@ -130,6 +130,8 @@ class HREmployeeLoader
             'standard_workday_hours' => $seller->standard_workday_hours ?? 8.00,
             'shift_start_time' => $seller->shift_start_time ?? '08:00',
             'shift_end_time' => $seller->shift_end_time ?? '17:00',
+            'shift_schedule_mode' => $seller->shift_schedule_mode ?? 'uniform',
+            'daily_shifts' => $seller->daily_shifts,
             'grace_period_minutes' => (int) ($seller->grace_period_minutes ?? 15),
             'break_window_start' => $seller->break_window_start ?? '11:30',
             'break_window_end' => $seller->break_window_end ?? '13:30',
