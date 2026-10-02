@@ -12,13 +12,36 @@ class MonetizationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_monetization_route_redirects_to_settings(): void
+    public function test_monetization_route_renders_dedicated_dashboard(): void
     {
         $admin = User::factory()->superAdmin()->create();
 
         $this->actingAs($admin)
             ->get(route('admin.monetization'))
-            ->assertRedirect(route('admin.settings.index', ['tab' => 'monetization']));
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Monetization/Monetization')
+                ->has('metrics')
+                ->has('recentSubscribers')
+            );
+    }
+
+    public function test_legacy_settings_monetization_tab_redirects_to_dedicated_route(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.settings.index', ['tab' => 'monetization']))
+            ->assertRedirect(route('admin.monetization'));
+    }
+
+    public function test_subscriptions_alias_redirects_to_monetization_route(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.subscriptions'))
+            ->assertRedirect(route('admin.monetization'));
     }
 
     public function test_monetization_marks_plan_mrr_as_projected(): void
@@ -28,10 +51,10 @@ class MonetizationTest extends TestCase
         User::factory()->artisanApproved()->create(['premium_tier' => 'super_premium']);
 
         $this->actingAs($admin)
-            ->get(route('admin.settings.index', ['tab' => 'monetization']))
+            ->get(route('admin.monetization'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Layout/SystemConfig/SystemConfig')
+                ->component('Admin/Monetization/Monetization')
                 ->where('metrics.mrr.value', 598)
                 ->where('metrics.mrr.is_projected', true)
                 ->where('metrics.mrr.basis', 'Based on current active artisan plan tiers.')
@@ -56,10 +79,10 @@ class MonetizationTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('admin.settings.index', ['tab' => 'monetization']))
+            ->get(route('admin.monetization'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Layout/SystemConfig/SystemConfig')
+                ->component('Admin/Monetization/Monetization')
                 ->where('recentSubscribers.0.id', $log->id)
                 ->where('recentSubscribers.0.user_id', $artisan->id)
                 ->where('recentSubscribers.0.name', 'Cavite Potter')

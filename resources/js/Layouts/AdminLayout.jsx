@@ -78,7 +78,7 @@ const resolveActiveGroup = (path, search = '') => {
     const tab = params.get('tab') || '';
     if (tab === 'monetization') return 'Operations Hub';
 
-    if (path.includes('dashboard') || path.includes('insights') || path.includes('operations')) return 'Operations Hub';
+    if (path.includes('dashboard') || path.includes('insights') || path.includes('operations') || path.includes('monetization') || path.includes('subscriptions')) return 'Operations Hub';
     if (path.includes('users') || path.includes('pending') || path.includes('catalog')) return 'Marketplace';
     if (path.includes('moderation') || path.includes('compliance') || path.includes('disputes')) return 'Safety & Compliance';
     if (path.includes('settings')) return 'System Settings';
@@ -188,7 +188,7 @@ export default function AdminLayout({ title, children }) {
             items: [
                 { name: 'Overview', href: route('admin.dashboard'), icon: LayoutDashboard, current: isTabActive('admin.dashboard', null, url) },
                 { name: 'Insights', href: route('admin.insights'), icon: BarChart2, current: isTabActive('admin.insights', null, url) },
-                { name: 'Subscriptions & Billing', href: route('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, current: isTabActive('admin.settings.index', 'monetization', url) },
+                { name: 'Subscriptions & Billing', href: route('admin.monetization'), icon: TrendingUp, current: route().current('admin.monetization*') || isTabActive('admin.settings.index', 'monetization', url) },
                 { name: 'Payouts', href: route('admin.payouts.index'), icon: CreditCard, current: route().current('admin.payouts.*') },
             ]
         },
