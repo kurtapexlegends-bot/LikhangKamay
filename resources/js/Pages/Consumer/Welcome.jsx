@@ -2,7 +2,7 @@ import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import Footer from '@/Layouts/Footer';
-import { Award, ArrowRight, Package, Store } from 'lucide-react';
+import { Award, ArrowRight, Package } from 'lucide-react';
 import { useSponsoredImpressionTracking } from '@/utils/sponsorshipTracking';
 import { formatSold } from '@/utils/catalog';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
@@ -14,7 +14,7 @@ import CategoryPillTabs from '@/Components/Consumer/Welcome/CategoryPillTabs';
 import SponsoredProductsCarousel from '@/Components/Consumer/Welcome/SponsoredProductsCarousel';
 import TopArtisansGrid from '@/Components/Consumer/Welcome/TopArtisansGrid';
 
-export default function Welcome({ featuredProducts = [], sponsoredProducts = [], followedProducts = [], topSellers = [], categories = [] }) {
+export default function Welcome({ featuredProducts = [], sponsoredProducts = [], topSellers = [], categories = [] }) {
     const sponsoredPlacement = 'home_sponsored';
 
     useSponsoredImpressionTracking(sponsoredProducts, sponsoredPlacement);
@@ -54,44 +54,6 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
 
                 {/* CATEGORIES */}
                 <CategoryPillTabs categories={categories} />
-
-                {/* 3. FROM STUDIOS YOU FOLLOW (COMPACT) */}
-                {followedProducts.length > 0 && (
-                    <section className="relative rounded-2xl bg-stone-50/40 border border-stone-200/70 p-3.5 sm:p-4 shadow-xs flex flex-col gap-3">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="flex items-center justify-center w-6 h-6 rounded-md bg-clay-50 text-clay-700 border border-clay-100/80 shrink-0">
-                                    <Store size={12} />
-                                </span>
-                                <div>
-                                    <h2 className="text-sm sm:text-base font-serif font-bold text-stone-900 leading-none">From Studios You Follow</h2>
-                                    <p className="text-[10px] text-stone-500 font-medium mt-0.5">Fresh releases from your favorite artisan workshops</p>
-                                </div>
-                            </div>
-                            <Link 
-                                href={route('shop.index', { followed_only: 1 })} 
-                                className="text-[11px] text-clay-700 font-semibold hover:underline flex items-center gap-1 min-h-[36px]"
-                            >
-                                View Feed <ArrowRight size={11} />
-                            </Link>
-                        </div>
-
-                        <div className="flex md:grid overflow-x-auto md:overflow-visible snap-x md:snap-none -mx-3.5 px-3.5 md:mx-0 md:px-0 scrollbar-hide pb-1 md:pb-0 gap-2.5 sm:gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-                            {followedProducts.map((product) => (
-                                <div key={`followed-${product.id}`} className="snap-start shrink-0 w-[150px] sm:w-[170px] md:w-auto">
-                                    <ProductCard
-                                        product={{
-                                            ...product,
-                                            image: product.img || product.image,
-                                            seller: product.seller || product.seller_name,
-                                            location: product.location || 'Philippines',
-                                        }}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
 
                 {/* FEATURED PRODUCTS */}
                 <section>

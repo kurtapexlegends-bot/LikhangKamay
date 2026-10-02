@@ -12,6 +12,7 @@ import ShippingMethodSelector from '@/Components/Consumer/Shop/Checkout/Shipping
 import ShippingAddressSelector from '@/Components/Consumer/Shop/Checkout/ShippingAddressSelector/ShippingAddressSelector';
 import PaymentMethodSelector from '@/Components/Consumer/Shop/Checkout/PaymentMethodSelector';
 import OrderPricingSummary from '@/Components/Consumer/Shop/Checkout/OrderPricingSummary';
+import StorePickupScheduler from '@/Components/Consumer/Shop/Checkout/StorePickupScheduler';
 
 const TYPES = [{ value: 'home', label: 'Home' }, { value: 'office', label: 'Office' }, { value: 'other', label: 'Other' }];
 const peso = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -25,7 +26,7 @@ const resolveAddressDisplay = (address) => address?.full_address || formatStruct
 });
 
 export default function Checkout({ auth, pricing }) {
-    const { flash, items: incomingItems = [] } = usePage().props;
+    const { flash, items: incomingItems = [], pickupConfigs = {} } = usePage().props;
     const { addToast } = useToast();
     const isArtisan = auth?.user?.role === 'artisan';
     const isPendingArtisan = auth?.user?.role === 'artisan' && auth?.user?.artisan_status === 'pending';
@@ -57,6 +58,9 @@ export default function Checkout({ auth, pricing }) {
     const sellerGroups = Object.values(grouped);
     const totalSellers = sellerGroups.length;
 
+    const primarySellerId = sellerGroups[0]?.sellerId;
+    const primaryPickupConfig = pickupConfigs?.[String(primarySellerId)] || Object.values(pickupConfigs || {})[0] || null;
+
     const { data, setData, post, processing, errors, setError, clearErrors } = useForm({
         items: incomingItems,
         selected_address_id: defaultAddress?.id || 'new',
@@ -73,6 +77,8 @@ export default function Checkout({ auth, pricing }) {
         shipping_notes: '',
         payment_method: 'COD',
         shipping_method: 'Delivery',
+        pickup_date: '',
+        pickup_time_slot: '',
         save_address: false,
         total: 0,
     });
@@ -274,6 +280,20 @@ export default function Checkout({ auth, pricing }) {
                 addToast('Wait for the delivery quote before placing the order.', 'info');
                 return;
             }
+        } else if (data.shipping_method === 'Pick Up') {
+            const localErrors = {};
+            if (!data.pickup_date) {
+                localErrors.pickup_date = 'Please select a pickup date.';
+            }
+            if (!data.pickup_time_slot) {
+                localErrors.pickup_time_slot = 'Please select an available pickup time window.';
+            }
+
+            if (Object.keys(localErrors).length > 0) {
+                setError(localErrors);
+                addToast('Please select your preferred pickup date and time window.', 'error');
+                return;
+            }
         }
 
         clearErrors();
@@ -367,19 +387,20 @@ export default function Checkout({ auth, pricing }) {
                                 needsDeliveryContactDetails={needsDeliveryContactDetails}
                             />
                         ) : (
-                            <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-5">
-                                <div className="flex items-start gap-3.5">
-                                    <div className="rounded-xl bg-blue-100/60 p-2.5 text-blue-600"><Store size={20} /></div>
-                                    <div>
-                                        <h3 className="text-base font-bold text-blue-900">Store Pickup</h3>
-                                        <p className="mt-1 text-sm text-blue-800">No delivery address is required. Coordinate pickup details with the artisan in chat after placing your order.</p>
-                                        <div className="mt-3 flex flex-wrap gap-2">
-                                            <span className="rounded-lg bg-blue-100/50 px-2.5 py-1 text-xs font-semibold text-blue-800">Zero Handling Fee</span>
-                                            <span className="rounded-lg bg-blue-100/50 px-2.5 py-1 text-xs font-semibold text-blue-800">COD Only</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <StorePickupScheduler
+                                pickupConfig={primaryPickupConfig}
+                                selectedDate={data.pickup_date}
+                                selectedSlot={data.pickup_time_slot}
+                                onSelectDate={(date) => {
+                                    setData('pickup_date', date);
+                                    if (errors.pickup_date) clearErrors('pickup_date');
+                                }}
+                                onSelectSlot={(slot) => {
+                                    setData('pickup_time_slot', slot);
+                                    if (errors.pickup_time_slot) clearErrors('pickup_time_slot');
+                                }}
+                                error={errors.pickup_date || errors.pickup_time_slot}
+                            />
                         )}
 
                         {/* 3. Delivery Notes */}

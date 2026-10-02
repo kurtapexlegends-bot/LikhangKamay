@@ -1,9 +1,10 @@
+/* global route */
 import React, { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { X, AlertTriangle, Check, Clock, CreditCard, ShieldCheck, MapPin, ArrowRight } from 'lucide-react';
 import Modal from '@/Components/Modal';
 
-const CANCELLATION_REASONS = [
+const DELIVERY_REASONS = [
     { id: 'change_delivery_address', label: 'Need to change delivery address' },
     { id: 'modify_order_items', label: 'Need to modify items or quantities' },
     { id: 'ordered_by_mistake', label: 'Order placed by mistake' },
@@ -12,11 +13,32 @@ const CANCELLATION_REASONS = [
     { id: 'other', label: 'Other reason' },
 ];
 
+const PICKUP_REASONS = [
+    { id: 'reschedule_pickup', label: 'Need to change pickup date or time window' },
+    { id: 'cannot_visit_store', label: 'Unable to visit artisan studio / store in person' },
+    { id: 'modify_order_items', label: 'Need to modify items or quantities' },
+    { id: 'ordered_by_mistake', label: 'Order placed by mistake' },
+    { id: 'other', label: 'Other reason' },
+];
+
 export default function CancelOrderModal({ isOpen, onClose, order }) {
-    const [selectedReason, setSelectedReason] = useState('change_delivery_address');
+    const isPickup = order?.shipping_method === 'Pick Up';
+    const reasons = isPickup ? PICKUP_REASONS : DELIVERY_REASONS;
+
+    const [selectedReason, setSelectedReason] = useState(
+        isPickup ? 'reschedule_pickup' : 'change_delivery_address'
+    );
     const [details, setDetails] = useState('');
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState(null);
+
+    React.useEffect(() => {
+        if (order) {
+            setSelectedReason(order.shipping_method === 'Pick Up' ? 'reschedule_pickup' : 'change_delivery_address');
+            setDetails('');
+            setError(null);
+        }
+    }, [order]);
 
     if (!order) return null;
 
@@ -138,7 +160,7 @@ export default function CancelOrderModal({ isOpen, onClose, order }) {
                         Select Cancellation Reason
                     </label>
                     <div className="space-y-2">
-                        {CANCELLATION_REASONS.map((reason) => {
+                        {reasons.map((reason) => {
                             const isSelected = selectedReason === reason.id;
                             return (
                                 <button
@@ -161,6 +183,19 @@ export default function CancelOrderModal({ isOpen, onClose, order }) {
                             );
                         })}
                     </div>
+
+                    {/* Reschedule Pickup Guidance Banner */}
+                    {selectedReason === 'reschedule_pickup' && (
+                        <div className="p-3.5 bg-clay-50/80 border border-clay-200 rounded-xl text-xs text-clay-900 space-y-1">
+                            <div className="flex items-center gap-1.5 font-bold text-clay-800">
+                                <Clock className="w-4 h-4 text-clay-600 shrink-0" />
+                                <span>Pickup Slot Released Immediately</span>
+                            </div>
+                            <p className="text-[11px] text-clay-700 leading-relaxed">
+                                Cancelling will instantly free up this pickup window so you or others can reserve a new date/time on LikhangKamay.
+                            </p>
+                        </div>
+                    )}
 
                     {/* Change Address Guidance Banner */}
                     {selectedReason === 'change_delivery_address' && (
