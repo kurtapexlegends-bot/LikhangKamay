@@ -222,6 +222,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         // SHOP SETTINGS & WORKPLACE LOCATIONS
         Route::get('/shop-settings', [\App\Http\Controllers\Seller\ShopController::class, 'settings'])->middleware('seller.module:shop_settings')->name('shop.settings');
         Route::post('/shop-settings', [\App\Http\Controllers\Seller\ShopController::class, 'updateSettings'])->middleware('seller.module:shop_settings')->name('shop.settings.update');
+        Route::post('/shop-settings/pickup-schedule', [\App\Http\Controllers\Seller\ShopController::class, 'updatePickupSchedule'])->middleware('seller.module:shop_settings')->name('shop.settings.pickup-schedule');
         Route::post('/shop-settings/presign', [\App\Http\Controllers\Seller\ShopController::class, 'presign'])->middleware('seller.module:shop_settings')->name('shop.settings.presign');
         Route::put('/shop-settings/local-upload', [\App\Http\Controllers\Seller\ShopController::class, 'localUpload'])->middleware('seller.module:shop_settings')->name('shop.settings.local-upload');
         Route::get('/shop/analytics/rollup', [\App\Http\Controllers\Seller\ShopController::class, 'analyticsRollup'])->name('shop.analytics.rollup');

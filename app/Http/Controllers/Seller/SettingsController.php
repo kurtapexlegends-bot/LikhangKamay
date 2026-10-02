@@ -94,6 +94,7 @@ class SettingsController extends Controller
                 'rating' => number_format($avgRating, 1),
             ],
             'locations' => $locations,
+            'pickupSchedule' => $sellerOwner->getPickupSchedule()->loadMissing('pickupLocation'),
             'permissions' => [
                 'can_edit_shop_settings' => $user->isArtisan() || $user->isWorkspaceOwner(),
                 'can_edit_hr_settings' => ($user->isArtisan() || $user->can_edit_hr_records) && in_array($sellerOwner->premium_tier, ['premium', 'super_premium']),

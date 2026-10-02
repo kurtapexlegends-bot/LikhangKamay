@@ -127,6 +127,8 @@ class CancelOrder
             if ($buyer->email) {
                 $reasonDescription = match ($reason) {
                     'change_delivery_address' => 'Need to change delivery address',
+                    'reschedule_pickup' => 'Need to change pickup schedule or time window',
+                    'cannot_visit_store' => 'Unable to visit artisan studio / store in person',
                     'modify_order_items' => 'Need to modify items or quantities',
                     'ordered_by_mistake' => 'Order placed by mistake',
                     'found_better_price' => 'Found alternative / better deal',

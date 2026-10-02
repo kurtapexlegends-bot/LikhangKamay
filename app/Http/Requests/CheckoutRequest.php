@@ -41,6 +41,8 @@ class CheckoutRequest extends FormRequest
             'total' => 'required|numeric',
             'shipping_notes' => 'nullable|string',
             'save_address' => 'nullable|boolean',
+            'pickup_date' => 'nullable|date',
+            'pickup_time_slot' => 'nullable|string|max:100',
         ];
     }
 }

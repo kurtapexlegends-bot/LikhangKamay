@@ -27,18 +27,15 @@ class CatalogController extends Controller
         }
 
         try {
-            $user = $request->user();
             $sponsoredProducts = $catalogService->getSponsoredProducts();
             $featuredProducts = $catalogService->getFeaturedProducts(
                 collect($sponsoredProducts)->pluck('id')->all()
             );
-            $followedProducts = $catalogService->getFollowedShopsProducts($user);
             $topSellers = $catalogService->getTopSellers();
             $categories = $catalogService->getCategories();
         } catch (\Throwable $e) {
             $sponsoredProducts = [];
             $featuredProducts = [];
-            $followedProducts = [];
             $topSellers = [];
             $categories = [];
             
@@ -50,7 +47,6 @@ class CatalogController extends Controller
             'canRegister' => Route::has('register'),
             'featuredProducts' => $featuredProducts,
             'sponsoredProducts' => $sponsoredProducts,
-            'followedProducts' => $followedProducts,
             'topSellers' => $topSellers,
             'categories' => $categories,
         ]);

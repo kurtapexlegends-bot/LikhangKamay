@@ -43,8 +43,9 @@ class UpdateOrderStatus
         $status = $data['status'];
         $trackingNumber = $data['tracking_number'] ?? null;
         $shippingNotes = $data['shipping_notes'] ?? null;
+        $pickupPin = $data['pickup_pin'] ?? null;
 
-        DB::transaction(function () use ($order, $status, $trackingNumber, $shippingNotes, $proofPath, $previousStatus, $previousPaymentStatus, $previousTrackingNumber, $actor) {
+        DB::transaction(function () use ($order, $status, $trackingNumber, $shippingNotes, $proofPath, $previousStatus, $previousPaymentStatus, $previousTrackingNumber, $actor, $pickupPin) {
             $lockedOrder = Order::with(['delivery', 'items'])->lockForUpdate()->findOrFail($order->id);
 
             if (!$this->isAllowedSellerStatusTransition($lockedOrder, $status)) {
@@ -62,6 +63,17 @@ class UpdateOrderStatus
 
             if ($status === 'Completed' && $replacementInProgress) {
                 throw new \Exception('Replacement orders must be marked as received by the buyer before completion.');
+            }
+
+            // GUARD: Verify 4-digit PIN for store pickup handoff
+            if ($status === 'Delivered' && $lockedOrder->shipping_method === 'Pick Up' && filled($lockedOrder->pickup_pin)) {
+                $inputPin = trim((string) ($pickupPin ?? ''));
+                $hasValidPin = filled($inputPin) && app(\App\Services\PickupScheduleService::class)->verifyPickupPin($lockedOrder, $inputPin);
+                $hasHandoverPhoto = (bool) $proofPath;
+
+                if (!$hasValidPin && !$hasHandoverPhoto) {
+                    throw new \Exception('Invalid 4-digit pickup PIN. Please ask the customer for the verification code shown on their order receipt.');
+                }
             }
 
             // Ensure proof is present before any database writes or side effects when the next status requires it.
@@ -108,6 +120,9 @@ class UpdateOrderStatus
                 $updateData['delivered_at'] = now();
                 $updateData['auto_complete_at'] = now()->addDays(1);
                 $updateData['warranty_expires_at'] = now()->addDay();
+                if ($lockedOrder->shipping_method === 'Pick Up' && $lockedOrder->payment_method === 'COD') {
+                    $updateData['payment_status'] = 'paid';
+                }
             }
 
             // Add tracking number when shipping
@@ -251,6 +266,10 @@ class UpdateOrderStatus
 
     private function statusRequiresProofImage(Order $order, string $nextStatus): bool
     {
+        if ($order->shipping_method === 'Pick Up' && $nextStatus === 'Delivered') {
+            return false;
+        }
+
         return in_array($nextStatus, ['Shipped', 'Ready for Pickup', 'Delivered'], true)
             && !$order->delivery?->external_order_id;
     }

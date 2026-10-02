@@ -52,6 +52,7 @@ class Order extends Model
         'shipping_latitude', 'shipping_longitude',
         'shipping_recipient_name', 'shipping_contact_phone', 'shipping_notes', 'tracking_number', 'received_at', 'warranty_expires_at',
         'accepted_at', 'shipped_at', 'delivered_at', 'cancelled_at', 'cancellation_reason', 'shipping_method', 'proof_of_delivery',
+        'pickup_date', 'pickup_time_slot', 'pickup_pin', 'pickup_location_id', 'pickup_location_snapshot',
         'return_reason', 'return_proof_image',
         'replacement_resolution_description', 'replacement_started_at', 'replacement_resolved_at',
     ];
@@ -68,6 +69,8 @@ class Order extends Model
         'cancelled_at' => 'datetime',
         'replacement_started_at' => 'datetime',
         'replacement_resolved_at' => 'datetime',
+        'pickup_date' => 'date',
+        'pickup_location_snapshot' => 'array',
         'shipping_latitude' => 'float',
         'shipping_longitude' => 'float',
         'merchandise_subtotal' => 'decimal:2',
@@ -109,6 +112,11 @@ class Order extends Model
     public function dispute()
     {
         return $this->hasOne(Dispute::class);
+    }
+
+    public function pickupLocation()
+    {
+        return $this->belongsTo(SellerLocation::class, 'pickup_location_id');
     }
 
     /**

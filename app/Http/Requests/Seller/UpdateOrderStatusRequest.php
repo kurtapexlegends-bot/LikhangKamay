@@ -28,6 +28,7 @@ class UpdateOrderStatusRequest extends FormRequest
             'tracking_number' => ['nullable', 'string', 'max:100'],
             'shipping_notes' => ['nullable', 'string', 'max:500'],
             'proof_of_delivery' => ['nullable', 'image', 'max:5120'],
+            'pickup_pin' => ['nullable', 'string', 'max:10'],
         ];
     }
 }

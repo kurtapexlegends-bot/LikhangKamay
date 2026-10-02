@@ -49,9 +49,22 @@ class BuyerOrderController extends Controller
         /** @var \App\Models\User|null $user */
         $user = Auth::user();
 
+        $pickupScheduleService = app(\App\Services\PickupScheduleService::class);
+        $pickupConfigs = [];
+
+        $sellerItems = collect($items)->groupBy('artisan_id');
+        foreach ($sellerItems as $artisanId => $sellerGroupItems) {
+            $seller = User::find((int) $artisanId);
+            if ($seller) {
+                $maxLeadTime = (int) $sellerGroupItems->max('lead_time');
+                $pickupConfigs[(string) $artisanId] = $pickupScheduleService->getScheduleOverviewForBuyer($seller, $maxLeadTime);
+            }
+        }
+
         return Inertia::render('Consumer/Shop/Checkout', [
             'items' => $items,
             'pricing' => OrderFinanceService::getPricingData(),
+            'pickupConfigs' => $pickupConfigs,
             'auth' => [
                 'user' => $user?->load('addresses'),
             ]

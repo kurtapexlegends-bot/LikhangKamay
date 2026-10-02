@@ -40,6 +40,7 @@ class PrepareCheckout
                     'moq' => (int) ($product->moq ?: 1),
                     'supply_unit' => $product->supply_unit ?: 'pcs',
                     'qty' => $qty,
+                    'lead_time' => (int) ($product->lead_time ?? 0),
                     'img' => $product->img
                 ];
             }
@@ -81,6 +82,7 @@ class PrepareCheckout
                     $item['supply_unit'] = $live->supply_unit ?: 'pcs';
                     $item['artisan_id'] = $live->artisan_id ?? $live->user_id;
                     $item['shop_name'] = $live->user->shop_name ?? 'Shop';
+                    $item['lead_time'] = (int) ($live->lead_time ?? 0);
                 }
             }
 

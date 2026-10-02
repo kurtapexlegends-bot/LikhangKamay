@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Events\ShopSettingsUpdated;
 use App\Http\Requests\Seller\UpdateShopSettingsRequest;
+use App\Http\Requests\Seller\UpdatePickupScheduleRequest;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -136,15 +137,37 @@ class ShopController extends Controller
             ->orderBy('created_at', 'desc')
             ->get(), collect());
 
+        $pickupSchedule = $user->getPickupSchedule()->loadMissing('pickupLocation');
+
         return Inertia::render('Seller/Settings/ShopSettings', [
             'user'  => $user,
             'locations' => $locations,
+            'pickupSchedule' => $pickupSchedule,
             'stats' => [
                 'products' => $productsCount,
                 'sales'    => $totalSales,
                 'rating'   => number_format($avgRating, 1),
             ],
         ]);
+    }
+
+    public function updatePickupSchedule(UpdatePickupScheduleRequest $request)
+    {
+        $user = $request->user()->getEffectiveSeller();
+        abort_unless($user && $user->isArtisan(), 403, 'Seller workspace access only.');
+
+        $schedule = $user->getPickupSchedule();
+        $validated = $request->validated();
+
+        $schedule->update([
+            'is_enabled' => (bool) $validated['is_enabled'],
+            'operating_days' => $validated['operating_days'],
+            'time_slots' => $validated['time_slots'],
+            'pickup_location_id' => $validated['pickup_location_id'] ?? null,
+            'max_advance_days' => $validated['max_advance_days'] ?? 30,
+        ]);
+
+        return redirect()->back()->with('success', 'Store pickup schedule updated successfully.');
     }
 
     public function updateSettings(UpdateShopSettingsRequest $request)

@@ -362,6 +362,30 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         return $this->hasMany(UserAddress::class);
     }
 
+    public function pickupSchedule()
+    {
+        return $this->hasOne(\App\Models\SellerPickupSchedule::class, 'user_id');
+    }
+
+    public function getPickupSchedule(): \App\Models\SellerPickupSchedule
+    {
+        $effectiveSeller = $this->getEffectiveSeller() ?: $this;
+        $schedule = $effectiveSeller->pickupSchedule;
+
+        if (!$schedule) {
+            $schedule = \App\Models\SellerPickupSchedule::firstOrCreate(
+                ['user_id' => $effectiveSeller->id],
+                [
+                    'is_enabled' => true,
+                    'operating_days' => \App\Models\SellerPickupSchedule::DEFAULT_OPERATING_DAYS,
+                    'time_slots' => \App\Models\SellerPickupSchedule::DEFAULT_TIME_SLOTS,
+                ]
+            );
+        }
+
+        return $schedule;
+    }
+
     public function sponsorshipRequests()
     {
         return $this->hasMany(\App\Models\SponsorshipRequest::class);

@@ -790,9 +790,15 @@ class StrictOrderLifecycleFlowE2ETest extends TestCase
 
         $discount->products()->attach($this->productA->id);
 
+        $pickupDate = app(\App\Services\PickupScheduleService::class)
+            ->calculateEarliestPickupDate($this->sellerA, (int) $this->productA->fresh()->lead_time)
+            ->format('Y-m-d');
+
         $checkoutResponse = $this->actingAs($this->buyer)->post(route('checkout.store'), [
             'items' => [['id' => $this->productA->id, 'qty' => 3, 'variant' => 'Standard']],
             'shipping_method' => 'Pick Up',
+            'pickup_date' => $pickupDate,
+            'pickup_time_slot' => '09:00 AM - 12:00 PM',
             'payment_method' => 'COD',
             'total' => 600.00, // 3 * 200 (250 - 20%)
         ]);

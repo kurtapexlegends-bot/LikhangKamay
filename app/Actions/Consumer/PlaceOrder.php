@@ -19,21 +19,25 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use App\Services\PickupScheduleService;
 
 class PlaceOrder
 {
     private SponsorshipAnalyticsService $sponsorshipAnalytics;
     private OrderFinanceService $orderFinanceService;
     private CheckoutShippingService $checkoutShippingService;
+    private PickupScheduleService $pickupScheduleService;
 
     public function __construct(
         SponsorshipAnalyticsService $sponsorshipAnalytics,
         OrderFinanceService $orderFinanceService,
-        CheckoutShippingService $checkoutShippingService
+        CheckoutShippingService $checkoutShippingService,
+        PickupScheduleService $pickupScheduleService
     ) {
         $this->sponsorshipAnalytics = $sponsorshipAnalytics;
         $this->orderFinanceService = $orderFinanceService;
         $this->checkoutShippingService = $checkoutShippingService;
+        $this->pickupScheduleService = $pickupScheduleService;
     }
 
     /**
@@ -218,6 +222,52 @@ class PlaceOrder
                 $finance = $financeBySeller[(string) $artisanId];
                 $paymentStatus = 'pending';
 
+                $pickupDate = null;
+                $pickupTimeSlot = null;
+                $pickupPin = null;
+                $pickupLocationId = null;
+                $pickupLocationSnapshot = null;
+                $orderShippingAddress = $shippingAddress;
+
+                if ($request->shipping_method === 'Pick Up') {
+                    $seller = User::find((int) $artisanId);
+                    $productIds = collect($items)->pluck('id')->all();
+                    $maxLeadTime = (int) Product::whereIn('id', $productIds)->max('lead_time');
+
+                    $reqDate = $request->input('pickup_date');
+                    $reqSlot = $request->input('pickup_time_slot');
+
+                    if ($reqDate && $reqSlot) {
+                        $validation = $this->pickupScheduleService->validateSlotSelection(
+                            $seller,
+                            (string) $reqDate,
+                            (string) $reqSlot,
+                            $maxLeadTime
+                        );
+
+                        if (!$validation['valid']) {
+                            throw \Illuminate\Validation\ValidationException::withMessages([
+                                'pickup_time_slot' => $validation['error'],
+                            ]);
+                        }
+
+                        $pickupDate = $reqDate;
+                        $pickupTimeSlot = $validation['slot']['label'] ?? $reqSlot;
+                    } else {
+                        // Fallback: auto-assign earliest available operating date and slot
+                        $earliest = $this->pickupScheduleService->calculateEarliestPickupDate($seller, $maxLeadTime);
+                        $pickupDate = $earliest->format('Y-m-d');
+                        $slots = $this->pickupScheduleService->getAvailableSlotsForDate($seller, $earliest);
+                        $firstSlot = collect($slots)->firstWhere('is_available', true);
+                        $pickupTimeSlot = $firstSlot['label'] ?? '09:00 AM - 12:00 PM';
+                    }
+
+                    $pickupLocationSnapshot = $this->pickupScheduleService->getResolvedLocation($seller);
+                    $pickupPin = $this->pickupScheduleService->generatePickupPin();
+                    $pickupLocationId = $pickupLocationSnapshot['id'] ?? null;
+                    $orderShippingAddress = $pickupLocationSnapshot['address'] ?? 'Store Pick-up';
+                }
+
                 $order = Order::create(Order::filterSchemaCompatibleAttributes([
                     'order_number' => 'ORD-' . strtoupper(uniqid()),
                     'user_id' => $buyer->id,
@@ -230,7 +280,7 @@ class PlaceOrder
                     'seller_net_amount' => $finance['seller_net_amount'],
                     'total_amount' => $finance['total_amount'],
                     'status' => 'Pending',
-                    'shipping_address' => $shippingAddress,
+                    'shipping_address' => $orderShippingAddress,
                     'shipping_address_type' => $shippingAddressType,
                     'shipping_street_address' => $shippingStreetAddress,
                     'shipping_barangay' => $shippingBarangay,
@@ -245,6 +295,11 @@ class PlaceOrder
                     'payment_method' => $paymentMethod,
                     'payment_status' => $paymentStatus,
                     'shipping_method' => $request->shipping_method,
+                    'pickup_date' => $pickupDate,
+                    'pickup_time_slot' => $pickupTimeSlot,
+                    'pickup_pin' => $pickupPin,
+                    'pickup_location_id' => $pickupLocationId,
+                    'pickup_location_snapshot' => $pickupLocationSnapshot,
                 ]));
 
                 foreach ($items as $item) {

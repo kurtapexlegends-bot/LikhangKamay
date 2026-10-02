@@ -71,7 +71,7 @@ class SellerOrderController extends Controller
         try {
             $updateOrderStatus->execute(
                 $order,
-                $request->only(['status', 'tracking_number', 'shipping_notes']),
+                $request->only(['status', 'tracking_number', 'shipping_notes', 'pickup_pin']),
                 $request->user(),
                 $proofPath
             );

@@ -190,10 +190,16 @@ class StrictCaviteAddressValidationTest extends TestCase
 
     public function test_checkout_allows_pickup_when_buyer_address_is_same(): void
     {
+        $pickupDate = app(\App\Services\PickupScheduleService::class)
+            ->calculateEarliestPickupDate($this->seller, (int) $this->product->fresh()->lead_time)
+            ->format('Y-m-d');
+
         // Same address but Pick Up method is valid
         $response = $this->actingAs($this->buyer)->post(route('checkout.store'), [
             'items' => [['id' => $this->product->id, 'qty' => 1]],
             'shipping_method' => 'Pick Up',
+            'pickup_date' => $pickupDate,
+            'pickup_time_slot' => '09:00 AM - 12:00 PM',
             'payment_method' => 'COD',
             'total' => 500.00,
         ]);
