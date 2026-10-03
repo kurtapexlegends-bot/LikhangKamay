@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Clock, Calendar, Shield, Copy, Check, Terminal, FileCode } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import { getActionIcon, getActionColor, formatActionLabel } from '@/utils/platformOperationsHelpers';
+import { copyToClipboard } from '@/utils/clipboard';
 
 export default function DiagnosticsLogDetailsModal({ isOpen, onClose, log }) {
     const [copied, setCopied] = useState(false);
@@ -13,10 +14,12 @@ export default function DiagnosticsLogDetailsModal({ isOpen, onClose, log }) {
     const hasMetadata = log.metadata && Object.keys(log.metadata).length > 0;
     const jsonString = hasMetadata ? JSON.stringify(log.metadata, null, 2) : '{}';
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(jsonString);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+    const handleCopy = async () => {
+        const ok = await copyToClipboard(jsonString);
+        if (ok) {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
     };
 
     return (

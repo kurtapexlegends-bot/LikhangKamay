@@ -15,6 +15,7 @@ import DriverVehicleVerifyModal from "@/Components/Staff/Driver/DriverVehicleVer
 import DriverProfileSidebar, { renderVehicleIcon } from "@/Components/Staff/Driver/DriverProfileSidebar";
 import CompletedDeliveriesList from "@/Components/Staff/Driver/CompletedDeliveriesList";
 import DriverPhotoViewerModal from "@/Components/Staff/Driver/DriverPhotoViewerModal";
+import { copyToClipboard } from "@/utils/clipboard";
 
 const StaffClockInModal = lazy(() => import("@/Components/Staff/Dashboard/StaffClockInModal"));
 
@@ -63,12 +64,14 @@ export default function DriverDeliveries({
         });
     };
 
-    const handleCopyAddress = (orderId, address) => {
+    const handleCopyAddress = async (orderId, address) => {
         if (!address) return;
-        navigator.clipboard.writeText(address);
-        setCopiedOrderId(orderId);
-        addToast("Address copied to clipboard.", "success");
-        setTimeout(() => setCopiedOrderId(null), 2500);
+        const ok = await copyToClipboard(address);
+        if (ok) {
+            setCopiedOrderId(orderId);
+            addToast("Address copied to clipboard.", "success");
+            setTimeout(() => setCopiedOrderId(null), 2500);
+        }
     };
 
     const handleSubmitVehicleVerification = (formDataValues) => {

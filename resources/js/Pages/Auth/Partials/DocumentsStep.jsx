@@ -122,9 +122,9 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
                 fileToUpload = await compressImage(selectedFile, 1600, 1600, 0.85);
             }
 
-            // Direct-to-storage presigned upload for PDFs or large files (> 2MB)
-            // Completely bypasses Vercel 4.5MB serverless edge limit
-            if (isPdf || fileToUpload.size > 2 * 1024 * 1024) {
+            // Direct-to-storage presigned upload for PDFs or files > 1MB
+            // Completely prevents multi-document payloads from exceeding Vercel 4.5MB serverless edge limit
+            if (isPdf || fileToUpload.size > 1024 * 1024) {
                 const abortController = new AbortController();
                 abortControllerRef.current = abortController;
 

@@ -15,6 +15,33 @@ router.on('error', (event) => {
     scrollToFirstError(errors);
 });
 
+// Seamless auto-recovery from expired CSRF tokens (HTTP 419) without crashing modal
+router.on('invalid', (event) => {
+    const status = event?.detail?.response?.status;
+    if (status === 419) {
+        event.preventDefault();
+        window.location.reload();
+    }
+});
+
+// Mobile background wake-up session refresh
+if (typeof document !== 'undefined') {
+    let lastActiveTime = Date.now();
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            const idleMinutes = (Date.now() - lastActiveTime) / 60000;
+            if (idleMinutes > 20) {
+                if (window.axios) {
+                    window.axios.get('/ping').catch(() => {});
+                }
+            }
+            lastActiveTime = Date.now();
+        } else {
+            lastActiveTime = Date.now();
+        }
+    });
+}
+
 import * as Sentry from "@sentry/react";
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';

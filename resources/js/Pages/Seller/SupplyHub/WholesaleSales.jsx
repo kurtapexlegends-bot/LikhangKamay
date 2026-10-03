@@ -10,6 +10,7 @@ import DispatchOrderModal from '@/Components/Seller/Orders/DispatchOrderModal';
 import WholesaleOrderStatusModal from '@/Components/Seller/SupplyHub/WholesaleOrderStatusModal';
 import WholesaleInvoiceModal from '@/Components/Seller/SupplyHub/WholesaleInvoiceModal';
 import WholesaleOrderCard from '@/Components/Seller/SupplyHub/WholesaleOrderCard';
+import { copyToClipboard as safeCopyToClipboard } from '@/utils/clipboard';
 
 export default function WholesaleSales({
     orders,
@@ -72,15 +73,17 @@ export default function WholesaleSales({
         });
     };
 
-    const copyToClipboard = (text, id) => {
-        navigator.clipboard.writeText(String(text));
-        setCopiedId(id);
-        addToast({
-            type: 'info',
-            title: 'Copied to Clipboard',
-            message: String(text),
-        });
-        setTimeout(() => setCopiedId(null), 2000);
+    const copyToClipboard = async (text, id) => {
+        const ok = await safeCopyToClipboard(text);
+        if (ok) {
+            setCopiedId(id);
+            addToast({
+                type: 'info',
+                title: 'Copied to Clipboard',
+                message: String(text),
+            });
+            setTimeout(() => setCopiedId(null), 2000);
+        }
     };
 
     const handleSearch = (e) => {

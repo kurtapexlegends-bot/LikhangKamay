@@ -12,6 +12,7 @@ import ConfirmationModal from '@/Components/ConfirmationModal';
 import CompactPagination from '@/Components/CompactPagination';
 import SourcingOrderFilterToolbar from './SourcingOrderFilterToolbar';
 import SourcingOrderCard from './SourcingOrderCard';
+import { copyToClipboard as safeCopyToClipboard } from '@/utils/clipboard';
 
 export default function SourcingOrders({
     orders,
@@ -66,15 +67,17 @@ export default function SourcingOrders({
         });
     };
 
-    const copyToClipboard = (text, id) => {
-        navigator.clipboard.writeText(String(text));
-        setCopiedId(id);
-        addToast({
-            type: 'info',
-            title: 'Copied to Clipboard',
-            message: String(text),
-        });
-        setTimeout(() => setCopiedId(null), 2000);
+    const copyToClipboard = async (text, id) => {
+        const ok = await safeCopyToClipboard(text);
+        if (ok) {
+            setCopiedId(id);
+            addToast({
+                type: 'info',
+                title: 'Copied to Clipboard',
+                message: String(text),
+            });
+            setTimeout(() => setCopiedId(null), 2000);
+        }
     };
 
     const handleSearch = (e) => {

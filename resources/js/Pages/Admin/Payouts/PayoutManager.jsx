@@ -16,6 +16,7 @@ import PayoutBalancesTable, { formatCurrency } from '@/Components/Admin/Payouts/
 import DisburseFundsModal from '@/Components/Admin/Payouts/DisburseFundsModal';
 import PayoutHistoryTable from '@/Components/Admin/Payouts/PayoutHistoryTable';
 import ArtisanStatementModal from '@/Components/Admin/Payouts/ArtisanStatementModal';
+import { copyToClipboard } from '@/utils/clipboard';
 
 export default function PayoutManager({ artisans = [], payoutHistory = { data: [] }, metrics = {} }) {
     const [activeTab, setActiveTab] = useState('balances');
@@ -25,11 +26,13 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
     const [viewingStatementArtisan, setViewingStatementArtisan] = useState(null);
     const [copiedKey, setCopiedKey] = useState(null);
 
-    const handleCopy = (text, key) => {
+    const handleCopy = async (text, key) => {
         if (!text) return;
-        navigator.clipboard.writeText(text);
-        setCopiedKey(key);
-        setTimeout(() => setCopiedKey(null), 2000);
+        const ok = await copyToClipboard(text);
+        if (ok) {
+            setCopiedKey(key);
+            setTimeout(() => setCopiedKey(null), 2000);
+        }
     };
 
     // Filter artisans for balances tab
