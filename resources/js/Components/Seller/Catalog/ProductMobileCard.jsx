@@ -1,13 +1,14 @@
 import React from "react";
 import Checkbox from "@/Components/Checkbox";
 import WorkspaceEmptyState from "@/Components/WorkspaceEmptyState";
-import { AlertTriangle, Edit3, Package, Tag } from "lucide-react";
+import { AlertTriangle, Edit3, Package, Tag, Zap } from "lucide-react";
 
 export default function ProductMobileCard({
     products,
     selectedProductIds,
     toggleProductSelection,
     canEditProducts,
+    openQuickEditModal,
     openEditModal,
     openDiscountModal,
     openAddModal,
@@ -134,22 +135,30 @@ export default function ProductMobileCard({
                                 </div>
                             </div>
                         </div>
-                        <div className="mt-3 grid grid-cols-2 gap-2">
+                        <div className="mt-3 grid grid-cols-3 gap-2">
+                            <button
+                                type="button"
+                                disabled={!canEditProducts}
+                                onClick={() => openQuickEditModal ? openQuickEditModal(product) : openEditModal(product)}
+                                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50/80 px-2 py-2.5 text-xs font-bold text-amber-800 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] select-none active:scale-98 transition-all"
+                            >
+                                <Zap size={13} className="fill-amber-500 text-amber-600 shrink-0" /> Quick
+                            </button>
                             <button
                                 type="button"
                                 disabled={!canEditProducts}
                                 onClick={() => openDiscountModal && openDiscountModal(product)}
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-clay-200 bg-clay-50 px-3.5 py-2.5 text-xs font-bold text-clay-700 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] select-none active:scale-98 transition-all"
+                                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-clay-200 bg-clay-50 px-2 py-2.5 text-xs font-bold text-clay-700 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] select-none active:scale-98 transition-all"
                             >
-                                <Tag size={14} /> Discount
+                                <Tag size={13} className="shrink-0" /> Discount
                             </button>
                             <button
                                 type="button"
                                 disabled={!canEditProducts}
                                 onClick={() => openEditModal(product)}
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-sky-100 bg-sky-50 px-3.5 py-2.5 text-xs font-bold text-sky-700 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] select-none active:scale-98 active:bg-sky-100 transition-all"
+                                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-sky-100 bg-sky-50 px-2 py-2.5 text-xs font-bold text-sky-700 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] select-none active:scale-98 active:bg-sky-100 transition-all"
                             >
-                                <Edit3 size={14} /> Edit
+                                <Edit3 size={13} className="shrink-0" /> Edit
                             </button>
                         </div>
                     </div>

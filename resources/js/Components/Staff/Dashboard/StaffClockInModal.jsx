@@ -497,8 +497,8 @@ export default function StaffClockInModal({ isOpen, onClose }) {
                                                 <span>You are at <strong>{locationName}</strong> ({distanceMeters}m away • allowed within {radiusLimit}m)</span>
                                             )}
                                             {locationStatus === 'success' && !isWithinGeofence && (
-                                                <span className="text-rose-900 font-bold">
-                                                    Too far from store: You are <strong>{distanceMeters}m</strong> away from {locationName} (must be within {radiusLimit}m to clock in).
+                                                <span className="text-rose-900 font-bold block">
+                                                    Too far from store: You are <strong>{distanceMeters}m</strong> away (must be within {radiusLimit}m). Move inside the green circle on the map above, or use Email Security Code.
                                                 </span>
                                             )}
                                             {locationStatus === 'error' && 'Location is turned off. Please allow location in your browser or phone settings.'}

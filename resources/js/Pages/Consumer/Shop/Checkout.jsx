@@ -367,6 +367,21 @@ export default function Checkout({ auth, pricing }) {
                     </div>
                 )}
 
+                {/* Multi-Shop Split Transparency Callout */}
+                {totalSellers > 1 && (
+                    <div className="mb-6 rounded-2xl border border-amber-200/90 bg-amber-50/80 p-4 text-xs text-amber-950 shadow-2xs flex items-start gap-3">
+                        <Store size={18} className="text-amber-700 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                            <span className="font-bold text-amber-950 block text-sm">
+                                Split Workshop Fulfillment ({totalSellers} Artisan Studios)
+                            </span>
+                            <p className="text-xs text-amber-900 leading-relaxed">
+                                You are purchasing handcrafted goods from {totalSellers} independent studios ({sellerGroups.map(g => g.shopName).join(', ')}). Each artisan crafts and packages their own orders individually. You will receive separate order numbers, independent delivery dispatches, and individual tracking updates for each package.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8 lg:gap-10">
                     <div className="space-y-6 md:col-span-2">
                         {/* 1. Shipping Method */}

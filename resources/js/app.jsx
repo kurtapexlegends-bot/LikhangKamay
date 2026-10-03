@@ -2,11 +2,18 @@ import '../css/app.css';
 import './bootstrap';
 import { ToastProvider } from '@/Components/ToastContext';
 
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import ErrorBoundary from '@/Components/ErrorBoundary';
 import { AnimatePresence } from 'framer-motion';
+import { scrollToFirstError } from '@/lib/formHelpers';
+
+// Global listener to automatically smooth-scroll to first invalid input on validation failures
+router.on('error', (event) => {
+    const errors = event?.detail?.errors || event?.errors || null;
+    scrollToFirstError(errors);
+});
 
 import * as Sentry from "@sentry/react";
 

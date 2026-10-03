@@ -113,7 +113,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                 preserveScroll: true,
                 onSuccess: () => {
                     addToast(
-                        `Dispute resolved: ${decision === 'refund' ? 'Full Refund Approved' : 'Funds Released to Seller'}.`, 
+                        `Dispute resolved: ${decision === 'refund' ? 'Full Refund Approved' : decision === 'partial_refund' ? 'Partial (50%) Refund Settled' : 'Funds Released to Seller'}.`, 
                         'success'
                     );
                     setNotes('');
@@ -334,7 +334,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                 isOpen={confirmModal.open}
                 onClose={() => setConfirmModal({ open: false, decision: null })}
                 decision={confirmModal.decision}
-                dispute={selectedDispute}
+                dispute={activeInspectorDispute}
                 isSubmitting={isSubmitting}
                 onConfirm={executeArbitration}
             />

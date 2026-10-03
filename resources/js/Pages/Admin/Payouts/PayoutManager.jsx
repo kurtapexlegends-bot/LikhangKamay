@@ -192,22 +192,28 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
             </div>
 
             {/* DISBURSE PAYOUT MODAL */}
-            <DisburseFundsModal
-                artisan={disbursingArtisan}
-                onClose={() => setDisbursingArtisan(null)}
-                handleCopy={handleCopy}
-                copiedKey={copiedKey}
-            />
+            {disbursingArtisan && (
+                <DisburseFundsModal
+                    key={`disburse-${disbursingArtisan.id}`}
+                    artisan={disbursingArtisan}
+                    onClose={() => setDisbursingArtisan(null)}
+                    handleCopy={handleCopy}
+                    copiedKey={copiedKey}
+                />
+            )}
 
             {/* ORDERS STATEMENT BREAKDOWN MODAL */}
-            <ArtisanStatementModal
-                artisan={viewingStatementArtisan}
-                onClose={() => setViewingStatementArtisan(null)}
-                onDisburse={(artisan) => {
-                    setViewingStatementArtisan(null);
-                    setDisbursingArtisan(artisan);
-                }}
-            />
+            {viewingStatementArtisan && (
+                <ArtisanStatementModal
+                    key={`statement-${viewingStatementArtisan.id}`}
+                    artisan={viewingStatementArtisan}
+                    onClose={() => setViewingStatementArtisan(null)}
+                    onDisburse={(artisan) => {
+                        setViewingStatementArtisan(null);
+                        setDisbursingArtisan(artisan);
+                    }}
+                />
+            )}
         </>
     );
 }

@@ -16,8 +16,28 @@ import CategoryManager from '@/Components/Admin/Catalog/CategoryManager';
 import TrashRestorationTable from '@/Components/Admin/Compliance/TrashRestorationTable';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 
+const ADMIN_AUTH_CACHE_KEY = 'admin_settings_last_auth';
+const AUTH_CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
+
+const isSecuritySessionActive = () => {
+    if (typeof window === 'undefined') return false;
+    const lastAuth = sessionStorage.getItem(ADMIN_AUTH_CACHE_KEY);
+    if (!lastAuth) return false;
+    const elapsed = Date.now() - parseInt(lastAuth, 10);
+    return elapsed < AUTH_CACHE_DURATION;
+};
+
 export default function SystemConfig({ auth, settings, metrics, recentSubscribers, recentSponsorships, categories = [], trashQueue = [], trashStats }) {
     const { addToast } = useToast();
+
+    const [sessionAuthActive, setSessionAuthActive] = useState(() => isSecuritySessionActive());
+
+    useEffect(() => {
+        const checkAuth = () => setSessionAuthActive(isSecuritySessionActive());
+        checkAuth();
+        const interval = setInterval(checkAuth, 15000);
+        return () => clearInterval(interval);
+    }, []);
 
     const [activeTab, setActiveTab] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -102,6 +122,10 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
+                if (typeof window !== 'undefined') {
+                    sessionStorage.setItem(ADMIN_AUTH_CACHE_KEY, Date.now().toString());
+                }
+                setSessionAuthActive(true);
                 addToast('System settings synchronized successfully.', 'success');
             },
             onError: (errs) => {
@@ -162,8 +186,8 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
             <Head title="System Configuration" />
 
             <div className="space-y-6 pb-20">
-                {/* Main Tabs Navigation Bar */}
-                <div className="border-b border-stone-200/80 -mx-4 px-4 sm:mx-0 sm:px-0">
+                {/* Main Tabs Navigation Bar with Security Session Indicator */}
+                <div className="border-b border-stone-200/80 -mx-4 px-4 sm:mx-0 sm:px-0 flex flex-wrap items-center justify-between gap-3">
                     <nav className="flex space-x-2 sm:space-x-4 overflow-x-auto no-scrollbar scroll-smooth">
                         {tabs.map((tab) => {
                             const Icon = tab.icon;
@@ -191,6 +215,20 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                             );
                         })}
                     </nav>
+
+                    <div className="py-2 shrink-0">
+                        {sessionAuthActive ? (
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-2xs">
+                                <ShieldCheck size={13} className="text-emerald-600" />
+                                <span>Security Session Active (15m Cache)</span>
+                            </div>
+                        ) : (
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border border-stone-200 bg-stone-50 text-stone-600 shadow-2xs">
+                                <ShieldCheck size={13} className="text-stone-400" />
+                                <span>Password Verification Required</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Tab Content Panels */}
@@ -255,14 +293,18 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                     onClose={() => setIsConfirmOpen(false)}
                     onConfirm={confirmSubmit}
                     title={activeTab === 'plans' ? "Confirm Subscription Plan Update" : "Confirm System Config Update"}
-                    message={activeTab === 'plans' 
-                        ? "Are you sure you want to update subscription plans? Lowering limits will automatically move excess active listings to draft for affected artisans."
-                        : "Are you sure you want to update the system configuration? Branding and operational settings will apply immediately to all active processes."}
+                    message={sessionAuthActive
+                        ? (activeTab === 'plans' 
+                            ? "Subscription plan changes will take effect immediately. Security session is active (verified within last 15 min)."
+                            : "System configuration changes will apply immediately. Security session is active (verified within last 15 min).")
+                        : (activeTab === 'plans' 
+                            ? "Are you sure you want to update subscription plans? Lowering limits will automatically move excess active listings to draft for affected artisans."
+                            : "Are you sure you want to update the system configuration? Branding and operational settings will apply immediately to all active processes.")}
                     icon={activeTab === 'plans' ? ShieldCheck : Settings}
                     iconBg="bg-clay-50 text-clay-700"
                     confirmText={activeTab === 'plans' ? "Apply Plan Changes" : "Apply Config Changes"}
                     confirmColor="bg-clay-600 hover:bg-clay-700 focus-visible:ring-clay-500/30"
-                    isVeryHighRisk={true}
+                    isVeryHighRisk={!sessionAuthActive}
                     processing={processing}
                 />
             </div>

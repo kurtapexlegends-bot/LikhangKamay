@@ -59,6 +59,9 @@ export default function DeliveryProofModal({
 
     // Simple canvas signature pad
     const startDrawing = (e) => {
+        if (e.cancelable && e.type.startsWith('touch')) {
+            e.preventDefault();
+        }
         const canvas = signatureCanvasRef.current;
         if (!canvas) return;
         isDrawingRef.current = true;
@@ -69,6 +72,9 @@ export default function DeliveryProofModal({
     };
 
     const draw = (e) => {
+        if (e.cancelable && e.type.startsWith('touch')) {
+            e.preventDefault();
+        }
         if (!isDrawingRef.current) return;
         const canvas = signatureCanvasRef.current;
         if (!canvas) return;
@@ -101,6 +107,23 @@ export default function DeliveryProofModal({
         let signatureDataUrl = null;
         if (hasSignature && signatureCanvasRef.current) {
             signatureDataUrl = signatureCanvasRef.current.toDataURL('image/png');
+        }
+
+        // Offline queueing fallback for rural cellular dropouts
+        if (typeof window !== 'undefined' && !navigator.onLine) {
+            try {
+                const queue = JSON.parse(localStorage.getItem('lk_offline_pod_queue') || '[]');
+                queue.push({
+                    deliveryId: delivery.id,
+                    orderNumber: delivery.order_number,
+                    notes: podNotes,
+                    signature: signatureDataUrl,
+                    queuedAt: new Date().toISOString(),
+                });
+                localStorage.setItem('lk_offline_pod_queue', JSON.stringify(queue));
+            } catch {
+                // Ignore storage error
+            }
         }
 
         onSubmit({
@@ -205,7 +228,8 @@ export default function DeliveryProofModal({
                                 onTouchStart={startDrawing}
                                 onTouchMove={draw}
                                 onTouchEnd={stopDrawing}
-                                className="w-full h-24 cursor-crosshair bg-white"
+                                className="w-full h-24 cursor-crosshair bg-white touch-none"
+                                style={{ touchAction: 'none' }}
                             />
                             {!hasSignature && (
                                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center text-stone-300 text-xs font-medium">

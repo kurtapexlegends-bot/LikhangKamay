@@ -145,7 +145,7 @@ class DisputeController extends Controller
         $this->authorizeAdmin();
 
         $validated = $request->validate([
-            'decision' => 'required|string|in:refund,reject',
+            'decision' => 'required|string|in:refund,reject,partial_refund',
             'admin_notes' => 'required|string|max:1000',
         ]);
 

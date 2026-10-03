@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, PackageCheck, AlertTriangle, Store, Clock, KeyRound } from 'lucide-react';
+import { MapPin, PackageCheck, AlertTriangle, Store, Clock, KeyRound, Navigation } from 'lucide-react';
 import CourierTrackingCard from '../CourierTrackingCard';
 import { buyerDeliverySummary, buyerIssueSummary, buyerProofLabel, humanizeAddressType } from '@/utils/orderHelpers';
 
@@ -84,42 +84,53 @@ export default function OrderListItemCard({
                     )}
 
                     {order.shipping_method === 'Pick Up' && (
-                        <div className="rounded-xl border border-stone-200/90 bg-stone-50/70 p-3 sm:p-3.5 space-y-2.5">
-                            <div className="flex items-start justify-between gap-2">
-                                <div className="flex items-start gap-2.5 min-w-0">
-                                    <div className="p-1.5 bg-white rounded-lg shadow-2xs text-clay-700 border border-stone-200 shrink-0 mt-0.5">
-                                        <Store size={15} />
+                        <div className="rounded-2xl border border-stone-200/90 bg-stone-50/70 p-4 space-y-3">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                <div className="flex items-start gap-3 min-w-0">
+                                    <div className="p-2 bg-white rounded-xl shadow-2xs text-clay-700 border border-stone-200 shrink-0 mt-0.5">
+                                        <Store size={18} />
                                     </div>
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                            <p className="text-xs font-bold text-stone-900">
-                                                Store Pickup Order
+                                    <div className="min-w-0 space-y-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <p className="text-xs font-black uppercase tracking-wider text-stone-900">
+                                                Self Store Pickup
                                             </p>
                                             {order.pickup_date && (
-                                                <span className="text-[10px] font-bold text-clay-800 bg-clay-100/80 px-2 py-0.5 rounded-md">
+                                                <span className="text-[10px] font-extrabold text-clay-800 bg-clay-100/90 border border-clay-200/80 px-2 py-0.5 rounded-lg">
                                                     {order.pickup_date}
                                                 </span>
                                             )}
                                         </div>
                                         {order.pickup_time_slot && (
-                                            <p className="text-[11px] font-medium text-stone-600 mt-0.5 flex items-center gap-1">
-                                                <Clock size={12} className="text-stone-400" />
-                                                Window: {order.pickup_time_slot}
+                                            <p className="text-xs font-semibold text-stone-700 flex items-center gap-1.5">
+                                                <Clock size={13} className="text-stone-400" />
+                                                Pickup Window: {order.pickup_time_slot}
                                             </p>
                                         )}
-                                        <p className="text-[10px] text-stone-500 mt-1 flex items-start gap-1">
-                                            <MapPin size={12} className="text-stone-400 shrink-0 mt-0.5" />
+                                        <p className="text-xs text-stone-600 flex items-start gap-1.5 leading-relaxed">
+                                            <MapPin size={13} className="text-stone-400 shrink-0 mt-0.5" />
                                             <span>{order.pickup_location_snapshot?.address || order.shipping_address || 'Studio Location'}</span>
                                         </p>
+
+                                        {/* 1-Tap Google Maps Button */}
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.pickup_location_snapshot?.address || order.shipping_address || (order.seller_name + ' studio'))}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-800 text-[11px] font-bold hover:bg-stone-50 hover:text-stone-900 transition shadow-2xs mt-1"
+                                        >
+                                            <Navigation size={12} className="text-clay-600 shrink-0" />
+                                            <span>Open in Google Maps</span>
+                                        </a>
                                     </div>
                                 </div>
 
                                 {order.pickup_pin && !['Cancelled', 'Rejected'].includes(order.status) && (
-                                    <div className="shrink-0 text-right bg-white border border-clay-200/80 rounded-xl px-3 py-1.5 shadow-2xs">
-                                        <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">
+                                    <div className="flex flex-col items-center justify-center bg-stone-900 border border-stone-800 text-white rounded-2xl px-5 py-3 shadow-sm shrink-0 self-stretch sm:self-auto min-w-[120px]">
+                                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-stone-400 block mb-0.5">
                                             Pickup PIN
                                         </span>
-                                        <span className="text-sm font-black text-clay-700 tracking-widest">
+                                        <span className="text-xl sm:text-2xl font-mono font-black tracking-[0.25em] text-clay-400">
                                             {order.pickup_pin}
                                         </span>
                                     </div>
@@ -127,9 +138,9 @@ export default function OrderListItemCard({
                             </div>
 
                             {order.pickup_pin && !['Delivered', 'Completed', 'Cancelled', 'Rejected'].includes(order.status) && (
-                                <div className="p-2 rounded-lg bg-clay-50/80 border border-clay-100 text-[10px] text-clay-800 flex items-center gap-1.5">
-                                    <KeyRound size={12} className="text-clay-600 shrink-0" />
-                                    <span>Present this 4-digit PIN to the artisan at the studio to verify your pickup.</span>
+                                <div className="p-2.5 rounded-xl bg-clay-50/90 border border-clay-200/80 text-xs text-clay-900 flex items-center gap-2">
+                                    <KeyRound size={14} className="text-clay-700 shrink-0" />
+                                    <span className="font-medium">Present this 4-digit PIN to the artisan at the workshop counter to claim your pieces.</span>
                                 </div>
                             )}
                         </div>

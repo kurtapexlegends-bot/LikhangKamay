@@ -84,10 +84,16 @@ body.has-sticky-action-bar .mobile-dock {
     pointer-events: none !important;
 }
 
-/* Ensure content is not obscured on mobile screens when sticky action bar is present */
+/* Ensure content is not obscured on mobile screens when sticky action bar or mobile dock is present */
 @media (max-width: 639px) {
     body.has-sticky-action-bar main {
-        padding-bottom: 6.5rem !important;
+        padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
+}
+
+@media (max-width: 767px) {
+    body:not(.has-sticky-action-bar) main {
+        padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
     }
 }
 

@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer-core';
 import fs from 'fs';
 import path from 'path';
 
-const defaultArtifactsDir = 'C:\\Users\\acost\\.gemini\\antigravity\\brain\\7d17bc62-5b56-4669-9ad2-1ed076c977e4';
+const defaultArtifactsDir = 'C:\\Users\\acost\\.gemini\\antigravity\\brain\\12ddd79e-71a2-4840-a7a1-349765705189';
 
 const chromePaths = [
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -25,7 +25,8 @@ function parseArgs() {
         outDir: defaultArtifactsDir,
         role: 'super_admin',
         width: 1440,
-        height: 900
+        height: 900,
+        clickText: null
     };
 
     for (let i = 0; i < args.length; i++) {
@@ -55,6 +56,12 @@ function parseArgs() {
             parsed.height = parseInt(value, 10);
         } else if (key === '--clickSelector' && value) {
             parsed.clickSelector = value;
+        } else if (key === '--clickText' && value) {
+            parsed.clickText = value;
+        } else if (key === '--fillSelector' && value) {
+            parsed.fillSelector = value;
+        } else if (key === '--fillValue' && value) {
+            parsed.fillValue = value;
         } else if (key === '--filename' && value) {
             parsed.filename = value;
         }
@@ -63,7 +70,7 @@ function parseArgs() {
 }
 
 async function capture() {
-    const { routes, outDir, role, width, height, clickSelector, filename: customFilename } = parseArgs();
+    const { routes, outDir, role, width, height, clickSelector, clickText, fillSelector, fillValue, filename: customFilename } = parseArgs();
     const chromePath = getBrowserExecutable();
 
     if (!fs.existsSync(outDir)) {
@@ -102,7 +109,39 @@ async function capture() {
         }
         await new Promise(r => setTimeout(r, 2000));
 
-        if (targetRoute === '/my-orders' || targetRoute.startsWith('/my-orders?')) {
+        if (fillSelector && fillValue) {
+            try {
+                await page.waitForSelector(fillSelector, { timeout: 5000 });
+                await page.type(fillSelector, fillValue, { delay: 10 });
+                await new Promise(r => setTimeout(r, 500));
+            } catch (e) {
+                console.log('[Remote Preview] fill notice:', e.message);
+            }
+        }
+
+        if (clickText) {
+            const texts = clickText.split('||');
+            for (const t of texts) {
+                const targetText = t.trim();
+                if (!targetText) continue;
+                try {
+                    await page.evaluate((txt) => {
+                        const buttons = Array.from(document.querySelectorAll('button, a'));
+                        const targetBtn = buttons.find(b => b.textContent && b.textContent.toLowerCase().includes(txt.toLowerCase()));
+                        if (targetBtn) {
+                            targetBtn.click();
+                        } else {
+                            const allEls = Array.from(document.querySelectorAll('*'));
+                            const leafEl = allEls.find(el => el.children.length === 0 && el.textContent && el.textContent.toLowerCase().includes(txt.toLowerCase()));
+                            if (leafEl) (leafEl.closest('button, a') || leafEl).click();
+                        }
+                    }, targetText);
+                    await new Promise(r => setTimeout(r, 1500));
+                } catch (e) {
+                    console.log(`[Remote Preview] clickText (${targetText}) notice:`, e.message);
+                }
+            }
+        } else if (!clickSelector && (targetRoute === '/my-orders' || targetRoute.startsWith('/my-orders?'))) {
             try {
                 await page.evaluate(() => {
                     const buttons = Array.from(document.querySelectorAll('button'));
@@ -118,12 +157,23 @@ async function capture() {
         }
 
         if (clickSelector) {
-            try {
-                await page.waitForSelector(clickSelector, { timeout: 5000 });
-                await page.click(clickSelector);
-                await new Promise(r => setTimeout(r, 1200));
-            } catch (e) {
-                console.log('[Remote Preview] clickSelector notice:', e.message);
+            const selectors = clickSelector.split('||');
+            for (const sel of selectors) {
+                const s = sel.trim();
+                if (!s) continue;
+                try {
+                    await page.waitForSelector(s, { timeout: 5000 });
+                    await page.evaluate((selector) => {
+                        const els = Array.from(document.querySelectorAll(selector));
+                        const visible = els.find(el => el.offsetParent !== null) || els[0];
+                        if (visible) {
+                            visible.click();
+                        }
+                    }, s);
+                    await new Promise(r => setTimeout(r, 1500));
+                } catch (e) {
+                    console.log(`[Remote Preview] clickSelector (${s}) notice:`, e.message);
+                }
             }
         }
 

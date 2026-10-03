@@ -3,7 +3,7 @@ import Modal from '@/Components/Modal';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import { Package } from 'lucide-react';
 
-export default function ReceiveRequestModal({ isOpen, onClose, max, value, onChange, onSubmit, processing, canEdit, supplyName }) {
+export default function ReceiveRequestModal({ isOpen, onClose, max, value, onChange, syncInventory = true, onSyncChange, onSubmit, processing, canEdit, supplyName }) {
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -19,7 +19,7 @@ export default function ReceiveRequestModal({ isOpen, onClose, max, value, onCha
             <div className="w-10 h-10 bg-[#F8EEE6] text-clay-700 rounded-lg flex items-center justify-center mb-3 border border-[#E7D8C9]">
                 <Package size={20} />
             </div>
-            <h2 className="text-base font-bold text-gray-900 mb-1">Receive Items into Buffer</h2>
+            <h2 className="text-base font-bold text-gray-900 mb-1">Receive Items</h2>
             <p className="text-xs text-gray-400 mb-4">
                 Record items received from the supplier {supplyName && <>for <strong>{supplyName}</strong></>}
             </p>
@@ -36,6 +36,22 @@ export default function ReceiveRequestModal({ isOpen, onClose, max, value, onCha
                     required 
                 />
                 <p className="text-xs text-gray-400 mt-2">Remaining needed: <span className="font-bold text-clay-700">{max}</span></p>
+            </div>
+
+            <div className="mb-5 p-3.5 bg-stone-50 border border-stone-200/80 rounded-xl flex items-start gap-2.5">
+                <input
+                    id="sync-inventory-toggle"
+                    type="checkbox"
+                    checked={Boolean(syncInventory)}
+                    onChange={(e) => onSyncChange && onSyncChange(e.target.checked)}
+                    className="mt-0.5 rounded border-stone-300 text-clay-600 focus:ring-clay-500 cursor-pointer h-4 w-4"
+                />
+                <label htmlFor="sync-inventory-toggle" className="text-xs text-stone-700 cursor-pointer select-none">
+                    <span className="font-bold block text-stone-900">Directly sync to active inventory</span>
+                    <span className="text-[11px] text-stone-500 leading-normal block">
+                        Increment workshop supply balance immediately and skip secondary buffer transfer.
+                    </span>
+                </label>
             </div>
             <div className="flex justify-end gap-3">
                 <button 

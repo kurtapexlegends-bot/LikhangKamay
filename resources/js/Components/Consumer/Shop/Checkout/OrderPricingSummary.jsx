@@ -19,19 +19,20 @@ export default function OrderPricingSummary({
     hideTitle = false,
     flat = false,
 }) {
+    const quoteShimmer = (
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-stone-100 border border-stone-200/80 animate-pulse text-[11px] text-stone-500 font-medium">
+            <span className="h-1.5 w-8 rounded-full bg-stone-300"></span>
+            <span className="text-[10px] text-stone-500 font-mono font-bold tracking-tight">Calculating...</span>
+        </span>
+    );
+
     const shippingFeeSummaryValue = shippingMethod === 'Pick Up'
         ? peso(0)
         : shippingQuote.status === 'ready'
             ? peso(summary.shippingFeeTotal)
             : shippingQuote.status === 'error'
                 ? 'Unavailable'
-            : (
-                <span className="inline-flex items-center gap-0.5">
-                    <span className="h-1 w-1 animate-pulse rounded-full bg-stone-400"></span>
-                    <span className="h-1 w-1 animate-pulse rounded-full bg-stone-400 [animation-delay:0.15s]"></span>
-                    <span className="h-1 w-1 animate-pulse rounded-full bg-stone-400 [animation-delay:0.3s]"></span>
-                </span>
-            );
+            : quoteShimmer;
 
     return (
         <div className={flat ? "" : "rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"}>
@@ -81,13 +82,7 @@ export default function OrderPricingSummary({
                                                     peso(group.shippingFee)
                                                 ) : shippingQuote.status === 'error' ? (
                                                     'Unavailable'
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-0.5">
-                                                        <span className="h-1 w-1 animate-pulse rounded-full bg-stone-400"></span>
-                                                        <span className="h-1 w-1 animate-pulse rounded-full bg-stone-400 [animation-delay:0.15s]"></span>
-                                                        <span className="h-1 w-1 animate-pulse rounded-full bg-stone-400 [animation-delay:0.3s]"></span>
-                                                    </span>
-                                                )}
+                                                ) : quoteShimmer}
                                             </span>
                                         </div>
                                     )}

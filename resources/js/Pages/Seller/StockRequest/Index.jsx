@@ -43,6 +43,7 @@ export default function StockRequestIndex({ auth, requests }) {
     const [showOrderModal, setShowOrderModal] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [qtyInput, setQtyInput] = useState('');
+    const [syncInventory, setSyncInventory] = useState(true);
 
     // Counts per status
     const getCount = (status) => {
@@ -106,7 +107,10 @@ export default function StockRequestIndex({ auth, requests }) {
     const submitReceive = (e) => {
         e.preventDefault();
         if (!canEditStockRequests || !selectedRequest) return;
-        router.post(route('stock-requests.receive', selectedRequest.id), { quantity: qtyInput }, {
+        router.post(route('stock-requests.receive', selectedRequest.id), { 
+            quantity: qtyInput,
+            sync_inventory: syncInventory,
+        }, {
             onStart: () => setProcessingId(`receive-${selectedRequest.id}`),
             onSuccess: () => {
                 setReceiveModal({ open: false, max: null });
@@ -246,6 +250,8 @@ export default function StockRequestIndex({ auth, requests }) {
                 max={receiveModal.max}
                 value={qtyInput}
                 onChange={(e) => setQtyInput(e.target.value)}
+                syncInventory={syncInventory}
+                onSyncChange={setSyncInventory}
                 onSubmit={submitReceive}
                 processing={processingId === `receive-${selectedRequest?.id}`}
                 canEdit={canEditStockRequests}

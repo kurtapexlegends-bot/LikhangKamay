@@ -122,32 +122,70 @@ class StockRequestController extends Controller
     }
 
     /**
-     * Receive items into Buffer (Inspection Stage)
+     * Receive items into Buffer or directly to Active Inventory
      */
     public function receive(Request $request, StockRequest $stockRequest)
     {
         Gate::authorize('manage', $stockRequest);
 
-        $validated = $request->validate(['quantity' => 'required|integer|min:1']);
+        $validated = $request->validate([
+            'quantity' => 'required|integer|min:1',
+            'sync_inventory' => 'nullable|boolean',
+        ]);
         
         $remaining = $stockRequest->quantity - $stockRequest->received_quantity;
         if ($validated['quantity'] > $remaining) {
             return back()->with('error', "Cannot receive more than requested remaining ({$remaining}).");
         }
 
-        // Add to buffer
-        $stockRequest->received_quantity += $validated['quantity'];
+        $syncDirectly = $request->boolean('sync_inventory', false);
 
-        // Check for partial or full receipt
-        if ($stockRequest->received_quantity < $stockRequest->quantity) {
-             $stockRequest->status = StockRequest::STATUS_PARTIALLY_RECEIVED;
-        } else {
-             $stockRequest->status = StockRequest::STATUS_RECEIVED;
-        }
+        DB::transaction(function () use ($stockRequest, $validated, $syncDirectly) {
+            /** @var StockRequest $locked */
+            $locked = StockRequest::where('id', $stockRequest->id)->lockForUpdate()->firstOrFail();
 
-        $stockRequest->save();
+            $locked->received_quantity += $validated['quantity'];
 
-        return back()->with('success', "Received {$validated['quantity']} items. Ready for transfer to inventory.");
+            if ($syncDirectly) {
+                // Immediately increment supply balance
+                if ($locked->supply_id) {
+                    $supply = Supply::where('id', $locked->supply_id)->lockForUpdate()->first();
+                    if ($supply) {
+                        $supply->increment('quantity', $validated['quantity']);
+
+                        if ($linkedProduct = $supply->product) {
+                            $supply->refresh();
+                            $linkedProduct->update(['stock' => $supply->quantity]);
+                        }
+                    }
+                }
+
+                $locked->transferred_quantity += $validated['quantity'];
+
+                if ($locked->transferred_quantity >= $locked->quantity) {
+                    $locked->status = StockRequest::STATUS_COMPLETED;
+                } elseif ($locked->received_quantity < $locked->quantity) {
+                    $locked->status = StockRequest::STATUS_PARTIALLY_RECEIVED;
+                } else {
+                    $locked->status = StockRequest::STATUS_RECEIVED;
+                }
+            } else {
+                // Buffer stage
+                if ($locked->received_quantity < $locked->quantity) {
+                    $locked->status = StockRequest::STATUS_PARTIALLY_RECEIVED;
+                } else {
+                    $locked->status = StockRequest::STATUS_RECEIVED;
+                }
+            }
+
+            $locked->save();
+        });
+
+        $message = $syncDirectly 
+            ? "Received {$validated['quantity']} items and directly synchronized with active inventory."
+            : "Received {$validated['quantity']} items into buffer. Ready for transfer.";
+
+        return back()->with('success', $message);
     }
 
     /**

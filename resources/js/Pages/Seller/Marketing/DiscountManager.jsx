@@ -9,6 +9,8 @@ import ConfirmationModal from "@/Components/ConfirmationModal";
 import FilterToolbarHeader from "@/Components/Seller/Shared/FilterToolbarHeader";
 import { Tag, Plus, PowerOff, CheckCircle2, Clock, TrendingUp, Edit3 } from "lucide-react";
 
+const EMPTY_SELECTED_PRODUCTS = [];
+
 export default function DiscountManager({ discounts, stats, filters, products, auth }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -257,22 +259,24 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                                         <div className="flex items-center justify-between pt-2 border-t border-stone-100 text-xs">
                                             <div className="flex items-center gap-2">
                                                 {discount.products && discount.products.length > 0 ? (
-                                                    <div className="flex -space-x-1.5 items-center">
-                                                        {discount.products.slice(0, 3).map((p) => {
-                                                            const imgUrl = p.cover_photo_path ? (p.cover_photo_path.startsWith('http') ? p.cover_photo_path : `/storage/${p.cover_photo_path}`) : '/images/no-image.png';
-                                                            return (
-                                                                <img
-                                                                    key={p.id}
-                                                                    src={imgUrl}
-                                                                    alt={p.name}
-                                                                    className="h-5 w-5 rounded-full ring-1 ring-white object-cover bg-stone-100 border border-stone-200"
-                                                                />
-                                                            );
-                                                        })}
-                                                        <span className="text-[11px] font-bold text-stone-700 ml-1">
+                                                    <>
+                                                        <div className="flex -space-x-1.5 items-center shrink-0">
+                                                            {discount.products.slice(0, 3).map((p) => {
+                                                                const imgUrl = p.cover_photo_path ? (p.cover_photo_path.startsWith('http') ? p.cover_photo_path : `/storage/${p.cover_photo_path}`) : '/images/no-image.png';
+                                                                return (
+                                                                    <img
+                                                                        key={p.id}
+                                                                        src={imgUrl}
+                                                                        alt={p.name}
+                                                                        className="h-5 w-5 rounded-full ring-1 ring-white object-cover bg-stone-100 border border-stone-200 shrink-0"
+                                                                    />
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <span className="text-[11px] font-bold text-stone-700 shrink-0 whitespace-nowrap">
                                                             {discount.products.length} {discount.products.length === 1 ? "product" : "products"}
                                                         </span>
-                                                    </div>
+                                                    </>
                                                 ) : (
                                                     <span className="text-stone-400 text-[11px]">No products</span>
                                                 )}
@@ -336,7 +340,7 @@ export default function DiscountManager({ discounts, stats, filters, products, a
 
                     {/* DESKTOP TABLE VIEW (>= lg) */}
                     <div className="hidden lg:block overflow-x-auto rounded-b-3xl">
-                        <table className="w-full text-left text-xs border-collapse">
+                        <table className="w-full min-w-[960px] text-left text-xs border-collapse">
                             <thead className="bg-stone-50 border-b border-stone-200/70 text-[10px] uppercase tracking-wider font-extrabold text-stone-400">
                                 <tr>
                                     <th className="py-3 px-5">Campaign / Discount</th>
@@ -386,8 +390,8 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                                                 {/* Linked Products */}
                                                 <td className="py-3.5 px-4 text-center whitespace-nowrap">
                                                     {discount.products && discount.products.length > 0 ? (
-                                                        <div className="flex items-center justify-center gap-2" title={discount.products.map(p => p.name).join(", ")}>
-                                                            <div className="flex -space-x-2 items-center">
+                                                        <div className="inline-flex items-center justify-center gap-2 shrink-0" title={discount.products.map(p => p.name).join(", ")}>
+                                                            <div className="flex -space-x-2 items-center shrink-0">
                                                                 {discount.products.slice(0, 3).map((p) => {
                                                                     const imgUrl = p.cover_photo_path ? (p.cover_photo_path.startsWith('http') ? p.cover_photo_path : `/storage/${p.cover_photo_path}`) : '/images/no-image.png';
                                                                     return (
@@ -396,17 +400,12 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                                                                             src={imgUrl}
                                                                             alt={p.name}
                                                                             title={p.name}
-                                                                            className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover bg-stone-100 border border-stone-200"
+                                                                            className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover bg-stone-100 border border-stone-200 shrink-0"
                                                                         />
                                                                     );
                                                                 })}
-                                                                {discount.products.length > 3 && (
-                                                                    <span className="inline-flex items-center justify-center h-6 w-6 rounded-full ring-2 ring-white bg-stone-200 text-stone-700 font-extrabold text-[9px] border border-stone-300">
-                                                                        +{discount.products.length - 3}
-                                                                    </span>
-                                                                )}
                                                             </div>
-                                                            <span className="font-bold text-stone-800 text-xs">
+                                                            <span className="font-bold text-stone-800 text-xs shrink-0 whitespace-nowrap">
                                                                 {discount.products.length} {discount.products.length === 1 ? "product" : "products"}
                                                             </span>
                                                         </div>
@@ -523,7 +522,7 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
                 allProducts={products}
-                selectedProducts={[]}
+                selectedProducts={EMPTY_SELECTED_PRODUCTS}
                 canEdit={true}
                 discountToEdit={editingDiscount}
             />

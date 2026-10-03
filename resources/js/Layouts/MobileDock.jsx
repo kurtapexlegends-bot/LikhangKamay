@@ -60,7 +60,7 @@ export default function MobileDock() {
 
     return (
         <>
-            <div className="mobile-dock fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] w-[calc(100%-2rem)] max-w-md md:hidden pointer-events-none transition-all duration-500 ease-in-out">
+            <div className="mobile-dock fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-[60] w-[calc(100%-2rem)] max-w-md md:hidden pointer-events-none transition-all duration-500 ease-in-out">
                 <nav className="bg-stone-950/95 backdrop-blur-xl border border-stone-800/80 rounded-3xl shadow-[0_-8px_30px_rgba(212,163,115,0.15),0_15px_35px_rgba(0,0,0,0.5)] px-4 py-3.5 flex items-center justify-between pointer-events-auto transition-all duration-500">
                     <Link
                         href="/"

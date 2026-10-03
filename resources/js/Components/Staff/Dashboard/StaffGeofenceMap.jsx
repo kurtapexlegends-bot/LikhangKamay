@@ -31,6 +31,7 @@ export default function StaffGeofenceMap({
     const circleRef = useRef(null);
     const workplaceMarkerRef = useRef(null);
     const staffMarkerRef = useRef(null);
+    const lineRef = useRef(null);
 
     const wpLat = Number(workplaceLat) || 14.5995;
     const wpLng = Number(workplaceLng) || 120.9842;
@@ -133,6 +134,22 @@ export default function StaffGeofenceMap({
                 [sLat, sLng],
             ]);
             map.fitBounds(bounds.pad(0.3), { animate: false });
+
+            // Connecting distance guide line
+            if (!isWithin) {
+                if (!lineRef.current) {
+                    lineRef.current = L.polyline([[wpLat, wpLng], [sLat, sLng]], {
+                        color: '#f43f5e',
+                        weight: 2,
+                        dashArray: '5, 5',
+                    }).addTo(map);
+                } else {
+                    lineRef.current.setLatLngs([[wpLat, wpLng], [sLat, sLng]]);
+                }
+            } else if (lineRef.current) {
+                lineRef.current.remove();
+                lineRef.current = null;
+            }
         }
 
         // Invalidate size to ensure proper tile rendering

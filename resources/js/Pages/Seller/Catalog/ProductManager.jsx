@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Head } from "@inertiajs/react";
 import CompactPagination from "@/Components/CompactPagination";
 import ReadOnlyCapabilityNotice from "@/Components/Seller/Shared/ReadOnlyCapabilityNotice";
@@ -22,6 +22,7 @@ import ArchiveModal from "@/Components/Seller/Catalog/ArchiveModal";
 import LimitModal from "@/Components/Seller/Catalog/LimitModal";
 import ProductFormModal from "@/Components/Seller/Catalog/ProductFormModal/ProductFormModal";
 import DiscountModal from "@/Components/Seller/Catalog/DiscountModal";
+import ProductQuickEditDrawer from "@/Components/Seller/Catalog/ProductQuickEditDrawer";
 
 // Custom Hook
 import useProductManager from "@/hooks/useProductManager";
@@ -44,6 +45,13 @@ export default function ProductManager({
         metrics,
         filters,
     });
+
+    const [quickEditProduct, setQuickEditProduct] = useState(null);
+    const [quickEditOpen, setQuickEditOpen] = useState(false);
+    const handleOpenQuickEdit = (prod) => {
+        setQuickEditProduct(prod);
+        setQuickEditOpen(true);
+    };
 
     return (
         <>
@@ -110,6 +118,7 @@ export default function ProductManager({
                             openRestockModal={state.openRestockModal}
                             openDeductModal={state.openDeductModal}
                             openDiscountModal={state.openDiscountModal}
+                            openQuickEditModal={handleOpenQuickEdit}
                             openEditModal={state.openEditModal}
                             openArchiveModal={state.openArchiveModal}
                             sortConfig={state.sortConfig}
@@ -124,6 +133,8 @@ export default function ProductManager({
                         selectedProductIds={state.selectedProductIds}
                         toggleProductSelection={state.toggleProductSelection}
                         canEditProducts={state.canEditProducts}
+                        openQuickEditModal={handleOpenQuickEdit}
+                        openDiscountModal={state.openDiscountModal}
                         openEditModal={state.openEditModal}
                         openAddModal={state.openAddModal}
                         onResubmitClick={state.openResubmitModal}
@@ -367,6 +378,13 @@ export default function ProductManager({
                     );
                 })()
             )}
+
+            <ProductQuickEditDrawer
+                isOpen={quickEditOpen}
+                onClose={() => setQuickEditOpen(false)}
+                product={quickEditProduct}
+                canEditProducts={state.canEditProducts}
+            />
 
         </>
     );

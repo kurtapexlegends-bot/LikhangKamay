@@ -1,9 +1,11 @@
-import React, { useState } from "react";
-import { Search, X } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Search, X, Layers } from "lucide-react";
 
 export default function DiscountProductTable({
+    allProducts = [],
     filteredProducts = [],
     targetProductIds = [],
+    setTargetProductIds,
     handleToggleProduct,
     handleToggleSelectAll,
     searchQuery,
@@ -17,9 +19,28 @@ export default function DiscountProductTable({
 }) {
     const [batchType, setBatchType] = useState("percentage");
     const [batchValue, setBatchValue] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState("All");
+
+    // Extract categories with counts
+    const categoriesWithCounts = useMemo(() => {
+        const counts = {};
+        const sourceList = allProducts.length > 0 ? allProducts : filteredProducts;
+        sourceList.forEach((p) => {
+            const cat = p.category || "General";
+            counts[cat] = (counts[cat] || 0) + 1;
+        });
+        return counts;
+    }, [allProducts, filteredProducts]);
+
+    // Filter products by selected category
+    const displayProducts = useMemo(() => {
+        if (selectedCategory === "All") return filteredProducts;
+        return filteredProducts.filter((p) => (p.category || "General") === selectedCategory);
+    }, [filteredProducts, selectedCategory]);
+
 
     return (
-        <div className="col-span-12 lg:col-span-8 p-6 flex flex-col overflow-hidden space-y-4">
+        <div className="col-span-12 lg:col-span-8 p-6 flex flex-col overflow-hidden space-y-3.5">
             {/* Search & Bulk Select Toolbar */}
             <div className="flex items-center justify-between gap-3 shrink-0">
                 <div className="relative flex-1">
@@ -44,13 +65,56 @@ export default function DiscountProductTable({
 
                 <button
                     type="button"
-                    onClick={handleToggleSelectAll}
+                    onClick={() => handleToggleSelectAll(displayProducts)}
                     className="px-3.5 py-2.5 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl transition border border-stone-200 shrink-0"
                 >
-                    {targetProductIds.length === filteredProducts.length && filteredProducts.length > 0
+                    {displayProducts.length > 0 && displayProducts.every((p) => targetProductIds.includes(p.id))
                         ? "Deselect All"
                         : "Select All"}
                 </button>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 shrink-0 scrollbar-none text-xs">
+                <button
+                    type="button"
+                    onClick={() => setSelectedCategory("All")}
+                    className={`h-7 px-3 rounded-xl font-bold transition shrink-0 flex items-center gap-1.5 text-[11px] ${
+                        selectedCategory === "All"
+                            ? "bg-clay-600 text-white shadow-2xs"
+                            : "bg-stone-100 text-stone-600 hover:bg-stone-200/80 border border-stone-200/60"
+                    }`}
+                >
+                    <span>All</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold leading-none ${
+                        selectedCategory === "All" ? "bg-white/20 text-white" : "bg-stone-200 text-stone-600"
+                    }`}>
+                        {filteredProducts.length}
+                    </span>
+                </button>
+
+                {Object.entries(categoriesWithCounts).map(([cat, count]) => {
+                    const isCurrent = selectedCategory === cat;
+                    return (
+                        <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setSelectedCategory(cat)}
+                            className={`h-7 px-3 rounded-xl font-bold transition shrink-0 flex items-center gap-1.5 text-[11px] ${
+                                isCurrent
+                                    ? "bg-clay-600 text-white shadow-2xs"
+                                    : "bg-stone-100 text-stone-600 hover:bg-stone-200/80 border border-stone-200/60"
+                            }`}
+                        >
+                            <span>{cat}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold leading-none ${
+                                isCurrent ? "bg-white/20 text-white" : "bg-stone-200 text-stone-600"
+                            }`}>
+                                {count}
+                            </span>
+                        </button>
+                    );
+                })}
             </div>
             {targetProductIds.length > 0 && mode === "individual" && (
                 <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-2xl flex flex-wrap items-center justify-between gap-3 animate-in fade-in duration-200">
@@ -123,8 +187,8 @@ export default function DiscountProductTable({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
-                        {filteredProducts.length > 0 ? (
-                            filteredProducts.map((product) => {
+                        {displayProducts.length > 0 ? (
+                            displayProducts.map((product) => {
                                 const isChecked = targetProductIds.includes(product.id);
                                 const calc = getCalculatedPrice(product);
                                 const setting = individualMap[product.id] || { type: "percentage", value: "" };
@@ -231,20 +295,26 @@ export default function DiscountProductTable({
                                             )}
                                         </td>
 
-                                        {/* Final Promo Price */}
+                                        {/* Final Promo Price (Live Preview ₱450.00 → ₱382.50) */}
                                         <td className="py-3 px-3 text-right whitespace-nowrap">
                                             {isChecked && calc.saved > 0 ? (
-                                                <div>
-                                                    <span className="font-extrabold text-clay-700 block">
-                                                        ₱{calc.final.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                    <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1 py-0.2 rounded">
+                                                <div className="flex flex-col items-end">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-[11px] text-stone-400 line-through">
+                                                            ₱{origNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        </span>
+                                                        <span className="text-[10px] text-stone-400 font-bold">→</span>
+                                                        <span className="font-extrabold text-clay-700 text-xs">
+                                                            ₱{calc.final.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        </span>
+                                                    </div>
+                                                    <span className="inline-flex items-center gap-1 text-[9px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.2 rounded mt-0.5">
                                                         Save ₱{calc.saved.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                     </span>
                                                 </div>
                                             ) : (
                                                 <span className="font-bold text-stone-700">
-                                                    ₱{Number(product.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                    ₱{origNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                 </span>
                                             )}
                                         </td>
@@ -263,8 +333,8 @@ export default function DiscountProductTable({
 
                 {/* Mobile Card List View (< sm) */}
                 <div className="sm:hidden divide-y divide-stone-100">
-                    {filteredProducts.length > 0 ? (
-                        filteredProducts.map((product) => {
+                    {displayProducts.length > 0 ? (
+                        displayProducts.map((product) => {
                             const isChecked = targetProductIds.includes(product.id);
                             const calc = getCalculatedPrice(product);
                             const setting = individualMap[product.id] || { type: "percentage", value: "" };
@@ -368,16 +438,22 @@ export default function DiscountProductTable({
                                                 <span className="text-[10px] font-bold uppercase text-stone-400">Promo Price</span>
                                                 {calc.saved > 0 ? (
                                                     <div className="text-right">
-                                                        <span className="font-extrabold text-clay-700 text-sm block">
-                                                            ₱{calc.final.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                        </span>
-                                                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">
+                                                        <div className="flex items-center justify-end gap-1.5">
+                                                            <span className="text-[11px] text-stone-400 line-through">
+                                                                ₱{origNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                            </span>
+                                                            <span className="text-[10px] text-stone-400 font-bold">→</span>
+                                                            <span className="font-extrabold text-clay-700 text-sm">
+                                                                ₱{calc.final.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded inline-block mt-0.5">
                                                             Save ₱{calc.saved.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                         </span>
                                                     </div>
                                                 ) : (
                                                     <span className="font-bold text-stone-700 text-sm">
-                                                        ₱{Number(product.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        ₱{origNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                     </span>
                                                 )}
                                             </div>

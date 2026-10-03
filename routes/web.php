@@ -18,9 +18,28 @@ if (app()->environment('local')) {
         if ($user) {
             Auth::guard('web')->login($user, true);
             $request->session()->regenerate();
+            
+            $target = $request->query('redirect', '/admin/overview');
+            if (str_contains($target, '/cart') || str_contains($target, '/checkout')) {
+                $products = \App\Models\Product::where('status', 'Active')->get()->unique('user_id')->take(2);
+                if ($products->isNotEmpty()) {
+                    $cart = [];
+                    foreach ($products as $p) {
+                        $cartKey = $p->id . ':' . md5('standard');
+                        $cart[$cartKey] = [
+                            'id' => $p->id,
+                            'name' => $p->name,
+                            'price' => (float) $p->price,
+                            'variant' => 'Standard',
+                            'cart_key' => $cartKey,
+                            'qty' => 1,
+                        ];
+                    }
+                    $request->session()->put('cart', $cart);
+                }
+            }
             $request->session()->save();
         }
-        $target = $request->query('redirect', '/admin/overview');
         $allParams = $request->except(['role', 'redirect']);
         if (!empty($allParams)) {
             $parsedUrl = parse_url($target);

@@ -101,7 +101,7 @@ export default function DiscountModal({
             });
             setIndividualMap(initialIndiv);
         }
-    }, [isOpen, discountToEdit, selectedProducts, allProducts]);
+    }, [isOpen, discountToEdit?.id]);
 
     // Handle product selection toggles
     const handleToggleProduct = (id) => {
@@ -145,17 +145,53 @@ export default function DiscountModal({
     };
 
     // Calculate preview price
-    const getCalculatedPrice = (productPrice, type, valStr) => {
-        const price = Number(productPrice) || 0;
+    const getCalculatedPrice = (product) => {
+        const origPrice = Number(product?.price) || 0;
+        let type = globalType;
+        let valStr = globalValue;
+
+        if (mode === "individual") {
+            const setting = individualMap[product?.id] || { type: "percentage", value: "10" };
+            type = setting.type;
+            valStr = setting.value;
+        }
+
         const val = Number(valStr) || 0;
-        if (val <= 0) return price;
+        if (val <= 0) {
+            return { original: origPrice, final: origPrice, saved: 0, percentOff: 0 };
+        }
 
         if (type === "percentage") {
-            const discount = price * (val / 100);
-            return Math.max(0, price - discount);
+            const safePercent = Math.min(Math.max(val, 0), 99.99);
+            const saved = origPrice * (safePercent / 100);
+            const final = Math.max(0, origPrice - saved);
+            return {
+                original: origPrice,
+                final: Math.round(final * 100) / 100,
+                saved: Math.round(saved * 100) / 100,
+                percentOff: safePercent,
+            };
         } else {
-            if (val < price) return Math.max(0, val);
-            return Math.max(0, price - val);
+            // Fixed target promo price
+            if (val < origPrice) {
+                const final = Math.max(0, val);
+                const saved = origPrice - final;
+                return {
+                    original: origPrice,
+                    final,
+                    saved,
+                    percentOff: origPrice > 0 ? Math.round((saved / origPrice) * 100) : 0,
+                };
+            }
+            // Or deduction
+            const final = Math.max(0, origPrice - val);
+            const saved = Math.min(val, origPrice);
+            return {
+                original: origPrice,
+                final,
+                saved,
+                percentOff: origPrice > 0 ? Math.round((saved / origPrice) * 100) : 0,
+            };
         }
     };
 
@@ -328,8 +364,10 @@ export default function DiscountModal({
 
                         {/* RIGHT MAIN PANEL: PRODUCT SELECTION & TABLE */}
                         <DiscountProductTable
+                            allProducts={allProducts}
                             filteredProducts={filteredProducts}
                             targetProductIds={targetProductIds}
+                            setTargetProductIds={setTargetProductIds}
                             handleToggleProduct={handleToggleProduct}
                             handleToggleSelectAll={handleToggleSelectAll}
                             searchQuery={searchQuery}

@@ -1,6 +1,6 @@
 import React from 'react';
 import Modal from '@/Components/Modal';
-import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, Scale } from 'lucide-react';
 
 export default function ArbitrationConfirmModal({
     isOpen,
@@ -15,6 +15,7 @@ export default function ArbitrationConfirmModal({
     const buyerName = dispute.order?.user?.name || dispute.order?.customer_name || 'the buyer';
     const shopName = dispute.order?.artisan?.shop_name || 'the artisan';
     const totalAmount = Number(dispute.order?.total_amount || 0);
+    const halfAmount = totalAmount / 2;
 
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="md">
@@ -23,13 +24,25 @@ export default function ArbitrationConfirmModal({
                     <div className={`p-2.5 rounded-xl border ${
                         decision === 'refund' 
                             ? 'bg-clay-50 text-clay-700 border-clay-200' 
+                            : decision === 'partial_refund'
+                            ? 'bg-amber-50 text-amber-800 border-amber-200'
                             : 'bg-rose-50 text-rose-700 border-rose-200'
                     }`}>
-                        {decision === 'refund' ? <CheckCircle2 size={20} /> : <XCircle size={20} />}
+                        {decision === 'refund' ? (
+                            <CheckCircle2 size={20} />
+                        ) : decision === 'partial_refund' ? (
+                            <Scale size={20} />
+                        ) : (
+                            <XCircle size={20} />
+                        )}
                     </div>
                     <div>
                         <h3 className="text-base font-bold text-stone-900">
-                            {decision === 'refund' ? 'Confirm Full Refund to Buyer' : 'Confirm Release Funds to Seller'}
+                            {decision === 'refund' 
+                                ? 'Confirm Full Refund to Buyer' 
+                                : decision === 'partial_refund'
+                                ? 'Confirm Partial Refund (50% Split)'
+                                : 'Confirm Release Funds to Seller'}
                         </h3>
                         <p className="text-xs text-stone-500 mt-0.5">
                             Dispute #{dispute.id} · Order #{dispute.order?.order_number || dispute.order_id}
@@ -44,6 +57,14 @@ export default function ArbitrationConfirmModal({
                             <strong className="text-clay-800">₱{totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</strong>{' '}
                             to <strong className="text-stone-900">{buyerName}</strong>. 
                             Funds held in escrow will be refunded to the customer.
+                        </p>
+                    ) : decision === 'partial_refund' ? (
+                        <p>
+                            You are about to <strong className="text-stone-900">split the order total 50/50</strong>. 
+                            <strong className="text-amber-900"> ₱{halfAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</strong> will be refunded to{' '}
+                            <strong className="text-stone-900">{buyerName}</strong>, and the remaining{' '}
+                            <strong className="text-stone-900">₱{halfAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</strong> will be released to{' '}
+                            <strong className="text-stone-900">{shopName}</strong>.
                         </p>
                     ) : (
                         <p>
@@ -73,11 +94,19 @@ export default function ArbitrationConfirmModal({
                         className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white rounded-xl shadow-2xs transition cursor-pointer disabled:opacity-50 ${
                             decision === 'refund'
                                 ? 'bg-clay-700 hover:bg-clay-800'
+                                : decision === 'partial_refund'
+                                ? 'bg-amber-750 hover:bg-amber-850'
                                 : 'bg-rose-600 hover:bg-rose-700'
                         }`}
                     >
                         {isSubmitting && <Loader2 size={13} className="animate-spin text-white" />}
-                        <span>{decision === 'refund' ? 'Confirm Refund' : 'Confirm Release'}</span>
+                        <span>
+                            {decision === 'refund' 
+                                ? 'Confirm Full Refund' 
+                                : decision === 'partial_refund'
+                                ? 'Confirm 50% Refund' 
+                                : 'Confirm Release'}
+                        </span>
                     </button>
                 </div>
             </div>

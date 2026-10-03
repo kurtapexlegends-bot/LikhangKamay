@@ -77,12 +77,13 @@ class DiscountController extends Controller
             }
 
             $products = Product::where('user_id', $sellerId)
-                ->select('id', 'name', 'price', 'sku', 'cover_photo_path', 'stock', 'status')
+                ->select('id', 'name', 'price', 'sku', 'cover_photo_path', 'stock', 'status', 'category')
                 ->latest()
                 ->get()
                 ->map(fn($p) => [
                     'id' => $p->id,
                     'name' => $p->name,
+                    'category' => $p->category ?? 'General',
                     'price' => (float) $p->price,
                     'sku' => $p->sku,
                     'stock' => (int) $p->stock,

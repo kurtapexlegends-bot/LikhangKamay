@@ -8,7 +8,8 @@ import {
     Eye,
     X,
     CheckCircle2,
-    ArrowLeft
+    ArrowLeft,
+    Scale
 } from 'lucide-react';
 
 export default function DisputeInspectorContent({
@@ -30,6 +31,11 @@ export default function DisputeInspectorContent({
     const totalAmount = order?.total_amount ? Number(order.total_amount) : 0;
     const items = order?.items || [];
     const proofPhotos = Array.isArray(dispute.proof_photos) ? dispute.proof_photos : [];
+    const sellerPhotos = Array.isArray(dispute.seller_proof_photos) 
+        ? dispute.seller_proof_photos 
+        : (Array.isArray(order?.packing_photos) 
+            ? order.packing_photos 
+            : (order?.proof_of_delivery ? [order.proof_of_delivery] : []));
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-white">
@@ -263,7 +269,38 @@ export default function DisputeInspectorContent({
                             </div>
                         )}
 
-                        {!dispute.seller_proposed_description && !dispute.seller_explanation && (
+                        {/* Pre-Shipment Packing Photos */}
+                        <div>
+                            <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5">
+                                Pre-Shipment & Packing Photos ({sellerPhotos.length})
+                            </span>
+                            {sellerPhotos.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {sellerPhotos.map((photo, sIdx) => {
+                                        const photoUrl = photo.startsWith('http') || photo.startsWith('/storage') ? photo : `/storage/${photo}`;
+                                        return (
+                                            <button
+                                                key={sIdx}
+                                                type="button"
+                                                onClick={() => openLightbox(sellerPhotos, sIdx)}
+                                                className="relative group border border-stone-200 bg-white rounded-xl overflow-hidden h-16 w-16 shadow-2xs hover:ring-2 hover:ring-indigo-500 transition-all shrink-0 cursor-pointer"
+                                            >
+                                                <img src={photoUrl} className="h-full w-full object-cover" alt={`Packing Photo ${sIdx + 1}`} />
+                                                <div className="absolute inset-0 bg-stone-900/20 group-hover:bg-stone-900/40 transition-colors flex items-center justify-center text-white opacity-0 group-hover:opacity-100">
+                                                    <Eye size={14} />
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <p className="text-[11px] text-stone-400 font-medium italic">
+                                    No pre-shipment packing photos uploaded by artisan.
+                                </p>
+                            )}
+                        </div>
+
+                        {!dispute.seller_proposed_description && !dispute.seller_explanation && sellerPhotos.length === 0 && (
                             <p className="text-xs text-stone-400 font-medium italic pt-2">
                                 The artisan did not submit additional explanation details.
                             </p>
@@ -301,7 +338,7 @@ export default function DisputeInspectorContent({
                     </p>
                 )}
 
-                <div className="flex items-center justify-end gap-2.5 pt-1">
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
                     <button
                         type="button"
                         onClick={() => openConfirmModal('reject')}
@@ -310,6 +347,16 @@ export default function DisputeInspectorContent({
                     >
                         <X size={13} className="text-rose-600" />
                         <span>Decline Claim (Release to Seller)</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => openConfirmModal('partial_refund')}
+                        disabled={isSubmitting}
+                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-bold hover:bg-amber-100 transition shadow-2xs min-h-[38px] cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                        <Scale size={13} className="text-amber-700" />
+                        <span>Partial Refund (50% Split)</span>
                     </button>
 
                     <button

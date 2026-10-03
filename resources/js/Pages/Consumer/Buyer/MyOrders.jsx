@@ -69,16 +69,17 @@ export default function MyOrders({ auth, orders }) {
         { id: 'Pending', label: 'To Pay' },
         { id: 'Accepted', label: 'To Ship' },
         { id: 'Shipped', label: 'To Receive' },
-        { id: 'Ready for Pickup', label: 'To Pickup' },
+        { id: 'Ready for Pickup', label: 'To Pick Up' },
         { id: 'Completed', label: 'Completed' },
         { id: 'Refund/Return', label: 'Returns' },
     ];
 
     const getTabCount = (tabId) => {
         if (tabId === 'All') return orders.length;
+        if (tabId === 'Pending') return orders.filter(o => o.status === 'Pending' && o.shipping_method !== 'Pick Up').length;
         if (tabId === 'Accepted') return orders.filter(o => ['Accepted', 'Processing'].includes(o.status) && o.shipping_method !== 'Pick Up').length;
         if (tabId === 'Shipped') return orders.filter(o => ['Shipped', 'Delivered'].includes(o.status) && o.shipping_method !== 'Pick Up').length;
-        if (tabId === 'Ready for Pickup') return orders.filter(o => (['Ready for Pickup', 'Delivered'].includes(o.status) || ['Accepted', 'Processing'].includes(o.status)) && o.shipping_method === 'Pick Up').length;
+        if (tabId === 'Ready for Pickup') return orders.filter(o => o.shipping_method === 'Pick Up' && !['Completed', 'Cancelled', 'Rejected'].includes(o.status)).length;
         if (tabId === 'Refund/Return') return orders.filter(o => ['Refund/Return', 'Refunded', 'Replaced'].includes(o.status)).length;
         return orders.filter(o => o.status === tabId).length;
     };
@@ -86,12 +87,14 @@ export default function MyOrders({ auth, orders }) {
     const filteredOrders = orders.filter(order => {
         let tabMatch = true;
         if (activeTab !== 'All') {
-            if (activeTab === 'Accepted') {
+            if (activeTab === 'Pending') {
+                tabMatch = order.status === 'Pending' && order.shipping_method !== 'Pick Up';
+            } else if (activeTab === 'Accepted') {
                 tabMatch = ['Accepted', 'Processing'].includes(order.status) && order.shipping_method !== 'Pick Up';
             } else if (activeTab === 'Shipped') {
                 tabMatch = ['Shipped', 'Delivered'].includes(order.status) && order.shipping_method !== 'Pick Up';
             } else if (activeTab === 'Ready for Pickup') {
-                tabMatch = (['Ready for Pickup', 'Delivered'].includes(order.status) || ['Accepted', 'Processing'].includes(order.status)) && order.shipping_method === 'Pick Up';
+                tabMatch = order.shipping_method === 'Pick Up' && !['Completed', 'Cancelled', 'Rejected'].includes(order.status);
             } else if (activeTab === 'Refund/Return') {
                 tabMatch = ['Refund/Return', 'Refunded', 'Replaced'].includes(order.status);
             } else {

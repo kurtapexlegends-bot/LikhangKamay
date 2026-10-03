@@ -41,7 +41,11 @@ class AdminArbitrateDispute
             $refundGatewayStatus = 'skipped';
             $refundGatewayId = null;
 
-            if ($decision === 'refund') {
+            if ($decision === 'refund' || $decision === 'partial_refund') {
+                $isPartial = $decision === 'partial_refund';
+                $refundMultiplier = $isPartial ? 0.5 : 1.0;
+                $targetRefundAmount = round(((float) $order->total_amount) * $refundMultiplier, 2);
+
                 // Trigger PayMongo automated refund for online payment
                 if ($order->payment_id || ($order->payment_status === 'paid' && $order->payment_method !== 'COD')) {
                     if (empty($order->payment_id) && !empty($order->paymongo_session_id)) {
@@ -63,12 +67,12 @@ class AdminArbitrateDispute
 
                     if ($order->payment_id) {
                         try {
-                            $amountInCents = (int) round(((float) $order->total_amount) * 100);
+                            $amountInCents = (int) round($targetRefundAmount * 100);
                             $refundResult = app(\App\Services\PayMongoService::class)->createRefund(
                                 paymentId: $order->payment_id,
                                 amountInCents: $amountInCents,
                                 reason: 'requested_by_customer',
-                                notes: "Order {$order->order_number} arbitrated refund approved by admin: {$adminNotes}"
+                                notes: "Order {$order->order_number} arbitrated " . ($isPartial ? "partial (50%) refund" : "full refund") . " approved by admin: {$adminNotes}"
                             );
                             if ($refundResult) {
                                 $refundGatewayStatus = 'success';
@@ -88,23 +92,27 @@ class AdminArbitrateDispute
                 // Refund order
                 $dispute->update([
                     'status' => 'resolved_refunded',
-                    'admin_decision' => 'refund',
+                    'admin_decision' => $decision,
                     'admin_notes' => $adminNotes,
                     'resolved_at' => now(),
                 ]);
 
                 $order->update([
                     'status' => 'Refunded',
-                    'payment_status' => 'refunded',
+                    'payment_status' => $isPartial ? 'partially_refunded' : 'refunded',
                 ]);
 
                 // Notify buyer and seller
                 $buyer = $order->user;
                 if ($buyer) {
+                    $noticeTitle = $isPartial ? "Partial Refund Approved: Order #{$order->order_number}" : "Refund Approved: Order #{$order->order_number}";
+                    $noticeMsg = $isPartial 
+                        ? "Platform support approved a 50% partial refund (PHP " . number_format($targetRefundAmount, 2) . ") for Order #{$order->order_number}. Funds will return to your account."
+                        : "Platform support approved a full refund for Order #{$order->order_number}. Funds will be refunded to your original payment method.";
                     $buyer->notify(new DisputeStatusNotification(
                         'dispute_arbitrated_refund',
-                        "Refund Approved: Order #{$order->order_number}",
-                        "Platform support approved a full refund for Order #{$order->order_number}. Funds will be refunded to your original payment method.",
+                        $noticeTitle,
+                        $noticeMsg,
                         route('my-orders.index')
                     ));
                     $this->sendMailSilently($buyer->email, new RefundProcessed($order));
@@ -112,10 +120,14 @@ class AdminArbitrateDispute
 
                 $seller = User::find($order->artisan_id);
                 if ($seller) {
+                    $sellerNoticeTitle = $isPartial ? "Dispute Settled: Partial Refund (PHP " . number_format($targetRefundAmount, 2) . ")" : "Refund Issued: Order #{$order->order_number}";
+                    $sellerNoticeMsg = $isPartial
+                        ? "Platform support settled the dispute for Order #{$order->order_number} with a 50% split. PHP " . number_format($targetRefundAmount, 2) . " has been released to your shop."
+                        : "Platform support approved a full refund for Order #{$order->order_number}. Escrow funds have been returned to the customer.";
                     $seller->notify(new DisputeStatusNotification(
                         'dispute_arbitrated_refund',
-                        "Refund Issued: Order #{$order->order_number}",
-                        "Platform support approved a full refund for Order #{$order->order_number}. Escrow funds have been returned to the customer.",
+                        $sellerNoticeTitle,
+                        $sellerNoticeMsg,
                         route('orders.index')
                     ));
                 }
@@ -127,16 +139,16 @@ class AdminArbitrateDispute
                     'actor_type' => 'system',
                     'category' => 'operations',
                     'module' => 'orders',
-                    'event_type' => 'dispute_arbitrated_refund',
+                    'event_type' => $isPartial ? 'dispute_arbitrated_partial_refund' : 'dispute_arbitrated_refund',
                     'severity' => 'warning',
                     'status' => 'refunded',
-                    'title' => 'Refund Approved',
-                    'summary' => "Platform support approved a full refund for Order #{$order->order_number}.",
+                    'title' => $isPartial ? 'Partial Refund Settled' : 'Refund Approved',
+                    'summary' => "Platform support approved " . ($isPartial ? "a 50% partial refund" : "a full refund") . " for Order #{$order->order_number}.",
                     'subject_type' => Order::class,
                     'subject_id' => $order->id,
                     'subject_label' => $order->order_number,
                     'reference' => $order->customer_name,
-                    'amount_label' => 'PHP ' . number_format((float) $order->total_amount, 2),
+                    'amount_label' => 'PHP ' . number_format($targetRefundAmount, 2),
                 ]);
             } elseif ($decision === 'reject') {
                 // Reject claim, restore order status back to Completed

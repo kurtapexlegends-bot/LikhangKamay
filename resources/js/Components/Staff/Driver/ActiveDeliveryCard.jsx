@@ -65,16 +65,16 @@ export default function ActiveDeliveryCard({
                         <div className="flex items-center gap-2">
                             <a
                                 href={`tel:${delivery.customer.phone}`}
-                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 active:scale-95 transition min-h-[42px] shadow-2xs"
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-50 px-5 py-3 text-sm font-extrabold text-emerald-900 hover:bg-emerald-100 active:scale-95 transition min-h-[52px] shadow-2xs"
                             >
-                                <Phone size={14} className="text-emerald-700" />
-                                <span>Call</span>
+                                <Phone size={16} className="text-emerald-700" />
+                                <span>Call Customer</span>
                             </a>
                             <a
                                 href={`sms:${delivery.customer.phone}`}
-                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3.5 py-2.5 text-xs font-bold text-sky-800 hover:bg-sky-100 active:scale-95 transition min-h-[42px] shadow-2xs"
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-300 bg-sky-50 px-5 py-3 text-sm font-extrabold text-sky-900 hover:bg-sky-100 active:scale-95 transition min-h-[52px] shadow-2xs"
                             >
-                                <MessageSquare size={14} className="text-sky-700" />
+                                <MessageSquare size={16} className="text-sky-700" />
                                 <span>SMS</span>
                             </a>
                         </div>
@@ -127,20 +127,20 @@ export default function ActiveDeliveryCard({
                             href={mapUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="w-full flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-stone-900 px-4 py-3 text-xs font-bold text-white hover:bg-stone-800 active:scale-[0.99] transition shadow-xs min-h-[46px]"
+                            className="w-full flex-1 inline-flex items-center justify-center gap-2.5 rounded-2xl bg-stone-950 px-5 py-3.5 text-sm font-extrabold text-white hover:bg-stone-850 active:scale-[0.99] transition shadow-xs min-h-[52px]"
                         >
-                            <Navigation size={15} className="text-clay-400" />
-                            <span>Navigate in Maps (Google Maps / Waze)</span>
-                            <ArrowUpRight size={14} className="text-stone-400" />
+                            <Navigation size={17} className="text-clay-400 shrink-0" />
+                            <span>Navigate in Google Maps / Waze</span>
+                            <ArrowUpRight size={15} className="text-stone-400 shrink-0" />
                         </a>
                         {onOpenRouteMap && (
                             <button
                                 type="button"
                                 onClick={() => onOpenRouteMap(delivery)}
-                                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-3 text-xs font-bold text-stone-700 hover:bg-stone-100 transition shadow-2xs min-h-[46px]"
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-stone-300 bg-white px-4 py-3.5 text-xs font-bold text-stone-700 hover:bg-stone-50 transition shadow-2xs min-h-[52px]"
                                 title="Inspect Map Preview"
                             >
-                                <Compass size={15} className="text-clay-600" />
+                                <Compass size={16} className="text-clay-600 shrink-0" />
                                 <span>Preview Map</span>
                             </button>
                         )}
@@ -191,9 +191,9 @@ export default function ActiveDeliveryCard({
                     <button
                         type="button"
                         onClick={() => onOpenCompleteModal(delivery)}
-                        className="w-full flex items-center justify-center gap-2 rounded-2xl bg-emerald-700 py-3.5 px-4 text-xs sm:text-sm font-bold text-white hover:bg-emerald-800 active:scale-[0.99] transition shadow-xs min-h-[50px]"
+                        className="w-full flex items-center justify-center gap-2.5 rounded-2xl bg-emerald-700 py-4 px-5 text-sm sm:text-base font-extrabold text-white hover:bg-emerald-800 active:scale-[0.99] transition shadow-xs min-h-[56px]"
                     >
-                        <Camera size={18} />
+                        <Camera size={20} className="shrink-0" />
                         <span>Complete Delivery &amp; Submit Proof Photo</span>
                     </button>
                 </div>

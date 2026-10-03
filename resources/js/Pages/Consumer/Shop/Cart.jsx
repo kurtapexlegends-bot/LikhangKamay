@@ -53,6 +53,14 @@ export default function Cart({ cart }) {
     const totalAmount = selectedCartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const totalItems = selectedCartItems.reduce((sum, item) => sum + item.qty, 0);
 
+    const selectedSellers = useMemo(() => {
+        const sellers = new Set();
+        selectedCartItems.forEach((item) => {
+            sellers.add(item.shop_name || item.seller || 'Unknown Seller');
+        });
+        return Array.from(sellers);
+    }, [selectedCartItems]);
+
     // Check if all items are selected
     const allSelected = cartItems.length > 0 && selectedItems.size === cartItems.length;
 
@@ -385,6 +393,18 @@ export default function Cart({ cart }) {
                                         </div>
                                     ) : (
                                         <>
+                                            {selectedSellers.length > 1 && (
+                                                <div className="mb-3 rounded-xl border border-amber-200/80 bg-amber-50/70 p-3 text-xs text-amber-950 flex items-start gap-2.5">
+                                                    <Store size={15} className="text-amber-700 shrink-0 mt-0.5" />
+                                                    <div className="space-y-0.5 leading-relaxed text-left">
+                                                        <span className="font-bold text-amber-950 block">Multi-Workshop Order ({selectedSellers.length} Studios)</span>
+                                                        <p className="text-[11px] text-amber-900">
+                                                            Your cart contains items from {selectedSellers.length} independent studios. Each artisan will prepare and ship their goods in a separate package with individual tracking.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <button
                                                 onClick={proceedToCheckout}
                                                 disabled={selectedItems.size === 0}
@@ -485,7 +505,8 @@ export default function Cart({ cart }) {
                 <StickyActionBar>
                     <div className="flex flex-col min-w-0">
                         <span className="text-[11px] font-medium text-stone-500 truncate">
-                            Total ({selectedItems.size} {selectedItems.size === 1 ? 'item' : 'items'})
+                            Total ({selectedItems.size} {selectedItems.size === 1 ? 'item' : 'items'}
+                            {selectedSellers.length > 1 ? ` · ${selectedSellers.length} studios` : ''})
                         </span>
                         <span className="text-base font-bold text-clay-600 truncate">
                             {currency.format(totalAmount)}
