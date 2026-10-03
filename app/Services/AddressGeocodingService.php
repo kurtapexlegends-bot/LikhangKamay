@@ -25,33 +25,48 @@ class AddressGeocodingService
         $cacheKey = 'geocode:' . md5(serialize($seedQueries));
 
         return Cache::remember($cacheKey, now()->addDays(30), function () use ($seedQueries, $context) {
-            foreach ($seedQueries as $seedQuery) {
-                foreach ($this->candidateQueriesFor($seedQuery) as $candidateQuery) {
-                    /** @var Response $response */
-                    $response = Http::acceptJson()
-                        ->withUserAgent(config('app.name', 'LikhangKamay') . '/1.0 logistics')
-                        ->timeout(20)
-                        ->get(config('services.nominatim.base_url', 'https://nominatim.openstreetmap.org') . '/search', [
-                            'q' => $candidateQuery,
-                            'format' => 'jsonv2',
-                            'limit' => 1,
-                            'countrycodes' => 'ph',
-                        ]);
+            $startTime = microtime(true);
+            $maxTotalSeconds = 4.0;
+            $timeout = (int) config('services.nominatim.timeout', 3);
+            $connectTimeout = (int) config('services.nominatim.connect_timeout', 1);
 
-                    if ($response->failed()) {
-                        throw new \RuntimeException('Address lookup failed. Please try again.');
+            foreach ($seedQueries as $seedQuery) {
+                // Limit candidate attempts to the top 2 candidates to prevent Nominatim rate-limiting and timeouts
+                $candidates = array_slice($this->candidateQueriesFor($seedQuery), 0, 2);
+
+                foreach ($candidates as $candidateQuery) {
+                    if ((microtime(true) - $startTime) > $maxTotalSeconds) {
+                        break 2;
                     }
 
-                    $result = $response->json();
+                    try {
+                        /** @var Response $response */
+                        $response = Http::acceptJson()
+                            ->withUserAgent(config('app.name', 'LikhangKamay') . '/1.0 logistics')
+                            ->connectTimeout($connectTimeout)
+                            ->timeout($timeout)
+                            ->get(config('services.nominatim.base_url', 'https://nominatim.openstreetmap.org') . '/search', [
+                                'q' => $candidateQuery,
+                                'format' => 'jsonv2',
+                                'limit' => 1,
+                                'countrycodes' => 'ph',
+                            ]);
 
-                    if (is_array($result) && !empty($result[0]['lat']) && !empty($result[0]['lon'])) {
-                        return [
-                            'lat' => (string) $result[0]['lat'],
-                            'lng' => (string) $result[0]['lon'],
-                            'display_name' => (string) ($result[0]['display_name'] ?? $candidateQuery),
-                            'matched_query' => $candidateQuery,
-                            'normalized_matched_query' => StructuredAddress::normalizeForComparison($candidateQuery),
-                        ];
+                        if ($response->successful()) {
+                            $result = $response->json();
+
+                            if (is_array($result) && !empty($result[0]['lat']) && !empty($result[0]['lon'])) {
+                                return [
+                                    'lat' => (string) $result[0]['lat'],
+                                    'lng' => (string) $result[0]['lon'],
+                                    'display_name' => (string) ($result[0]['display_name'] ?? $candidateQuery),
+                                    'matched_query' => $candidateQuery,
+                                    'normalized_matched_query' => StructuredAddress::normalizeForComparison($candidateQuery),
+                                ];
+                            }
+                        }
+                    } catch (\Throwable) {
+                        // Suppress connection/timeout errors per candidate and proceed to next candidate or fallback
                     }
                 }
             }

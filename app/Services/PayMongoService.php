@@ -14,6 +14,20 @@ class PayMongoService
         $this->secretKey = config('services.paymongo.secret_key');
     }
 
+    protected function httpClient(): \Illuminate\Http\Client\PendingRequest
+    {
+        $timeout = (int) config('services.paymongo.timeout', 6);
+        $connectTimeout = (int) config('services.paymongo.connect_timeout', 2);
+
+        return Http::withHeaders([
+            'Authorization' => 'Basic ' . base64_encode($this->secretKey),
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+        ])
+        ->connectTimeout($connectTimeout)
+        ->timeout($timeout);
+    }
+
     /**
      * Create a Checkout Session
      * https://developers.paymongo.com/docs/create-a-checkout-session
@@ -21,11 +35,7 @@ class PayMongoService
     public function createCheckoutSession(array $data)
     {
         /** @var \Illuminate\Http\Client\Response $response */
-        $response = Http::withHeaders([
-            'Authorization' => 'Basic ' . base64_encode($this->secretKey),
-            'Content-Type' => 'application/json',
-            'Accept' => 'application/json',
-        ])->post("{$this->baseUrl}/checkout_sessions", [
+        $response = $this->httpClient()->post("{$this->baseUrl}/checkout_sessions", [
             'data' => [
                 'attributes' => $data
             ]
@@ -44,10 +54,7 @@ class PayMongoService
     public function retrieveCheckoutSession($sessionId)
     {
         /** @var \Illuminate\Http\Client\Response $response */
-        $response = Http::withHeaders([
-            'Authorization' => 'Basic ' . base64_encode($this->secretKey),
-            'Accept' => 'application/json',
-        ])->get("{$this->baseUrl}/checkout_sessions/{$sessionId}", [
+        $response = $this->httpClient()->get("{$this->baseUrl}/checkout_sessions/{$sessionId}", [
             'include' => 'payments',
         ]);
 
@@ -79,11 +86,7 @@ class PayMongoService
         }
 
         /** @var \Illuminate\Http\Client\Response $response */
-        $response = Http::withHeaders([
-            'Authorization' => 'Basic ' . base64_encode($this->secretKey),
-            'Content-Type' => 'application/json',
-            'Accept' => 'application/json',
-        ])->post("{$this->baseUrl}/refunds", [
+        $response = $this->httpClient()->post("{$this->baseUrl}/refunds", [
             'data' => [
                 'attributes' => $payload
             ]

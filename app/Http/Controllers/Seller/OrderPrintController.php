@@ -17,8 +17,10 @@ class OrderPrintController extends Controller
     public function bulkPackingSlips(Request $request)
     {
         $request->validate([
-            'order_ids' => ['required', 'array', 'min:1'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:15'],
             'order_ids.*' => ['required', 'string'],
+        ], [
+            'order_ids.max' => 'To prevent server timeouts, a maximum of 15 packing slips can be generated at once. Please export in smaller batches.',
         ]);
 
         $artisanId = $this->sellerOwnerId();
@@ -44,7 +46,8 @@ class OrderPrintController extends Controller
                   ->setOptions([
                       'defaultFont' => 'DejaVu Sans',
                       'isHtml5ParserEnabled' => true,
-                      'isRemoteEnabled' => true,
+                      'isRemoteEnabled' => false,
+                      'dpi' => 96,
                       'fontDir' => $fontDir,
                       'fontCache' => $fontDir,
                       'tempDir' => sys_get_temp_dir(),

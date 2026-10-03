@@ -298,6 +298,10 @@ export default function useOrderManagerActions({
 
     const handleBulkPrintPackingSlips = () => {
         if (selectedOrderIds.length === 0) return;
+        if (selectedOrderIds.length > 15) {
+            addToast("Please select up to 15 orders at a time to export packing slips without timeout.", "error");
+            return;
+        }
         setIsPrintingSlips(true);
         addToast("Generating packing slips. Please wait...", "info");
         axios.post(route("orders.bulk-packing-slips"), { order_ids: selectedOrderIds }, { responseType: 'blob' })
@@ -311,9 +315,18 @@ export default function useOrderManagerActions({
                 link.remove();
                 addToast("Packing slips downloaded successfully.", "success");
             })
-            .catch(err => {
+            .catch(async (err) => {
                 console.error("Print Error", err);
-                addToast("Failed to generate packing slips.", "error");
+                let message = "Failed to generate packing slips.";
+                if (err?.response?.data instanceof Blob) {
+                    try {
+                        const parsed = JSON.parse(await err.response.data.text());
+                        message = parsed.message || parsed.errors?.order_ids?.[0] || message;
+                    } catch {
+                        // ignore parse error
+                    }
+                }
+                addToast(message, "error");
             })
             .finally(() => setIsPrintingSlips(false));
     };

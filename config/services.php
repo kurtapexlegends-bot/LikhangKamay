@@ -51,6 +51,8 @@ return [
         'public_key' => env('PAYMONGO_PUBLIC_KEY'),
         'secret_key' => env('PAYMONGO_SECRET_KEY'),
         'webhook_secret' => env('PAYMONGO_WEBHOOK_SECRET'),
+        'timeout' => env('PAYMONGO_TIMEOUT', 6),
+        'connect_timeout' => env('PAYMONGO_CONNECT_TIMEOUT', 2),
     ],
 
     'lalamove' => [
@@ -60,10 +62,14 @@ return [
         'market' => env('LALAMOVE_MARKET', 'PH'),
         'service_type' => env('LALAMOVE_SERVICE_TYPE', 'MOTORCYCLE'),
         'webhook_secret' => env('LALAMOVE_WEBHOOK_SECRET'),
+        'timeout' => env('LALAMOVE_TIMEOUT', 5),
+        'connect_timeout' => env('LALAMOVE_CONNECT_TIMEOUT', 2),
     ],
 
     'nominatim' => [
         'base_url' => env('NOMINATIM_BASE_URL', 'https://nominatim.openstreetmap.org'),
+        'timeout' => env('NOMINATIM_TIMEOUT', 3),
+        'connect_timeout' => env('NOMINATIM_CONNECT_TIMEOUT', 1),
     ],
 
     'artisan_applications' => [

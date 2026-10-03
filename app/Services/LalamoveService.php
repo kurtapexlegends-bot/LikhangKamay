@@ -75,13 +75,18 @@ class LalamoveService
         $signature = hash_hmac('sha256', $rawSignature, $apiSecret);
         $requestId = (string) Str::uuid();
 
+        $timeout = (int) config('services.lalamove.timeout', 5);
+        $connectTimeout = (int) config('services.lalamove.connect_timeout', 2);
+
         $request = Http::withHeaders([
             'Authorization' => 'hmac ' . "{$apiKey}:{$timestamp}:{$signature}",
             'Market' => $market,
             'Request-ID' => $requestId,
             'Accept' => 'application/json',
             'Content-Type' => 'application/json',
-        ])->timeout(20);
+        ])
+        ->connectTimeout($connectTimeout)
+        ->timeout($timeout);
 
         $url = $this->resolveBaseUrl() . $path;
         /** @var Response $response */
