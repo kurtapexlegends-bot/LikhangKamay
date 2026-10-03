@@ -58,7 +58,8 @@ class ImageProxyController extends Controller
             } catch (\Throwable $e) {
                 // Never redirect to unverified external input.
                 if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
-                    return redirect('/storage/' . $path);
+                    $fallbackUrl = \App\Services\StorageUrl::url($path);
+                    return redirect($fallbackUrl ?: ('/storage/' . $path));
                 }
                 abort(404, 'Image not found');
             }

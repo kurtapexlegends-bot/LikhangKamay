@@ -7,8 +7,8 @@ import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { compressImage } from '@/utils/imageCompressor';
 
-export default function ReturnRequestModal({ isOpen, onClose, order }) {
-    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
+export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoint = 'my-orders.dispute' }) {
+    const { data, setData, post, processing, errors, reset, clearErrors, transform } = useForm({
         reason: '',
         proof_photos: [],
     });
@@ -68,7 +68,12 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('my-orders.dispute', order.id), {
+        transform((curr) => ({
+            ...curr,
+            return_reason: curr.reason,
+            return_proof_image: curr.proof_photos?.[0] || null,
+        }));
+        post(route(routeEndpoint, order.id), {
             preserveScroll: true,
             forceFormData: true,
             onSuccess: () => onClose(),
@@ -76,6 +81,9 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
     };
 
     if (!order) return null;
+
+    const reasonError = errors.reason || errors.return_reason;
+    const proofError = errors.proof_photos || errors.return_proof_image || errors.proof_photo;
 
     const renderFormContent = () => (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,7 +98,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
                     onChange={(e) => setData('reason', e.target.value)}
                     required
                 ></textarea>
-                {errors.reason && <p className="text-red-500 text-xs mt-1">{errors.reason}</p>}
+                {reasonError && <p className="text-red-500 text-xs mt-1">{reasonError}</p>}
             </div>
 
             {/* Image Upload */}
@@ -115,7 +123,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
                         <p className="text-xs text-stone-500">PNG, JPG, GIF up to 5MB (multiple allowed)</p>
                     </div>
                 </label>
-                {errors.proof_photos && <p className="text-red-500 text-xs mt-1">{errors.proof_photos}</p>}
+                {proofError && <p className="text-red-500 text-xs mt-1">{proofError}</p>}
                 
                 {/* Preview list */}
                 {previewUrls.length > 0 && (

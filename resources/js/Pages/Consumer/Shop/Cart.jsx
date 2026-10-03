@@ -49,9 +49,17 @@ export default function Cart({ cart }) {
     }, {});
 
     // Calculate totals based on selected items only
-    const selectedCartItems = cartItems.filter((item) => selectedItems.has(getCartKey(item)));
-    const totalAmount = selectedCartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
-    const totalItems = selectedCartItems.reduce((sum, item) => sum + item.qty, 0);
+    const selectedCartItems = useMemo(() => {
+        return cartItems.filter((item) => selectedItems.has(getCartKey(item)));
+    }, [cartItems, selectedItems]);
+
+    const totalAmount = useMemo(() => {
+        return selectedCartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    }, [selectedCartItems]);
+
+    const totalItems = useMemo(() => {
+        return selectedCartItems.reduce((sum, item) => sum + item.qty, 0);
+    }, [selectedCartItems]);
 
     const selectedSellers = useMemo(() => {
         const sellers = new Set();

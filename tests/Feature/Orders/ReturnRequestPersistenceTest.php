@@ -90,4 +90,77 @@ class ReturnRequestPersistenceTest extends TestCase
                 && $mail->order->is($order);
         });
     }
+
+    public function test_buyer_return_request_accepts_reason_and_proof_photos_aliases(): void
+    {
+        Storage::fake('public');
+        Mail::fake();
+
+        $buyer = User::factory()->create([
+            'role' => 'buyer',
+            'email_verified_at' => now(),
+        ]);
+
+        $seller = User::factory()->artisanApproved()->create([
+            'email' => 'seller2@example.com',
+        ]);
+
+        $product = Product::create([
+            'user_id' => $seller->id,
+            'artisan_id' => $seller->id,
+            'name' => 'Alias Return Test Vase',
+            'sku' => 'ARTV-002',
+            'category' => 'Vases',
+            'status' => 'Active',
+            'price' => 300,
+            'cost_price' => 100,
+            'stock' => 5,
+            'lead_time' => '3 days',
+            'cover_photo_path' => 'products/alias-vase.jpg',
+        ]);
+
+        $order = Order::create([
+            'artisan_id' => $seller->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-RETURN-ALIAS-' . strtoupper(uniqid()),
+            'customer_name' => $buyer->name,
+            'merchandise_subtotal' => 300,
+            'convenience_fee_amount' => 9,
+            'total_amount' => 309,
+            'status' => 'Completed',
+            'payment_method' => 'COD',
+            'payment_status' => 'paid',
+            'shipping_address' => 'Blk 35 Lot 1, Burol I, Dasmarinas City, Cavite, 4115',
+            'shipping_method' => 'Delivery',
+            'received_at' => now()->subHours(1),
+            'warranty_expires_at' => now()->addHours(23),
+        ]);
+
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'variant' => 'Standard',
+            'price' => 300,
+            'cost' => 100,
+            'quantity' => 1,
+            'product_img' => 'products/alias-vase.jpg',
+        ]);
+
+        $response = $this->actingAs($buyer)->post(route('my-orders.return', $order->id), [
+            'reason' => 'Item arrived with chips along the rim.',
+            'proof_photos' => [
+                UploadedFile::fake()->image('chip1.jpg'),
+                UploadedFile::fake()->image('chip2.jpg'),
+            ],
+        ]);
+
+        $response->assertRedirect();
+
+        $order->refresh();
+
+        $this->assertSame('Refund/Return', $order->status);
+        $this->assertSame('Item arrived with chips along the rim.', $order->return_reason);
+        $this->assertNotNull($order->return_proof_image);
+        Storage::disk('public')->assertExists($order->return_proof_image);
+    }
 }

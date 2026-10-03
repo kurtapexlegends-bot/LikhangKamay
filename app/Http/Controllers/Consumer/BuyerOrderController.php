@@ -146,10 +146,20 @@ class BuyerOrderController extends Controller
         $proofPath = null;
         if ($request->hasFile('return_proof_image')) {
             $proofPath = $request->file('return_proof_image')->store('returns', 'public');
+        } elseif ($request->hasFile('proof_photos')) {
+            $photos = $request->file('proof_photos');
+            $firstPhoto = is_array($photos) ? ($photos[0] ?? null) : $photos;
+            if ($firstPhoto) {
+                $proofPath = $firstPhoto->store('returns', 'public');
+            }
+        } elseif ($request->hasFile('proof_photo')) {
+            $proofPath = $request->file('proof_photo')->store('returns', 'public');
         }
 
+        $reason = (string) ($request->input('return_reason') ?: $request->input('reason'));
+
         try {
-            $requestOrderReturn->execute($id, $request->return_reason, $proofPath, $request->user());
+            $requestOrderReturn->execute($id, $reason, $proofPath, $request->user());
             return redirect()->back()->with('success', 'Return request submitted. Please chat with the seller to negotiate.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());

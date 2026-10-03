@@ -24,8 +24,12 @@ class RequestReturnRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'return_reason' => ['required', 'string', 'max:1000'],
-            'return_proof_image' => ['required', 'image', 'max:5120'],
+            'return_reason' => ['required_without:reason', 'nullable', 'string', 'max:1000'],
+            'reason' => ['required_without:return_reason', 'nullable', 'string', 'max:1000'],
+            'return_proof_image' => ['required_without_all:proof_photos,proof_photo', 'nullable', 'image', 'max:5120'],
+            'proof_photos' => ['required_without_all:return_proof_image,proof_photo', 'nullable', 'array', 'min:1', 'max:5'],
+            'proof_photos.*' => ['nullable', 'image', 'max:5120'],
+            'proof_photo' => ['nullable', 'image', 'max:5120'],
         ];
     }
 }

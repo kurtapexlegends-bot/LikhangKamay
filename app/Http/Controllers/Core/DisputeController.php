@@ -25,13 +25,25 @@ class DisputeController extends Controller
         BuyerInitiateDispute $action
     ) {
         $validated = $request->validate([
-            'reason' => 'required|string|max:1000',
-            'proof_photos' => 'required|array|min:1|max:5',
-            'proof_photos.*' => 'required|image|max:5120', // 5MB max each
+            'reason' => 'required_without:return_reason|nullable|string|max:1000',
+            'return_reason' => 'required_without:reason|nullable|string|max:1000',
+            'proof_photos' => 'required_without_all:return_proof_image,proof_photo|nullable|array|min:1|max:5',
+            'proof_photos.*' => 'nullable|image|max:5120', // 5MB max each
+            'return_proof_image' => 'required_without_all:proof_photos,proof_photo|nullable|image|max:5120',
+            'proof_photo' => 'nullable|image|max:5120',
         ]);
 
+        $reason = (string) ($request->input('reason') ?: $request->input('return_reason'));
+        $photos = $request->file('proof_photos');
+        if (empty($photos)) {
+            $single = $request->file('return_proof_image') ?: $request->file('proof_photo');
+            $photos = $single ? [$single] : [];
+        } elseif (!is_array($photos)) {
+            $photos = [$photos];
+        }
+
         try {
-            $action->execute($orderId, $validated['reason'], $request->file('proof_photos'), Auth::id());
+            $action->execute($orderId, $reason, $photos, Auth::id());
             return back()->with('success', 'Dispute request submitted successfully.');
         } catch (\Throwable $e) {
             Log::error("Dispute initiation failed: " . $e->getMessage());

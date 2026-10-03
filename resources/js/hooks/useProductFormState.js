@@ -351,8 +351,8 @@ export default function useProductFormState({
             cover_photo: compressedCover,
             gallery: compressedGallery,
             model_3d: model3dKeyOrFile,
-            model_3d_assets: [],
-            model_3d_asset_paths: [],
+            model_3d_assets: currentData.model_3d_assets || [],
+            model_3d_asset_paths: currentData.model_3d_asset_paths || [],
         }));
 
         const options = {
