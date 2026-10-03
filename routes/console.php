@@ -56,6 +56,10 @@ Artisan::command('staff:auto-pause-inactive', function () {
     $this->info("Auto-paused {$count} inactive staff attendance session(s).");
 })->purpose('Pause stale staff attendance sessions after inactivity');
 
+Schedule::command('queue:work', [
+    '--stop-when-empty' => true,
+    '--max-time' => 10,
+])->everyMinute();
 Schedule::command('orders:auto-complete')->daily();
 Schedule::command('staff:auto-pause-inactive')->everyMinute();
 Schedule::command('orders:cancel-unpaid')->hourly();

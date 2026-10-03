@@ -77,7 +77,7 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
 
-            // Vercel read-only filesystem fix for views, cache, and sessions
+            // Vercel read-only filesystem fix for views, cache, sessions, and local storage
             $tmpStorage = '/tmp/storage/framework';
             foreach (['views', 'cache/data', 'sessions'] as $sub) {
                 $dir = $tmpStorage . '/' . $sub;
@@ -85,12 +85,48 @@ class AppServiceProvider extends ServiceProvider
                     @mkdir($dir, 0755, true);
                 }
             }
+            $tmpPrivate = '/tmp/storage/app/private';
+            if (!is_dir($tmpPrivate)) {
+                @mkdir($tmpPrivate, 0755, true);
+            }
+
             config([
                 'view.compiled' => $tmpStorage . '/views',
                 'cache.stores.file.path' => $tmpStorage . '/cache/data',
                 'cache.stores.file.lock_path' => $tmpStorage . '/cache/data',
                 'session.files' => $tmpStorage . '/sessions',
+                'filesystems.disks.local.root' => env('FILESYSTEM_LOCAL_ROOT', $tmpPrivate),
             ]);
+
+            if (env('PUBLIC_DISK_DRIVER') === 's3' || env('FILESYSTEM_DISK') === 's3') {
+                config(['filesystems.default' => 's3']);
+            }
+        }
+
+        // Serverless background queue and schedule runner:
+        // Opportunistically drain database jobs and trigger schedule ticks in the background
+        if (!$this->app->runningInConsole()) {
+            $this->app->terminating(function () {
+                try {
+                    // 1. Opportunistically drain queued database jobs if any are pending
+                    if (config('queue.default') === 'database') {
+                        $hasPendingJobs = \Illuminate\Support\Facades\DB::table(config('queue.connections.database.table', 'jobs'))->exists();
+                        if ($hasPendingJobs) {
+                            \Illuminate\Support\Facades\Artisan::call('queue:work', [
+                                '--stop-when-empty' => true,
+                                '--max-time' => 5,
+                            ]);
+                        }
+                    }
+
+                    // 2. Catch up on sub-daily scheduled tasks if at least 5 minutes have elapsed since last tick
+                    if (\Illuminate\Support\Facades\Cache::add('serverless_schedule_tick_lock', true, 300)) {
+                        \Illuminate\Support\Facades\Artisan::call('schedule:run');
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Serverless background task runner error: ' . $e->getMessage());
+                }
+            });
         }
         
         Vite::prefetch(concurrency: 3);

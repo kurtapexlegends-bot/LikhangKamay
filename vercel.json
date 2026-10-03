@@ -61,6 +61,10 @@
         {
             "path": "/webhooks/cron",
             "schedule": "0 0 * * *"
+        },
+        {
+            "path": "/webhooks/cron/queue",
+            "schedule": "0 12 * * *"
         }
     ],
 
@@ -71,7 +75,10 @@
         "VIEW_COMPILED_PATH": "/tmp/storage/framework/views",
         "SESSION_DRIVER": "database",
         "CACHE_STORE": "database",
+        "QUEUE_CONNECTION": "database",
+        "FILESYSTEM_DISK": "s3",
         "PUBLIC_DISK_DRIVER": "s3",
+        "FILESYSTEM_LOCAL_ROOT": "/tmp/storage/app/private",
         "APP_CONFIG_CACHE": "/tmp/config.php",
         "APP_EVENTS_CACHE": "/tmp/events.php",
         "APP_PACKAGES_CACHE": "/tmp/packages.php",

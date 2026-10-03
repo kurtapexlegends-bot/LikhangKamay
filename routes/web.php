@@ -518,7 +518,16 @@ Route::get('/webhooks/migrate', function (\Illuminate\Http\Request $request) {
     }
 })->name('webhooks.migrate');
 
-Route::get('/ping', function () {
+Route::get('/ping', function (\Illuminate\Http\Request $request) {
+    // Opportunistically drain pending database queue jobs during 5m container warmup pings
+    $hasPendingJobs = rescue(fn() => \Illuminate\Support\Facades\DB::table('jobs')->exists(), false);
+    if ($hasPendingJobs) {
+        \Illuminate\Support\Facades\Artisan::call('queue:work', [
+            '--stop-when-empty' => true,
+            '--max-time' => 5,
+        ]);
+    }
+
     return response('pong', 200)->header('Content-Type', 'text/plain');
 })->withoutMiddleware([
     \Illuminate\Session\Middleware\StartSession::class,
