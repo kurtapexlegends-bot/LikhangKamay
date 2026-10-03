@@ -1,62 +1,11 @@
+/* global route */
 import React, { useRef, useState, useEffect } from 'react';
 import { FileText, ArrowLeft, ArrowRight, UploadCloud, FileCheck, Eye, Trash2, Loader2, XCircle } from 'lucide-react';
 import { router } from '@inertiajs/react';
+import axios from 'axios';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
-
-// Helper function to compress images client-side using Canvas
-const compressImage = (file, maxWidth = 1600, maxHeight = 1600, quality = 0.8) => {
-    return new Promise((resolve) => {
-        if (!file.type.startsWith('image/')) {
-            resolve(file);
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-
-                // Resize if too large
-                if (width > maxWidth || height > maxHeight) {
-                    if (width > height) {
-                        height = Math.round((height * maxWidth) / width);
-                        width = maxWidth;
-                    } else {
-                        width = Math.round((width * maxHeight) / height);
-                        height = maxHeight;
-                    }
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                canvas.toBlob(
-                    (blob) => {
-                        if (blob) {
-                            const compressedFile = new File([blob], file.name, {
-                                type: file.type || 'image/jpeg',
-                                lastModified: Date.now(),
-                            });
-                            resolve(compressedFile);
-                        } else {
-                            resolve(file);
-                        }
-                    },
-                    file.type || 'image/jpeg',
-                    quality
-                );
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
-};
+import { compressImage } from '@/utils/imageCompressor';
 
 export default function DocumentsStep({
     errors = {},
@@ -136,6 +85,7 @@ export default function DocumentsStep({
 const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
     const inputRef = useRef(null);
     const activeRequestRef = useRef(null);
+    const abortControllerRef = useRef(null);
     
     const [previewUrl, setPreviewUrl] = useState(null);
     const [uploading, setUploading] = useState(false);
@@ -166,7 +116,64 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
         setShowConfirmDelete(false);
 
         try {
-            const fileToUpload = await compressImage(selectedFile);
+            const isPdf = selectedFile.type === 'application/pdf' || selectedFile.name.toLowerCase().endsWith('.pdf');
+            let fileToUpload = selectedFile;
+            if (!isPdf) {
+                fileToUpload = await compressImage(selectedFile, 1600, 1600, 0.85);
+            }
+
+            // Direct-to-storage presigned upload for PDFs or large files (> 2MB)
+            // Completely bypasses Vercel 4.5MB serverless edge limit
+            if (isPdf || fileToUpload.size > 2 * 1024 * 1024) {
+                const abortController = new AbortController();
+                abortControllerRef.current = abortController;
+
+                const presignRes = await axios.post(route('api.uploads.presign'), {
+                    folder: 'legal_docs',
+                    filename: fileToUpload.name,
+                    contentType: isPdf ? 'application/pdf' : (fileToUpload.type || 'application/octet-stream'),
+                }, {
+                    signal: abortController.signal,
+                });
+
+                const { url, key, contentType } = presignRes.data;
+
+                const uploadRes = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': contentType,
+                    },
+                    body: fileToUpload,
+                    signal: abortController.signal,
+                });
+
+                if (!uploadRes.ok) {
+                    throw new Error('Direct file upload to storage failed.');
+                }
+
+                activeRequestRef.current = router.post(route('artisan.setup.upload-document', { type: id }), {
+                    document_key: key,
+                }, {
+                    preserveScroll: true,
+                    preserveState: true,
+                    onSuccess: () => {
+                        setUploading(false);
+                        setCanCancel(false);
+                        activeRequestRef.current = null;
+                        abortControllerRef.current = null;
+                        if (inputRef.current) inputRef.current.value = '';
+                    },
+                    onError: (errs) => {
+                        setUploading(false);
+                        setCanCancel(false);
+                        activeRequestRef.current = null;
+                        abortControllerRef.current = null;
+                        setUploadError(errs[id] || errs.document || 'Failed to link uploaded document.');
+                        if (inputRef.current) inputRef.current.value = '';
+                    },
+                });
+                return;
+            }
 
             activeRequestRef.current = router.post(route('artisan.setup.upload-document', { type: id }), {
                 document: fileToUpload,
@@ -187,7 +194,7 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
                     setCanCancel(false);
                     activeRequestRef.current = null;
                     console.error('File Upload Error details:', errs);
-                    setUploadError(errs.document || 'Failed to upload document.');
+                    setUploadError(errs[id] || errs.document || 'Failed to upload document.');
                     if (inputRef.current) {
                         inputRef.current.value = '';
                     }
@@ -197,13 +204,24 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
             setUploading(false);
             setCanCancel(false);
             activeRequestRef.current = null;
-            setUploadError('Failed to process file before upload.');
-            console.error('File compression error:', err);
+            abortControllerRef.current = null;
+            if (err?.name === 'AbortError' || axios.isCancel(err)) {
+                setUploadError('Upload cancelled.');
+            } else {
+                setUploadError(err?.response?.data?.error || err.message || 'Failed to process file before upload.');
+            }
+            if (inputRef.current) {
+                inputRef.current.value = '';
+            }
         }
     };
 
     const handleCancel = (e) => {
         e.stopPropagation();
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
         if (activeRequestRef.current) {
             activeRequestRef.current.cancel();
             activeRequestRef.current = null;

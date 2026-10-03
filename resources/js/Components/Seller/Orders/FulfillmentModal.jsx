@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Modal from "@/Components/Modal";
 import SlideOverDrawer from "@/Components/SlideOverDrawer";
-import InputLabel from "@/Components/InputLabel";
-import TextInput from "@/Components/TextInput";
 import ManualDeliveryForm from "@/Components/Seller/Orders/ManualDeliveryForm";
+import { compressImage } from "@/utils/imageCompressor";
 import {
     MapPin,
     PackageCheck,
@@ -12,8 +11,6 @@ import {
     User,
     MessageCircle,
     PackageOpen,
-    Hash,
-    Camera as CameraIcon,
     CheckCircle2,
     LoaderCircle,
     AlertTriangle
@@ -37,16 +34,17 @@ export default function FulfillmentModal({
         return () => window.removeEventListener("resize", checkMobile);
     }, []);
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
+    const handleFileChange = async (e) => {
+        const file = e.target.files?.[0];
         if (file) {
             if (shippingModal.previewUrl?.startsWith("blob:")) {
                 URL.revokeObjectURL(shippingModal.previewUrl);
             }
+            const compressed = await compressImage(file, 1600, 1600, 0.85);
             setShippingModal(prev => ({
                 ...prev,
-                proofOfDelivery: file,
-                previewUrl: URL.createObjectURL(file)
+                proofOfDelivery: compressed,
+                previewUrl: URL.createObjectURL(compressed)
             }));
         }
     };

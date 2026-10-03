@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Modal from '@/Components/Modal';
 import { Camera, X, LoaderCircle, CheckCircle2, PenLine, RotateCcw } from 'lucide-react';
+import { compressImage } from '@/utils/imageCompressor';
 
 export default function DeliveryProofModal({
     isOpen,
@@ -34,14 +35,15 @@ export default function DeliveryProofModal({
         };
     }, [podPreview]);
 
-    const handlePhotoChange = (e) => {
+    const handlePhotoChange = async (e) => {
         const file = e.target.files?.[0];
         if (file) {
             if (podPreview?.startsWith('blob:')) {
                 URL.revokeObjectURL(podPreview);
             }
-            setPodPhoto(file);
-            setPodPreview(URL.createObjectURL(file));
+            const compressed = await compressImage(file, 1600, 1600, 0.85);
+            setPodPhoto(compressed);
+            setPodPreview(URL.createObjectURL(compressed));
         }
     };
 

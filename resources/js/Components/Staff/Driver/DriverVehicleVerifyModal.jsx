@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/Components/Modal';
 import { ShieldCheck, X, Camera, LoaderCircle, CheckCircle2 } from 'lucide-react';
+import { compressImage } from '@/utils/imageCompressor';
 
 export default function DriverVehicleVerifyModal({
     isOpen,
@@ -37,14 +38,15 @@ export default function DriverVehicleVerifyModal({
         };
     }, [licensePreview]);
 
-    const handleLicensePhotoChange = (e) => {
+    const handleLicensePhotoChange = async (e) => {
         const file = e.target.files?.[0];
         if (file) {
             if (licensePreview?.startsWith("blob:")) {
                 URL.revokeObjectURL(licensePreview);
             }
-            setLicensePhoto(file);
-            setLicensePreview(URL.createObjectURL(file));
+            const compressed = await compressImage(file, 1600, 1600, 0.85);
+            setLicensePhoto(compressed);
+            setLicensePreview(URL.createObjectURL(compressed));
         }
     };
 

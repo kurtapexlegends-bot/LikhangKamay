@@ -250,6 +250,64 @@ class ArtisanSetupTest extends TestCase
         $disk->assertExists($user->business_permit);
     }
 
+    public function test_artisan_setup_can_link_presigned_document_key(): void
+    {
+        Storage::fake('public');
+
+        /** @var User $user */
+        $user = User::factory()->create([
+            'role' => 'artisan',
+            'email_verified_at' => now(),
+        ]);
+
+        $key = 'legal_docs/permit_sample.pdf';
+        Storage::disk('public')->put($key, '%PDF-1.4 simulated pdf stream');
+
+        $response = $this->actingAs($user)->post(route('artisan.setup.upload-document', ['type' => 'business_permit']), [
+            'document_key' => $key,
+        ]);
+
+        $response->assertRedirect();
+        $user->refresh();
+        $this->assertSame($key, $user->business_permit);
+    }
+
+    public function test_artisan_setup_step_2_accepts_storage_key_documents(): void
+    {
+        Storage::fake('public');
+
+        /** @var User $user */
+        $user = User::factory()->create([
+            'role' => 'artisan',
+            'email_verified_at' => now(),
+        ]);
+
+        $permitKey = 'legal_docs/permit.pdf';
+        $dtiKey = 'legal_docs/dti.pdf';
+        $idKey = 'legal_docs/id.pdf';
+        $tinKey = 'legal_docs/tin.pdf';
+
+        Storage::disk('public')->put($permitKey, 'dummy pdf');
+        Storage::disk('public')->put($dtiKey, 'dummy pdf');
+        Storage::disk('public')->put($idKey, 'dummy pdf');
+        Storage::disk('public')->put($tinKey, 'dummy pdf');
+
+        $response = $this->actingAs($user)->post(route('artisan.setup.store'), [
+            'current_step' => 2,
+            'business_permit' => $permitKey,
+            'dti_registration' => $dtiKey,
+            'valid_id' => $idKey,
+            'tin_id' => $tinKey,
+        ]);
+
+        $response->assertRedirect();
+        $user->refresh();
+        $this->assertSame($permitKey, $user->business_permit);
+        $this->assertSame($dtiKey, $user->dti_registration);
+        $this->assertSame($idKey, $user->valid_id);
+        $this->assertSame($tinKey, $user->tin_id);
+    }
+
     public function test_artisan_can_visit_pending_approval_page(): void
     {
         /** @var User $user */

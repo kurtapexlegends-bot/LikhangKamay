@@ -2,6 +2,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { router } from "@inertiajs/react";
+import { compressImage } from "@/utils/imageCompressor";
 
 export default function useOrderManagerActions({
     canEditOrders = true,
@@ -125,13 +126,18 @@ export default function useOrderManagerActions({
         error: "",
     }));
 
-    const submitShipping = () => {
+    const submitShipping = async () => {
         if (!canEditOrders) return;
         const formData = new FormData();
         formData.append("status", shippingModal.status);
         if (shippingModal.trackingNumber) formData.append("tracking_number", shippingModal.trackingNumber);
         if (shippingModal.shippingNotes) formData.append("shipping_notes", shippingModal.shippingNotes);
-        if (shippingModal.proofOfDelivery) formData.append("proof_of_delivery", shippingModal.proofOfDelivery);
+        if (shippingModal.proofOfDelivery) {
+            const finalProof = shippingModal.proofOfDelivery instanceof File
+                ? await compressImage(shippingModal.proofOfDelivery, 1600, 1600, 0.85)
+                : shippingModal.proofOfDelivery;
+            formData.append("proof_of_delivery", finalProof);
+        }
         if (shippingModal.pickupPin) formData.append("pickup_pin", shippingModal.pickupPin);
 
         router.post(route("orders.update", shippingModal.orderId), formData, {

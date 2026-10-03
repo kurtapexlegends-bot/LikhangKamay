@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { router, useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import { Star, Image as ImageIcon, X, Send, Loader2, Trash2, Pencil } from 'lucide-react';
+import { compressImage } from '@/utils/imageCompressor';
 
 const StarRating = ({ rating, setRating, readOnly = false, size = 24 }) => {
     const [hover, setHover] = useState(0);
@@ -61,7 +62,7 @@ const ReviewForm = ({ item, onSuccess }) => {
         revokeBlobPreviews(previewUrls);
     }, [previewUrls]);
 
-    const handlePhotoChange = (e) => {
+    const handlePhotoChange = async (e) => {
         const files = Array.from(e.target.files || e.dataTransfer.files || []);
         if (!files.length) return;
 
@@ -70,16 +71,20 @@ const ReviewForm = ({ item, onSuccess }) => {
 
         if (!acceptedFiles.length) return;
 
-        const nextPreviews = acceptedFiles.map((file) => URL.createObjectURL(file));
+        const compressedFiles = await Promise.all(
+            acceptedFiles.map((file) => compressImage(file, 1600, 1600, 0.85))
+        );
+
+        const nextPreviews = compressedFiles.map((file) => URL.createObjectURL(file));
 
         if (isEditing) {
             revokeBlobPreviews(previewUrls);
-            setData('photos', acceptedFiles);
+            setData('photos', compressedFiles);
             setPreviewUrls(nextPreviews);
             return;
         }
 
-        setData('photos', [...data.photos, ...acceptedFiles].slice(0, 5));
+        setData('photos', [...data.photos, ...compressedFiles].slice(0, 5));
         setPreviewUrls((current) => [...current, ...nextPreviews].slice(0, 5));
     };
 

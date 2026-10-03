@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/react';
 import { Star, Pin, Trash2, Pencil } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import { compressImage } from '@/utils/imageCompressor';
 
 export default function ProductReviewsSection({
     product,
@@ -179,7 +180,13 @@ export default function ProductReviewsSection({
                                             type="file" 
                                             multiple 
                                             accept="image/*"
-                                            onChange={(e) => setData('photos', Array.from(e.target.files))}
+                                            onChange={async (e) => {
+                                                const rawFiles = Array.from(e.target.files || []).slice(0, 3);
+                                                const compressed = await Promise.all(
+                                                    rawFiles.map((file) => compressImage(file, 1600, 1600, 0.85))
+                                                );
+                                                setData('photos', compressed);
+                                            }}
                                             className="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-medium file:bg-clay-50 file:text-clay-700 hover:file:bg-clay-100 transition"
                                         />
                                         {data.photos && data.photos.length > 0 && (

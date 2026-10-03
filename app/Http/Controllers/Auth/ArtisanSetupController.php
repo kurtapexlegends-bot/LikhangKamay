@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use App\Mail\NewArtisanApplication;
@@ -98,14 +99,40 @@ class ArtisanSetupController extends Controller
 
         // --- STEP 2: LEGAL FILES ---
         if ($step == 2) {
-            $request->validate([
-                'business_permit' => [$user->business_permit ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
-                'dti_registration' => [$user->dti_registration ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
-                'valid_id' => [$user->valid_id ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
-                'tin_id' => [$user->tin_id ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
-            ]);
+            $docs = ['business_permit', 'dti_registration', 'valid_id', 'tin_id'];
+            $rules = [];
 
-            $documentFlags = [];
+            foreach ($docs as $docKey) {
+                $hasExisting = !empty($user->{$docKey});
+                $rules[$docKey] = [
+                    $hasExisting ? 'nullable' : 'required',
+                    function ($attribute, $value, $fail) {
+                        if ($value === null) {
+                            return;
+                        }
+                        if ($value instanceof \Illuminate\Http\UploadedFile) {
+                            $mime = $value->getMimeType();
+                            $validMimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+                            if (!in_array($mime, $validMimes, true)) {
+                                $fail("The {$attribute} must be a file of type: jpg, jpeg, png, pdf.");
+                            }
+                            if ($value->getSize() > 4096 * 1024) {
+                                $fail("The {$attribute} may not be greater than 4MB.");
+                            }
+                        } elseif (is_string($value)) {
+                            if (!str_starts_with($value, 'legal_docs/')) {
+                                $fail("The {$attribute} is an invalid document reference.");
+                            }
+                        } else {
+                            $fail("The {$attribute} is invalid.");
+                        }
+                    },
+                ];
+            }
+
+            $request->validate($rules);
+
+            $documentFlags = $user->document_flags ?? [];
             $upload = function ($key) use ($request, $user, &$documentFlags) {
                 if ($request->hasFile($key)) {
                     $file = $request->file($key);
@@ -132,6 +159,14 @@ class ArtisanSetupController extends Controller
                     $documentFlags[$key] = $flags;
                     return $file->store('legal_docs', 'public');
                 }
+
+                if ($request->filled($key) && is_string($request->input($key))) {
+                    $path = $request->input($key);
+                    if (str_starts_with($path, 'legal_docs/')) {
+                        return $path;
+                    }
+                }
+
                 return $user->{$key};
             };
 
@@ -329,6 +364,32 @@ class ArtisanSetupController extends Controller
             return back()->withErrors([$type => 'Invalid document type.']);
         }
 
+        if ($request->filled('document_key')) {
+            $request->validate([
+                'document_key' => ['required', 'string', 'max:255'],
+            ]);
+
+            $path = $request->input('document_key');
+            if (!str_starts_with($path, 'legal_docs/')) {
+                return back()->withErrors([$type => 'Invalid document storage path.']);
+            }
+
+            if (!Storage::disk('public')->exists($path)) {
+                return back()->withErrors([$type => 'Uploaded document not found in storage.']);
+            }
+
+            // Delete old file if exists and different
+            if ($user->{$type} && $user->{$type} !== $path) {
+                Storage::disk('public')->delete($user->{$type});
+            }
+
+            $user->update([
+                $type => $path,
+            ]);
+
+            return back()->with('success', ucfirst(str_replace('_', ' ', $type)) . ' uploaded successfully.');
+        }
+
         $request->validate([
             'document' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ]);
@@ -356,7 +417,7 @@ class ArtisanSetupController extends Controller
 
         // Delete old file if exists
         if ($user->{$type}) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($user->{$type});
+            Storage::disk('public')->delete($user->{$type});
         }
 
         $path = $file->store('legal_docs', 'public');

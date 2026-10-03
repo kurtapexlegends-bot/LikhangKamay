@@ -1,9 +1,11 @@
+/* global route */
 import React, { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { RotateCcw, UploadCloud, XCircle } from 'lucide-react';
 import Modal from '@/Components/Modal';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { compressImage } from '@/utils/imageCompressor';
 
 export default function ReturnRequestModal({ isOpen, onClose, order }) {
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
@@ -35,16 +37,19 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
         return () => revokePreviews();
     }, [previewUrls]);
 
-    const handleFileChange = (e) => {
-        const files = Array.from(e.target.files);
+    const handleFileChange = async (e) => {
+        const files = Array.from(e.target.files || []);
         if (files.length + data.proof_photos.length > 5) {
             alert('You can upload up to 5 photos in total.');
             return;
         }
-        const updatedFiles = [...data.proof_photos, ...files];
+        const compressedFiles = await Promise.all(
+            files.map((file) => compressImage(file, 1600, 1600, 0.85))
+        );
+        const updatedFiles = [...data.proof_photos, ...compressedFiles];
         setData('proof_photos', updatedFiles);
 
-        const newUrls = files.map(file => URL.createObjectURL(file));
+        const newUrls = compressedFiles.map((file) => URL.createObjectURL(file));
         setPreviewUrls([...previewUrls, ...newUrls]);
     };
 
@@ -65,6 +70,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order }) {
         e.preventDefault();
         post(route('my-orders.dispute', order.id), {
             preserveScroll: true,
+            forceFormData: true,
             onSuccess: () => onClose(),
         });
     };
