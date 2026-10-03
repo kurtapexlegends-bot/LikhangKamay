@@ -17,32 +17,38 @@ import {
 } from '@/utils/buyerSignals';
 
 // Subcomponents
-import NavigationHeader from '@/Components/Consumer/Buyer/Saved/NavigationHeader';
+import SavedHeroHeader from '@/Components/Consumer/Buyer/Saved/SavedHeroHeader';
 import SavedItemsGrid from '@/Components/Consumer/Buyer/Saved/SavedItemsGrid';
 import FollowedShopsList from '@/Components/Consumer/Buyer/Saved/FollowedShopsList';
-import ActivitySidebar from '@/Components/Consumer/Buyer/Saved/ActivitySidebar';
 import QuickViewModal from '@/Components/Consumer/Buyer/Saved/QuickViewModal';
 import SavedBulkActions from '@/Components/Consumer/Buyer/Saved/SavedBulkActions';
 import ClearConfirmation from '@/Components/Consumer/Buyer/Saved/ClearConfirmation';
 
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 15;
 
 export default function Saved() {
     const { addToast } = useToast();
     const { auth } = usePage().props;
     const userId = auth?.user?.id;
+
     const [activeTab, setActiveTab] = useState('wishlist');
     const [wishlistedProducts, setWishlistedProducts] = useState([]);
     const [followedShops, setFollowedShops] = useState([]);
     const [recentlyViewed, setRecentlyViewed] = useState([]);
+    
+    // Controls State
     const [sortOrder, setSortOrder] = useState('recent');
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
     const [isBulkEdit, setIsBulkEdit] = useState(false);
     const [selectedIds, setSelectedIds] = useState([]);
     const [wishlistPage, setWishlistPage] = useState(1);
+    
+    // Modal State
     const [quickViewProduct, setQuickViewProduct] = useState(null);
     const [isProcessingBulk, setIsProcessingBulk] = useState(false);
-    const [clearAction, setClearAction] = useState(null); // { type, title, message }
+    const [clearAction, setClearAction] = useState(null);
 
     useEffect(() => {
         if (userId) {
@@ -57,7 +63,7 @@ export default function Saved() {
 
         syncSignals();
 
-        // Gather cached product IDs for verification
+        // Verify active products with server
         const wishlistIds = getWishlistedProducts(userId).map((p) => Number(p?.id));
         const recentlyViewedIds = getRecentlyViewedProducts().map((p) => Number(p?.id));
         const idsToVerify = Array.from(new Set([...wishlistIds, ...recentlyViewedIds])).filter(Boolean);
@@ -69,9 +75,7 @@ export default function Saved() {
                         pruneInactiveProducts(res.data, userId);
                     }
                 })
-                .catch((err) => {
-                    console.error('Failed to validate active products:', err);
-                });
+                .catch(() => {});
         }
 
         window.addEventListener('storage', syncSignals);
@@ -83,6 +87,82 @@ export default function Saved() {
         };
     }, [userId]);
 
+    // Extract dynamic categories from wishlist
+    const categories = useMemo(() => {
+        const counts = {};
+        wishlistedProducts.forEach((p) => {
+            if (p.category) {
+                counts[p.category] = (counts[p.category] || 0) + 1;
+            }
+        });
+        return Object.entries(counts).map(([name, count]) => ({ name, count }));
+    }, [wishlistedProducts]);
+
+    // Filtering & Sorting
+    const filteredAndSortedWishlist = useMemo(() => {
+        let result = [...wishlistedProducts];
+
+        if (selectedCategory !== 'all') {
+            result = result.filter((p) => p.category === selectedCategory);
+        }
+
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter(
+                (p) =>
+                    p.name.toLowerCase().includes(query) ||
+                    (p.sellerName && p.sellerName.toLowerCase().includes(query)) ||
+                    (p.category && p.category.toLowerCase().includes(query))
+            );
+        }
+
+        if (sortOrder === 'price_asc') {
+            result.sort((a, b) => a.price - b.price);
+        } else if (sortOrder === 'price_desc') {
+            result.sort((a, b) => b.price - a.price);
+        } else if (sortOrder === 'name_asc') {
+            result.sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        return result;
+    }, [wishlistedProducts, selectedCategory, searchQuery, sortOrder]);
+
+    const totalWishlistPages = Math.max(1, Math.ceil(filteredAndSortedWishlist.length / ITEMS_PER_PAGE));
+
+    const paginatedWishlist = useMemo(() => {
+        const start = (wishlistPage - 1) * ITEMS_PER_PAGE;
+        return filteredAndSortedWishlist.slice(start, start + ITEMS_PER_PAGE);
+    }, [filteredAndSortedWishlist, wishlistPage]);
+
+    // Reset pagination when filters change
+    useEffect(() => {
+        setWishlistPage(1);
+    }, [searchQuery, selectedCategory, sortOrder]);
+
+    // Total price of selected items in bulk edit
+    const totalSelectedPrice = useMemo(() => {
+        return wishlistedProducts
+            .filter((p) => selectedIds.includes(p.id))
+            .reduce((sum, p) => sum + (Number(p.price) || 0), 0);
+    }, [wishlistedProducts, selectedIds]);
+
+    // Selection Handlers
+    const toggleSelect = (e, id) => {
+        if (e && e.preventDefault) e.preventDefault();
+        setSelectedIds((prev) =>
+            prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+        );
+    };
+
+    const handleSelectAll = () => {
+        setSelectedIds(filteredAndSortedWishlist.map((p) => p.id));
+    };
+
+    const handleDeselectAll = () => {
+        setSelectedIds([]);
+    };
+
+    // Wishlist Removal
     const handleRemoveWishlist = (e, product) => {
         if (e) {
             e.preventDefault();
@@ -90,13 +170,11 @@ export default function Saved() {
         }
         toggleWishlistedProduct(product, userId);
         setWishlistedProducts(getWishlistedProducts(userId));
-        
-        // Remove from current selection if it was selected
-        setSelectedIds(prev => prev.filter(id => id !== product.id));
-        
-        addToast(`${product.name} removed from wishlist`, 'success');
+        setSelectedIds((prev) => prev.filter((id) => id !== product.id));
+        addToast(`${product.name} removed from wishlist.`, 'success');
     };
 
+    // Unfollow Shop
     const handleUnfollowShop = (e, shop) => {
         if (e) {
             e.preventDefault();
@@ -104,121 +182,77 @@ export default function Saved() {
         }
         toggleFollowedShop(shop, userId);
         setFollowedShops(getFollowedShops(userId));
-        addToast(`Unfollowed ${shop.name}`, 'success');
+        addToast(`Unfollowed ${shop.name}.`, 'success');
     };
 
-    const filteredAndSortedWishlist = useMemo(() => {
-        let sorted = [...wishlistedProducts];
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            sorted = sorted.filter(p => 
-                p.name.toLowerCase().includes(query) || 
-                p.sellerName.toLowerCase().includes(query)
-            );
+    // Single Add to Cart Action
+    const handleAddToCart = async (product, quantity = 1) => {
+        try {
+            await axios.post(route('cart.store'), {
+                product_id: product.id,
+                quantity: quantity || 1,
+                variant: 'Standard',
+            });
+            addToast(`Added "${product.name}" to cart.`, 'success');
+            router.reload({ only: ['cart'] });
+        } catch {
+            addToast('Failed to add item to cart. It may be currently out of stock.', 'error');
         }
-        if (sortOrder === 'price_asc') sorted.sort((a, b) => a.price - b.price);
-        if (sortOrder === 'price_desc') sorted.sort((a, b) => b.price - a.price);
-        return sorted;
-    }, [wishlistedProducts, sortOrder, searchQuery]);
-
-    const totalWishlistPages = Math.max(1, Math.ceil(filteredAndSortedWishlist.length / ITEMS_PER_PAGE));
-    
-    const paginatedWishlist = useMemo(() => {
-        const start = (wishlistPage - 1) * ITEMS_PER_PAGE;
-        return filteredAndSortedWishlist.slice(start, start + ITEMS_PER_PAGE);
-    }, [filteredAndSortedWishlist, wishlistPage]);
-
-    // Reset pagination page to 1 when search query or sort order changes
-    useEffect(() => {
-        setWishlistPage(1);
-    }, [searchQuery, sortOrder]);
-
-    const toggleSelect = (e, id) => {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        setSelectedIds(prev => 
-            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-        );
     };
 
-    const handleBulkRemove = () => {
-        if (!selectedIds.length) return;
-        selectedIds.forEach(id => toggleWishlistedProduct({ id }, userId));
-        setWishlistedProducts(getWishlistedProducts(userId));
-        setSelectedIds([]);
-        setIsBulkEdit(false);
-        addToast(`Removed ${selectedIds.length} items from wishlist`, 'success');
-    };
-
+    // Bulk Add to Cart
     const handleBulkAddToCart = async () => {
         if (!selectedIds.length) return;
         setIsProcessingBulk(true);
-        
         try {
-            const promises = selectedIds.map(id => 
+            const requests = selectedIds.map((id) =>
                 axios.post(route('cart.store'), {
                     product_id: id,
                     quantity: 1,
-                    variant: 'Standard'
+                    variant: 'Standard',
                 })
             );
-            
-            await Promise.all(promises);
-            
-            addToast(`Added ${selectedIds.length} items to your cart`, 'success');
+            await Promise.all(requests);
+            addToast(`Added ${selectedIds.length} items to your cart.`, 'success');
             setSelectedIds([]);
             setIsBulkEdit(false);
-            
             router.reload({ only: ['cart'] });
-        } catch (error) {
-            addToast('Failed to add items to cart. Some might be out of stock.', 'error');
+        } catch {
+            addToast('Some items could not be added to cart.', 'error');
         } finally {
             setIsProcessingBulk(false);
         }
     };
 
-    const handleBulkCheckout = async () => {
+    // Bulk Remove
+    const handleBulkRemove = () => {
         if (!selectedIds.length) return;
-        setIsProcessingBulk(true);
-        
-        try {
-            const promises = selectedIds.map(id => 
-                axios.post(route('cart.store'), {
-                    product_id: id,
-                    quantity: 1,
-                    variant: 'Standard'
-                })
-            );
-            
-            await Promise.all(promises);
-            
-            router.visit(route('cart.index'));
-        } catch (error) {
-            addToast('Failed to prepare checkout. Some items might be unavailable.', 'error');
-            setIsProcessingBulk(false);
-        }
+        selectedIds.forEach((id) => toggleWishlistedProduct({ id }, userId));
+        setWishlistedProducts(getWishlistedProducts(userId));
+        setSelectedIds([]);
+        setIsBulkEdit(false);
+        addToast(`Removed ${selectedIds.length} items from wishlist.`, 'success');
     };
 
+    // Clear All Flow
     const handleClearAll = () => {
         if (activeTab === 'wishlist') {
             setClearAction({
                 type: 'wishlist',
                 title: 'Clear Wishlist',
-                message: 'Are you sure you want to clear your entire wishlist? This action cannot be undone.'
+                message: 'Are you sure you want to remove all saved items from your wishlist? This action cannot be undone.',
             });
         } else if (activeTab === 'following') {
             setClearAction({
                 type: 'following',
                 title: 'Unfollow All Studios',
-                message: 'Are you sure you want to unfollow all studios in your collection?'
+                message: 'Are you sure you want to unfollow all artisan studios in your collection?',
             });
         } else if (activeTab === 'recent') {
             setClearAction({
                 type: 'recent',
-                title: 'Clear History',
-                message: 'Are you sure you want to clear your recently viewed history?'
+                title: 'Clear Browsing History',
+                message: 'Are you sure you want to clear your recently viewed craft history?',
             });
         }
     };
@@ -226,113 +260,116 @@ export default function Saved() {
     const confirmClearAll = () => {
         const type = clearAction?.type;
         setClearAction(null);
-        
         if (type === 'wishlist') {
             clearWishlistedProducts(userId);
             setWishlistedProducts([]);
             setSelectedIds([]);
             setIsBulkEdit(false);
-            addToast('Wishlist cleared', 'success');
+            addToast('Wishlist cleared.', 'success');
         } else if (type === 'following') {
             clearFollowedShops(userId);
             setFollowedShops([]);
-            addToast('All studios unfollowed', 'success');
+            addToast('All studios unfollowed.', 'success');
         } else if (type === 'recent') {
             clearRecentlyViewedProducts();
             setRecentlyViewed([]);
-            addToast('History cleared', 'success');
+            addToast('Browsing history cleared.', 'success');
         }
     };
 
     return (
-        <ShopLayout>
-            <Head title="Saved Collections" />
+        <ShopLayout hideMobileDock={isBulkEdit}>
+            <Head title="Saved | LikhangKamay" />
 
-            <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 bg-stone-50/20 rounded-[32px] mt-2 mb-6">
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8 mt-2">
-                    <div className="space-y-6 lg:col-span-2">
-                        <NavigationHeader
+            <div className="mx-auto w-full max-w-6xl px-4 pt-4 pb-28 sm:py-6 sm:px-6 space-y-4 animate-in fade-in duration-200 min-w-0">
+                {/* Hero Header & Filter Controls */}
+                <SavedHeroHeader
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    wishlistedCount={wishlistedProducts.length}
+                    followedCount={followedShops.length}
+                    recentlyViewedCount={recentlyViewed.length}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    sortOrder={sortOrder}
+                    setSortOrder={setSortOrder}
+                    viewMode={viewMode}
+                    setViewMode={setViewMode}
+                    isBulkEdit={isBulkEdit}
+                    setIsBulkEdit={setIsBulkEdit}
+                    categories={categories}
+                    selectedCategory={selectedCategory}
+                    setSelectedCategory={setSelectedCategory}
+                    onClearAll={handleClearAll}
+                />
+
+                {/* Tab Content Canvas */}
+                <div className="min-h-[460px]">
+                    {activeTab === 'wishlist' && (
+                        <SavedItemsGrid
+                            items={paginatedWishlist}
                             activeTab={activeTab}
-                            setActiveTab={setActiveTab}
-                            wishlistedCount={wishlistedProducts.length}
-                            followedCount={followedShops.length}
-                            recentlyViewedCount={recentlyViewed.length}
-                            searchQuery={searchQuery}
-                            setSearchQuery={setSearchQuery}
-                            sortOrder={sortOrder}
-                            setSortOrder={setSortOrder}
+                            viewMode={viewMode}
                             isBulkEdit={isBulkEdit}
-                            setIsBulkEdit={setIsBulkEdit}
-                            onClearAll={handleClearAll}
+                            selectedIds={selectedIds}
+                            onToggleSelect={toggleSelect}
+                            onRemoveWishlist={handleRemoveWishlist}
+                            onQuickView={setQuickViewProduct}
+                            onAddToCart={handleAddToCart}
+                            currentPage={wishlistPage}
+                            totalPages={totalWishlistPages}
+                            totalItems={filteredAndSortedWishlist.length}
+                            itemsPerPage={ITEMS_PER_PAGE}
+                            onPageChange={setWishlistPage}
                         />
+                    )}
 
-                        {/* Contents layout cards */}
-                        <div className="rounded-[28px] border border-stone-200/85 bg-white p-5 sm:p-6 shadow-sm min-h-[420px] transition-all duration-300">
-                            {activeTab === 'wishlist' && (
-                                <SavedItemsGrid
-                                    items={paginatedWishlist}
-                                    activeTab={activeTab}
-                                    isBulkEdit={isBulkEdit}
-                                    selectedIds={selectedIds}
-                                    onToggleSelect={toggleSelect}
-                                    onRemoveWishlist={handleRemoveWishlist}
-                                    onQuickView={setQuickViewProduct}
-                                    currentPage={wishlistPage}
-                                    totalPages={totalWishlistPages}
-                                    totalItems={filteredAndSortedWishlist.length}
-                                    itemsPerPage={ITEMS_PER_PAGE}
-                                    onPageChange={setWishlistPage}
-                                />
-                            )}
+                    {activeTab === 'following' && (
+                        <FollowedShopsList
+                            shops={followedShops}
+                            onUnfollowShop={handleUnfollowShop}
+                        />
+                    )}
 
-                            {activeTab === 'following' && (
-                                <FollowedShopsList
-                                    shops={followedShops}
-                                    onUnfollowShop={handleUnfollowShop}
-                                />
-                            )}
-
-                            {activeTab === 'recent' && (
-                                <SavedItemsGrid
-                                    items={recentlyViewed}
-                                    activeTab={activeTab}
-                                    isBulkEdit={false}
-                                    selectedIds={[]}
-                                    onToggleSelect={() => {}}
-                                    onRemoveWishlist={() => {}}
-                                    onQuickView={setQuickViewProduct}
-                                    currentPage={1}
-                                    totalPages={1}
-                                    totalItems={recentlyViewed.length}
-                                    itemsPerPage={recentlyViewed.length}
-                                    onPageChange={() => {}}
-                                />
-                            )}
-                        </div>
-                    </div>
-
-                    <ActivitySidebar
-                        wishlistedCount={wishlistedProducts.length}
-                        followedCount={followedShops.length}
-                        recentlyViewedCount={recentlyViewed.length}
-                        activeTab={activeTab}
-                        onClearAll={handleClearAll}
-                    />
+                    {activeTab === 'recent' && (
+                        <SavedItemsGrid
+                            items={recentlyViewed}
+                            activeTab={activeTab}
+                            viewMode={viewMode}
+                            isBulkEdit={false}
+                            selectedIds={[]}
+                            onToggleSelect={() => {}}
+                            onRemoveWishlist={() => {}}
+                            onQuickView={setQuickViewProduct}
+                            onAddToCart={handleAddToCart}
+                            currentPage={1}
+                            totalPages={1}
+                            totalItems={recentlyViewed.length}
+                            itemsPerPage={recentlyViewed.length || 1}
+                            onPageChange={() => {}}
+                        />
+                    )}
                 </div>
             </div>
 
+            {/* Quick View Modal / Drawer */}
             <QuickViewModal
                 product={quickViewProduct}
                 onClose={() => setQuickViewProduct(null)}
                 onRemoveWishlist={handleRemoveWishlist}
+                onAddToCart={handleAddToCart}
             />
 
+            {/* Floating Bulk Action Dock */}
             <SavedBulkActions
                 isBulkEdit={isBulkEdit}
                 selectedCount={selectedIds.length}
+                totalCount={filteredAndSortedWishlist.length}
+                totalSelectedPrice={totalSelectedPrice}
                 isProcessing={isProcessingBulk}
+                onSelectAll={handleSelectAll}
+                onDeselectAll={handleDeselectAll}
                 onBulkAddToCart={handleBulkAddToCart}
-                onBulkCheckout={handleBulkCheckout}
                 onBulkRemove={handleBulkRemove}
                 onCancel={() => {
                     setIsBulkEdit(false);
@@ -340,6 +377,7 @@ export default function Saved() {
                 }}
             />
 
+            {/* Confirmation Dialog */}
             <ClearConfirmation
                 clearAction={clearAction}
                 onClose={() => setClearAction(null)}
