@@ -70,10 +70,8 @@ class ProductController extends Controller
                               ->orWhere('cover_photo_path', '')
                               ->orWhereNull('model_3d_path')
                               ->orWhere('model_3d_path', '')
-                              ->orWhereNull('gallery_paths')
                               ->orWhere(function($sq) {
-                                  $sq->whereNotNull('gallery_paths')
-                                     ->whereJsonLength('gallery_paths', '<', 3);
+                                  $sq->whereGalleryCount('<', 3);
                               });
                         });
                 } elseif ($request->quick_filter === 'ready_drafts') {
@@ -82,11 +80,7 @@ class ProductController extends Controller
                         ->where('cover_photo_path', '!=', '')
                         ->whereNotNull('model_3d_path')
                         ->where('model_3d_path', '!=', '')
-                        ->whereNotNull('gallery_paths')
-                        ->where(function($sq) {
-                            $sq->whereNotNull('gallery_paths')
-                               ->whereJsonLength('gallery_paths', '>=', 3);
-                        });
+                        ->whereGalleryCount('>=', 3);
                 }
             } elseif ($request->filled('status') && $request->status !== 'All') {
                 if ($request->status === 'Low Stock') {
@@ -145,11 +139,11 @@ class ProductController extends Controller
                     'incompleteDraftCount' => rescue(fn() => $seller->products()->where('status', 'Draft')
                         ->where(function($q) {
                             $q->whereNull('cover_photo_path')
+                              ->orWhere('cover_photo_path', '')
                               ->orWhereNull('model_3d_path')
-                              ->orWhereNull('gallery_paths')
+                              ->orWhere('model_3d_path', '')
                               ->orWhere(function($sq) {
-                                  $sq->whereNotNull('gallery_paths')
-                                     ->whereJsonLength('gallery_paths', '<', 3);
+                                  $sq->whereGalleryCount('<', 3);
                               });
                         })->count(), 0),
                 ],

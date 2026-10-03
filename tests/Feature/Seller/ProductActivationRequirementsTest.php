@@ -195,6 +195,61 @@ class ProductActivationRequirementsTest extends TestCase
         );
     }
 
+    public function test_quick_filters_handle_non_array_and_empty_gallery_paths_without_errors(): void
+    {
+        $seller = User::factory()->artisanApproved()->create();
+
+        // 1. Draft with empty array []
+        $emptyArrayDraft = $this->makeProduct($seller, [
+            'name' => 'Empty Array Draft',
+            'status' => 'Draft',
+            'cover_photo_path' => 'products/covers/empty.jpg',
+            'gallery_paths' => [],
+            'model_3d_path' => 'products/models/empty.glb',
+        ]);
+
+        // 2. Draft with 2 gallery images (< 3)
+        $twoImagesDraft = $this->makeProduct($seller, [
+            'name' => 'Two Images Draft',
+            'status' => 'Draft',
+            'cover_photo_path' => 'products/covers/two.jpg',
+            'gallery_paths' => ['products/gallery/1.jpg', 'products/gallery/2.jpg'],
+            'model_3d_path' => 'products/models/two.glb',
+        ]);
+
+        // 3. Draft with 3 gallery images (>= 3, ready)
+        $readyDraft = $this->makeProduct($seller, [
+            'name' => 'Ready Draft',
+            'status' => 'Draft',
+            'cover_photo_path' => 'products/covers/ready.jpg',
+            'gallery_paths' => ['products/gallery/1.jpg', 'products/gallery/2.jpg', 'products/gallery/3.jpg'],
+            'model_3d_path' => 'products/models/ready.glb',
+        ]);
+
+        // Needs readiness should return the 2 incomplete drafts
+        $needsResponse = $this->actingAs($seller)
+            ->get(route('products.index', ['quick_filter' => 'needs_readiness']));
+
+        $needsResponse->assertOk();
+        $needsResponse->assertInertia(fn ($page) => $page
+            ->component('Seller/Catalog/ProductManager')
+            ->has('products.data', 2)
+            ->where('filters.quick_filter', 'needs_readiness')
+        );
+
+        // Ready drafts should return only the ready draft
+        $readyResponse = $this->actingAs($seller)
+            ->get(route('products.index', ['quick_filter' => 'ready_drafts']));
+
+        $readyResponse->assertOk();
+        $readyResponse->assertInertia(fn ($page) => $page
+            ->component('Seller/Catalog/ProductManager')
+            ->has('products.data', 1)
+            ->where('products.data.0.id', $readyDraft->id)
+            ->where('filters.quick_filter', 'ready_drafts')
+        );
+    }
+
     private function makeProduct(User $seller, array $overrides = []): Product
     {
         return Product::create(array_merge([

@@ -251,7 +251,7 @@ export const useRealtime = () => {
                         {
                             event: 'INSERT',
                             schema: 'public',
-                            table: 'activity_logs',
+                            table: 'platform_activities',
                         },
                         (payload) => {
                             router.reload({

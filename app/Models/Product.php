@@ -494,6 +494,69 @@ class Product extends Model
     }
 
     /**
+     * Cross-database safe scope for filtering by gallery image count.
+     * Prevents PostgreSQL 'cannot get array length of a non-array' crashes on non-array / empty rows.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string $operator e.g. '>=', '<', '=', etc.
+     * @param int $count
+     * @param string $boolean 'and' or 'or'
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeWhereGalleryCount(\Illuminate\Database\Eloquent\Builder $query, string $operator, int $count, string $boolean = 'and'): \Illuminate\Database\Eloquent\Builder
+    {
+        $driver = $query->getConnection()->getDriverName();
+
+        if ($driver === 'pgsql') {
+            return $query->whereRaw(
+                "(CASE 
+                    WHEN products.gallery_paths IS NOT NULL 
+                         AND jsonb_typeof((products.gallery_paths)::jsonb) = 'array' 
+                    THEN jsonb_array_length((products.gallery_paths)::jsonb) 
+                    ELSE 0 
+                 END) {$operator} ?",
+                [$count],
+                $boolean
+            );
+        }
+
+        if ($driver === 'sqlite') {
+            return $query->whereRaw(
+                "(CASE 
+                    WHEN products.gallery_paths IS NOT NULL 
+                         AND json_valid(products.gallery_paths) 
+                         AND json_type(products.gallery_paths) = 'array' 
+                    THEN json_array_length(products.gallery_paths) 
+                    ELSE 0 
+                 END) {$operator} ?",
+                [$count],
+                $boolean
+            );
+        }
+
+        // MySQL / MariaDB
+        return $query->whereRaw(
+            "(CASE 
+                WHEN products.gallery_paths IS NOT NULL 
+                     AND JSON_VALID(products.gallery_paths) 
+                     AND JSON_TYPE(products.gallery_paths) = 'ARRAY' 
+                THEN JSON_LENGTH(products.gallery_paths) 
+                ELSE 0 
+             END) {$operator} ?",
+            [$count],
+            $boolean
+        );
+    }
+
+    /**
+     * Cross-database safe scope for OR filtering by gallery image count.
+     */
+    public function scopeOrWhereGalleryCount(\Illuminate\Database\Eloquent\Builder $query, string $operator, int $count): \Illuminate\Database\Eloquent\Builder
+    {
+        return $this->scopeWhereGalleryCount($query, $operator, $count, 'or');
+    }
+
+    /**
      * Get effective unit price based on ordered wholesale quantity.
      */
     public function getEffectiveB2BPrice(int $qty): float

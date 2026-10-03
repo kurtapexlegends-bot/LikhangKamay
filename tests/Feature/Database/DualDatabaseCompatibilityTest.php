@@ -212,6 +212,11 @@ class DualDatabaseCompatibilityTest extends TestCase
         $pgJsonLengthSql = Product::on('pgsql')->whereJsonLength('gallery_paths', '<', 3)->toSql();
         $this->assertNotEmpty($pgJsonLengthSql);
 
+        $pgGalleryCountSql = Product::on('pgsql')->whereGalleryCount('<', 3)->toSql();
+        $this->assertNotEmpty($pgGalleryCountSql);
+        $this->assertStringContainsString('jsonb_typeof', $pgGalleryCountSql);
+        $this->assertStringContainsString('jsonb_array_length', $pgGalleryCountSql);
+
         $pgJsonContainsSql = User::on('pgsql')->whereJsonContains('modules_enabled', 'pos')->toSql();
         $this->assertNotEmpty($pgJsonContainsSql);
 
@@ -222,6 +227,11 @@ class DualDatabaseCompatibilityTest extends TestCase
         // MySQL JSON compilation
         $myJsonLengthSql = Product::on('mysql')->whereJsonLength('gallery_paths', '<', 3)->toSql();
         $this->assertNotEmpty($myJsonLengthSql);
+
+        $myGalleryCountSql = Product::on('mysql')->whereGalleryCount('<', 3)->toSql();
+        $this->assertNotEmpty($myGalleryCountSql);
+        $this->assertStringContainsString('JSON_TYPE', $myGalleryCountSql);
+        $this->assertStringContainsString('JSON_LENGTH', $myGalleryCountSql);
 
         $myJsonContainsSql = User::on('mysql')->whereJsonContains('modules_enabled', 'pos')->toSql();
         $this->assertNotEmpty($myJsonContainsSql);
