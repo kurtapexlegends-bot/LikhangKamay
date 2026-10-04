@@ -103,32 +103,6 @@ class AppServiceProvider extends ServiceProvider
             }
         }
 
-        // Serverless background queue and schedule runner:
-        // Opportunistically drain database jobs and trigger schedule ticks in the background
-        if (!$this->app->runningInConsole()) {
-            $this->app->terminating(function () {
-                try {
-                    // 1. Opportunistically drain queued database jobs if any are pending
-                    if (config('queue.default') === 'database') {
-                        $hasPendingJobs = \Illuminate\Support\Facades\DB::table(config('queue.connections.database.table', 'jobs'))->exists();
-                        if ($hasPendingJobs) {
-                            \Illuminate\Support\Facades\Artisan::call('queue:work', [
-                                '--stop-when-empty' => true,
-                                '--max-time' => 5,
-                            ]);
-                        }
-                    }
-
-                    // 2. Catch up on sub-daily scheduled tasks if at least 5 minutes have elapsed since last tick
-                    if (\Illuminate\Support\Facades\Cache::add('serverless_schedule_tick_lock', true, 300)) {
-                        \Illuminate\Support\Facades\Artisan::call('schedule:run');
-                    }
-                } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::warning('Serverless background task runner error: ' . $e->getMessage());
-                }
-            });
-        }
-        
         Vite::prefetch(concurrency: 3);
 
         \App\Models\Review::observe(\App\Observers\ReviewObserver::class);

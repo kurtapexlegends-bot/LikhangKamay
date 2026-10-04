@@ -103,4 +103,35 @@ class EmailStudioTest extends TestCase
                 'success' => true,
             ]);
     }
+
+    public function test_email_studio_routes_redirect_when_requested_via_inertia(): void
+    {
+        /** @var User $admin */
+        $admin = User::factory()->create(['role' => 'super_admin']);
+
+        $version = app(\App\Http\Middleware\HandleInertiaRequests::class)->version(request());
+        $inertiaHeaders = [
+            'X-Inertia' => 'true',
+            'X-Requested-With' => 'XMLHttpRequest',
+            'X-Inertia-Version' => (string) $version,
+        ];
+
+        // 1. Index visited via Inertia - redirects to Settings with email tab
+        $indexResponse = $this->actingAs($admin)->get(route('admin.email-templates.index'), $inertiaHeaders);
+        $indexResponse->assertRedirect(route('admin.settings.index', ['tab' => 'email']));
+        $this->assertFalse($indexResponse->headers->contains('content-type', 'application/json'));
+
+        // 2. Dispatch via Inertia - redirects back with session flash
+        $recipient = User::factory()->create(['name' => 'Test Inertia Buyer', 'email' => 'inertia-buyer@example.com']);
+        $dispatchResponse = $this->actingAs($admin)->post(route('admin.email-templates.dispatch'), [
+            'target_type' => 'user',
+            'target_user_id' => $recipient->id,
+            'subject' => 'Inertia Broadcast Test',
+            'body' => 'Inertia test body',
+        ], $inertiaHeaders);
+
+        $dispatchResponse->assertRedirect();
+        $dispatchResponse->assertSessionHas('success');
+        $this->assertFalse($dispatchResponse->headers->contains('content-type', 'application/json'));
+    }
 }

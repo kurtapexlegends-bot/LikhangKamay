@@ -38,9 +38,11 @@ class CartController extends Controller
      */
     public function store(Request $request): RedirectResponse|JsonResponse
     {
+        $isApi = !$request->header('X-Inertia') && ($request->wantsJson() || $request->ajax());
+
         if (Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
             $msg = 'Administrators are not permitted to make purchases.';
-            if ($request->wantsJson() || $request->ajax()) {
+            if ($isApi) {
                 return response()->json(['success' => false, 'message' => $msg], 403);
             }
             return redirect()->back()->with('error', $msg);
@@ -55,13 +57,13 @@ class CartController extends Controller
         $result = $this->cartService->addItem($validated);
 
         if (!$result['success']) {
-            if ($request->wantsJson() || $request->ajax()) {
+            if ($isApi) {
                 return response()->json(['success' => false, 'message' => $result['message']], $result['status'] ?? 422);
             }
             return redirect()->back()->with('error', $result['message']);
         }
 
-        if ($request->wantsJson() || $request->ajax()) {
+        if ($isApi) {
             return response()->json([
                 'success' => true,
                 'message' => $result['message'],
@@ -78,12 +80,14 @@ class CartController extends Controller
      */
     public function update(Request $request): RedirectResponse|JsonResponse
     {
+        $isApi = !$request->header('X-Inertia') && ($request->wantsJson() || $request->ajax());
+
         $id = $request->input('id') ?? $request->input('cart_key');
         $qty = (int) ($request->input('qty') ?? $request->input('quantity') ?? 1);
 
         if (!$id) {
             $msg = 'Cart item identifier is required.';
-            if ($request->wantsJson() || $request->ajax()) {
+            if ($isApi) {
                 return response()->json(['success' => false, 'message' => $msg], 422);
             }
             return redirect()->back()->with('error', $msg);
@@ -92,13 +96,13 @@ class CartController extends Controller
         $result = $this->cartService->updateQuantity((string) $id, $qty);
 
         if (!$result['success']) {
-            if ($request->wantsJson() || $request->ajax()) {
+            if ($isApi) {
                 return response()->json(['success' => false, 'message' => $result['message']], $result['status'] ?? 422);
             }
             return redirect()->back()->with('error', $result['message']);
         }
 
-        if ($request->wantsJson() || $request->ajax()) {
+        if ($isApi) {
             return response()->json([
                 'success' => true,
                 'message' => $result['message'],
@@ -115,11 +119,13 @@ class CartController extends Controller
      */
     public function destroy(Request $request): RedirectResponse|JsonResponse
     {
+        $isApi = !$request->header('X-Inertia') && ($request->wantsJson() || $request->ajax());
+
         $id = $request->input('id') ?? $request->input('cart_key');
 
         if (!$id) {
             $msg = 'Cart item identifier is required.';
-            if ($request->wantsJson() || $request->ajax()) {
+            if ($isApi) {
                 return response()->json(['success' => false, 'message' => $msg], 422);
             }
             return redirect()->back()->with('error', $msg);
@@ -127,7 +133,7 @@ class CartController extends Controller
 
         $result = $this->cartService->removeItem((string) $id);
 
-        if ($request->wantsJson() || $request->ajax()) {
+        if ($isApi) {
             return response()->json([
                 'success' => true,
                 'message' => $result['message'],
@@ -144,9 +150,11 @@ class CartController extends Controller
      */
     public function clear(Request $request): RedirectResponse|JsonResponse
     {
+        $isApi = !$request->header('X-Inertia') && ($request->wantsJson() || $request->ajax());
+
         $result = $this->cartService->clearCart();
 
-        if ($request->wantsJson() || $request->ajax()) {
+        if ($isApi) {
             return response()->json([
                 'success' => true,
                 'message' => $result['message'],

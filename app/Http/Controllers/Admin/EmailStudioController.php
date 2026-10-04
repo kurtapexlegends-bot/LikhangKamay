@@ -11,6 +11,7 @@ use App\Models\PlatformActivity;
 use App\Mail\CustomDynamicMail;
 use App\Notifications\SystemBroadcastNotification;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -26,9 +27,13 @@ class EmailStudioController extends Controller
     /**
      * Get all email templates and user suggestions.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): JsonResponse|RedirectResponse
     {
         Gate::authorize('admin-action');
+
+        if ($request->header('X-Inertia') || (!$request->wantsJson() && !$request->ajax())) {
+            return redirect()->route('admin.settings.index', ['tab' => 'email']);
+        }
 
         $templates = EmailTemplate::orderBy('category', 'asc')
             ->orderBy('name', 'asc')
@@ -90,7 +95,7 @@ class EmailStudioController extends Controller
             "Saved email template: {$template->name} ({$template->slug})"
         );
 
-        if ($request->wantsJson() || $request->ajax()) {
+        if (!$request->header('X-Inertia') && ($request->wantsJson() || $request->ajax())) {
             return response()->json([
                 'success' => true,
                 'message' => "Email template \"{$template->name}\" saved successfully.",
@@ -126,7 +131,7 @@ class EmailStudioController extends Controller
             "Updated email template: {$template->name} ({$template->slug})"
         );
 
-        if ($request->wantsJson() || $request->ajax()) {
+        if (!$request->header('X-Inertia') && ($request->wantsJson() || $request->ajax())) {
             return response()->json([
                 'success' => true,
                 'message' => "Email template \"{$template->name}\" saved successfully.",
@@ -145,7 +150,7 @@ class EmailStudioController extends Controller
         Gate::authorize('admin-action');
 
         if ($template->category === 'system') {
-            if ($request->wantsJson() || $request->ajax()) {
+            if (!$request->header('X-Inertia') && ($request->wantsJson() || $request->ajax())) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Default system templates cannot be deleted.',
@@ -165,7 +170,7 @@ class EmailStudioController extends Controller
             "Deleted custom email template: {$name}"
         );
 
-        if ($request->wantsJson() || $request->ajax()) {
+        if (!$request->header('X-Inertia') && ($request->wantsJson() || $request->ajax())) {
             return response()->json([
                 'success' => true,
                 'message' => "Template \"{$name}\" deleted successfully.",
@@ -178,7 +183,7 @@ class EmailStudioController extends Controller
     /**
      * Dispatch an email template or custom message to target audience.
      */
-    public function dispatch(Request $request): JsonResponse
+    public function dispatch(Request $request): JsonResponse|RedirectResponse
     {
         Gate::authorize('admin-action');
 
@@ -238,6 +243,9 @@ class EmailStudioController extends Controller
         }
 
         if ($targetUsers->isEmpty() && empty($customEmails)) {
+            if ($request->header('X-Inertia')) {
+                return back()->with('error', 'No valid target recipients found for the selected criteria.');
+            }
             return response()->json([
                 'success' => false,
                 'message' => 'No valid target recipients found for the selected criteria.',
@@ -310,6 +318,10 @@ class EmailStudioController extends Controller
                 "Dispatched template email & in-app broadcast \"{$validated['subject']}\" to {$dispatchedCount} recipient(s) ({$recipientLabel})"
             );
 
+            if ($request->header('X-Inertia')) {
+                return back()->with('success', "Successfully dispatched email to {$dispatchedCount} recipient(s) [Target: {$recipientLabel}].");
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => "Successfully dispatched email to {$dispatchedCount} recipient(s) [Target: {$recipientLabel}].",
@@ -320,6 +332,10 @@ class EmailStudioController extends Controller
             ]);
         } catch (\Throwable $e) {
             Log::error("Email Studio dispatch failed: " . $e->getMessage());
+
+            if ($request->header('X-Inertia')) {
+                return back()->with('error', 'Email dispatch failed: ' . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => false,

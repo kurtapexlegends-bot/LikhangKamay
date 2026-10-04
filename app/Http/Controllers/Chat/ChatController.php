@@ -112,7 +112,7 @@ class ChatController extends Controller
             report($e);
         }
 
-        if ($request->expectsJson() || $request->wantsJson()) {
+        if (!$request->header('X-Inertia') && ($request->expectsJson() || $request->wantsJson())) {
             return response()->json([
                 'success' => true,
                 'message' => $this->directMessageService->formatMessageItem($msg, $senderId),

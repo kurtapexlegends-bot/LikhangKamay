@@ -110,4 +110,49 @@ class ChatMessageTemplatesTest extends TestCase
             ])
             ->assertNotFound();
     }
+
+    public function test_chat_store_supports_inertia_requests_without_returning_plain_json(): void
+    {
+        $sender = User::factory()->artisanApproved()->create();
+        $receiver = User::factory()->artisanApproved()->create();
+
+        $inertiaHeaders = [
+            'X-Inertia' => 'true',
+            'X-Requested-With' => 'XMLHttpRequest',
+        ];
+
+        $response = $this->actingAs($sender)->post(route('chat.store'), [
+            'receiver_id' => $receiver->id,
+            'message' => 'Hello from Inertia!',
+        ], $inertiaHeaders);
+
+        $response->assertRedirect();
+        $this->assertFalse($response->headers->contains('content-type', 'application/json'));
+
+        $this->assertDatabaseHas('messages', [
+            'sender_id' => $sender->id,
+            'receiver_id' => $receiver->id,
+            'message' => 'Hello from Inertia!',
+        ]);
+    }
+
+    public function test_chat_store_supports_json_api_requests(): void
+    {
+        $sender = User::factory()->artisanApproved()->create();
+        $receiver = User::factory()->artisanApproved()->create();
+
+        $response = $this->actingAs($sender)->postJson(route('chat.store'), [
+            'receiver_id' => $receiver->id,
+            'message' => 'Hello from API!',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->assertDatabaseHas('messages', [
+            'sender_id' => $sender->id,
+            'receiver_id' => $receiver->id,
+            'message' => 'Hello from API!',
+        ]);
+    }
 }

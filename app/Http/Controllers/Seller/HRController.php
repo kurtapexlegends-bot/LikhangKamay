@@ -477,10 +477,15 @@ class HRController extends Controller
     }
 
     public function approveAttendanceSession(
+        Request $request,
         \App\Models\StaffAttendanceSession $session,
         ApproveAttendanceSession $action
     ) {
         $session = $action->execute($session, $this->sellerActor());
+
+        if ($request->header('X-Inertia')) {
+            return redirect()->back()->with('success', 'Attendance session approved successfully.');
+        }
 
         return response()->json([
             'message' => 'Attendance session approved successfully.',
@@ -494,6 +499,10 @@ class HRController extends Controller
         RejectAttendanceSession $action
     ) {
         $session = $action->execute($session, $this->sellerActor(), $request->validated('reason'));
+
+        if ($request->header('X-Inertia')) {
+            return redirect()->back()->with('success', 'Attendance session declined.');
+        }
 
         return response()->json([
             'message' => 'Attendance session declined.',

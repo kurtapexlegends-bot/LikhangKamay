@@ -132,7 +132,7 @@ export default function GlobalSearch({ scope = null }) {
                 { label: 'Go to Artisan Applications', cmd: '> applications', url: getSafeRoute('admin.users.manager', { tab: 'approvals' }), icon: Award, color: 'text-amber-600 bg-amber-50' },
                 { label: 'Go to Product Categories', cmd: '> categories', url: getSafeRoute('admin.settings.index', { tab: 'taxonomy' }), icon: FolderTree, color: 'text-rose-600 bg-rose-50' },
                 { label: 'Go to Payouts & Fund Releases', cmd: '> payouts', url: getSafeRoute('admin.payouts.index'), icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50' },
-                { label: 'Go to Email Studio & Templates', cmd: '> email', url: getSafeRoute('admin.email-templates.index'), icon: Mail, color: 'text-sky-600 bg-sky-50' },
+                { label: 'Go to Email Studio & Templates', cmd: '> email', url: getSafeRoute('admin.settings.index', { tab: 'email' }), icon: Mail, color: 'text-sky-600 bg-sky-50' },
                 { label: 'Go to Platform Revenue & Monetization', cmd: '> revenue', url: getSafeRoute('admin.settings.index', { tab: 'monetization' }), icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50' },
                 { label: 'Go to Insights & Analytics', cmd: '> insights', url: getSafeRoute('admin.insights'), icon: BarChart2, color: 'text-purple-600 bg-purple-50' },
                 { label: 'Go to Platform Operations & Audit', cmd: '> operations', url: getSafeRoute('admin.operations'), icon: Shield, color: 'text-clay-600 bg-clay-50' },

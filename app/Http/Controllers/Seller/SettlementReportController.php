@@ -33,7 +33,7 @@ class SettlementReportController extends Controller
 
         $data = $this->settlementReportService->getMonthlyStatementData($seller, $year, $month);
 
-        if ($request->wantsJson() || $request->query('format') === 'json') {
+        if (!$request->header('X-Inertia') && ($request->wantsJson() || $request->query('format') === 'json')) {
             return response()->json($data);
         }
 

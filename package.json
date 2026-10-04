@@ -5,7 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "dev:all": "concurrently -k -p \"[{name}]\" -n \"PHP,VITE\" -c \"blue,green\" \"php artisan serve\" \"vite\"",
+        "dev:all": "concurrently -k -r \"php artisan serve --no-reload\" \"php artisan queue:listen --tries=1\" \"vite\"",
         "lint": "eslint resources/js",
         "test:smoke": "php artisan test:smoke",
         "test:refs": "node scripts/verify-references.js",

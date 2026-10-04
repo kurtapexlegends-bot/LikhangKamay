@@ -310,10 +310,19 @@ class StaffAttendancePayrollTest extends TestCase
             'approval_status' => 'pending',
         ]);
 
-        // Approve session 1
+        // Approve session 1 (API call)
         $approveRes = $this->actingAs($owner)->post(route('hr.attendance-sessions.approve', $sessionToApprove));
         $approveRes->assertOk();
         $this->assertEquals('approved', $sessionToApprove->fresh()->approval_status);
+
+        // Approve session 1 via Inertia - must redirect back without returning plain JSON
+        $approveInertiaRes = $this->actingAs($owner)->post(
+            route('hr.attendance-sessions.approve', $sessionToApprove),
+            [],
+            ['X-Inertia' => 'true', 'X-Requested-With' => 'XMLHttpRequest']
+        );
+        $approveInertiaRes->assertRedirect();
+        $this->assertFalse($approveInertiaRes->headers->contains('content-type', 'application/json'));
 
         // Reject session 2
         $rejectRes = $this->actingAs($owner)->post(route('hr.attendance-sessions.reject', $sessionToReject), [

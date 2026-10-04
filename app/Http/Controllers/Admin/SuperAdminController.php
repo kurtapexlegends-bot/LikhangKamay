@@ -144,6 +144,9 @@ class SuperAdminController extends Controller
         Gate::authorize('admin-action');
 
         if (!$user->isArtisan()) {
+            if ($request->header('X-Inertia')) {
+                return back()->with('error', 'Target user is not an artisan.');
+            }
             return response()->json([
                 'success' => false,
                 'message' => 'Target user is not an artisan.',
@@ -151,6 +154,10 @@ class SuperAdminController extends Controller
         }
 
         $this->superAdminService->reengageArtisan($user);
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', "Re-engagement email & in-app alert sent to {$user->name}.");
+        }
 
         return response()->json([
             'success' => true,
