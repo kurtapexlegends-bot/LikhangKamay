@@ -18,6 +18,8 @@ use App\Models\Payout;
 use App\Models\EmailTemplate;
 use App\Models\TeamChannel;
 use App\Models\SellerActivityLog;
+use App\Models\OwnerApproval;
+use App\Support\NotificationPresenter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -417,5 +419,102 @@ class GlobalSearchTest extends TestCase
             ->assertJsonFragment([
                 'title' => 'Channel: #operations-alerts',
             ]);
+    }
+
+    public function test_search_enforces_plan_tier_isolation_and_approval_guards(): void
+    {
+        // 1. Standard artisan (free tier, 0 employees)
+        /** @var \App\Models\User $standardArtisan */
+        $standardArtisan = User::factory()->artisanApproved()->create([
+            'name' => 'Solo Weaver',
+            'shop_name' => 'Solo Loom Works',
+            'premium_tier' => 'free',
+        ]);
+
+        // 2. Elite artisan with staff and an approval request
+        /** @var \App\Models\User $eliteArtisan */
+        $eliteArtisan = User::factory()->artisanApproved()->create([
+            'name' => 'Master Craftsperson',
+            'shop_name' => 'Master Guild Studio',
+            'premium_tier' => 'super_premium',
+        ]);
+
+        $eliteStaff = User::factory()->staff($eliteArtisan)->create([
+            'name' => 'Guild Apprentice',
+            'staff_module_permissions' => ['products' => true],
+        ]);
+
+        $approval = OwnerApproval::create([
+            'seller_id' => $eliteArtisan->id,
+            'requester_id' => $eliteStaff->id,
+            'domain' => OwnerApproval::DOMAIN_PROCUREMENT,
+            'title' => 'Urgent Silk Restock Request',
+            'summary' => 'Need 50 yards of dyed silk thread',
+            'status' => OwnerApproval::STATUS_PENDING,
+            'payload' => ['quantity' => 50],
+        ]);
+
+        // Super Admin
+        /** @var \App\Models\User $admin */
+        $admin = User::factory()->superAdmin()->create();
+
+        // Check A: Standard artisan cannot find Team Requests / Approvals, Discounts, or Sponsorships in search
+        $standardSearch = $this->actingAs($standardArtisan)
+            ->get(route('api.global-search', ['query' => 'Team Request']))
+            ->assertOk();
+        $this->assertEmpty($standardSearch->json('results'));
+
+        $standardSearchDiscounts = $this->actingAs($standardArtisan)
+            ->get(route('api.global-search', ['query' => 'Discounts']))
+            ->assertOk();
+        $this->assertEmpty($standardSearchDiscounts->json('results'));
+
+        // Standard artisan hitting /approvals directly gets 403 Forbidden
+        $this->actingAs($standardArtisan)
+            ->get(route('seller.approvals.index'))
+            ->assertForbidden();
+
+        // Check B: Elite artisan can search and find their own approval request
+        $this->actingAs($eliteArtisan)
+            ->get(route('api.global-search', ['query' => 'Urgent Silk']))
+            ->assertOk()
+            ->assertJsonFragment([
+                'title' => 'Request: Urgent Silk Restock Request',
+                'type' => 'Team Request',
+            ]);
+
+        // Elite artisan hitting /approvals directly gets 200 OK
+        $this->actingAs($eliteArtisan)
+            ->get(route('seller.approvals.index'))
+            ->assertOk();
+
+        // Check C: Admin searching for the approval title does NOT see seller's private team approval
+        $adminSearch = $this->actingAs($admin)
+            ->get(route('api.global-search', ['query' => 'Urgent Silk']))
+            ->assertOk();
+        $this->assertEmpty($adminSearch->json('results'));
+
+        // Check D: Staff without approvals permission cannot find the approval request
+        $staffSearch = $this->actingAs($eliteStaff)
+            ->get(route('api.global-search', ['query' => 'Urgent Silk']))
+            ->assertOk();
+        $this->assertEmpty($staffSearch->json('results'));
+
+        // Check E: Notification URLs resolve safely without 403s
+        // Standard artisan presenting an approval notification safely redirects to subscription
+        $standardNotificationUrl = NotificationPresenter::resolveUrl([
+            'type' => 'owner_approval_decision',
+            'url' => route('seller.approvals.index'),
+            'domain' => 'procurement',
+        ], $standardArtisan);
+        $this->assertEquals(route('seller.subscription'), $standardNotificationUrl);
+
+        // Restricted staff presenting an approval notification routes safely to stock-requests or dashboard
+        $staffNotificationUrl = NotificationPresenter::resolveUrl([
+            'type' => 'owner_approval_decision',
+            'url' => route('seller.approvals.index'),
+            'domain' => 'procurement',
+        ], $eliteStaff);
+        $this->assertEquals(route('stock-requests.index'), $staffNotificationUrl);
     }
 }

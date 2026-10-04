@@ -24,6 +24,11 @@ class ApprovalController extends Controller
         $seller = $this->sellerOwner();
         $user = $request->user();
 
+        // Enforce plan entitlement (Premium/Elite with staff delegation capability)
+        if (!$seller->canManageStaff() && !$seller->isPremiumTier()) {
+            abort(403, 'Team Requests is available on Premium and Elite plans.');
+        }
+
         // Enforce owner-only or staff with executive access
         if ($user->isStaff() && !$user->canEditSellerModule('overview')) {
             abort(403, 'Unauthorized access to the approval hub.');
@@ -77,6 +82,10 @@ class ApprovalController extends Controller
         $seller = $this->sellerOwner();
         $user = $request->user();
 
+        if (!$seller->canManageStaff() && !$seller->isPremiumTier()) {
+            abort(403, 'Team Requests is available on Premium and Elite plans.');
+        }
+
         if ($user->isStaff() && !$user->canEditSellerModule('overview')) {
             abort(403, 'Only the shop owner can approve requests.');
         }
@@ -109,6 +118,10 @@ class ApprovalController extends Controller
     {
         $seller = $this->sellerOwner();
         $user = $request->user();
+
+        if (!$seller->canManageStaff() && !$seller->isPremiumTier()) {
+            abort(403, 'Team Requests is available on Premium and Elite plans.');
+        }
 
         if ($user->isStaff() && !$user->canEditSellerModule('overview')) {
             abort(403, 'Only the shop owner can decline requests.');

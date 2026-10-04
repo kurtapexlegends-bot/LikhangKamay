@@ -23,8 +23,12 @@ class SellerEntitlementService
     {
         $seller = $user->getEffectiveSeller();
 
-        if (($user->isSellerOwner() || $user->isStaff()) && ($seller?->canUseFeature('staff_management') || $seller?->isPremiumTier())) {
+        if ($user->isSellerOwner() && ($seller?->canUseFeature('staff_management') || $seller?->isPremiumTier())) {
             return ['team_messages', 'approvals'];
+        }
+
+        if ($user->isStaff() && $user->isStaffManager() && ($seller?->canUseFeature('staff_management') || $seller?->isPremiumTier())) {
+            return ['approvals'];
         }
 
         return [];

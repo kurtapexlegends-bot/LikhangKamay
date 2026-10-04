@@ -223,10 +223,10 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/products/{id}/deduct', [\App\Http\Controllers\Seller\ProductController::class, 'manualDeduct'])->middleware('seller.module:products')->name('products.deduct'); // Phase 1: Manual Deduction
 
         // DISCOUNTS
-        Route::get('/discounts', [\App\Http\Controllers\Seller\DiscountController::class, 'index'])->middleware('seller.module:products')->name('discounts.index');
-        Route::post('/discounts', [\App\Http\Controllers\Seller\DiscountController::class, 'store'])->middleware('seller.module:products')->name('discounts.store');
-        Route::put('/discounts/{discount}', [\App\Http\Controllers\Seller\DiscountController::class, 'update'])->middleware('seller.module:products')->name('discounts.update');
-        Route::delete('/discounts/{discount}', [\App\Http\Controllers\Seller\DiscountController::class, 'destroy'])->middleware('seller.module:products')->name('discounts.destroy');
+        Route::get('/discounts', [\App\Http\Controllers\Seller\DiscountController::class, 'index'])->middleware('seller.module:discounts')->name('discounts.index');
+        Route::post('/discounts', [\App\Http\Controllers\Seller\DiscountController::class, 'store'])->middleware('seller.module:discounts')->name('discounts.store');
+        Route::put('/discounts/{discount}', [\App\Http\Controllers\Seller\DiscountController::class, 'update'])->middleware('seller.module:discounts')->name('discounts.update');
+        Route::delete('/discounts/{discount}', [\App\Http\Controllers\Seller\DiscountController::class, 'destroy'])->middleware('seller.module:discounts')->name('discounts.destroy');
         
         Route::get('/3d-manager', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'index'])->middleware('seller.module:3d')->name('3d.index');
         Route::post('/3d-manager/upload', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'upload'])->middleware('seller.module:3d,products')->name('3d.upload');
@@ -268,10 +268,10 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/settings/modules', [\App\Http\Controllers\Seller\SettingsController::class, 'updateModules'])->middleware('artisan')->name('settings.modules');
 
         // EXECUTIVE APPROVALS & DELEGATION (PREMIUM & ELITE)
-        Route::get('/approvals', [\App\Http\Controllers\Seller\ApprovalController::class, 'index'])->middleware(['seller.workspace'])->name('seller.approvals.index');
-        Route::post('/approvals/{approval}/approve', [\App\Http\Controllers\Seller\ApprovalController::class, 'approve'])->middleware(['seller.workspace'])->name('seller.approvals.approve');
-        Route::post('/approvals/{approval}/reject', [\App\Http\Controllers\Seller\ApprovalController::class, 'reject'])->middleware(['seller.workspace'])->name('seller.approvals.reject');
-        Route::post('/approvals/batch-approve', [\App\Http\Controllers\Seller\ApprovalController::class, 'batchApprove'])->middleware(['seller.workspace'])->name('seller.approvals.batch-approve');
+        Route::get('/approvals', [\App\Http\Controllers\Seller\ApprovalController::class, 'index'])->middleware(['seller.workspace', 'seller.module:approvals'])->name('seller.approvals.index');
+        Route::post('/approvals/{approval}/approve', [\App\Http\Controllers\Seller\ApprovalController::class, 'approve'])->middleware(['seller.workspace', 'seller.module:approvals'])->name('seller.approvals.approve');
+        Route::post('/approvals/{approval}/reject', [\App\Http\Controllers\Seller\ApprovalController::class, 'reject'])->middleware(['seller.workspace', 'seller.module:approvals'])->name('seller.approvals.reject');
+        Route::post('/approvals/batch-approve', [\App\Http\Controllers\Seller\ApprovalController::class, 'batchApprove'])->middleware(['seller.workspace', 'seller.module:approvals'])->name('seller.approvals.batch-approve');
     });
 
     // CHAT SYSTEM & REVIEWS (CRM)

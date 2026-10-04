@@ -150,14 +150,16 @@ export default function GlobalSearch({ scope = null }) {
         if (effectiveScope === 'seller') {
             return [
                 { label: 'Go to Product Catalog', cmd: '> products', url: getSafeRoute('products.index'), icon: Package, color: 'text-rose-600 bg-rose-50', module: 'products' },
-                { label: 'Go to Marketing Discounts', cmd: '> discounts', url: getSafeRoute('discounts.index'), icon: Tag, color: 'text-amber-600 bg-amber-50', module: 'products' },
-                { label: 'Go to 3D Model Manager', cmd: '> 3d', url: getSafeRoute('3d.index'), icon: Box, color: 'text-indigo-600 bg-indigo-50', module: 'products' },
+                { label: 'Go to Marketing Discounts', cmd: '> discounts', url: getSafeRoute('discounts.index'), icon: Tag, color: 'text-amber-600 bg-amber-50', module: 'discounts' },
+                { label: 'Go to 3D Model Manager', cmd: '> 3d', url: getSafeRoute('3d.index'), icon: Box, color: 'text-indigo-600 bg-indigo-50', module: '3d' },
                 { label: 'Go to Order Manager', cmd: '> orders', url: getSafeRoute('orders.index'), icon: ShoppingBag, color: 'text-emerald-600 bg-emerald-50', module: 'orders' },
                 { label: 'Go to Materials Inventory & Supplies', cmd: '> inventory', url: getSafeRoute('procurement.index'), icon: Box, color: 'text-blue-600 bg-blue-50', module: 'procurement' },
                 { label: 'Go to Stock Requests Queue', cmd: '> stock-requests', url: getSafeRoute('stock-requests.index'), icon: ClipboardList, color: 'text-clay-600 bg-clay-50', module: 'stock_requests' },
                 { label: 'Go to Customer Reviews & Feedback', cmd: '> reviews', url: getSafeRoute('reviews.index'), icon: Star, color: 'text-amber-600 bg-amber-50', module: 'reviews' },
                 { label: 'Go to Team Messages & Channels', cmd: '> team-messages', url: getSafeRoute('team-messages.index'), icon: MessageSquare, color: 'text-sky-600 bg-sky-50', module: 'team_messages' },
+                { label: 'Go to Team Requests', cmd: '> approvals', url: getSafeRoute('seller.approvals.index'), icon: Shield, color: 'text-clay-600 bg-clay-50', module: 'approvals' },
                 { label: 'Go to Featured Product Items', cmd: '> featured', url: getSafeRoute('seller.sponsorships'), icon: Award, color: 'text-indigo-600 bg-indigo-50', module: 'sponsorships', ownerOnly: true },
+                { label: 'Go to Supply Hub', cmd: '> supply-hub', url: getSafeRoute('seller.supply-hub.index'), icon: Box, color: 'text-blue-600 bg-blue-50', module: 'supply_hub' },
                 { label: 'Go to HR Employee Directory', cmd: '> hr', url: getSafeRoute('hr.index'), icon: Users, color: 'text-purple-600 bg-purple-50', module: 'hr' },
                 { label: 'Go to Attendance & Shift Review', cmd: '> attendance', url: getSafeRoute('hr.index', { tab: 'timecard_audit' }), icon: Clock, color: 'text-purple-600 bg-purple-50', module: 'hr' },
                 { label: 'Go to Payroll Runs & Ledger', cmd: '> payroll', url: getSafeRoute('hr.index', { tab: 'payroll' }), icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50', module: 'accounting' },

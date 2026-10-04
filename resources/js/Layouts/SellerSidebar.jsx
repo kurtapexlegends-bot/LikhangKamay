@@ -78,9 +78,9 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
         return {
             tierLabel: isElite ? 'Elite' : isPremium ? 'Premium' : 'Standard',
             visibleModules: isElite
-                ? ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'sponsorships', 'discounts', 'supply_hub', 'hr', 'accounting', 'procurement', 'stock_requests']
+                ? ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'sponsorships', 'discounts', 'supply_hub', 'hr', 'accounting', 'procurement', 'stock_requests', 'approvals', 'team_messages']
                 : isPremium
-                    ? ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'procurement', 'stock_requests']
+                    ? ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'procurement', 'stock_requests', 'approvals', 'team_messages']
                     : ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings'],
             toggleableModules: isElite || isPremium ? ['hr', 'accounting', 'procurement'] : [],
             enabledToggleableModules: isElite ? ['hr', 'accounting', 'procurement'] : ['procurement'],
@@ -377,7 +377,7 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                                 {visibleModulesSet.has('3d') && (
                                     <NavItem href={route('3d.index')} icon={Box} active={active === '3d'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, '3D Models')} onMouseLeave={handleTooltipLeave}>3D Models</NavItem>
                                 )}
-                                {(!isStaffActor || visibleModulesSet.has('approvals')) && (user?.role === 'artisan' || user?.is_workspace_owner) && (
+                                {visibleModulesSet.has('approvals') && (user?.role === 'artisan' || user?.is_workspace_owner || isStaffActor) && (
                                     <NavItem
                                         href={route('seller.approvals.index')}
                                         icon={ShieldCheck}

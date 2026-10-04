@@ -21,7 +21,7 @@ trait HasWorkspaceNotifications
             $ownerId = $this->getEffectiveSellerId();
             if ($ownerId && $ownerId !== $this->id) {
                 // Collect allowed notification types matching staff module access
-                $allowedTypes = ['general', 'team_message', 'team_channel_message', 'team_mention']; // Direct/team alerts are always allowed
+                $allowedTypes = ['general']; // Base general alerts
                 
                 if ($this->canAccessSellerModule('orders')) {
                     $allowedTypes = array_merge($allowedTypes, [
@@ -46,6 +46,9 @@ trait HasWorkspaceNotifications
                 if ($this->canAccessSellerModule('team_messages')) {
                     $allowedTypes = array_merge($allowedTypes, ['team_message', 'team_channel_message', 'team_mention']);
                 }
+                if ($this->canAccessSellerModule('approvals')) {
+                    $allowedTypes = array_merge($allowedTypes, ['owner_approval_request', 'owner_approval_decision']);
+                }
                 if ($this->canAccessSellerModule('reviews')) {
                     $allowedTypes = array_merge($allowedTypes, ['new_review', 'review_moderation_status']);
                 }
@@ -60,7 +63,7 @@ trait HasWorkspaceNotifications
                              ->where(function ($jsonQ) use ($allowedTypes) {
                                  $jsonQ->whereIn('data->type', $allowedTypes)
                                        ->orWhereNull('data->type');
-                              });
+                             });
                       });
                 });
             } else {
@@ -68,6 +71,25 @@ trait HasWorkspaceNotifications
             }
         } else {
             $query->where('notifiable_id', $this->id);
+
+            if ($this->isArtisan()) {
+                // If artisan does not have staff management or is not Premium/Elite, filter out staff operations
+                if (!$this->canUseFeature('staff_management') && !$this->isPremiumTier()) {
+                    $query->where(function ($q) {
+                        $q->whereNull('data->type')
+                          ->orWhereNotIn('data->type', [
+                              'off_site_clock_in',
+                              'accounting_request',
+                              'accounting_rejected',
+                              'owner_approval_request',
+                              'owner_approval_decision',
+                              'team_message',
+                              'team_channel_message',
+                              'team_mention',
+                          ]);
+                    });
+                }
+            }
         }
 
         try {

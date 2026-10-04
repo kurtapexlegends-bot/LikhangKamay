@@ -133,21 +133,18 @@ class NotificationPresenter
 
         return match ($type) {
             'new_message' => self::resolveBuyerSellerChatUrl($data, $user),
-            'team_message', 'team_channel_message', 'team_mention' => self::resolveTeamMessageUrl($data),
-            'new_order' => route('orders.index'),
-            'new_review' => route('reviews.index'),
-            'low_stock' => route('products.index'),
-            'replacement_resolution' => route('my-orders.index'),
-            'review_moderation_status' => route('my-orders.index'),
-            'sponsorship_status' => route('seller.sponsorships') . (isset($data['request_id']) ? '#request-' . $data['request_id'] : ''),
-            'artisan_application' => route('admin.users.manager', ['tab' => 'approvals']),
-            'payment_confirmed' => route('orders.index'),
-            'refund_request' => route('orders.index'),
-            'shipment_deadline' => route('orders.index'),
-            'supply_depleted' => route('procurement.index'),
+            'team_message', 'team_channel_message', 'team_mention' => self::resolveTeamMessageUrl($data, $user),
+            'new_order', 'payment_confirmed', 'refund_request', 'shipment_deadline' => self::resolveOrderUrl($data, $user),
+            'new_review' => self::resolveReviewUrl($data, $user),
+            'low_stock', 'low_stock_warning' => self::resolveStockUrl($data, $user),
+            'replacement_resolution', 'review_moderation_status' => self::resolveBuyerOrderUrl($data, $user),
+            'sponsorship_status' => self::resolveSponsorshipUrl($data, $user),
+            'artisan_application' => self::resolveArtisanApplicationUrl($data, $user),
+            'supply_depleted' => self::resolveProcurementUrl($data, $user),
             'disciplinary_action' => route('profile.edit'),
             'owner_approval_decision' => self::resolveOwnerApprovalDecisionUrl($data, $user),
-            default => $data['url'] ?? null,
+            'owner_approval_request' => self::resolveOwnerApprovalRequestUrl($data, $user),
+            default => self::resolveDefaultUrl($data, $user),
         };
     }
 
@@ -159,7 +156,7 @@ class NotificationPresenter
         $senderId = isset($data['sender_id']) ? (int) $data['sender_id'] : null;
 
         if (!$senderId) {
-            return $data['url'] ?? null;
+            return self::sanitizeFallbackUrl($data['url'] ?? null, $user);
         }
 
         if ($user?->isBuyer()) {
@@ -170,16 +167,20 @@ class NotificationPresenter
             return route('chat.index', ['user_id' => $senderId]);
         }
 
-        return $data['url'] ?? null;
+        return self::sanitizeFallbackUrl($data['url'] ?? null, $user);
     }
 
     /**
      * @param  array<string, mixed>  $data
      */
-    private static function resolveTeamMessageUrl(array $data): ?string
+    private static function resolveTeamMessageUrl(array $data, ?User $user): ?string
     {
+        if (!$user || $user->isBuyer() || $user->isAdmin()) {
+            return null;
+        }
+
         if (!empty($data['url'])) {
-            return $data['url'];
+            return self::sanitizeFallbackUrl($data['url'], $user);
         }
 
         if (!empty($data['team_channel_id'])) {
@@ -189,10 +190,173 @@ class NotificationPresenter
         $senderId = isset($data['sender_id']) ? (int) $data['sender_id'] : null;
 
         if (!$senderId) {
-            return null;
+            return route('team-messages.index');
         }
 
         return route('team-messages.index', ['user_id' => $senderId]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function resolveOrderUrl(array $data, ?User $user): ?string
+    {
+        if ($user?->isBuyer()) {
+            return route('my-orders.index');
+        }
+
+        if ($user?->isAdmin()) {
+            return route('admin.disputes.index');
+        }
+
+        if ($user?->isArtisan()) {
+            return route('orders.index');
+        }
+
+        if ($user?->isStaff()) {
+            return $user->canAccessSellerModule('orders')
+                ? route('orders.index')
+                : route('staff.dashboard');
+        }
+
+        return route('orders.index');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function resolveReviewUrl(array $data, ?User $user): ?string
+    {
+        if ($user?->isBuyer()) {
+            return route('my-orders.index');
+        }
+
+        if ($user?->isAdmin()) {
+            return route('admin.catalog.moderation');
+        }
+
+        if ($user?->isArtisan()) {
+            return route('reviews.index');
+        }
+
+        if ($user?->isStaff()) {
+            return $user->canAccessSellerModule('reviews')
+                ? route('reviews.index')
+                : route('staff.dashboard');
+        }
+
+        return route('reviews.index');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function resolveStockUrl(array $data, ?User $user): ?string
+    {
+        if ($user?->isBuyer()) {
+            return null;
+        }
+
+        if ($user?->isAdmin()) {
+            return route('admin.catalog.moderation');
+        }
+
+        if ($user?->isArtisan()) {
+            return route('products.index');
+        }
+
+        if ($user?->isStaff()) {
+            if ($user->canAccessSellerModule('products')) {
+                return route('products.index');
+            }
+            if ($user->canAccessSellerModule('stock_requests')) {
+                return route('stock-requests.index');
+            }
+            return route('staff.dashboard');
+        }
+
+        return route('products.index');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function resolveBuyerOrderUrl(array $data, ?User $user): ?string
+    {
+        if ($user?->isArtisan()) {
+            return route('orders.index');
+        }
+
+        if ($user?->isStaff()) {
+            return $user->canAccessSellerModule('orders')
+                ? route('orders.index')
+                : route('staff.dashboard');
+        }
+
+        return route('my-orders.index');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function resolveSponsorshipUrl(array $data, ?User $user): ?string
+    {
+        if ($user?->isAdmin()) {
+            return route('admin.users.manager');
+        }
+
+        if ($user?->isStaff()) {
+            return route('staff.dashboard');
+        }
+
+        if ($user?->isArtisan()) {
+            if ($user->canAccessSellerModule('sponsorships')) {
+                return route('seller.sponsorships') . (isset($data['request_id']) ? '#request-' . $data['request_id'] : '');
+            }
+            return route('seller.subscription');
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function resolveArtisanApplicationUrl(array $data, ?User $user): ?string
+    {
+        if ($user?->isAdmin()) {
+            return route('admin.users.manager', ['tab' => 'approvals']);
+        }
+
+        if ($user?->isArtisan()) {
+            return route('artisan.pending');
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function resolveProcurementUrl(array $data, ?User $user): ?string
+    {
+        if ($user?->isArtisan()) {
+            return $user->canAccessSellerModule('procurement')
+                ? route('procurement.index')
+                : route('seller.subscription');
+        }
+
+        if ($user?->isStaff()) {
+            if ($user->canAccessSellerModule('procurement')) {
+                return route('procurement.index');
+            }
+            if ($user->canAccessSellerModule('stock_requests')) {
+                return route('stock-requests.index');
+            }
+            return route('staff.dashboard');
+        }
+
+        return null;
     }
 
     /**
@@ -206,11 +370,163 @@ class NotificationPresenter
         if ($isRestrictedStaff) {
             return match ($domain) {
                 'procurement' => route('stock-requests.index'),
-                'hr_payroll', 'staff_rate' => route('hr.index'),
+                'hr_payroll', 'staff_rate' => $user->canAccessSellerModule('hr') ? route('hr.index') : route('staff.dashboard'),
                 default => route('dashboard'),
             };
         }
 
+        if ($user?->isArtisan()) {
+            if (!$user->canManageStaff() && !$user->isPremiumTier()) {
+                return route('seller.subscription');
+            }
+            return self::sanitizeFallbackUrl(
+                $data['url'] ?? route('seller.approvals.index', ['status' => $data['status'] ?? 'pending']),
+                $user
+            ) ?? route('seller.subscription');
+        }
+
+        if ($user?->isStaff()) {
+            if ($user->canAccessSellerModule('approvals')) {
+                return self::sanitizeFallbackUrl(
+                    $data['url'] ?? route('seller.approvals.index', ['status' => $data['status'] ?? 'pending']),
+                    $user
+                ) ?? route('staff.dashboard');
+            }
+            return route('staff.dashboard');
+        }
+
         return $data['url'] ?? route('seller.approvals.index', ['status' => $data['status'] ?? 'pending']);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function resolveOwnerApprovalRequestUrl(array $data, ?User $user): ?string
+    {
+        if ($user?->isArtisan()) {
+            if (!$user->canManageStaff() && !$user->isPremiumTier()) {
+                return route('seller.subscription');
+            }
+            return self::sanitizeFallbackUrl(
+                $data['url'] ?? route('seller.approvals.index', ['status' => 'pending']),
+                $user
+            ) ?? route('seller.subscription');
+        }
+
+        if ($user?->isStaff()) {
+            if ($user->canAccessSellerModule('approvals')) {
+                return self::sanitizeFallbackUrl(
+                    $data['url'] ?? route('seller.approvals.index', ['status' => 'pending']),
+                    $user
+                ) ?? route('staff.dashboard');
+            }
+            return route('staff.dashboard');
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function resolveDefaultUrl(array $data, ?User $user): ?string
+    {
+        $rawUrl = $data['url'] ?? null;
+        return self::sanitizeFallbackUrl($rawUrl, $user);
+    }
+
+    /**
+     * Guard fallback URLs against unauthorized role or tier module access.
+     */
+    private static function sanitizeFallbackUrl(?string $url, ?User $user): ?string
+    {
+        if ($url === null || $url === '') {
+            return null;
+        }
+
+        if (!$user) {
+            return $url;
+        }
+
+        if (str_contains($url, '/approvals')) {
+            if ($user->isArtisan() && (!$user->canManageStaff() && !$user->isPremiumTier())) {
+                return route('seller.subscription');
+            }
+            if ($user->isStaff() && !$user->canAccessSellerModule('approvals')) {
+                return route('staff.dashboard');
+            }
+        }
+
+        if (str_contains($url, '/team-messages')) {
+            if ($user->isBuyer() || $user->isAdmin()) {
+                return null;
+            }
+            if ($user->isStaff() && !$user->canAccessSellerModule('team_messages') && !$user->canAccessSellerModule('messages')) {
+                return route('staff.dashboard');
+            }
+        }
+
+        if (str_contains($url, '/sponsorships')) {
+            if ($user->isArtisan() && !$user->canAccessSellerModule('sponsorships')) {
+                return route('seller.subscription');
+            }
+            if ($user->isStaff()) {
+                return route('staff.dashboard');
+            }
+        }
+
+        if (str_contains($url, '/discounts')) {
+            if ($user->isArtisan() && !$user->canAccessSellerModule('discounts')) {
+                return route('seller.subscription');
+            }
+            if ($user->isStaff() && !$user->canAccessSellerModule('discounts')) {
+                return route('staff.dashboard');
+            }
+        }
+
+        if (str_contains($url, '/3d') || str_contains($url, 'three-d')) {
+            if ($user->isArtisan() && !$user->canAccessSellerModule('3d')) {
+                return route('seller.subscription');
+            }
+            if ($user->isStaff() && !$user->canAccessSellerModule('3d')) {
+                return route('staff.dashboard');
+            }
+        }
+
+        if (str_contains($url, '/orders')) {
+            if ($user->isStaff() && !$user->canAccessSellerModule('orders')) {
+                return route('staff.dashboard');
+            }
+        }
+
+        if (str_contains($url, '/products')) {
+            if ($user->isStaff() && !$user->canAccessSellerModule('products')) {
+                return $user->canAccessSellerModule('stock_requests')
+                    ? route('stock-requests.index')
+                    : route('staff.dashboard');
+            }
+        }
+
+        if (str_contains($url, '/procurement') && !str_contains($url, '/stock-requests')) {
+            if ($user->isArtisan() && !$user->canAccessSellerModule('procurement')) {
+                return route('seller.subscription');
+            }
+            if ($user->isStaff() && !$user->canAccessSellerModule('procurement')) {
+                return $user->canAccessSellerModule('stock_requests')
+                    ? route('stock-requests.index')
+                    : route('staff.dashboard');
+            }
+        }
+
+        if (str_contains($url, '/hr') || str_contains($url, '/payroll')) {
+            if ($user->isArtisan() && (!$user->canManageStaff() && !$user->isPremiumTier())) {
+                return route('seller.subscription');
+            }
+            if ($user->isStaff() && !$user->canAccessSellerModule('hr') && !$user->canAccessSellerModule('payroll')) {
+                return route('staff.dashboard');
+            }
+        }
+
+        return $url;
     }
 }

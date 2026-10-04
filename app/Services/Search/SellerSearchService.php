@@ -39,10 +39,13 @@ class SellerSearchService
         // 2. Domain Data Models (Strict Multi-Tenant Scoping & Granular RBAC)
         if ($user->canAccessSellerModule('products')) {
             $results = array_merge($results, $this->searchSellerProducts($sellerId, $query, $like));
+        }
+
+        if ($user->canAccessSellerModule('discounts')) {
             $results = array_merge($results, $this->searchSellerDiscounts($sellerId, $query, $like));
         }
 
-        if ($user->canAccessSellerModule('3d') || $user->canAccessSellerModule('products')) {
+        if ($user->canAccessSellerModule('3d')) {
             $results = array_merge($results, $this->searchSeller3DModels($sellerId, $query, $like));
         }
 
@@ -66,22 +69,28 @@ class SellerSearchService
             $results = array_merge($results, $this->searchSellerSponsorships($sellerId, $query, $like));
         }
 
+        if ($user->canAccessSellerModule('approvals')) {
+            $results = array_merge($results, $this->searchSellerApprovals($sellerId, $query, $like));
+        }
+
         if ($user->canAccessSellerModule('hr')) {
             $results = array_merge($results, $this->searchSellerEmployees($sellerId, $query, $like));
         }
 
-        if ($user->canAccessSellerModule('hr') || $user->canAccessSellerModule('accounting')) {
+        if ($user->canViewSellerPayrollData()) {
             $results = array_merge($results, $this->searchSellerPayrolls($sellerId, $query, $like));
         }
 
-        if ($user->canAccessSellerModule('messages')) {
+        if ($user->canAccessSellerModule('messages') && ($user->isStaff() || $user->canManageStaff() || $user->isPremiumTier())) {
             $results = array_merge($results, $this->searchSellerTeamChannels($sellerId, $query, $like));
         }
 
         if ($user->isSellerOwner()) {
-            $results = array_merge($results, $this->searchSellerLocations($sellerId, $query, $like));
+            if ($user->canManageStaff() || $user->isPremiumTier()) {
+                $results = array_merge($results, $this->searchSellerLocations($sellerId, $query, $like));
+                $results = array_merge($results, $this->searchSellerStaffAudits($sellerId, $query, $like));
+            }
             $results = array_merge($results, $this->searchSellerLogs($sellerId, $query, $like));
-            $results = array_merge($results, $this->searchSellerStaffAudits($sellerId, $query, $like));
         }
 
         return $results;
@@ -132,6 +141,7 @@ class SellerSearchService
                 'icon' => 'map-pin',
                 'module' => null,
                 'owner_only' => true,
+                'staff_feature_required' => true,
             ],
             [
                 'keywords' => ['finance & payouts', 'finance', 'payouts', 'paymongo', 'bank', 'bank account', 'withdrawal', 'wallet', 'payment settings', 'e-wallet'],
@@ -214,6 +224,7 @@ class SellerSearchService
                 'icon' => 'clock',
                 'module' => 'hr',
                 'owner_only' => false,
+                'timecard_audit_only' => true,
             ],
             [
                 'keywords' => ['payroll', 'payday', 'salary', 'wages', 'overtime', 'deductions'],
@@ -224,6 +235,7 @@ class SellerSearchService
                 'icon' => 'trending-up',
                 'module' => 'accounting',
                 'owner_only' => false,
+                'payroll_only' => true,
             ],
             [
                 'keywords' => ['3d', 'three d', 'glb', 'model', 'upload 3d'],
@@ -232,7 +244,7 @@ class SellerSearchService
                 'type' => 'Module',
                 'url' => $threeDUrl,
                 'icon' => 'box',
-                'module' => 'products',
+                'module' => '3d',
                 'owner_only' => false,
             ],
             [
@@ -242,7 +254,7 @@ class SellerSearchService
                 'type' => 'Module',
                 'url' => $discountsUrl,
                 'icon' => 'tag',
-                'module' => 'products',
+                'module' => 'discounts',
                 'owner_only' => false,
             ],
             [
@@ -252,13 +264,72 @@ class SellerSearchService
                 'type' => 'Module',
                 'url' => $teamMessagesUrl,
                 'icon' => 'message-square',
-                'module' => 'messages',
+                'module' => 'team_messages',
+                'owner_only' => false,
+            ],
+            [
+                'keywords' => ['approval', 'approvals', 'team requests', 'team request', 'payroll approval', 'rate approval', 'procurement approval'],
+                'title' => 'Team Requests & Approvals',
+                'subtitle' => 'Review and approve staff payroll submissions, salary rates, and stock requests',
+                'type' => 'Module',
+                'url' => $this->safeRoute('seller.approvals.index'),
+                'icon' => 'shield-check',
+                'module' => 'approvals',
+                'owner_only' => false,
+            ],
+            [
+                'keywords' => ['sponsorship', 'sponsorships', 'featured', 'featured items', 'boost', 'promoted'],
+                'title' => 'Featured Items & Sponsorships',
+                'subtitle' => 'Apply for sponsored product placements and hero banner promotions',
+                'type' => 'Module',
+                'url' => $this->safeRoute('seller.sponsorships'),
+                'icon' => 'award',
+                'module' => 'sponsorships',
+                'owner_only' => true,
+            ],
+            [
+                'keywords' => ['supply hub', 'wholesale', 'raw materials', 'b2b', 'bulk supplies'],
+                'title' => 'Supply Hub & Wholesale',
+                'subtitle' => 'Source bulk raw materials and handcrafted supplies from partner artisans',
+                'type' => 'Module',
+                'url' => $this->safeRoute('seller.supply-hub.index'),
+                'icon' => 'box',
+                'module' => 'supply_hub',
+                'owner_only' => false,
+            ],
+            [
+                'keywords' => ['supply', 'supplies', 'inventory', 'raw materials', 'procurement', 'restock'],
+                'title' => 'Materials Inventory & Supplies',
+                'subtitle' => 'Track workshop raw material stocks, unit costs, and trigger restock orders',
+                'type' => 'Module',
+                'url' => $this->safeRoute('procurement.index'),
+                'icon' => 'box',
+                'module' => 'procurement',
+                'owner_only' => false,
+            ],
+            [
+                'keywords' => ['stock request', 'stock requests', 'purchase order', 'procurement request', 'order supplies'],
+                'title' => 'Stock Requests Queue',
+                'subtitle' => 'Submit and review staff supply restock requests and material orders',
+                'type' => 'Module',
+                'url' => $this->safeRoute('stock-requests.index'),
+                'icon' => 'clipboard-list',
+                'module' => 'stock_requests',
                 'owner_only' => false,
             ],
         ];
 
         foreach ($navItems as $item) {
             if ($item['owner_only'] && !$user->isSellerOwner()) {
+                continue;
+            }
+            if (!empty($item['staff_feature_required']) && !$user->canManageStaff() && !$user->isPremiumTier()) {
+                continue;
+            }
+            if (!empty($item['payroll_only']) && !$user->canViewSellerPayrollData()) {
+                continue;
+            }
+            if (!empty($item['timecard_audit_only']) && !$user->isSellerOwner() && (!$user->isStaff() || !$user->canEditSellerModule('hr'))) {
                 continue;
             }
             if ($item['module'] && !$user->canAccessSellerModule($item['module'])) {
@@ -597,6 +668,38 @@ class SellerSearchService
                 'type' => 'Staff Audit',
                 'url' => route('audit-log.index', ['search' => $sa->summary]),
                 'icon' => 'shield',
+            ])->toArray();
+    }
+
+    public function searchSellerApprovals(int $sellerId, string $query, string $like): array
+    {
+        return \App\Models\OwnerApproval::select([
+                'id', 'seller_id', 'requester_id', 'domain', 'title', 'summary', 'status', 'created_at'
+            ])
+            ->where('seller_id', $sellerId)
+            ->where(function ($q) use ($query, $like) {
+                $q->where('title', $like, "%{$query}%")
+                    ->orWhere('summary', $like, "%{$query}%")
+                    ->orWhere('domain', $like, "%{$query}%")
+                    ->orWhereHas('requester', function ($rq) use ($query, $like) {
+                        $rq->where('name', $like, "%{$query}%")
+                           ->orWhere('email', $like, "%{$query}%");
+                    });
+            })
+            ->with(['requester:id,name'])
+            ->latest('id')
+            ->limit(5)
+            ->get()
+            ->map(fn ($a) => [
+                'id' => "seller-approval-{$a->id}",
+                'title' => "Request: {$a->title}",
+                'subtitle' => "Submitted by " . ($a->requester->name ?? 'Staff') . " • Domain: " . ucfirst(str_replace('_', ' ', (string) $a->domain)) . " • Status: " . ucfirst((string) $a->status),
+                'type' => 'Team Request',
+                'url' => $this->safeRoute('seller.approvals.index', [
+                    'status' => $a->status === 'pending' ? 'pending' : 'reviewed',
+                    'search' => $a->title,
+                ]),
+                'icon' => 'shield-check',
             ])->toArray();
     }
 }
