@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { MapPin, PackageCheck, AlertTriangle, Store, Clock, KeyRound, Navigation } from 'lucide-react';
+import { MapPin, PackageCheck, AlertTriangle, Store, Clock, Navigation } from 'lucide-react';
 import CourierTrackingCard from '../CourierTrackingCard';
+import HandoffVerificationPin from '../HandoffVerificationPin';
 import { buyerDeliverySummary, buyerIssueSummary, buyerProofLabel, humanizeAddressType } from '@/utils/orderHelpers';
 
 // Subcomponents
@@ -126,23 +127,13 @@ export default function OrderListItemCard({
                                 </div>
 
                                 {order.pickup_pin && !['Cancelled', 'Rejected'].includes(order.status) && (
-                                    <div className="flex flex-col items-center justify-center bg-stone-900 border border-stone-800 text-white rounded-2xl px-5 py-3 shadow-sm shrink-0 self-stretch sm:self-auto min-w-[120px]">
-                                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-stone-400 block mb-0.5">
-                                            Pickup PIN
-                                        </span>
-                                        <span className="text-xl sm:text-2xl font-mono font-black tracking-[0.25em] text-clay-400">
-                                            {order.pickup_pin}
-                                        </span>
-                                    </div>
+                                    <HandoffVerificationPin
+                                        pin={order.pickup_pin}
+                                        status={order.status}
+                                        isPickup={true}
+                                    />
                                 )}
                             </div>
-
-                            {order.pickup_pin && !['Delivered', 'Completed', 'Cancelled', 'Rejected'].includes(order.status) && (
-                                <div className="p-2.5 rounded-xl bg-clay-50/90 border border-clay-200/80 text-xs text-clay-900 flex items-center gap-2">
-                                    <KeyRound size={14} className="text-clay-700 shrink-0" />
-                                    <span className="font-medium">Present this 4-digit PIN to the artisan at the workshop counter to claim your pieces.</span>
-                                </div>
-                            )}
                         </div>
                     )}
 

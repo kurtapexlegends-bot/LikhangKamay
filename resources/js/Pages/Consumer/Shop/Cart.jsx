@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import StickyActionBar from '@/Components/StickyActionBar';
-import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, ChevronRight, Package, ShieldCheck, Store, Loader2, Check, RotateCcw } from 'lucide-react';
+import SwipeableCartItemRow from '@/Components/Consumer/Shop/SwipeableCartItemRow';
+import { Trash2, ShoppingBag, ArrowRight, ChevronRight, Package, ShieldCheck, Store, Loader2, Check, RotateCcw } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import useCartPersistence from '@/hooks/useCartPersistence';
@@ -296,114 +297,18 @@ export default function Cart({ cart }) {
 
                                             {/* Seller's Items */}
                                             {items.map((item) => (
-                                                <div 
-                                                    key={getCartKey(item)} 
-                                                    className={`grid grid-cols-1 gap-3 px-4 py-4 border-b border-gray-50 items-center transition sm:grid-cols-12 sm:gap-4 ${
-                                                        removingId === getCartKey(item) ? 'opacity-50' : ''
-                                                    } ${!selectedItems.has(getCartKey(item)) ? 'bg-gray-50/30' : ''}`}
-                                                >
-                                                    {/* Product Info with Checkbox */}
-                                                    <div className="sm:col-span-6 flex gap-3 items-start">
-                                                        <button
-                                                            onClick={() => toggleItem(getCartKey(item))}
-                                                            className={`w-4 h-4 rounded border flex items-center justify-center transition flex-shrink-0 mt-1 ${
-                                                                selectedItems.has(getCartKey(item)) 
-                                                                    ? 'bg-clay-600 border-clay-600 text-white' 
-                                                                    : 'border-gray-300 hover:border-clay-400'
-                                                            }`}
-                                                        >
-                                                            {selectedItems.has(getCartKey(item)) && <Check size={12} />}
-                                                        </button>
-                                                        <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                                            <img 
-                                                                src={item.img ? (item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`) : '/images/no-image.png'} 
-                                                                alt={item.name} 
-                                                                className="w-full h-full object-cover"
-                                                                onError={(e) => { e.target.src = '/images/no-image.png'; }}
-                                                            />
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            {item.slug ? (
-                                                                <Link
-                                                                    href={route('product.show', item.slug)}
-                                                                    className="text-sm font-medium text-gray-900 hover:text-clay-600 transition line-clamp-2"
-                                                                >
-                                                                    {item.name}
-                                                                </Link>
-                                                            ) : (
-                                                                <span className="text-sm font-medium text-gray-500 line-clamp-2">
-                                                                    {item.name}
-                                                                </span>
-                                                            )}
-                                                            <p className="text-xs text-gray-400 mt-1">SKU: {item.sku || 'Unavailable'}</p>
-                                                            <p className="text-xs text-gray-400 mt-0.5">Variant: {item.variant || 'Standard'}</p>
-                                                            <button 
-                                                                onClick={() => removeItem(getCartKey(item))}
-                                                                disabled={removingId === getCartKey(item)}
-                                                                className="text-xs text-red-400 hover:text-red-600 mt-1 flex items-center gap-1 sm:hidden"
-                                                            >
-                                                                {removingId === getCartKey(item) ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                                                                Remove
-                                                            </button>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Unit Price */}
-                                                    <div className="sm:col-span-2 flex items-center justify-between sm:block sm:text-center">
-                                                        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:hidden">Unit Price</span>
-                                                        <div>
-                                                            <span className="text-sm font-bold text-clay-700">{currency.format(Number(item.price) || 0)}</span>
-                                                            {(item.has_discount || item.discount_info || (item.original_price && item.original_price > item.price)) && (
-                                                                <div className="text-[10px] text-gray-400 line-through">
-                                                                    {currency.format(Number(item.original_price || item.discount_info?.original_price) || 0)}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Quantity */}
-                                                    <div className="sm:col-span-2 flex items-center justify-between sm:block">
-                                                        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:hidden">Quantity</span>
-                                                        <div className="flex justify-end sm:justify-center">
-                                                        <div className="flex items-center border border-gray-200 rounded">
-                                                            <button
-                                                                onClick={() => updateQty(getCartKey(item), item.qty, -1, (item.is_b2b_supply && item.moq) ? Number(item.moq) : 1)}
-                                                                disabled={item.qty <= ((item.is_b2b_supply && item.moq) ? Number(item.moq) : 1) || updatingId === getCartKey(item)}
-                                                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
-                                                            >
-                                                                <Minus size={12} />
-                                                            </button>
-                                                            <span className="w-8 text-center text-sm font-medium text-gray-900">
-                                                                {updatingId === getCartKey(item) ? <Loader2 size={12} className="animate-spin mx-auto" /> : item.qty}
-                                                            </span>
-                                                            <button
-                                                                onClick={() => updateQty(getCartKey(item), item.qty, 1, (item.is_b2b_supply && item.moq) ? Number(item.moq) : 1)}
-                                                                disabled={updatingId === getCartKey(item)}
-                                                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                                                            >
-                                                                <Plus size={12} />
-                                                            </button>
-                                                        </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Total & Delete */}
-                                                    <div className="sm:col-span-2 flex items-center justify-between sm:justify-end gap-3">
-                                                        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:hidden">Total</span>
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="text-sm font-semibold text-clay-600">
-                                                                {currency.format((Number(item.price) || 0) * (Number(item.qty) || 0))}
-                                                            </span>
-                                                            <button 
-                                                                onClick={() => removeItem(getCartKey(item))}
-                                                                disabled={removingId === getCartKey(item)}
-                                                                className="hidden sm:flex w-7 h-7 items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition"
-                                                            >
-                                                                {removingId === getCartKey(item) ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                <SwipeableCartItemRow
+                                                    key={getCartKey(item)}
+                                                    item={item}
+                                                    cartKey={getCartKey(item)}
+                                                    isSelected={selectedItems.has(getCartKey(item))}
+                                                    onToggle={toggleItem}
+                                                    onRemove={removeItem}
+                                                    onUpdateQty={updateQty}
+                                                    isRemoving={removingId === getCartKey(item)}
+                                                    isUpdating={updatingId === getCartKey(item)}
+                                                    currency={currency}
+                                                />
                                             ))}
                                         </div>
                                     );

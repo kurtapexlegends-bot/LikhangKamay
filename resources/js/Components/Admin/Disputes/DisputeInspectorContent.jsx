@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import UserAvatar from '@/Components/UserAvatar';
+import ImageDiffSlider from '@/Components/Common/ImageDiffSlider';
 import {
     AlertTriangle,
     Package,
@@ -23,6 +24,9 @@ export default function DisputeInspectorContent({
     openLightbox,
     onBack
 }) {
+    const [selectedBeforeIdx, setSelectedBeforeIdx] = useState(0);
+    const [selectedAfterIdx, setSelectedAfterIdx] = useState(0);
+
     const order = dispute.order;
     const buyerName = order?.user?.name || order?.customer_name || 'Buyer';
     const buyerEmail = order?.user?.email || '';
@@ -36,6 +40,13 @@ export default function DisputeInspectorContent({
         : (Array.isArray(order?.packing_photos) 
             ? order.packing_photos 
             : (order?.proof_of_delivery ? [order.proof_of_delivery] : []));
+    const catalogPhotos = items
+        .map((i) => i.product_img || i.product?.cover_photo_path)
+        .filter(Boolean);
+    const comparisonSellerPhotos = sellerPhotos.length > 0 ? sellerPhotos : catalogPhotos;
+    const isCatalogFallback = sellerPhotos.length === 0 && catalogPhotos.length > 0;
+    const beforeLabel = isCatalogFallback ? 'Catalog Reference' : 'Artisan Pre-Shipment';
+    const hasComparisonImages = proofPhotos.length > 0 || comparisonSellerPhotos.length > 0;
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-white">
@@ -137,7 +148,23 @@ export default function DisputeInspectorContent({
                     )}
                 </div>
 
-                {/* 2. Side-by-Side Comparison: Buyer vs Seller */}
+                {/* 2. Visual Evidence Diff Slider */}
+                {hasComparisonImages && (
+                    <ImageDiffSlider
+                        beforeImage={comparisonSellerPhotos[selectedBeforeIdx] || comparisonSellerPhotos[0]}
+                        afterImage={proofPhotos[selectedAfterIdx] || proofPhotos[0]}
+                        beforeLabel={beforeLabel}
+                        afterLabel="Buyer Defect Proof"
+                        beforeOptions={comparisonSellerPhotos}
+                        afterOptions={proofPhotos}
+                        selectedBeforeIndex={selectedBeforeIdx}
+                        selectedAfterIndex={selectedAfterIdx}
+                        onSelectBefore={setSelectedBeforeIdx}
+                        onSelectAfter={setSelectedAfterIdx}
+                    />
+                )}
+
+                {/* 3. Detailed Evidence Dossier: Buyer vs Seller */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Buyer Request Box */}
                     <div className="bg-white border border-stone-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3.5">
