@@ -31,6 +31,8 @@ class PrepareCheckout
                     'cart_key' => null,
                     'artisan_id' => $product->artisan_id ?? $product->user_id,
                     'shop_name' => $product->user->shop_name ?? 'Shop',
+                    'seller_city' => $product->user->city ?? null,
+                    'location' => $product->user->city ?? null,
                     'name' => $product->name,
                     'variant' => $variant,
                     'price' => $product->is_b2b_supply ? $product->getEffectiveB2BPrice($qty) : $product->effective_price,
@@ -82,6 +84,8 @@ class PrepareCheckout
                     $item['supply_unit'] = $live->supply_unit ?: 'pcs';
                     $item['artisan_id'] = $live->artisan_id ?? $live->user_id;
                     $item['shop_name'] = $live->user->shop_name ?? 'Shop';
+                    $item['seller_city'] = $live->user->city ?? ($item['seller_city'] ?? null);
+                    $item['location'] = $live->user->city ?? ($item['location'] ?? null);
                     $item['lead_time'] = (int) ($live->lead_time ?? 0);
                 }
             }

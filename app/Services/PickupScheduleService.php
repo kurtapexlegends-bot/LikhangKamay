@@ -277,7 +277,7 @@ class PickupScheduleService
                 'month_full' => $cursor->format('F'),
                 'day_of_week' => $dayOfWeek,
                 'day_name' => $cursor->format('D'),
-                'day_number' => $cursor->format('j'),
+                'day_number' => (int) $cursor->format('j'),
                 'formatted' => $cursor->format('M d, Y'),
                 'is_operating_day' => $isOperating,
                 'is_before_earliest' => $isBeforeEarliest,

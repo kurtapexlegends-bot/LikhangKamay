@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Pencil, Trash2 } from 'lucide-react';
+import { CheckCircle2, Pencil, Trash2, MapPin } from 'lucide-react';
 import { typeLabel, resolveAddressDisplay } from '@/utils/addressHelpers';
 
 export default function AddressCard({
@@ -15,16 +15,16 @@ export default function AddressCard({
     return (
         <div
             onClick={() => onSelect(address)}
-            className={`cursor-pointer rounded-xl border p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm flex flex-col justify-between h-full ${
+            className={`cursor-pointer rounded-xl border p-2.5 sm:p-3 transition-all duration-200 hover:shadow-xs flex flex-col justify-between h-full ${
                 isSelected
-                    ? 'border-clay-600 bg-clay-50/20 ring-1 ring-clay-600 shadow-sm'
+                    ? 'border-clay-600 bg-clay-50/25 ring-1 ring-clay-600 shadow-2xs'
                     : 'border-stone-200 bg-white hover:border-clay-300'
             }`}
         >
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-2">
                 {/* Radio Indicator */}
-                <div className="shrink-0 mt-1">
-                    <div className={`h-4 w-4 rounded-full border flex items-center justify-center transition-all ${
+                <div className="shrink-0 mt-0.5">
+                    <div className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center transition-all ${
                         isSelected
                             ? 'border-clay-600 bg-clay-600'
                             : 'border-stone-300 bg-white hover:border-clay-400'
@@ -36,61 +36,71 @@ export default function AddressCard({
                 </div>
 
                 {/* Address Details Content */}
-                <div className="flex-1 space-y-2.5 min-w-0">
-                    {/* Header: Label & Type */}
-                    <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-sm font-bold text-gray-800 truncate">{address.label}</span>
-                            <span className="shrink-0 rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-blue-700">
+                <div className="flex-1 space-y-0.5 min-w-0">
+                    {/* Header: Label, Type & Badges */}
+                    <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-[11.5px] font-bold text-stone-900 truncate">{address.label}</span>
+                            <span className="shrink-0 rounded-full border border-stone-200 bg-stone-100 px-1.5 py-0.2 text-[8.5px] font-bold uppercase tracking-wider text-stone-600">
                                 {typeLabel(address.address_type)}
                             </span>
                         </div>
-                        {address.is_default && (
-                            <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                                <CheckCircle2 size={10} />
-                                Default
-                            </span>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0">
+                            {address.latitude && address.longitude && (
+                                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.2 text-[8px] font-bold text-emerald-700">
+                                    <MapPin size={8} className="text-emerald-600" />
+                                    Pinned
+                                </span>
+                            )}
+                            {address.is_default && (
+                                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.2 text-[8.5px] font-bold text-emerald-800">
+                                    <CheckCircle2 size={8.5} />
+                                    Default
+                                </span>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Address Details */}
-                    <p className="line-clamp-2 text-xs text-gray-650 leading-relaxed">{resolveAddressDisplay(address)}</p>
-                    <p className="text-[10px] font-semibold text-gray-500 tracking-wide">
+                    {/* Address Line */}
+                    <p className="line-clamp-1 sm:line-clamp-2 text-[11px] text-stone-600 leading-snug">
+                        {resolveAddressDisplay(address)}
+                    </p>
+                    <p className="text-[10px] font-medium text-stone-500 truncate">
                         {address.recipient_name} • {address.phone_number}
                     </p>
                 </div>
             </div>
 
-            {/* Separated Actions Footer */}
-            <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2" onClick={(event) => event.stopPropagation()}>
-                <div className="flex items-center gap-1">
+            {/* Compact Actions Footer */}
+            <div className="mt-1.5 pt-1.5 border-t border-stone-100 flex items-center justify-between gap-1" onClick={(event) => event.stopPropagation()}>
+                <div>
                     {!address.is_default && (
                         <button
                             type="button"
                             onClick={() => onSetDefault(address.id)}
-                            className="h-11 px-3 sm:h-9 sm:px-2.5 rounded-lg text-xs font-bold text-gray-500 hover:bg-stone-50 hover:text-clay-600 transition flex items-center"
+                            className="h-5 px-1.5 rounded text-[10px] font-bold text-stone-500 hover:bg-stone-100 hover:text-clay-600 transition flex items-center"
                         >
                             Set Default
                         </button>
                     )}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
                     <button
                         type="button"
                         onClick={() => onEdit(address)}
-                        className="inline-flex h-11 px-3 sm:h-9 sm:px-2.5 items-center gap-1 rounded-lg text-xs font-bold text-gray-500 hover:bg-stone-50 hover:text-clay-600 transition"
+                        className="inline-flex h-5 px-1.5 items-center gap-1 rounded text-[10px] font-bold text-stone-500 hover:bg-stone-100 hover:text-clay-600 transition"
                     >
-                        <Pencil size={11} />
+                        <Pencil size={9.5} />
                         Edit
                     </button>
                     <button
                         type="button"
                         onClick={() => onDelete(address)}
-                        className="inline-flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-stone-50 hover:text-red-650 transition"
+                        className="inline-flex h-5 w-5 items-center justify-center rounded text-stone-400 hover:bg-rose-50 hover:text-rose-600 transition"
                         aria-label={`Delete ${address.label} address`}
                         title="Delete address"
                     >
-                        <Trash2 size={13} />
+                        <Trash2 size={10} />
                     </button>
                 </div>
             </div>

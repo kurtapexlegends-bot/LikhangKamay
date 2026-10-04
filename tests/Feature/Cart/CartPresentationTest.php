@@ -173,4 +173,135 @@ class CartPresentationTest extends TestCase
                 ->where('items.0.qty', 2)
             );
     }
+
+    public function test_cart_endpoints_support_inertia_requests_without_returning_plain_json(): void
+    {
+        /** @var User $buyer */
+        $buyer = User::factory()->create();
+        /** @var User $seller */
+        $seller = User::factory()->artisanApproved()->create();
+
+        $product = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'CART-INERTIA-001',
+            'name' => 'Inertia Clay Mug',
+            'description' => 'Inertia compatibility test item.',
+            'category' => 'Pottery',
+            'status' => 'Active',
+            'price' => 350,
+            'cost_price' => 150,
+            'stock' => 15,
+            'lead_time' => 2,
+            'track_as_supply' => false,
+        ]);
+
+        $inertiaHeaders = [
+            'X-Inertia' => 'true',
+            'X-Requested-With' => 'XMLHttpRequest',
+        ];
+
+        // 1. Store via Inertia - MUST redirect back, NEVER return plain JSON
+        $storeResponse = $this->actingAs($buyer)->post(route('cart.store'), [
+            'product_id' => $product->id,
+            'quantity' => 2,
+        ], $inertiaHeaders);
+
+        $storeResponse->assertRedirect();
+        $storeResponse->assertSessionHas('success');
+        $this->assertFalse($storeResponse->headers->contains('content-type', 'application/json'));
+
+        $cart = session('cart', []);
+        $cartKey = array_key_first($cart);
+        $this->assertNotNull($cartKey);
+
+        // 2. Update via Inertia - MUST redirect back
+        $updateResponse = $this->actingAs($buyer)->patch(route('cart.update'), [
+            'id' => $cartKey,
+            'qty' => 4,
+        ], $inertiaHeaders);
+
+        $updateResponse->assertRedirect();
+        $updateResponse->assertSessionHas('success');
+        $this->assertFalse($updateResponse->headers->contains('content-type', 'application/json'));
+
+        // 3. Destroy via Inertia - MUST redirect back
+        $destroyResponse = $this->actingAs($buyer)->delete(route('cart.destroy'), [
+            'id' => $cartKey,
+        ], $inertiaHeaders);
+
+        $destroyResponse->assertRedirect();
+        $destroyResponse->assertSessionHas('success');
+        $this->assertFalse($destroyResponse->headers->contains('content-type', 'application/json'));
+
+        // 4. Clear via Inertia - MUST redirect back
+        $clearResponse = $this->actingAs($buyer)->post(route('cart.clear'), [], $inertiaHeaders);
+
+        $clearResponse->assertRedirect();
+        $clearResponse->assertSessionHas('success');
+        $this->assertFalse($clearResponse->headers->contains('content-type', 'application/json'));
+    }
+
+    public function test_cart_endpoints_still_support_pure_json_api_requests(): void
+    {
+        /** @var User $buyer */
+        $buyer = User::factory()->create();
+        /** @var User $seller */
+        $seller = User::factory()->artisanApproved()->create();
+
+        $product = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'CART-API-002',
+            'name' => 'API Clay Mug',
+            'description' => 'API compatibility test item.',
+            'category' => 'Pottery',
+            'status' => 'Active',
+            'price' => 400,
+            'cost_price' => 200,
+            'stock' => 10,
+            'lead_time' => 2,
+            'track_as_supply' => false,
+        ]);
+
+        // 1. Store via postJson
+        $storeResponse = $this->actingAs($buyer)->postJson(route('cart.store'), [
+            'product_id' => $product->id,
+            'quantity' => 1,
+        ]);
+
+        $storeResponse->assertOk()
+            ->assertJsonStructure(['success', 'message', 'cart', 'cart_count'])
+            ->assertJsonPath('success', true);
+
+        $cart = $storeResponse->json('cart');
+        $cartKey = array_key_first($cart);
+
+        // 2. Update via patchJson
+        $updateResponse = $this->actingAs($buyer)->patchJson(route('cart.update'), [
+            'id' => $cartKey,
+            'qty' => 3,
+        ]);
+
+        $updateResponse->assertOk()
+            ->assertJsonStructure(['success', 'message', 'cart', 'cart_count'])
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('cart_count', 3);
+
+        // 3. Destroy via deleteJson
+        $destroyResponse = $this->actingAs($buyer)->deleteJson(route('cart.destroy'), [
+            'id' => $cartKey,
+        ]);
+
+        $destroyResponse->assertOk()
+            ->assertJsonStructure(['success', 'message', 'cart', 'cart_count'])
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('cart_count', 0);
+
+        // 4. Clear via postJson
+        $clearResponse = $this->actingAs($buyer)->postJson(route('cart.clear'));
+
+        $clearResponse->assertOk()
+            ->assertJsonStructure(['success', 'message', 'cart', 'cart_count'])
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('cart_count', 0);
+    }
 }

@@ -43,6 +43,7 @@ class CheckoutRequest extends FormRequest
             'save_address' => 'nullable|boolean',
             'pickup_date' => 'nullable|date',
             'pickup_time_slot' => 'nullable|string|max:100',
+            'pickup_schedules' => 'nullable|array',
         ];
     }
 }

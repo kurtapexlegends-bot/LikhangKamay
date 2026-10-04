@@ -62,8 +62,8 @@ export default function StorePickupScheduler({
         const daysInMonth = new Date(year, month, 0).getDate();
         const daysLookup = new Map();
         for (const d of days) {
-            if (d.year === year && d.month === month) {
-                daysLookup.set(d.day_number, d);
+            if (Number(d.year) === Number(year) && Number(d.month) === Number(month)) {
+                daysLookup.set(Number(d.day_number), d);
             }
         }
 
@@ -189,24 +189,21 @@ export default function StorePickupScheduler({
     );
 
     return (
-        <div className="rounded-2xl border border-stone-200 bg-white p-4 sm:p-5 shadow-sm space-y-4">
+        <div className="rounded-2xl border border-stone-200 bg-white p-3.5 sm:p-4 shadow-sm space-y-3">
             {/* Header: Title, Icon, Studio Info & Map */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-stone-100">
-                <div className="flex items-center gap-3 text-stone-700">
-                    <div className="rounded-xl bg-clay-50 p-2 text-clay-700 border border-clay-100">
-                        <Store size={18} />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-stone-100">
+                <div className="flex items-center gap-2 text-stone-700">
+                    <div className="rounded-lg bg-clay-50 p-1.5 text-clay-700 border border-clay-100">
+                        <Store size={15} />
                     </div>
                     <div>
                         <h2 className="text-sm font-bold text-stone-900">Store Pick Up Schedule</h2>
-                        <p className="text-[10px] text-stone-400 font-semibold uppercase tracking-wider">
-                            Choose your visit date & time window
-                        </p>
                     </div>
                 </div>
 
                 {/* Studio Location & Map Link */}
-                <div className="flex items-center gap-2 text-xs text-stone-600 bg-stone-50/80 px-3 py-1.5 rounded-xl border border-stone-200/60 self-start sm:self-center">
-                    <MapPin size={13} className="text-clay-600 shrink-0" />
+                <div className="flex items-center gap-1.5 text-xs text-stone-600 bg-stone-50/80 px-2.5 py-1 rounded-lg border border-stone-200/60 self-start sm:self-center">
+                    <MapPin size={12} className="text-clay-600 shrink-0" />
                     <span className="font-semibold text-stone-800 truncate max-w-[170px] sm:max-w-[220px]">
                         {location?.name || pickupConfig?.shop_name || 'Artisan Workshop'}
                     </span>
@@ -218,7 +215,7 @@ export default function StorePickupScheduler({
                             className="inline-flex items-center gap-1 font-bold text-clay-700 hover:text-clay-900 pl-1.5 border-l border-stone-200 shrink-0 transition"
                         >
                             <span>Map</span>
-                            <ExternalLink size={10} />
+                            <ExternalLink size={9} />
                         </a>
                     )}
                 </div>
@@ -226,16 +223,16 @@ export default function StorePickupScheduler({
 
             {/* Preparation notice if items have lead time */}
             {leadTimeDays > 0 && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50/70 border border-amber-200/70 text-xs text-amber-900">
-                    <Info size={14} className="text-amber-700 shrink-0" />
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-amber-50/70 border border-amber-200/70 text-[11px] text-amber-900">
+                    <Info size={13} className="text-amber-700 shrink-0" />
                     <span>
-                        Includes made-to-order items. Requires <strong>{leadTimeDays}d</strong> prep time. Earliest pickup is <strong>{earliestFormatted}</strong>.
+                        Includes made-to-order items ({leadTimeDays}d prep). Earliest pickup is <strong>{earliestFormatted}</strong>.
                     </span>
                 </div>
             )}
 
             {/* Interactive Airbnb/Apple Booking Tiles */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 relative">
                 {/* Tile 1: Date Trigger */}
                 <div ref={dateContainerRef} className="relative">
                     <button
@@ -244,24 +241,24 @@ export default function StorePickupScheduler({
                             setIsDateOpen((prev) => !prev);
                             setIsTimeOpen(false);
                         }}
-                        className={`w-full text-left p-3.5 rounded-xl border transition-all duration-200 flex items-center justify-between ${
+                        className={`w-full text-left p-2.5 sm:p-3 rounded-xl border transition-all duration-200 flex items-center justify-between ${
                             isDateOpen
-                                ? 'border-clay-600 bg-clay-50/30 ring-4 ring-clay-600/5 shadow-sm'
+                                ? 'border-clay-600 bg-clay-50/30 ring-2 ring-clay-600/10 shadow-2xs'
                                 : 'border-stone-200 bg-stone-50/40 hover:bg-stone-50 hover:border-clay-300'
                         }`}
                     >
-                        <div className="flex items-start gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-lg bg-white border border-stone-200 flex items-center justify-center text-clay-700 shrink-0 mt-0.5 shadow-2xs">
-                                <Calendar size={15} />
+                        <div className="flex items-start gap-2.5 min-w-0">
+                            <div className="w-7 h-7 rounded-lg bg-white border border-stone-200 flex items-center justify-center text-clay-700 shrink-0 mt-0.5 shadow-2xs">
+                                <Calendar size={13} />
                             </div>
                             <div className="min-w-0">
-                                <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                                <span className="block text-[9.5px] font-bold text-stone-400 uppercase tracking-wider">
                                     Pick Up Date
                                 </span>
-                                <span className="text-xs sm:text-sm font-bold text-stone-900 block truncate">
+                                <span className="text-xs sm:text-[13px] font-bold text-stone-900 block truncate">
                                     {selectedDayObj ? selectedDayObj.formatted : 'Select a date'}
                                 </span>
-                                <span className="text-[10px] font-medium text-stone-500 block truncate">
+                                <span className="text-[9.5px] font-medium text-stone-500 block truncate">
                                     {selectedDayObj?.day_name} • {selectedDate === pickupConfig?.earliest_date ? 'Earliest Available' : 'Tap to change'}
                                 </span>
                             </div>
@@ -321,6 +318,10 @@ export default function StorePickupScheduler({
                                     const day = cell.dayData;
                                     const isSelectable = day && day.is_selectable;
                                     const isSelected = day && day.date === selectedDate;
+                                    const totalRemaining = isSelectable
+                                        ? (day.slots?.reduce((sum, s) => sum + (s.is_available ? s.remaining_capacity : 0), 0) || 0)
+                                        : 0;
+                                    const isAlmostFull = isSelectable && totalRemaining > 0 && totalRemaining <= 2;
 
                                     return (
                                         <button
@@ -328,22 +329,42 @@ export default function StorePickupScheduler({
                                             type="button"
                                             disabled={!isSelectable}
                                             onClick={() => handleSelectDateFromCalendar(day)}
-                                            className={`h-8 w-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
+                                            className={`relative h-9 w-9 rounded-xl text-xs font-bold flex flex-col items-center justify-center transition-all ${
                                                 isSelected
                                                     ? 'bg-clay-600 text-white shadow-xs'
                                                     : isSelectable
-                                                    ? 'hover:bg-clay-50 hover:text-clay-800 text-stone-800 active:scale-90'
+                                                    ? 'hover:bg-clay-50 hover:text-clay-800 text-stone-800 active:scale-95'
                                                     : 'text-stone-300 opacity-50 cursor-not-allowed'
                                             }`}
                                         >
-                                            {cell.dayNum}
+                                            <span className="leading-none">{cell.dayNum}</span>
+                                            {isSelectable && (
+                                                <span
+                                                    className={`mt-1 h-1 w-1 rounded-full ${
+                                                        isSelected
+                                                            ? 'bg-white'
+                                                            : isAlmostFull
+                                                            ? 'bg-amber-500'
+                                                            : 'bg-emerald-500'
+                                                    }`}
+                                                />
+                                            )}
                                         </button>
                                     );
                                 })}
                             </div>
 
-                            <div className="mt-3 pt-2 border-t border-stone-100 flex items-center justify-between text-[10px] text-stone-400">
-                                <span>• Gray dates are unavailable/closed</span>
+                            <div className="mt-3 pt-2.5 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2 text-[10px] text-stone-500">
+                                <div className="flex items-center gap-3">
+                                    <span className="flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                        <span>Available</span>
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                        <span>Filling fast (≤2)</span>
+                                    </span>
+                                </div>
                                 {pickupConfig?.earliest_formatted && (
                                     <span className="font-semibold text-clay-700">Earliest: {pickupConfig.earliest_formatted}</span>
                                 )}
@@ -361,24 +382,24 @@ export default function StorePickupScheduler({
                             setIsDateOpen(false);
                         }}
                         disabled={!selectedDayObj || !selectedDayObj.slots || selectedDayObj.slots.length === 0}
-                        className={`w-full text-left p-3.5 rounded-xl border transition-all duration-200 flex items-center justify-between disabled:opacity-60 disabled:cursor-not-allowed ${
+                        className={`w-full text-left p-2.5 sm:p-3 rounded-xl border transition-all duration-200 flex items-center justify-between disabled:opacity-60 disabled:cursor-not-allowed ${
                             isTimeOpen
-                                ? 'border-clay-600 bg-clay-50/30 ring-4 ring-clay-600/5 shadow-sm'
+                                ? 'border-clay-600 bg-clay-50/30 ring-2 ring-clay-600/10 shadow-2xs'
                                 : 'border-stone-200 bg-stone-50/40 hover:bg-stone-50 hover:border-clay-300'
                         }`}
                     >
-                        <div className="flex items-start gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-lg bg-white border border-stone-200 flex items-center justify-center text-clay-700 shrink-0 mt-0.5 shadow-2xs">
-                                <Clock size={15} />
+                        <div className="flex items-start gap-2.5 min-w-0">
+                            <div className="w-7 h-7 rounded-lg bg-white border border-stone-200 flex items-center justify-center text-clay-700 shrink-0 mt-0.5 shadow-2xs">
+                                <Clock size={13} />
                             </div>
                             <div className="min-w-0">
-                                <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                                <span className="block text-[9.5px] font-bold text-stone-400 uppercase tracking-wider">
                                     Time Window
                                 </span>
-                                <span className="text-xs sm:text-sm font-bold text-stone-900 block truncate">
+                                <span className="text-xs sm:text-[13px] font-bold text-stone-900 block truncate">
                                     {selectedSlot || 'Select time slot'}
                                 </span>
-                                <span className="text-[10px] font-medium text-stone-500 block truncate">
+                                <span className="text-[9.5px] font-medium text-stone-500 block truncate">
                                     {activeSlotObj
                                         ? `${activeSlotObj.remaining_capacity} spot${activeSlotObj.remaining_capacity === 1 ? '' : 's'} available`
                                         : 'Tap to pick time'}
@@ -386,7 +407,7 @@ export default function StorePickupScheduler({
                             </div>
                         </div>
 
-                        <ChevronDown size={15} className={`text-stone-400 transition-transform duration-200 shrink-0 ml-2 ${isTimeOpen ? 'rotate-180 text-clay-600' : ''}`} />
+                        <ChevronDown size={14} className={`text-stone-400 transition-transform duration-200 shrink-0 ml-2 ${isTimeOpen ? 'rotate-180 text-clay-600' : ''}`} />
                     </button>
 
                     {/* Popover Time Slot List */}
@@ -437,6 +458,101 @@ export default function StorePickupScheduler({
                     )}
                 </div>
             </div>
+
+            {/* Interactive Visual Time Slot Matrix */}
+            {selectedDayObj && selectedDayObj.slots && selectedDayObj.slots.length > 0 && (
+                <div className="pt-3 border-t border-stone-100 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-stone-800">
+                            <Clock size={13} className="text-clay-600" />
+                            <span>Available Time Slots for {selectedDayObj.formatted}</span>
+                        </div>
+                        {selectedSlot && (
+                            <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                1 Slot Selected
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                        {selectedDayObj.slots.map((slot) => {
+                            const isSelected = selectedSlot === slot.label || selectedSlot === slot.id;
+                            const isAvailable = slot.is_available;
+                            const maxCap = Math.max(1, slot.max_capacity || 5);
+                            const remaining = Math.max(0, slot.remaining_capacity ?? (maxCap - (slot.booked_count || 0)));
+                            const percentFilled = Math.min(100, Math.round(((maxCap - remaining) / maxCap) * 100));
+                            const isUrgent = remaining > 0 && remaining <= 2;
+
+                            return (
+                                <button
+                                    key={slot.id}
+                                    type="button"
+                                    disabled={!isAvailable}
+                                    onClick={() => handleSelectSlotOption(slot)}
+                                    className={`group relative text-left p-3 rounded-xl border transition-all duration-150 flex flex-col justify-between ${
+                                        isSelected
+                                            ? 'border-clay-600 bg-clay-50/70 ring-2 ring-clay-600/20 shadow-xs'
+                                            : isAvailable
+                                            ? 'border-stone-200 bg-white hover:border-clay-300 hover:bg-stone-50/60'
+                                            : 'border-stone-200/60 bg-stone-50/60 opacity-55 cursor-not-allowed'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between gap-2 mb-2">
+                                        <span className={`text-xs font-bold tracking-tight ${
+                                            isSelected ? 'text-clay-950 font-extrabold' : isAvailable ? 'text-stone-900' : 'text-stone-400'
+                                        }`}>
+                                            {slot.label}
+                                        </span>
+                                        <div
+                                            className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                                                isSelected
+                                                    ? 'border-clay-600 bg-clay-600 text-white'
+                                                    : isAvailable
+                                                    ? 'border-stone-300 bg-white group-hover:border-clay-400'
+                                                    : 'border-stone-200 bg-stone-100 text-transparent'
+                                            }`}
+                                        >
+                                            {isSelected && <Check size={10} strokeWidth={3} />}
+                                        </div>
+                                    </div>
+
+                                    {/* Capacity Progress Bar & Status */}
+                                    <div className="space-y-1.5 mt-auto">
+                                        <div className="flex items-center justify-between text-[10px]">
+                                            <span className={`font-semibold ${
+                                                isUrgent ? 'text-amber-700' : isAvailable ? 'text-stone-500' : 'text-stone-400'
+                                            }`}>
+                                                {slot.is_past ? 'Time Passed' : slot.is_full ? 'Fully Booked' : `${remaining} of ${maxCap} spots left`}
+                                            </span>
+                                            {isUrgent && isAvailable && (
+                                                <span className="text-[9px] font-bold text-amber-700 bg-amber-100/70 px-1.5 py-0.5 rounded">
+                                                    Filling Fast
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Visual Progress Bar */}
+                                        <div className="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-300 ${
+                                                    !isAvailable
+                                                        ? 'bg-stone-300 w-full'
+                                                        : isUrgent
+                                                        ? 'bg-amber-500'
+                                                        : isSelected
+                                                        ? 'bg-clay-600'
+                                                        : 'bg-emerald-500'
+                                                }`}
+                                                style={{ width: !isAvailable ? '100%' : `${percentFilled}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* Error message */}
             {error && (

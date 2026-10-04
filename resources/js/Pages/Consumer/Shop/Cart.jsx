@@ -40,13 +40,17 @@ export default function Cart({ cart }) {
         }
     }, [cartItems.length]);
 
+    const [activeStudioFilter, setActiveStudioFilter] = useState('all');
+
     // Group items by seller
-    const groupedBySeller = cartItems.reduce((acc, item) => {
-        const seller = item.shop_name || item.seller || 'Unknown Seller';
-        if (!acc[seller]) acc[seller] = [];
-        acc[seller].push(item);
-        return acc;
-    }, {});
+    const groupedBySeller = useMemo(() => {
+        return cartItems.reduce((acc, item) => {
+            const seller = item.shop_name || item.seller || 'Unknown Seller';
+            if (!acc[seller]) acc[seller] = [];
+            acc[seller].push(item);
+            return acc;
+        }, {});
+    }, [cartItems]);
 
     // Calculate totals based on selected items only
     const selectedCartItems = useMemo(() => {
@@ -188,6 +192,40 @@ export default function Cart({ cart }) {
                                     </h1>
                                 </div>
 
+                                {/* Studio Filter Tabs (when multiple sellers present) */}
+                                {Object.keys(groupedBySeller).length > 1 && (
+                                    <div className="px-4 py-2.5 bg-stone-50/80 border-b border-gray-100 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                                            <Store size={12} className="text-clay-600" /> Studios:
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveStudioFilter('all')}
+                                            className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition-all ${
+                                                activeStudioFilter === 'all'
+                                                    ? 'bg-clay-600 text-white shadow-2xs'
+                                                    : 'bg-white text-stone-600 border border-stone-200 hover:border-clay-300'
+                                            }`}
+                                        >
+                                            All Studios ({cartItems.length})
+                                        </button>
+                                        {Object.entries(groupedBySeller).map(([seller, items]) => (
+                                            <button
+                                                key={seller}
+                                                type="button"
+                                                onClick={() => setActiveStudioFilter(seller)}
+                                                className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition-all ${
+                                                    activeStudioFilter === seller
+                                                        ? 'bg-clay-600 text-white shadow-2xs'
+                                                        : 'bg-white text-stone-600 border border-stone-200 hover:border-clay-300'
+                                                }`}
+                                            >
+                                                {seller} ({items.length})
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
                                 {/* Table Header with Select All */}
                                 <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase items-center">
                                     <div className="col-span-6 flex items-center gap-3">
@@ -209,7 +247,9 @@ export default function Cart({ cart }) {
                                 </div>
 
                                 {/* Items grouped by seller */}
-                                {Object.entries(groupedBySeller).map(([seller, items]) => {
+                                {Object.entries(groupedBySeller)
+                                    .filter(([seller]) => activeStudioFilter === 'all' || activeStudioFilter === seller)
+                                    .map(([seller, items], sellerIndex) => {
                                     const sellerIds = items.map((item) => getCartKey(item));
                                     const allSellerSelected = sellerIds.every(id => selectedItems.has(id));
                                     const someSellerSelected = sellerIds.some(id => selectedItems.has(id));
@@ -217,21 +257,41 @@ export default function Cart({ cart }) {
                                     return (
                                         <div key={seller}>
                                             {/* Seller Header */}
-                                                <div className="px-4 py-2 bg-gray-50/50 border-t border-b border-gray-100 flex flex-wrap items-center gap-3">
-                                                <button
-                                                    onClick={() => toggleSeller(items)}
-                                                    className={`w-4 h-4 rounded border flex items-center justify-center transition ${
-                                                        allSellerSelected 
-                                                            ? 'bg-clay-600 border-clay-600 text-white' 
-                                                            : someSellerSelected
-                                                                ? 'bg-clay-200 border-clay-400'
-                                                                : 'border-gray-300 hover:border-clay-400'
-                                                    }`}
-                                                >
-                                                    {allSellerSelected && <Check size={12} />}
-                                                </button>
-                                                <Store size={14} className="text-gray-400" />
-                                                <span className="text-sm font-medium text-gray-700">{seller}</span>
+                                            <div className="px-4 py-2.5 bg-gray-50/70 border-t border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+                                                <div className="flex items-center gap-3">
+                                                    <button
+                                                        onClick={() => toggleSeller(items)}
+                                                        className={`w-4 h-4 rounded border flex items-center justify-center transition ${
+                                                            allSellerSelected 
+                                                                ? 'bg-clay-600 border-clay-600 text-white' 
+                                                                : someSellerSelected
+                                                                    ? 'bg-clay-200 border-clay-400'
+                                                                    : 'border-gray-300 hover:border-clay-400'
+                                                        }`}
+                                                    >
+                                                        {allSellerSelected && <Check size={12} />}
+                                                    </button>
+                                                    <Store size={14} className="text-clay-600" />
+                                                    <span className="text-sm font-bold text-gray-900">{seller}</span>
+                                                    {Object.keys(groupedBySeller).length > 1 && (
+                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-clay-50 text-clay-700 border border-clay-200/80">
+                                                            Studio Package {sellerIndex + 1}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {Object.keys(groupedBySeller).length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const ids = new Set(items.map((item) => getCartKey(item)));
+                                                            setSelectedItems(ids);
+                                                        }}
+                                                        className="text-[11px] font-semibold text-clay-700 hover:text-clay-900 transition"
+                                                    >
+                                                        Checkout Only This Studio
+                                                    </button>
+                                                )}
                                             </div>
 
                                             {/* Seller's Items */}

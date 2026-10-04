@@ -235,19 +235,19 @@ export default function ShippingAddressSelector({
     const drawerTitle = editingAddressId ? 'Edit Shipping Address' : 'Add New Address';
 
     return (
-        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-            <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-3 text-clay-700">
-                    <MapPin size={18} />
-                    <h2 className="text-base font-bold">Shipping Address</h2>
+        <div className="rounded-2xl border border-stone-200 bg-white p-3.5 sm:p-4 shadow-sm space-y-2.5">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-clay-700">
+                    <MapPin size={15} />
+                    <h2 className="text-sm font-bold text-stone-900">Shipping Address</h2>
                 </div>
             </div>
 
             {/* Saved Addresses (Mobile: Grid-to-scroll, Tablet/Desktop: 2-column Grid) */}
             {auth?.user?.addresses?.length > 0 ? (
-                <div className="flex md:grid overflow-x-auto md:overflow-visible flex-nowrap md:grid-cols-2 gap-4 pb-3 md:pb-0 snap-x scrollbar-hide">
+                <div className="flex md:grid overflow-x-auto md:overflow-visible flex-nowrap md:grid-cols-2 gap-2.5 pb-1 md:pb-0 snap-x scrollbar-hide">
                     {auth.user.addresses.map((address) => (
-                        <div key={address.id} className="w-[290px] md:w-auto shrink-0 md:shrink snap-start h-full">
+                        <div key={address.id} className="w-[250px] sm:w-[265px] md:w-auto shrink-0 md:shrink snap-start h-full">
                             <AddressCard
                                 address={address}
                                 selectedAddressId={data.selected_address_id}
@@ -258,17 +258,17 @@ export default function ShippingAddressSelector({
                             />
                         </div>
                     ))}
-                    <div className="w-[290px] md:w-auto shrink-0 md:shrink snap-start h-full">
+                    <div className="w-[250px] sm:w-[265px] md:w-auto shrink-0 md:shrink snap-start h-full">
                         <div 
                             onClick={() => { setIsAddingNew(true); chooseNewAddress(); }}
-                            className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm min-h-[160px] md:min-h-[140px] h-full ${
+                            className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed p-2 text-center transition-all duration-200 hover:shadow-xs min-h-[76px] h-full ${
                                 data.selected_address_id === 'new' 
-                                    ? 'border-clay-600 bg-clay-50/20 text-clay-700 shadow-sm' 
-                                    : 'border-gray-200 text-gray-400 hover:border-clay-400 hover:text-clay-600'
+                                    ? 'border-clay-600 bg-clay-50/20 text-clay-700 shadow-2xs' 
+                                    : 'border-stone-250 text-stone-400 hover:border-clay-400 hover:text-clay-600'
                             }`}
                         >
-                            <span className="text-2xl font-light leading-none">+</span>
-                            <span className="text-sm font-medium">Use New Address</span>
+                            <span className="text-lg font-light leading-none">+</span>
+                            <span className="text-[11px] font-semibold">Use New Address</span>
                         </div>
                     </div>
                 </div>

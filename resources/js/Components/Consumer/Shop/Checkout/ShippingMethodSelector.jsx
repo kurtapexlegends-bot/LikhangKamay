@@ -16,20 +16,17 @@ export default function ShippingMethodSelector({ shippingMethod, setShippingMeth
     };
 
     return (
-        <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center gap-3 text-stone-700">
-                <div className="rounded-xl bg-stone-50 p-2 text-stone-500"><Truck size={18} /></div>
-                <div>
-                    <h2 className="text-sm font-bold text-stone-900">Shipping Method</h2>
-                    <p className="text-[10px] text-stone-400 font-semibold uppercase tracking-wider">Select delivery preference</p>
-                </div>
+        <div className="rounded-2xl border border-stone-200 bg-white p-3.5 sm:p-4 shadow-sm space-y-2.5">
+            <div className="flex items-center gap-2 text-clay-700">
+                <Truck size={15} />
+                <h2 className="text-sm font-bold text-stone-900">Shipping Method</h2>
             </div>
             
-            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-                <label className={`relative flex cursor-pointer items-start gap-3.5 rounded-xl border p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                <label className={`relative flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 sm:p-3 transition-all ${
                     shippingMethod === 'Delivery' 
-                        ? 'border-clay-600 bg-clay-50/30 ring-4 ring-clay-600/5 shadow-sm' 
-                        : 'border-stone-200 bg-white hover:border-clay-300 hover:bg-stone-50/10'
+                        ? 'border-clay-600 bg-clay-50/25 ring-1 ring-clay-600 shadow-2xs' 
+                        : 'border-stone-200 bg-white hover:border-clay-300'
                 }`}>
                     <input 
                         type="radio" 
@@ -37,18 +34,18 @@ export default function ShippingMethodSelector({ shippingMethod, setShippingMeth
                         value="Delivery" 
                         checked={shippingMethod === 'Delivery'} 
                         onChange={() => handleMethodChange('Delivery')} 
-                        className="mt-1 h-4.5 w-4.5 text-clay-600 border-stone-300 focus:ring-clay-500 focus:ring-offset-0" 
+                        className="mt-0.5 h-4 w-4 text-clay-600 border-stone-300 focus:ring-clay-500 focus:ring-offset-0" 
                     />
-                    <div>
-                        <p className="font-bold text-stone-900 text-sm">Standard Delivery</p>
-                        <p className="text-xs text-stone-500 mt-1 leading-relaxed">Service fee applies per seller order subtotal.</p>
+                    <div className="min-w-0">
+                        <p className="font-bold text-stone-900 text-xs sm:text-[13px]">Standard Delivery</p>
+                        <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">Courier dispatch directly to your address.</p>
                     </div>
                 </label>
                 
-                <label className={`relative flex cursor-pointer items-start gap-3.5 rounded-xl border p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
+                <label className={`relative flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 sm:p-3 transition-all ${
                     shippingMethod === 'Pick Up' 
-                        ? 'border-clay-600 bg-clay-50/30 ring-4 ring-clay-600/5 shadow-sm' 
-                        : 'border-stone-200 bg-white hover:border-clay-300 hover:bg-stone-50/10'
+                        ? 'border-clay-600 bg-clay-50/25 ring-1 ring-clay-600 shadow-2xs' 
+                        : 'border-stone-200 bg-white hover:border-clay-300'
                 }`}>
                     <input 
                         type="radio" 
@@ -56,11 +53,11 @@ export default function ShippingMethodSelector({ shippingMethod, setShippingMeth
                         value="Pick Up" 
                         checked={shippingMethod === 'Pick Up'} 
                         onChange={() => handleMethodChange('Pick Up')} 
-                        className="mt-1 h-4.5 w-4.5 text-clay-600 border-stone-300 focus:ring-clay-500 focus:ring-offset-0" 
+                        className="mt-0.5 h-4 w-4 text-clay-600 border-stone-300 focus:ring-clay-500 focus:ring-offset-0" 
                     />
-                    <div>
-                        <p className="font-bold text-stone-900 text-sm">Store Pick Up</p>
-                        <p className="text-xs text-stone-500 mt-1 leading-relaxed">No service fee. COD only. Coordinate physical pickup details directly.</p>
+                    <div className="min-w-0">
+                        <p className="font-bold text-stone-900 text-xs sm:text-[13px]">Store Pick Up</p>
+                        <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">Collect directly at artisan workshop · No fees.</p>
                     </div>
                 </label>
             </div>

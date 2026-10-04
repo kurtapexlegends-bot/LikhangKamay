@@ -234,8 +234,19 @@ class PlaceOrder
                     $productIds = collect($items)->pluck('id')->all();
                     $maxLeadTime = (int) Product::whereIn('id', $productIds)->max('lead_time');
 
-                    $reqDate = $request->input('pickup_date');
-                    $reqSlot = $request->input('pickup_time_slot');
+                    $schedules = $request->input('pickup_schedules', []);
+                    $reqDate = $schedules[$artisanId]['date']
+                        ?? $schedules[(string) $artisanId]['date']
+                        ?? $schedules[$artisanId]['pickup_date']
+                        ?? $schedules[(string) $artisanId]['pickup_date']
+                        ?? $request->input('pickup_date');
+                    $reqSlot = $schedules[$artisanId]['slot']
+                        ?? $schedules[(string) $artisanId]['slot']
+                        ?? $schedules[$artisanId]['time_slot']
+                        ?? $schedules[(string) $artisanId]['time_slot']
+                        ?? $schedules[$artisanId]['pickup_time_slot']
+                        ?? $schedules[(string) $artisanId]['pickup_time_slot']
+                        ?? $request->input('pickup_time_slot');
 
                     if ($reqDate && $reqSlot) {
                         $validation = $this->pickupScheduleService->validateSlotSelection(
@@ -246,8 +257,10 @@ class PlaceOrder
                         );
 
                         if (!$validation['valid']) {
+                            $shopPrefix = $seller->shop_name ? "{$seller->shop_name}: " : '';
                             throw \Illuminate\Validation\ValidationException::withMessages([
-                                'pickup_time_slot' => $validation['error'],
+                                "pickup_schedules.{$artisanId}" => $shopPrefix . $validation['error'],
+                                'pickup_time_slot' => $shopPrefix . $validation['error'],
                             ]);
                         }
 
