@@ -13,6 +13,7 @@ export default function Modal({
     maxWidth = '2xl',
     closeable = true,
     bottomSheet = false,
+    panelClassName = 'bg-white',
     onClose = () => {},
     afterLeave = () => {},
 }) {
@@ -36,7 +37,9 @@ export default function Modal({
         '3xl': 'sm:max-w-3xl',
         '4xl': 'sm:max-w-4xl',
         '5xl': 'sm:max-w-5xl',
-    }[maxWidth];
+        '6xl': 'sm:max-w-6xl',
+        '7xl': 'sm:max-w-7xl',
+    }[maxWidth] || 'sm:max-w-2xl';
 
     return (
         <Transition show={show} leave="duration-200 ease-in" afterLeave={afterLeave}>
@@ -71,11 +74,11 @@ export default function Modal({
                     leaveTo={`opacity-0 ${effectiveBottomSheet ? 'translate-y-12 sm:translate-y-0 sm:scale-95' : 'translate-y-4 sm:translate-y-0 sm:scale-95'}`}
                 >
                     <DialogPanel
-                        className={`relative transform overflow-y-auto bg-white shadow-2xl transition-all max-h-[92vh] sm:rounded-2xl sm:mx-auto sm:w-full ${maxWidthClass} ${effectiveBottomSheet ? 'rounded-t-[2.5rem] sm:rounded-2xl w-full' : 'w-full mx-4 sm:mx-auto rounded-2xl'}`}
+                        className={`relative transform overflow-y-auto ${panelClassName} shadow-2xl transition-all max-h-[92vh] sm:rounded-2xl sm:mx-auto sm:w-full ${maxWidthClass} ${effectiveBottomSheet ? 'rounded-t-[2.5rem] sm:rounded-2xl w-full' : 'w-full mx-4 sm:mx-auto rounded-2xl'}`}
                     >
                         {effectiveBottomSheet && (
                             <div className="sm:hidden w-full flex justify-center pt-3 pb-1">
-                                <div className="w-12 h-1.5 bg-stone-200/60 rounded-full" />
+                                <div className="w-12 h-1.5 bg-stone-400/40 rounded-full" />
                             </div>
                         )}
                         {children}

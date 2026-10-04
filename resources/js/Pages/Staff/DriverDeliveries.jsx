@@ -15,6 +15,7 @@ import DriverVehicleVerifyModal from "@/Components/Staff/Driver/DriverVehicleVer
 import DriverProfileSidebar, { renderVehicleIcon } from "@/Components/Staff/Driver/DriverProfileSidebar";
 import CompletedDeliveriesList from "@/Components/Staff/Driver/CompletedDeliveriesList";
 import DriverPhotoViewerModal from "@/Components/Staff/Driver/DriverPhotoViewerModal";
+import RouteSequencerBar from "@/Components/Staff/Driver/RouteSequencerBar";
 import { copyToClipboard } from "@/utils/clipboard";
 
 const StaffClockInModal = lazy(() => import("@/Components/Staff/Dashboard/StaffClockInModal"));
@@ -37,6 +38,12 @@ export default function DriverDeliveries({
         activeDeliveries,
         isClockedIn: Boolean(driverProfile?.is_clocked_in),
     });
+
+    const [orderedDeliveries, setOrderedDeliveries] = useState(activeDeliveries);
+
+    React.useEffect(() => {
+        setOrderedDeliveries(activeDeliveries);
+    }, [activeDeliveries]);
 
     const [isClockInModalOpen, setIsClockInModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("active");
@@ -399,7 +406,11 @@ export default function DriverDeliveries({
                                         )
                                     ) : (
                                         <div className="space-y-4">
-                                            {activeDeliveries.map((delivery) => (
+                                            <RouteSequencerBar
+                                                deliveries={orderedDeliveries}
+                                                onReorder={setOrderedDeliveries}
+                                            />
+                                            {orderedDeliveries.map((delivery, index) => (
                                                 <ActiveDeliveryCard
                                                     key={delivery.id}
                                                     delivery={delivery}
@@ -407,6 +418,8 @@ export default function DriverDeliveries({
                                                     onCopyAddress={handleCopyAddress}
                                                     onOpenCompleteModal={setCompletingDelivery}
                                                     onOpenRouteMap={setRouteMapDelivery}
+                                                    stopIndex={index + 1}
+                                                    totalStops={orderedDeliveries.length}
                                                 />
                                             ))}
                                         </div>

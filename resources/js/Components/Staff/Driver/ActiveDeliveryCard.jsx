@@ -18,6 +18,8 @@ export default function ActiveDeliveryCard({
     onCopyAddress,
     onOpenCompleteModal,
     onOpenRouteMap,
+    stopIndex,
+    totalStops,
 }) {
     const encodedAddr = encodeURIComponent(delivery.destination?.address || "");
     const mapUrl =
@@ -30,6 +32,15 @@ export default function ActiveDeliveryCard({
             {/* Card Header: Order #, Status & Dispatch Time */}
             <div className="border-b border-stone-100 bg-stone-50/80 px-4 sm:px-6 py-3.5 flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
+                    {totalStops > 1 && stopIndex && (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono border ${
+                            stopIndex === 1
+                                ? 'bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30'
+                                : 'bg-stone-100 text-stone-700 border-stone-200'
+                        }`}>
+                            Stop {stopIndex} of {totalStops}{stopIndex === 1 ? ' • Next' : ''}
+                        </span>
+                    )}
                     <span className="font-mono text-sm font-extrabold text-stone-900">
                         Order #{delivery.order_number}
                     </span>

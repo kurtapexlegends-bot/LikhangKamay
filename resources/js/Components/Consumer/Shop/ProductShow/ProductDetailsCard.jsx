@@ -1,8 +1,8 @@
 import React from 'react';
-import { Star, Check, Package, Clock, Award, X, Users } from 'lucide-react';
+import { Star, Check, Package, Clock, Award, X, Users, Ruler } from 'lucide-react';
 import DiscountCountdownBadge from '@/Components/Consumer/DiscountCountdownBadge';
 
-export default function ProductDetailsCard({ product, productRating }) {
+export default function ProductDetailsCard({ product, productRating, onOpenHeightComparison }) {
     return (
         <div className="p-3.5 sm:p-5 lg:col-span-7">
             {/* Title */}
@@ -92,9 +92,27 @@ export default function ProductDetailsCard({ product, productRating }) {
                         </div>
                     )}
                     {(product.height > 0 || product.width > 0) && (
-                        <div className="flex flex-col sm:flex-row sm:items-baseline">
-                            <span className="text-stone-400 font-bold uppercase tracking-wider mb-0.5 sm:w-24 sm:mb-0 text-[9px]">Dimensions</span>
-                            <span className="text-stone-700 font-bold truncate">{product.height || 0}"H x {product.width || 0}"W</span>
+                        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                            <div className="flex flex-col sm:flex-row sm:items-baseline">
+                                <span className="text-stone-400 font-bold uppercase tracking-wider mb-0.5 sm:w-24 sm:mb-0 text-[9px]">Dimensions</span>
+                                <span className="text-stone-700 font-bold truncate">
+                                    {Math.round(product.height || 0)} cm H × {Math.round(product.width || 0)} cm W
+                                    <span className="text-stone-400 text-[10px] font-normal ml-1">
+                                        ({((product.height || 0) / 2.54).toFixed(1)}″ × {((product.width || 0) / 2.54).toFixed(1)}″)
+                                    </span>
+                                </span>
+                            </div>
+                            {onOpenHeightComparison && (
+                                <button
+                                    type="button"
+                                    onClick={onOpenHeightComparison}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] font-bold transition border border-stone-200 cursor-pointer self-start sm:self-auto shrink-0 shadow-2xs"
+                                    title="Compare scale with an adult human and everyday items"
+                                >
+                                    <Ruler size={11} className="text-amber-600" />
+                                    <span>Compare Scale</span>
+                                </button>
+                            )}
                         </div>
                     )}
                     {product.firing_method && (

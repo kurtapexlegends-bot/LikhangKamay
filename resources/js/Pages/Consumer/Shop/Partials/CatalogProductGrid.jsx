@@ -26,7 +26,7 @@ export default function CatalogProductGrid({
             <div>
                 <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                     {products.map((product) => (
-                        <motion.div layout key={product.id}>
+                        <motion.div layout key={product.id} className="h-full">
                             <ProductCard
                                 product={product}
                                 sponsoredPlacement={sponsoredGridPlacement}

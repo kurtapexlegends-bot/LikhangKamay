@@ -29,7 +29,7 @@ export default function ProductCard({ product, sponsoredPlacement, previewOnly =
                     oncePerSession: true,
                 });
             }}
-            className={`group bg-white rounded-xl border transition-[border-color,box-shadow] duration-300 flex flex-col overflow-hidden active:scale-95 transition-all ${
+            className={`group bg-white rounded-xl border transition-[border-color,box-shadow] duration-300 flex flex-col h-full overflow-hidden active:scale-95 transition-all ${
                 product.is_sponsored 
                     ? 'border-amber-200 shadow-sm shadow-amber-50 hover:border-amber-400 hover:shadow-md' 
                     : 'border-gray-100 hover:border-gray-200 hover:shadow-md'
@@ -80,11 +80,13 @@ export default function ProductCard({ product, sponsoredPlacement, previewOnly =
             </div>
 
             {/* Card Body Content */}
-            <div className={`p-3 flex flex-col flex-1 ${product.is_sponsored ? 'bg-amber-50/10' : ''}`}>
-                <h3 className={`text-xs font-bold line-clamp-2 leading-tight mb-1 transition ${product.is_sponsored ? 'text-amber-900 group-hover:text-amber-600' : 'text-gray-800 group-hover:text-clay-600'}`}>
-                    {product.name}
-                </h3>
-                <div className="mt-auto">
+            <div className={`p-3 flex flex-col flex-1 justify-between ${product.is_sponsored ? 'bg-amber-50/10' : ''}`}>
+                <div>
+                    <h3 className={`text-xs font-bold line-clamp-2 leading-tight min-h-[2rem] mb-1 transition ${product.is_sponsored ? 'text-amber-900 group-hover:text-amber-600' : 'text-gray-800 group-hover:text-clay-600'}`}>
+                        {product.name}
+                    </h3>
+                </div>
+                <div className="mt-auto pt-1">
                     <div className="flex items-center gap-1 mb-1.5">
                         <span className="text-[10px] text-gray-400 truncate">{product.seller}</span>
                         <span className="text-gray-300">·</span>

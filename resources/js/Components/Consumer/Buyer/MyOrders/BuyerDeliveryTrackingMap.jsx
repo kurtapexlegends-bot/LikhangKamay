@@ -3,11 +3,12 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { 
     Truck, Phone, MessageSquare, 
-    RefreshCw, Maximize2, Compass, ShieldCheck, X 
+    RefreshCw, Maximize2, Compass, ShieldCheck, X, Radio 
 } from 'lucide-react';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import LiveCourierRadarOverlay from './LiveCourierRadarOverlay';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -40,6 +41,7 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [lastSyncTime, setLastSyncTime] = useState(null);
+    const [showRadarHud, setShowRadarHud] = useState(false);
 
     // Initial Telemetry coordinates
     const [telemetry, setTelemetry] = useState({
@@ -137,15 +139,16 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
     const createDriverIcon = useCallback(() => L.divIcon({
         className: 'custom-driver-pin',
         html: `
-            <div style="position: relative; width: 34px; height: 34px;">
-                <div style="position: absolute; inset: 0; border-radius: 50%; background-color: rgba(16, 185, 129, 0.35); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-                <div style="position: relative; width: 34px; height: 34px; border-radius: 50%; background-color: #0f172a; color: white; display: flex; align-items: center; justify-content: center; border: 2.5px solid #10b981; box-shadow: 0 3px 8px rgba(0,0,0,0.35);">
+            <div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                <div style="position: absolute; inset: -4px; border-radius: 50%; border: 1.5px dashed rgba(16, 185, 129, 0.65); animation: spin 8s linear infinite;"></div>
+                <div style="position: absolute; inset: 0; border-radius: 50%; background-color: rgba(16, 185, 129, 0.3); animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                <div style="position: relative; width: 34px; height: 34px; border-radius: 50%; background-color: #0f172a; color: white; display: flex; align-items: center; justify-content: center; border: 2.5px solid #10b981; box-shadow: 0 3px 8px rgba(0,0,0,0.35); z-index: 2;">
                     <svg style="width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5a2 2 0 0 0-2 2v7h3m10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0zm-10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/></svg>
                 </div>
             </div>
         `,
-        iconSize: [34, 34],
-        iconAnchor: [17, 17],
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
     }), []);
 
     // 1. Initialize Map DOM (only re-runs when pickup/dropoff locations or order addresses change)
@@ -334,6 +337,18 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
                     <div className="flex items-center gap-1.5">
                         <button
                             type="button"
+                            onClick={() => setShowRadarHud(!showRadarHud)}
+                            className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-bold transition ${
+                                showRadarHud 
+                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' 
+                                    : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-100'
+                            }`}
+                        >
+                            <Radio size={12} className={showRadarHud ? 'animate-pulse' : 'text-emerald-600'} />
+                            <span>Radar</span>
+                        </button>
+                        <button
+                            type="button"
                             onClick={handleCenterMap}
                             className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1 text-[11px] font-bold text-stone-600 hover:bg-stone-100 transition"
                         >
@@ -391,6 +406,16 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
                         <div className="absolute top-2 right-2 z-[500] flex items-center gap-0.5 rounded-lg bg-white/95 p-0.5 shadow-xs border border-stone-200/80 backdrop-blur-xs">
                             <button
                                 type="button"
+                                onClick={() => setShowRadarHud(!showRadarHud)}
+                                className={`inline-flex items-center justify-center h-6 w-6 rounded transition ${
+                                    showRadarHud ? 'bg-emerald-600 text-white' : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+                                }`}
+                                title="Toggle Radar Telemetry"
+                            >
+                                <Radio size={11} className={showRadarHud ? 'animate-pulse' : ''} />
+                            </button>
+                            <button
+                                type="button"
                                 onClick={handleCenterMap}
                                 className="inline-flex items-center justify-center h-6 w-6 rounded text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition"
                                 title="Center route"
@@ -417,6 +442,15 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
                         </div>
                     </>
                 )}
+
+                {/* Live Courier Telemetry Radar Overlay */}
+                <LiveCourierRadarOverlay
+                    isOpen={showRadarHud}
+                    onClose={() => setShowRadarHud(false)}
+                    telemetry={telemetry}
+                    remainingKm={remainingKm}
+                    estimatedMinutes={estimatedMinutes}
+                />
             </div>
 
             {/* Bottom Driver Strip */}

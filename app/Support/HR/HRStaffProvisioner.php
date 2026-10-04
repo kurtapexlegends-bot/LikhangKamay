@@ -99,6 +99,12 @@ class HRStaffProvisioner
             $normalized[$module] = User::normalizeStaffModuleAccessLevel($value) ?? false;
         }
 
+        if ($presetKey === 'driver') {
+            foreach (['orders', 'products', 'analytics', '3d', 'reviews', 'shop_settings', 'hr', 'accounting', 'procurement', 'stock_requests', 'sponsorships', 'discounts'] as $forbiddenModule) {
+                $normalized[$forbiddenModule] = false;
+            }
+        }
+
         return $normalized;
     }
 

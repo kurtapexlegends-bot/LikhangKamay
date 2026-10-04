@@ -17,6 +17,7 @@ export default function ProductImageGallery({
     handleWishlistToggle,
     auth,
     setIsReporting,
+    onOpenHeightComparison,
 }) {
     const scrollRef = useRef(null);
 
@@ -107,6 +108,12 @@ export default function ProductImageGallery({
                             <ProductViewer3D
                                 modelUrl={product.model_3d_url || product.model_url}
                                 productName={product.name}
+                                dimensions={{
+                                    height: product.height,
+                                    width: product.width,
+                                    depth: product.depth
+                                }}
+                                onOpenHeightChart={onOpenHeightComparison}
                                 compact
                                 className="h-full rounded-none border-0 bg-gradient-to-b from-gray-50 to-white"
                             />

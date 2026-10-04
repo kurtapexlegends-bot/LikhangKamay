@@ -87,6 +87,20 @@ class DriverDeliveryAccessTest extends TestCase
         $response->assertForbidden();
     }
 
+    public function test_driver_with_orders_permission_override_still_cannot_access_orders(): void
+    {
+        $this->driverUser->update([
+            'staff_module_permissions' => array_merge(
+                (array) $this->driverUser->staff_module_permissions,
+                ['orders' => User::STAFF_ACCESS_PERMISSION_CAN_EDIT]
+            ),
+        ]);
+
+        $response = $this->actingAs($this->driverUser)->get(route('orders.index'));
+
+        $response->assertForbidden();
+    }
+
     public function test_driver_can_access_deliveries_console_with_vehicle_and_compensation_profile(): void
     {
         $response = $this->actingAs($this->driverUser)->get(route('staff.deliveries'));

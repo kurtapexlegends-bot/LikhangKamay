@@ -285,6 +285,13 @@ class SellerEntitlementService
      */
     public function getGrantedStaffModules(User $staff): array
     {
+        if ($staff->isDriver()) {
+            return array_values(array_unique([
+                'overview',
+                ...$this->alwaysVisibleWorkspaceModulesFor($staff),
+            ]));
+        }
+
         $granted = collect($this->getSupportedStaffModules())
             ->mapWithKeys(fn (string $module) => [$module => false]);
 

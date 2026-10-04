@@ -104,6 +104,29 @@ trait HasStaffCapabilities
         return $this->isStaff() && $this->getStaffUserLevel() === User::STAFF_MANAGER_USER_LEVEL;
     }
 
+    public function isDriver(): bool
+    {
+        if (!$this->isStaff()) {
+            return false;
+        }
+
+        if ($this->staff_role_preset_key === 'driver') {
+            return true;
+        }
+
+        $employeeRole = $this->employee?->role ?? '';
+
+        return in_array($employeeRole, [
+            'Logistics & Driver',
+            'Logistics / Driver',
+            'Driver',
+            'Courier',
+            'Rider',
+        ], true)
+        || str_contains(strtolower($employeeRole), 'driver')
+        || str_contains(strtolower($employeeRole), 'logistics');
+    }
+
     public function getStaffModuleAccessLevel(string $module): ?string
     {
         if ($this->isSellerOwner()) {

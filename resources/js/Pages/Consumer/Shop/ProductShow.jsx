@@ -18,9 +18,11 @@ import ProductReviewsSection from '@/Components/Consumer/Shop/ProductShow/Produc
 import RecentlyViewedGrid from '@/Components/Consumer/Shop/ProductShow/RecentlyViewedGrid';
 import RelatedProductsGrid from '@/Components/Consumer/Shop/ProductShow/RelatedProductsGrid';
 import SellerAboutPanel from '@/Components/Consumer/Shop/ProductShow/SellerAboutPanel';
+import HeightComparisonModal from '@/Components/Consumer/Shop/ProductShow/HeightComparisonModal';
 
 export default function ProductShow({ product, relatedProducts = [], auth }) {
     const { addToast } = useToast();
+    const [isHeightComparisonOpen, setIsHeightComparisonOpen] = useState(false);
     const productRating = normalizeRating(product?.rating);
     const currentUserReview = auth?.user
         ? product?.reviews?.find((review) => Number(review.user_id) === Number(auth.user.id)) || null
@@ -293,12 +295,14 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             handleWishlistToggle={handleWishlistToggle}
                             auth={auth}
                             setIsReporting={setIsReporting}
+                            onOpenHeightComparison={() => setIsHeightComparisonOpen(true)}
                         />
 
                         <div className="lg:col-span-7 flex flex-col justify-between">
                             <ProductDetailsCard 
                                 product={product}
                                 productRating={productRating}
+                                onOpenHeightComparison={() => setIsHeightComparisonOpen(true)}
                             />
 
                             <ProductActionsPanel 
@@ -442,6 +446,16 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                     </form>
                 </div>
             </Modal>
+
+            <HeightComparisonModal
+                isOpen={isHeightComparisonOpen}
+                onClose={() => setIsHeightComparisonOpen(false)}
+                productName={product.name}
+                initialHeight={product.height || 22}
+                initialWidth={product.width || 16}
+                initialDepth={product.depth || 14}
+                category={product.category}
+            />
         </ShopLayout>
     );
 }
