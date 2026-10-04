@@ -172,6 +172,20 @@ trait HasStaffCapabilities
             }
         }
 
+        if ($module === 'discounts') {
+            $seller = $this->getEffectiveSeller();
+
+            if ($seller?->canAccessDiscounts()) {
+                return $this->getStaffModuleAccessLevel('products');
+            }
+        }
+
+        if ($module === 'approvals') {
+            return $this->isStaffManager()
+                ? User::STAFF_ACCESS_PERMISSION_CAN_EDIT
+                : null;
+        }
+
         return null;
     }
 

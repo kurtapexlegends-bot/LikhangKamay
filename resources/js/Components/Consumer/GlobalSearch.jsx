@@ -3,8 +3,8 @@ import {
     Search, X, User, Package, ShoppingCart, Loader2, Command, Box, 
     ClipboardList, Star, Award, ShoppingBag, FolderTree, Users, 
     TrendingUp, BarChart2, ShieldAlert, RotateCcw, Shield, 
-    LayoutDashboard, MessageSquare, Settings, MapPin, Truck, 
-    CreditCard, Clock, Tag, Mail, AlertCircle
+    LayoutDashboard, MessageSquare, Settings, MapPin, 
+    Clock, Tag, Mail, AlertCircle
 } from 'lucide-react';
 import { router, usePage } from '@inertiajs/react';
 import axios from 'axios';
@@ -13,7 +13,6 @@ export default function GlobalSearch({ scope = null }) {
     const { auth, sellerSidebar } = usePage().props;
     const userRole = auth?.user?.role;
     const isSuperAdmin = userRole === 'super_admin' || userRole === 'admin';
-    const isAdmin = isSuperAdmin;
     const isSeller = userRole === 'artisan' || userRole === 'staff';
 
     // Strictly resolve effective scope based on role and active workspace
@@ -24,12 +23,12 @@ export default function GlobalSearch({ scope = null }) {
         : ((requestedScope === 'seller' && isSeller) ? 'seller' : null);
     const showAdminShortcuts = effectiveScope === 'admin';
 
-    const visibleModules = sellerSidebar?.visibleModules || [];
+    const visibleModules = useMemo(() => sellerSidebar?.visibleModules || [], [sellerSidebar?.visibleModules]);
 
     const getSafeRoute = (name, params = {}) => {
         try {
             return route(name, params);
-        } catch (e) {
+        } catch {
             return '#';
         }
     };

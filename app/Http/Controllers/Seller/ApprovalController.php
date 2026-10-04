@@ -30,7 +30,7 @@ class ApprovalController extends Controller
         }
 
         // Enforce owner-only or staff with executive access
-        if ($user->isStaff() && !$user->canEditSellerModule('overview')) {
+        if ($user->isStaff() && !$user->canEditSellerModule('overview') && !$user->isStaffManager()) {
             abort(403, 'Unauthorized access to the approval hub.');
         }
 
@@ -86,8 +86,8 @@ class ApprovalController extends Controller
             abort(403, 'Team Requests is available on Premium and Elite plans.');
         }
 
-        if ($user->isStaff() && !$user->canEditSellerModule('overview')) {
-            abort(403, 'Only the shop owner can approve requests.');
+        if ($user->isStaff() && !$user->canEditSellerModule('overview') && !$user->isStaffManager()) {
+            abort(403, 'Only the shop owner or authorized managers can approve requests.');
         }
 
         if ($approval->seller_id !== $seller->id) {
@@ -123,8 +123,8 @@ class ApprovalController extends Controller
             abort(403, 'Team Requests is available on Premium and Elite plans.');
         }
 
-        if ($user->isStaff() && !$user->canEditSellerModule('overview')) {
-            abort(403, 'Only the shop owner can decline requests.');
+        if ($user->isStaff() && !$user->canEditSellerModule('overview') && !$user->isStaffManager()) {
+            abort(403, 'Only the shop owner or authorized managers can decline requests.');
         }
 
         if ($approval->seller_id !== $seller->id) {
@@ -158,6 +158,10 @@ class ApprovalController extends Controller
 
         if (!$seller->isEliteTier()) {
             abort(403, 'Batch approvals are exclusively available on the Elite plan.');
+        }
+
+        if ($user->isStaff() && !$user->canEditSellerModule('overview') && !$user->isStaffManager()) {
+            abort(403, 'Only the shop owner or authorized managers can batch approve requests.');
         }
 
         $validated = $request->validate([

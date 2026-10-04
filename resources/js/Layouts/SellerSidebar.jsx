@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'; 
 import { router, usePage } from '@inertiajs/react';
-import { motion, AnimatePresence } from 'framer-motion';
 import StaffAttendanceMonitor from '@/Components/StaffAttendanceMonitor';
 import { 
     LayoutDashboard, Package, ShoppingBag, BarChart3, Box, 
-    Users, MessageCircle, Settings, X, ChevronLeft,
+    Users, MessageCircle, X, ChevronLeft,
     ClipboardList, Warehouse, FileQuestion, Banknote, Star, Award, Tag, ShieldCheck, Truck
 } from 'lucide-react';
 import SidebarSettingsPopover from '@/Components/Seller/Sidebar/SidebarSettingsPopover';

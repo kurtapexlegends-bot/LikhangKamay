@@ -185,7 +185,7 @@ class OwnerApprovalWorkflowTest extends TestCase
         $response = $this->actingAs($this->staff)
             ->post(route('seller.approvals.approve', $approval->id));
 
-        $response->assertRedirect(route('staff.home'));
+        $response->assertForbidden();
 
         $approval->refresh();
         $this->assertEquals(OwnerApproval::STATUS_PENDING, $approval->status);
@@ -988,5 +988,86 @@ class OwnerApprovalWorkflowTest extends TestCase
         $response->assertSessionHas('success');
         $this->assertEquals(OwnerApproval::STATUS_REJECTED, $approval->fresh()->status);
         $this->assertEquals('Completed', $order->fresh()->status);
+    }
+
+    public function test_standard_seller_and_restricted_staff_strictly_forbidden_from_all_approval_endpoints(): void
+    {
+        $standardSeller = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'free',
+        ]);
+
+        $sampleApproval = OwnerApproval::create([
+            'seller_id' => $this->owner->id,
+            'requester_id' => $this->staff->id,
+            'domain' => OwnerApproval::DOMAIN_PROCUREMENT,
+            'title' => 'Sample Approval Item',
+            'summary' => 'Sample approval item summary',
+            'status' => OwnerApproval::STATUS_PENDING,
+            'payload' => ['item' => 'test'],
+        ]);
+
+        // Standard seller (0 employees, standard plan) is completely forbidden
+        $this->actingAs($standardSeller)
+            ->get(route('seller.approvals.index'))
+            ->assertForbidden();
+
+        $this->actingAs($standardSeller)
+            ->post(route('seller.approvals.approve', $sampleApproval->id))
+            ->assertForbidden();
+
+        $this->actingAs($standardSeller)
+            ->post(route('seller.approvals.reject', $sampleApproval->id), ['reason' => 'Denied'])
+            ->assertForbidden();
+
+        $this->actingAs($standardSeller)
+            ->post(route('seller.approvals.batch-approve'), ['approval_ids' => [$sampleApproval->id]])
+            ->assertForbidden();
+
+        $this->actingAs($standardSeller)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('pendingApprovalsCount', 0)
+            );
+
+        // Restricted staff (non-manager without approvals/overview capability)
+        $restrictedStaff = User::factory()->staff($this->owner)->create([
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'custom',
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(['products' => true], true),
+        ]);
+
+        StaffAttendanceSession::create([
+            'staff_user_id' => $restrictedStaff->id,
+            'seller_owner_id' => $this->owner->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => now(config('app.timezone'))->subHour(),
+            'last_heartbeat_at' => now(config('app.timezone')),
+            'worked_minutes' => 60,
+        ]);
+
+        $this->actingAs($restrictedStaff)
+            ->get(route('seller.approvals.index'))
+            ->assertForbidden();
+
+        $this->actingAs($restrictedStaff)
+            ->post(route('seller.approvals.approve', $sampleApproval->id))
+            ->assertForbidden();
+
+        $this->actingAs($restrictedStaff)
+            ->post(route('seller.approvals.reject', $sampleApproval->id), ['reason' => 'Denied'])
+            ->assertForbidden();
+
+        $this->actingAs($restrictedStaff)
+            ->post(route('seller.approvals.batch-approve'), ['approval_ids' => [$sampleApproval->id]])
+            ->assertForbidden();
+
+        $this->actingAs($restrictedStaff)
+            ->get(route('staff.dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('pendingApprovalsCount', 0)
+            );
     }
 }

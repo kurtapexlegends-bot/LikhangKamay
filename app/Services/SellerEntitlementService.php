@@ -23,12 +23,21 @@ class SellerEntitlementService
     {
         $seller = $user->getEffectiveSeller();
 
-        if ($user->isSellerOwner() && ($seller?->canUseFeature('staff_management') || $seller?->isPremiumTier())) {
+        $hasStaffCapability = $seller?->canUseFeature('staff_management') || $seller?->isPremiumTier();
+        if (!$hasStaffCapability) {
+            return [];
+        }
+
+        if ($user->isSellerOwner()) {
             return ['team_messages', 'approvals'];
         }
 
-        if ($user->isStaff() && $user->isStaffManager() && ($seller?->canUseFeature('staff_management') || $seller?->isPremiumTier())) {
-            return ['approvals'];
+        if ($user->isStaff()) {
+            $modules = ['team_messages'];
+            if ($user->isStaffManager()) {
+                $modules[] = 'approvals';
+            }
+            return $modules;
         }
 
         return [];
@@ -320,6 +329,11 @@ class SellerEntitlementService
             ->values()
             ->all();
 
+        $effectiveSeller = $staff->getEffectiveSeller();
+        if ($effectiveSeller?->canAccessDiscounts() && in_array('products', $grantedModules, true)) {
+            $grantedModules[] = 'discounts';
+        }
+
         return array_values(array_unique([
             ...$grantedModules,
             ...$this->alwaysVisibleWorkspaceModulesFor($staff),
@@ -472,6 +486,8 @@ class SellerEntitlementService
             'procurement' => 'procurement.index',
             'stock_requests' => 'stock-requests.index',
             '3d' => '3d.index',
+            'discounts' => 'discounts.index',
+            'approvals' => 'seller.approvals.index',
             'sponsorships' => 'seller.sponsorships',
             'messages' => 'chat.index',
             'team_messages' => 'team-messages.index',

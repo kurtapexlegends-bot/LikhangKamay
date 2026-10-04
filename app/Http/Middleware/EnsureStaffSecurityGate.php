@@ -86,6 +86,7 @@ class EnsureStaffSecurityGate
         'stock-requests.',
         'accounting.',
         'audit-log.',
+        'seller.approvals.',
         'api.global-search',
     ];
 
