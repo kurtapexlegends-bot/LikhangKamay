@@ -123,21 +123,25 @@ class ShopController extends Controller
         $user = $request->user()?->getEffectiveSeller();
         abort_unless($user && $user->isArtisan(), 403, 'Seller workspace access only.');
 
-        $user->load(['products' => fn($q) => $q->where('status', 'Active')->latest()->take(12)]);
+        try {
+            $user->load(['products' => fn($q) => $q->where('status', 'Active')->latest()->take(12)]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
-        $productsCount = (int) Product::where('user_id', $user->id)->where('status', 'Active')->count();
-        $totalSales = (int) Product::where('user_id', $user->id)->where('status', 'Active')->sum('sold');
+        $productsCount = (int) rescue(fn() => Product::where('user_id', $user->id)->where('status', 'Active')->count(), 0);
+        $totalSales = (int) rescue(fn() => Product::where('user_id', $user->id)->where('status', 'Active')->sum('sold'), 0);
 
-        $avgRating = (float) (\App\Models\Review::whereHas('product', fn($q) => $q->where('user_id', $user->id))
+        $avgRating = (float) rescue(fn() => (\App\Models\Review::whereHas('product', fn($q) => $q->where('user_id', $user->id))
             ->visibleToMarketplace()
-            ->avg('rating') ?? 0);
+            ->avg('rating') ?? 0), 0.0);
 
         $locations = rescue(fn() => \App\Models\SellerLocation::where('user_id', $user->id)
             ->withCount('employees')
             ->orderBy('created_at', 'desc')
             ->get(), collect());
 
-        $pickupSchedule = $user->getPickupSchedule()->loadMissing('pickupLocation');
+        $pickupSchedule = rescue(fn() => $user->getPickupSchedule()?->loadMissing('pickupLocation'), null);
 
         return Inertia::render('Seller/Settings/ShopSettings', [
             'user'  => $user,

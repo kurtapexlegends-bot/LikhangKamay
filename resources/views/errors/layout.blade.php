@@ -20,30 +20,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        clay: {
-                            50: '#FDF8F5',
-                            100: '#F9EFEA',
-                            200: '#F2DACE',
-                            500: '#A0522D',
-                            600: '#8B4513',
-                            700: '#70370F',
-                            800: '#5C2D0C',
-                        },
-                    },
-                    fontFamily: {
-                        sans: ['Figtree', 'sans-serif'],
-                        serif: ['Playfair Display', 'serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    @vite(['resources/css/app.css'])
     <style>
         body { font-family: 'Figtree', sans-serif; background-color: #FDFBF9; }
         .font-serif-brand { font-family: 'Playfair Display', serif; }

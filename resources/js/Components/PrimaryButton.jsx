@@ -4,10 +4,12 @@ export default function PrimaryButton({
     className = '',
     disabled,
     children,
+    type = 'submit',
     ...props
 }) {
     return (
         <motion.button
+            type={type}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             {...props}

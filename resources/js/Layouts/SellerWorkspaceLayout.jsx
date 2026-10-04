@@ -100,7 +100,7 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
                     onToggleCollapse={handleToggleCollapse}
                 />
 
-                <div 
+                <main 
                     scroll-region="true" 
                     id="seller-main-content"
                     tabIndex={-1}
@@ -115,7 +115,7 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
                     }`}>
                         {children}
                     </div>
-                </div>
+                </main>
             </div>
 
             <ScrollToTop targetSelector='[scroll-region="true"]' />
