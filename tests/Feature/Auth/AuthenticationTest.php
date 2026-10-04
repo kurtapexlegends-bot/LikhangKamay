@@ -189,4 +189,19 @@ class AuthenticationTest extends TestCase
         $response->assertCookie($guard->getRecallerName());
         $this->assertAuthenticatedAs($user);
     }
+
+    public function test_users_can_authenticate_with_case_insensitive_email(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'artisan.test@likhangkamay.com',
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => 'Artisan.Test@LikhangKamay.COM',
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect('/');
+    }
 }

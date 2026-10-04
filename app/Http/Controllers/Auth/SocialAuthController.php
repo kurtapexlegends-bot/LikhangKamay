@@ -99,7 +99,8 @@ class SocialAuthController extends Controller
         $rememberSocialLogin = $request->session()->get('social_auth_remember', false);
 
         // Check if user already exists with this email
-        $existingUser = User::where('email', $socialUser->getEmail())->first();
+        $socialEmail = strtolower(trim((string) $socialUser->getEmail()));
+        $existingUser = User::where('email', $socialEmail)->first();
 
         if ($existingUser) {
             // For existing users, link social provider and auto-verify email since Google proved ownership
@@ -134,7 +135,7 @@ class SocialAuthController extends Controller
         $request->session()->put('social_auth', [
             'provider' => $provider,
             'id' => $socialUser->getId(),
-            'email' => $socialUser->getEmail(),
+            'email' => $socialEmail,
             'name' => $socialUser->getName(),
             'avatar' => $socialUser->getAvatar(),
             'role' => $intendedRole,

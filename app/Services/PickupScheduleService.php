@@ -104,8 +104,8 @@ class PickupScheduleService
      */
     public function calculateEarliestPickupDate(User $seller, int $leadTimeDays = 0, ?Carbon $fromDate = null): Carbon
     {
-        $timezone = config('app.timezone', 'Asia/Manila');
-        $current = $fromDate ? $fromDate->copy()->setTimezone($timezone) : Carbon::now($timezone);
+        $timezone = self::TIMEZONE;
+        $current = $fromDate ? Carbon::parse($fromDate->toDateString(), $timezone)->startOfDay() : Carbon::now($timezone)->startOfDay();
         $schedule = $this->getEffectiveSchedule($seller);
         $operatingDays = $schedule->getEffectiveOperatingDays();
 
@@ -147,6 +147,8 @@ class PickupScheduleService
         return $target;
     }
 
+    public const TIMEZONE = 'Asia/Manila';
+
     /**
      * Get slot availability for a specific date.
      *
@@ -154,8 +156,10 @@ class PickupScheduleService
      */
     public function getAvailableSlotsForDate(User $seller, Carbon|string $date): array
     {
-        $timezone = config('app.timezone', 'Asia/Manila');
-        $carbonDate = is_string($date) ? Carbon::parse($date, $timezone)->startOfDay() : $date->copy()->setTimezone($timezone)->startOfDay();
+        $timezone = self::TIMEZONE;
+        $carbonDate = is_string($date)
+            ? Carbon::parse($date, $timezone)->startOfDay()
+            : Carbon::parse($date->toDateString(), $timezone)->startOfDay();
         $now = Carbon::now($timezone);
         $isToday = $carbonDate->isSameDay($now);
 
@@ -227,7 +231,7 @@ class PickupScheduleService
      */
     public function getScheduleOverviewForBuyer(User $seller, int $leadTimeDays = 0, ?int $daysAhead = null): array
     {
-        $timezone = config('app.timezone', 'Asia/Manila');
+        $timezone = self::TIMEZONE;
         $schedule = $this->getEffectiveSchedule($seller);
 
         if (!$schedule->is_enabled) {
@@ -306,7 +310,7 @@ class PickupScheduleService
      */
     public function validateSlotSelection(User $seller, string $dateString, string $slotIdentifier, int $leadTimeDays = 0): array
     {
-        $timezone = config('app.timezone', 'Asia/Manila');
+        $timezone = self::TIMEZONE;
 
         try {
             $date = Carbon::parse($dateString, $timezone)->startOfDay();

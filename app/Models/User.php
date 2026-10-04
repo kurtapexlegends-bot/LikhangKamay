@@ -242,6 +242,14 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     }
 
     /**
+     * Normalize email attribute to lowercase for PostgreSQL and MySQL parity.
+     */
+    public function setEmailAttribute(?string $value): void
+    {
+        $this->attributes['email'] = $value !== null ? strtolower(trim($value)) : null;
+    }
+
+    /**
      * Disciplinary action audit logs relationship.
      */
     public function disciplinaryLogs(): \Illuminate\Database\Eloquent\Relations\HasMany

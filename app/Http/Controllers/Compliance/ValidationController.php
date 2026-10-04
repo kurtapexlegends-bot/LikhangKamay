@@ -46,11 +46,12 @@ class ValidationController extends Controller
 
     private function checkEmailAvailability($email, $userId = null)
     {
-        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $normalizedEmail = strtolower(trim((string) $email));
+        if (empty($normalizedEmail) || !filter_var($normalizedEmail, FILTER_VALIDATE_EMAIL)) {
             return response()->json(['valid' => false, 'message' => 'Please enter a valid email address.']);
         }
 
-        $query = User::where('email', $email);
+        $query = User::where('email', $normalizedEmail);
         if ($userId) {
             $query->where('id', '!=', $userId);
         }

@@ -162,3 +162,13 @@ body.has-sticky-action-bar .mobile-dock {
 .animate-toast-shrink {
     animation: toast-shrink linear forwards;
 }
+
+/* Prevent iOS Safari automatic viewport zooming on text inputs */
+@media screen and (max-width: 767px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="color"]),
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+}
+

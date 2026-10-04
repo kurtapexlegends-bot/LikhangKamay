@@ -166,7 +166,7 @@ class ThreeDManagerController extends Controller
             ? 'model/gltf-binary'
             : ($extension === 'gltf' ? 'model/gltf+json' : ($request->input('contentType') ?: 'application/octet-stream'));
 
-        if (!in_array($extension, ['glb', 'gltf'], true)) {
+        if (!in_array($extension, ['glb', 'gltf', 'bin'], true)) {
             return response()->json(['error' => 'Invalid file type'], 400);
         }
 

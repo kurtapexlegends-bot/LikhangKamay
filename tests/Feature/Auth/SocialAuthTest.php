@@ -78,4 +78,36 @@ class SocialAuthTest extends TestCase
         $this->assertGuest();
         $this->assertEquals('newuser@gmail.com', session('social_auth.email'));
     }
+
+    public function test_existing_user_with_mixed_case_email_logs_in_via_google_callback(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'artisan.case@likhangkamay.com',
+            'role' => 'artisan',
+            'artisan_status' => 'approved',
+            'setup_completed_at' => now(),
+            'email_verified_at' => now(),
+        ]);
+        $user->complianceAgreements()->create([
+            'document_type' => 'seller_terms',
+            'accepted_at' => now(),
+        ]);
+
+        $abstractUser = Mockery::mock(SocialiteUser::class);
+        $abstractUser->shouldReceive('getId')->andReturn('google-88888');
+        $abstractUser->shouldReceive('getEmail')->andReturn('Artisan.Case@LikhangKamay.COM');
+        $abstractUser->shouldReceive('getName')->andReturn('Artisan Case');
+        $abstractUser->shouldReceive('getAvatar')->andReturn('https://lh3.googleusercontent.com/a/avatar.jpg');
+
+        $provider = Mockery::mock(\Laravel\Socialite\Two\GoogleProvider::class);
+        $provider->shouldReceive('stateless')->andReturnSelf();
+        $provider->shouldReceive('user')->andReturn($abstractUser);
+
+        Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
+
+        $response = $this->get('/auth/google/callback');
+
+        $response->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($user);
+    }
 }
