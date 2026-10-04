@@ -40,6 +40,11 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
     const [scanPhase, setScanPhase] = useState('align'); // 'align' | 'calibrating' | 'challenge' | 'completed'
     const [capturedPhoto, setCapturedPhoto] = useState(null);
     const [step1Passed, setStep1Passed] = useState(false);
+    const [radarTelemetry, setRadarTelemetry] = useState({
+        status: 'searching',
+        label: 'Position face in circle'
+    });
+    const lastRadarStatusRef = useRef('searching');
 
     // Stop camera stream & timers
     const stopCamera = useCallback(() => {
@@ -246,6 +251,28 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
 
                             setIsInsideOval(insideOval);
 
+                            const faceRatio = box.width / videoW;
+                            let newStatus = 'aligned';
+                            let newLabel = 'Face aligned • Hold still';
+
+                            if (!insideOval) {
+                                if (faceRatio < 0.20) {
+                                    newStatus = 'too_far';
+                                    newLabel = 'Step closer to camera';
+                                } else if (faceRatio > 0.58) {
+                                    newStatus = 'too_close';
+                                    newLabel = 'Step back slightly';
+                                } else {
+                                    newStatus = 'off_center';
+                                    newLabel = 'Center face in the circle';
+                                }
+                            }
+
+                            if (lastRadarStatusRef.current !== newStatus) {
+                                lastRadarStatusRef.current = newStatus;
+                                setRadarTelemetry({ status: newStatus, label: newLabel });
+                            }
+
                             if (insideOval) {
                                 const landmarks = detection.landmarks;
                                 const leftEye = landmarks.getLeftEye();
@@ -356,6 +383,10 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                         } else {
                             setFaceDetected(false);
                             setIsInsideOval(false);
+                            if (lastRadarStatusRef.current !== 'searching') {
+                                lastRadarStatusRef.current = 'searching';
+                                setRadarTelemetry({ status: 'searching', label: 'Position face in circle' });
+                            }
                         }
                     }
                 } catch (detectErr) {
@@ -410,7 +441,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                     />
                 )}
 
-                {/* Steady Oval Guide Reticle */}
+                {/* Circular Face Framing Radar Reticle */}
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-3">
                     <div
                         className={`w-40 h-52 rounded-[50%] border-2 transition-all duration-300 flex items-center justify-center relative ${
@@ -423,11 +454,24 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                                 : 'border-white/50'
                         }`}
                     >
-                        {/* Guide Notches */}
-                        <div className="absolute -top-1 w-3 h-0.5 bg-white/70 rounded-full" />
-                        <div className="absolute -bottom-1 w-3 h-0.5 bg-white/70 rounded-full" />
-                        <div className="absolute -left-1 h-3 w-0.5 bg-white/70 rounded-full" />
-                        <div className="absolute -right-1 h-3 w-0.5 bg-white/70 rounded-full" />
+                        {/* Outer Radar Sweep Orbit */}
+                        {scanPhase !== 'completed' && (
+                            <div
+                                className={`absolute -inset-3.5 rounded-[50%] border border-dashed transition-colors duration-300 pointer-events-none animate-[spin_12s_linear_infinite] ${
+                                    isInsideOval
+                                        ? 'border-emerald-400/60'
+                                        : faceDetected
+                                        ? 'border-amber-400/50'
+                                        : 'border-white/25'
+                                }`}
+                            />
+                        )}
+
+                        {/* Radar Crosshair Notches */}
+                        <div className={`absolute -top-1 w-4 h-0.5 rounded-full transition-colors ${isInsideOval ? 'bg-emerald-400' : 'bg-white/70'}`} />
+                        <div className={`absolute -bottom-1 w-4 h-0.5 rounded-full transition-colors ${isInsideOval ? 'bg-emerald-400' : 'bg-white/70'}`} />
+                        <div className={`absolute -left-1 h-4 w-0.5 rounded-full transition-colors ${isInsideOval ? 'bg-emerald-400' : 'bg-white/70'}`} />
+                        <div className={`absolute -right-1 h-4 w-0.5 rounded-full transition-colors ${isInsideOval ? 'bg-emerald-400' : 'bg-white/70'}`} />
 
                         {/* Verified Success Badge */}
                         {scanPhase === 'completed' && (
@@ -437,6 +481,28 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                         )}
                     </div>
                 </div>
+
+                {/* Live Radar Alignment Telemetry Pill */}
+                {scanPhase !== 'completed' && (
+                    <div className="absolute bottom-2 inset-x-2 flex justify-center pointer-events-none z-10">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold backdrop-blur-md shadow-xs border transition-all ${
+                            radarTelemetry.status === 'aligned'
+                                ? 'bg-emerald-950/85 text-emerald-300 border-emerald-500/50 ring-2 ring-emerald-500/20'
+                                : radarTelemetry.status === 'searching'
+                                ? 'bg-stone-900/85 text-stone-300 border-stone-700'
+                                : 'bg-amber-950/85 text-amber-300 border-amber-500/50'
+                        }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                                radarTelemetry.status === 'aligned'
+                                    ? 'bg-emerald-400 animate-ping'
+                                    : radarTelemetry.status === 'searching'
+                                    ? 'bg-stone-400'
+                                    : 'bg-amber-400'
+                            }`} />
+                            <span>{radarTelemetry.label}</span>
+                        </span>
+                    </div>
+                )}
 
                 {/* Challenge Progress Bar */}
                 <div className="absolute top-0 inset-x-0 h-1.5 bg-black/40 flex">

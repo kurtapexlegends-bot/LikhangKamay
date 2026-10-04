@@ -1,11 +1,12 @@
 /* global route */
 import React, { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
-import { RotateCcw, UploadCloud, XCircle } from 'lucide-react';
+import { RotateCcw, UploadCloud, XCircle, Pencil } from 'lucide-react';
 import Modal from '@/Components/Modal';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { compressImage } from '@/utils/imageCompressor';
+import ProofAnnotationModal from './ProofAnnotationModal';
 
 export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoint = 'my-orders.dispute' }) {
     const { data, setData, post, processing, errors, reset, clearErrors, transform } = useForm({
@@ -14,6 +15,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
     });
 
     const [previewUrls, setPreviewUrls] = useState([]);
+    const [annotationTarget, setAnnotationTarget] = useState(null);
     const isMobileOrTablet = useMediaQuery('(max-width: 1023px)');
 
     const revokePreviews = () => {
@@ -22,6 +24,28 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
                 URL.revokeObjectURL(url);
             }
         });
+    };
+
+    const handleSaveAnnotation = (annotatedFile, annotatedUrl) => {
+        if (!annotationTarget) return;
+        const { index } = annotationTarget;
+
+        const updatedFiles = [...data.proof_photos];
+        updatedFiles[index] = annotatedFile;
+        setData('proof_photos', updatedFiles);
+
+        const updatedUrls = [...previewUrls];
+        if (updatedUrls[index]?.startsWith('blob:')) {
+            URL.revokeObjectURL(updatedUrls[index]);
+        }
+        updatedUrls[index] = annotatedUrl;
+        setPreviewUrls(updatedUrls);
+        setAnnotationTarget(null);
+    };
+
+    const handleModalClose = () => {
+        if (annotationTarget) return;
+        onClose();
     };
 
     useEffect(() => {
@@ -134,9 +158,19 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
                                 <button
                                     type="button"
                                     onClick={() => handleRemoveFile(index)}
-                                    className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-2.5 shadow hover:bg-red-700 transition min-h-[36px] min-w-[36px] flex items-center justify-center"
+                                    className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-2.5 shadow hover:bg-red-700 transition min-h-[36px] min-w-[36px] flex items-center justify-center z-10 cursor-pointer"
+                                    title="Remove photo"
                                 >
                                     <XCircle size={16} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setAnnotationTarget({ index, url })}
+                                    className="absolute bottom-1 inset-x-1 py-1 rounded bg-stone-900/85 backdrop-blur-xs text-white text-[9px] font-bold flex items-center justify-center gap-1 hover:bg-stone-900 transition shadow-xs z-10 cursor-pointer"
+                                    title="Highlight damage or defect"
+                                >
+                                    <Pencil size={10} />
+                                    <span>Highlight</span>
                                 </button>
                             </div>
                         ))}
@@ -164,36 +198,51 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
         </form>
     );
 
-    if (isMobileOrTablet) {
-        return (
-            <SlideOverDrawer
-                show={isOpen}
-                onClose={onClose}
-                title="Request Item Return"
-                widthClass="max-w-md"
-            >
-                <div className="space-y-4">
-                    <p className="text-sm text-stone-500">Provide details and photos of the damaged item.</p>
-                    {renderFormContent()}
-                </div>
-            </SlideOverDrawer>
-        );
-    }
-
     return (
-        <Modal show={isOpen} onClose={onClose} maxWidth="md">
-            <div className="p-6">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-3 bg-clay-100 text-clay-700 rounded-2xl">
-                        <RotateCcw size={24} />
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-bold text-stone-900">Request Item Return</h2>
+        <>
+            {isMobileOrTablet ? (
+                <SlideOverDrawer
+                    show={isOpen}
+                    onClose={handleModalClose}
+                    title="Request Item Return"
+                    widthClass="max-w-md"
+                >
+                    <div className="space-y-4">
                         <p className="text-sm text-stone-500">Provide details and photos of the damaged item.</p>
+                        {renderFormContent()}
                     </div>
-                </div>
-                {renderFormContent()}
-            </div>
-        </Modal>
+                </SlideOverDrawer>
+            ) : (
+                <Modal
+                    show={isOpen}
+                    onClose={handleModalClose}
+                    closeable={!annotationTarget}
+                    maxWidth="md"
+                >
+                    <div className="p-6">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-3 bg-clay-100 text-clay-700 rounded-2xl">
+                                <RotateCcw size={24} />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-stone-900">Request Item Return</h2>
+                                <p className="text-sm text-stone-500">Provide details and photos of the damaged item.</p>
+                            </div>
+                        </div>
+                        {renderFormContent()}
+                    </div>
+                </Modal>
+            )}
+
+            {/* Damage Annotation Studio Modal */}
+            {annotationTarget && (
+                <ProofAnnotationModal
+                    isOpen={!!annotationTarget}
+                    onClose={() => setAnnotationTarget(null)}
+                    imageUrl={annotationTarget.url}
+                    onSave={handleSaveAnnotation}
+                />
+            )}
+        </>
     );
 }
