@@ -42,9 +42,15 @@ This document details the compliance agreement logs, staff access tracking, capi
 *   **Active Observers**:
     *   [ReviewObserver.php](file:///c:/laragon/www/LikhangKamay/app/Observers/ReviewObserver.php): Automatically tracks product reviews ratings updates.
     *   [ReviewDisputeObserver.php](file:///c:/laragon/www/LikhangKamay/app/Observers/ReviewDisputeObserver.php): Audits moderation actions on reported reviews.
+    *   [OrderAuditObserver.php](file:///c:/laragon/www/LikhangKamay/app/Observers/OrderAuditObserver.php): Audits order status and payment status state transitions.
 *   **Automated Audit Middleware**:
     *   [TrackStaffActivity.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/TrackStaffActivity.php): Tracks and logs staff interaction telemetry inside the workspace.
     *   [UpdateLastSeen.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/UpdateLastSeen.php): Records user activity heartbeat events.
+
+### Unified Audit Trail & Action Layer
+*   [RecordAuditActivity.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Audit/RecordAuditActivity.php): Centralized domain audit writer logging actor ID, subject model, before/after diffs, and network telemetry (IP address, user agent) to `PlatformActivity`.
+*   [ActivityHistoryDrawer.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Common/ActivityHistoryDrawer.jsx): Reusable SlideOver drawer showing timeline history for a specific subject model (Order, User, Payout).
+*   **Subject Audit Endpoint**: `GET /operations/subject-history` in [PlatformDiagnosticsController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Admin/PlatformDiagnosticsController.php) queried via `PlatformActivity::forSubject($type, $id)`.
 
 ### Capital Audit Trails
 Whenever a seller owner changes starting capital balances (`base_funds`), the adjustment must execute inside a database transaction (`DB::transaction`) and write a matching `CapitalAdjustment` row capturing:
@@ -57,6 +63,7 @@ Whenever a seller owner changes starting capital balances (`base_funds`), the ad
 *   [NotificationPresenter.php](file:///c:/laragon/www/LikhangKamay/app/Support/NotificationPresenter.php): Transforms raw Eloquent notification records into descriptive frontend list objects.
 
 ### Core Business Actions
+*   [RecordAuditActivity.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Audit/RecordAuditActivity.php): Standardized audit trail recording.
 *   [ExportAnalyticsReportCsv.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Analytics/ExportAnalyticsReportCsv.php), [ExportAuditLogCsv.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Audit/ExportAuditLogCsv.php): Handles background generation and stream-downloading of compliance and financial logs.
 
 ### Auditing & Analytics Controllers
