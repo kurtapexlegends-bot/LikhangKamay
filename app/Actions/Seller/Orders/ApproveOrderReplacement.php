@@ -62,8 +62,10 @@ class ApproveOrderReplacement
             $previousDeliveryProvider = $lockedOrder->delivery?->provider;
 
             if ($lockedOrder->shipping_method === 'Delivery' && $lockedOrder->delivery) {
-                $lockedOrder->delivery()->delete();
-                $lockedOrder->unsetRelation('delivery');
+                $lockedOrder->delivery->update([
+                    'status' => 'CANCELLED',
+                    'failure_reason' => 'Superseded by replacement dispatch',
+                ]);
             }
 
             $lockedOrder->update([

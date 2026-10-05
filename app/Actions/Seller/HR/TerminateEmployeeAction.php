@@ -46,6 +46,10 @@ class TerminateEmployeeAction
 
         DB::transaction(function () use ($employee, $linkedLogin) {
             if ($linkedLogin) {
+                $linkedLogin->update([
+                    'suspended_at' => now(),
+                    'suspension_reason' => 'Staff access revoked by shop owner',
+                ]);
                 $linkedLogin->delete();
             }
 
@@ -54,14 +58,14 @@ class TerminateEmployeeAction
 
         if ($linkedLoginSnapshot !== null) {
             HRWorkflowHelper::recordStaffAccessAudit($seller, $actor, 'login_removed', $employee, null, [
-                'changes' => ['Removed seller portal login'],
+                'changes' => ['Revoked and archived seller portal login'],
                 'before' => $linkedLoginSnapshot,
             ]);
         }
 
         return [
             'success' => true,
-            'message' => 'Employee record removed.',
+            'message' => 'Staff member access removed.',
         ];
     }
 }

@@ -35,14 +35,10 @@ class PruneSoftDeletedItems extends Command
             ->where('deleted_at', '<=', $cutoffDate)
             ->forceDelete();
 
-        $orderCount = \App\Models\Order::onlyTrashed()
-            ->where('deleted_at', '<=', $cutoffDate)
-            ->forceDelete();
-
         $this->info("System optimization complete:");
         $this->info("- $productCount products purged.");
         $this->info("- $categoryCount categories purged.");
-        $this->info("- $orderCount orders purged.");
+        $this->info("- Orders are permanently preserved for audit and accounting compliance.");
 
         return 0;
     }

@@ -142,14 +142,8 @@ class ReviewController extends Controller
     {
         $review = Review::where('user_id', Auth::id())->findOrFail($id);
 
-        if ($review->photos) {
-            foreach ($review->photos as $photo) {
-                Storage::disk('public')->delete($photo);
-            }
-        }
-
         $review->delete();
 
-        return back()->with('success', 'Review deleted successfully.');
+        return back()->with('success', 'Review withdrawn successfully.');
     }
 }

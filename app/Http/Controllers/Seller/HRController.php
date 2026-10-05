@@ -151,17 +151,18 @@ class HRController extends Controller
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
 
-        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access cannot delete payroll runs.');
+        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access cannot cancel payroll runs.');
 
         $payroll = Payroll::where('user_id', $seller->id)->findOrFail($id);
 
         if (in_array($payroll->status, ['Submitted', 'Approved', 'Paid'], true)) {
-            return back()->with('error', 'Submitted or approved payroll runs cannot be deleted.');
+            return back()->with('error', 'Submitted or approved payroll runs cannot be cancelled.');
         }
 
+        $payroll->update(['status' => 'Cancelled']);
         $payroll->delete();
 
-        return back()->with('success', 'Draft payroll run deleted.');
+        return back()->with('success', 'Draft payroll run cancelled.');
     }
 
     public function attendanceLogs(

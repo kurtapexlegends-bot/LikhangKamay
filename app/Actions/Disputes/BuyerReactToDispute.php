@@ -66,10 +66,12 @@ class BuyerReactToDispute
             }
         }
 
-        // Delete existing delivery if necessary
+        // Archive/cancel existing delivery record for audit trail instead of hard deletion
         if ($order->shipping_method === 'Delivery' && $order->delivery) {
-            $order->delivery()->delete();
-            $order->unsetRelation('delivery');
+            $order->delivery->update([
+                'status' => 'CANCELLED',
+                'failure_reason' => 'Superseded by replacement dispatch',
+            ]);
         }
 
         // Reset order status to 'Accepted' for delivery

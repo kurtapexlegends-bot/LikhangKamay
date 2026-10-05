@@ -254,9 +254,12 @@ class PlatformDiagnosticsController extends Controller
         $model = match($validated['type']) {
             'Product' => Product::class,
             'Category' => Category::class,
-            'Order' => Order::class,
             default => null
         };
+
+        if ($validated['type'] === 'Order') {
+            return back()->with('error', 'Customer orders cannot be permanently deleted to preserve legal, financial, and tax audit compliance.');
+        }
 
         if (!$model) {
             return back()->with('error', 'Invalid item type.');

@@ -172,7 +172,7 @@ class ProfileController extends Controller
         $user = $request->user();
 
         if ($user->isStaff()) {
-            return back()->with('error', 'Staff accounts cannot be self-deleted. Access suspension is managed by your Shop Owner.');
+            return back()->with('error', 'Staff accounts cannot be self-deactivated. Access permissions are managed by your Shop Owner.');
         }
 
         if ($user->role === 'artisan' && $user->artisan_status === 'pending') {
@@ -190,6 +190,6 @@ class ProfileController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::to('/');
+        return Redirect::to('/')->with('status', 'Your account has been deactivated.');
     }
 }

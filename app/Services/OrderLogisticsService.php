@@ -555,13 +555,14 @@ class OrderLogisticsService
             $lockedOrder = Order::query()->with('delivery')->lockForUpdate()->findOrFail($order->id);
 
             if ($this->isReplacementExchange($lockedOrder)) {
-                $lockedOrder->delivery()->delete();
-                $lockedOrder->unsetRelation('delivery');
+                $delivery = $lockedOrder->delivery ?: new OrderDelivery(['order_id' => $lockedOrder->id]);
             } elseif ($lockedOrder->delivery?->external_order_id) {
                 return $lockedOrder->delivery;
+            } else {
+                $delivery = $lockedOrder->delivery ?: new OrderDelivery(['order_id' => $lockedOrder->id]);
             }
 
-            $delivery = $lockedOrder->delivery()->create([
+            $delivery->fill([
                 'provider' => OrderDelivery::PROVIDER_LALAMOVE,
                 'status' => strtoupper((string) ($lalamoveOrder['status'] ?? 'ASSIGNING_DRIVER')),
                 'service_type' => (string) ($quotation['serviceType'] ?? config('services.lalamove.service_type', 'MOTORCYCLE')),
@@ -579,6 +580,7 @@ class OrderLogisticsService
                 'latest_payload' => $lalamoveOrder,
                 'is_pod_enabled' => true,
             ]);
+            $delivery->save();
 
             $lockedOrder->update([
                 'status' => 'Shipped',

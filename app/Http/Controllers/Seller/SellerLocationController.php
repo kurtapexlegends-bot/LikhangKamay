@@ -81,6 +81,6 @@ class SellerLocationController extends Controller
 
         $location->delete();
 
-        return redirect()->back()->with('success', 'Workplace location removed.');
+        return redirect()->back()->with('success', 'Workplace location archived.');
     }
 }
