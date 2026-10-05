@@ -104,6 +104,7 @@ If the webhook processing throws a server-side exception (e.g., database lock or
     2. Authenticated `super_admin` or `artisan` user session.
     3. Emergency migration key parameter (`?secret=likhangkamay_migrate_2026`).
 *   **Response Format**: Returns JSON payload with migration output and structured error reports.
+*   **Settings Cache Invalidation**: Automatically flushes `all_platform_settings`, `system_settings_all`, and `setting_contact_info` from cache upon execution, ensuring zero-downtime propagation of newly seeded or migrated platform variables (such as official support email `likhangkamaybusiness@gmail.com`) to frontend Inertia shared props.
 
 ### Background Queue Worker Webhook (`/webhooks/cron/queue`)
 *   **Route**: `GET /webhooks/cron/queue` (defined in [web.php](file:///c:/laragon/www/LikhangKamay/routes/web.php)).
