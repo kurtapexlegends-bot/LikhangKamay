@@ -140,7 +140,7 @@ export default function DisburseFundsModal({
                     </div>
 
                     <div>
-                        <InputLabel htmlFor="reference_number" value="GCash / Bank Reference Number *" />
+                        <InputLabel htmlFor="reference_number" value="GCash / Maya / Bank Reference Number *" />
                         <input
                             type="text"
                             id="reference_number"

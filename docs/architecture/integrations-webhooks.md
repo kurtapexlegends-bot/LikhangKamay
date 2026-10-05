@@ -22,12 +22,24 @@ This document outlines the operational flows, validation rules, and webhook beha
 3.  **Db-Backed Status Verification**:
     Never trust raw frontend triggers or simple session identifiers. Always run a backend lookup against checkout records to verify paid states before updating order statuses to `Accepted`.
 
+### Supported Online Payment Methods & Multi-Wallet Channels
+*   **GCash**: Mapped to `gcash` in PayMongo checkout sessions.
+*   **Maya**: Mapped to `paymaya` in PayMongo checkout sessions.
+*   **Dynamic Source Reconciliation**:
+    When a customer checks out choosing Maya or GCash, PayMongo's session dynamically returns the actual source type in `data.attributes.payments[].attributes.source.type` or `data.attributes.payment_intent.attributes.payments[].attributes.source.type`.
+    - Both [PaymentController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/PaymentController.php) and [PaymongoWebhookController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Webhooks/PaymongoWebhookController.php) inspect this telemetry.
+    - If a user selected Maya at checkout but completed payment via GCash (or vice-versa in test/production gateway environments), `orders.payment_method` is automatically reconciled to reflect the true wallet provider (`Maya`, `GCash`, `Card`).
+    - [GetBuyerOrders.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Consumer/GetBuyerOrders.php) also applies this reconciliation when resolving lingering pending sessions upon viewing `/my-orders`.
+
 ### Webhook & Signature Verification
 *   **Webhook Controller**: [PaymongoWebhookController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Webhooks/PaymongoWebhookController.php)
 *   **Endpoint Route**: POST `/webhooks/paymongo` (exempt from CSRF in `bootstrap/app.php`).
 *   **Signature Security**:
     > [!IMPORTANT]
-    > To prevent webhook spoofing attacks, all requests are validated using the `Paymongo-Signature` header against the HMAC SHA-256 secret configured in `config('services.paymongo.webhook_secret')`. Unauthorized payloads receive a `401 Unauthorized` response.
+### Integration & Regression Suites
+*   [MayaPaymentIntegrationTest.php](file:///c:/laragon/www/LikhangKamay/tests/Feature/Payments/MayaPaymentIntegrationTest.php): Tests end-to-end Maya checkout, session generation, webhook handling, and dynamic source reconciliation.
+*   [PaymongoWebhookSignatureTest.php](file:///c:/laragon/www/LikhangKamay/tests/Feature/Payments/PaymongoWebhookSignatureTest.php): Tests HMAC signature verification and attack payload rejection.
+*   [PaymentConvenienceFeeTest.php](file:///c:/laragon/www/LikhangKamay/tests/Feature/Payments/PaymentConvenienceFeeTest.php): Tests online payment convenience fee computation and guest session handling.
 
 ---
 

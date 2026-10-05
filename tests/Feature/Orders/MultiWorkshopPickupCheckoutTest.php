@@ -132,6 +132,8 @@ class MultiWorkshopPickupCheckoutTest extends TestCase
     {
         $pickupService = app(PickupScheduleService::class);
         $earliest1 = $pickupService->calculateEarliestPickupDate($this->artisan1, 0);
+        $slots1 = $pickupService->getAvailableSlotsForDate($this->artisan1, $earliest1);
+        $slot1Label = collect($slots1)->firstWhere('is_available', true)['label'] ?? '09:00 AM - 12:00 PM';
 
         // Attempting to schedule artisan2 (lead_time = 2) for today (before earliest date) should fail
         $response = $this->actingAs($this->buyer)->post(route('checkout.store'), [
@@ -155,7 +157,7 @@ class MultiWorkshopPickupCheckoutTest extends TestCase
             'pickup_schedules' => [
                 (string) $this->artisan1->id => [
                     'date' => $earliest1->toDateString(),
-                    'slot' => '09:00 AM - 12:00 PM',
+                    'slot' => $slot1Label,
                 ],
                 (string) $this->artisan2->id => [
                     'date' => Carbon::today()->toDateString(), // Too early! lead_time = 2

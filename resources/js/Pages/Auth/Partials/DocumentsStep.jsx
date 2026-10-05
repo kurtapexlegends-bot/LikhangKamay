@@ -1,10 +1,11 @@
-/* global route */
+/* global route, AbortController */
 import React, { useRef, useState, useEffect } from 'react';
-import { FileText, ArrowLeft, ArrowRight, UploadCloud, FileCheck, Eye, Trash2, Loader2, XCircle } from 'lucide-react';
+import { ShieldCheck, ArrowLeft, ArrowRight, UploadCloud, Eye, Trash2, Loader2, XCircle, FileText } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
+import DocumentViewerModal from '@/Components/Seller/Approvals/DocumentViewerModal';
 import { compressImage } from '@/utils/imageCompressor';
 
 export default function DocumentsStep({
@@ -14,75 +15,97 @@ export default function DocumentsStep({
     setStep,
     auth,
 }) {
+    const [viewingDoc, setViewingDoc] = useState(null);
+
     return (
-        <form onSubmit={submit} className="p-6 sm:p-10">
-            <div className="mb-8">
-                <div className="mb-1 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
-                        <FileText size={20} className="text-amber-600" />
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-900">Business &amp; Artisan Verification</h2>
-                        <p className="text-sm text-gray-500">Upload clear photos or scans of your business permits and documents.</p>
+        <>
+            <form onSubmit={submit} className="p-6 sm:p-10">
+                <div className="mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-clay-50 border border-clay-200 text-clay-700 shadow-xs">
+                            <ShieldCheck size={22} strokeWidth={2} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-stone-900 tracking-tight">Artisan Verification Documents</h2>
+                            <p className="text-sm text-stone-500">Upload clear scans or photos of your government credentials and permits.</p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-sm text-amber-800">
-                    <strong>Why do we need these?</strong> To protect buyers and ensure authenticity of all artisan sellers on our platform.
-                </p>
-            </div>
+                <div className="mb-6 rounded-xl border border-stone-200 bg-stone-50/70 p-4 flex items-start gap-3">
+                    <ShieldCheck size={18} className="mt-0.5 shrink-0 text-clay-600" />
+                    <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                        <strong className="text-stone-900 font-semibold">Buyer Protection & Authenticity:</strong> Credentials are securely stored and reviewed solely by LikhangKamay verification officers to ensure handmade craftsmanship standards.
+                    </p>
+                </div>
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <FileUploadField
-                    label="Business Permit (Mayor's Permit)"
-                    id="business_permit"
-                    existingFileUrl={auth.user.business_permit_url}
-                    error={errors.business_permit}
-                />
-                <FileUploadField
-                    label="DTI Registration"
-                    id="dti_registration"
-                    existingFileUrl={auth.user.dti_registration_url}
-                    error={errors.dti_registration}
-                />
-                <FileUploadField
-                    label="Valid Government ID (Front)"
-                    id="valid_id"
-                    existingFileUrl={auth.user.valid_id_url}
-                    error={errors.valid_id}
-                />
-                <FileUploadField
-                    label="TIN ID / Registration"
-                    id="tin_id"
-                    existingFileUrl={auth.user.tin_id_url}
-                    error={errors.tin_id}
-                />
-            </div>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <FileUploadField
+                        label="Business or Mayor's Permit"
+                        description="Or Barangay Micro-Business Certificate"
+                        id="business_permit"
+                        existingFileUrl={auth.user.business_permit_url}
+                        error={errors.business_permit}
+                        onView={(doc) => setViewingDoc(doc)}
+                    />
+                    <FileUploadField
+                        label="DTI Registration Certificate"
+                        description="Department of Trade & Industry permit"
+                        id="dti_registration"
+                        existingFileUrl={auth.user.dti_registration_url}
+                        error={errors.dti_registration}
+                        onView={(doc) => setViewingDoc(doc)}
+                    />
+                    <FileUploadField
+                        label="Valid Government ID (Front)"
+                        description="PhilID, UMID, Driver's License, or Passport"
+                        id="valid_id"
+                        existingFileUrl={auth.user.valid_id_url}
+                        error={errors.valid_id}
+                        onView={(doc) => setViewingDoc(doc)}
+                    />
+                    <FileUploadField
+                        label="TIN / BIR Registration"
+                        description="TIN Card or BIR Certificate (Form 2303)"
+                        id="tin_id"
+                        existingFileUrl={auth.user.tin_id_url}
+                        error={errors.tin_id}
+                        onView={(doc) => setViewingDoc(doc)}
+                    />
+                </div>
 
-            <div className="mt-8 flex items-center justify-between">
-                <button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    className="flex items-center gap-2 font-medium text-gray-500 transition hover:text-gray-700 active:scale-95"
-                >
-                    <ArrowLeft size={16} /> Back
-                </button>
+                <div className="mt-10 flex items-center justify-between border-t border-stone-100 pt-6">
+                    <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="inline-flex items-center gap-2 rounded-xl border border-stone-200 px-5 py-3 text-sm font-semibold text-stone-700 transition hover:bg-stone-50 active:bg-stone-100 cursor-pointer"
+                    >
+                        <ArrowLeft size={16} />
+                        <span>Back to Shop Info</span>
+                    </button>
 
-                <button
-                    type="submit"
-                    disabled={processing}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-clay-600 to-clay-700 px-8 py-3.5 font-bold text-white shadow-lg shadow-clay-200 transition hover:from-clay-700 hover:to-clay-800 disabled:opacity-50 active:scale-95"
-                >
-                    {processing ? 'Saving...' : 'Continue to Payments'} <ArrowRight size={18} />
-                </button>
-            </div>
-        </form>
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-clay-600 px-7 py-3 text-sm font-semibold text-white shadow-xs transition hover:bg-clay-700 active:bg-clay-800 disabled:opacity-50 cursor-pointer"
+                    >
+                        <span>{processing ? 'Saving...' : 'Continue to Payments'}</span>
+                        <ArrowRight size={16} />
+                    </button>
+                </div>
+            </form>
+
+            {/* Document Viewer Modal */}
+            <DocumentViewerModal
+                isOpen={Boolean(viewingDoc)}
+                onClose={() => setViewingDoc(null)}
+                doc={viewingDoc}
+            />
+        </>
     );
 }
 
-const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
+const FileUploadField = React.memo(({ label, description, id, existingFileUrl, error, onView }) => {
     const inputRef = useRef(null);
     const activeRequestRef = useRef(null);
     const abortControllerRef = useRef(null);
@@ -257,119 +280,149 @@ const FileUploadField = React.memo(({ label, id, existingFileUrl, error }) => {
 
     const handleView = (e) => {
         e.stopPropagation();
-        if (existingFileUrl) {
-            window.open(existingFileUrl, '_blank');
+        const targetUrl = previewUrl || existingFileUrl;
+        if (!targetUrl) return;
+
+        const isPdf = targetUrl.toLowerCase().endsWith('.pdf') || targetUrl.toLowerCase().includes('.pdf');
+
+        if (onView) {
+            onView({
+                url: targetUrl,
+                title: label,
+                type: isPdf ? 'pdf' : 'image',
+            });
+        } else {
+            window.open(targetUrl, '_blank');
         }
     };
 
+    const hasFile = Boolean(existingFileUrl);
+
     return (
-        <div>
-            <InputLabel htmlFor={id} value={label} />
+        <div className="flex flex-col">
+            <div className="flex items-center justify-between mb-1.5">
+                <div>
+                    <InputLabel htmlFor={id} value={label} />
+                    {description && <p className="text-[11px] text-stone-500">{description}</p>}
+                </div>
+                {hasFile ? (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
+                        Attached
+                    </span>
+                ) : (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-stone-600 border border-stone-200">
+                        Required
+                    </span>
+                )}
+            </div>
+
             <div
                 onClick={() => !uploading && !showConfirmDelete && inputRef.current?.click()}
-                className={`mt-1 relative flex min-h-[170px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] hover:shadow-md ${
+                className={`mt-1 relative flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-2xl border p-5 transition-all ${
                     uploading
-                        ? 'border-clay-300 bg-clay-50/10 cursor-not-allowed'
+                        ? 'border-clay-300 bg-clay-50/20 cursor-not-allowed'
                         : showConfirmDelete
-                            ? 'border-red-300 bg-red-50/10 cursor-default'
-                            : existingFileUrl
-                                ? 'border-clay-400 bg-clay-50/30'
-                                : 'border-gray-200 bg-white/50 backdrop-blur-sm hover:border-clay-300 hover:bg-white'
+                            ? 'border-rose-300 bg-rose-50/20 cursor-default'
+                            : hasFile
+                                ? 'border-stone-200 bg-stone-50/40 hover:bg-white hover:border-stone-300'
+                                : 'border-dashed border-stone-300 bg-white hover:border-clay-400 hover:bg-stone-50/50'
                 }`}
             >
                 {uploading ? (
-                    <div className="flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
-                        <Loader2 size={32} className="mb-2 text-clay-600 animate-spin" />
-                        <p className="text-sm font-semibold text-clay-800">Processing document...</p>
-                        <p className="text-xs text-gray-500 mb-3">Uploading to secure storage</p>
+                    <div className="flex flex-col items-center justify-center text-center" onClick={(e) => e.stopPropagation()}>
+                        <Loader2 size={28} className="mb-2 text-clay-600 animate-spin" />
+                        <p className="text-sm font-semibold text-stone-900">Processing document...</p>
+                        <p className="text-xs text-stone-500 mb-3">Uploading to secure storage</p>
                         {canCancel && (
                             <button
                                 type="button"
                                 onClick={handleCancel}
-                                className="flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-200 transition active:scale-95 shadow-sm"
+                                className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 transition cursor-pointer"
                             >
                                 <XCircle size={14} /> Cancel Upload
                             </button>
                         )}
                     </div>
                 ) : showConfirmDelete ? (
-                    <div className="flex w-full flex-col items-center justify-center text-center animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
-                        <Trash2 size={32} className="mb-2 text-red-500 animate-bounce" />
-                        <p className="text-sm font-bold text-gray-900">Remove document?</p>
-                        <p className="text-xs text-gray-500 mb-4">This action cannot be undone.</p>
+                    <div className="flex w-full flex-col items-center justify-center text-center p-2" onClick={(e) => e.stopPropagation()}>
+                        <Trash2 size={24} className="mb-2 text-rose-600" />
+                        <p className="text-sm font-bold text-stone-900">Remove this document?</p>
+                        <p className="text-xs text-stone-500 mb-3">You will need to upload a replacement before submitting.</p>
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
                                 onClick={executeRemove}
-                                className="rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-red-200 transition hover:bg-red-700 active:scale-95"
+                                className="rounded-lg bg-rose-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:bg-rose-700 cursor-pointer"
                             >
                                 Yes, Remove
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setShowConfirmDelete(false)}
-                                className="rounded-lg bg-white border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-95"
+                                className="rounded-lg border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-50 cursor-pointer"
                             >
                                 Cancel
                             </button>
                         </div>
                     </div>
                 ) : previewUrl ? (
-                    <div className="flex w-full flex-col items-center">
-                        <div className="relative mb-3 h-24 w-full overflow-hidden rounded-xl border border-clay-200 bg-white shadow-inner flex items-center justify-center">
-                            <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+                    <div className="flex w-full flex-col items-center text-center">
+                        <div className="relative mb-2.5 h-20 w-32 overflow-hidden rounded-lg border border-stone-200 bg-white shadow-xs flex items-center justify-center">
+                            <img src={previewUrl} alt="Document Preview" className="h-full w-full object-cover" />
                         </div>
-                        <p className="max-w-full truncate text-xs font-semibold text-clay-800">
-                            Document on File (Image)
+                        <p className="max-w-full truncate text-xs font-semibold text-stone-800">
+                            Document on File (Photo)
                         </p>
-                        <div className="mt-3 flex items-center gap-2">
+                        <div className="mt-2.5 flex items-center gap-2">
                             <button
                                 type="button"
                                 onClick={handleView}
-                                className="flex items-center gap-1 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-95"
+                                className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-xs transition hover:bg-stone-50 cursor-pointer"
                             >
-                                <Eye size={14} /> View
+                                <Eye size={13} /> View
                             </button>
                             <button
                                 type="button"
                                 onClick={handleRemove}
-                                className="flex items-center gap-1 rounded-lg bg-red-50 border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-600 shadow-sm transition hover:bg-red-100 active:scale-95"
+                                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-xs transition hover:bg-rose-100 cursor-pointer"
                             >
-                                <Trash2 size={14} /> Remove
+                                <Trash2 size={13} /> Remove
                             </button>
                         </div>
                     </div>
-                ) : existingFileUrl ? (
-                    <div className="flex w-full flex-col items-center">
-                        <div className="relative mb-3 h-24 w-full overflow-hidden rounded-xl border border-clay-200 bg-white shadow-inner flex items-center justify-center">
-                            <FileCheck size={40} className="text-clay-600 animate-pulse" />
+                ) : hasFile ? (
+                    <div className="flex w-full flex-col items-center text-center">
+                        <div className="relative mb-2.5 flex h-16 w-16 items-center justify-center rounded-xl border border-stone-200 bg-stone-50 shadow-xs">
+                            <FileText size={28} className="text-clay-600" />
                         </div>
-                        <p className="max-w-full truncate text-xs font-semibold text-clay-800">
+                        <p className="max-w-full truncate text-xs font-semibold text-stone-800">
                             Document on File (PDF)
                         </p>
-                        <div className="mt-3 flex items-center gap-2">
+                        <div className="mt-2.5 flex items-center gap-2">
                             <button
                                 type="button"
                                 onClick={handleView}
-                                className="flex items-center gap-1 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-95"
+                                className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-xs transition hover:bg-stone-50 cursor-pointer"
                             >
-                                <Eye size={14} /> View
+                                <Eye size={13} /> View
                             </button>
                             <button
                                 type="button"
                                 onClick={handleRemove}
-                                className="flex items-center gap-1 rounded-lg bg-red-50 border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-600 shadow-sm transition hover:bg-red-100 active:scale-95"
+                                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-xs transition hover:bg-rose-100 cursor-pointer"
                             >
-                                <Trash2 size={14} /> Remove
+                                <Trash2 size={13} /> Remove
                             </button>
                         </div>
                     </div>
                 ) : (
-                    <>
-                        <UploadCloud size={32} className="mb-2 text-gray-400" />
-                        <p className="text-sm font-medium text-gray-600">Click to upload</p>
-                        <p className="text-xs text-gray-400">PNG, JPG, PDF up to 10MB</p>
-                    </>
+                    <div className="flex flex-col items-center text-center">
+                        <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100 text-stone-500">
+                            <UploadCloud size={20} />
+                        </div>
+                        <p className="text-xs sm:text-sm font-semibold text-stone-800">Click or drag file to upload</p>
+                        <p className="mt-0.5 text-[11px] text-stone-500">PNG, JPG, WEBP, or PDF up to 4MB</p>
+                    </div>
                 )}
                 <input
                     ref={inputRef}

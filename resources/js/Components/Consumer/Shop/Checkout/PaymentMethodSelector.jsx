@@ -11,7 +11,7 @@ export default function PaymentMethodSelector({ paymentMethod, setPaymentMethod,
                 <h2 className="text-sm font-bold text-stone-900">Payment Method</h2>
             </div>
             
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                 {/* Cash on Delivery */}
                 <label className={`relative flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 sm:p-3 transition-all ${
                     paymentMethod === 'COD' 
@@ -53,6 +53,31 @@ export default function PaymentMethodSelector({ paymentMethod, setPaymentMethod,
                         <p className="font-bold text-stone-900 text-xs sm:text-[13px]">GCash</p>
                         <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">
                             {isPickUp ? 'Unavailable for workshop pickup' : 'Instant mobile e-wallet payment.'}
+                        </p>
+                    </div>
+                </label>
+
+                {/* Maya */}
+                <label className={`relative flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 sm:p-3 transition-all ${
+                    isPickUp 
+                        ? 'cursor-not-allowed border-stone-100 bg-stone-50/40 opacity-60' 
+                        : paymentMethod === 'Maya' 
+                            ? 'border-emerald-600 bg-emerald-50/25 ring-1 ring-emerald-600 shadow-2xs' 
+                            : 'border-stone-200 bg-white hover:border-emerald-300'
+                }`}>
+                    <input 
+                        type="radio" 
+                        name="payment" 
+                        value="Maya" 
+                        checked={paymentMethod === 'Maya'} 
+                        onChange={() => !isPickUp && setPaymentMethod('Maya')} 
+                        disabled={isPickUp} 
+                        className="mt-0.5 h-4 w-4 text-emerald-600 border-stone-300 focus:ring-emerald-500 focus:ring-offset-0 disabled:opacity-50" 
+                    />
+                    <div className="min-w-0">
+                        <p className="font-bold text-stone-900 text-xs sm:text-[13px]">Maya</p>
+                        <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">
+                            {isPickUp ? 'Unavailable for workshop pickup' : 'Direct Maya e-wallet & QR payment.'}
                         </p>
                     </div>
                 </label>

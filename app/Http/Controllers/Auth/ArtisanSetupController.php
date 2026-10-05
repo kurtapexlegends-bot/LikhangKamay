@@ -41,7 +41,9 @@ class ArtisanSetupController extends Controller
             return redirect()->route('artisan.pending');
         }
         
-        return Inertia::render('Auth/ArtisanSetup');
+        return Inertia::render('Auth/ArtisanSetup', [
+            'rejectionReason' => $user->artisan_rejection_reason,
+        ]);
     }
 
     public function store(Request $request)

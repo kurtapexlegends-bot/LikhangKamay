@@ -49,7 +49,7 @@ class GetBuyerOrders
     {
         Order::query()
             ->where('user_id', $user->id)
-            ->where('payment_method', 'GCash')
+            ->whereIn('payment_method', ['GCash', 'Maya'])
             ->where('payment_status', 'pending')
             ->whereNotNull('paymongo_session_id')
             ->whereIn('status', ['Pending', 'Accepted'])
@@ -77,10 +77,25 @@ class GetBuyerOrders
                             });
                     }
 
+                    $resolveMethodFromPayment = function ($payment) {
+                        $sourceType = $payment['attributes']['source']['type']
+                            ?? ($payment['source']['type']
+                            ?? ($payment['attributes']['payment_method_type'] ?? null));
+                        return match (strtolower((string) $sourceType)) {
+                            'paymaya', 'maya' => 'Maya',
+                            'gcash' => 'GCash',
+                            'card' => 'Card',
+                            'grab_pay' => 'GrabPay',
+                            default => null,
+                        };
+                    };
+
                     $paymentId = null;
+                    $detectedMethod = null;
                     foreach ($session['included'] ?? [] as $included) {
                         if (($included['type'] ?? null) === 'payment' && !empty($included['id'])) {
                             $paymentId = $included['id'];
+                            $detectedMethod = $resolveMethodFromPayment($included);
                             break;
                         }
                     }
@@ -88,6 +103,7 @@ class GetBuyerOrders
                         foreach ($attributes['payments'] as $payment) {
                             if (!empty($payment['id'])) {
                                 $paymentId = $payment['id'];
+                                $detectedMethod = $resolveMethodFromPayment($payment);
                                 break;
                             }
                         }
@@ -96,7 +112,7 @@ class GetBuyerOrders
                     if ($isPaid || $hasPaidPayment) {
                         $updateData = [
                             'payment_status' => 'paid',
-                            'payment_method' => $order->payment_method ?: 'GCash',
+                            'payment_method' => $detectedMethod ?: ($order->payment_method ?: 'GCash'),
                         ];
                         if ($paymentId) {
                             $updateData['payment_id'] = $paymentId;

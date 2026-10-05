@@ -84,10 +84,21 @@ class PaymongoWebhookController extends Controller
 
             if ($sessionId && $status === 'paid') {
                 $paymentId = null;
+                $detectedMethod = null;
                 $payments = $sessionData['attributes']['payments'] ?? [];
                 if (is_array($payments) && !empty($payments)) {
                     $firstPayment = reset($payments);
                     $paymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
+                    $sourceType = $firstPayment['attributes']['source']['type']
+                        ?? ($firstPayment['source']['type']
+                        ?? ($firstPayment['attributes']['payment_method_type'] ?? null));
+                    $detectedMethod = match (strtolower((string) $sourceType)) {
+                        'paymaya', 'maya' => 'Maya',
+                        'gcash' => 'GCash',
+                        'card' => 'Card',
+                        'grab_pay' => 'GrabPay',
+                        default => null,
+                    };
                 }
                 if (!$paymentId && !empty($sessionData['relationships']['payments']['data'])) {
                     $relPayments = $sessionData['relationships']['payments']['data'];
@@ -101,17 +112,25 @@ class PaymongoWebhookController extends Controller
                 $orderIds = Order::where('paymongo_session_id', $sessionId)->pluck('id');
                 if ($orderIds->isNotEmpty()) {
                     $receiptOrders = [];
-                    \Illuminate\Support\Facades\DB::transaction(function () use ($orderIds, $paymentId, &$receiptOrders) {
+                    \Illuminate\Support\Facades\DB::transaction(function () use ($orderIds, $paymentId, $detectedMethod, &$receiptOrders) {
                         $lockedOrders = Order::whereIn('id', $orderIds)->lockForUpdate()->get();
                         foreach ($lockedOrders as $order) {
                             $wasUnpaid = $order->payment_status !== 'paid';
-                            if ($wasUnpaid || ($paymentId && empty($order->payment_id))) {
+                            if ($wasUnpaid || ($paymentId && empty($order->payment_id)) || ($detectedMethod && $order->payment_method !== $detectedMethod)) {
                                 $updateData = ['payment_status' => 'paid'];
+                                if ($detectedMethod) {
+                                    $updateData['payment_method'] = $detectedMethod;
+                                }
                                 if ($paymentId && empty($order->payment_id)) {
                                     $updateData['payment_id'] = $paymentId;
                                 }
                                 $order->update($updateData);
-                                Log::info('Order marked as paid via Webhook', ['order_id' => $order->id, 'order_number' => $order->order_number, 'payment_id' => $paymentId]);
+                                Log::info('Order marked as paid via Webhook', [
+                                    'order_id' => $order->id,
+                                    'order_number' => $order->order_number,
+                                    'payment_id' => $paymentId,
+                                    'payment_method' => $order->payment_method,
+                                ]);
 
                                 if ($wasUnpaid) {
                                     $receiptOrders[] = $order;

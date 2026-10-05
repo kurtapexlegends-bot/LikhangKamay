@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, ExternalLink, FileText, Image as ImageIcon } from 'lucide-react';
 
 export default function DocumentViewerModal({
@@ -6,6 +6,17 @@ export default function DocumentViewerModal({
     onClose,
     doc = null,
 }) {
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                onClose?.();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose]);
+
     if (!isOpen || !doc) return null;
 
     const docUrl = typeof doc === 'string' ? doc : doc.url;

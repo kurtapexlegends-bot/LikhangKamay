@@ -59,7 +59,13 @@ export default function PayoutHistoryTable({
                             <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/60 text-xs space-y-1.5">
                                 <div className="flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-1.5 min-w-0">
-                                        <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-stone-100 text-stone-700 border border-stone-200">
+                                        <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${
+                                            (payout.payout_method || '').toLowerCase().includes('gcash')
+                                                ? 'bg-sky-50 text-sky-700 border-sky-200/70'
+                                                : (payout.payout_method || '').toLowerCase().includes('maya')
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200/70'
+                                                : 'bg-stone-100 text-stone-700 border-stone-200'
+                                        }`}>
                                             {payout.payout_method || 'GCash'}
                                         </span>
                                         <span className="font-bold text-stone-800 text-xs truncate">
@@ -142,7 +148,13 @@ export default function PayoutHistoryTable({
                                     {/* Payout Destination */}
                                     <td className="py-4 px-5">
                                         <div className="flex items-center gap-1.5">
-                                            <span className="inline-flex px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-stone-100 text-stone-700 border border-stone-200">
+                                            <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${
+                                                (payout.payout_method || '').toLowerCase().includes('gcash')
+                                                    ? 'bg-sky-50 text-sky-700 border-sky-200/70'
+                                                    : (payout.payout_method || '').toLowerCase().includes('maya')
+                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200/70'
+                                                    : 'bg-stone-100 text-stone-700 border-stone-200'
+                                            }`}>
                                                 {payout.payout_method || 'GCash'}
                                             </span>
                                             <span className="font-bold text-stone-850 text-xs truncate max-w-[140px]">

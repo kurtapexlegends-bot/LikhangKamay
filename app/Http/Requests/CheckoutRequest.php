@@ -37,7 +37,7 @@ class CheckoutRequest extends FormRequest
             'shipping_postal_code' => 'nullable|string|max:20',
             'recipient_name' => 'nullable|string|max:100',
             'phone_number' => 'nullable|string|max:20',
-            'payment_method' => 'required|string|in:COD,GCash',
+            'payment_method' => 'required|string|in:COD,GCash,Maya',
             'total' => 'required|numeric',
             'shipping_notes' => 'nullable|string',
             'save_address' => 'nullable|boolean',

@@ -98,9 +98,15 @@ class PaymentController extends Controller
             $order->update(['total_amount' => $calculatedTotal]);
         }
 
+        $paymentMethodTypes = match ($order->payment_method) {
+            'Maya' => ['paymaya'],
+            'GCash' => ['gcash'],
+            default => ['gcash', 'paymaya', 'card'],
+        };
+
         $checkoutData = [
             'line_items' => $lineItems,
-            'payment_method_types' => ['gcash', 'grab_pay', 'paymaya', 'card'],
+            'payment_method_types' => $paymentMethodTypes,
             'success_url' => route('payment.success', ['order_id' => $order->order_number]),
             'cancel_url' => route('payment.cancel', ['order_id' => $order->order_number]),
             'description' => 'Payment for Order #' . $order->order_number,
@@ -172,12 +178,27 @@ class PaymentController extends Controller
             $hasPaidPayment = false;
             $paymentId = null;
 
+            $detectedMethod = null;
+            $resolveMethodFromPayment = function ($payment) {
+                $sourceType = $payment['attributes']['source']['type']
+                    ?? ($payment['source']['type']
+                    ?? ($payment['attributes']['payment_method_type'] ?? null));
+                return match (strtolower((string) $sourceType)) {
+                    'paymaya', 'maya' => 'Maya',
+                    'gcash' => 'GCash',
+                    'card' => 'Card',
+                    'grab_pay' => 'GrabPay',
+                    default => null,
+                };
+            };
+
             foreach (($session['included'] ?? []) as $included) {
                 $includedType = $included['type'] ?? null;
                 $includedStatus = $included['attributes']['status'] ?? null;
                 if ($includedType === 'payment' && $includedStatus === 'paid') {
                     $hasPaidPayment = true;
                     $paymentId = $included['id'] ?? null;
+                    $detectedMethod = $resolveMethodFromPayment($included);
                     break;
                 }
             }
@@ -188,6 +209,7 @@ class PaymentController extends Controller
                     if ($paymentStatus === 'paid') {
                         $hasPaidPayment = true;
                         $paymentId = $payment['id'] ?? ($payment['attributes']['id'] ?? null);
+                        $detectedMethod = $resolveMethodFromPayment($payment);
                         break;
                     }
                 }
@@ -196,6 +218,9 @@ class PaymentController extends Controller
             if (!$paymentId && !empty($attributes['payments']) && is_array($attributes['payments'])) {
                 $firstPayment = reset($attributes['payments']);
                 $paymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
+                if (!$detectedMethod) {
+                    $detectedMethod = $resolveMethodFromPayment($firstPayment);
+                }
             }
 
             $sessionStatus = $attributes['status'] ?? 'pending';
@@ -219,7 +244,7 @@ class PaymentController extends Controller
             if ($isPaid || $hasPaidPayment) {
                 $shouldSendReceipt = false;
 
-                DB::transaction(function () use ($paymentId, &$order, &$shouldSendReceipt) {
+                DB::transaction(function () use ($paymentId, $detectedMethod, &$order, &$shouldSendReceipt) {
                     $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
                     if (!$lockedOrder) {
                         return;
@@ -231,8 +256,10 @@ class PaymentController extends Controller
 
                     if ($wasUnpaid) {
                         $updateData['payment_status'] = 'paid';
-                        $updateData['payment_method'] = $lockedOrder->payment_method ?: 'GCash';
+                        $updateData['payment_method'] = $detectedMethod ?: ($lockedOrder->payment_method ?: 'GCash');
                         $shouldSendReceipt = true;
+                    } elseif ($detectedMethod && $lockedOrder->payment_method !== $detectedMethod) {
+                        $updateData['payment_method'] = $detectedMethod;
                     }
 
                     if ($paymentId && empty($lockedOrder->payment_id)) {
@@ -300,7 +327,7 @@ class PaymentController extends Controller
 
     private function canInitiateOnlinePayment(Order $order): bool
     {
-        return $order->payment_method === 'GCash'
+        return in_array($order->payment_method, ['GCash', 'Maya'], true)
             && in_array($order->status, self::PAYABLE_ONLINE_STATUSES, true)
             && $order->payment_status === 'pending';
     }
