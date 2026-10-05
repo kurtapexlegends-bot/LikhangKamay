@@ -378,13 +378,15 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     
     // BUYER: SHOPPING & ORDERS
     Route::middleware(['ensure.not.pending.artisan'])->group(function () {
-        Route::get('/checkout', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'create'])->name('checkout.create');
-        Route::post('/checkout/shipping-quote', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'quoteShipping'])
-            ->middleware('throttle:30,1')
-            ->name('checkout.shipping-quote');
-        Route::post('/checkout', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'store'])
-            ->middleware('throttle:checkout.initiate')
-            ->name('checkout.store');
+        Route::middleware(['auth'])->group(function () {
+            Route::get('/checkout', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'create'])->name('checkout.create');
+            Route::post('/checkout/shipping-quote', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'quoteShipping'])
+                ->middleware('throttle:30,1')
+                ->name('checkout.shipping-quote');
+            Route::post('/checkout', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'store'])
+                ->middleware('throttle:checkout.initiate')
+                ->name('checkout.store');
+        });
         Route::get('/saved', function () {
             return Inertia::render('Consumer/Buyer/Saved');
         })->name('saved.index');

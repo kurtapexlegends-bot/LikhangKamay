@@ -47,8 +47,12 @@ class PlaceOrder
      * @param User $buyer
      * @return void
      */
-    public function execute(Request $request, User $buyer): void
+    public function execute(Request $request, ?User $buyer): void
     {
+        if (!$buyer) {
+            throw new \Illuminate\Auth\AuthenticationException('You must be logged in to place an order.');
+        }
+
         $shippingContext = $request->shipping_method === 'Delivery'
             ? OrderWorkflowHelper::resolveCheckoutDeliveryContext($request, $buyer, true)
             : [

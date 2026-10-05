@@ -149,6 +149,11 @@ export default function Cart({ cart }) {
     };
 
     const proceedToCheckout = () => {
+        if (!auth?.user) {
+            router.visit(route('login'));
+            return;
+        }
+
         // Pass selected item IDs to checkout
         router.get(route('checkout.create'), { 
             items: Array.from(selectedItems) 

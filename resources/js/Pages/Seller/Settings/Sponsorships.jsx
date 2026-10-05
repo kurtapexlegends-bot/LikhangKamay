@@ -29,7 +29,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
         product_id: '',
     });
 
-    const isSuperPremium = auth.user.premium_tier === 'super_premium';
+    const isSuperPremium = auth?.user?.premium_tier === 'super_premium';
 
     const submitRequest = (e) => {
         e.preventDefault();

@@ -74,7 +74,7 @@ export default function Edit({ mustVerifyEmail, status, addresses, profileMode =
                 </div>
             )}
 
-            {auth.user.role !== 'staff' && !auth.user.is_staff && (
+            {auth?.user?.role !== 'staff' && !auth?.user?.is_staff && (
                 <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-red-50 bg-red-50/10">
                         <div className="flex items-center gap-2.5">

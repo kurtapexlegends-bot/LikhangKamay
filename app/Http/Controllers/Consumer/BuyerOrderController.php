@@ -30,11 +30,15 @@ class BuyerOrderController extends Controller
      */
     public function create(Request $request, PrepareCheckout $prepareCheckout)
     {
-        if (Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('info', 'Please sign in to proceed with checkout.');
+        }
+
+        if (in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
             abort(403, 'Administrators are not permitted to make purchases.');
         }
 
-        if (Auth::check() && Auth::user()->isSuspended()) {
+        if (Auth::user()->isSuspended()) {
             $days = Auth::user()->daysRemainingSuspension();
             $reason = Auth::user()->suspension_reason ?: 'Policy violation';
             abort(403, "Your account is temporarily suspended for {$days} day(s) until " . Auth::user()->suspended_until->format('M d, Y') . ". Reason: {$reason}. You cannot place new orders at this time.");
@@ -93,11 +97,15 @@ class BuyerOrderController extends Controller
      */
     public function store(CheckoutRequest $request, PlaceOrder $placeOrder)
     {
-        if (Auth::check() && in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('info', 'Please sign in to complete your purchase.');
+        }
+
+        if (in_array(Auth::user()->role, ['super_admin', 'admin'], true)) {
             abort(403, 'Administrators are not permitted to make purchases.');
         }
 
-        if (Auth::check() && Auth::user()->isSuspended()) {
+        if (Auth::user()->isSuspended()) {
             $days = Auth::user()->daysRemainingSuspension();
             $reason = Auth::user()->suspension_reason ?: 'Policy violation';
             abort(403, "Your account is temporarily suspended for {$days} day(s) until " . Auth::user()->suspended_until->format('M d, Y') . ". Reason: {$reason}. You cannot place new orders at this time.");

@@ -84,17 +84,17 @@ export default function ShippingAddressSelector({
             address_label: typeLabel(current.shipping_address_type || 'home'),
             shipping_address: '',
             shipping_address_type: current.shipping_address_type || 'home',
-            shipping_street_address: auth.user.street_address || '',
-            shipping_barangay: auth.user.barangay || '',
-            shipping_city: auth.user.city || '',
-            shipping_region: auth.user.region || '',
-            shipping_postal_code: auth.user.zip_code || '',
+            shipping_street_address: auth?.user?.street_address || '',
+            shipping_barangay: auth?.user?.barangay || '',
+            shipping_city: auth?.user?.city || '',
+            shipping_region: auth?.user?.region || '',
+            shipping_postal_code: auth?.user?.zip_code || '',
             latitude: null,
             longitude: null,
             shipping_latitude: null,
             shipping_longitude: null,
-            recipient_name: auth.user.name || '',
-            phone_number: auth.user.phone_number || '',
+            recipient_name: auth?.user?.name || '',
+            phone_number: auth?.user?.phone_number || '',
             save_address: false,
         }));
     };
@@ -116,8 +116,8 @@ export default function ShippingAddressSelector({
             longitude: address.longitude ?? null,
             shipping_latitude: address.latitude ?? null,
             shipping_longitude: address.longitude ?? null,
-            recipient_name: address.recipient_name || auth.user.name || '',
-            phone_number: address.phone_number || auth.user.phone_number || '',
+            recipient_name: address.recipient_name || auth?.user?.name || '',
+            phone_number: address.phone_number || auth?.user?.phone_number || '',
             save_address: false,
         }));
     };
@@ -125,7 +125,7 @@ export default function ShippingAddressSelector({
     const cancelAddressForm = () => {
         setEditingAddressId(null);
         setIsAddingNew(false);
-        if (auth.user.addresses?.length && data.selected_address_id !== 'new') {
+        if (auth?.user?.addresses?.length && data.selected_address_id !== 'new') {
             const fallback = auth.user.addresses.find((address) => String(address.id) === String(data.selected_address_id));
             if (fallback) {
                 chooseSavedAddress(fallback);
@@ -246,7 +246,7 @@ export default function ShippingAddressSelector({
             {/* Saved Addresses (Mobile: Grid-to-scroll, Tablet/Desktop: 2-column Grid) */}
             {auth?.user?.addresses?.length > 0 ? (
                 <div className="flex md:grid overflow-x-auto md:overflow-visible flex-nowrap md:grid-cols-2 gap-2.5 pb-1 md:pb-0 snap-x scrollbar-hide">
-                    {auth.user.addresses.map((address) => (
+                    {auth?.user?.addresses?.map((address) => (
                         <div key={address.id} className="w-[250px] sm:w-[265px] md:w-auto shrink-0 md:shrink snap-start h-full">
                             <AddressCard
                                 address={address}

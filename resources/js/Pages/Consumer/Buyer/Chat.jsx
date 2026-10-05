@@ -265,7 +265,7 @@ export default function BuyerChat({ auth, conversations = [], activeMessages = [
             channel.stopListening('.message.seen');
             channel.stopListening('.user.typing');
         };
-    }, [auth.user.id, selectedUser?.id, hasMoreMessages, activeOrderCtx, activeUserOrdersList, markAsRead]);
+    }, [auth?.user?.id, selectedUser?.id, hasMoreMessages, activeOrderCtx, activeUserOrdersList, markAsRead]);
 
     useEffect(() => {
         if (selectedUser) {

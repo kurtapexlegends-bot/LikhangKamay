@@ -116,15 +116,15 @@ export default function Checkout({ auth, pricing }) {
         items: checkoutItems,
         selected_address_id: defaultAddress?.id || 'new',
         address_label: defaultAddress?.label || typeLabel(defaultAddress?.address_type || 'home'),
-        shipping_address: resolveAddressDisplay(defaultAddress) || auth.user.saved_address || auth.user.street_address || '',
+        shipping_address: resolveAddressDisplay(defaultAddress) || auth?.user?.saved_address || auth?.user?.street_address || '',
         shipping_address_type: defaultAddress?.address_type || 'home',
-        shipping_street_address: defaultAddress?.street_address || auth.user.street_address || '',
-        shipping_barangay: defaultAddress?.barangay || auth.user.barangay || '',
-        shipping_city: defaultAddress?.city || auth.user.city || '',
-        shipping_region: defaultAddress?.region || auth.user.region || '',
-        shipping_postal_code: defaultAddress?.postal_code || auth.user.zip_code || '',
-        recipient_name: defaultAddress?.recipient_name || auth.user.name || '',
-        phone_number: defaultAddress?.phone_number || auth.user.phone_number || '',
+        shipping_street_address: defaultAddress?.street_address || auth?.user?.street_address || '',
+        shipping_barangay: defaultAddress?.barangay || auth?.user?.barangay || '',
+        shipping_city: defaultAddress?.city || auth?.user?.city || '',
+        shipping_region: defaultAddress?.region || auth?.user?.region || '',
+        shipping_postal_code: defaultAddress?.postal_code || auth?.user?.zip_code || '',
+        recipient_name: defaultAddress?.recipient_name || auth?.user?.name || '',
+        phone_number: defaultAddress?.phone_number || auth?.user?.phone_number || '',
         shipping_notes: '',
         payment_method: 'COD',
         shipping_method: 'Delivery',
@@ -164,7 +164,7 @@ export default function Checkout({ auth, pricing }) {
         data.shipping_street_address,
     ]);
 
-    const isNewAddress = data.selected_address_id === 'new' || !auth.user.addresses?.length;
+    const isNewAddress = data.selected_address_id === 'new' || !auth?.user?.addresses?.length;
     const activeShippingAddress = isNewAddress ? structuredShippingPreview : data.shipping_address;
 
     useEffect(() => {

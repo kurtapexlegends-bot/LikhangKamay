@@ -230,8 +230,8 @@ export default function ReviewListItem({
                                 </button>
                             </div>
                             <div className="flex items-center gap-2 mb-2 pr-16">
-                                <UserAvatar user={auth.user} className="w-5 h-5 shadow-sm" />
-                                <span className="text-[11px] font-bold text-stone-900">{auth.user.shop_name || auth.user.name}</span>
+                                <UserAvatar user={auth?.user} className="w-5 h-5 shadow-sm" />
+                                <span className="text-[11px] font-bold text-stone-900">{auth?.user?.shop_name || auth?.user?.name || 'Seller'}</span>
                                 <span className="text-[9px] font-bold tracking-wider uppercase text-clay-600 bg-clay-100/50 px-1 py-0.5 rounded border border-clay-200/50">Seller Reply</span>
                             </div>
                             <div className="text-[13px] text-stone-700 leading-snug prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: review.seller_reply }} />

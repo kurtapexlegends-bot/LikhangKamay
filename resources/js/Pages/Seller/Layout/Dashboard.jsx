@@ -30,13 +30,13 @@ export default function Dashboard({ auth }) {
         return () => clearTimeout(timer);
     }, []);
 
-    const isNewlyApproved = auth.user.approved_at 
+    const isNewlyApproved = auth?.user?.approved_at 
         ? (new Date() - new Date(auth.user.approved_at)) / (1000 * 60 * 60 * 24) <= 7 
         : false;
 
     const [showWelcome, setShowWelcome] = useState(
-        auth.user.role === 'artisan' && 
-        (auth.user.artisan_welcomed === 0 || auth.user.artisan_welcomed === false) &&
+        auth?.user?.role === 'artisan' && 
+        (auth?.user?.artisan_welcomed === 0 || auth?.user?.artisan_welcomed === false) &&
         isNewlyApproved
     );
 
@@ -93,9 +93,10 @@ export default function Dashboard({ auth }) {
             <SellerHeader
                 title={(() => {
                     const hour = new Date().getHours();
-                    if (hour < 12) return `Good morning, ${auth.user.name.split(' ')[0]}`;
-                    if (hour < 18) return `Good afternoon, ${auth.user.name.split(' ')[0]}`;
-                    return `Good evening, ${auth.user.name.split(' ')[0]}`;
+                    const firstName = auth?.user?.name ? auth.user.name.split(' ')[0] : 'Artisan';
+                    if (hour < 12) return `Good morning, ${firstName}`;
+                    if (hour < 18) return `Good afternoon, ${firstName}`;
+                    return `Good evening, ${firstName}`;
                 })()}
                 subtitle="Monitor daily sales, active orders, and shop performance."
                 auth={auth}

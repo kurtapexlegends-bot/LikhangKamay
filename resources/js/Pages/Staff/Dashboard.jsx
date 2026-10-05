@@ -64,7 +64,7 @@ export default function StaffDashboard({ auth, hub }) {
     const [tasks, setTasks] = useState(() => {
         if (typeof window === 'undefined') return defaultChecklist;
         try {
-            const saved = window.localStorage.getItem(`staff_checklist_${auth.user.id}`);
+            const saved = window.localStorage.getItem(`staff_checklist_${auth?.user?.id || 'guest'}`);
             return saved ? JSON.parse(saved) : defaultChecklist;
         } catch {
             return defaultChecklist;
@@ -75,8 +75,8 @@ export default function StaffDashboard({ auth, hub }) {
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        window.localStorage.setItem(`staff_checklist_${auth.user.id}`, JSON.stringify(tasks));
-    }, [tasks, auth.user.id]);
+        window.localStorage.setItem(`staff_checklist_${auth?.user?.id || 'guest'}`, JSON.stringify(tasks));
+    }, [tasks, auth?.user?.id]);
 
     const handleAddTask = (e) => {
         e.preventDefault();

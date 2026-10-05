@@ -279,5 +279,5 @@ export default function useTeamChatEcho({
                 }
             }
         };
-    }, [auth.user.id, currentChatUser?.id, currentChannel?.id, activeThreadParent?.id]);
+    }, [auth?.user?.id, currentChatUser?.id, currentChannel?.id, activeThreadParent?.id]);
 }
