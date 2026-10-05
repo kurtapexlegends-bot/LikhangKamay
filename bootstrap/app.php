@@ -66,6 +66,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 if ($response->getStatusCode() === 419) {
                     return Inertia::location(route('login'));
                 }
+                if ($response->getStatusCode() === 429) {
+                    $retryAfter = $response->headers->get('Retry-After', 60);
+                    return back()->with('error', "Too many attempts. Please slow down and wait {$retryAfter} seconds before trying again.");
+                }
                 if ($response->getStatusCode() >= 400 && !app()->environment('local', 'testing')) {
                     return back()->with('error', $exception->getMessage() ?: 'An error occurred while processing your request.');
                 }

@@ -23,7 +23,7 @@ export default function useOrderPolling(paginatedOrders) {
         }
 
         const intervalId = window.setInterval(() => {
-            if (document.hidden) {
+            if (document.hidden || !navigator.onLine) {
                 return;
             }
 

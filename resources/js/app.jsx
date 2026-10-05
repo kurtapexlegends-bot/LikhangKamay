@@ -9,18 +9,31 @@ import ErrorBoundary from '@/Components/ErrorBoundary';
 import { AnimatePresence } from 'framer-motion';
 import { scrollToFirstError } from '@/lib/formHelpers';
 
+import NetworkStatusBanner from '@/Components/Common/NetworkStatusBanner';
+
 // Global listener to automatically smooth-scroll to first invalid input on validation failures
 router.on('error', (event) => {
     const errors = event?.detail?.errors || event?.errors || null;
     scrollToFirstError(errors);
 });
 
-// Seamless auto-recovery from expired CSRF tokens (HTTP 419) without crashing modal
+// Auto-recovery from expired CSRF tokens (419) and graceful rate limit warning (429)
 router.on('invalid', (event) => {
     const status = event?.detail?.response?.status;
     if (status === 419) {
         event.preventDefault();
         window.location.reload();
+    } else if (status === 429) {
+        event.preventDefault();
+        const retryAfter = event?.detail?.response?.headers?.['retry-after'] || 60;
+        window.dispatchEvent(
+            new CustomEvent('app-toast', {
+                detail: {
+                    type: 'warning',
+                    message: `Too many requests. Please wait ${retryAfter} seconds before trying again.`,
+                },
+            })
+        );
     }
 });
 
@@ -76,6 +89,7 @@ createInertiaApp({
         root.render(
             <ErrorBoundary>
                 <ToastProvider>
+                    <NetworkStatusBanner />
                     <AnimatePresence mode="wait" initial={false}>
                         <App {...props} />
                     </AnimatePresence>

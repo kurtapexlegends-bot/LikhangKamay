@@ -108,6 +108,7 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\Review::observe(\App\Observers\ReviewObserver::class);
         \App\Models\ReviewDispute::observe(\App\Observers\ReviewDisputeObserver::class);
         \App\Models\Product::observe(\App\Observers\ProductObserver::class);
+        \App\Models\Order::observe(\App\Observers\OrderAuditObserver::class);
 
         \Illuminate\Support\Facades\Event::listen(
             \App\Events\ShopSettingsUpdated::class,
@@ -143,6 +144,26 @@ class AppServiceProvider extends ServiceProvider
         // 4. User Login (Prevent brute force)
         \Illuminate\Support\Facades\RateLimiter::for('login', function (\Illuminate\Http\Request $request) {
             return \Illuminate\Cache\RateLimiting\Limit::perMinute(5)->by($request->ip());
+        });
+
+        // 5. Checkout & Payment Session Initiation
+        \Illuminate\Support\Facades\RateLimiter::for('checkout.initiate', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // 6. Review & Rating Submissions
+        \Illuminate\Support\Facades\RateLimiter::for('reviews.submit', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(6)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // 7. In-App Team & Customer Chat Flood Guard
+        \Illuminate\Support\Facades\RateLimiter::for('chat.message', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // 8. Auth Verification & Resend Email/Code
+        \Illuminate\Support\Facades\RateLimiter::for('auth.resend_code', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(3)->by($request->ip());
         });
     }
 }

@@ -279,7 +279,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::get('/chat', [\App\Http\Controllers\Chat\ChatController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:messages'])->name('chat.index'); 
     
     Route::middleware(['ensure.not.pending.artisan'])->group(function () {
-        Route::post('/chat/send', [\App\Http\Controllers\Chat\ChatController::class, 'store'])->name('chat.store');
+        Route::post('/chat/send', [\App\Http\Controllers\Chat\ChatController::class, 'store'])->middleware('throttle:chat.message')->name('chat.store');
         Route::post('/chat/seen', [\App\Http\Controllers\Chat\ChatController::class, 'markAsSeen'])->name('chat.seen');
         Route::post('/chat/signal-typing', [\App\Http\Controllers\Chat\ChatController::class, 'signalTyping'])->name('chat.signal-typing');
             
@@ -294,7 +294,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     });
 
     Route::get('/team-messages', [\App\Http\Controllers\Seller\TeamMessageController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.index');
-    Route::post('/team-messages/send', [\App\Http\Controllers\Seller\TeamMessageController::class, 'store'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.store');
+    Route::post('/team-messages/send', [\App\Http\Controllers\Seller\TeamMessageController::class, 'store'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages', 'throttle:chat.message'])->name('team-messages.store');
     Route::post('/team-messages/seen', [\App\Http\Controllers\Seller\TeamMessageController::class, 'markAsSeen'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.seen');
     Route::post('/team-messages/signal-typing', [\App\Http\Controllers\Seller\TeamMessageController::class, 'signalTyping'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.signal-typing');
     Route::post('/team-messages/channels', [\App\Http\Controllers\Seller\TeamMessageController::class, 'createChannel'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.channels.store');
@@ -383,7 +383,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
             ->middleware('throttle:30,1')
             ->name('checkout.shipping-quote');
         Route::post('/checkout', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'store'])
-            ->middleware('throttle:15,1')
+            ->middleware('throttle:checkout.initiate')
             ->name('checkout.store');
         Route::get('/saved', function () {
             return Inertia::render('Consumer/Buyer/Saved');
@@ -431,7 +431,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
         // REVIEWS
         Route::get('/my-reviews', [\App\Http\Controllers\Consumer\ReviewController::class, 'buyerIndex'])->name('buyer.reviews');
-        Route::post('/reviews', [\App\Http\Controllers\Consumer\ReviewController::class, 'store'])->name('reviews.store');
+        Route::post('/reviews', [\App\Http\Controllers\Consumer\ReviewController::class, 'store'])->middleware('throttle:reviews.submit')->name('reviews.store');
         Route::patch('/reviews/{id}', [\App\Http\Controllers\Consumer\ReviewController::class, 'update'])->name('reviews.update');
         Route::delete('/reviews/{id}', [\App\Http\Controllers\Consumer\ReviewController::class, 'destroy'])->name('reviews.destroy');
 
@@ -615,6 +615,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     // Platform Operations Control Center
     Route::get('/operations', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'operations'])->name('admin.operations');
     Route::get('/operations/export', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'export'])->name('admin.activity.export');
+    Route::get('/operations/subject-history', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'subjectHistory'])->name('admin.operations.subject-history');
     Route::get('/activity-log', fn() => redirect()->route('admin.operations', request()->query()))->name('admin.activity.index');
 
 
