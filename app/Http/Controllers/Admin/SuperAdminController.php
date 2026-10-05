@@ -322,4 +322,28 @@ class SuperAdminController extends Controller
 
         return back()->with('success', "Artisan {$user->name}'s subscription tier successfully updated to {$tierLabel}.");
     }
+
+    public function verifyUserEmail(Request $request, User $user)
+    {
+        Gate::authorize('admin-action');
+
+        if (!$user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "User {$user->email}'s email address marked as verified.",
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'email_verified_at' => $user->email_verified_at?->toIso8601String(),
+                ],
+            ]);
+        }
+
+        return back()->with('success', "User {$user->email}'s email address marked as verified.");
+    }
 }
