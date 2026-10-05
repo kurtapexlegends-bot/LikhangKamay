@@ -132,20 +132,20 @@ class PayoutController extends Controller
             $recentOrdersGrouped
         ) {
             $sales = $completedSalesAggregates->get($user->id);
-            $grossSales = (float) ($sales->gross_sales ?? 0);
-            $platformFees = (float) ($sales->platform_fees ?? 0);
-            $netSales = (float) ($sales->net_sales ?? 0);
+            $grossSales = (float) ($sales?->gross_sales ?? 0);
+            $platformFees = (float) ($sales?->platform_fees ?? 0);
+            $netSales = (float) ($sales?->net_sales ?? 0);
 
-            $codSales = (float) ($codSalesAggregates->get($user->id)->cod_sales ?? 0);
+            $codSales = (float) ($codSalesAggregates->get($user->id)?->cod_sales ?? 0);
             $onlineSales = max(0.00, $netSales - $codSales);
 
-            $stockExpenses = (float) ($stockExpenseAggregates->get($user->id)->total_stock_expenses ?? 0);
-            $payrollExpenses = (float) ($payrollExpenseAggregates->get($user->id)->total_payroll_expenses ?? 0);
+            $stockExpenses = (float) ($stockExpenseAggregates->get($user->id)?->total_stock_expenses ?? 0);
+            $payrollExpenses = (float) ($payrollExpenseAggregates->get($user->id)?->total_payroll_expenses ?? 0);
             $totalExpenses = $stockExpenses + $payrollExpenses;
 
-            $payouts = (float) ($payoutAggregates->get($user->id)->total_payouts ?? 0);
-            $heldForDispute = (float) ($disputeHoldAggregates->get($user->id)->total_held ?? 0);
-            $ordersInProgress = (float) ($ordersInProgressAggregates->get($user->id)->total_in_progress ?? 0);
+            $payouts = (float) ($payoutAggregates->get($user->id)?->total_payouts ?? 0);
+            $heldForDispute = (float) ($disputeHoldAggregates->get($user->id)?->total_held ?? 0);
+            $ordersInProgress = (float) ($ordersInProgressAggregates->get($user->id)?->total_in_progress ?? 0);
 
             $baseFunds = (float) ($user->base_funds ?? 0);
             $currentBalance = $baseFunds + $netSales - $totalExpenses - $payouts;

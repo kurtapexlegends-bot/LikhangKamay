@@ -70,8 +70,14 @@ return Application::configure(basePath: dirname(__DIR__))
                     $retryAfter = $response->headers->get('Retry-After', 60);
                     return back()->with('error', "Too many attempts. Please slow down and wait {$retryAfter} seconds before trying again.");
                 }
+                if ($response->getStatusCode() >= 500 && !app()->environment('local', 'testing')) {
+                    return back()->with('error', 'An unexpected error occurred. Please try again.');
+                }
                 if ($response->getStatusCode() >= 400 && !app()->environment('local', 'testing')) {
-                    return back()->with('error', $exception->getMessage() ?: 'An error occurred while processing your request.');
+                    $message = $exception instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface
+                        ? $exception->getMessage()
+                        : 'An error occurred while processing your request.';
+                    return back()->with('error', $message ?: 'An error occurred while processing your request.');
                 }
                 if (in_array($response->getStatusCode(), [403, 404])) {
                     return back()->with('error', $exception->getMessage() ?: 'Access restricted or page not found.');
