@@ -205,6 +205,7 @@ export default function AdminLayout({ title, children }) {
                 },
                 { name: 'Product Approvals', href: route('admin.catalog.index', { tab: 'moderation' }), icon: ShoppingBag, current: isTabActive('admin.catalog.index', 'moderation', url) },
                 { name: 'Sponsorships', href: route('admin.catalog.index', { tab: 'sponsorships' }), icon: Star, current: isTabActive('admin.catalog.index', 'sponsorships', url) },
+                { name: 'Categories & Taxonomy', href: route('admin.catalog.index', { tab: 'categories' }), icon: FolderTree, current: isTabActive('admin.catalog.index', 'categories', url) || isTabActive('admin.settings.index', 'taxonomy', url) },
             ]
         },
         {

@@ -9,12 +9,21 @@ use Illuminate\Support\Facades\File;
 
 class LocalImageTransformer
 {
-    /** @var \Intervention\Image\ImageManager */
-    protected $manager;
+    /** @var \Intervention\Image\ImageManager|null */
+    protected $manager = null;
 
     public function __construct(?ImageManager $manager = null)
     {
-        $this->manager = $manager ?? new ImageManager(new Driver());
+        if ($manager !== null) {
+            $this->manager = $manager;
+        } elseif (extension_loaded('gd')) {
+            $this->manager = new ImageManager(new Driver());
+        }
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->manager !== null;
     }
 
     /**

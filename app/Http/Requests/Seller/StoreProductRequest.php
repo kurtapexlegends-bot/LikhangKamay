@@ -50,9 +50,9 @@ class StoreProductRequest extends FormRequest
             'recipes' => ['nullable', 'array'],
             'recipes.*.supply_id' => ['required', 'exists:supplies,id'],
             'recipes.*.quantity_required' => ['required', 'numeric', 'min:0.01'],
-            'cover_photo' => ['nullable', 'image', 'max:10240'],
+            'cover_photo' => ['nullable', 'image', 'max:4096'],
             'gallery' => ['nullable', 'array', 'max:' . self::MAX_GALLERY_IMAGES],
-            'gallery.*' => ['nullable', 'image', 'max:10240'],
+            'gallery.*' => ['nullable', 'image', 'max:4096'],
             'model_3d' => $threeDAssetService->getUploadRules(),
             ...$threeDAssetService->getAssetRules(),
         ];

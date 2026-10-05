@@ -27,7 +27,7 @@ class UpdateOrderStatusRequest extends FormRequest
             'status' => ['required', 'string', 'in:Accepted,Processing,Rejected,Shipped,Ready for Pickup,Delivered,Completed,Cancelled'],
             'tracking_number' => ['nullable', 'string', 'max:100'],
             'shipping_notes' => ['nullable', 'string', 'max:500'],
-            'proof_of_delivery' => ['nullable', 'image', 'max:5120'],
+            'proof_of_delivery' => ['nullable', 'image', 'max:4096'],
             'pickup_pin' => ['nullable', 'string', 'max:10'],
         ];
     }

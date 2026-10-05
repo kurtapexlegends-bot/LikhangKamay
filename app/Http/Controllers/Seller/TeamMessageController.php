@@ -226,7 +226,7 @@ class TeamMessageController extends Controller
             'team_channel_id' => ['nullable', 'integer', 'exists:team_channels,id'],
             'parent_id' => ['nullable', 'integer', 'exists:team_messages,id'],
             'message' => ['nullable', 'string', 'max:5000'],
-            'attachment' => ['nullable', 'file', 'max:10240'],
+            'attachment' => ['nullable', 'file', 'max:4096'],
         ]);
 
         if (! $request->filled('message') && ! $request->hasFile('attachment')) {

@@ -17,6 +17,24 @@ export default function OrderCardActions({
     onOpenEscalateModal,
     onOpenRatingModal,
 }) {
+    const [isAcceptingReplacement, setIsAcceptingReplacement] = React.useState(false);
+
+    const handleAcceptReplacement = () => {
+        if (isAcceptingReplacement || !order.dispute?.id) return;
+        setIsAcceptingReplacement(true);
+        router.post(
+            route('disputes.react', order.dispute.id),
+            { action: 'accept_replacement' },
+            {
+                onFinish: () => setIsAcceptingReplacement(false),
+            }
+        );
+    };
+
+    const hasUnratedItems = Boolean(order.items?.some(item => !item.is_rated));
+    const hasManageableReviewItems = Boolean(order.items?.some(item => item.review?.can_manage_review));
+    const hasRateOrReviewActions = hasUnratedItems || hasManageableReviewItems;
+
     const formatPHP = (val) => {
         const num = Number(val);
         return isNaN(num) ? `PHP ${val}` : `PHP ${num.toFixed(2)}`;
@@ -184,15 +202,12 @@ export default function OrderCardActions({
                 {/* COMPLETED: Rate & Return */}
                 {order.status === 'Completed' && (
                     <>
-                        {(!order.replacement_in_progress && (
-                            order.items.some(item => !item.is_rated) ||
-                            order.items.some(item => item.review?.can_manage_review)
-                        )) && (
+                        {(!order.replacement_in_progress && hasRateOrReviewActions) && (
                             <button 
                                 onClick={() => onOpenRatingModal(order)}
                                 className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-clay-600 text-white rounded-lg text-[12px] font-bold hover:bg-clay-700 shadow-md shadow-clay-200 transition-all hover:-translate-y-0.5 min-h-[38px]"
                             >
-                                <Star size={15} /> {order.items.some(item => item.review?.can_manage_review) ? 'Manage Reviews' : 'Rate'}
+                                <Star size={15} /> {hasManageableReviewItems ? 'Manage Reviews' : 'Rate'}
                             </button>
                         )}
 
@@ -212,10 +227,13 @@ export default function OrderCardActions({
                     <>
                         {order.dispute?.status === 'seller_proposed_replacement' && (
                             <button 
-                                onClick={() => router.post(route('disputes.react', order.dispute.id), { action: 'accept_replacement' })}
-                                className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-teal-700 text-white rounded-lg text-[12px] font-bold hover:bg-teal-800 shadow-md shadow-teal-200 transition-all hover:-translate-y-0.5 min-h-[38px]"
+                                onClick={handleAcceptReplacement}
+                                disabled={isAcceptingReplacement}
+                                className={`inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-teal-700 text-white rounded-lg text-[12px] font-bold hover:bg-teal-800 shadow-md shadow-teal-200 transition-all hover:-translate-y-0.5 min-h-[38px] ${
+                                    isAcceptingReplacement ? 'opacity-60 cursor-not-allowed' : ''
+                                }`}
                             >
-                                <CheckCircle size={15} /> Accept Replacement
+                                <CheckCircle size={15} /> {isAcceptingReplacement ? 'Accepting...' : 'Accept Replacement'}
                             </button>
                         )}
                         
@@ -279,25 +297,25 @@ export default function OrderCardActions({
                 )}
 
                 {/* 3. Rate / Manage Reviews */}
-                {(order.status === 'Completed' && !order.replacement_in_progress && (
-                    order.items.some(item => !item.is_rated) ||
-                    order.items.some(item => item.review?.can_manage_review)
-                )) && (
+                {(order.status === 'Completed' && !order.replacement_in_progress && hasRateOrReviewActions) && (
                     <button 
                         onClick={() => onOpenRatingModal(order)}
                         className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-5 bg-clay-600 text-white rounded-lg text-[12px] font-bold hover:bg-clay-700 shadow-md shadow-clay-200 transition-all active:scale-95 min-h-[44px]"
                     >
-                        <Star size={15} /> {order.items.some(item => item.review?.can_manage_review) ? 'Manage Reviews' : 'Rate'}
+                        <Star size={15} /> {hasManageableReviewItems ? 'Manage Reviews' : 'Rate'}
                     </button>
                 )}
 
                 {/* 4. Accept Replacement */}
                 {(order.status === 'Refund/Return' && order.dispute?.status === 'seller_proposed_replacement') && (
                     <button 
-                        onClick={() => router.post(route('disputes.react', order.dispute.id), { action: 'accept_replacement' })}
-                        className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-5 bg-teal-600 text-white rounded-lg text-[12px] font-bold hover:bg-teal-700 shadow-md shadow-teal-200 transition-all active:scale-95 min-h-[44px] animate-pulse"
+                        onClick={handleAcceptReplacement}
+                        disabled={isAcceptingReplacement}
+                        className={`flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-5 bg-teal-600 text-white rounded-lg text-[12px] font-bold hover:bg-teal-700 shadow-md shadow-teal-200 transition-all active:scale-95 min-h-[44px] ${
+                            isAcceptingReplacement ? 'opacity-60 cursor-not-allowed' : 'animate-pulse'
+                        }`}
                     >
-                        <CheckCircle size={15} /> Accept Replacement
+                        <CheckCircle size={15} /> {isAcceptingReplacement ? 'Accepting...' : 'Accept Replacement'}
                     </button>
                 )}
 
@@ -315,7 +333,7 @@ export default function OrderCardActions({
                 {/* Promoting Chat */}
                 {(!(['Pending', 'Accepted'].includes(order.status) && order.payment_status === 'pending' && order.payment_method !== 'COD') &&
                  !(order.status === 'Delivered' && !order.received_at) &&
-                 !(order.status === 'Completed' && !order.replacement_in_progress && (order.items.some(item => !item.is_rated) || order.items.some(item => item.review?.can_manage_review))) &&
+                 !(order.status === 'Completed' && !order.replacement_in_progress && hasRateOrReviewActions) &&
                  !(order.status === 'Refund/Return') &&
                  order.status !== 'Completed') && (
                     <button 
@@ -328,7 +346,7 @@ export default function OrderCardActions({
 
                 {/* Promoting Buy Again */}
                 {(['Completed', 'Cancelled', 'Rejected', 'Refunded', 'Replaced'].includes(order.status) && 
-                  !(order.status === 'Completed' && !order.replacement_in_progress && (order.items.some(item => !item.is_rated) || order.items.some(item => item.review?.can_manage_review)))) && (
+                  !(order.status === 'Completed' && !order.replacement_in_progress && hasRateOrReviewActions)) && (
                     <button 
                         onClick={() => onBuyAgain(order.id)}
                         className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-4 border border-stone-200 bg-white text-stone-700 rounded-lg text-[12px] font-bold hover:bg-stone-50 hover:border-clay-300 transition shadow-2xs active:scale-95 min-h-[44px]"
@@ -341,12 +359,12 @@ export default function OrderCardActions({
                 {(() => {
                     const isChatPromoted = !(['Pending', 'Accepted'].includes(order.status) && order.payment_status === 'pending' && order.payment_method !== 'COD') &&
                          !(order.status === 'Delivered' && !order.received_at) &&
-                         !(order.status === 'Completed' && !order.replacement_in_progress && (order.items.some(item => !item.is_rated) || order.items.some(item => item.review?.can_manage_review))) &&
+                         !(order.status === 'Completed' && !order.replacement_in_progress && hasRateOrReviewActions) &&
                          !(order.status === 'Refund/Return') &&
                          order.status !== 'Completed';
 
                     const isBuyAgainPromoted = ['Completed', 'Cancelled', 'Rejected', 'Refunded', 'Replaced'].includes(order.status) && 
-                         !(order.status === 'Completed' && !order.replacement_in_progress && (order.items.some(item => !item.is_rated) || order.items.some(item => item.review?.can_manage_review)));
+                         !(order.status === 'Completed' && !order.replacement_in_progress && hasRateOrReviewActions);
 
                     const finalMobileSecondaryActions = getMobileSecondaryActions().filter(act => {
                         if (isChatPromoted && act.label === 'Chat') return false;

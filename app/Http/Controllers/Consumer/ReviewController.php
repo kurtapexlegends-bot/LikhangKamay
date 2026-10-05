@@ -52,7 +52,7 @@ class ReviewController extends Controller
             'product_id' => 'required|exists:products,id',
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
-            'photos.*' => 'nullable|image|max:5120',
+            'photos.*' => 'nullable|image|max:4096',
         ]);
 
         $orderQuery = \App\Models\Order::query()
@@ -111,7 +111,7 @@ class ReviewController extends Controller
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
-            'photos.*' => 'nullable|image|max:5120',
+            'photos.*' => 'nullable|image|max:4096',
         ]);
 
         if ($request->hasFile('photos')) {

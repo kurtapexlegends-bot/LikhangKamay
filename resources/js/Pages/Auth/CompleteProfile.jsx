@@ -58,10 +58,11 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
             if (data.shop_name.trim().length > 2) {
                 setIsValidatingShop(true);
                 try {
-                    // Simple slugification for validation
-                    const slug = data.shop_name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-                    const response = await axios.post(route('admin.artisan.check-slug'), { slug });
-                    setIsShopNameTaken(response.data.exists);
+                    const response = await axios.post(route('api.validate-constraint'), {
+                        type: 'shop_name_availability',
+                        value: data.shop_name.trim()
+                    });
+                    setIsShopNameTaken(response.data.valid === false);
                 } catch (e) {
                     console.error("Shop validation failed", e);
                 } finally {

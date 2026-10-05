@@ -388,6 +388,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             $schedule = \App\Models\SellerPickupSchedule::firstOrCreate(
                 ['user_id' => $effectiveSeller->id],
                 [
+                    'is_enabled' => true,
                     'operating_days' => \App\Models\SellerPickupSchedule::DEFAULT_OPERATING_DAYS,
                     'time_slots' => \App\Models\SellerPickupSchedule::DEFAULT_TIME_SLOTS,
                 ]

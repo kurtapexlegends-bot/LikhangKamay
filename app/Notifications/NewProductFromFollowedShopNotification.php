@@ -28,7 +28,7 @@ class NewProductFromFollowedShopNotification extends Notification implements Sho
             'type' => 'followed_shop_new_product',
             'title' => 'New Release from ' . $shopName,
             'message' => "{$shopName} just published a new piece: \"{$this->product->name}\".",
-            'url' => route('products.show', $this->product->slug),
+            'url' => route('product.show', $this->product->slug),
             'product_id' => $this->product->id,
             'product_name' => $this->product->name,
             'product_image' => $this->product->img ?? $this->product->image,

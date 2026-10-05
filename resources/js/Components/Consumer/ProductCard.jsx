@@ -3,8 +3,9 @@ import { Link } from '@inertiajs/react';
 import { Heart } from 'lucide-react';
 import DiscountCountdownBadge from '@/Components/Consumer/DiscountCountdownBadge';
 
-export default React.memo(function ProductCard({ image, title, price, category, originalPrice, hasDiscount, discountInfo, endAt }) {
+export default React.memo(function ProductCard({ id, slug, href, onQuickView, onWishlist, image, title, price, category, originalPrice, hasDiscount, discountInfo, endAt }) {
     const countdownEndAt = discountInfo?.end_at || endAt;
+    const productHref = href || (slug ? route('product.show', { product: slug }) : (id ? route('product.show', { product: id }) : route('shop.index')));
 
     return (
         <div className="group relative bg-white rounded-xl p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-clay-900/5 border border-transparent hover:border-clay-100 animate-in fade-in duration-500">
@@ -33,19 +34,27 @@ export default React.memo(function ProductCard({ image, title, price, category, 
 
                 {/* Secondary Actions Overlay */}
                 <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center gap-2 bg-gradient-to-t from-black/60 to-transparent">
-                    <button className="flex-1 bg-white text-gray-900 px-4 py-2 rounded-xl shadow-md text-sm font-medium transition-all duration-300 hover:bg-clay-600 hover:text-white active:scale-95 text-center">
-                        Quick View
-                    </button>
-                    <button className="bg-white/90 backdrop-blur text-gray-900 p-2 rounded-xl shadow-md transition-all duration-300 hover:bg-rose-500 hover:text-white active:scale-95" title="Add to Wishlist">
-                        <Heart className="w-5 h-5" strokeWidth={1.5} />
-                    </button>
+                    {onQuickView ? (
+                        <button type="button" onClick={onQuickView} className="flex-1 bg-white text-gray-900 px-4 py-2 rounded-xl shadow-md text-sm font-medium transition-all duration-300 hover:bg-clay-600 hover:text-white active:scale-95 text-center">
+                            Quick View
+                        </button>
+                    ) : (
+                        <Link href={productHref} className="flex-1 bg-white text-gray-900 px-4 py-2 rounded-xl shadow-md text-sm font-medium transition-all duration-300 hover:bg-clay-600 hover:text-white active:scale-95 text-center">
+                            View Details
+                        </Link>
+                    )}
+                    {onWishlist && (
+                        <button type="button" onClick={onWishlist} className="bg-white/90 backdrop-blur text-gray-900 p-2 rounded-xl shadow-md transition-all duration-300 hover:bg-rose-500 hover:text-white active:scale-95" title="Add to Wishlist">
+                            <Heart className="w-5 h-5" strokeWidth={1.5} />
+                        </button>
+                    )}
                 </div>
             </div>
             <div className="mt-4 flex justify-between items-start">
                 <div>
                     <p className="text-xs text-clay-600 mb-1">{category}</p>
                     <h3 className="text-lg font-serif font-medium text-gray-900">
-                        <Link href="#">
+                        <Link href={productHref}>
                             <span aria-hidden="true" className="absolute inset-0" />
                             {title}
                         </Link>

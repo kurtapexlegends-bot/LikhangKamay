@@ -24,6 +24,9 @@ class MultiWorkshopPickupCheckoutTest extends TestCase
     {
         parent::setUp();
 
+        \Illuminate\Support\Facades\Mail::fake();
+        \Illuminate\Support\Facades\Notification::fake();
+
         $this->buyer = User::factory()->create([
             'role' => 'buyer',
             'name' => 'Test Buyer',

@@ -1,6 +1,7 @@
 import React from "react";
 import { Activity, Clock } from "lucide-react";
-import { formatTimelineStamp, timelineSourceTone } from "@/utils/orderUtils";
+import { formatTimelineStamp } from "@/utils/buyerOrderHelpers";
+import { timelineSourceTone } from "@/utils/sellerOrderHelpers";
 
 const OrderTimeline = ({ timeline }) => {
     if (!timeline || timeline.length === 0) return null;

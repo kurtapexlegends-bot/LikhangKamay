@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from '@inertiajs/react';
 import { MapPin, Star } from 'lucide-react';
 
-export default React.memo(function ArtisanCard({ name, location, rating, image, avatar, tags }) {
+export default React.memo(function ArtisanCard({ name, location, rating, image, avatar, tags, slug, id, href }) {
     return (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-clay-900/5 group cursor-pointer animate-in fade-in duration-500">
             {/* Cover Image */}
@@ -48,7 +48,7 @@ export default React.memo(function ArtisanCard({ name, location, rating, image, 
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-100">
-                    <Link href="#" className="text-sm text-clay-600 font-medium hover:underline">
+                    <Link href={href || (slug ? route('shop.seller', { user: slug }) : (id ? route('shop.seller', { user: id }) : route('shop.index')))} className="text-sm text-clay-600 font-medium hover:underline">
                         Visit Shop &rarr;
                     </Link>
                 </div>

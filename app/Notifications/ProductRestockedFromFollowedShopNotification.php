@@ -28,7 +28,7 @@ class ProductRestockedFromFollowedShopNotification extends Notification implemen
             'type' => 'followed_shop_product_restocked',
             'title' => 'Back in Stock at ' . $shopName,
             'message' => "\"{$this->product->name}\" from {$shopName} has been restocked!",
-            'url' => route('products.show', $this->product->slug),
+            'url' => route('product.show', $this->product->slug),
             'product_id' => $this->product->id,
             'product_name' => $this->product->name,
             'product_image' => $this->product->img ?? $this->product->image,

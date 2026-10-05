@@ -114,7 +114,7 @@ class DriverDeliveryController extends Controller
         InHouseDispatchService $dispatchService
     ): RedirectResponse {
         $request->validate([
-            'pod_photo' => ['required', 'image', 'max:10240'], // max 10MB
+            'pod_photo' => ['required', 'image', 'max:4096'], // 4MB per Vercel serverless limit
             'pod_notes' => ['nullable', 'string', 'max:500'],
         ]);
 

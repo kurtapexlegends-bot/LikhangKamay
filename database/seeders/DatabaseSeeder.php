@@ -15,12 +15,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Core marketplace categories are idempotent and safe for all environments
+        $this->call(CategorySeeder::class);
+
         if (!$this->app->environment(['local', 'testing'])) {
             $this->command?->warn('DatabaseSeeder skipped non-production-safe sample accounts outside local/testing.');
             return;
         }
-
-        $this->call(CategorySeeder::class);
 
         User::factory()->create([
             'name' => 'Test User',

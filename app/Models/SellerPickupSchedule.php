@@ -47,6 +47,10 @@ class SellerPickupSchedule extends Model
         'max_advance_days' => 'integer',
     ];
 
+    protected $attributes = [
+        'is_enabled' => true,
+    ];
+
     /**
      * Default operating days: Monday through Saturday (1 to 6).
      */

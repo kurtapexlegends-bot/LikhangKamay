@@ -1,6 +1,6 @@
 import { useMemo, useEffect } from "react";
 import { router } from "@inertiajs/react";
-import { isLalamoveManagedOrder } from "@/utils/orderUtils";
+import { isLalamoveManagedOrder } from "@/utils/sellerOrderHelpers";
 
 export default function useOrderPolling(paginatedOrders) {
     const hasActiveCourierTracking = useMemo(() => {

@@ -31,7 +31,13 @@ class ToggleWholesaleSupplyRequest extends FormRequest
         }
 
         if (is_string($product) || is_int($product)) {
-            $resolved = Product::where('id', $product)->orWhere('slug', (string) $product)->first();
+            $resolved = Product::where(function ($q) use ($product) {
+                if (is_numeric($product)) {
+                    $q->where('id', (int) $product)->orWhere('slug', (string) $product);
+                } else {
+                    $q->where('slug', (string) $product);
+                }
+            })->first();
             return $resolved !== null && (int) $resolved->user_id === (int) $seller->id;
         }
 

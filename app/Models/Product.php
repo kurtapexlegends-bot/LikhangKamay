@@ -336,9 +336,13 @@ class Product extends Model
             return $this->where('id', $decodedId)->firstOrFail();
         }
 
-        return $this->where($field ?? 'slug', $value)
-            ->orWhere('id', $value)
-            ->firstOrFail();
+        $targetField = $field ?? 'slug';
+        return $this->where(function ($q) use ($targetField, $value) {
+            $q->where($targetField, $value);
+            if (is_numeric($value)) {
+                $q->orWhere('id', (int) $value);
+            }
+        })->firstOrFail();
     }
 
     public function getSlugAttribute(?string $value = null)

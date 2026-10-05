@@ -39,6 +39,12 @@ class ImageProxyController extends Controller
             abort(400, 'Invalid image path');
         }
         
+        // Fast fallback for serverless or environments without GD extension / local file access
+        if (!$this->transformer->isAvailable() || config('filesystems.default') === 's3' || env('FILESYSTEM_DISK') === 's3') {
+            $fallbackUrl = \App\Services\StorageUrl::url($path);
+            return redirect($fallbackUrl ?: ('/storage/' . $path));
+        }
+
         $params = [
             'w' => $request->query('w'),
             'h' => $request->query('h'),
@@ -49,20 +55,19 @@ class ImageProxyController extends Controller
         // Cache the transformed image
         $cacheKey = 'img_proxy_' . md5($path . serialize($params));
 
-        return Cache::remember($cacheKey, 86400, function () use ($path, $params) {
-            try {
-                $image = $this->transformer->transform($path, $params);
-                return response($image)
-                    ->header('Content-Type', 'image/jpeg')
-                    ->header('Cache-Control', 'public, max-age=86400');
-            } catch (\Throwable $e) {
-                // Never redirect to unverified external input.
-                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
-                    $fallbackUrl = \App\Services\StorageUrl::url($path);
-                    return redirect($fallbackUrl ?: ('/storage/' . $path));
-                }
-                abort(404, 'Image not found');
-            }
-        });
+        try {
+            $image = Cache::remember($cacheKey, 86400, function () use ($path, $params) {
+                return (string) $this->transformer->transform($path, $params);
+            });
+
+            return response($image)
+                ->header('Content-Type', 'image/jpeg')
+                ->header('Cache-Control', 'public, max-age=86400');
+        } catch (\DomainException $e) {
+            abort(404, 'Image not found');
+        } catch (\Throwable $e) {
+            $fallbackUrl = \App\Services\StorageUrl::url($path);
+            return redirect($fallbackUrl ?: ('/storage/' . $path));
+        }
     }
 }

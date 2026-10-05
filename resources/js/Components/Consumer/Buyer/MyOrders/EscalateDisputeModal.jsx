@@ -30,8 +30,16 @@ export default function EscalateDisputeModal({ isOpen, onClose, disputeId }) {
 
     if (!disputeId) return null;
 
+    const generalError = errors.message || errors.error;
+
     const renderFormContent = () => (
         <form onSubmit={handleSubmit} className="space-y-4">
+            {generalError && (
+                <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                    <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-600" />
+                    <span className="font-semibold leading-relaxed">{generalError}</span>
+                </div>
+            )}
             <div>
                 <label className="block text-sm font-bold text-stone-700 mb-1">Reason for Support Help</label>
                 <textarea

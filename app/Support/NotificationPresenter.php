@@ -232,7 +232,7 @@ class NotificationPresenter
         }
 
         if ($user?->isAdmin()) {
-            return route('admin.catalog.moderation');
+            return route('admin.catalog.index', ['tab' => 'moderation']);
         }
 
         if ($user?->isArtisan()) {
@@ -258,7 +258,7 @@ class NotificationPresenter
         }
 
         if ($user?->isAdmin()) {
-            return route('admin.catalog.moderation');
+            return route('admin.catalog.index', ['tab' => 'moderation']);
         }
 
         if ($user?->isArtisan()) {

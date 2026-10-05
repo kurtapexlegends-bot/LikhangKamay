@@ -33,7 +33,11 @@ class ReceiveOrder
         DB::transaction(function () use ($id, $buyer, &$successMessage) {
             $order = Order::lockForUpdate()
                 ->where(function ($q) use ($id) {
-                    $q->where('order_number', $id)->orWhere('id', $id);
+                    if (is_numeric($id)) {
+                        $q->where('order_number', (string) $id)->orWhere('id', (int) $id);
+                    } else {
+                        $q->where('order_number', (string) $id);
+                    }
                 })
                 ->where('user_id', $buyer->id)
                 ->firstOrFail();
@@ -92,7 +96,11 @@ class ReceiveOrder
         });
         try {
             $freshOrder = Order::where(function ($q) use ($id) {
-                $q->where('order_number', $id)->orWhere('id', $id);
+                if (is_numeric($id)) {
+                    $q->where('order_number', (string) $id)->orWhere('id', (int) $id);
+                } else {
+                    $q->where('order_number', (string) $id);
+                }
             })->first();
             if ($freshOrder && $freshOrder->status === 'Completed') {
                 app(\App\Actions\Seller\Chat\SendOrderCompletionAutoReply::class)->execute($freshOrder);

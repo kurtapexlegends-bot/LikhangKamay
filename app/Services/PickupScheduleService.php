@@ -108,6 +108,9 @@ class PickupScheduleService
         $current = $fromDate ? Carbon::parse($fromDate->toDateString(), $timezone)->startOfDay() : Carbon::now($timezone)->startOfDay();
         $schedule = $this->getEffectiveSchedule($seller);
         $operatingDays = $schedule->getEffectiveOperatingDays();
+        if (empty($operatingDays) || !$schedule->is_enabled) {
+            return $current->copy()->addDays(max(0, $leadTimeDays))->startOfDay();
+        }
 
         if ($leadTimeDays <= 0) {
             // If today is operating day and has slots remaining
@@ -121,7 +124,8 @@ class PickupScheduleService
 
             // Move to next operating day
             $next = $current->copy()->addDay()->startOfDay();
-            while (!$schedule->isOperatingOnDay($next->dayOfWeekIso)) {
+            $guard = 0;
+            while (!$schedule->isOperatingOnDay($next->dayOfWeekIso) && ++$guard < 365) {
                 $next->addDay();
             }
 
@@ -131,8 +135,9 @@ class PickupScheduleService
         // Advance by leadTimeDays operating days
         $target = $current->copy()->startOfDay();
         $daysAccumulated = 0;
+        $guard = 0;
 
-        while ($daysAccumulated < $leadTimeDays) {
+        while ($daysAccumulated < $leadTimeDays && ++$guard < 365) {
             $target->addDay();
             if ($schedule->isOperatingOnDay($target->dayOfWeekIso)) {
                 $daysAccumulated++;
@@ -140,7 +145,8 @@ class PickupScheduleService
         }
 
         // Ensure target is an operating day
-        while (!$schedule->isOperatingOnDay($target->dayOfWeekIso)) {
+        $guard = 0;
+        while (!$schedule->isOperatingOnDay($target->dayOfWeekIso) && ++$guard < 365) {
             $target->addDay();
         }
 

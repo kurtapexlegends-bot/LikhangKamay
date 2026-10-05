@@ -246,7 +246,11 @@ class B2BSupplyHubController extends Controller
         }
 
         $order = Order::where(function ($q) use ($id) {
-                $q->where('order_number', $id)->orWhere('id', $id);
+                if (is_numeric($id)) {
+                    $q->where('order_number', (string) $id)->orWhere('id', (int) $id);
+                } else {
+                    $q->where('order_number', (string) $id);
+                }
             })
             ->where('artisan_id', $actor->id)
             ->firstOrFail();

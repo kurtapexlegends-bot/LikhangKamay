@@ -29,7 +29,11 @@ class PaymentController extends Controller
     public function pay(Request $request, string $orderId)
     {
         $order = Order::where(function ($q) use ($orderId) {
-                $q->where('order_number', $orderId)->orWhere('id', $orderId);
+                if (is_numeric($orderId)) {
+                    $q->where('order_number', (string) $orderId)->orWhere('id', (int) $orderId);
+                } else {
+                    $q->where('order_number', (string) $orderId);
+                }
             })
             ->where('user_id', Auth::id())
             ->firstOrFail();
@@ -310,7 +314,11 @@ class PaymentController extends Controller
         $isB2B = false;
         if ($orderNumber) {
             $order = Order::where(function ($q) use ($orderNumber) {
-                $q->where('order_number', $orderNumber)->orWhere('id', $orderNumber);
+                if (is_numeric($orderNumber)) {
+                    $q->where('order_number', (string) $orderNumber)->orWhere('id', (int) $orderNumber);
+                } else {
+                    $q->where('order_number', (string) $orderNumber);
+                }
             })->first();
             if ($order) {
                 $isB2B = $this->resolveOrderDashboardRoute($order) === 'seller.supply-hub.orders';
@@ -322,7 +330,7 @@ class PaymentController extends Controller
             return redirect()->route($targetRoute)->with('error', 'Payment was cancelled.');
         }
 
-        return redirect()->route('login')->with('status', 'Payment was cancelled. Sign in to continue with your order.');
+        return redirect()->route('login')->with('error', 'Payment was cancelled. Sign in to continue with your order.');
     }
 
     private function canInitiateOnlinePayment(Order $order): bool

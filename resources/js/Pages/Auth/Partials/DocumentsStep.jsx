@@ -44,7 +44,7 @@ export default function DocumentsStep({
                         label="Business or Mayor's Permit"
                         description="Or Barangay Micro-Business Certificate"
                         id="business_permit"
-                        existingFileUrl={auth.user.business_permit_url}
+                        existingFileUrl={auth?.user?.business_permit_url}
                         error={errors.business_permit}
                         onView={(doc) => setViewingDoc(doc)}
                     />
@@ -52,7 +52,7 @@ export default function DocumentsStep({
                         label="DTI Registration Certificate"
                         description="Department of Trade & Industry permit"
                         id="dti_registration"
-                        existingFileUrl={auth.user.dti_registration_url}
+                        existingFileUrl={auth?.user?.dti_registration_url}
                         error={errors.dti_registration}
                         onView={(doc) => setViewingDoc(doc)}
                     />
@@ -60,7 +60,7 @@ export default function DocumentsStep({
                         label="Valid Government ID (Front)"
                         description="PhilID, UMID, Driver's License, or Passport"
                         id="valid_id"
-                        existingFileUrl={auth.user.valid_id_url}
+                        existingFileUrl={auth?.user?.valid_id_url}
                         error={errors.valid_id}
                         onView={(doc) => setViewingDoc(doc)}
                     />
@@ -68,7 +68,7 @@ export default function DocumentsStep({
                         label="TIN / BIR Registration"
                         description="TIN Card or BIR Certificate (Form 2303)"
                         id="tin_id"
-                        existingFileUrl={auth.user.tin_id_url}
+                        existingFileUrl={auth?.user?.tin_id_url}
                         error={errors.tin_id}
                         onView={(doc) => setViewingDoc(doc)}
                     />

@@ -153,9 +153,9 @@ class StaffDashboardController extends Controller
                 'focus' => 'Human Resources',
                 'theme' => 'clay',
                 'stats' => array_values(array_filter([
-                    ['label' => 'Employees', 'value' => $employeeCount, 'routeName' => 'seller.hr'],
-                    ['label' => 'Active Staff', 'value' => $activeEmployees, 'routeName' => 'seller.hr'],
-                    $user->hasStaffCapability(User::CAP_VIEW_PAYROLL) ? ['label' => 'Pending Payrolls', 'value' => $pendingPayrolls, 'routeName' => 'seller.hr'] : null,
+                    ['label' => 'Employees', 'value' => $employeeCount, 'routeName' => 'hr.index'],
+                    ['label' => 'Active Staff', 'value' => $activeEmployees, 'routeName' => 'hr.index'],
+                    $user->hasStaffCapability(User::CAP_VIEW_PAYROLL) ? ['label' => 'Pending Payrolls', 'value' => $pendingPayrolls, 'routeName' => 'hr.index'] : null,
                     ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages, 'routeName' => 'team-messages.index'],
                 ])),
                 'highlights' => [
@@ -170,8 +170,8 @@ class StaffDashboardController extends Controller
                 'focus' => 'Accounting',
                 'theme' => 'emerald',
                 'stats' => array_values(array_filter([
-                    ['label' => 'Requests Awaiting Release', 'value' => $pendingReleases, 'tone' => 'emerald', 'routeName' => 'seller.fund-release.index'],
-                    $user->hasStaffCapability(User::CAP_VIEW_PAYROLL) ? ['label' => 'Pending Payroll Approvals', 'value' => $pendingPayrolls, 'tone' => 'amber', 'routeName' => 'seller.hr'] : null,
+                    ['label' => 'Requests Awaiting Release', 'value' => $pendingReleases, 'tone' => 'emerald', 'routeName' => 'accounting.index'],
+                    $user->hasStaffCapability(User::CAP_VIEW_PAYROLL) ? ['label' => 'Pending Payroll Approvals', 'value' => $pendingPayrolls, 'tone' => 'amber', 'routeName' => 'hr.index'] : null,
                     ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages, 'tone' => 'sky', 'routeName' => 'team-messages.index'],
                     $user->hasStaffCapability(User::CAP_VIEW_REVENUE) ? ['label' => 'Completed Orders', 'value' => Order::where('artisan_id', $sellerId)->where('status', 'Completed')->count(), 'tone' => 'violet', 'routeName' => 'orders.index'] : null,
                 ])),
@@ -187,9 +187,9 @@ class StaffDashboardController extends Controller
                 'focus' => 'Procurement',
                 'theme' => 'amber',
                 'stats' => [
-                    ['label' => 'Tracked Supplies', 'value' => $supplyCount, 'tone' => 'amber', 'routeName' => 'seller.procurement.index'],
-                    ['label' => 'Low Stock Items', 'value' => $lowStockCount, 'tone' => 'red', 'routeName' => 'seller.procurement.index'],
-                    ['label' => 'Inbound Requests', 'value' => $inboundRequests, 'tone' => 'indigo', 'routeName' => 'seller.procurement.index'],
+                    ['label' => 'Tracked Supplies', 'value' => $supplyCount, 'tone' => 'amber', 'routeName' => 'procurement.index'],
+                    ['label' => 'Low Stock Items', 'value' => $lowStockCount, 'tone' => 'red', 'routeName' => 'procurement.index'],
+                    ['label' => 'Inbound Requests', 'value' => $inboundRequests, 'tone' => 'indigo', 'routeName' => 'procurement.index'],
                     ['label' => 'Unread Team Messages', 'value' => $unreadTeamMessages, 'tone' => 'sky', 'routeName' => 'team-messages.index'],
                 ],
                 'highlights' => [

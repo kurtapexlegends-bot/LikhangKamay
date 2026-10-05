@@ -15,6 +15,7 @@ import {
     AlertCircle,
     Monitor,
     Smartphone,
+    X,
 } from 'lucide-react';
 import { useConfirm } from '@/hooks/useConfirm';
 
@@ -218,7 +219,9 @@ export default function SystemEmailTemplatesEditor({
                             {templateSaveFeedback.success ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
                             <span>{templateSaveFeedback.message}</span>
                         </div>
-                        <button type="button" onClick={() => setTemplateSaveFeedback(null)} className="text-xs opacity-60 hover:opacity-100">✕</button>
+                        <button type="button" onClick={() => setTemplateSaveFeedback(null)} className="text-xs opacity-60 hover:opacity-100 p-0.5 rounded transition" aria-label="Dismiss feedback">
+                            <X size={14} />
+                        </button>
                     </div>
                 )}
 

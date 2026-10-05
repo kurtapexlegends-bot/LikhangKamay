@@ -6,8 +6,10 @@ export default function useFlashToast(
     {
         successDuration = 3000,
         errorDuration = 5000,
+        warningDuration = 4000,
         mapSuccess,
         mapError,
+        mapWarning,
     } = {}
 ) {
     useEffect(() => {
@@ -21,4 +23,10 @@ export default function useFlashToast(
             addToast(mapError ? mapError(flash.error) : flash.error, 'error', errorDuration);
         }
     }, [addToast, errorDuration, flash?.error, mapError]);
+
+    useEffect(() => {
+        if (flash?.warning) {
+            addToast(mapWarning ? mapWarning(flash.warning) : flash.warning, 'warning', warningDuration);
+        }
+    }, [addToast, flash?.warning, mapWarning, warningDuration]);
 }

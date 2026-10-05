@@ -68,7 +68,9 @@ class CatalogController extends Controller
             ->get();
 
         return Inertia::render('Admin/Catalog/CatalogManager', [
-            'categories' => Inertia::defer(fn() => Category::withCount('products')->orderBy('name')->get()),
+            'categories' => $request->query('tab') === 'categories'
+                ? Category::withCount('products')->orderBy('name')->get()
+                : Inertia::defer(fn() => Category::withCount('products')->orderBy('name')->get()),
             'requests' => SponsorshipRequest::with(['user:id,name,shop_name', 'product:id,name,slug,cover_photo_path'])
                 ->latest()
                 ->paginate(10, ['*'], 'requests_page'),

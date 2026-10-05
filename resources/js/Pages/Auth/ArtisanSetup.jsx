@@ -10,39 +10,40 @@ import DocumentsStep from '@/Pages/Auth/Partials/DocumentsStep';
 import PaymentStep from '@/Pages/Auth/Partials/PaymentStep';
 
 export default function ArtisanSetup({ auth, rejectionReason }) {
+    const user = auth?.user || {};
     const [step, setStep] = React.useState(1);
     const [showRejection, setShowRejection] = React.useState(true);
-    const isRejected = auth.user.artisan_status === 'rejected';
-    const effectiveRejectionReason = rejectionReason || auth.user.artisan_rejection_reason;
-    const defaultRegion = auth.user.region || CAVITE_REGION;
-    const defaultCity = auth.user.city
-        ? normalizeCaviteAddressText(auth.user.city)
+    const isRejected = user.artisan_status === 'rejected';
+    const effectiveRejectionReason = rejectionReason || user.artisan_rejection_reason;
+    const defaultRegion = user.region || CAVITE_REGION;
+    const defaultCity = user.city
+        ? normalizeCaviteAddressText(user.city)
         : defaultRegion === CAVITE_REGION
             ? 'Dasmarinas City'
             : '';
 
     const { data, setData, post, processing, errors, transform } = useForm({
         current_step: 1,
-        shop_name: auth.user.shop_name || '',
-        phone_number: auth.user.phone_number || '',
-        street_address: auth.user.street_address || '',
+        shop_name: user.shop_name || '',
+        phone_number: user.phone_number || '',
+        street_address: user.street_address || '',
         city: defaultCity,
-        barangay: normalizeCaviteAddressText(auth.user.barangay || ''),
+        barangay: normalizeCaviteAddressText(user.barangay || ''),
         region: defaultRegion,
-        zip_code: auth.user.zip_code || '',
+        zip_code: user.zip_code || '',
         business_permit: null,
         dti_registration: null,
         valid_id: null,
         tin_id: null,
-        payout_method: auth.user.payout_method || 'GCash',
-        payout_account_name: auth.user.payout_account_name || '',
-        payout_account_number: auth.user.payout_account_number || '',
+        payout_method: user.payout_method || 'GCash',
+        payout_account_name: user.payout_account_name || '',
+        payout_account_number: user.payout_account_number || '',
     });
 
     const [shopNameValidation, setShopNameValidation] = React.useState({ isValid: null, message: '' });
 
     React.useEffect(() => {
-        if (!data.shop_name || data.shop_name.length < 3) {
+        if (!data.shop_name || data.shop_name.length < 3 || !user.id) {
             setShopNameValidation({ isValid: null, message: '' });
             return;
         }
@@ -52,7 +53,7 @@ export default function ArtisanSetup({ auth, rejectionReason }) {
                 const response = await axios.post(route('api.validate-constraint'), {
                     type: 'shop_name_availability',
                     value: data.shop_name,
-                    context: { user_id: auth.user.id }
+                    context: { user_id: user.id }
                 });
                 setShopNameValidation({ 
                     isValid: response.data.valid, 
@@ -64,7 +65,7 @@ export default function ArtisanSetup({ auth, rejectionReason }) {
         }, 600);
 
         return () => clearTimeout(timer);
-    }, [data.shop_name, auth.user.id]);
+    }, [data.shop_name, user.id]);
 
     const submit = (event) => {
         event.preventDefault();

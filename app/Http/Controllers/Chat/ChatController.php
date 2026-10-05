@@ -50,7 +50,7 @@ class ChatController extends Controller
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
             'message' => 'nullable|string|max:2000',
-            'attachment' => 'nullable|file|max:10240', // 10MB max
+            'attachment' => 'nullable|file|max:4096', // 4MB per Vercel serverless limit
         ]);
 
         if (!$request->filled('message') && !$request->hasFile('attachment')) {
