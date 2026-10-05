@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\UserTierLog;
+use Illuminate\Support\Facades\DB;
 use App\Services\Admin\AdminAnalyticsService;
 use App\Services\Admin\SuperAdminService;
 use App\Services\Compliance\UserDisciplinaryService;
@@ -258,5 +260,66 @@ class SuperAdminController extends Controller
         );
 
         return response()->json(['exists' => $exists]);
+    }
+
+    public function setArtisanTier(Request $request, User $user)
+    {
+        Gate::authorize('admin-action');
+
+        $validated = $request->validate([
+            'tier' => 'required|in:free,premium,super_premium',
+            'days' => 'nullable|integer|min:1|max:365',
+        ]);
+
+        if (!$user->isArtisan()) {
+            return back()->with('error', 'Target user is not an artisan.');
+        }
+
+        $tier = $validated['tier'];
+        $days = (int) ($validated['days'] ?? 30);
+        $previousTier = $user->premium_tier ?? 'free';
+
+        DB::transaction(function () use ($user, $tier, $days, $previousTier) {
+            $user->update([
+                'premium_tier' => $tier,
+                'subscription_expires_at' => $tier === 'free' ? null : now()->addDays($days),
+                'subscription_cancelled_at' => null,
+                'pending_downgrade_tier' => 'free',
+            ]);
+
+            UserTierLog::create([
+                'user_id' => $user->id,
+                'previous_tier' => $previousTier,
+                'new_tier' => $tier,
+            ]);
+
+            if ($tier !== 'free') {
+                $user->staffMembers()
+                    ->whereNotNull('staff_plan_suspended_at')
+                    ->update(['staff_plan_suspended_at' => null]);
+            }
+        });
+
+        $tierLabel = match ($tier) {
+            'super_premium' => 'Elite',
+            'premium' => 'Premium',
+            default => 'Standard',
+        };
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Artisan {$user->name}'s subscription tier successfully updated to {$tierLabel}.",
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'premium_tier' => $tier,
+                    'tier_label' => $tierLabel,
+                    'subscription_expires_at' => $user->subscription_expires_at?->toIso8601String(),
+                ],
+            ]);
+        }
+
+        return back()->with('success', "Artisan {$user->name}'s subscription tier successfully updated to {$tierLabel}.");
     }
 }

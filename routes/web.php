@@ -569,6 +569,7 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/users-manager', [\App\Http\Controllers\Admin\SuperAdminController::class, 'userManager'])->name('admin.users.manager');
     Route::post('/users-manager/{user:id}/toggle-status', [\App\Http\Controllers\Admin\SuperAdminController::class, 'toggleUserStatus'])->name('admin.users.toggle-status');
     Route::post('/users-manager/{user:id}/discipline', [\App\Http\Controllers\Admin\SuperAdminController::class, 'disciplineUser'])->name('admin.users.discipline');
+    Route::post('/users-manager/{user:id}/set-tier', [\App\Http\Controllers\Admin\SuperAdminController::class, 'setArtisanTier'])->name('admin.users.set-tier');
     Route::get('/users', fn() => redirect()->route('admin.users.manager', ['tab' => 'directory']))->name('admin.users');
 
     // Payout Management
