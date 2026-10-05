@@ -1,4 +1,5 @@
 import React from 'react';
+import { Check } from 'lucide-react';
 
 export default function Stepper({ activeStep, steps }) {
     return (
@@ -17,7 +18,7 @@ export default function Stepper({ activeStep, steps }) {
                                     ? 'bg-clay-700 border-clay-700 text-white shadow-sm ring-4 ring-clay-100'
                                     : 'bg-white border-stone-200 text-stone-400'
                             }`}>
-                                {isCompleted ? '✓' : stepNum}
+                                {isCompleted ? <Check size={12} strokeWidth={3} /> : stepNum}
                             </div>
                             <span className={`text-[11px] font-bold transition-colors uppercase tracking-wider whitespace-nowrap ${
                                 isActive ? 'text-clay-800' : isCompleted ? 'text-emerald-700' : 'text-stone-400'

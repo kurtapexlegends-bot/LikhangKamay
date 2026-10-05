@@ -179,8 +179,14 @@ export default function WorkplaceLocationModal({
                     addToast('Store location detected!', 'success');
                 });
             },
-            () => {
-                finishLoading();
+            (err) => {
+                finishLoading(() => {
+                    if (err?.code === 1) {
+                        addToast('Location access is blocked. Please click the lock icon in your browser address bar to allow location permissions.', 'error');
+                    } else {
+                        addToast('Unable to detect store location. Please pin your workplace manually on the map.', 'error');
+                    }
+                });
             },
             { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
         );

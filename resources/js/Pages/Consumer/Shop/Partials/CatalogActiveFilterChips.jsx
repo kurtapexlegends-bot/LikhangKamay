@@ -1,5 +1,5 @@
 import React from 'react';
-import { Store, X } from 'lucide-react';
+import { Store, X, Star } from 'lucide-react';
 
 export default function CatalogActiveFilterChips({
     activeFilterCount = 0,
@@ -91,7 +91,7 @@ export default function CatalogActiveFilterChips({
             {/* Rating Chip */}
             {minRating && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-900 font-bold rounded-lg shadow-2xs">
-                    Rating: {minRating}★ &amp; Up
+                    <span className="flex items-center gap-1">Rating: {minRating} <Star size={11} className="fill-amber-500 text-amber-500" /> &amp; Up</span>
                     <button onClick={() => handleRatingChange('')} className="hover:text-amber-950 transition" title="Clear rating filter">
                         <X size={12} />
                     </button>

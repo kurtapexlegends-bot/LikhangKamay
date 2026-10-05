@@ -39,9 +39,9 @@ export default function FilterSidebar({
     // Rating options
     const ratingOptions = [
         { value: '', label: 'Any Rating' },
-        { value: '4', label: '4★ & Up' },
-        { value: '3', label: '3★ & Up' },
-        { value: '2', label: '2★ & Up' },
+        { value: '4', label: '4 Stars & Up' },
+        { value: '3', label: '3 Stars & Up' },
+        { value: '2', label: '2 Stars & Up' },
     ];
 
     const handlePriceSubmit = () => {

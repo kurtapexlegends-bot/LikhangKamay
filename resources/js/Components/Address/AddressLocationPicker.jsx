@@ -196,7 +196,11 @@ export default function AddressLocationPicker({
             },
             (error) => {
                 setIsLocating(false);
-                console.warn('Geolocation lookup notice:', error.message);
+                if (error.code === 1) {
+                    alert('Location access is blocked. Please click the lock icon in your browser address bar to allow location permissions.');
+                } else {
+                    alert('Unable to detect your current location. Please check your device location settings or pin your location manually.');
+                }
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );

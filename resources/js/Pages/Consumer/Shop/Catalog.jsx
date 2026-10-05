@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Head, router } from '@inertiajs/react';
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import {
-    ChevronDown, SlidersHorizontal, MapPin, X, ArrowUpDown, Store
+    ChevronDown, SlidersHorizontal, MapPin, X, ArrowUpDown, Store, Star
 } from 'lucide-react';
 import { normalizeRating } from '@/utils/rating';
 import { useSponsoredImpressionTracking } from '@/utils/sponsorshipTracking';
@@ -441,7 +441,7 @@ export default function Catalog(props) {
                                 ))}
                                 {minRating && (
                                     <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                                        {minRating}★ &amp; Up
+                                        <span className="flex items-center gap-0.5">{minRating} <Star size={11} className="fill-amber-500 text-amber-500" /></span> &amp; Up
                                         <button onClick={() => handleRatingChange('')} className="hover:text-red-500 active:scale-95 transition-all">
                                             <X size={12} />
                                         </button>

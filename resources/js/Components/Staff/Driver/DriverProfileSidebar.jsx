@@ -104,7 +104,7 @@ export default function DriverProfileSidebar({
                             ) : (
                                 <>
                                     <ShieldAlert size={13} className="text-amber-600" />
-                                    <span>Verification Pending</span>
+                                    <span>Pending Vehicle Check</span>
                                 </>
                             )}
                         </span>
