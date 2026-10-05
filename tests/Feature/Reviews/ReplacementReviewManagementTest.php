@@ -77,9 +77,9 @@ class ReplacementReviewManagementTest extends TestCase
             ->from(route('my-orders.index'))
             ->delete(route('reviews.destroy', $review->id))
             ->assertRedirect(route('my-orders.index', absolute: false))
-            ->assertSessionHas('success', 'Review deleted successfully.');
+            ->assertSessionHas('success', 'Review withdrawn successfully.');
 
-        $this->assertDatabaseMissing('reviews', [
+        $this->assertSoftDeleted('reviews', [
             'id' => $review->id,
         ]);
     }

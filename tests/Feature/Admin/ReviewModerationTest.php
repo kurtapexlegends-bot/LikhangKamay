@@ -258,7 +258,7 @@ class ReviewModerationTest extends TestCase
             ->delete(route('admin.review-moderation.destroy', $dispute))
             ->assertSessionHas('success', 'Moderation request removed.');
 
-        $this->assertDatabaseMissing('review_disputes', [
+        $this->assertSoftDeleted('review_disputes', [
             'id' => $dispute->id,
         ]);
 

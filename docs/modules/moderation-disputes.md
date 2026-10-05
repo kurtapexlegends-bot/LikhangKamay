@@ -10,7 +10,7 @@ This document outlines the content moderation workflow, order disputes, review r
     *   Tracks formal complaints raised by buyers regarding order delivery, item quality, or incorrect charges.
     *   Fields: `order_id`, `status`, `reason`, `proof_photos` (JSON array of image paths), `seller_response_type`, `seller_explanation`, `seller_proposed_description`, `escalation_reason`, `admin_notes`, `admin_decision`, `resolved_at`.
 *   **Review Dispute**: [ReviewDispute.php](file:///c:/laragon/www/LikhangKamay/app/Models/ReviewDispute.php)
-    *   Tracks complaints filed by sellers to report abusive, fraudulent, or off-topic product reviews.
+    *   Tracks complaints filed by sellers to report abusive, fraudulent, or off-topic product reviews (supports Soft Deletes and moderation withdrawal).
     *   Fields: `review_id`, `seller_id`, `seller_owner_id`, `reported_by_user_id`, `status` (Pending, Resolved, Rejected), `reason`, `explanation`, `resolved_at`, `resolution_notes`.
 *   **Flagged Content**: [FlaggedContent.php](file:///c:/laragon/www/LikhangKamay/app/Models/FlaggedContent.php)
     *   Polymorphic reports tracking flagged products, descriptions, reviews, or user accounts.

@@ -483,7 +483,7 @@ class HrStaffProvisioningTest extends TestCase
 
         $response->assertRedirect();
         $this->assertSoftDeleted('employees', ['id' => $employee->id]);
-        $this->assertDatabaseMissing('users', ['id' => $linkedLogin->id]);
+        $this->assertSoftDeleted('users', ['id' => $linkedLogin->id]);
     }
 
     public function test_owner_can_update_employee_record_and_sync_linked_login_name(): void

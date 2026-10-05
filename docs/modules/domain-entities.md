@@ -105,7 +105,7 @@ All order operations are processed through dedicated single-responsibility Actio
 ## 3. User & Authorization Roles
 
 *   **Model File**: [User.php](file:///c:/laragon/www/LikhangKamay/app/Models/User.php)
-*   **Database Table**: `users`
+*   **Database Table**: `users` (supports Soft Deletes for legal audit and accounting preservation)
 
 ### Roles
 *   `artisan`: Sellers creating and managing ceramic products.

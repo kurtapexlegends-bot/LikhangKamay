@@ -13,10 +13,10 @@ This document details the employee payroll formulas, clock-in/clock-out lifecycl
     *   Represents a continuous period of active work.
     *   Fields: `clock_in_at`, `clock_out_at`, `worked_minutes`, `close_mode`, `close_reason`, `last_heartbeat_at`, `last_activity_at`.
 *   **Seller Location Model**: [SellerLocation.php](file:///c:/laragon/www/LikhangKamay/app/Models/SellerLocation.php)
-    *   Represents physical shop/workshop workplace locations and geofence perimeters.
+    *   Represents physical shop/workshop workplace locations and geofence perimeters (supports Soft Deletes to preserve historical attendance sessions).
     *   Fields: `name`, `address`, `latitude`, `longitude`, `radius_meters`, `enforce_strict_geofence` (boolean toggle for hard-block vs soft-flagging), `is_active`.
 *   **Payroll & Payroll Item**: [Payroll.php](file:///c:/laragon/www/LikhangKamay/app/Models/Payroll.php) | [PayrollItem.php](file:///c:/laragon/www/LikhangKamay/app/Models/PayrollItem.php)
-    *   Represents monthly salary computations and individual payouts.
+    *   Represents monthly salary computations and individual payouts (supports Soft Deletes and draft cancellation).
 
 ---
 
