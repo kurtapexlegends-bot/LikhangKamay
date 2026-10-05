@@ -7,12 +7,14 @@ import { Trash2, ShoppingBag, ArrowRight, ChevronRight, Package, ShieldCheck, St
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import useCartPersistence from '@/hooks/useCartPersistence';
+import { useConfirm } from '@/hooks/useConfirm';
 
 export default function Cart({ cart }) {
     const [updatingId, setUpdatingId] = useState(null);
     const [removingId, setRemovingId] = useState(null);
     const [selectedItems, setSelectedItems] = useState(new Set());
     const { addToast } = useToast();
+    const { confirm, ConfirmationDialog } = useConfirm();
     const currency = useMemo(() => new Intl.NumberFormat('en-PH', {
         style: 'currency',
         currency: 'PHP',
@@ -123,7 +125,15 @@ export default function Cart({ cart }) {
         });
     };
 
-    const removeItem = (id) => {
+    const removeItem = async (id) => {
+        const ok = await confirm({
+            title: 'Remove Item from Cart?',
+            message: 'Are you sure you want to remove this handcrafted piece from your cart?',
+            confirmText: 'Remove Item',
+            intent: 'danger',
+        });
+        if (!ok) return;
+
         setRemovingId(id);
         router.delete(route('cart.destroy'), { 
             data: { id }, 
@@ -507,6 +517,8 @@ export default function Cart({ cart }) {
                     </div>
                 </StickyActionBar>
             )}
+
+            {ConfirmationDialog}
         </ShopLayout>
     );
 }

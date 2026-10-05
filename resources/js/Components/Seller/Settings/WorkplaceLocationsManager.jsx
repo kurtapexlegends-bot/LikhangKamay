@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { MapPin, Plus, Trash2, Edit3, Mail } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
+import { useConfirm } from '@/hooks/useConfirm';
 import LocationPickerMap from './LocationPickerMap';
 import WorkplaceLocationModal from './WorkplaceLocationModal';
 
@@ -10,6 +11,7 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingLocation, setEditingLocation] = useState(null);
     const { addToast } = useToast();
+    const { confirm, ConfirmationDialog } = useConfirm();
 
     const openAddModal = () => {
         setEditingLocation(null);
@@ -26,9 +28,15 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
         setEditingLocation(null);
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (!canEdit) return;
-        if (!window.confirm('Remove this workplace location? Staff assigned here will revert to remote/unassigned.')) return;
+        const ok = await confirm({
+            title: 'Remove Workplace Location?',
+            message: 'Staff assigned here will revert to remote/unassigned.',
+            confirmText: 'Remove Location',
+            intent: 'danger',
+        });
+        if (!ok) return;
 
         router.delete(route('shop.locations.destroy', { location: id }), {
             preserveScroll: true,
@@ -153,6 +161,8 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                 editingLocation={editingLocation}
                 canEdit={canEdit}
             />
+
+            {ConfirmationDialog}
         </div>
     );
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { X, Sparkles, MessageSquare, Bot, Plus, Trash2, Edit2, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
+import { useConfirm } from '@/hooks/useConfirm';
 
 export default function ChatAutomationModal({
     isOpen,
@@ -13,6 +14,7 @@ export default function ChatAutomationModal({
     const hasAutoReply = Boolean(autoReplySettings);
     const [activeTab, setActiveTab] = useState(hasAutoReply ? 'auto-reply' : 'templates');
     const { addToast } = useToast();
+    const { confirm, ConfirmationDialog } = useConfirm();
 
     // Auto-Reply Form
     const autoReplyForm = useForm({
@@ -95,8 +97,15 @@ export default function ChatAutomationModal({
         });
     };
 
-    const handleDeleteTemplate = (id) => {
-        if (!confirm('Are you sure you want to delete this template?')) return;
+    const handleDeleteTemplate = async (id) => {
+        const ok = await confirm({
+            title: 'Delete Quick Reply Template?',
+            message: 'This canned template will be permanently removed from your chat shortcuts.',
+            confirmText: 'Delete Template',
+            intent: 'danger',
+        });
+        if (!ok) return;
+
         templateForm.delete(route('chat.templates.destroy', id), {
             preserveScroll: true,
             onSuccess: () => {
@@ -339,6 +348,7 @@ export default function ChatAutomationModal({
                         </div>
                     )}
                 </div>
+                {ConfirmationDialog}
             </div>
         </div>
     );

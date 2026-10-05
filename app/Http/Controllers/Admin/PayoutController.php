@@ -378,4 +378,28 @@ class PayoutController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+
+    /**
+     * Download or view printable Payout Disbursement Voucher.
+     */
+    public function voucher(Request $request, string $id)
+    {
+        /** @var User|null $actor */
+        $actor = $request->user();
+
+        $payout = Payout::with('user:id,name,shop_name,email,phone_number')
+            ->findOrFail($id);
+
+        $isAdmin = $actor && in_array($actor->role, ['super_admin', 'admin'], true);
+        $isOwner = $actor && (int) $actor->id === (int) $payout->user_id;
+
+        if (!$isAdmin && !$isOwner) {
+            abort(403, 'Unauthorized access to payout disbursement voucher.');
+        }
+
+        return view('pdf.payout_voucher', [
+            'payout' => $payout,
+            'artisan' => $payout->user,
+        ]);
+    }
 }

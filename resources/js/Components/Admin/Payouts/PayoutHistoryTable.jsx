@@ -4,6 +4,7 @@ import {
     Calendar,
     Copy,
     Check,
+    FileText,
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import CompactPagination from '@/Components/CompactPagination';
@@ -95,7 +96,19 @@ export default function PayoutHistoryTable({
                             </div>
 
                             <div className="flex items-center justify-between pt-2 border-t border-stone-100">
-                                <span className="text-[10px] text-stone-400 uppercase font-bold tracking-wider">Amount Paid</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-stone-400 uppercase font-bold tracking-wider">Amount Paid</span>
+                                    <a
+                                        href={`/admin/payouts/${payout.id}/voucher?download=1`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-600 hover:text-stone-900 px-2 py-0.5 rounded-md border border-stone-200 bg-white hover:bg-stone-50 transition"
+                                        title="View Official Disbursement Voucher"
+                                    >
+                                        <FileText size={11} className="text-stone-500" />
+                                        <span>Voucher</span>
+                                    </a>
+                                </div>
                                 <span className="font-black text-base text-emerald-700">{formatCurrency(payout.amount)}</span>
                             </div>
                         </div>
@@ -113,6 +126,7 @@ export default function PayoutHistoryTable({
                             <th className="py-3.5 px-5">Payout Destination</th>
                             <th className="py-3.5 px-5">Reference / Txn ID</th>
                             <th className="py-3.5 px-5 text-right">Amount Paid</th>
+                            <th className="py-3.5 px-5 text-center w-28">Voucher</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100 text-xs">
@@ -197,6 +211,20 @@ export default function PayoutHistoryTable({
                                     {/* Amount Paid */}
                                     <td className="py-4 px-5 text-right font-black text-sm text-emerald-700">
                                         {formatCurrency(payout.amount)}
+                                    </td>
+
+                                    {/* Printable Voucher */}
+                                    <td className="py-4 px-5 text-center">
+                                        <a
+                                            href={`/admin/payouts/${payout.id}/voucher?download=1`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-stone-700 bg-white border border-stone-200/90 rounded-lg hover:bg-stone-50 hover:text-stone-900 transition shadow-2xs"
+                                            title="View Official Disbursement Voucher"
+                                        >
+                                            <FileText size={12} className="text-stone-500" />
+                                            <span>Slip</span>
+                                        </a>
                                     </td>
                                 </tr>
                             );

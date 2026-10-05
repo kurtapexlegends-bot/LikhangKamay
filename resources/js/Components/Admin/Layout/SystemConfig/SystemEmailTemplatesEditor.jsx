@@ -16,12 +16,14 @@ import {
     Monitor,
     Smartphone,
 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 
 export default function SystemEmailTemplatesEditor({
     templates = [],
     fetchTemplates,
     auth,
 }) {
+    const { confirm, ConfirmationDialog } = useConfirm();
     const [selectedTemplateId, setSelectedTemplateId] = useState(templates[0]?.id || null);
     const [templateSearchQuery, setTemplateSearchQuery] = useState('');
     const [templateForm, setTemplateForm] = useState({
@@ -104,7 +106,14 @@ export default function SystemEmailTemplatesEditor({
     };
 
     const handleDeleteTemplate = async (id) => {
-        if (!confirm('Are you sure you want to delete this custom template?')) return;
+        const ok = await confirm({
+            title: 'Delete Email Template?',
+            message: 'Are you sure you want to delete this custom template? System defaults will be used instead.',
+            confirmText: 'Delete Template',
+            intent: 'danger',
+        });
+        if (!ok) return;
+
         try {
             const res = await window.axios.delete(route('admin.email-templates.destroy', id));
             if (res.data && res.data.success) {
@@ -120,7 +129,11 @@ export default function SystemEmailTemplatesEditor({
             }
         } catch (err) {
             console.error('Failed to delete template', err);
-            alert(err.response?.data?.message || 'Delete operation failed.');
+            setTemplateSaveFeedback({
+                success: false,
+                message: err.response?.data?.message || 'Delete operation failed.'
+            });
+            setTimeout(() => setTemplateSaveFeedback(null), 4000);
         }
     };
 
@@ -411,6 +424,8 @@ export default function SystemEmailTemplatesEditor({
                     </div>
                 </div>
             </Modal>
+
+            {ConfirmationDialog}
         </div>
     );
 }

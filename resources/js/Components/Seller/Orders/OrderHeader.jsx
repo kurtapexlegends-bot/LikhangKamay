@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock } from "lucide-react";
+import { Clock, Printer } from "lucide-react";
 import OrderStatusBadge from "@/Components/Orders/OrderStatusBadge";
 import PaymentStatusBadge from "@/Components/Orders/PaymentStatusBadge";
 
@@ -24,6 +24,16 @@ export default function OrderHeader({ order }) {
                 </div>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
+                <a
+                    href={route("orders.receipt", order.id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10.5px] font-bold text-stone-600 bg-white border border-stone-200/90 rounded-md hover:bg-stone-50 hover:text-stone-900 transition shadow-2xs"
+                    title="Print Packing Slip & Customer Receipt"
+                >
+                    <Printer size={11} className="text-stone-400" />
+                    <span>Slip</span>
+                </a>
                 <PaymentStatusBadge
                     status={order.payment_status}
                     method={order.payment_method}

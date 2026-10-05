@@ -3,6 +3,7 @@ import { router, useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import { Star, Image as ImageIcon, X, Send, Loader2, Trash2, Pencil } from 'lucide-react';
 import { compressImage } from '@/utils/imageCompressor';
+import { useConfirm } from '@/hooks/useConfirm';
 
 const StarRating = ({ rating, setRating, readOnly = false, size = 24 }) => {
     const [hover, setHover] = useState(0);
@@ -42,6 +43,7 @@ const ReviewForm = ({ item, onSuccess }) => {
     const [previewUrls, setPreviewUrls] = useState(existingReview?.photos || []);
     const [isDragging, setIsDragging] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const { confirm, ConfirmationDialog } = useConfirm();
 
     const { data, setData, post, processing, errors, reset, transform } = useForm({
         product_id: item.product_id,
@@ -130,8 +132,16 @@ const ReviewForm = ({ item, onSuccess }) => {
         post(route('reviews.store'), options);
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (!existingReview) return;
+
+        const ok = await confirm({
+            title: 'Delete Product Review?',
+            message: 'Are you sure you want to remove your feedback and rating for this product?',
+            confirmText: 'Delete Review',
+            intent: 'danger',
+        });
+        if (!ok) return;
 
         router.delete(route('reviews.destroy', existingReview.id), {
             preserveScroll: true,
@@ -248,6 +258,7 @@ const ReviewForm = ({ item, onSuccess }) => {
                     )}
                 </button>
             </div>
+            {ConfirmationDialog}
         </form>
     );
 };
