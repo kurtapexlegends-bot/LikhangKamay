@@ -29,7 +29,7 @@ export default function useTeamChatEcho({
     useEffect(() => {
         if (!auth?.user?.id || !window.Echo) return undefined;
 
-        const chatChannelName = `team-chat.${auth.user.id}`;
+        const chatChannelName = `team-chat.${auth?.user?.id}`;
         const chatChannel = window.Echo.private(chatChannelName);
 
         chatChannel.listen('.team.message.sent', (e) => {
@@ -39,7 +39,7 @@ export default function useTeamChatEcho({
             }
 
             const senderId = Number(e.message.sender_id);
-            const myId = Number(auth.user.id);
+            const myId = Number(auth?.user?.id);
 
             // Check if this is a threaded reply
             const parentId = e.message.parent_id ? Number(e.message.parent_id) : null;
@@ -52,8 +52,8 @@ export default function useTeamChatEcho({
                         attachment_path: e.message.attachment_path,
                         attachment_type: e.message.attachment_type,
                         sender: isMe ? 'me' : 'other',
-                        sender_name: e.message.sender_name || (isMe ? auth.user.name : 'Teammate'),
-                        sender_avatar: e.message.sender_avatar || (isMe ? auth.user.avatar : null),
+                        sender_name: e.message.sender_name || (isMe ? auth?.user?.name : 'Teammate'),
+                        sender_avatar: e.message.sender_avatar || (isMe ? auth?.user?.avatar : null),
                         time: new Date(e.message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                         dateLabel: 'Today',
                         isRead: true,
@@ -203,7 +203,7 @@ export default function useTeamChatEcho({
             
             teamChannelInstance.listen('.team.message.sent', (e) => {
                 const senderId = Number(e.message.sender_id);
-                const myId = Number(auth.user.id);
+                const myId = Number(auth?.user?.id);
 
                 const parentId = e.message.parent_id ? Number(e.message.parent_id) : null;
                 if (parentId) {
@@ -215,8 +215,8 @@ export default function useTeamChatEcho({
                             attachment_path: e.message.attachment_path,
                             attachment_type: e.message.attachment_type,
                             sender: isMe ? 'me' : 'other',
-                            sender_name: e.message.sender_name || (isMe ? auth.user.name : 'Teammate'),
-                            sender_avatar: e.message.sender_avatar || (isMe ? auth.user.avatar : null),
+                            sender_name: e.message.sender_name || (isMe ? auth?.user?.name : 'Teammate'),
+                            sender_avatar: e.message.sender_avatar || (isMe ? auth?.user?.avatar : null),
                             time: new Date(e.message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                             dateLabel: 'Today',
                             isRead: true,

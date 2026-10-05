@@ -31,7 +31,7 @@ export default function ShippingAddressSelector({
     const postalCodeRef = useRef(null);
     const regionRef = useRef(null);
 
-    const isNewAddress = data.selected_address_id === 'new' || !auth.user.addresses?.length;
+    const isNewAddress = data.selected_address_id === 'new' || !auth?.user?.addresses?.length;
     const showAddressForm = isAddingNew || editingAddressId !== null;
 
     const chooseSavedAddress = (address) => {
@@ -51,14 +51,14 @@ export default function ShippingAddressSelector({
             longitude: address.longitude ?? null,
             shipping_latitude: address.latitude ?? null,
             shipping_longitude: address.longitude ?? null,
-            recipient_name: address.recipient_name || auth.user.name || '',
-            phone_number: address.phone_number || auth.user.phone_number || '',
+            recipient_name: address.recipient_name || auth?.user?.name || '',
+            phone_number: address.phone_number || auth?.user?.phone_number || '',
             save_address: false,
         }));
     };
 
     useEffect(() => {
-        if (!auth.user.addresses?.length) {
+        if (!auth?.user?.addresses?.length) {
             if (data.selected_address_id !== 'new') {
                 setData('selected_address_id', 'new');
             }
@@ -67,14 +67,14 @@ export default function ShippingAddressSelector({
 
         if (data.selected_address_id === 'new') return;
 
-        const stillExists = auth.user.addresses.some((address) => String(address.id) === String(data.selected_address_id));
+        const stillExists = auth?.user?.addresses?.some((address) => String(address.id) === String(data.selected_address_id));
         if (!stillExists) {
-            const fallback = auth.user.addresses.find((address) => address.is_default) || auth.user.addresses[0];
+            const fallback = auth?.user?.addresses?.find((address) => address.is_default) || auth?.user?.addresses?.[0];
             if (fallback) {
                 chooseSavedAddress(fallback);
             }
         }
-    }, [auth.user.addresses, data.selected_address_id]);
+    }, [auth?.user?.addresses, data.selected_address_id]);
 
     const chooseNewAddress = () => {
         setEditingAddressId(null);
@@ -126,7 +126,7 @@ export default function ShippingAddressSelector({
         setEditingAddressId(null);
         setIsAddingNew(false);
         if (auth?.user?.addresses?.length && data.selected_address_id !== 'new') {
-            const fallback = auth.user.addresses.find((address) => String(address.id) === String(data.selected_address_id));
+            const fallback = auth?.user?.addresses?.find((address) => String(address.id) === String(data.selected_address_id));
             if (fallback) {
                 chooseSavedAddress(fallback);
                 return;

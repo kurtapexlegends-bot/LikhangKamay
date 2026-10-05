@@ -24,7 +24,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     const { addToast } = useToast();
     const [isHeightComparisonOpen, setIsHeightComparisonOpen] = useState(false);
     const productRating = normalizeRating(product?.rating);
-    const currentUserReview = auth?.user
+    const currentUserReview = auth?.user?.id
         ? product?.reviews?.find((review) => Number(review.user_id) === Number(auth.user.id)) || null
         : null;
     const canWriteReview = Boolean(currentUserReview || product.viewer_can_review);
@@ -66,7 +66,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     
     const chatRequirementMessage = !auth?.user
         ? 'Log in as a buyer first.'
-        : auth.user.role && auth.user.role !== 'buyer'
+        : auth?.user?.role && auth?.user?.role !== 'buyer'
             ? 'Buyer accounts only.'
             : product?.viewer_can_chat_seller
                 ? ''
@@ -212,7 +212,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
             return;
         }
 
-        if (auth.user.role && auth.user.role !== 'buyer') {
+        if (auth?.user?.role && auth?.user?.role !== 'buyer') {
             addToast('This chat is only available from a buyer account.', 'info');
             return;
         }
@@ -227,7 +227,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
             return;
         }
 
-        const nextWishlisted = toggleWishlistedProduct(product, auth.user.id);
+        const nextWishlisted = toggleWishlistedProduct(product, auth?.user?.id);
         setIsWishlisted(nextWishlisted);
         addToast(
             nextWishlisted ? 'Saved to your wishlist. Open Saved to view it.' : 'Removed from your wishlist.',

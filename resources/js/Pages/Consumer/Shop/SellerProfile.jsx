@@ -21,11 +21,11 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('featured');
     const [categoryFilter, setCategoryFilter] = useState('all');
-    const [isFollowed, setIsFollowed] = useState(() => (auth?.user ? isShopFollowed(seller.id, auth.user.id) : false));
+    const [isFollowed, setIsFollowed] = useState(() => (auth?.user?.id ? isShopFollowed(seller.id, auth.user.id) : false));
 
     useEffect(() => {
-        setIsFollowed(auth?.user ? isShopFollowed(seller.id, auth.user.id) : false);
-    }, [seller, auth?.user]);
+        setIsFollowed(auth?.user?.id ? isShopFollowed(seller.id, auth.user.id) : false);
+    }, [seller, auth?.user?.id]);
 
     const categoryOptions = useMemo(
         () => ['all', ...Array.from(new Set(products.map((product) => product.category).filter(Boolean)))],
@@ -69,7 +69,7 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
             return;
         }
 
-        const nextFollowed = toggleFollowedShop(seller, auth.user.id);
+        const nextFollowed = toggleFollowedShop(seller, auth?.user?.id);
         setIsFollowed(nextFollowed);
         addToast(
             nextFollowed

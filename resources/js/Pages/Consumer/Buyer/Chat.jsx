@@ -190,12 +190,12 @@ export default function BuyerChat({ auth, conversations = [], activeMessages = [
     useEffect(() => {
         if (!auth?.user?.id || !window.Echo) return undefined;
 
-        const activeChannelId = auth.effectiveSellerId || auth.user.id;
+        const activeChannelId = auth?.effectiveSellerId || auth?.user?.id;
         const channel = window.Echo.private(`chat.${activeChannelId}`);
 
         channel.listen('.message.sent', (e) => {
             const senderId = Number(e.message.sender_id);
-            const myId = Number(auth.effectiveSellerId || auth.user.id);
+            const myId = Number(auth?.effectiveSellerId || auth?.user?.id);
             if (senderId === myId) return;
 
             if (selectedUser && senderId === Number(selectedUser.id)) {

@@ -31,7 +31,7 @@ export default function Dashboard({ auth }) {
     }, []);
 
     const isNewlyApproved = auth?.user?.approved_at 
-        ? (new Date() - new Date(auth.user.approved_at)) / (1000 * 60 * 60 * 24) <= 7 
+        ? (new Date() - new Date(auth?.user?.approved_at)) / (1000 * 60 * 60 * 24) <= 7 
         : false;
 
     const [showWelcome, setShowWelcome] = useState(

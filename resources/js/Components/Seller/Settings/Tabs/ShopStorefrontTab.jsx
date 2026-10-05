@@ -320,7 +320,7 @@ export default function ShopStorefrontTab({ sellerOwner, stats, products = [], p
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-clay-600 text-white text-xs font-bold hover:bg-clay-700 transition disabled:opacity-50 min-h-[44px]"
                     >
                         <CheckCircle2 size={16} />
-                        Save Storefront Settings
+                        <span className="hidden sm:inline">Save</span>
                     </button>
                 </div>
             )}

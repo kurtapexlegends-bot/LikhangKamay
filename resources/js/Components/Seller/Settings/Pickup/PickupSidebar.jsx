@@ -168,7 +168,7 @@ export default function PickupSidebar({
                         ) : (
                             <>
                                 <Save size={14} />
-                                <span>Save Pickup Schedule</span>
+                                <span className="hidden sm:inline">Save Changes</span>
                             </>
                         )}
                     </button>

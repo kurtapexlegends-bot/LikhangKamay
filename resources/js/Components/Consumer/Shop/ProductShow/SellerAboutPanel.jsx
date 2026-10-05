@@ -9,11 +9,11 @@ export default function SellerAboutPanel({ product, handleChatSeller, chatRequir
     const { addToast } = useToast();
     const [isExpanded, setIsExpanded] = useState(false);
     const sellerId = product.seller?.id || product.user_id;
-    const [isFollowed, setIsFollowed] = useState(() => (auth?.user && sellerId ? isShopFollowed(sellerId, auth.user.id) : false));
+    const [isFollowed, setIsFollowed] = useState(() => (auth?.user?.id && sellerId ? isShopFollowed(sellerId, auth.user.id) : false));
 
     useEffect(() => {
-        setIsFollowed(auth?.user && sellerId ? isShopFollowed(sellerId, auth.user.id) : false);
-    }, [sellerId, auth?.user]);
+        setIsFollowed(auth?.user?.id && sellerId ? isShopFollowed(sellerId, auth.user.id) : false);
+    }, [sellerId, auth?.user?.id]);
 
     const toggleFollow = () => {
         if (!auth?.user) {
@@ -23,7 +23,7 @@ export default function SellerAboutPanel({ product, handleChatSeller, chatRequir
         }
 
         const sellerObj = product.seller || { id: sellerId, name: product.seller_name };
-        const nextFollowed = toggleFollowedShop(sellerObj, auth.user.id);
+        const nextFollowed = toggleFollowedShop(sellerObj, auth?.user?.id);
         setIsFollowed(nextFollowed);
         addToast(
             nextFollowed

@@ -206,7 +206,7 @@ export default function AccountingFilterPanel({
                         variant="secondary"
                         className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs"
                     >
-                        <span className="hidden sm:inline">Export Breakdown</span>
+                        <span className="hidden sm:inline">Export</span>
                         <span className="sm:hidden">CSV</span>
                     </ExportButton>
                 </div>
