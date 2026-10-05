@@ -506,6 +506,10 @@ Route::get('/webhooks/migrate', function (\Illuminate\Http\Request $request) {
 
     try {
         \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        \Illuminate\Support\Facades\Cache::forget('all_platform_settings');
+        \Illuminate\Support\Facades\Cache::forget('system_settings_all');
+        \Illuminate\Support\Facades\Cache::forget('setting_contact_info');
+        \Illuminate\Support\Facades\Cache::forget('platform_setting_contact_info');
         return response()->json([
             'status' => 'success',
             'output' => \Illuminate\Support\Facades\Artisan::output()
