@@ -94,7 +94,7 @@ export default function TrashRestorationTable({
                                 : 'bg-stone-50 border border-stone-200/80 text-stone-600 hover:bg-stone-100'
                         }`}
                     >
-                        {type === 'all' ? 'All Types' : `${type}s`}
+                        {type === 'all' ? 'All Types' : type === 'Category' ? 'Categories' : `${type}s`}
                     </button>
                 ))}
 

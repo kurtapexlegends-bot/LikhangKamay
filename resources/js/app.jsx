@@ -57,7 +57,7 @@ if (typeof document !== 'undefined') {
 
 import * as Sentry from "@sentry/react";
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'LikhangKamay';
 
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN_PUBLIC,
@@ -77,7 +77,10 @@ Sentry.init({
 });
 
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
+    title: (title) => {
+        if (!title) return appName;
+        return title.includes(appName) ? title : `${title} - ${appName}`;
+    },
     resolve: (name) =>
         resolvePageComponent(
             `./Pages/${name}.jsx`,

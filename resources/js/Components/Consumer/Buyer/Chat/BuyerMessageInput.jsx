@@ -194,8 +194,8 @@ export default function BuyerMessageInput({ currentChatUser, form, userOrders = 
     return (
         <div className="p-3 sm:p-4 bg-white/90 backdrop-blur-md border-t border-gray-100 shrink-0 relative shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10 w-full">
             <div className="max-w-3xl mx-auto flex flex-col">
-                {/* Mobile Quick Replies Carousel */}
-                <div className="flex sm:hidden overflow-x-auto flex-nowrap gap-2 pb-2.5 mb-2.5 no-scrollbar">
+                {/* Quick Replies Carousel */}
+                <div className="flex overflow-x-auto flex-nowrap gap-2 pb-2.5 mb-2.5 no-scrollbar">
                     {BUYER_QUICK_REPLIES.map((replyText, idx) => (
                         <button
                             key={idx}

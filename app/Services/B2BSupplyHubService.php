@@ -437,7 +437,11 @@ class B2BSupplyHubService
             'delivery',
         ])
             ->where(function ($q) use ($id) {
-                $q->where('order_number', $id)->orWhere('id', $id);
+                if (is_numeric($id)) {
+                    $q->where('id', (int) $id)->orWhere('order_number', (string) $id);
+                } else {
+                    $q->where('order_number', (string) $id);
+                }
             })
             ->where(function ($q) use ($actor) {
                 $q->where('user_id', $actor->id)->orWhere('artisan_id', $actor->id);

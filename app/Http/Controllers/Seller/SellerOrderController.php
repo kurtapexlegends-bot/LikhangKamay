@@ -177,7 +177,11 @@ class SellerOrderController extends Controller
             'delivery',
         ])
             ->where(function ($q) use ($id) {
-                $q->where('id', $id)->orWhere('order_number', $id);
+                if (is_numeric($id)) {
+                    $q->where('id', (int) $id)->orWhere('order_number', (string) $id);
+                } else {
+                    $q->where('order_number', (string) $id);
+                }
             })
             ->where('artisan_id', $this->sellerOwnerId())
             ->firstOrFail();
