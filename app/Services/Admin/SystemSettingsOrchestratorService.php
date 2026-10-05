@@ -400,7 +400,7 @@ class SystemSettingsOrchestratorService
                 'keywords' => 'artisan, handmade, crafts, philippines, marketplace',
             ]),
             'contact_info' => $this->settings->get('contact_info', [
-                'email' => 'support@likhangkamay.app',
+                'email' => 'likhangkamaybusiness@gmail.com',
                 'phone' => '',
                 'address' => '',
             ]),

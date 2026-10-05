@@ -26,7 +26,7 @@ export default function ContactSocialsForm({ data, updateNested }) {
                             <TextInput 
                                 type="email"
                                 className="block w-full pl-9 bg-stone-50/30 text-xs py-2 min-h-[44px] focus:ring-clay-500/20 focus:border-clay-500" 
-                                placeholder="support@likhangkamay.app"
+                                placeholder="likhangkamaybusiness@gmail.com"
                                 value={data.contact_info?.email || ''}
                                 onChange={(e) => updateNested('contact_info', 'email', e.target.value)}
                             />

@@ -60,7 +60,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
 
     const { data, setData, post, processing, errors, recentlySuccessful, isDirty } = useForm({
         contact_info: {
-            email: settings?.contact_info?.email || 'support@likhangkamay.app',
+            email: settings?.contact_info?.email || 'likhangkamaybusiness@gmail.com',
             phone: settings?.contact_info?.phone || '',
             address: settings?.contact_info?.address || '',
         },
@@ -139,7 +139,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         if (settings) {
             setData({
                 contact_info: {
-                    email: settings.contact_info?.email || 'support@likhangkamay.app',
+                    email: settings.contact_info?.email || 'likhangkamaybusiness@gmail.com',
                     phone: settings.contact_info?.phone || '',
                     address: settings.contact_info?.address || '',
                 },

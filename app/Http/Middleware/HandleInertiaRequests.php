@@ -133,7 +133,7 @@ class HandleInertiaRequests extends Middleware
                     'keywords' => 'artisan, handmade, crafts, philippines, marketplace',
                 ]),
                 'contact' => \App\Facades\Settings::get('contact_info', [
-                    'email' => 'support@likhangkamay.app',
+                    'email' => 'likhangkamaybusiness@gmail.com',
                     'phone' => '',
                     'address' => '',
                 ]),

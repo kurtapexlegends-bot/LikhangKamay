@@ -79,7 +79,7 @@
             <h3>Disbursing Platform Entity</h3>
             <p class="party-name">LikhangKamay Marketplace</p>
             <p>Escrow & Treasury Settlement Division</p>
-            <p>support@likhangkamay.com</p>
+            <p>likhangkamaybusiness@gmail.com</p>
             <p style="margin-top: 6px; font-size: 11px; color: #78716c;">
                 <strong>Date Released:</strong> {{ $payout->created_at->format('M d, Y - h:i A') }}
             </p>
