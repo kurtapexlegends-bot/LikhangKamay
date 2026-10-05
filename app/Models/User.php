@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Schema;
@@ -68,7 +69,7 @@ use App\Models\Traits\HasWorkspaceNotifications;
  */
 class User extends Authenticatable implements AuthenticatableContract, MustVerifyEmail
 {
-    use HasFactory, Notifiable, HasTransformableImages, Searchable;
+    use HasFactory, Notifiable, SoftDeletes, HasTransformableImages, Searchable;
     use ManagesStaffAccountFlags, HasStaffCapabilities, HasArtisanSubscriptions, HasWorkspaceNotifications;
 
     protected static ?bool $hasSplitNameColumns = null;

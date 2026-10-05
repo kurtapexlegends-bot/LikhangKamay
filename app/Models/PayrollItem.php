@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property int $id
@@ -27,6 +28,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class PayrollItem extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'payroll_id',
         'employee_id',
@@ -66,7 +69,7 @@ class PayrollItem extends Model
 
     public function employee()
     {
-        return $this->belongsTo(Employee::class);
+        return $this->belongsTo(Employee::class)->withTrashed();
     }
     public static function forgetSchemaSupportCache(): void
     {

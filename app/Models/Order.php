@@ -91,12 +91,12 @@ class Order extends Model
     // Relationship: Order belongs to a Buyer
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function artisan()
     {
-        return $this->belongsTo(User::class, 'artisan_id');
+        return $this->belongsTo(User::class, 'artisan_id')->withTrashed();
     }
 
     public function seller()

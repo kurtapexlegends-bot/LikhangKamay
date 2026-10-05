@@ -76,12 +76,12 @@ class Employee extends Model
     // Optional: Relationship back to the Seller
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function loginAccount()
     {
-        return $this->hasOne(User::class, 'employee_id');
+        return $this->hasOne(User::class, 'employee_id')->withTrashed();
     }
 
     public function deliveries()
@@ -91,7 +91,7 @@ class Employee extends Model
 
     public function assignedLocation()
     {
-        return $this->belongsTo(SellerLocation::class, 'assigned_location_id');
+        return $this->belongsTo(SellerLocation::class, 'assigned_location_id')->withTrashed();
     }
 
     public function sellerLocation()

@@ -85,12 +85,12 @@ class OrderDelivery extends Model
 
     public function driverUser()
     {
-        return $this->belongsTo(User::class, 'driver_user_id');
+        return $this->belongsTo(User::class, 'driver_user_id')->withTrashed();
     }
 
     public function driverEmployee()
     {
-        return $this->belongsTo(Employee::class, 'driver_employee_id');
+        return $this->belongsTo(Employee::class, 'driver_employee_id')->withTrashed();
     }
 
     public function events()

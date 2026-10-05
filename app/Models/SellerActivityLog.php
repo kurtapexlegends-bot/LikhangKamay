@@ -42,12 +42,12 @@ class SellerActivityLog extends Model
 
     public function sellerOwner(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'seller_owner_id');
+        return $this->belongsTo(User::class, 'seller_owner_id')->withTrashed();
     }
 
     public function actor(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'actor_user_id');
+        return $this->belongsTo(User::class, 'actor_user_id')->withTrashed();
     }
 
     /**
