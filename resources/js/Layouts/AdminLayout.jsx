@@ -362,7 +362,7 @@ export default function AdminLayout({ title, children }) {
                                     'Insights': "View revenue forecasts and platform analytics.",
                                     'Subscriptions & Billing': "View platform subscriptions, sponsorships, and financial performance.",
                                     'Payouts': "Review seller earnings and disburse weekly payouts to artisans.",
-                                    'Activity History': "Track background jobs, logs, and system health.",
+                                    'Activity History': "Timeline of store activities, disbursements, and administrative changes.",
                                     'User Directory': "Manage platform users, staff profiles, and account notices.",
                                     'Artisan Applications': "Review and approve artisan registration applications or request revisions.",
                                     'Product Approvals': "Review and approve new handmade product submissions before they go live.",

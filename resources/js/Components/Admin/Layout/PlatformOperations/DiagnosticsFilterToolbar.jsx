@@ -137,7 +137,7 @@ export default function DiagnosticsFilterToolbar({
             {/* 2. Action Type Filter */}
             <div>
                 <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5">
-                    Action Type
+                    Activity Type
                 </label>
                 <div className="relative">
                     <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
@@ -146,7 +146,7 @@ export default function DiagnosticsFilterToolbar({
                         onChange={(e) => setDraftActionType(e.target.value)}
                         className="pl-9 pr-8 text-xs py-2 w-full min-h-[40px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer appearance-none"
                     >
-                        <option value="">All Action Types ({availableActions.length})</option>
+                        <option value="">All Activity Types ({availableActions.length})</option>
                         {availableActions.map((action) => (
                             <option key={action} value={action}>
                                 {formatActionLabel(action)}
@@ -194,7 +194,7 @@ export default function DiagnosticsFilterToolbar({
                         type="text" 
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search by action, description or admin..."
+                        placeholder="Search by activity, description, or administrator..."
                         className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-stone-200/60 rounded-xl text-xs font-bold text-stone-800 focus:border-clay-500 focus:ring-2 focus:ring-clay-100 placeholder:text-stone-400 min-h-[42px]"
                     />
                 </div>
@@ -239,7 +239,7 @@ export default function DiagnosticsFilterToolbar({
                                 <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-3 shrink-0">
                                     <div className="flex items-center gap-2">
                                         <Filter size={15} className="text-clay-700" />
-                                        <h3 className="text-sm font-bold text-stone-900">Filter Diagnostic Logs</h3>
+                                        <h3 className="text-sm font-bold text-stone-900">Filter Activity History</h3>
                                     </div>
                                     {draftActiveCount > 0 && (
                                         <button
@@ -307,7 +307,7 @@ export default function DiagnosticsFilterToolbar({
                     </span>
                     {actionType && (
                         <span className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-sm">
-                            <span>Action: {actionType.replace(/_/g, ' ')}</span>
+                            <span>Activity: {formatActionLabel(actionType)}</span>
                             <button
                                 type="button"
                                 onClick={() => {
@@ -391,7 +391,7 @@ export default function DiagnosticsFilterToolbar({
             <SlideOverDrawer
                 show={isDrawerOpen}
                 onClose={() => setIsDrawerOpen(false)}
-                title="Filter Diagnostic Logs"
+                title="Filter Activity History"
                 position="bottom"
                 widthClass="max-w-md"
                 footer={

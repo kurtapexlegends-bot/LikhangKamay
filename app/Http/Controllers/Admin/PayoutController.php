@@ -290,17 +290,19 @@ class PayoutController extends Controller
                         'status' => 'Completed',
                     ]);
 
-                    \App\Models\PlatformActivity::create([
-                        'user_id' => \Illuminate\Support\Facades\Auth::id(),
-                        'action' => 'payout_disbursed',
-                        'description' => "Disbursed payout of PHP " . number_format($validated['amount'], 2) . " to {$artisan->shop_name}",
-                        'metadata' => [
+                    app(\App\Actions\Audit\RecordAuditActivity::class)->execute(
+                        action: 'payout.disbursed',
+                        description: "Disbursed payout of PHP " . number_format($validated['amount'], 2) . " to {$artisan->shop_name}",
+                        subject: $payout,
+                        diff: [
                             'artisan_id' => $artisan->id,
                             'shop_name' => $artisan->shop_name,
                             'amount' => $validated['amount'],
+                            'payout_method' => $validated['payout_method'],
                             'reference_number' => $validated['reference_number'] ?? null,
-                        ]
-                    ]);
+                        ],
+                        actorId: \Illuminate\Support\Facades\Auth::id(),
+                    );
 
                     return $payout;
                 });

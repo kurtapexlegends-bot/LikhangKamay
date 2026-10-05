@@ -3,7 +3,7 @@ import { Link, router } from '@inertiajs/react';
 import { Clock, Calendar, Shield, Eye } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
-import { getActionIcon, getActionColor, formatActionLabel } from '@/utils/platformOperationsHelpers';
+import { getActionIcon, getActionColor, formatActionLabel, getHumanReadableMetadata } from '@/utils/platformOperationsHelpers';
 import DiagnosticsFilterToolbar from './DiagnosticsFilterToolbar';
 import DiagnosticsLogDetailsModal from './DiagnosticsLogDetailsModal';
 
@@ -89,10 +89,10 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-[#FAF9F5] border-b border-stone-100">
-                                    <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Event & Status</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Description</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Administrator</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest text-right">Timestamp</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Activity</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Activity Summary</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Performed By</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest text-right">Date &amp; Time</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-stone-50">
@@ -100,13 +100,14 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
                                     activities.data.map((log) => {
                                         const ActionIcon = getActionIcon(log.action);
                                         const colorClasses = getActionColor(log.action);
+                                        const readableMeta = getHumanReadableMetadata(log.metadata);
 
                                         return (
                                             <tr 
                                                 key={log.id} 
                                                 onClick={() => setSelectedLog(log)}
                                                 className="hover:bg-stone-50/70 transition-all group cursor-pointer"
-                                                title="Click to view full log details"
+                                                title="Click to view activity record details"
                                             >
                                                 <td className="px-6 py-5 align-top">
                                                     <div className="flex items-center gap-3">
@@ -120,13 +121,13 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
                                                 </td>
                                                 <td className="px-6 py-5 align-top max-w-md">
                                                     <p className="text-xs sm:text-sm font-bold text-gray-800 leading-snug mb-2">{log.description}</p>
-                                                    {log.metadata && Object.keys(log.metadata).length > 0 && (
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {Object.entries(log.metadata).map(([key, value]) => (
-                                                                <div key={key} className="flex items-center gap-1.5 px-2 py-0.5 bg-stone-100 rounded-md border border-stone-200">
-                                                                    <span className="text-[8px] font-black text-stone-400 uppercase tracking-tighter">{key.replace(/_/g, ' ')}:</span>
-                                                                    <span className="text-[9px] font-bold text-stone-600">
-                                                                        {typeof value === 'boolean' ? (value ? 'YES' : 'NO') : String(value)}
+                                                    {readableMeta.length > 0 && (
+                                                        <div className="flex flex-wrap gap-1.5 mt-2">
+                                                            {readableMeta.map((item) => (
+                                                                <div key={item.key} className="flex items-center gap-1.5 px-2 py-0.5 bg-stone-100/80 rounded-md border border-stone-200/80">
+                                                                    <span className="text-[8px] font-black text-stone-400 uppercase tracking-tighter">{item.label}:</span>
+                                                                    <span className="text-[9px] font-bold text-stone-700">
+                                                                        {item.value}
                                                                     </span>
                                                                 </div>
                                                             ))}
@@ -162,8 +163,8 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
                                         <td colSpan="4" className="px-6 py-12 text-center bg-white">
                                             <WorkspaceEmptyState
                                                 icon={Shield}
-                                                title="No activity logs found"
-                                                description="Governance events will appear here once recorded."
+                                                title="No activity records found"
+                                                description="Store and platform activities will appear here as they occur."
                                             />
                                         </td>
                                     </tr>
@@ -191,7 +192,7 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
                                                     <ActionIcon size={12} />
                                                 </div>
                                                 <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${colorClasses}`}>
-                                                    {log.action.split('_')[0]}
+                                                    {formatActionLabel(log.action)}
                                                 </span>
                                             </div>
                                             <div className="text-right text-[9px] text-stone-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
@@ -206,22 +207,26 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
                                         <div className="space-y-2">
                                             <p className="text-xs font-bold text-gray-800 leading-snug">{log.description}</p>
                                             
-                                            {log.metadata && Object.keys(log.metadata).length > 0 && (
-                                                <div className="flex flex-wrap gap-1.5 pt-1">
-                                                    {Object.entries(log.metadata).map(([key, value]) => (
-                                                        <div key={key} className="flex items-center gap-1 px-1.5 py-0.5 bg-stone-100 rounded-md border border-stone-200/60">
-                                                            <span className="text-[8px] font-black text-stone-400 uppercase tracking-tight">{key.replace(/_/g, ' ')}:</span>
-                                                            <span className="text-[8px] font-bold text-stone-600">
-                                                                {typeof value === 'boolean' ? (value ? 'YES' : 'NO') : String(value)}
-                                                            </span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
+                                            {(() => {
+                                                const readableMeta = getHumanReadableMetadata(log.metadata);
+                                                if (readableMeta.length === 0) return null;
+                                                return (
+                                                    <div className="flex flex-wrap gap-1.5 pt-1">
+                                                        {readableMeta.map((item) => (
+                                                            <div key={item.key} className="flex items-center gap-1 px-1.5 py-0.5 bg-stone-100 rounded-md border border-stone-200/60">
+                                                                <span className="text-[8px] font-black text-stone-400 uppercase tracking-tight">{item.label}:</span>
+                                                                <span className="text-[8px] font-bold text-stone-700">
+                                                                    {item.value}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
 
                                         <div className="flex items-center justify-between pt-2.5 border-t border-stone-50">
-                                            <span className="text-[8px] font-bold text-stone-400 uppercase tracking-wider">Administrator</span>
+                                            <span className="text-[8px] font-bold text-stone-400 uppercase tracking-wider">Performed By</span>
                                             <div className="flex items-center gap-2">
                                                 <UserAvatar user={log.user} className="w-6 h-6 border border-stone-200" />
                                                 <div className="text-left">
@@ -237,8 +242,8 @@ export default function DiagnosticsLogsTable({ activities, filters = {}, availab
                             <div className="p-6 text-center">
                                 <WorkspaceEmptyState
                                     icon={Shield}
-                                    title="No activity logs found"
-                                    description="Governance events will appear here once recorded."
+                                    title="No activity records found"
+                                    description="Store and platform activities will appear here as they occur."
                                 />
                             </div>
                         )}

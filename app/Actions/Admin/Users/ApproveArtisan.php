@@ -61,11 +61,18 @@ class ApproveArtisan
 
         session()->forget("artisan_review_docs_{$id}");
 
-        // Log Activity
-        PlatformActivity::log(
-            'artisan_approved',
-            "Approved artisan application for: {$artisan->shop_name} ({$artisan->name})",
-            ['artisan_id' => $artisan->id, 'shop_name' => $artisan->shop_name]
+        // Log Standardized Audit Activity
+        app(\App\Actions\Audit\RecordAuditActivity::class)->execute(
+            action: 'artisan.approved',
+            description: "Approved artisan application for: {$artisan->shop_name} ({$artisan->name})",
+            subject: $artisan,
+            diff: [
+                'artisan_id' => $artisan->id,
+                'shop_name' => $artisan->shop_name,
+                'before' => ['artisan_status' => 'pending'],
+                'after' => ['artisan_status' => 'approved', 'approved_by' => $adminId],
+            ],
+            actorId: $adminId,
         );
 
         try {

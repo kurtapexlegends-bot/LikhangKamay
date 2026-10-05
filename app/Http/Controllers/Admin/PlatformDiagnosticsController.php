@@ -171,6 +171,39 @@ class PlatformDiagnosticsController extends Controller
         });
     }
 
+    /**
+     * Get activity history for a specific subject model (e.g. Order, User, Payout).
+     */
+    public function subjectHistory(Request $request)
+    {
+        Gate::authorize('admin-action');
+
+        $validated = $request->validate([
+            'subject_type' => 'required|string',
+            'subject_id' => 'required',
+        ]);
+
+        $activities = PlatformActivity::query()
+            ->with('user:id,name,role,avatar')
+            ->forSubject($validated['subject_type'], (string) $validated['subject_id'])
+            ->latest()
+            ->take(30)
+            ->get()
+            ->map(fn($a) => [
+                'id' => $a->id,
+                'action' => $a->action,
+                'description' => $a->description,
+                'metadata' => $a->metadata,
+                'created_at' => $a->created_at->toIso8601String(),
+                'user' => [
+                    'name' => $a->user->name ?? 'System',
+                    'role' => $a->user->role ?? 'N/A',
+                ],
+            ]);
+
+        return response()->json(['activities' => $activities]);
+    }
+
 
 
     /**

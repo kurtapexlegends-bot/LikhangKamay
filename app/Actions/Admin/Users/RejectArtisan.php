@@ -41,11 +41,18 @@ class RejectArtisan
 
         session()->forget("artisan_review_docs_{$id}");
 
-        // Log Activity
-        PlatformActivity::log(
-            'artisan_rejected',
-            "Requested application revision for: {$artisan->name}",
-            ['artisan_id' => $artisan->id, 'reason' => $reason]
+        // Log Standardized Audit Activity
+        app(\App\Actions\Audit\RecordAuditActivity::class)->execute(
+            action: 'artisan.rejected',
+            description: "Requested application revision for: {$artisan->name}",
+            subject: $artisan,
+            diff: [
+                'artisan_id' => $artisan->id,
+                'shop_name' => $artisan->shop_name,
+                'before' => ['artisan_status' => 'pending'],
+                'after' => ['artisan_status' => 'rejected', 'reason' => $reason],
+            ],
+            actorId: auth()->id(),
         );
 
         try {
