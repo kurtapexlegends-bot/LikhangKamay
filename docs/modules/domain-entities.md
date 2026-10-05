@@ -159,7 +159,7 @@ All order operations are processed through dedicated single-responsibility Actio
 *   `status` (disbursement status, e.g. Completed)
 
 ### Payout Controllers & Actions
-*   [PayoutController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Admin/PayoutController.php): Manages payouts ledger, aggregates outstanding owed balances, and registers manual disbursements.
+*   [PayoutController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Admin/PayoutController.php): Manages payouts ledger, aggregates outstanding owed balances, registers manual disbursements, and generates official printable disbursement vouchers ([payout_voucher.blade.php](file:///c:/laragon/www/LikhangKamay/resources/views/pdf/payout_voucher.blade.php)).
 
 ---
 
