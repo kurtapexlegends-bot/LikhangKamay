@@ -9,17 +9,18 @@ import ShopHealthStrip from '@/Components/Seller/Dashboard/ShopHealthStrip';
 import RecentOrdersPreview from '@/Components/Seller/Dashboard/RecentOrdersPreview';
 import WelcomeModal from '@/Components/Seller/Dashboard/WelcomeModal';
 import ErrorBoundary from '@/Components/ErrorBoundary';
+import WidgetErrorBoundary from '@/Components/Common/WidgetErrorBoundary';
 
 const RevenueAnalyticsChart = lazy(() => import('@/Components/Seller/Dashboard/RevenueAnalyticsChart'));
 const SalesByCategoryChart = lazy(() => import('@/Components/Seller/Dashboard/SalesByCategoryChart'));
 
 export default function Dashboard({ auth }) {
-    const { metrics, chartData, categoryData, recentOrders, filters } = usePage().props;
+    const { metrics = {}, chartData = {}, categoryData = [], recentOrders = {}, filters = {} } = usePage().props;
     const { openSidebar } = useSellerWorkspaceShell();
     const [chartFilter, setChartFilter] = useState('Monthly');
-    const [search, setSearch] = useState(filters.search || '');
-    const [status, setStatus] = useState(filters.status || 'All');
-    const [date, setDate] = useState(filters.date || '');
+    const [search, setSearch] = useState(filters?.search || '');
+    const [status, setStatus] = useState(filters?.status || 'All');
+    const [date, setDate] = useState(filters?.date || '');
     const [isLoading, setIsLoading] = useState(false);
     const searchTimeoutRef = useRef(null);
     
@@ -47,7 +48,7 @@ export default function Dashboard({ auth }) {
         });
     };
 
-    const currentChartData = chartFilter === 'Monthly' ? chartData.monthly : chartData.yearly;
+    const currentChartData = chartFilter === 'Monthly' ? (chartData?.monthly || []) : (chartData?.yearly || []);
 
     // Shared partial-reload helper — only refetches 'recentOrders' and 'filters',
     // leaving metrics, charts, and categories untouched (no full-page reload).
@@ -100,16 +101,20 @@ export default function Dashboard({ auth }) {
                 auth={auth}
                 onMenuClick={openSidebar}
             />
-            <main className="flex-1 p-6 overflow-y-auto space-y-6">
+            <div className="flex-1 p-6 space-y-6">
                 {/* Key Metrics Overview Grid */}
-                <DashboardKPIs 
-                    metrics={metrics} 
-                    isLoading={isLoading} 
-                    shouldAnimateKPI={shouldAnimateKPI} 
-                />
+                <WidgetErrorBoundary widgetName="Overview KPIs">
+                    <DashboardKPIs 
+                        metrics={metrics} 
+                        isLoading={isLoading} 
+                        shouldAnimateKPI={shouldAnimateKPI} 
+                    />
+                </WidgetErrorBoundary>
 
                 {/* Shop Operational Health Strip */}
-                <ShopHealthStrip metrics={metrics} />
+                <WidgetErrorBoundary widgetName="Shop Health">
+                    <ShopHealthStrip metrics={metrics} />
+                </WidgetErrorBoundary>
 
                 {/* Charts Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -195,7 +200,7 @@ export default function Dashboard({ auth }) {
                     handleDateChange={handleDateChange}
                     isLoading={isLoading}
                 />
-            </main>
+            </div>
 
             {/* Welcome Flow Modal / SlideOverDrawer */}
             <WelcomeModal 

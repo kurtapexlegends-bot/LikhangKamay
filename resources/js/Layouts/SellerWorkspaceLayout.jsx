@@ -25,6 +25,14 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
         }
     };
 
+    // Reset scroll position on route transitions across persistent layout pages
+    React.useEffect(() => {
+        const mainContent = document.getElementById('seller-main-content');
+        if (mainContent) {
+            mainContent.scrollTop = 0;
+        }
+    }, [active]);
+
     // Gesture-based sidebar reveal (Swipe from left edge)
     React.useEffect(() => {
         let touchStartX = 0;

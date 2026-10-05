@@ -12,8 +12,7 @@ import {
     Edit3,
     RotateCcw,
     Archive,
-    Package,
-    Zap
+    Package
 } from "lucide-react";
 
 export default function ProductTable({
@@ -27,7 +26,6 @@ export default function ProductTable({
     openRestockModal,
     openDeductModal,
     openDiscountModal,
-    openQuickEditModal,
     openEditModal,
     openArchiveModal,
     sortConfig,
@@ -205,15 +203,6 @@ export default function ProductTable({
                                         title={canEditProducts ? "Manual Deduct" : "Read only"}
                                     >
                                         <TrendingUp size={14} className="rotate-180" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={!canEditProducts}
-                                        onClick={() => openQuickEditModal ? openQuickEditModal(product) : openEditModal(product)}
-                                        className="p-2 text-amber-700 hover:text-amber-900 hover:bg-amber-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:opacity-40"
-                                        title={canEditProducts ? "Quick Edit Price & Stock" : "Read only"}
-                                    >
-                                        <Zap size={14} className="fill-amber-500 text-amber-600" />
                                     </button>
                                     <button
                                         type="button"

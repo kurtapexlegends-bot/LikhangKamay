@@ -3,8 +3,8 @@ import { Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { AlertCircle, ShoppingBag, Box } from 'lucide-react';
 
-export default function ShopHealthStrip({ metrics }) {
-    if (!metrics.pending_orders && !metrics.stalled_orders && !metrics.low_stock_count) {
+export default function ShopHealthStrip({ metrics = {} }) {
+    if (!metrics?.pending_orders && !metrics?.stalled_orders && !metrics?.low_stock_count) {
         return null;
     }
 

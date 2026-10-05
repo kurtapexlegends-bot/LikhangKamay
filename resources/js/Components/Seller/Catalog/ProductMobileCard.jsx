@@ -1,14 +1,13 @@
 import React from "react";
 import Checkbox from "@/Components/Checkbox";
 import WorkspaceEmptyState from "@/Components/WorkspaceEmptyState";
-import { AlertTriangle, Edit3, Package, Tag, Zap } from "lucide-react";
+import { AlertTriangle, Edit3, Package, Tag } from "lucide-react";
 
 export default function ProductMobileCard({
     products,
     selectedProductIds,
     toggleProductSelection,
     canEditProducts,
-    openQuickEditModal,
     openEditModal,
     openDiscountModal,
     openAddModal,
@@ -135,15 +134,7 @@ export default function ProductMobileCard({
                                 </div>
                             </div>
                         </div>
-                        <div className="mt-3 grid grid-cols-3 gap-2">
-                            <button
-                                type="button"
-                                disabled={!canEditProducts}
-                                onClick={() => openQuickEditModal ? openQuickEditModal(product) : openEditModal(product)}
-                                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50/80 px-2 py-2.5 text-xs font-bold text-amber-800 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] select-none active:scale-98 transition-all"
-                            >
-                                <Zap size={13} className="fill-amber-500 text-amber-600 shrink-0" /> Quick
-                            </button>
+                        <div className="mt-3 grid grid-cols-2 gap-2">
                             <button
                                 type="button"
                                 disabled={!canEditProducts}

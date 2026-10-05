@@ -86,7 +86,12 @@ const MetricCard = ({ title, value, growth, icon: Icon, bg, text, animateValue =
     );
 };
 
-export default function DashboardKPIs({ metrics, isLoading, shouldAnimateKPI }) {
+export default function DashboardKPIs({ metrics = {}, isLoading, shouldAnimateKPI }) {
+    const revenue = Number(metrics?.revenue) || 0;
+    const orders = Number(metrics?.orders) || 0;
+    const customers = Number(metrics?.customers) || 0;
+    const avgValue = Number(metrics?.avg_value) || 0;
+
     return (
         <div className="flex overflow-x-auto pb-2.5 gap-6 flex-nowrap snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
             {isLoading ? (
@@ -96,8 +101,8 @@ export default function DashboardKPIs({ metrics, isLoading, shouldAnimateKPI }) 
                     <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
                         <MetricCard 
                             title="Total Revenue" 
-                            value={`₱${Number(metrics.revenue).toLocaleString()}`} 
-                            growth={metrics.revenue_growth} 
+                            value={`₱${revenue.toLocaleString()}`} 
+                            growth={metrics?.revenue_growth} 
                             icon={DollarSign} 
                             bg="bg-emerald-50" 
                             text="text-emerald-600" 
@@ -107,8 +112,8 @@ export default function DashboardKPIs({ metrics, isLoading, shouldAnimateKPI }) 
                     <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
                         <MetricCard 
                             title="Total Orders" 
-                            value={metrics.orders} 
-                            growth={metrics.orders_growth} 
+                            value={orders} 
+                            growth={metrics?.orders_growth} 
                             icon={ShoppingBag} 
                             bg="bg-clay-50" 
                             text="text-clay-600" 
@@ -118,8 +123,8 @@ export default function DashboardKPIs({ metrics, isLoading, shouldAnimateKPI }) 
                     <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
                         <MetricCard 
                             title="Total Customers" 
-                            value={metrics.customers} 
-                            growth={metrics.customers_growth} 
+                            value={customers} 
+                            growth={metrics?.customers_growth} 
                             icon={Users} 
                             bg="bg-rose-50" 
                             text="text-rose-600" 
@@ -129,8 +134,8 @@ export default function DashboardKPIs({ metrics, isLoading, shouldAnimateKPI }) 
                     <div className="w-[85vw] max-w-[280px] shrink-0 snap-center md:w-auto">
                         <MetricCard 
                             title="Avg. Order Value" 
-                            value={`₱${Number(metrics.avg_value).toLocaleString()}`} 
-                            growth={metrics.avg_growth} 
+                            value={`₱${avgValue.toLocaleString()}`} 
+                            growth={metrics?.avg_growth} 
                             icon={CreditCard} 
                             bg="bg-stone-100" 
                             text="text-stone-600" 

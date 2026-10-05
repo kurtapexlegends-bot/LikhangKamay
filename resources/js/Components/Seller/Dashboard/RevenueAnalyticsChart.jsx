@@ -2,10 +2,13 @@ import React from 'react';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import WidgetErrorBoundary from '@/Components/Common/WidgetErrorBoundary';
 
 export default function RevenueAnalyticsChart({ chartFilter, setChartFilter, currentChartData, isLoading }) {
     return (
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div className="lg:col-span-2">
+            <WidgetErrorBoundary widgetName="Revenue Analytics">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-lg font-bold text-gray-900">Revenue Analytics</h2>
@@ -76,6 +79,8 @@ export default function RevenueAnalyticsChart({ chartFilter, setChartFilter, cur
                     </div>
                 )}
             </div>
+            </div>
+        </WidgetErrorBoundary>
         </div>
     );
 }
