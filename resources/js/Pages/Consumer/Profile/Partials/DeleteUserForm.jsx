@@ -48,24 +48,24 @@ export default function DeleteUserForm({ className = '' }) {
     return (
         <section className={`space-y-6 ${className}`}>
             <header>
-                <h3 className="text-lg font-bold text-stone-900">Delete Account</h3>
+                <h3 className="text-lg font-bold text-stone-900">Deactivate Account</h3>
                 <p className="mt-1 text-sm text-stone-500">
-                    Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.
+                    Deactivating your account will disable your login and hide your profile. Your past orders, purchase receipts, and audit history will be securely archived for accounting and financial compliance.
                 </p>
             </header>
 
             <div className="mt-5">
-                <DangerButton onClick={confirmUserDeletion}>Delete Account</DangerButton>
+                <DangerButton onClick={confirmUserDeletion}>Deactivate Account</DangerButton>
             </div>
 
             <Modal show={confirmingUserDeletion} onClose={closeModal}>
                 <form onSubmit={deleteUser} className="p-6">
                     <h2 className="text-lg font-bold text-stone-900">
-                        Are you sure you want to delete your account?
+                        Are you sure you want to deactivate your account?
                     </h2>
 
                     <p className="mt-1 text-sm text-stone-500">
-                        Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.
+                        Once deactivated, your session will end immediately. Your historical transaction logs will remain protected. Please enter your password to confirm deactivation.
                     </p>
 
                     <div className="mt-6">
@@ -90,7 +90,7 @@ export default function DeleteUserForm({ className = '' }) {
                         <SecondaryButton onClick={closeModal}>Cancel</SecondaryButton>
 
                         <DangerButton className="ms-3" disabled={processing}>
-                            Delete Account
+                            Deactivate Account
                         </DangerButton>
                     </div>
                 </form>

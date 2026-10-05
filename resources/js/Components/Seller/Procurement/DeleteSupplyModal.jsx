@@ -19,9 +19,9 @@ export default function DeleteSupplyModal({
                             <Trash2 size={18} strokeWidth={2.5} />
                         </div>
                         <div>
-                            <h2 className="text-base font-bold text-stone-900 tracking-tight">Delete Supply Item</h2>
+                            <h2 className="text-base font-bold text-stone-900 tracking-tight">Archive Supply Material</h2>
                             <p className="text-xs text-stone-500 mt-0.5 font-medium">
-                                Remove <strong className="text-stone-800 font-semibold">{supply?.name}</strong> from catalog tracking.
+                                Archive <strong className="text-stone-800 font-semibold">{supply?.name}</strong> from active inventory.
                             </p>
                         </div>
                     </div>
@@ -39,7 +39,7 @@ export default function DeleteSupplyModal({
                 {/* Body */}
                 <div className="p-6">
                     <p className="text-xs text-stone-600 font-medium leading-relaxed">
-                        Are you sure you want to remove this supply item? This will remove its inventory tracking and history from your workspace.
+                        Are you sure you want to archive this supply material? It will be hidden from active inventory, while past consumption records and batch receipts will remain safely saved.
                     </p>
                 </div>
 
@@ -58,7 +58,7 @@ export default function DeleteSupplyModal({
                         onClick={onConfirm} 
                         className="px-6 py-2.5 text-xs bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl font-bold transition shadow-xs disabled:opacity-50 min-h-[44px] sm:min-h-[38px] flex items-center gap-2"
                     >
-                        <Trash2 size={14} /> Confirm Delete
+                        <Trash2 size={14} /> Archive Supply
                     </button>
                 </div>
             </div>

@@ -31,16 +31,16 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
     const handleDelete = async (id) => {
         if (!canEdit) return;
         const ok = await confirm({
-            title: 'Remove Workplace Location?',
-            message: 'Staff assigned here will revert to remote/unassigned.',
-            confirmText: 'Remove Location',
+            title: 'Archive Workplace Location?',
+            message: 'Staff assigned here will revert to remote/unassigned. Past attendance sessions and pickup orders will safely retain their historical location records.',
+            confirmText: 'Archive Location',
             intent: 'danger',
         });
         if (!ok) return;
 
         router.delete(route('shop.locations.destroy', { location: id }), {
             preserveScroll: true,
-            onSuccess: () => addToast('Location deleted.', 'success'),
+            onSuccess: () => addToast('Workplace location archived.', 'success'),
         });
     };
 

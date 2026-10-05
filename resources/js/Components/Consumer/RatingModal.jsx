@@ -136,9 +136,9 @@ const ReviewForm = ({ item, onSuccess }) => {
         if (!existingReview) return;
 
         const ok = await confirm({
-            title: 'Delete Product Review?',
-            message: 'Are you sure you want to remove your feedback and rating for this product?',
-            confirmText: 'Delete Review',
+            title: 'Withdraw Product Review?',
+            message: 'Are you sure you want to withdraw your feedback and rating for this product?',
+            confirmText: 'Withdraw Review',
             intent: 'danger',
         });
         if (!ok) return;
@@ -240,7 +240,7 @@ const ReviewForm = ({ item, onSuccess }) => {
                         className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
                     >
                         <Trash2 size={16} />
-                        {deleting ? 'Deleting...' : 'Delete Review'}
+                        {deleting ? 'Withdrawing...' : 'Withdraw Review'}
                     </button>
                 )}
                 <button
@@ -290,7 +290,7 @@ export default function RatingModal({ isOpen, onClose, order }) {
 
                 <div className="custom-scrollbar overflow-y-auto p-6">
                     <p className="mb-6 text-sm text-gray-600">
-                        Rate unrated items here, or update and delete your existing reviews anytime.
+                        Rate unrated items here, or update and withdraw your existing reviews anytime.
                     </p>
 
                     <div className="space-y-6">

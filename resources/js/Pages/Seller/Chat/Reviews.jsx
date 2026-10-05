@@ -327,11 +327,11 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                 isOpen={confirmingDisputeRemoval !== null}
                 onClose={() => setConfirmingDisputeRemoval(null)}
                 onConfirm={removeDispute}
-                title="Remove moderation request?"
+                title="Withdraw moderation request?"
                 message="This will withdraw the open review moderation request so it no longer appears in the admin queue."
                 icon={ShieldAlert}
                 iconBg="bg-rose-100 text-rose-600"
-                confirmText="Remove Request"
+                confirmText="Withdraw Request"
                 confirmColor="bg-rose-600 hover:bg-rose-700"
                 processing={false}
                 isHighRisk={true}
@@ -342,11 +342,11 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                 isOpen={confirmingDelete !== null}
                 onClose={() => setConfirmingDelete(null)}
                 onConfirm={deleteReply}
-                title="Delete Reply?"
-                message="Are you sure you want to delete your reply? This action cannot be undone."
+                title="Remove Reply?"
+                message="Are you sure you want to clear your reply to this customer review?"
                 icon={AlertTriangle}
                 iconBg="bg-rose-100 text-rose-600"
-                confirmText="Delete"
+                confirmText="Remove Reply"
                 confirmColor="bg-rose-600 hover:bg-rose-700"
                 processing={false}
             />

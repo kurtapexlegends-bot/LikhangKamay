@@ -30,7 +30,7 @@ export default function Edit({ mustVerifyEmail, status, addresses }) {
         { id: 'security', label: 'Security', icon: Shield },
         { id: 'addresses', label: 'Addresses', icon: MapPin },
 
-        { id: 'danger', label: 'Delete Account', icon: AlertTriangle, variant: 'danger' },
+        { id: 'danger', label: 'Deactivate Account', icon: AlertTriangle, variant: 'danger' },
     ];
 
     return (

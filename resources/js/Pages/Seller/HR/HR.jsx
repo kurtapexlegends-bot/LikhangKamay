@@ -145,7 +145,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
         if (confirmModal.type === 'payroll') {
             router.delete(route('hr.payroll.destroy', confirmModal.id), {
-                onSuccess: () => addToast('Payroll request deleted', 'success'),
+                onSuccess: () => addToast('Draft payroll run cancelled', 'success'),
                 onFinish: () => setConfirmModal({ isOpen: false, type: null, id: null }),
             });
         }
@@ -250,13 +250,13 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 isOpen={confirmModal.isOpen}
                 onClose={() => setConfirmModal({ isOpen: false, type: null, id: null })}
                 onConfirm={confirmDeleteAction}
-                title={confirmModal.type === 'employee' ? 'Remove employee record?' : 'Delete payroll request?'}
+                title={confirmModal.type === 'employee' ? 'Remove staff member?' : 'Cancel draft payroll run?'}
                 message={confirmModal.type === 'employee'
-                    ? 'This will remove the employee from your directory and unlink any login accounts. Historical payroll runs and past timecards will be safely preserved.'
-                    : 'This payroll request will be removed from the list.'}
+                    ? 'This will remove the staff member from your active team and revoke portal access. Past payroll distributions, approved compensation, and attendance logs will remain safely archived for audit compliance.'
+                    : 'This draft payroll run will be cancelled. Past submitted and paid periods are unaffected.'}
                 icon={Trash2}
                 iconBg="bg-red-50 text-red-600"
-                confirmText={confirmModal.type === 'employee' ? 'Remove Employee' : 'Delete'}
+                confirmText={confirmModal.type === 'employee' ? 'Remove Staff Member' : 'Cancel Payroll Run'}
                 confirmColor="bg-red-600 hover:bg-red-700"
                 isVeryHighRisk={true}
             />

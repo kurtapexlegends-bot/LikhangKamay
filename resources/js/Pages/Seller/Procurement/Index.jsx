@@ -164,10 +164,11 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
                 setShowDeleteModal(false);
                 setSupplyToDelete(null);
                 setActionNotice(null);
+                addToast('Material archived.', 'success');
             },
             onError: () => {
-                setActionNotice('This supply could not be deleted right now.');
-                addToast('Delete failed.', 'error');
+                setActionNotice('This supply could not be archived right now.');
+                addToast('Archiving failed.', 'error');
             },
         });
     };

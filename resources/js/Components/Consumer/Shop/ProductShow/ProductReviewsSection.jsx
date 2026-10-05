@@ -228,12 +228,12 @@ export default function ProductReviewsSection({
                                             <button
                                                 type="button"
                                                 onClick={handleDeleteReview}
-                                                aria-label="Delete your review"
+                                                aria-label="Withdraw your review"
                                                 disabled={deletingReview || processing}
                                                 className="inline-flex flex-1 items-center justify-center gap-1.5 rounded border border-red-200 bg-red-50 h-11 lg:h-9 text-xs font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
                                             >
                                                 <Trash2 size={14} />
-                                                {deletingReview ? 'Deleting...' : 'Delete'}
+                                                {deletingReview ? 'Withdrawing...' : 'Withdraw'}
                                             </button>
                                         )}
                                         <button
