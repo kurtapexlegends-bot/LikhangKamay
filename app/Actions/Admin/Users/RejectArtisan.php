@@ -57,9 +57,15 @@ class RejectArtisan
 
         try {
             if ($artisan->email) {
-                Mail::to($artisan->email)->send(new ArtisanRejected($artisan));
+                $mailer = Mail::to($artisan->email);
+                if (app()->environment('production') && config('queue.default') !== 'sync') {
+                    $mailer->queue(new ArtisanRejected($artisan));
+                } else {
+                    $mailer->send(new ArtisanRejected($artisan));
+                }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
             Log::error('Email failed: ' . $e->getMessage());
         }
     }

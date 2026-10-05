@@ -136,9 +136,18 @@ class CancelOrder
                     default => $details ?: 'Cancelled by customer.',
                 };
 
-                \Illuminate\Support\Facades\Mail::to($buyer->email)->send(
-                    new \App\Mail\OrderCancelled($order, $reasonDescription)
-                );
+                try {
+                    $mailer = \Illuminate\Support\Facades\Mail::to($buyer->email);
+                    $mailable = new \App\Mail\OrderCancelled($order, $reasonDescription);
+                    if (app()->environment('production') && config('queue.default') !== 'sync') {
+                        $mailer->queue($mailable);
+                    } else {
+                        $mailer->send($mailable);
+                    }
+                } catch (\Throwable $e) {
+                    report($e);
+                    \Illuminate\Support\Facades\Log::warning('Failed to dispatch order cancellation email: ' . $e->getMessage());
+                }
             }
         });
     }

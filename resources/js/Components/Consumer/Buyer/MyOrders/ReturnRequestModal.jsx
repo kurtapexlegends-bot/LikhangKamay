@@ -92,11 +92,15 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        transform((curr) => ({
-            ...curr,
-            return_reason: curr.reason,
-            return_proof_image: curr.proof_photos?.[0] || null,
-        }));
+        transform((curr) => {
+            const transformed = {
+                ...curr,
+                return_reason: curr.reason,
+                return_proof_image: curr.proof_photos?.[0] || null,
+            };
+            delete transformed.proof_photos;
+            return transformed;
+        });
         post(route(routeEndpoint, order.id), {
             preserveScroll: true,
             forceFormData: true,

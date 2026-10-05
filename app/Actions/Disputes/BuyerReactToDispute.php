@@ -174,8 +174,15 @@ class BuyerReactToDispute
             ));
             if ($admin->email) {
                 try {
-                    \Illuminate\Support\Facades\Mail::to($admin->email)->send(new \App\Mail\DisputeEscalated($order, $escalationReason ?? 'No reason provided.'));
+                    $mailer = \Illuminate\Support\Facades\Mail::to($admin->email);
+                    $mailable = new \App\Mail\DisputeEscalated($order, $escalationReason ?? 'No reason provided.');
+                    if (app()->environment('production') && config('queue.default') !== 'sync') {
+                        $mailer->queue($mailable);
+                    } else {
+                        $mailer->send($mailable);
+                    }
                 } catch (\Throwable $e) {
+                    report($e);
                     \Illuminate\Support\Facades\Log::warning("Failed to send dispute escalation mail to Admin: " . $e->getMessage());
                 }
             }

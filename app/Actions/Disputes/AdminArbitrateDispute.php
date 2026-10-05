@@ -227,8 +227,14 @@ class AdminArbitrateDispute
     private function sendMailSilently(string $recipient, \Illuminate\Mail\Mailable $mailable): void
     {
         try {
-            Mail::to($recipient)->send($mailable);
+            $mailer = Mail::to($recipient);
+            if (app()->environment('production') && config('queue.default') !== 'sync') {
+                $mailer->queue($mailable);
+            } else {
+                $mailer->send($mailable);
+            }
         } catch (\Throwable $e) {
+            report($e);
             Log::warning("Failed to send mail to {$recipient}: " . $e->getMessage());
         }
     }

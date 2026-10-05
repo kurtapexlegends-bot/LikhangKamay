@@ -77,9 +77,15 @@ class ApproveArtisan
 
         try {
             if ($artisan->email) {
-                Mail::to($artisan->email)->send(new ArtisanApproved($artisan));
+                $mailer = Mail::to($artisan->email);
+                if (app()->environment('production') && config('queue.default') !== 'sync') {
+                    $mailer->queue(new ArtisanApproved($artisan));
+                } else {
+                    $mailer->send(new ArtisanApproved($artisan));
+                }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
             Log::error('Email failed: ' . $e->getMessage());
         }
     }

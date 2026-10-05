@@ -200,14 +200,25 @@ class SuperAdminService
             '{action_url}' => route('dashboard'),
         ];
 
-        Mail::to($user->email)->send(new CustomDynamicMail(
-            subjectText: 'We miss your craft on LikhangKamay!',
-            headlineText: 'Your artisan shop has been quiet lately',
-            bodyText: "Hello {user_name},\n\nWe noticed your shop ({shop_name}) has been inactive recently. Handcrafted lovers and buyers are looking for unique Filipino creations every day on LikhangKamay.\n\nLog in now to restock your listings, post new craft updates, and discover what shoppers are searching for.",
-            buttonLabel: 'Open Seller Dashboard',
-            buttonUrl: route('dashboard'),
-            replacements: $replacements
-        ));
+        try {
+            $mailer = Mail::to($user->email);
+            $mailable = new CustomDynamicMail(
+                subjectText: 'We miss your craft on LikhangKamay!',
+                headlineText: 'Your artisan shop has been quiet lately',
+                bodyText: "Hello {user_name},\n\nWe noticed your shop ({shop_name}) has been inactive recently. Handcrafted lovers and buyers are looking for unique Filipino creations every day on LikhangKamay.\n\nLog in now to restock your listings, post new craft updates, and discover what shoppers are searching for.",
+                buttonLabel: 'Open Seller Dashboard',
+                buttonUrl: route('dashboard'),
+                replacements: $replacements
+            );
+            if (app()->environment('production') && config('queue.default') !== 'sync') {
+                $mailer->queue($mailable);
+            } else {
+                $mailer->send($mailable);
+            }
+        } catch (\Throwable $e) {
+            report($e);
+            \Illuminate\Support\Facades\Log::warning('Failed to dispatch artisan re-engagement mail: ' . $e->getMessage());
+        }
 
         Notification::send($user, new ArtisanReengagementNotification());
 
