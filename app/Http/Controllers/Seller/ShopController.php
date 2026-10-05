@@ -194,14 +194,14 @@ class ShopController extends Controller
         $hasBannerUpdate = false;
         if ($request->filled('banner_key') || ($request->filled('banner_image') && is_string($request->input('banner_image')) && \Illuminate\Support\Facades\Storage::disk('public')->exists($request->input('banner_image')))) {
             $bannerKey = (string) ($request->input('banner_key') ?: $request->input('banner_image'));
-            if ($user->banner_image && $user->banner_image !== $bannerKey) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->banner_image);
+            if ($user->banner_image && $user->banner_image !== $bannerKey && !str_starts_with($user->banner_image, 'http')) {
+                rescue(fn() => \Illuminate\Support\Facades\Storage::disk('public')->delete($user->banner_image));
             }
             $user->banner_image = $bannerKey;
             $hasBannerUpdate = true;
         } elseif ($request->hasFile('banner_image')) {
-            if ($user->banner_image) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->banner_image);
+            if ($user->banner_image && !str_starts_with($user->banner_image, 'http')) {
+                rescue(fn() => \Illuminate\Support\Facades\Storage::disk('public')->delete($user->banner_image));
             }
             $bannerPath = \App\Services\ImageOptimizer::storeOptimized($request->file('banner_image'), 'shop_banners', 1600);
             $user->banner_image = $bannerPath;
@@ -211,14 +211,14 @@ class ShopController extends Controller
         $hasAvatarUpdate = false;
         if ($request->filled('avatar_key') || ($request->filled('avatar') && is_string($request->input('avatar')) && \Illuminate\Support\Facades\Storage::disk('public')->exists($request->input('avatar')))) {
             $avatarKey = (string) ($request->input('avatar_key') ?: $request->input('avatar'));
-            if ($user->avatar && $user->avatar !== $avatarKey) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+            if ($user->avatar && $user->avatar !== $avatarKey && !str_starts_with($user->avatar, 'http')) {
+                rescue(fn() => \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar));
             }
             $user->avatar = $avatarKey;
             $hasAvatarUpdate = true;
         } elseif ($request->hasFile('avatar')) {
-            if ($user->avatar) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+            if ($user->avatar && !str_starts_with($user->avatar, 'http')) {
+                rescue(fn() => \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar));
             }
             $avatarPath = \App\Services\ImageOptimizer::storeAvatar($request->file('avatar'));
             $user->avatar = $avatarPath;

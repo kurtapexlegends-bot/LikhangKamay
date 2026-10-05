@@ -8,9 +8,10 @@ import {
     CheckCircle2, AlertCircle, MessageSquare, Package
 } from 'lucide-react';
 
-const formatImgUrl = (path) => {
+const getImageUrl = (url, path) => {
+    if (url) return url;
     if (!path) return null;
-    if (path.startsWith('http') || path.startsWith('/storage')) return path;
+    if (path.startsWith('http') || path.startsWith('/storage') || path.startsWith('data:') || path.startsWith('blob:')) return path;
     return `/storage/${path}`;
 };
 
@@ -22,8 +23,8 @@ export default function ShopStorefrontTab({ sellerOwner, stats, products = [], p
     const bannerInputRef = useRef(null);
     const avatarInputRef = useRef(null);
 
-    const [bannerPreview, setBannerPreview] = useState(formatImgUrl(sellerOwner.banner_image));
-    const [avatarPreview, setAvatarPreview] = useState(formatImgUrl(sellerOwner.avatar));
+    const [bannerPreview, setBannerPreview] = useState(() => getImageUrl(sellerOwner?.banner_image_url, sellerOwner?.banner_image));
+    const [avatarPreview, setAvatarPreview] = useState(() => getImageUrl(sellerOwner?.avatar_url, sellerOwner?.avatar));
 
     const { data, setData, post, processing, errors } = useForm({
         bio: sellerOwner.bio || '',
@@ -41,6 +42,18 @@ export default function ShopStorefrontTab({ sellerOwner, stats, products = [], p
         revokePreview(avatarPreview);
         revokePreview(bannerPreview);
     }, [avatarPreview, bannerPreview]);
+
+    useEffect(() => {
+        if (!data.avatar) {
+            setAvatarPreview(getImageUrl(sellerOwner?.avatar_url, sellerOwner?.avatar));
+        }
+    }, [sellerOwner?.avatar, sellerOwner?.avatar_url, data.avatar]);
+
+    useEffect(() => {
+        if (!data.banner_image) {
+            setBannerPreview(getImageUrl(sellerOwner?.banner_image_url, sellerOwner?.banner_image));
+        }
+    }, [sellerOwner?.banner_image, sellerOwner?.banner_image_url, data.banner_image]);
 
     const handleAvatarChange = async (e) => {
         if (!canEdit) return;
@@ -69,7 +82,12 @@ export default function ShopStorefrontTab({ sellerOwner, stats, products = [], p
         if (!canEdit) return;
         post(route('shop.settings.update'), {
             preserveScroll: true,
+            forceFormData: true,
             onSuccess: () => {
+                setData('avatar', null);
+                setData('banner_image', null);
+                if (avatarInputRef.current) avatarInputRef.current.value = '';
+                if (bannerInputRef.current) bannerInputRef.current.value = '';
                 if (addToast) addToast('Shop storefront settings updated.', 'success');
             },
             onError: (errs) => {

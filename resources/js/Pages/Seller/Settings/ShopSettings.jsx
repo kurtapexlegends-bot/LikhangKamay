@@ -68,6 +68,22 @@ export default function ShopSettings({ auth, user, stats, locations = [], pickup
         revokePreview(bannerPreview);
     }, [avatarPreview, bannerPreview]);
 
+    useEffect(() => {
+        if (!data.avatar) {
+            setAvatarPreview(
+                user?.avatar_url || (user?.avatar ? (user.avatar.startsWith('http') || user.avatar.startsWith('/storage') ? user.avatar : `/storage/${user.avatar}`) : null)
+            );
+        }
+    }, [user?.avatar, user?.avatar_url, data.avatar]);
+
+    useEffect(() => {
+        if (!data.banner_image) {
+            setBannerPreview(
+                user?.banner_image_url || (user?.banner_image ? (user.banner_image.startsWith('http') || user.banner_image.startsWith('/storage') ? user.banner_image : `/storage/${user.banner_image}`) : null)
+            );
+        }
+    }, [user?.banner_image, user?.banner_image_url, data.banner_image]);
+
     const handleAvatarChange = async (e) => {
         if (!canEditShopSettings) return;
         const file = e.target.files[0];
@@ -95,11 +111,17 @@ export default function ShopSettings({ auth, user, stats, locations = [], pickup
         if (!canEditShopSettings) return;
         post(route('shop.settings.update'), { 
             preserveScroll: true,
+            forceFormData: true,
             onSuccess: () => {
+                setData('avatar', null);
+                setData('banner_image', null);
+                if (avatarInputRef.current) avatarInputRef.current.value = '';
+                if (bannerInputRef.current) bannerInputRef.current.value = '';
                 addToast('Shop settings updated.', 'success');
             },
-            onError: () => {
-                addToast('Failed to update shop settings.', 'error');
+            onError: (errs) => {
+                const firstError = Object.values(errs || {})[0];
+                addToast(firstError || 'Failed to update shop settings.', 'error');
             }
         });
     };

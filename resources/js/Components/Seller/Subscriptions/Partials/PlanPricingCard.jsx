@@ -48,7 +48,7 @@ export default function PlanPricingCard({
                         hoveredPlan === plan.id ? 'scale-110' : ''
                     } ${
                         plan.id === 'super_premium'
-                            ? 'bg-clay-800 text-white'
+                            ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white'
                             : plan.id === 'premium'
                                 ? 'bg-amber-600 text-white'
                                 : 'bg-stone-100 text-stone-700 border border-stone-200'
@@ -122,7 +122,7 @@ export default function PlanPricingCard({
                         }}
                         className={`flex w-full items-center justify-center gap-1.5 rounded-xl ${
                             plan.id === 'super_premium'
-                                ? 'bg-clay-800 hover:bg-clay-900'
+                                ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700'
                                 : 'bg-amber-600 hover:bg-amber-700'
                         } px-4 py-2 text-[11px] font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]`}
                     >
