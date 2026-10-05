@@ -12,9 +12,11 @@ use App\Models\Supply;
 use App\Models\User;
 use App\Actions\Seller\HR\ProvisionStaffAccount;
 use App\Notifications\OwnerApprovalDecisionNotification;
+use App\Notifications\TeamRequestSubmittedNotification;
 use App\Services\OwnerApprovalService;
 use App\Support\NotificationPresenter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -1069,5 +1071,59 @@ class OwnerApprovalWorkflowTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('pendingApprovalsCount', 0)
             );
+    }
+
+    public function test_submitting_team_request_notifies_owner_and_evicts_cache_instantly(): void
+    {
+        Notification::fake();
+        $cacheKey = "seller_{$this->owner->id}_pending_approvals_count";
+        Cache::put($cacheKey, 99, 60);
+
+        $approval = $this->approvalService->submitRequest(
+            $this->owner,
+            $this->staff,
+            OwnerApproval::DOMAIN_PROCUREMENT,
+            'Restock Red Clay',
+            'Staff requested 50kg clay'
+        );
+
+        $this->assertNull(Cache::get($cacheKey));
+        Notification::assertSentTo(
+            $this->owner,
+            TeamRequestSubmittedNotification::class,
+            function ($notification) use ($approval) {
+                return $notification->approval->id === $approval->id
+                    && $notification->requester->id === $this->staff->id;
+            }
+        );
+    }
+
+    public function test_approving_and_rejecting_request_evicts_cache_instantly(): void
+    {
+        $cacheKey = "seller_{$this->owner->id}_pending_approvals_count";
+
+        $approval1 = $this->approvalService->submitRequest(
+            $this->owner,
+            $this->staff,
+            OwnerApproval::DOMAIN_DISCOUNT,
+            '10% OFF Sale',
+            'Summer promo'
+        );
+
+        Cache::put($cacheKey, 5, 60);
+        $this->approvalService->approve($approval1, $this->owner);
+        $this->assertNull(Cache::get($cacheKey));
+
+        $approval2 = $this->approvalService->submitRequest(
+            $this->owner,
+            $this->staff,
+            OwnerApproval::DOMAIN_DISCOUNT,
+            '20% OFF Sale',
+            'Flash promo'
+        );
+
+        Cache::put($cacheKey, 5, 60);
+        $this->approvalService->reject($approval2, $this->owner, 'Too high discount');
+        $this->assertNull(Cache::get($cacheKey));
     }
 }

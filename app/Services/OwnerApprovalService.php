@@ -15,10 +15,12 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\SellerActivityLog;
 use App\Notifications\OwnerApprovalDecisionNotification;
+use App\Notifications\TeamRequestSubmittedNotification;
 use App\Services\AccountingLedgerService;
 use App\Support\HRWorkflowHelper;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
@@ -76,6 +78,13 @@ class OwnerApprovalService
             'target_url' => route('seller.approvals.index', ['status' => 'pending']),
             'target_label' => 'View Approvals',
         ]);
+
+        Cache::forget("seller_{$seller->id}_pending_approvals_count");
+        Cache::forget("user_{$seller->id}_unread_notif_count");
+
+        if ($seller->id !== $requester->id) {
+            rescue(fn () => $seller->notify(new TeamRequestSubmittedNotification($approval, $requester)));
+        }
 
         return $approval;
     }
@@ -263,6 +272,8 @@ class OwnerApprovalService
                 'rejection_reason' => null,
             ]);
 
+            Cache::forget("seller_{$locked->seller_id}_pending_approvals_count");
+
             SellerActivityLog::recordEvent([
                 'seller_owner_id' => $locked->seller_id,
                 'actor_user_id' => $reviewer->id,
@@ -323,6 +334,8 @@ class OwnerApprovalService
                 'reviewed_at' => now(),
                 'rejection_reason' => $reason,
             ]);
+
+            Cache::forget("seller_{$locked->seller_id}_pending_approvals_count");
 
             SellerActivityLog::recordEvent([
                 'seller_owner_id' => $locked->seller_id,
@@ -385,6 +398,8 @@ class OwnerApprovalService
                 \Illuminate\Support\Facades\Log::warning("Batch approve failed for approval #{$approval->id}: " . $e->getMessage());
             }
         }
+
+        Cache::forget("seller_{$seller->id}_pending_approvals_count");
 
         return $count;
     }

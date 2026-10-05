@@ -296,6 +296,8 @@ class AccountingController extends Controller
                     'reviewed_at' => now(),
                 ]);
 
+            \Illuminate\Support\Facades\Cache::forget("seller_{$lockedUser->id}_pending_approvals_count");
+
             return null;
         });
 
