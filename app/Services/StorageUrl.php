@@ -24,8 +24,10 @@ class StorageUrl
             return $path;
         }
 
-        // Static public assets (e.g., /images/placeholder.svg)
-        if (str_starts_with($path, '/images/') || str_starts_with($path, 'images/')) {
+        // Static public assets (e.g., /images/placeholder.svg, /models/demo/...)
+        if (str_starts_with($path, '/images/') || str_starts_with($path, 'images/')
+            || str_starts_with($path, '/models/') || str_starts_with($path, 'models/')
+            || str_starts_with($path, '/demo/') || str_starts_with($path, 'demo/')) {
             return str_starts_with($path, '/') ? $path : '/' . $path;
         }
 
