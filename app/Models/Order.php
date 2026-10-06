@@ -128,7 +128,7 @@ class Order extends Model
             return $this->items->contains(fn($item) => (bool) $item->is_b2b_supply);
         }
 
-        return $this->items()->where('is_b2b_supply', true)->exists();
+        return $this->items()->where('is_b2b_supply', \App\Casts\PostgresCompatibleBoolean::dbVal(true))->exists();
     }
 
     /**
@@ -137,7 +137,7 @@ class Order extends Model
     public function scopeWhereB2B($query)
     {
         return $query->whereHas('items', function ($q) {
-            $q->where('is_b2b_supply', true);
+            $q->where('is_b2b_supply', \App\Casts\PostgresCompatibleBoolean::dbVal(true));
         });
     }
 
@@ -147,7 +147,7 @@ class Order extends Model
     public function scopeWhereRetail($query)
     {
         return $query->whereDoesntHave('items', function ($q) {
-            $q->where('is_b2b_supply', true);
+            $q->where('is_b2b_supply', \App\Casts\PostgresCompatibleBoolean::dbVal(true));
         });
     }
 

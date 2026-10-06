@@ -482,8 +482,13 @@ class Product extends Model
     public function scopeRetailOnly(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where(function ($q) {
-            $q->where('products.is_b2b_supply', false)
-              ->orWhereNull('products.is_b2b_supply');
+            $driver = $q->getConnection()->getDriverName();
+            if ($driver === 'pgsql') {
+                $q->whereRaw('("products"."is_b2b_supply" IS NOT TRUE)');
+            } else {
+                $q->where('products.is_b2b_supply', false)
+                  ->orWhereNull('products.is_b2b_supply');
+            }
         });
     }
 
