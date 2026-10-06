@@ -12,6 +12,11 @@ use App\Models\SellerComplianceAgreement;
 return new class extends Migration
 {
     /**
+     * Disable transaction wrapper so PostgreSQL does not abort on soft-handled DML.
+     */
+    public $withinTransaction = false;
+
+    /**
      * Run the migrations.
      */
     public function up(): void
@@ -23,21 +28,29 @@ return new class extends Migration
         // 1. Cleanly remove demo account 'kurtapexlegends@gmail.com' for live demo defense registration
         $kurt = User::withTrashed()->where('email', 'kurtapexlegends@gmail.com')->first();
         if ($kurt) {
-            rescue(fn() => DB::table('messages')->where('receiver_id', $kurt->id)->orWhere('sender_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('conversations')->where('user_one_id', $kurt->id)->orWhere('user_two_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('conversations')->where('user1_id', $kurt->id)->orWhere('user2_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('order_items')->where('seller_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('orders')->where('user_id', $kurt->id)->orWhere('artisan_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('disputes')->where('user_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('attendances')->where('user_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('seller_locations')->where('user_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('wishlists')->where('user_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('reviews')->where('user_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('seller_compliance_agreements')->where('user_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('payouts')->where('user_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('addresses')->where('user_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('notifications')->where('notifiable_id', $kurt->id)->delete());
-            rescue(fn() => DB::table('products')->where('user_id', $kurt->id)->delete());
+            $cleanup = function ($table, $column) use ($kurt) {
+                if (\Illuminate\Support\Facades\Schema::hasTable($table) && \Illuminate\Support\Facades\Schema::hasColumn($table, $column)) {
+                    DB::table($table)->where($column, $kurt->id)->delete();
+                }
+            };
+
+            $cleanup('messages', 'receiver_id');
+            $cleanup('messages', 'sender_id');
+            $cleanup('conversations', 'user_one_id');
+            $cleanup('conversations', 'user_two_id');
+            $cleanup('order_items', 'seller_id');
+            $cleanup('orders', 'user_id');
+            $cleanup('orders', 'artisan_id');
+            $cleanup('disputes', 'user_id');
+            $cleanup('attendances', 'user_id');
+            $cleanup('seller_locations', 'user_id');
+            $cleanup('wishlists', 'user_id');
+            $cleanup('reviews', 'user_id');
+            $cleanup('seller_compliance_agreements', 'user_id');
+            $cleanup('payouts', 'user_id');
+            $cleanup('addresses', 'user_id');
+            $cleanup('notifications', 'notifiable_id');
+            $cleanup('products', 'user_id');
 
             $driver = DB::connection()->getDriverName();
             if ($driver === 'mysql') {
