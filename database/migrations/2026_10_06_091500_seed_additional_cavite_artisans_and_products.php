@@ -25,41 +25,12 @@ return new class extends Migration
             return;
         }
 
-        // 1. Cleanly remove demo account 'kurtapexlegends@gmail.com' for live demo defense registration
-        $kurt = User::withTrashed()->where('email', 'kurtapexlegends@gmail.com')->first();
-        if ($kurt) {
-            $cleanup = function ($table, $column) use ($kurt) {
-                if (\Illuminate\Support\Facades\Schema::hasTable($table) && \Illuminate\Support\Facades\Schema::hasColumn($table, $column)) {
-                    DB::table($table)->where($column, $kurt->id)->delete();
-                }
-            };
-
-            $cleanup('messages', 'receiver_id');
-            $cleanup('messages', 'sender_id');
-            $cleanup('conversations', 'user_one_id');
-            $cleanup('conversations', 'user_two_id');
-            $cleanup('order_items', 'seller_id');
-            $cleanup('orders', 'user_id');
-            $cleanup('orders', 'artisan_id');
-            $cleanup('disputes', 'user_id');
-            $cleanup('attendances', 'user_id');
-            $cleanup('seller_locations', 'user_id');
-            $cleanup('wishlists', 'user_id');
-            $cleanup('reviews', 'user_id');
-            $cleanup('seller_compliance_agreements', 'user_id');
-            $cleanup('payouts', 'user_id');
-            $cleanup('addresses', 'user_id');
-            $cleanup('notifications', 'notifiable_id');
-            $cleanup('products', 'user_id');
-
-            $driver = DB::connection()->getDriverName();
-            if ($driver === 'mysql') {
-                DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-            }
-            $kurt->forceDelete();
-            if ($driver === 'mysql') {
-                DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-            }
+        // 1. Cleanly liberate demo account 'kurtapexlegends@gmail.com' for live demo defense registration
+        $kurtUsers = User::withTrashed()->where('email', 'kurtapexlegends@gmail.com')->get();
+        foreach ($kurtUsers as $kurt) {
+            $kurt->email = 'cleared_kurt_' . $kurt->id . '_' . time() . '@demo.local';
+            $kurt->save();
+            $kurt->delete();
         }
 
         // 2. Fetch or guarantee Artisan 1 (Kapwa Ceramics - Maria Santos / Dasmariñas, Cavite)
