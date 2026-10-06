@@ -510,8 +510,24 @@ Route::get('/webhooks/migrate', function (\Illuminate\Http\Request $request) {
         \Illuminate\Support\Facades\Cache::forget('system_settings_all');
         \Illuminate\Support\Facades\Cache::forget('setting_contact_info');
         \Illuminate\Support\Facades\Cache::forget('platform_setting_contact_info');
+
+        $catalogService = app(\App\Services\CatalogService::class);
+        $diag = [
+            'db_driver' => \Illuminate\Support\Facades\DB::connection()->getDriverName(),
+            'products_count' => \App\Models\Product::count(),
+            'active_products_count' => \App\Models\Product::where('status', 'Active')->count(),
+            'categories_count' => \App\Models\Category::count(),
+            'artisan' => \App\Models\User::where('email', 'artisan@likhangkamay.com')->select('id', 'name', 'role', 'artisan_status')->first(),
+            'compliance_count' => \App\Models\SellerComplianceAgreement::count(),
+            'home_sponsored' => count($catalogService->getSponsoredProducts()),
+            'home_featured' => count($catalogService->getFeaturedProducts()),
+            'home_top_sellers' => count($catalogService->getTopSellers()),
+            'home_categories' => count($catalogService->getCategories()),
+        ];
+
         return response()->json([
             'status' => 'success',
+            'diag' => $diag,
             'output' => \Illuminate\Support\Facades\Artisan::output()
         ]);
     } catch (\Throwable $e) {
