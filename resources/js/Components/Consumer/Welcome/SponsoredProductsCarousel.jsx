@@ -29,7 +29,7 @@ export default function SponsoredProductsCarousel({
                 >
                     <div className="relative bg-stone-50 overflow-hidden aspect-square">
                         <img
-                            src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') || product.img.startsWith('/img') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'}
+                            src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/') || product.img.startsWith('data:') || product.img.startsWith('blob:') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'}
                             alt={product.name}
                             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                             onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}

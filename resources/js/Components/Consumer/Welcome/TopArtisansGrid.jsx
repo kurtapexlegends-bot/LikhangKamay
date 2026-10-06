@@ -122,7 +122,7 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                                                 >
                                                     <div className="w-full aspect-square rounded-xl overflow-hidden border border-stone-100 relative bg-stone-50 shadow-xs group-hover/prod:border-clay-300 transition-all">
                                                         <img 
-                                                            src={p.img ? (p.img.startsWith('http') || p.img.startsWith('/storage') || p.img.startsWith('/img') ? p.img : `/storage/${p.img}`) : '/images/no-image.png'}
+                                                            src={p.img ? (p.img.startsWith('http') || p.img.startsWith('/') || p.img.startsWith('data:') || p.img.startsWith('blob:') ? p.img : `/storage/${p.img}`) : '/images/no-image.png'}
                                                             alt={p.name || ''}
                                                             className="w-full h-full object-cover transition-transform duration-500 group-hover/prod:scale-108"
                                                             onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
@@ -248,7 +248,7 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                                                 >
                                                     <div className="w-full aspect-square rounded-xl overflow-hidden border border-stone-100 relative bg-stone-50 shadow-xs group-hover/prod:border-clay-300 group-hover/prod:shadow-md transition-all duration-300">
                                                         <img 
-                                                            src={p.img ? (p.img.startsWith('http') || p.img.startsWith('/storage') || p.img.startsWith('/img') ? p.img : `/storage/${p.img}`) : '/images/no-image.png'}
+                                                            src={p.img ? (p.img.startsWith('http') || p.img.startsWith('/') || p.img.startsWith('data:') || p.img.startsWith('blob:') ? p.img : `/storage/${p.img}`) : '/images/no-image.png'}
                                                             alt={p.name || ''}
                                                             className="w-full h-full object-cover transition-transform duration-500 group-hover/prod:scale-110"
                                                             onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
