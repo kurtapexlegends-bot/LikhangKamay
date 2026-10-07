@@ -523,7 +523,47 @@ Route::get('/webhooks/migrate', function (\Illuminate\Http\Request $request) {
             'home_featured' => count($catalogService->getFeaturedProducts()),
             'home_top_sellers' => count($catalogService->getTopSellers()),
             'home_categories' => count($catalogService->getCategories()),
+            'recent_users' => \App\Models\User::latest()->take(5)->get(['id', 'name', 'email', 'role', 'artisan_status']),
+            'orders_columns' => \Illuminate\Support\Facades\Schema::getColumnListing('orders'),
         ];
+
+        try {
+            $buyer = \App\Models\User::where('role', 'buyer')->first() ?? \App\Models\User::first();
+            if ($buyer) {
+                \Illuminate\Support\Facades\Auth::login($buyer);
+            }
+
+            $activeProducts = \App\Models\Product::where('status', 'Active')->get();
+            $prep = app(\App\Actions\Consumer\PrepareCheckout::class);
+            $controller = app(\App\Http\Controllers\Consumer\BuyerOrderController::class);
+            $simulations = [];
+
+            foreach ($activeProducts as $p) {
+                $req = \Illuminate\Http\Request::create('/checkout', 'GET', ['product_id' => $p->id, 'quantity' => 1]);
+                $response = $controller->create($req, $prep);
+                $simulations[$p->id] = [
+                    'sku' => $p->sku,
+                    'name' => $p->name,
+                    'seller_id' => $p->user_id,
+                    'status' => 'OK',
+                ];
+            }
+
+            $diag['checkout_simulation'] = [
+                'status' => 'ALL_OK',
+                'buyer_tested' => $buyer ? ['id' => $buyer->id, 'email' => $buyer->email, 'role' => $buyer->role] : null,
+                'products_tested_count' => count($simulations),
+                'simulations' => $simulations,
+            ];
+        } catch (\Throwable $e) {
+            $diag['checkout_simulation'] = [
+                'status' => 'CRASH',
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => array_slice(explode("\n", $e->getTraceAsString()), 0, 5),
+            ];
+        }
 
         return response()->json([
             'status' => 'success',

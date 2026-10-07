@@ -56,13 +56,18 @@ class BuyerOrderController extends Controller
         $pickupScheduleService = app(\App\Services\PickupScheduleService::class);
         $pickupConfigs = [];
 
-        $sellerItems = collect($items)->groupBy('artisan_id');
-        foreach ($sellerItems as $artisanId => $sellerGroupItems) {
-            $seller = User::find((int) $artisanId);
-            if ($seller) {
-                $maxLeadTime = (int) $sellerGroupItems->max('lead_time');
-                $pickupConfigs[(string) $artisanId] = $pickupScheduleService->getScheduleOverviewForBuyer($seller, $maxLeadTime);
+        try {
+            $sellerItems = collect($items)->groupBy('artisan_id');
+            foreach ($sellerItems as $artisanId => $sellerGroupItems) {
+                $seller = User::withTrashed()->find((int) $artisanId);
+                if ($seller) {
+                    $maxLeadTime = (int) $sellerGroupItems->max('lead_time');
+                    $pickupConfigs[(string) $artisanId] = $pickupScheduleService->getScheduleOverviewForBuyer($seller, $maxLeadTime);
+                }
             }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Pickup overview generation fallback in controller: ' . $e->getMessage());
+            $pickupConfigs = [];
         }
 
         return Inertia::render('Consumer/Shop/Checkout', [
@@ -70,7 +75,7 @@ class BuyerOrderController extends Controller
             'pricing' => OrderFinanceService::getPricingData(),
             'pickupConfigs' => $pickupConfigs,
             'auth' => [
-                'user' => $user?->load('addresses'),
+                'user' => rescue(fn() => $user?->load('addresses'), $user),
             ]
         ]);
     }

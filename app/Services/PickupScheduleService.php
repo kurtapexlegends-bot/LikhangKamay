@@ -42,7 +42,7 @@ class PickupScheduleService
 
         if (!$location) {
             $location = SellerLocation::where('user_id', $seller->id)
-                ->where('is_active', true)
+                ->active()
                 ->first();
         }
 
@@ -177,7 +177,7 @@ class PickupScheduleService
         }
 
         // Active orders booked for this date
-        $bookedCounts = Order::query()
+        $bookedCounts = rescue(fn() => Order::query()
             ->where('artisan_id', $seller->id)
             ->whereDate('pickup_date', $carbonDate->toDateString())
             ->where('shipping_method', 'Pick Up')
@@ -185,7 +185,7 @@ class PickupScheduleService
             ->select('pickup_time_slot', DB::raw('count(*) as aggregate'))
             ->groupBy('pickup_time_slot')
             ->pluck('aggregate', 'pickup_time_slot')
-            ->all();
+            ->all(), []);
 
         $slots = $schedule->getEffectiveTimeSlotsForDay($carbonDate->dayOfWeekIso);
         $results = [];
@@ -237,76 +237,86 @@ class PickupScheduleService
      */
     public function getScheduleOverviewForBuyer(User $seller, int $leadTimeDays = 0, ?int $daysAhead = null): array
     {
-        $timezone = self::TIMEZONE;
-        $schedule = $this->getEffectiveSchedule($seller);
+        try {
+            $timezone = self::TIMEZONE;
+            $schedule = $this->getEffectiveSchedule($seller);
 
-        if (!$schedule->is_enabled) {
+            if (!$schedule->is_enabled) {
+                return [
+                    'pickup_enabled' => false,
+                    'reason' => 'Store pickup is currently unavailable for this artisan.',
+                    'location' => null,
+                    'days' => [],
+                ];
+            }
+
+            $effectiveDaysAhead = $daysAhead !== null ? max(1, $daysAhead) : (int) ($schedule->max_advance_days ?: 30);
+            $location = $this->getResolvedLocation($seller);
+            $earliestDate = $this->calculateEarliestPickupDate($seller, $leadTimeDays);
+            $operatingDays = $schedule->getEffectiveOperatingDays();
+
+            $days = [];
+            $cursor = Carbon::now($timezone)->startOfDay();
+
+            for ($i = 0; $i < $effectiveDaysAhead; $i++) {
+                $dateStr = $cursor->toDateString();
+                $dayOfWeek = $cursor->dayOfWeekIso;
+                $isOperating = $schedule->isOperatingOnDay($dayOfWeek);
+                $isBeforeEarliest = $cursor->lessThan($earliestDate);
+                $slots = $isOperating ? $this->getAvailableSlotsForDate($seller, $cursor) : [];
+                $hasAvailableSlot = collect($slots)->contains('is_available', true);
+                $isSelectable = $isOperating && !$isBeforeEarliest && $hasAvailableSlot;
+
+                $statusReason = '';
+                if (!$isOperating) {
+                    $statusReason = 'Shop closed';
+                } elseif ($isBeforeEarliest) {
+                    $statusReason = 'Requires preparation';
+                } elseif (!$hasAvailableSlot) {
+                    $statusReason = 'Fully booked';
+                }
+
+                $days[] = [
+                    'date' => $dateStr,
+                    'year' => (int) $cursor->format('Y'),
+                    'month' => (int) $cursor->format('n'),
+                    'month_name' => $cursor->format('M'),
+                    'month_full' => $cursor->format('F'),
+                    'day_of_week' => $dayOfWeek,
+                    'day_name' => $cursor->format('D'),
+                    'day_number' => (int) $cursor->format('j'),
+                    'formatted' => $cursor->format('M d, Y'),
+                    'is_operating_day' => $isOperating,
+                    'is_before_earliest' => $isBeforeEarliest,
+                    'is_selectable' => $isSelectable,
+                    'status_reason' => $statusReason,
+                    'slots' => $slots,
+                ];
+
+                $cursor->addDay();
+            }
+
+            return [
+                'pickup_enabled' => true,
+                'seller_id' => $seller->id,
+                'shop_name' => $seller->shop_name ?: $seller->name,
+                'location' => $location,
+                'lead_time_days' => $leadTimeDays,
+                'earliest_date' => $earliestDate->toDateString(),
+                'earliest_formatted' => $earliestDate->format('M d, Y'),
+                'operating_days' => $operatingDays,
+                'max_advance_days' => $effectiveDaysAhead,
+                'days' => $days,
+            ];
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Pickup overview generation fallback: ' . $e->getMessage());
             return [
                 'pickup_enabled' => false,
-                'reason' => 'Store pickup is currently unavailable for this artisan.',
+                'reason' => 'Store pickup schedule is temporarily unavailable.',
                 'location' => null,
                 'days' => [],
             ];
         }
-
-        $effectiveDaysAhead = $daysAhead !== null ? max(1, $daysAhead) : (int) ($schedule->max_advance_days ?: 30);
-        $location = $this->getResolvedLocation($seller);
-        $earliestDate = $this->calculateEarliestPickupDate($seller, $leadTimeDays);
-        $operatingDays = $schedule->getEffectiveOperatingDays();
-
-        $days = [];
-        $cursor = Carbon::now($timezone)->startOfDay();
-
-        for ($i = 0; $i < $effectiveDaysAhead; $i++) {
-            $dateStr = $cursor->toDateString();
-            $dayOfWeek = $cursor->dayOfWeekIso;
-            $isOperating = $schedule->isOperatingOnDay($dayOfWeek);
-            $isBeforeEarliest = $cursor->lessThan($earliestDate);
-            $slots = $isOperating ? $this->getAvailableSlotsForDate($seller, $cursor) : [];
-            $hasAvailableSlot = collect($slots)->contains('is_available', true);
-            $isSelectable = $isOperating && !$isBeforeEarliest && $hasAvailableSlot;
-
-            $statusReason = '';
-            if (!$isOperating) {
-                $statusReason = 'Shop closed';
-            } elseif ($isBeforeEarliest) {
-                $statusReason = 'Requires preparation';
-            } elseif (!$hasAvailableSlot) {
-                $statusReason = 'Fully booked';
-            }
-
-            $days[] = [
-                'date' => $dateStr,
-                'year' => (int) $cursor->format('Y'),
-                'month' => (int) $cursor->format('n'),
-                'month_name' => $cursor->format('M'),
-                'month_full' => $cursor->format('F'),
-                'day_of_week' => $dayOfWeek,
-                'day_name' => $cursor->format('D'),
-                'day_number' => (int) $cursor->format('j'),
-                'formatted' => $cursor->format('M d, Y'),
-                'is_operating_day' => $isOperating,
-                'is_before_earliest' => $isBeforeEarliest,
-                'is_selectable' => $isSelectable,
-                'status_reason' => $statusReason,
-                'slots' => $slots,
-            ];
-
-            $cursor->addDay();
-        }
-
-        return [
-            'pickup_enabled' => true,
-            'seller_id' => $seller->id,
-            'shop_name' => $seller->shop_name ?: $seller->name,
-            'location' => $location,
-            'lead_time_days' => $leadTimeDays,
-            'earliest_date' => $earliestDate->toDateString(),
-            'earliest_formatted' => $earliestDate->format('M d, Y'),
-            'operating_days' => $operatingDays,
-            'max_advance_days' => $effectiveDaysAhead,
-            'days' => $days,
-        ];
     }
 
     /**

@@ -38,7 +38,7 @@ class SellerPickupSchedule extends Model
     ];
 
     protected $casts = [
-        'is_enabled' => 'boolean',
+        'is_enabled' => \App\Casts\PostgresCompatibleBoolean::class,
         'schedule_mode' => 'string',
         'operating_days' => 'array',
         'time_slots' => 'array',
@@ -46,6 +46,11 @@ class SellerPickupSchedule extends Model
         'pickup_location_id' => 'integer',
         'max_advance_days' => 'integer',
     ];
+
+    public function scopeEnabled($query)
+    {
+        return $query->where('is_enabled', \App\Casts\PostgresCompatibleBoolean::dbVal(true));
+    }
 
     protected $attributes = [
         'is_enabled' => true,

@@ -386,14 +386,19 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         $schedule = $effectiveSeller->pickupSchedule;
 
         if (!$schedule) {
-            $schedule = \App\Models\SellerPickupSchedule::firstOrCreate(
+            $schedule = rescue(fn() => \App\Models\SellerPickupSchedule::firstOrCreate(
                 ['user_id' => $effectiveSeller->id],
                 [
                     'is_enabled' => true,
                     'operating_days' => \App\Models\SellerPickupSchedule::DEFAULT_OPERATING_DAYS,
                     'time_slots' => \App\Models\SellerPickupSchedule::DEFAULT_TIME_SLOTS,
                 ]
-            );
+            ), new \App\Models\SellerPickupSchedule([
+                'user_id' => $effectiveSeller->id,
+                'is_enabled' => true,
+                'operating_days' => \App\Models\SellerPickupSchedule::DEFAULT_OPERATING_DAYS,
+                'time_slots' => \App\Models\SellerPickupSchedule::DEFAULT_TIME_SLOTS,
+            ]));
         }
 
         return $schedule;
