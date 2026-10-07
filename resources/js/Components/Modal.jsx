@@ -74,7 +74,7 @@ export default function Modal({
                     leaveTo={`opacity-0 ${effectiveBottomSheet ? 'translate-y-12 sm:translate-y-0 sm:scale-95' : 'translate-y-4 sm:translate-y-0 sm:scale-95'}`}
                 >
                     <DialogPanel
-                        className={`relative transform overflow-y-auto ${panelClassName} shadow-2xl transition-all max-h-[92vh] sm:rounded-2xl sm:mx-auto sm:w-full ${maxWidthClass} ${effectiveBottomSheet ? 'rounded-t-[2.5rem] sm:rounded-2xl w-full' : 'w-full mx-4 sm:mx-auto rounded-2xl'}`}
+                        className={`relative transform overflow-y-auto ${panelClassName} shadow-2xl transition-all max-h-[92vh] sm:rounded-2xl sm:mx-auto sm:w-full ${maxWidthClass} ${effectiveBottomSheet ? 'rounded-t-[2.5rem] sm:rounded-2xl w-full pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] sm:pb-0' : 'w-full mx-4 sm:mx-auto rounded-2xl'}`}
                     >
                         {effectiveBottomSheet && (
                             <div className="sm:hidden w-full flex justify-center pt-3 pb-1">

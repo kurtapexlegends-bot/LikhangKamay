@@ -239,6 +239,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'suspended_at' => 'datetime',
             'auto_reply_on_completion' => \App\Casts\PostgresCompatibleBoolean::class,
             'artisan_welcomed' => \App\Casts\PostgresCompatibleBoolean::class,
+            'is_verified' => \App\Casts\PostgresCompatibleBoolean::class,
         ];
     }
 

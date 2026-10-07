@@ -82,7 +82,7 @@ export default function SlideOverDrawer({
 
                                         {/* Footer */}
                                         {footer && (
-                                            <div className="border-t border-stone-100 bg-stone-50/50 px-6 py-4 shrink-0">
+                                            <div className={`border-t border-stone-100 bg-stone-50/50 px-6 shrink-0 ${isRight ? 'py-4' : 'py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:pb-4'}`}>
                                                 {footer}
                                             </div>
                                         )}

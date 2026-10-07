@@ -98,7 +98,7 @@ class CartService
             return $cart;
         }
 
-        $liveProducts = Product::with(['user:id,name,shop_name,city', 'discounts'])
+        $liveProducts = Product::with(['user:id,name,shop_name,city,deleted_at', 'discounts'])
             ->whereIn('id', $productIds)
             ->get()
             ->keyBy('id');
@@ -191,7 +191,7 @@ class CartService
         }
 
         $product = Product::select($productColumns)
-            ->with('user:id,name,shop_name,city')
+            ->with('user:id,name,shop_name,city,deleted_at')
             ->findOrFail($data['product_id']);
 
         $moq = (int) ($product->moq ?: 1);
@@ -455,7 +455,7 @@ class CartService
         $restoredCount = 0;
 
         $productIds = collect($items)->pluck('id')->filter()->unique()->values()->all();
-        $products = Product::with('user:id,name,shop_name,city')
+        $products = Product::with('user:id,name,shop_name,city,deleted_at')
             ->whereIn('id', $productIds)
             ->get()
             ->keyBy('id');

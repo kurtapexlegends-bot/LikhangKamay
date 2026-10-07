@@ -64,7 +64,7 @@ Webhooks from the Lalamove API dispatch events that update the `status` of `Orde
 *   [LalamoveWebhookService.php](file:///c:/laragon/www/LikhangKamay/app/Services/Logistics/LalamoveWebhookService.php): Translates incoming raw Lalamove REST API payloads into internal domain events.
 
 ### Workshop Pickup & Multi-Location Models
-*   [SellerPickupSchedule.php](file:///c:/laragon/www/LikhangKamay/app/Models/SellerPickupSchedule.php): Configures weekly operating schedules, slot durations, and capacity per artisan workshop. Uses `PostgresCompatibleBoolean` cast on `is_enabled` and `scopeEnabled` scope for strict cross-DB compatibility.
+*   [SellerPickupSchedule.php](file:///c:/laragon/www/LikhangKamay/app/Models/SellerPickupSchedule.php): Configures weekly operating schedules, slot durations, and capacity per artisan workshop. Uses `PostgresCompatibleBoolean` cast on `is_enabled` and `scopeEnabled` scope for strict cross-DB compatibility, with defensive `->withTrashed()` scoping on artisan and workshop location relations.
 *   [PrepareCheckout.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Consumer/PrepareCheckout.php): Orchestrates single and multi-artisan checkout workflows, ensuring null-safe seller resolution and pickup schedule attachment.
 
 ### Logistics Controllers

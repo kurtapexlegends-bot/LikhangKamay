@@ -51,7 +51,7 @@ return [
         'public_key' => env('PAYMONGO_PUBLIC_KEY'),
         'secret_key' => env('PAYMONGO_SECRET_KEY'),
         'webhook_secret' => env('PAYMONGO_WEBHOOK_SECRET'),
-        'timeout' => env('PAYMONGO_TIMEOUT', 6),
+        'timeout' => env('PAYMONGO_TIMEOUT', 5),
         'connect_timeout' => env('PAYMONGO_CONNECT_TIMEOUT', 2),
     ],
 
