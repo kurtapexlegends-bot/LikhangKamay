@@ -60,7 +60,12 @@ Webhooks from the Lalamove API dispatch events that update the `status` of `Orde
 ### Logistics Domain Services
 *   [OrderLogisticsService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OrderLogisticsService.php): Manages quotation requests, driver dispatch requests, and cancellation refunds.
 *   [CheckoutShippingService.php](file:///c:/laragon/www/LikhangKamay/app/Services/CheckoutShippingService.php): Computes and validates courier fees on checkout.
+*   [PickupScheduleService.php](file:///c:/laragon/www/LikhangKamay/app/Services/PickupScheduleService.php): Resolves effective pickup slots, operating days, and booking availability across multi-workshop artisan locations with defensive fallback handling.
 *   [LalamoveWebhookService.php](file:///c:/laragon/www/LikhangKamay/app/Services/Logistics/LalamoveWebhookService.php): Translates incoming raw Lalamove REST API payloads into internal domain events.
+
+### Workshop Pickup & Multi-Location Models
+*   [SellerPickupSchedule.php](file:///c:/laragon/www/LikhangKamay/app/Models/SellerPickupSchedule.php): Configures weekly operating schedules, slot durations, and capacity per artisan workshop. Uses `PostgresCompatibleBoolean` cast on `is_enabled` and `scopeEnabled` scope for strict cross-DB compatibility.
+*   [PrepareCheckout.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Consumer/PrepareCheckout.php): Orchestrates single and multi-artisan checkout workflows, ensuring null-safe seller resolution and pickup schedule attachment.
 
 ### Logistics Controllers
 *   [LalamoveDeliveryController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/LalamoveDeliveryController.php): Manages explicit seller actions to dispatch Lalamove riders and fetch delivery pricing.

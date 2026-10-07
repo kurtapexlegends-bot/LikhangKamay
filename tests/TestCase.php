@@ -22,7 +22,9 @@ abstract class TestCase extends BaseTestCase
         }
 
         // 2. Environment check: Local runs vs CI runner
-        $isCi = env('CI') === true || env('CI') === 'true' || env('GITHUB_ACTIONS') === true || env('GITHUB_ACTIONS') === 'true';
+        $isCi = (bool) config('app.ci', false)
+            || env('CI') === true || env('CI') === 'true'
+            || env('GITHUB_ACTIONS') === true || env('GITHUB_ACTIONS') === 'true';
 
         if (!$isCi) {
             // Local runs must ALWAYS use in-memory SQLite to guarantee local Laragon data is never touched

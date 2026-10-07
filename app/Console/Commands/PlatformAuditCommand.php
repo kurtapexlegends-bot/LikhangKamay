@@ -115,20 +115,19 @@ class PlatformAuditCommand extends Command
 
         $critical = [
             'LALAMOVE_API_KEY' => config('services.lalamove.api_key'),
-            'LALAMOVE_SECRET_KEY' => config('services.lalamove.secret_key'),
+            'LALAMOVE_SECRET_KEY' => config('services.lalamove.secret_key') ?: config('services.lalamove.api_secret'),
             'PAYMONGO_SECRET_KEY' => config('services.paymongo.secret_key'),
             'PAYMONGO_PUBLIC_KEY' => config('services.paymongo.public_key'),
             'RESEND_API_KEY' => config('services.resend.key'),
             'SUPABASE_URL' => config('services.supabase.url'),
             'SUPABASE_ANON_KEY' => config('services.supabase.anon_key'),
-            'VITE_SENTRY_DSN_PUBLIC' => $_ENV['VITE_SENTRY_DSN_PUBLIC'] ?? $_SERVER['VITE_SENTRY_DSN_PUBLIC'] ?? getenv('VITE_SENTRY_DSN_PUBLIC') ?? config('sentry.dsn'),
+            'SENTRY_DSN' => config('sentry.dsn'),
         ];
 
         $missing = [];
 
         foreach ($critical as $key => $val) {
-            $resolvedVal = $val ?: ($_ENV[$key] ?? $_SERVER[$key] ?? getenv($key) ?? env($key));
-            if (empty($resolvedVal)) {
+            if (empty($val)) {
                 $missing[] = $key;
             }
         }

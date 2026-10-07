@@ -112,4 +112,19 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Super Admin Initial Credentials
+    |--------------------------------------------------------------------------
+    |
+    | Used by database seeders to configure the primary super administrator.
+    |
+    */
+
+    'super_admin' => [
+        'email' => env('SUPER_ADMIN_EMAIL'),
+        'password' => env('SUPER_ADMIN_PASSWORD'),
+        'name' => env('SUPER_ADMIN_NAME', 'LikhangKamay Admin'),
+    ],
+
 ];

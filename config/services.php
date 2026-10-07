@@ -57,13 +57,19 @@ return [
 
     'lalamove' => [
         'api_key' => env('LALAMOVE_API_KEY'),
-        'api_secret' => env('LALAMOVE_API_SECRET'),
+        'api_secret' => env('LALAMOVE_API_SECRET', env('LALAMOVE_SECRET_KEY')),
+        'secret_key' => env('LALAMOVE_SECRET_KEY', env('LALAMOVE_API_SECRET')),
         'environment' => env('LALAMOVE_ENV', 'sandbox'),
         'market' => env('LALAMOVE_MARKET', 'PH'),
         'service_type' => env('LALAMOVE_SERVICE_TYPE', 'MOTORCYCLE'),
         'webhook_secret' => env('LALAMOVE_WEBHOOK_SECRET'),
         'timeout' => env('LALAMOVE_TIMEOUT', 5),
         'connect_timeout' => env('LALAMOVE_CONNECT_TIMEOUT', 2),
+    ],
+
+    'supabase' => [
+        'url' => env('SUPABASE_URL', env('VITE_SUPABASE_URL')),
+        'anon_key' => env('SUPABASE_ANON_KEY', env('VITE_SUPABASE_ANON_KEY')),
     ],
 
     'nominatim' => [

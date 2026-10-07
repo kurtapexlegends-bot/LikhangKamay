@@ -40,7 +40,7 @@ class ImageProxyController extends Controller
         }
         
         // Fast fallback for serverless or environments without GD extension / local file access
-        if (!$this->transformer->isAvailable() || config('filesystems.default') === 's3' || env('FILESYSTEM_DISK') === 's3') {
+        if (!$this->transformer->isAvailable() || config('filesystems.default') === 's3' || config('filesystems.disks.public.driver') === 's3') {
             $fallbackUrl = \App\Services\StorageUrl::url($path);
             return redirect($fallbackUrl ?: ('/storage/' . $path));
         }

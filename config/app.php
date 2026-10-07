@@ -125,4 +125,6 @@ return [
 
     'cron_secret' => env('CRON_SECRET'),
 
+    'ci' => (bool) (env('CI', false) || env('GITHUB_ACTIONS', false)),
+
 ];

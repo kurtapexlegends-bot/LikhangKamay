@@ -460,7 +460,7 @@ Route::get('/subscription/payment/cancel', [\App\Http\Controllers\Seller\Subscri
 Route::post('/webhooks/lalamove', \App\Http\Controllers\Webhooks\LalamoveWebhookController::class)->middleware('throttle:120,1')->name('webhooks.lalamove');
 Route::post('/webhooks/paymongo', [\App\Http\Controllers\Webhooks\PaymongoWebhookController::class, 'handle'])->middleware('throttle:120,1')->name('webhooks.paymongo');
 Route::get('/webhooks/cron', function (\Illuminate\Http\Request $request) {
-    $cronSecret = config('app.cron_secret') ?: env('CRON_SECRET');
+    $cronSecret = config('app.cron_secret');
     $provided = $request->header('X-Vercel-Cron-Secret')
         ?: ($request->bearerToken() ?: $request->query('secret'));
 
@@ -475,7 +475,7 @@ Route::get('/webhooks/cron', function (\Illuminate\Http\Request $request) {
 })->name('webhooks.cron');
 
 Route::get('/webhooks/cron/queue', function (\Illuminate\Http\Request $request) {
-    $cronSecret = config('app.cron_secret') ?: env('CRON_SECRET');
+    $cronSecret = config('app.cron_secret');
     $provided = $request->header('X-Vercel-Cron-Secret')
         ?: ($request->bearerToken() ?: $request->query('secret'));
 
@@ -494,7 +494,7 @@ Route::get('/webhooks/cron/queue', function (\Illuminate\Http\Request $request) 
 
 Route::get('/webhooks/migrate', function (\Illuminate\Http\Request $request) {
     $user = $request->user();
-    $cronSecret = config('app.cron_secret') ?: env('CRON_SECRET');
+    $cronSecret = config('app.cron_secret');
     $providedSecret = $request->query('secret') ?: $request->header('X-Vercel-Cron-Secret');
 
     $isAuthorized = ($cronSecret && !empty($providedSecret) && hash_equals((string) $cronSecret, (string) $providedSecret))

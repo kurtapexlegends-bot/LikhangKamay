@@ -36,39 +36,42 @@ class AppServiceProvider extends ServiceProvider
 
         // Dynamically override Mail & Platform settings from database / config
         try {
-            $settings = app('system.settings');
-            
-            $platformName = $settings->get('platform_name');
-            if ($platformName) {
-                config(['app.name' => $platformName]);
-            }
+            $isCacheCommand = $this->app->runningInConsole() && in_array($_SERVER['argv'][1] ?? '', ['config:cache', 'config:clear', 'package:discover', 'optimize:clear', 'route:list', 'route:cache', 'route:clear', 'platform:audit']);
+            if (!$isCacheCommand) {
+                $settings = app('system.settings');
+                
+                $platformName = $settings->get('platform_name');
+                if ($platformName) {
+                    config(['app.name' => $platformName]);
+                }
 
-            $mailDriver = $settings->get('mail_driver');
-            if ($mailDriver) {
-                config(['mail.default' => $mailDriver]);
-            }
+                $mailDriver = $settings->get('mail_driver');
+                if ($mailDriver) {
+                    config(['mail.default' => $mailDriver]);
+                }
 
-            $resendApiKey = $settings->get('resend_api_key');
-            if ($resendApiKey) {
-                config(['services.resend.key' => $resendApiKey]);
-            }
+                $resendApiKey = $settings->get('resend_api_key');
+                if ($resendApiKey) {
+                    config(['services.resend.key' => $resendApiKey]);
+                }
 
-            $fromAddress = $settings->get('mail_from_address') ?: config('mail.from.address', 'noreply@likhangkamay.app');
-            $fromName = $settings->get('mail_from_name') ?: config('mail.from.name', 'LikhangKamay');
-            config([
-                'mail.from.address' => $fromAddress,
-                'mail.from.name' => $fromName,
-            ]);
-
-            $mailHost = $settings->get('mail_host');
-            if ($mailHost) {
+                $fromAddress = $settings->get('mail_from_address') ?: config('mail.from.address', 'noreply@likhangkamay.app');
+                $fromName = $settings->get('mail_from_name') ?: config('mail.from.name', 'LikhangKamay');
                 config([
-                    'mail.mailers.smtp.host' => $mailHost,
-                    'mail.mailers.smtp.port' => $settings->get('mail_port', '2525'),
-                    'mail.mailers.smtp.encryption' => $settings->get('mail_encryption', 'tls'),
-                    'mail.mailers.smtp.username' => $settings->get('mail_username'),
-                    'mail.mailers.smtp.password' => $settings->get('mail_password'),
+                    'mail.from.address' => $fromAddress,
+                    'mail.from.name' => $fromName,
                 ]);
+
+                $mailHost = $settings->get('mail_host');
+                if ($mailHost) {
+                    config([
+                        'mail.mailers.smtp.host' => $mailHost,
+                        'mail.mailers.smtp.port' => $settings->get('mail_port', '2525'),
+                        'mail.mailers.smtp.encryption' => $settings->get('mail_encryption', 'tls'),
+                        'mail.mailers.smtp.username' => $settings->get('mail_username'),
+                        'mail.mailers.smtp.password' => $settings->get('mail_password'),
+                    ]);
+                }
             }
         } catch (\Throwable $e) {
             // Silence if database is not ready or migrated yet
@@ -90,15 +93,20 @@ class AppServiceProvider extends ServiceProvider
                 @mkdir($tmpPrivate, 0755, true);
             }
 
+            $localRoot = config('filesystems.disks.local.root');
+            if (!$localRoot || $localRoot === storage_path('app/private')) {
+                $localRoot = $tmpPrivate;
+            }
+
             config([
                 'view.compiled' => $tmpStorage . '/views',
                 'cache.stores.file.path' => $tmpStorage . '/cache/data',
                 'cache.stores.file.lock_path' => $tmpStorage . '/cache/data',
                 'session.files' => $tmpStorage . '/sessions',
-                'filesystems.disks.local.root' => env('FILESYSTEM_LOCAL_ROOT', $tmpPrivate),
+                'filesystems.disks.local.root' => $localRoot,
             ]);
 
-            if (env('PUBLIC_DISK_DRIVER') === 's3' || env('FILESYSTEM_DISK') === 's3') {
+            if (config('filesystems.disks.public.driver') === 's3' || config('filesystems.default') === 's3') {
                 config(['filesystems.default' => 's3']);
             }
         }
