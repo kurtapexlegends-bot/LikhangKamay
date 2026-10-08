@@ -3,6 +3,7 @@ import Modal from "@/Components/Modal";
 import SlideOverDrawer from "@/Components/SlideOverDrawer";
 import ManualDeliveryForm from "@/Components/Seller/Orders/ManualDeliveryForm";
 import { compressImage } from "@/utils/imageCompressor";
+import { resolveImageUrl } from "@/lib/media";
 import {
     MapPin,
     PackageCheck,
@@ -177,15 +178,12 @@ export default function FulfillmentModal({
                                 >
                                     <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-stone-200 bg-stone-50">
                                         <img
-                                            src={
-                                                item.img.startsWith("http") || item.img.startsWith("/storage")
-                                                    ? item.img
-                                                    : `/storage/${item.img}`
-                                            }
+                                            src={resolveImageUrl(item.img || item.product_img || item.image)}
                                             alt={item.name}
                                             className="w-full h-full object-cover"
                                             onError={(e) => {
-                                                e.target.src = "/images/no-image.png";
+                                                e.target.onerror = null;
+                                                e.target.src = "/images/placeholder.svg";
                                             }}
                                         />
                                     </div>

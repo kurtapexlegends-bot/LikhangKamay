@@ -5,6 +5,7 @@ namespace App\Services\Cart;
 use App\Models\Discount;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\StorageUrl;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 
@@ -158,7 +159,7 @@ class CartService
                 $updatedCart = true;
             }
 
-            $photo = $liveProduct->cover_photo_path ?: $liveProduct->img;
+            $photo = $liveProduct->img ?: StorageUrl::url($liveProduct->cover_photo_path, '/images/placeholder.svg');
             if (($item['image'] ?? null) !== $photo || ($item['cover_photo_path'] ?? null) !== $photo) {
                 $item['image'] = $photo;
                 $item['img'] = $photo;
@@ -240,7 +241,7 @@ class CartService
                     'status' => 422,
                 ];
             }
-            $photo = $product->cover_photo_path ?: $product->img;
+            $photo = $product->img ?: StorageUrl::url($product->cover_photo_path, '/images/placeholder.svg');
             $sellerName = $product->user->shop_name ?? $product->user->name ?? 'Shop';
             $unitPrice = $product->is_b2b_supply
                 ? $product->getEffectiveB2BPrice($requestedQty)
@@ -480,7 +481,7 @@ class CartService
                 'slug' => $product->slug,
                 'price' => (float) $product->effective_price,
                 'qty' => $qty,
-                'img' => $product->cover_photo_path ?: $product->img,
+                'img' => $product->img ?: StorageUrl::url($product->cover_photo_path, '/images/placeholder.svg'),
                 'seller' => $product->user?->shop_name ?? $product->user?->name ?? 'Shop',
                 'shop_name' => $product->user?->shop_name ?? $product->user?->name ?? 'Shop',
                 'location' => $product->user?->city ?? 'Cavite',

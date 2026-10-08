@@ -1,19 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { ShoppingCart, Eye, Trash2, Check } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/media';
 
 const formatPrice = (value) => Number(value || 0).toLocaleString('en-PH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
 });
-
-const resolveProductImage = (image) => {
-    if (!image) return '/images/no-image.png';
-    if (image.startsWith('http') || image.startsWith('/') || image.startsWith('data:') || image.startsWith('blob:')) {
-        return image;
-    }
-    return `/storage/${image}`;
-};
 
 export default function SavedProductListRow({
     product,
@@ -70,13 +63,13 @@ export default function SavedProductListRow({
                     className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-stone-100 overflow-hidden shrink-0 block"
                 >
                     <img
-                        src={resolveProductImage(product.image)}
+                        src={resolveImageUrl(product.image || product.img)}
                         alt={product.name}
                         loading="lazy"
                         className="w-full h-full object-cover"
                         onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = '/images/no-image.png';
+                            e.target.src = '/images/placeholder.svg';
                         }}
                     />
                 </Link>

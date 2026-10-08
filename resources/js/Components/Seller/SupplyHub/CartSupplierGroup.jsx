@@ -4,6 +4,7 @@ import {
     Store, MapPin, Trash2, Plus, Minus, 
     Layers, AlertCircle, Sparkles, Truck 
 } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/media';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -81,8 +82,13 @@ export default function CartSupplierGroup({
                                 />
 
                                 <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl bg-stone-100 border border-stone-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                    {item.img ? (
-                                        <img src={item.img} alt={item.name} className="h-full w-full object-cover" />
+                                    {item.img || item.image ? (
+                                        <img 
+                                            src={resolveImageUrl(item.img || item.image)} 
+                                            alt={item.name} 
+                                            className="h-full w-full object-cover" 
+                                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/placeholder.svg'; }}
+                                        />
                                     ) : (
                                         <Layers size={18} className="text-stone-400" />
                                     )}

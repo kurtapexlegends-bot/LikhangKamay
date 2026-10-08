@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from '@inertiajs/react';
 import { Package, ArrowUpRight, Sparkles, TrendingUp } from 'lucide-react';
 import SatisfactionBreakdown from './SatisfactionBreakdown';
+import { resolveImageUrl } from '@/lib/media';
 
 const pesoFormatter = new Intl.NumberFormat('en-PH', {
     style: 'currency',
@@ -137,7 +138,7 @@ export default function OperationsControl({ insights, topProducts = [], salesHea
                             <div className="space-y-2.5">
                                 {topProducts.length > 0 ? (
                                     topProducts.slice(0, 3).map((item, index) => {
-                                        const imageUrl = item.img ? (item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`) : null;
+                                        const imageUrl = item.img ? resolveImageUrl(item.img) : null;
                                         return (
                                             <div key={index} className="flex items-center gap-3 bg-stone-50/60 p-2.5 rounded-xl border border-stone-100/80 hover:bg-white hover:shadow-xs hover:border-stone-200 transition-all duration-200">
                                                 <div className="w-9 h-9 rounded-lg overflow-hidden bg-stone-200 border border-white shrink-0">

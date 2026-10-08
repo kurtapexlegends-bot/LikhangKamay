@@ -73,7 +73,7 @@ const sanitizeWishlistProduct = (product) => {
         id,
         slug: product.slug,
         name: product.name || 'Product',
-        image: product.image || product.img || '/images/no-image.png',
+        image: product.image || product.img || '/images/placeholder.svg',
         price: Number(product.price || 0),
         sellerName: product.seller?.shop_name || product.seller?.name || product.sellerName || 'Artisan',
         sellerSlug: product.seller?.slug || product.seller_slug || null,
@@ -109,7 +109,7 @@ const sanitizeRecentlyViewedProduct = (product) => {
         id,
         slug: product.slug,
         name: product.name || 'Product',
-        image: product.image || product.img || '/images/no-image.png',
+        image: product.image || product.img || '/images/placeholder.svg',
         price: Number(product.price || 0),
         sellerName: product.seller?.shop_name || product.seller?.name || product.sellerName || 'Artisan',
     };

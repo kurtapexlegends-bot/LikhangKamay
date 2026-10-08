@@ -45,7 +45,7 @@ class SearchController extends Controller
                     'name' => $p->name,
                     'slug' => $p->slug,
                     'price' => number_format((float) $p->price, 2),
-                    'image' => StorageUrl::url($p->cover_photo_path, '/images/no-image.png'),
+                    'image' => StorageUrl::url($p->cover_photo_path, '/images/placeholder.svg'),
                     'seller' => $p->user?->shop_name ?? $p->user?->name ?? 'Artisan',
                 ]);
 

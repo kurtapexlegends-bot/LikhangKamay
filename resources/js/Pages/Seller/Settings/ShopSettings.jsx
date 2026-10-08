@@ -14,6 +14,7 @@ import { compressImage } from '@/utils/imageCompressor';
 import WorkplaceLocationsManager from '@/Components/Seller/Settings/WorkplaceLocationsManager';
 import PickupScheduleSettings from '@/Components/Seller/Settings/PickupScheduleSettings';
 import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
+import { resolveImageUrl } from '@/lib/media';
 
 export default function ShopSettings({ auth, user, stats, locations = [], pickupSchedule }) {
     const bannerInputRef = useRef(null);
@@ -39,13 +40,11 @@ export default function ShopSettings({ auth, user, stats, locations = [], pickup
     ];
 
     const [bannerPreview, setBannerPreview] = useState(
-        user?.banner_image_url || (user?.banner_image
-            ? (user.banner_image.startsWith('http') || user.banner_image.startsWith('/storage') ? user.banner_image : `/storage/${user.banner_image}`)
-            : null)
+        () => user?.banner_image_url || (user?.banner_image ? resolveImageUrl(user.banner_image, null) : null)
     );
 
     const [avatarPreview, setAvatarPreview] = useState(
-        user?.avatar_url || (user?.avatar ? (user.avatar.startsWith('http') || user.avatar.startsWith('/storage') ? user.avatar : `/storage/${user.avatar}`) : null)
+        () => user?.avatar_url || (user?.avatar ? resolveImageUrl(user.avatar, null) : null)
     );
     const avatarInputRef = useRef(null);
 
@@ -71,7 +70,7 @@ export default function ShopSettings({ auth, user, stats, locations = [], pickup
     useEffect(() => {
         if (!data.avatar) {
             setAvatarPreview(
-                user?.avatar_url || (user?.avatar ? (user.avatar.startsWith('http') || user.avatar.startsWith('/storage') ? user.avatar : `/storage/${user.avatar}`) : null)
+                user?.avatar_url || (user?.avatar ? resolveImageUrl(user.avatar, null) : null)
             );
         }
     }, [user?.avatar, user?.avatar_url, data.avatar]);
@@ -79,7 +78,7 @@ export default function ShopSettings({ auth, user, stats, locations = [], pickup
     useEffect(() => {
         if (!data.banner_image) {
             setBannerPreview(
-                user?.banner_image_url || (user?.banner_image ? (user.banner_image.startsWith('http') || user.banner_image.startsWith('/storage') ? user.banner_image : `/storage/${user.banner_image}`) : null)
+                user?.banner_image_url || (user?.banner_image ? resolveImageUrl(user.banner_image, null) : null)
             );
         }
     }, [user?.banner_image, user?.banner_image_url, data.banner_image]);
@@ -367,10 +366,10 @@ export default function ShopSettings({ auth, user, stats, locations = [], pickup
                                     >
                                         <div className="aspect-square relative bg-stone-50 border-b border-stone-100 overflow-hidden flex items-center justify-center p-2">
                                             <img 
-                                                src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/storage') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'} 
+                                                src={resolveImageUrl(product.img || product.image)} 
                                                 alt={product.name} 
                                                 className="w-full h-full object-contain mix-blend-multiply transition duration-500 group-hover:scale-105"
-                                                onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                                onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
                                             />
                                             {hasRating(product.rating) && (
                                                 <div className="absolute top-1.5 right-1.5 bg-white/95 backdrop-blur-sm shadow-sm text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 text-stone-700 border border-stone-200/50">

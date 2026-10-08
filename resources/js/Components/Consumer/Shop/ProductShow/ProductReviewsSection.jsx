@@ -4,6 +4,7 @@ import { Star, Pin, Trash2, Pencil } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { compressImage } from '@/utils/imageCompressor';
+import { resolveImageUrl } from '@/lib/media';
 
 export default function ProductReviewsSection({
     product,
@@ -74,14 +75,14 @@ export default function ProductReviewsSection({
                                         {review.photos && review.photos.length > 0 && (
                                             <div className="flex gap-2 mt-2 overflow-x-auto pb-1 -mx-2 px-2">
                                                 {review.photos.map((photo, i) => {
-                                                    const photoUrl = (typeof photo === 'string' && (photo.startsWith('http') || photo.startsWith('/storage') || photo.startsWith('data:') || photo.startsWith('blob:'))) ? photo : `/storage/${photo}`;
+                                                    const photoUrl = resolveImageUrl(photo);
                                                     return (
                                                         <div key={i} className="w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-gray-100 cursor-pointer hover:opacity-90 transition shadow-sm">
                                                             <img 
                                                                 src={photoUrl} 
                                                                 alt="Review Attachment" 
-                                                                className="w-full h-full object-cover"
-                                                                onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/no-image.png'; }}
+                                                                className="w-full h-full object-cover" 
+                                                                onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/placeholder.svg'; }}
                                                                 onClick={() => window.open(photoUrl, '_blank')}
                                                             />
                                                         </div>
@@ -209,10 +210,10 @@ export default function ProductReviewsSection({
                                                     {currentReviewPhotos.map((photo, i) => (
                                                         <div key={`${photo}-${i}`} className="w-10 h-10 rounded overflow-hidden border border-gray-200">
                                                             <img
-                                                                src={photo}
+                                                                src={resolveImageUrl(photo)}
                                                                 alt="Current review"
                                                                 className="w-full h-full object-cover"
-                                                                onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/no-image.png'; }}
+                                                                onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/placeholder.svg'; }}
                                                             />
                                                         </div>
                                                     ))}

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Search, X, Layers } from "lucide-react";
+import { resolveImageUrl } from "@/lib/media";
 
 export default function DiscountProductTable({
     allProducts = [],
@@ -217,9 +218,10 @@ export default function DiscountProductTable({
                                                     className="rounded border-stone-300 text-clay-600 focus:ring-clay-500 cursor-pointer"
                                                 />
                                                 <img
-                                                    src={product.img || "/images/no-image.png"}
+                                                    src={resolveImageUrl(product.img)}
                                                     alt={product.name}
                                                     className="w-10 h-10 rounded-lg object-cover bg-stone-100 border border-stone-200 shrink-0"
+                                                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/placeholder.svg'; }}
                                                 />
                                                 <div className="min-w-0">
                                                     <p className="font-bold text-stone-900 truncate max-w-[180px]">{product.name}</p>
@@ -361,9 +363,10 @@ export default function DiscountProductTable({
                                             className="mt-1 rounded border-stone-300 text-clay-600 focus:ring-clay-500 cursor-pointer h-4 w-4 shrink-0"
                                         />
                                         <img
-                                            src={product.img || "/images/no-image.png"}
+                                            src={resolveImageUrl(product.img)}
                                             alt={product.name}
                                             className="w-11 h-11 rounded-xl object-cover bg-stone-100 border border-stone-200 shrink-0"
+                                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/placeholder.svg'; }}
                                         />
                                         <div className="min-w-0 flex-1">
                                             <p className="font-bold text-stone-900 text-xs truncate">{product.name}</p>

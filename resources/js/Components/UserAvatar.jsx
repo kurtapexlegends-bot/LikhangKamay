@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Crown, Sparkles } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/media';
 
 export default function UserAvatar({ user, className = 'w-9 h-9' }) {
+    const [hasError, setHasError] = useState(false);
     if (!user) return null;
     
     // Check both premium_tier (from User model) and subscription_plan (if passed explicitly)
@@ -9,9 +11,7 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
     const isSellerOwner = user.role === 'artisan';
     const isPremium = isSellerOwner && plan === 'premium';
     const isElite = isSellerOwner && plan === 'super_premium';
-    const avatarBaseSrc = user.avatar_url || (user.avatar
-        ? (user.avatar.startsWith('http') || user.avatar.startsWith('/') || user.avatar.startsWith('data:') ? user.avatar : `/storage/${user.avatar}`)
-        : null);
+    const avatarBaseSrc = resolveImageUrl(user.avatar_url || user.avatar, null);
     const avatarVersion = user.avatar_updated_at || null;
     const avatarSrc = avatarBaseSrc && avatarVersion
         ? `${avatarBaseSrc}${avatarBaseSrc.includes('?') ? '&' : '?'}v=${encodeURIComponent(avatarVersion)}`
@@ -35,13 +35,14 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
                 </div>
             )}
             <div className={`${className} rounded-full bg-stone-100 flex items-center justify-center text-stone-700 font-bold uppercase overflow-hidden ${isElite || isPremium ? 'ring-2 ring-offset-2' : ''} ${isElite ? 'ring-violet-500' : isPremium ? 'ring-amber-500' : ''} shrink-0`}>
-                {avatarSrc ? (
+                {avatarSrc && !hasError ? (
                     <img 
                         src={avatarSrc}
                         alt={user.shop_name || user.name} 
                         className="w-full h-full object-cover"
                         loading="lazy"
                         decoding="async"
+                        onError={() => setHasError(true)}
                     />
                 ) : (
                     (user.shop_name || user.name || 'A').charAt(0)

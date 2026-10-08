@@ -3,19 +3,12 @@ import { Link } from '@inertiajs/react';
 import { Heart, ShoppingBag, ShoppingCart, X, Plus, Minus, ArrowRight } from 'lucide-react';
 import Modal from '@/Components/Modal';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
+import { resolveImageUrl } from '@/lib/media';
 
 const formatPrice = (value) => Number(value || 0).toLocaleString('en-PH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
 });
-
-const resolveProductImage = (image) => {
-    if (!image) return '/images/no-image.png';
-    if (image.startsWith('http') || image.startsWith('/') || image.startsWith('data:') || image.startsWith('blob:')) {
-        return image;
-    }
-    return `/storage/${image}`;
-};
 
 export default function QuickViewModal({ product, onClose, onRemoveWishlist, onAddToCart }) {
     const [isMobile, setIsMobile] = useState(false);
@@ -53,11 +46,12 @@ export default function QuickViewModal({ product, onClose, onRemoveWishlist, onA
             {/* Gallery Image */}
             <div className="w-full md:w-1/2 aspect-square rounded-2xl bg-stone-100 border border-stone-200/80 overflow-hidden shrink-0 flex items-center justify-center select-none relative">
                 <img
-                    src={resolveProductImage(product.image)}
+                    src={resolveImageUrl(product.image || product.img)}
                     alt={product.name}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                     onError={(event) => {
-                        event.target.src = '/images/no-image.png';
+                        event.target.onerror = null;
+                        event.target.src = '/images/placeholder.svg';
                     }}
                 />
                 {product.category && (

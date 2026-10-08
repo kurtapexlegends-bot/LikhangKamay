@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
 import { History } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/media';
 
 export default function RecentlyViewedGrid({ recentlyViewed }) {
     if (!recentlyViewed || recentlyViewed.length === 0) return null;
@@ -20,10 +21,10 @@ export default function RecentlyViewedGrid({ recentlyViewed }) {
                     >
                         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-50">
                             <img
-                                src={entry.image}
+                                src={resolveImageUrl(entry.image)}
                                 alt={entry.name}
                                 className="h-full w-full object-cover"
-                                onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/no-image.png'; }}
+                                onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/placeholder.svg'; }}
                             />
                         </div>
                         <div className="min-w-0">

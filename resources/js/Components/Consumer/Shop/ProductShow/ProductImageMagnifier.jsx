@@ -36,7 +36,7 @@ export default function ProductImageMagnifier({ src, alt, id }) {
                 src={src}
                 alt={alt}
                 loading="lazy"
-                onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
                 className="w-full h-full object-cover transition-transform duration-200 ease-out"
                 style={{
                     transform: isMagnifying ? `scale(${zoomLevel})` : 'scale(1)',

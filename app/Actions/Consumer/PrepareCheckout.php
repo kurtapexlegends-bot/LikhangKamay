@@ -43,7 +43,8 @@ class PrepareCheckout
                     'supply_unit' => $product->supply_unit ?: 'pcs',
                     'qty' => $qty,
                     'lead_time' => (int) ($product->lead_time ?? 0),
-                    'img' => $product->img
+                    'img' => $product->img ?: StorageUrl::url($product->cover_photo_path, '/images/placeholder.svg'),
+                    'image' => $product->img ?: StorageUrl::url($product->cover_photo_path, '/images/placeholder.svg'),
                 ];
             }
         }
@@ -87,6 +88,9 @@ class PrepareCheckout
                     $item['seller_city'] = $live->user?->city ?? ($item['seller_city'] ?? null);
                     $item['location'] = $live->user?->city ?? ($item['location'] ?? null);
                     $item['lead_time'] = (int) ($live->lead_time ?? 0);
+                    $photo = $live->img ?: StorageUrl::url($live->cover_photo_path, '/images/placeholder.svg');
+                    $item['img'] = $photo;
+                    $item['image'] = $photo;
                 }
             }
 
@@ -103,7 +107,9 @@ class PrepareCheckout
             }, $items, array_keys($items)));
 
             foreach ($items as &$item) {
-                $item['img'] = StorageUrl::url($item['img'] ?? null, '/images/placeholder.svg');
+                $photo = StorageUrl::url($item['img'] ?? $item['image'] ?? null, '/images/placeholder.svg');
+                $item['img'] = $photo;
+                $item['image'] = $photo;
             }
         }
 

@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\OwnerApproval;
 use App\Services\DiscountService;
 use App\Services\OwnerApprovalService;
+use App\Services\StorageUrl;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -87,7 +88,7 @@ class DiscountController extends Controller
                     'price' => (float) $p->price,
                     'sku' => $p->sku,
                     'stock' => (int) $p->stock,
-                    'img' => $p->cover_photo_path ? (str_starts_with($p->cover_photo_path, 'http') ? $p->cover_photo_path : "/storage/{$p->cover_photo_path}") : '/images/no-image.png',
+                    'img' => StorageUrl::url($p->cover_photo_path, '/images/placeholder.svg'),
                 ]);
 
             return Inertia::render('Seller/Marketing/DiscountManager', [

@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/react';
 import { Trophy, Star, Crown, Sparkles } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import { hasRating, formatRating } from '@/utils/rating';
+import { resolveImageUrl } from '@/lib/media';
 
 export default function TopArtisansGrid({ topSellers = [], formatSold }) {
     if (!topSellers || topSellers.length === 0) return null;
@@ -122,10 +123,10 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                                                 >
                                                     <div className="w-full aspect-square rounded-xl overflow-hidden border border-stone-100 relative bg-stone-50 shadow-xs group-hover/prod:border-clay-300 transition-all">
                                                         <img 
-                                                            src={p.img ? (p.img.startsWith('http') || p.img.startsWith('/') || p.img.startsWith('data:') || p.img.startsWith('blob:') ? p.img : `/storage/${p.img}`) : '/images/no-image.png'}
+                                                            src={resolveImageUrl(p.img || p.image)}
                                                             alt={p.name || ''}
                                                             className="w-full h-full object-cover transition-transform duration-500 group-hover/prod:scale-108"
-                                                            onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
+                                                            onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
                                                         />
                                                         
                                                         {/* Top-Left: Rank Badge */}
@@ -248,10 +249,10 @@ export default function TopArtisansGrid({ topSellers = [], formatSold }) {
                                                 >
                                                     <div className="w-full aspect-square rounded-xl overflow-hidden border border-stone-100 relative bg-stone-50 shadow-xs group-hover/prod:border-clay-300 group-hover/prod:shadow-md transition-all duration-300">
                                                         <img 
-                                                            src={p.img ? (p.img.startsWith('http') || p.img.startsWith('/') || p.img.startsWith('data:') || p.img.startsWith('blob:') ? p.img : `/storage/${p.img}`) : '/images/no-image.png'}
+                                                            src={resolveImageUrl(p.img || p.image)}
                                                             alt={p.name || ''}
                                                             className="w-full h-full object-cover transition-transform duration-500 group-hover/prod:scale-110"
-                                                            onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
+                                                            onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
                                                         />
                                                         
                                                         {/* Top-Left: Rank Badge */}

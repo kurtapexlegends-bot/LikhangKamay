@@ -5,6 +5,7 @@ import { hasRating, formatRating } from '@/utils/rating';
 import { trackSponsorshipEvent } from '@/utils/sponsorshipTracking';
 import { formatPrice } from '@/utils/money';
 import DiscountCountdownBadge from '@/Components/Consumer/DiscountCountdownBadge';
+import { resolveImageUrl } from '@/lib/media';
 
 export default function ProductCard({ product, sponsoredPlacement, previewOnly = false }) {
     const hasActiveDiscount = (product.has_discount || Boolean(product.discount_info)) && product.discount_info?.end_at;
@@ -40,16 +41,10 @@ export default function ProductCard({ product, sponsoredPlacement, previewOnly =
                 <img
                     loading="lazy"
                     decoding="async"
-                    src={
-                        !product.image
-                            ? '/images/no-image.png'
-                            : (product.image.startsWith('http') || product.image.startsWith('/') || product.image.startsWith('data:') || product.image.startsWith('blob:'))
-                                ? product.image
-                                : `/storage/${product.image}`
-                    }
+                    src={resolveImageUrl(product.image || product.img)}
                     alt={product.name}
                     className="absolute inset-0 block h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                    onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
+                    onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
                 />
 
                 {/* Top Left Overlay: Countdown Badge (Compact Mode) or Status Badges */}

@@ -1,4 +1,11 @@
-<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100%" height="100%" fill="#f3f4f6"/>
-  <text x="50%" y="50%" font-family="Arial" font-size="20" fill="#9ca3af" text-anchor="middle" dy=".3em">No Image</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" fill="#F5F5F4"/>
+  <rect x="0.5" y="0.5" width="199" height="199" fill="none" stroke="#E7E5E4" stroke-width="1"/>
+  <!-- Minimalist handcrafted ceramic vase silhouette -->
+  <g fill="none" stroke="#A8A29E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" transform="translate(68, 62)">
+    <path d="M16 8 h32" />
+    <path d="M22 8 v10 c0 6 -12 12 -12 24 c0 16 10 26 22 26 s22 -10 22 -26 c0 -12 -12 -18 -12 -24 v-10" />
+    <path d="M18 68 h28" stroke-width="2.5" />
+    <circle cx="32" cy="46" r="3" fill="#D6D3D1" stroke="none" />
+  </g>
 </svg>

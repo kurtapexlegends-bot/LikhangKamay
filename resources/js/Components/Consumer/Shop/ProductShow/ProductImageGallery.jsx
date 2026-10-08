@@ -55,7 +55,7 @@ export default function ProductImageGallery({
                         <div className="hidden md:block h-full">
                             <ProductImageMagnifier 
                                 id="main-product-image"
-                                src={gallery[activeImageIndex] || '/images/no-image.png'} 
+                                src={gallery[activeImageIndex] || '/images/placeholder.svg'} 
                                 alt={product.name} 
                             />
                         </div>
@@ -73,7 +73,7 @@ export default function ProductImageGallery({
                                             src={img} 
                                             alt={`${product.name} - image ${index + 1}`}
                                             className="w-full h-full object-cover"
-                                            onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                            onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
                                         />
                                     </div>
                                 ))}
@@ -166,7 +166,7 @@ export default function ProductImageGallery({
                             src={img}
                             alt=""
                             className="w-full h-full object-cover"
-                            onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                            onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
                         />
                     </button>
                 ))}

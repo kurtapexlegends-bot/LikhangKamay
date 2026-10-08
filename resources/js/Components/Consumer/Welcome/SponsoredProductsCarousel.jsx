@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/react';
 import { Star, MapPin } from 'lucide-react';
 import { hasRating, formatRating } from '@/utils/rating';
 import { trackSponsorshipEvent } from '@/utils/sponsorshipTracking';
+import { resolveImageUrl } from '@/lib/media';
 
 export default function SponsoredProductsCarousel({ 
     sponsoredProducts = [], 
@@ -29,10 +30,10 @@ export default function SponsoredProductsCarousel({
                 >
                     <div className="relative bg-stone-50 overflow-hidden aspect-square">
                         <img
-                            src={product.img ? (product.img.startsWith('http') || product.img.startsWith('/') || product.img.startsWith('data:') || product.img.startsWith('blob:') ? product.img : `/storage/${product.img}`) : '/images/no-image.png'}
+                            src={resolveImageUrl(product.img || product.image)}
                             alt={product.name}
                             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                            onError={(e) => { e.target.onerror = null; e.target.src = '/images/no-image.png'; }}
+                            onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
                         />
                          <div className="absolute left-1.5 top-1.5 rounded-md bg-white/90 backdrop-blur-xs px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-amber-700 shadow-2xs border border-amber-200/40">
                             Sponsored

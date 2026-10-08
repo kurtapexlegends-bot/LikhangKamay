@@ -1,6 +1,7 @@
 import React from "react";
 import { Camera as CameraIcon } from "lucide-react";
 import { formatTimelineStamp } from "@/utils/orderHelpers";
+import { resolveImageUrl } from "@/lib/media";
 
 export default function OrderIssueBanner({ order, issueSummary }) {
     if (!issueSummary) return null;
@@ -48,24 +49,27 @@ export default function OrderIssueBanner({ order, issueSummary }) {
                                 Buyer Proof Photos
                             </span>
                             <div className="flex flex-nowrap overflow-x-auto gap-2 py-1 scrollbar-none">
-                                {issueSummary.proofPhotos.map((photo, i) => (
-                                    <a
-                                        key={`${order.id}-dispute-proof-${i}`}
-                                        href={photo.startsWith("http") || photo.startsWith("/storage") ? photo : `/storage/${photo}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-stone-200 hover:border-stone-400 transition"
-                                    >
-                                        <img
-                                            src={photo.startsWith("http") || photo.startsWith("/storage") ? photo : `/storage/${photo}`}
-                                            alt={`Dispute proof ${i + 1}`}
-                                            className="h-full w-full object-cover"
-                                            onError={(e) => {
-                                                e.target.src = "/images/no-image.png";
-                                            }}
-                                        />
-                                    </a>
-                                ))}
+                                {issueSummary.proofPhotos.map((photo, i) => {
+                                    const photoUrl = resolveImageUrl(photo);
+                                    return (
+                                        <a
+                                            key={`${order.id}-dispute-proof-${i}`}
+                                            href={photoUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-stone-200 hover:border-stone-400 transition"
+                                        >
+                                            <img
+                                                src={photoUrl}
+                                                alt={`Dispute proof ${i + 1}`}
+                                                className="h-full w-full object-cover"
+                                                onError={(e) => {
+                                                    e.target.src = "/images/placeholder.svg";
+                                                }}
+                                            />
+                                        </a>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

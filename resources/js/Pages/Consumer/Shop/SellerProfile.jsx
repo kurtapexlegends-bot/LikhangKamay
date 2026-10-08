@@ -14,6 +14,7 @@ import { isShopFollowed, toggleFollowedShop } from '@/utils/buyerSignals';
 import CompactPagination from '@/Components/CompactPagination';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { parsePrice, formatPrice } from '@/utils/money';
+import { resolveImageUrl } from '@/lib/media';
 
 export default function SellerProfile({ seller, products, bestSellers = [], stats }) {
     const { addToast } = useToast();
@@ -116,7 +117,7 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                     <div className="h-48 md:h-64 relative overflow-hidden bg-stone-100 group">
                         {seller.banner_image_url || seller.banner_image ? (
                             <img 
-                                src={seller.banner_image_url || (seller.banner_image.startsWith('http') || seller.banner_image.startsWith('/storage') ? seller.banner_image : `/storage/${seller.banner_image}`)} 
+                                src={resolveImageUrl(seller.banner_image_url || seller.banner_image)} 
                                 alt={`${seller.name} Banner`} 
                                 className="w-full h-full object-cover" 
                                 onError={(e) => { e.target.style.display = 'none'; }}
@@ -233,10 +234,10 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                         <div className={`aspect-square relative overflow-hidden flex items-center justify-center p-3 select-none ${isTop ? 'bg-amber-50/15' : 'bg-stone-50/50'}`}>
                                             <img 
                                                 loading="lazy"
-                                                src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'}
+                                                src={resolveImageUrl(product.image || product.img)}
                                                 alt={product.name}
                                                 className="w-full h-full object-contain mix-blend-multiply transition duration-700 ease-out group-hover:scale-105"
-                                                onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                                onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
                                             />
                                             {/* Rank Badge */}
                                             <div className={`absolute top-2.5 left-2.5 w-7 h-7 rounded-full flex items-center justify-center shadow-md backdrop-blur-md transition-transform group-hover:scale-105 ${
@@ -359,10 +360,10 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                                     <div className="aspect-[4/3] relative bg-stone-50 overflow-hidden flex items-center justify-center rounded-t-[23px] select-none">
                                         <img 
                                             loading="lazy"
-                                            src={product.image ? (product.image.startsWith('http') || product.image.startsWith('/storage') ? product.image : `/storage/${product.image}`) : '/images/no-image.png'} 
+                                            src={resolveImageUrl(product.image || product.img)} 
                                             alt={product.name} 
                                             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                                            onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                            onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-stone-900/50 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                                         

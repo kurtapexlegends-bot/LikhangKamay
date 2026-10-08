@@ -7,12 +7,11 @@ import {
     Camera, Star, Pencil, MapPin, Calendar, Crown, Sparkles, Heart,
     CheckCircle2, AlertCircle, MessageSquare, Package
 } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/media';
 
 const getImageUrl = (url, path) => {
-    if (url) return url;
-    if (!path) return null;
-    if (path.startsWith('http') || path.startsWith('/storage') || path.startsWith('data:') || path.startsWith('blob:')) return path;
-    return `/storage/${path}`;
+    if (!url && !path) return null;
+    return resolveImageUrl(url || path, null);
 };
 
 export default function ShopStorefrontTab({ sellerOwner, stats, products = [], permissions }) {

@@ -14,6 +14,7 @@ import {
     Archive,
     Package
 } from "lucide-react";
+import { resolveImageUrl } from "@/lib/media";
 
 export default function ProductTable({
     products,
@@ -98,9 +99,10 @@ export default function ProductTable({
                             <td className="px-5 py-3">
                                 <div className="flex items-center gap-3">
                                     <img
-                                        src={product.img || "/images/no-image.png"}
+                                        src={resolveImageUrl(product.img || product.cover_photo_url || product.cover_photo_path)}
                                         alt={product.name}
                                         className="w-10 h-10 rounded-lg object-cover bg-gray-100 border border-gray-200"
+                                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/placeholder.svg'; }}
                                     />
                                     <div>
                                         <p className="font-bold text-gray-900 text-sm">

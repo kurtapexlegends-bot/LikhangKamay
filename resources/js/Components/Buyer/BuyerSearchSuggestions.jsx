@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, router } from '@inertiajs/react';
 import { Crown, Sparkles } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/media';
 
 export default function BuyerSearchSuggestions({
     showSuggestions,
@@ -38,12 +39,12 @@ export default function BuyerSearchSuggestions({
                                 >
                                     <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
                                         <img 
-                                            src={p.image || '/images/no-image.png'} 
+                                            src={resolveImageUrl(p.image)} 
                                             alt={p.name} 
                                             className="w-full h-full object-cover" 
                                             onError={(e) => {
                                                 e.target.onerror = null;
-                                                e.target.src = '/images/no-image.png';
+                                                e.target.src = '/images/placeholder.svg';
                                             }}
                                         />
                                     </div>

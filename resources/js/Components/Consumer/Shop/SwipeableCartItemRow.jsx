@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Link } from '@inertiajs/react';
 import { Check, Minus, Plus, Trash2, Loader2 } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/media';
 
 /**
  * SwipeableCartItemRow
@@ -147,12 +148,12 @@ export default function SwipeableCartItemRow({
                         {isSelected && <Check size={12} />}
                     </button>
 
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                    <div className="w-16 h-16 bg-stone-100 rounded-lg overflow-hidden flex-shrink-0">
                         <img 
-                            src={item.img ? (item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`) : '/images/no-image.png'} 
+                            src={resolveImageUrl(item.img || item.image)} 
                             alt={item.name} 
                             className="w-full h-full object-cover"
-                            onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                            onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
                         />
                     </div>
 

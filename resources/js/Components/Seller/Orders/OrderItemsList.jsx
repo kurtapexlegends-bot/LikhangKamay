@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveImageUrl } from "@/lib/media";
 
 export default function OrderItemsList({ order }) {
     if (!order.items || order.items.length === 0) return null;
@@ -13,15 +14,12 @@ export default function OrderItemsList({ order }) {
                     >
                         <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-stone-200 bg-white">
                             <img
-                                src={
-                                    item.img.startsWith("http") || item.img.startsWith("/storage") || item.img.startsWith("/images")
-                                        ? item.img
-                                        : `/storage/${item.img}`
-                                }
+                                src={resolveImageUrl(item.img || item.product_img || item.image)}
                                 alt={item.name}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
-                                    e.target.src = "/images/no-image.png";
+                                    e.target.onerror = null;
+                                    e.target.src = "/images/placeholder.svg";
                                 }}
                             />
                         </div>

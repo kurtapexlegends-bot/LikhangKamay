@@ -3,6 +3,7 @@ import {
     Truck, Store, ShieldCheck, MapPin, Plus, Minus, 
     ShoppingCart, ArrowUpRight, Bike, Car 
 } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/media';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -25,7 +26,7 @@ export default function SupplyCard({
             <div className="space-y-3">
                 <div className="relative aspect-4/3 w-full overflow-hidden rounded-xl bg-stone-100 border border-stone-200/70">
                     <img
-                        src={item.img || '/images/placeholder.svg'}
+                        src={resolveImageUrl(item.img || item.image)}
                         alt={item.name}
                         className="h-full w-full object-cover"
                         onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}

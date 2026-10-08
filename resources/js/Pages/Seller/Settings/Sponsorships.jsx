@@ -10,6 +10,7 @@ import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/Seller
 import useFlashToast from '@/hooks/useFlashToast';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import SellerHeader from '@/Layouts/SellerHeader';
+import { resolveImageUrl } from '@/lib/media';
 
 export default function Sponsorships({ auth, creditsAvailable, activeProducts, requests }) {
     const { addToast } = useToast();
@@ -219,10 +220,10 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                                             <div className="w-10 h-10 rounded-lg overflow-hidden border border-stone-100 bg-stone-50 shrink-0 flex items-center justify-center">
                                                                 {p.cover_photo_path ? (
                                                                     <img 
-                                                                        src={`/storage/${p.cover_photo_path}`} 
+                                                                        src={resolveImageUrl(p.cover_photo_path)} 
                                                                         alt="" 
                                                                         className="w-full h-full object-cover"
-                                                                        onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                                                        onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
                                                                     />
                                                                 ) : (
                                                                     <Package size={16} className="text-stone-300" />
@@ -291,10 +292,10 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                                 <div className="w-9 h-9 rounded-lg overflow-hidden border border-stone-100 bg-stone-50 shrink-0 flex items-center justify-center">
                                                     {req.product?.cover_photo_path ? (
                                                         <img
-                                                            src={`/storage/${req.product.cover_photo_path}`}
+                                                            src={resolveImageUrl(req.product.cover_photo_path)}
                                                             alt=""
                                                             className="w-full h-full object-cover"
-                                                            onError={(e) => { e.target.src = '/images/no-image.png'; }}
+                                                            onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
                                                         />
                                                     ) : (
                                                         <Package size={14} className="text-stone-300" />

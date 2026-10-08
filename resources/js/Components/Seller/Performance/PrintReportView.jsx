@@ -4,6 +4,7 @@ import PrintReportKPIs from './PrintReportKPIs';
 import PrintReportCharts from './PrintReportCharts';
 import PrintReportHeatmap from './PrintReportHeatmap';
 import SatisfactionBreakdown from './SatisfactionBreakdown';
+import { resolveImageUrl } from '@/lib/media';
 
 const pesoFormatter = new Intl.NumberFormat('en-PH', {
     style: 'currency',
@@ -290,12 +291,17 @@ export default function PrintReportView({
                         <div className="space-y-2 flex-1">
                             {topProducts.length > 0 ? (
                                 topProducts.slice(0, 3).map((item, index) => {
-                                    const imageUrl = item.img ? (item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`) : null;
+                                    const imageUrl = item.img ? resolveImageUrl(item.img) : null;
                                     return (
                                         <div key={index} className="flex items-center gap-2.5 bg-stone-50 p-2 rounded-lg border border-stone-100">
                                             <div className="w-9 h-9 rounded-md overflow-hidden bg-stone-200 border border-white shrink-0">
                                                 {imageUrl ? (
-                                                    <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+                                                    <img 
+                                                        src={imageUrl} 
+                                                        alt="" 
+                                                        className="w-full h-full object-cover" 
+                                                        onError={(e) => { e.currentTarget.src = '/images/placeholder.svg'; }}
+                                                    />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-stone-400 bg-stone-100"><Package size={14} /></div>
                                                 )}

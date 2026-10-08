@@ -1,19 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { Heart, ShoppingCart, Eye, Check } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/media';
 
 const formatPrice = (value) => Number(value || 0).toLocaleString('en-PH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
 });
-
-const resolveProductImage = (image) => {
-    if (!image) return '/images/no-image.png';
-    if (image.startsWith('http') || image.startsWith('/') || image.startsWith('data:') || image.startsWith('blob:')) {
-        return image;
-    }
-    return `/storage/${image}`;
-};
 
 export default function SavedProductCard({
     product,
@@ -55,14 +48,14 @@ export default function SavedProductCard({
             <div className="relative aspect-square w-full bg-stone-100 overflow-hidden select-none">
                 <Link href={route('product.show', product.slug)} className="block w-full h-full">
                     <img
-                        src={resolveProductImage(product.image)}
+                        src={resolveImageUrl(product.image || product.img)}
                         alt={product.name}
                         loading="lazy"
                         decoding="async"
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = '/images/no-image.png';
+                            e.target.src = '/images/placeholder.svg';
                         }}
                     />
                 </Link>

@@ -4,6 +4,7 @@ import {
     ShoppingCart, ArrowUpRight, Bike, Car, Truck, Percent, Eye 
 } from 'lucide-react';
 import { router } from '@inertiajs/react';
+import { resolveImageUrl } from '@/lib/media';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -82,7 +83,7 @@ function B2BSupplyCard({
                 <img
                     loading="lazy"
                     decoding="async"
-                    src={item.img || '/images/placeholder.svg'}
+                    src={resolveImageUrl(item.img || item.image)}
                     alt={item.name}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                     onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}

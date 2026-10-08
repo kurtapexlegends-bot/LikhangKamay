@@ -2,6 +2,7 @@ import React from "react";
 import Checkbox from "@/Components/Checkbox";
 import WorkspaceEmptyState from "@/Components/WorkspaceEmptyState";
 import { AlertTriangle, Edit3, Package, Tag } from "lucide-react";
+import { resolveImageUrl } from "@/lib/media";
 
 export default function ProductMobileCard({
     products,
@@ -29,9 +30,10 @@ export default function ProductMobileCard({
                                 />
                             </div>
                             <img
-                                src={product.img || "/images/no-image.png"}
+                                src={resolveImageUrl(product.img || product.cover_photo_url || product.cover_photo_path)}
                                 alt={product.name}
                                 className="h-20 w-20 shrink-0 rounded-lg border border-gray-200 bg-gray-100 object-cover"
+                                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/placeholder.svg'; }}
                             />
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between gap-3">

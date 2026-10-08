@@ -9,6 +9,7 @@ import { ChevronRight, ChevronLeft, ShoppingCart, Loader2, MessageCircle } from 
 import { normalizeRating } from '@/utils/rating';
 import { getRecentlyViewedProducts, isProductWishlisted, rememberViewedProduct, toggleWishlistedProduct } from '@/utils/buyerSignals';
 import { useToast } from '@/Components/ToastContext';
+import { resolveImageUrl } from '@/lib/media';
 
 // Extracted Subcomponents
 import ProductImageGallery from '@/Components/Consumer/Shop/ProductShow/ProductImageGallery';
@@ -28,9 +29,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
         ? product?.reviews?.find((review) => Number(review.user_id) === Number(auth.user.id)) || null
         : null;
     const canWriteReview = Boolean(currentUserReview || product.viewer_can_review);
-    const currentReviewPhotos = (currentUserReview?.photos || []).map((photo) =>
-        photo?.startsWith?.('http') || photo?.startsWith?.('/storage') ? photo : `/storage/${photo}`
-    );
+    const currentReviewPhotos = (currentUserReview?.photos || []).map((photo) => resolveImageUrl(photo));
     
     const defaultQty = product?.is_b2b_supply && product?.moq ? Math.max(1, Number(product.moq)) : 1;
     const [quantity, setQuantity] = useState(defaultQty);
@@ -74,8 +73,8 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
 
     // Build gallery
     const gallery = [
-        product.image || product.img,
-        ...(product.gallery_urls || [])
+        resolveImageUrl(product.image || product.img),
+        ...(product.gallery_urls || []).map((url) => resolveImageUrl(url))
     ].filter(Boolean);
 
     // Review Form
