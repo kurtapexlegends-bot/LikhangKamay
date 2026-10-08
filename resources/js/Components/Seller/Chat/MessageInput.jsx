@@ -1,22 +1,19 @@
-import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
-
-const EmojiPicker = lazy(() => import('emoji-picker-react'));
+import React, { useState, useEffect, useRef } from 'react';
 import {
     AlertCircle,
-    FileIcon,
-    Image as ImageIcon,
-    Paperclip,
     Send,
     Smile,
-    X,
-    MessageCircle,
-    Package,
 } from 'lucide-react';
 import MentionsList, { useMentions } from './MentionsList';
 import { SlashCommandsList, useSlashCommands } from './SlashCommandsList';
 import TemplateDropdown from './TemplateDropdown';
 import { compressImage } from "@/utils/imageCompressor";
 import { OrderMentionsList, useOrderMentions } from '@/Components/Chat/OrderMentionsList';
+import EmojiPickerPopover from './EmojiPickerPopover';
+import MessageAttachmentPreview from './MessageAttachmentPreview';
+import MessageActionButtons from './MessageActionButtons';
+import useChatClickOutside from './hooks/useChatClickOutside';
+import { createOptimisticMessage } from './chatInputHelpers';
 
 export default function MessageInput({ 
     currentChatUser, 
@@ -79,8 +76,6 @@ export default function MessageInput({
     const [internalAttachmentPreview, internalSetAttachmentPreview] = useState(null);
     const attachmentPreview = form ? internalAttachmentPreview : propAttachmentPreview;
     const setAttachmentPreview = form ? internalSetAttachmentPreview : null;
-
-    const [attachmentPreviewBroken, setAttachmentPreviewBroken] = useState(false);
 
     // 3. Resolve refs
     const localInputRef = useRef(null);
@@ -178,40 +173,20 @@ export default function MessageInput({
     }, [currentChatUser?.id, currentChannel?.id]);
 
     // Click outside handler for dropdowns
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            // Click outside emoji picker
-            if (showEmojiPicker && emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
-                const toggleBtn = event.target.closest('[title="Add emoji"]');
-                if (!toggleBtn) {
-                    setShowEmojiPicker(false);
-                }
-            }
-
-            // Click outside templates dropdown
-            if (showTemplateSelector && templateSelectorRef.current && !templateSelectorRef.current.contains(event.target)) {
-                const toggleBtn = event.target.closest('[title="Quick Templates"]');
-                if (!toggleBtn) {
-                    setShowTemplateSelector(false);
-                }
-            }
-
-            // Click outside mentions dropdown
-            if (isDropdownVisible && mentionsDropdownRef.current && !mentionsDropdownRef.current.contains(event.target)) {
-                setShowMentions(false);
-            }
-
-            // Click outside slash commands dropdown
-            if (isSlashDropdownVisible && slashCommandsDropdownRef.current && !slashCommandsDropdownRef.current.contains(event.target)) {
-                setShowSlashMenu(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [showEmojiPicker, showTemplateSelector, isDropdownVisible, isSlashDropdownVisible, setShowMentions, setShowSlashMenu, emojiPickerRef, templateSelectorRef]);
+    useChatClickOutside({
+        showEmojiPicker,
+        setShowEmojiPicker,
+        emojiPickerRef,
+        showTemplateSelector,
+        setShowTemplateSelector,
+        templateSelectorRef,
+        isDropdownVisible,
+        setShowMentions,
+        mentionsDropdownRef,
+        isSlashDropdownVisible,
+        setShowSlashMenu,
+        slashCommandsDropdownRef,
+    });
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -221,18 +196,7 @@ export default function MessageInput({
 
         const messageText = data.message;
         const tempId = `temp-${Date.now()}`;
-
-        const optimisticMsg = {
-            id: tempId,
-            text: messageText,
-            attachment_path: attachmentPreview ? attachmentPreview.url : null,
-            attachment_type: attachmentPreview ? attachmentPreview.type : null,
-            sender: 'me',
-            created_at: new Date().toISOString(),
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            is_read: false,
-            status: 'sending'
-        };
+        const optimisticMsg = createOptimisticMessage(tempId, messageText, attachmentPreview);
 
         if (onSendStart) {
             onSendStart(optimisticMsg);
@@ -320,7 +284,6 @@ export default function MessageInput({
             }
 
             setData('attachment', file);
-            setAttachmentPreviewBroken(false);
             if (setAttachmentPreview) {
                 setAttachmentPreview({
                     url: URL.createObjectURL(file),
@@ -356,7 +319,6 @@ export default function MessageInput({
             const newMsg = data.message + emojiObject.emoji;
             setData('message', newMsg);
             
-            // Adjust input height after adding emoji
             setTimeout(() => {
                 if (inputRef.current) {
                     inputRef.current.focus();
@@ -390,18 +352,11 @@ export default function MessageInput({
                     onSelect={selectMention}
                 />
                 
-                {showEmojiPicker && (
-                    <div ref={emojiPickerRef} className="absolute bottom-full right-3 z-50 mb-2 overflow-hidden rounded-2xl border border-gray-100 shadow-2xl sm:right-4">
-                        <Suspense fallback={<div className="h-[350px] w-[300px] flex items-center justify-center bg-white text-xs text-stone-400">Loading emojis...</div>}>
-                            <EmojiPicker
-                                onEmojiClick={onEmojiClick}
-                                autoFocusSearch={false}
-                                theme="light"
-                                lazyLoadEmojis
-                            />
-                        </Suspense>
-                    </div>
-                )}
+                <EmojiPickerPopover
+                    showEmojiPicker={showEmojiPicker}
+                    emojiPickerRef={emojiPickerRef}
+                    onEmojiClick={onEmojiClick}
+                />
 
                 {/* Quick Templates Panel (Seller-Buyer Chat Only) */}
                 <TemplateDropdown
@@ -410,46 +365,15 @@ export default function MessageInput({
                     chatTemplates={chatTemplates}
                     onSelect={(content) => {
                         injectTemplate(content);
-                        // Focus is returned and height is calculated within injectTemplate (defined in Chat.jsx)
                     }}
                     onManage={() => setShowTemplateManager(true)}
                     onCreateFirst={() => { setShowTemplateSelector(false); setShowTemplateManager(true); }}
                 />
 
-                {attachmentPreview && (
-                    <div className="group mb-3 mt-3 flex items-start justify-between rounded-xl border border-gray-200 bg-gray-50 p-3 animate-in fade-in slide-in-from-bottom-2">
-                        <div className="flex min-w-0 items-center gap-3 overflow-hidden">
-                            {attachmentPreview.type === 'image' ? (
-                                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-                                    {attachmentPreviewBroken ? (
-                                        <div className="flex h-full w-full items-center justify-center bg-stone-50 text-stone-400">
-                                            <FileIcon size={18} />
-                                        </div>
-                                    ) : (
-                                        <img src={attachmentPreview.url} alt="Preview" className="h-full w-full object-cover" onError={() => setAttachmentPreviewBroken(true)} />
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-clay-500 shadow-sm">
-                                    <FileIcon size={24} />
-                                </div>
-                            )}
-                            <div className="min-w-0 flex-1">
-                                <p className="mb-0.5 truncate text-sm font-medium text-gray-800">{attachmentPreview.name}</p>
-                                <p className="text-xs text-gray-500">
-                                    {attachmentPreview.type === 'image' ? 'Image File' : 'Document File'}
-                                </p>
-                            </div>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={removeAttachment}
-                            className="shrink-0 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                        >
-                            <X size={16} />
-                        </button>
-                    </div>
-                )}
+                <MessageAttachmentPreview
+                    attachmentPreview={attachmentPreview}
+                    removeAttachment={removeAttachment}
+                />
 
                 {(errors.message || errors.attachment) && (
                     <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-700">
@@ -470,56 +394,16 @@ export default function MessageInput({
 
                 <form onSubmit={handleSubmit} className="flex w-full items-end gap-2 sm:gap-3">
                     <div className="relative flex flex-1 items-center overflow-visible rounded-2xl border border-gray-200 bg-gray-50 p-1 shadow-sm transition-all focus-within:border-clay-400 focus-within:ring-4 focus-within:ring-clay-50">
-                        <div className="flex items-center gap-0.5 px-1">
-                            {/* Templates Button (Seller-Buyer Chat Only) */}
-                            {!form && (
-                                <button 
-                                    type="button"
-                                    onClick={() => !isMessagesReadOnly && setShowTemplateSelector(!showTemplateSelector)}
-                                    disabled={isMessagesReadOnly}
-                                    className={`hidden sm:flex p-2 rounded-xl transition-all duration-200 min-h-[40px] min-w-[40px] items-center justify-center ${
-                                        isMessagesReadOnly
-                                            ? 'cursor-not-allowed text-gray-300'
-                                            : showTemplateSelector 
-                                                ? 'bg-white text-clay-600 shadow-sm'
-                                                : 'text-gray-400 hover:bg-white hover:text-clay-600'
-                                    }`}
-                                    title="Quick Templates"
-                                >
-                                    <MessageCircle size={20} />
-                                </button>
-                            )}
-
-                            <button
-                                type="button"
-                                onClick={() => imageInputRef.current?.click()}
-                                disabled={isMessagesReadOnly}
-                                className="rounded-xl p-2 text-gray-400 transition-all duration-200 hover:bg-white hover:text-clay-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Attach image"
-                            >
-                                <ImageIcon size={20} />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={isMessagesReadOnly}
-                                className="rounded-xl p-2 text-gray-400 transition-all duration-200 hover:bg-white hover:text-clay-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Attach file"
-                            >
-                                <Paperclip size={20} />
-                            </button>
-                            {userOrders && userOrders.length > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={toggleManualPicker}
-                                    disabled={isMessagesReadOnly}
-                                    className="rounded-xl p-2 text-gray-400 transition-all duration-200 hover:bg-white hover:text-clay-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Tag Specific Order (@)"
-                                >
-                                    <Package size={20} />
-                                </button>
-                            )}
-                        </div>
+                        <MessageActionButtons
+                            isTeamChat={!!form}
+                            isMessagesReadOnly={isMessagesReadOnly}
+                            showTemplateSelector={showTemplateSelector}
+                            setShowTemplateSelector={setShowTemplateSelector}
+                            imageInputRef={imageInputRef}
+                            fileInputRef={fileInputRef}
+                            userOrders={userOrders}
+                            toggleManualPicker={toggleManualPicker}
+                        />
 
                         <textarea
                             ref={inputRef}

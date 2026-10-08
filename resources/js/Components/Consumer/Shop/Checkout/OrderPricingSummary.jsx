@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Store, Package, AlertTriangle, ShieldCheck, MessageCircle, Truck, Car, Bike, ChevronDown, ChevronUp, Plus, Minus, Trash2 } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/media';
 
 const peso = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -95,10 +96,10 @@ export default function OrderPricingSummary({
                                     <div key={`${group.sellerId}-${index}`} className="flex gap-2 bg-white/80 p-2 rounded-lg border border-stone-200/50 shadow-2xs transition-all">
                                         <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-stone-250 bg-stone-100">
                                             <img 
-                                                src={item.img ? (item.img.startsWith('http') || item.img.startsWith('/storage') ? item.img : `/storage/${item.img}`) : '/images/no-image.png'} 
+                                                src={resolveImageUrl(item.img || item.image)} 
                                                 alt={item.name} 
                                                 className="h-full w-full object-cover" 
-                                                onError={(event) => { event.target.onerror = null; event.target.src = '/images/no-image.png'; }} 
+                                                onError={(event) => { event.target.onerror = null; event.target.src = '/images/placeholder.svg'; }} 
                                             />
                                         </div>
                                         <div className="min-w-0 flex-1 flex flex-col justify-between">

@@ -1,15 +1,17 @@
-import { useEffect, useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import GuestLayout from '@/Layouts/GuestLayout';
 import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
 import LegalModal from '@/Components/LegalModal';
 import PasswordStrengthIndicator from '@/Components/PasswordStrengthIndicator';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { Eye, EyeOff, Loader2, Store, Mail, Lock, User, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { Loader2, Mail, Lock, User, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+import useEmailAvailability from '@/Components/Auth/hooks/useEmailAvailability';
+import RegisterSocialAndLinks from '@/Components/Auth/RegisterSocialAndLinks';
 
 export default function Register() {
     const { flash } = usePage().props;
@@ -22,19 +24,18 @@ export default function Register() {
         terms: false,
     });
 
-    const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
-    const [legalModal, setLegalModal] = useState({ isOpen: false, type: 'terms' });
-    const [isGuidingTermsAcceptance, setIsGuidingTermsAcceptance] = useState(false);
-    const [acceptedLegalDocuments, setAcceptedLegalDocuments] = useState({
-        terms: false,
-        privacy: false,
-    });
-
     const firstNameRef = useRef(null);
     const lastNameRef = useRef(null);
     const emailRef = useRef(null);
     const passwordRef = useRef(null);
     const confirmPasswordRef = useRef(null);
+
+    const [legalModal, setLegalModal] = useState({ isOpen: false, type: 'terms' });
+    const [, setIsGuidingTermsAcceptance] = useState(false);
+    const [acceptedLegalDocuments, setAcceptedLegalDocuments] = useState({
+        terms: false,
+        privacy: false,
+    });
 
     useEffect(() => {
         return () => {
@@ -42,36 +43,114 @@ export default function Register() {
         };
     }, []);
 
-    const [emailValidation, setEmailValidation] = useState({ isValid: null, message: '' });
+    const emailValidation = useEmailAvailability(data.email);
 
-    useEffect(() => {
-        if (!data.email || data.email.length < 5) {
-            setEmailValidation({ isValid: null, message: '' });
+    const openLegalModal = (type) => {
+        setLegalModal({ isOpen: true, type });
+    };
+
+    const closeLegalModal = () => {
+        setLegalModal((previous) => ({ ...previous, isOpen: false }));
+    };
+
+    const openNextRequiredLegalModal = (documents = acceptedLegalDocuments) => {
+        if (!documents.terms) {
+            setLegalModal({ isOpen: true, type: 'terms' });
             return;
         }
 
-        const timer = setTimeout(async () => {
-            try {
-                const response = await axios.post(route('api.validate-constraint'), {
-                    type: 'email_availability',
-                    value: data.email
-                });
-                setEmailValidation({ 
-                    isValid: response.data.valid, 
-                    message: response.data.message 
-                });
-            } catch (error) {
-                console.error("Email validation failed", error);
-            }
-        }, 600);
+        if (!documents.privacy) {
+            setLegalModal({ isOpen: true, type: 'privacy' });
+            return;
+        }
 
-        return () => clearTimeout(timer);
-    }, [data.email]);
+        setIsGuidingTermsAcceptance(false);
+        setLegalModal((previous) => ({ ...previous, isOpen: false }));
+        setData('terms', true);
+    };
+
+    const handleLegalModalClose = (payload = {}) => {
+        if (!payload.accepted) {
+            setIsGuidingTermsAcceptance(false);
+        }
+        closeLegalModal();
+    };
+
+    const handleLegalAccept = () => {
+        const currentType = legalModal.type;
+        const updatedDocuments = {
+            ...acceptedLegalDocuments,
+            [currentType]: true,
+        };
+
+        setAcceptedLegalDocuments(updatedDocuments);
+
+        if (currentType === 'terms' && !updatedDocuments.privacy) {
+            setLegalModal({ isOpen: true, type: 'privacy' });
+            return false;
+        }
+
+        if (currentType === 'privacy' && !updatedDocuments.terms) {
+            setLegalModal({ isOpen: true, type: 'terms' });
+            return false;
+        }
+
+        setIsGuidingTermsAcceptance(false);
+        setLegalModal((previous) => ({ ...previous, isOpen: false }));
+        setData('terms', true);
+        return true;
+    };
+
+    const handleLegalBack = () => {
+        const previousType = legalModal.type === 'terms' ? 'privacy' : 'terms';
+        setLegalModal({ isOpen: true, type: previousType });
+    };
+
+    const canEnableTermsCheckbox = acceptedLegalDocuments.terms && acceptedLegalDocuments.privacy;
+
+    const handleTermsCheckboxChange = (e) => {
+        if (!e.target.checked) {
+            setData('terms', false);
+            return;
+        }
+
+        if (canEnableTermsCheckbox) {
+            setData('terms', true);
+            return;
+        }
+
+        setData('terms', false);
+        setIsGuidingTermsAcceptance(true);
+        openNextRequiredLegalModal();
+    };
+
+    const isTermsAgreed = Boolean(acceptedLegalDocuments.terms);
+    const isPrivacyAgreed = Boolean(acceptedLegalDocuments.privacy);
+    const isBothAgreed = isTermsAgreed && isPrivacyAgreed;
+    const currentDocAccepted = Boolean(acceptedLegalDocuments[legalModal.type]);
+    const counterpartAccepted = legalModal.type === 'terms' ? isPrivacyAgreed : isTermsAgreed;
+
+    let modalStep = null;
+    let modalTotalSteps = null;
+    let modalHasNextStep = false;
+
+    if (!isBothAgreed) {
+        modalTotalSteps = 2;
+        if (!counterpartAccepted && !currentDocAccepted) {
+            modalStep = 1;
+            modalHasNextStep = true;
+        } else if (counterpartAccepted && !currentDocAccepted) {
+            modalStep = 2;
+            modalHasNextStep = false;
+        } else {
+            modalStep = 1;
+            modalHasNextStep = true;
+        }
+    }
 
     const submit = (e) => {
         e.preventDefault();
         
-        // Client-side validation intercept
         const localErrors = {};
         let firstInvalidRef = null;
 
@@ -133,118 +212,6 @@ export default function Register() {
         }
     };
 
-    const handleGoogleClick = () => {
-        setIsGoogleSigningIn(true);
-    };
-
-    const openLegalModal = (type) => {
-        setLegalModal({ isOpen: true, type });
-    };
-
-    const closeLegalModal = () => {
-        setLegalModal((previous) => ({ ...previous, isOpen: false }));
-    };
-
-    const openNextRequiredLegalModal = (documents = acceptedLegalDocuments) => {
-        if (!documents.terms) {
-            setLegalModal({ isOpen: true, type: 'terms' });
-            return;
-        }
-
-        if (!documents.privacy) {
-            setLegalModal({ isOpen: true, type: 'privacy' });
-            return;
-        }
-
-        setIsGuidingTermsAcceptance(false);
-        setLegalModal((previous) => ({ ...previous, isOpen: false }));
-        setData('terms', true);
-    };
-
-    const handleLegalModalClose = (payload = {}) => {
-        if (!payload.accepted) {
-            setIsGuidingTermsAcceptance(false);
-        }
-
-        closeLegalModal();
-    };
-
-    const handleLegalAccept = () => {
-        const currentType = legalModal.type;
-        const updatedDocuments = {
-            ...acceptedLegalDocuments,
-            [currentType]: true,
-        };
-
-        setAcceptedLegalDocuments(updatedDocuments);
-
-        // If on terms of service and privacy not yet accepted, advance smoothly to privacy
-        if (currentType === 'terms' && !updatedDocuments.privacy) {
-            setLegalModal({ isOpen: true, type: 'privacy' });
-            return false;
-        }
-
-        // If on privacy and terms not yet accepted, advance to terms
-        if (currentType === 'privacy' && !updatedDocuments.terms) {
-            setLegalModal({ isOpen: true, type: 'terms' });
-            return false;
-        }
-
-        // Both documents have been accepted
-        setIsGuidingTermsAcceptance(false);
-        setLegalModal((previous) => ({ ...previous, isOpen: false }));
-        setData('terms', true);
-        return true;
-    };
-
-    const handleLegalBack = () => {
-        const previousType = legalModal.type === 'terms' ? 'privacy' : 'terms';
-        setLegalModal({ isOpen: true, type: previousType });
-    };
-
-    const handleTermsCheckboxChange = (e) => {
-        if (!e.target.checked) {
-            setData('terms', false);
-            return;
-        }
-
-        if (canEnableTermsCheckbox) {
-            setData('terms', true);
-            return;
-        }
-
-        setData('terms', false);
-        setIsGuidingTermsAcceptance(true);
-        openNextRequiredLegalModal();
-    };
-
-    const canEnableTermsCheckbox = acceptedLegalDocuments.terms && acceptedLegalDocuments.privacy;
-
-    const isTermsAgreed = Boolean(acceptedLegalDocuments.terms);
-    const isPrivacyAgreed = Boolean(acceptedLegalDocuments.privacy);
-    const isBothAgreed = isTermsAgreed && isPrivacyAgreed;
-    const currentDocAccepted = Boolean(acceptedLegalDocuments[legalModal.type]);
-    const counterpartAccepted = legalModal.type === 'terms' ? isPrivacyAgreed : isTermsAgreed;
-
-    let modalStep = null;
-    let modalTotalSteps = null;
-    let modalHasNextStep = false;
-
-    if (!isBothAgreed) {
-        modalTotalSteps = 2;
-        if (!counterpartAccepted && !currentDocAccepted) {
-            modalStep = 1;
-            modalHasNextStep = true;
-        } else if (counterpartAccepted && !currentDocAccepted) {
-            modalStep = 2;
-            modalHasNextStep = false;
-        } else {
-            modalStep = 1;
-            modalHasNextStep = true;
-        }
-    }
-
-    // Staggered animation configurations
     const containerVariants = {
         hidden: { opacity: 0 },
         show: {
@@ -501,59 +468,8 @@ export default function Register() {
                     </motion.div>
                 </motion.form>
 
-                {/* Social Signup Section */}
-                <motion.div variants={itemVariants} className="mt-8 flex flex-col items-center">
-                    <div className="relative w-full mb-6">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full h-px bg-stone-200/60"></div>
-                        </div>
-                        <div className="relative flex justify-center text-xs">
-                            <span className="px-4 bg-white text-stone-400 font-bold uppercase tracking-widest text-[9px]">Or sign up with</span>
-                        </div>
-                    </div>
-
-                    <a 
-                        href="/auth/google" 
-                        onClick={handleGoogleClick}
-                        className="group flex items-center justify-center gap-3 px-6 py-2.5 border border-stone-200/80 rounded-full bg-white hover:bg-stone-50 hover:border-stone-400 transition-all duration-300 active:scale-[0.98] shadow-sm hover:shadow"
-                    >
-                        {isGoogleSigningIn ? (
-                            <>
-                                <Loader2 size={14} className="animate-spin text-stone-500" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Connecting...</span>
-                            </>
-                        ) : (
-                            <>
-                                <img src="/images/google-icon.svg" className="w-4 h-4 group-hover:scale-110 transition-transform" alt="Google" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-600 group-hover:text-stone-900 transition-colors">Google Account</span>
-                            </>
-                        )}
-                    </a>
-                </motion.div>
-
-                {/* Footer Navigation */}
-                <motion.div 
-                    variants={itemVariants}
-                    className="mt-10 pt-6 border-t border-stone-100"
-                >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                        <Link 
-                            href={route('login')}
-                            className="group flex items-center justify-center gap-2 text-xs font-bold text-stone-600 bg-stone-50 border border-stone-200 px-5 py-3 rounded-xl hover:bg-stone-100 hover:border-stone-300 transition-all duration-300 shadow-sm hover:shadow uppercase tracking-wider"
-                        >
-                            <User size={14} className="text-stone-400 group-hover:text-stone-600 transition-colors group-hover:scale-110" />
-                            <span>Log in</span>
-                        </Link>
-                        
-                        <Link 
-                            href="/artisan/register" 
-                            className="group flex items-center justify-center gap-2 text-xs font-bold text-clay-700 bg-clay-50 border border-clay-200 px-5 py-3 rounded-xl hover:bg-clay-100 hover:border-clay-300 transition-all duration-300 shadow-sm hover:shadow uppercase tracking-wider"
-                        >
-                            <Store size={14} className="text-clay-500 group-hover:text-clay-700 transition-colors group-hover:scale-110" />
-                            <span>Become an Artisan</span>
-                        </Link>
-                    </div>
-                </motion.div>
+                {/* Social Signup and Switch-to-Login Links */}
+                <RegisterSocialAndLinks itemVariants={itemVariants} />
             </motion.div>
 
             {/* Legal Modal */}
@@ -570,4 +486,3 @@ export default function Register() {
         </GuestLayout>
     );
 }
-
