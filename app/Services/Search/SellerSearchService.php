@@ -488,10 +488,10 @@ class SellerSearchService
             ->get()
             ->map(fn ($sr) => [
                 'id' => "sr-{$sr->id}",
-                'title' => "Stock Request: " . ($sr->supply->name ?? 'Supply'),
-                'subtitle' => "Qty: {$sr->quantity} " . ($sr->supply->unit ?? 'units') . " • Status: " . ucfirst($sr->status) . ($sr->total_cost ? " • ₱" . number_format((float) $sr->total_cost, 2) : ''),
+                'title' => "Stock Request: " . ($sr->supply?->name ?? 'Supply'),
+                'subtitle' => "Qty: {$sr->quantity} " . ($sr->supply?->unit ?? 'units') . " • Status: " . ucfirst($sr->status) . ($sr->total_cost ? " • ₱" . number_format((float) $sr->total_cost, 2) : ''),
                 'type' => 'Stock Request',
-                'url' => $this->safeRoute('stock-requests.index', ['search' => $sr->supply->name ?? '']),
+                'url' => $this->safeRoute('stock-requests.index', ['search' => $sr->supply?->name ?? '']),
                 'icon' => 'truck',
             ])->toArray();
     }
@@ -516,10 +516,10 @@ class SellerSearchService
             ->get()
             ->map(fn ($r) => [
                 'id' => "rev-{$r->id}",
-                'title' => "Review: " . ($r->product->name ?? 'Product'),
-                'subtitle' => "★ {$r->rating}/5 • By " . ($r->user->name ?? 'Buyer') . " • \"" . substr($r->comment ?? '', 0, 35) . "...\"",
+                'title' => "Review: " . ($r->product?->name ?? 'Product'),
+                'subtitle' => "★ {$r->rating}/5 • By " . ($r->user?->name ?? 'Buyer') . " • \"" . substr($r->comment ?? '', 0, 35) . "...\"",
                 'type' => 'Review',
-                'url' => route('reviews.index', ['search' => $r->user->name ?? '']),
+                'url' => route('reviews.index', ['search' => $r->user?->name ?? '']),
                 'icon' => 'star',
             ])->toArray();
     }
@@ -536,10 +536,10 @@ class SellerSearchService
             ->get()
             ->map(fn ($s) => [
                 'id' => "sell-spons-{$s->id}",
-                'title' => "Sponsorship: " . ($s->product->name ?? 'Product'),
+                'title' => "Sponsorship: " . ($s->product?->name ?? 'Product'),
                 'subtitle' => "Status: " . ucfirst($s->status),
                 'type' => 'Sponsorship',
-                'url' => route('seller.sponsorships', ['search' => $s->product->name ?? '']),
+                'url' => route('seller.sponsorships', ['search' => $s->product?->name ?? '']),
                 'icon' => 'award',
             ])->toArray();
     }
@@ -693,7 +693,7 @@ class SellerSearchService
             ->map(fn ($a) => [
                 'id' => "seller-approval-{$a->id}",
                 'title' => "Request: {$a->title}",
-                'subtitle' => "Submitted by " . ($a->requester->name ?? 'Staff') . " • Domain: " . ucfirst(str_replace('_', ' ', (string) $a->domain)) . " • Status: " . ucfirst((string) $a->status),
+                'subtitle' => "Submitted by " . ($a->requester?->name ?? 'Staff') . " • Domain: " . ucfirst(str_replace('_', ' ', (string) $a->domain)) . " • Status: " . ucfirst((string) $a->status),
                 'type' => 'Team Request',
                 'url' => $this->safeRoute('seller.approvals.index', [
                     'status' => $a->status === 'pending' ? 'pending' : 'reviewed',

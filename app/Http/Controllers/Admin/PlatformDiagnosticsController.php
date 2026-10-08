@@ -100,8 +100,8 @@ class PlatformDiagnosticsController extends Controller
                     $a->id,
                     $a->action,
                     $a->description,
-                    $a->user->name ?? 'System',
-                    $a->user->role ?? 'N/A',
+                    $a->user?->name ?? 'System',
+                    $a->user?->role ?? 'N/A',
                     $metadataStr,
                     $a->created_at->toIso8601String(),
                 ]);
@@ -154,9 +154,9 @@ class PlatformDiagnosticsController extends Controller
                 'metadata' => $a->metadata,
                 'created_at' => $a->created_at->toIso8601String(),
                 'user' => [
-                    'name' => $a->user->name ?? 'System',
-                    'role' => $a->user->role ?? 'N/A',
-                    'avatar' => $a->user->avatar ?? null,
+                    'name' => $a->user?->name ?? 'System',
+                    'role' => $a->user?->role ?? 'N/A',
+                    'avatar' => $a->user?->avatar ?? null,
                     'avatar_url' => $a->user?->avatar_url,
                 ]
             ]);
@@ -197,8 +197,8 @@ class PlatformDiagnosticsController extends Controller
                 'metadata' => $a->metadata,
                 'created_at' => $a->created_at->toIso8601String(),
                 'user' => [
-                    'name' => $a->user->name ?? 'System',
-                    'role' => $a->user->role ?? 'N/A',
+                    'name' => $a->user?->name ?? 'System',
+                    'role' => $a->user?->role ?? 'N/A',
                 ],
             ]);
 

@@ -264,9 +264,9 @@ class BuyerOrderController extends Controller
                     'discount_info' => $product->discount_info,
                     'qty' => $item->quantity,
                     'img' => $product->img,
-                    'seller' => $product->user->shop_name ?? $product->user->name ?? 'Shop',
-                    'shop_name' => $product->user->shop_name ?? $product->user->name ?? 'Shop',
-                    'location' => $product->user->city ?? 'Cavite',
+                    'seller' => $product->user?->shop_name ?? $product->user?->name ?? 'Shop',
+                    'shop_name' => $product->user?->shop_name ?? $product->user?->name ?? 'Shop',
+                    'location' => $product->user?->city ?? 'Cavite',
                 ];
             }
 

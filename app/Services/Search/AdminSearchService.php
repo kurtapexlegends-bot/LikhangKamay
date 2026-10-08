@@ -69,7 +69,7 @@ class AdminSearchService
             ->map(fn ($o) => [
                 'id' => "admin-order-{$o->id}",
                 'title' => "Order: {$o->order_number}",
-                'subtitle' => "₱" . number_format((float) $o->total_amount, 2) . " • Customer: {$o->customer_name} • Shop: " . ($o->artisan->shop_name ?? $o->artisan->name ?? 'Artisan') . " • Status: {$o->status}",
+                'subtitle' => "₱" . number_format((float) $o->total_amount, 2) . " • Customer: {$o->customer_name} • Shop: " . ($o->artisan?->shop_name ?? $o->artisan?->name ?? 'Artisan') . " • Status: {$o->status}",
                 'type' => 'Order',
                 'url' => route('admin.disputes.index', ['search' => $o->order_number]),
                 'icon' => 'shopping-cart',
@@ -88,7 +88,7 @@ class AdminSearchService
             ->map(fn ($a) => [
                 'id' => "admin-log-{$a->id}",
                 'title' => "Audit: {$a->description}",
-                'subtitle' => "Actor: " . ($a->user->name ?? 'System') . " • " . ($a->created_at ? $a->created_at->diffForHumans() : 'Recent'),
+                'subtitle' => "Actor: " . ($a->user?->name ?? 'System') . " • " . ($a->created_at ? $a->created_at->diffForHumans() : 'Recent'),
                 'type' => 'Activity Log',
                 'url' => route('admin.operations', ['search' => $a->description]),
                 'icon' => 'activity',
@@ -155,7 +155,7 @@ class AdminSearchService
             ->map(fn ($p) => [
                 'id' => "admin-prod-{$p->id}",
                 'title' => $p->name,
-                'subtitle' => "SKU: {$p->sku} • ₱" . number_format((float) $p->price, 2) . " • Shop: " . ($p->user->shop_name ?? $p->user->name ?? 'Artisan') . " • Status: {$p->status}",
+                'subtitle' => "SKU: {$p->sku} • ₱" . number_format((float) $p->price, 2) . " • Shop: " . ($p->user?->shop_name ?? $p->user?->name ?? 'Artisan') . " • Status: {$p->status}",
                 'type' => 'Product',
                 'url' => route('admin.catalog.index', ['tab' => 'moderation', 'search' => $p->sku ?: $p->name]),
                 'icon' => 'package',
@@ -182,10 +182,10 @@ class AdminSearchService
             ->get()
             ->map(fn ($d) => [
                 'id' => "admin-disp-{$d->id}",
-                'title' => "Dispute: Order #" . ($d->order->order_number ?? $d->order_id),
+                'title' => "Dispute: Order #" . ($d->order?->order_number ?? $d->order_id),
                 'subtitle' => "Reason: " . substr($d->reason, 0, 35) . "... • Status: " . ucfirst($d->status),
                 'type' => 'Dispute',
-                'url' => route('admin.disputes.index', ['search' => $d->order->order_number ?? '']),
+                'url' => route('admin.disputes.index', ['search' => $d->order?->order_number ?? '']),
                 'icon' => 'rotate-ccw',
             ])->toArray();
     }
@@ -206,8 +206,8 @@ class AdminSearchService
             ->get()
             ->map(fn ($rd) => [
                 'id' => "admin-rev-disp-{$rd->id}",
-                'title' => "Review Dispute #" . $rd->id . ": " . ($rd->review->product->name ?? 'Product'),
-                'subtitle' => "Shop: " . ($rd->sellerOwner->shop_name ?? $rd->sellerOwner->name ?? 'Artisan') . " • Reason: " . substr($rd->reason, 0, 30) . "... • Status: " . ucfirst($rd->status),
+                'title' => "Review Dispute #" . $rd->id . ": " . ($rd->review?->product?->name ?? 'Product'),
+                'subtitle' => "Shop: " . ($rd->sellerOwner?->shop_name ?? $rd->sellerOwner?->name ?? 'Artisan') . " • Reason: " . substr($rd->reason, 0, 30) . "... • Status: " . ucfirst($rd->status),
                 'type' => 'Review Dispute',
                 'url' => route('admin.compliance', ['tab' => 'disputes', 'search' => $rd->id]),
                 'icon' => 'message-square',
@@ -233,7 +233,7 @@ class AdminSearchService
             ->map(fn ($p) => [
                 'id' => "admin-payout-{$p->id}",
                 'title' => "Payout: ₱" . number_format((float) $p->amount, 2) . " (" . ($p->reference_number ?: "Ref #{$p->id}") . ")",
-                'subtitle' => "Artisan: " . ($p->user->shop_name ?? $p->user->name ?? 'Artisan') . " • Method: {$p->payout_method} • Status: {$p->status}",
+                'subtitle' => "Artisan: " . ($p->user?->shop_name ?? $p->user?->name ?? 'Artisan') . " • Method: {$p->payout_method} • Status: {$p->status}",
                 'type' => 'Payout',
                 'url' => route('admin.payouts.index', ['search' => $p->reference_number ?: $p->id]),
                 'icon' => 'trending-up',
@@ -255,10 +255,10 @@ class AdminSearchService
             ->get()
             ->map(fn ($s) => [
                 'id' => "spons-{$s->id}",
-                'title' => "Sponsorship: " . ($s->product->name ?? 'Product'),
-                'subtitle' => "Artisan: " . ($s->user->shop_name ?? $s->user->name ?? 'Artisan') . " • Status: " . ucfirst($s->status),
+                'title' => "Sponsorship: " . ($s->product?->name ?? 'Product'),
+                'subtitle' => "Artisan: " . ($s->user?->shop_name ?? $s->user?->name ?? 'Artisan') . " • Status: " . ucfirst($s->status),
                 'type' => 'Sponsorship',
-                'url' => route('admin.catalog.index', ['tab' => 'sponsorships', 'search' => $s->product->name ?? '']),
+                'url' => route('admin.catalog.index', ['tab' => 'sponsorships', 'search' => $s->product?->name ?? '']),
                 'icon' => 'star',
             ])->toArray();
     }

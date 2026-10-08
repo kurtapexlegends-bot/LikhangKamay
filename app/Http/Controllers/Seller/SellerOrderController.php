@@ -215,7 +215,7 @@ class SellerOrderController extends Controller
                     'address' => $order->shipping_address,
                     'phone' => $order->shipping_contact_phone,
                     'items' => $order->items->map(fn($i) => [
-                        'name' => $i->product->name,
+                        'name' => $i->product?->name ?? $i->product_name ?? 'Item',
                         'qty' => $i->quantity,
                     ]),
                     'shipping_method' => $order->shipping_method,

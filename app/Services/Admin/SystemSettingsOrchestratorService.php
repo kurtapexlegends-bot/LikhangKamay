@@ -57,7 +57,7 @@ class SystemSettingsOrchestratorService
                 return [
                     'id' => $req->id,
                     'user' => $req->user,
-                    'product_name' => $req->product->name ?? 'Unknown Product',
+                    'product_name' => $req->product?->name ?? 'Unknown Product',
                     'status' => $req->status,
                     'date' => $req->created_at->format('M d, Y h:i A'),
                 ];
@@ -158,8 +158,8 @@ class SystemSettingsOrchestratorService
             fputcsv($file, ['Artisan', 'Product', 'Status', 'Date']);
             foreach ($sponsorshipRequests as $req) {
                 fputcsv($file, [
-                    $req->user->name ?? '',
-                    $req->product->name ?? 'Unknown Product',
+                    $req->user?->name ?? '',
+                    $req->product?->name ?? 'Unknown Product',
                     ucfirst($req->status),
                     $req->created_at->format('M d, Y h:i A'),
                 ]);

@@ -51,7 +51,7 @@ class PayoutController extends Controller
                 'amount' => (float) $payout->amount,
                 'payout_method' => $payout->payout_method,
                 'payout_account_name' => $payout->payout_account_name,
-                'artisan' => [
+                'artisan' => $payout->user ? [
                     'id' => $payout->user->id,
                     'name' => $payout->user->name,
                     'shop_name' => $payout->user->shop_name,
@@ -61,9 +61,9 @@ class PayoutController extends Controller
                     'avatar' => $payout->user->avatar,
                     'avatar_url' => $payout->user->avatar_url,
                     'updated_at' => $payout->user->updated_at?->toIso8601String(),
-                ],
-                'artisan_name' => $payout->user->name ?? 'Unknown Artisan',
-                'shop_name' => $payout->user->shop_name ?? 'Unknown Shop',
+                ] : null,
+                'artisan_name' => $payout->user?->name ?? 'Unknown Artisan',
+                'shop_name' => $payout->user?->shop_name ?? 'Unknown Shop',
                 'payout_account_number' => $payout->payout_account_number,
                 'reference_number' => $payout->reference_number,
                 'created_at' => $payout->created_at->format('M d, Y h:i A'),
