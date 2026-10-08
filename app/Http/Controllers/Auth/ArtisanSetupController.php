@@ -147,14 +147,18 @@ class ArtisanSetupController extends Controller
 
                     // Check image resolution if it's an image
                     if (str_starts_with($file->getMimeType(), 'image/')) {
-                        $realPath = $file->getRealPath();
-                        $dimensions = $realPath ? @getimagesize($realPath) : null;
-                        if ($dimensions) {
-                            $width = $dimensions[0];
-                            $height = $dimensions[1];
-                            if ($width < 300 || $height < 300) {
-                                $flags[] = 'low_resolution';
+                        try {
+                            $realPath = $file->getRealPath();
+                            $dimensions = ($realPath && file_exists($realPath)) ? @getimagesize($realPath) : null;
+                            if ($dimensions) {
+                                $width = $dimensions[0];
+                                $height = $dimensions[1];
+                                if ($width < 300 || $height < 300) {
+                                    $flags[] = 'low_resolution';
+                                }
                             }
+                        } catch (\Throwable $e) {
+                            // Defensive guard: never fail upload if metadata reading encounters I/O issues
                         }
                     }
 

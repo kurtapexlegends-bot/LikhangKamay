@@ -183,7 +183,7 @@ export default function StockRequestsTable({
                                             <>
                                                 <Link
                                                     href={route('seller.supply-hub.index', { search: req.supply?.name })}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 text-white text-xs font-bold rounded-xl hover:bg-stone-800 transition-all active:scale-95 shadow-2xs min-h-[34px]"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 text-white text-xs font-bold rounded-xl hover:bg-stone-800 transition-all active:scale-95 shadow-2xs min-h-[44px] sm:min-h-[36px]"
                                                     title="Source on Supply Hub"
                                                 >
                                                     <Store size={13} /> 
@@ -192,7 +192,7 @@ export default function StockRequestsTable({
                                                 <button 
                                                     disabled={!canEdit || processingId === `ordered-${req.id}`}
                                                     onClick={() => onMarkOrdered(req)} 
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-stone-200 text-stone-700 text-xs font-bold rounded-xl hover:bg-stone-50 transition-all active:scale-95 shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 min-h-[34px]"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-stone-200 text-stone-700 text-xs font-bold rounded-xl hover:bg-stone-50 transition-all active:scale-95 shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-[36px]"
                                                     title="Mark as Ordered"
                                                 >
                                                     <Truck size={13} /> 
@@ -204,7 +204,7 @@ export default function StockRequestsTable({
                                             <button 
                                                 disabled={!canEdit || processingId === `receive-${req.id}`} 
                                                 onClick={() => onReceiveClick(req)} 
-                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-xl hover:bg-amber-700 transition-all active:scale-95 shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 min-h-[34px]"
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-xl hover:bg-amber-700 transition-all active:scale-95 shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-[36px]"
                                             >
                                                 <Package size={13} /> 
                                                 <span>Receive</span>
@@ -214,7 +214,7 @@ export default function StockRequestsTable({
                                             <button 
                                                 disabled={!canEdit || processingId === `transfer-${req.id}`} 
                                                 onClick={() => onTransferClick(req)} 
-                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition-all active:scale-95 shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 min-h-[34px]"
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition-all active:scale-95 shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-[36px]"
                                             >
                                                 <ArrowRight size={13} /> 
                                                 <span>Transfer</span>

@@ -27,26 +27,26 @@ export default function External3DToolLink({ className = '' }) {
                     href={MESHY_APP_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 hover:border-clay-400 hover:bg-stone-50 text-xs font-semibold text-stone-700 hover:text-clay-700 transition group shadow-2xs min-h-[36px]"
+                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-white border border-stone-200 hover:border-clay-400 hover:bg-stone-50 text-xs font-semibold text-stone-700 hover:text-clay-700 transition group shadow-2xs min-h-[44px]"
                 >
                     <div className="min-w-0 pr-1">
                         <span className="block truncate font-bold text-xs text-stone-800 group-hover:text-clay-700">Meshy AI</span>
                         <span className="block text-[10px] text-stone-400 group-hover:text-clay-500 truncate">Photo to 3D</span>
                     </div>
-                    <ArrowUpRight size={12} className="text-stone-400 group-hover:text-clay-600 shrink-0" />
+                    <ArrowUpRight size={13} className="text-stone-400 group-hover:text-clay-600 shrink-0" />
                 </a>
 
                 <a
                     href={TRIPO_3D_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 hover:border-clay-400 hover:bg-stone-50 text-xs font-semibold text-stone-700 hover:text-clay-700 transition group shadow-2xs min-h-[36px]"
+                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-white border border-stone-200 hover:border-clay-400 hover:bg-stone-50 text-xs font-semibold text-stone-700 hover:text-clay-700 transition group shadow-2xs min-h-[44px]"
                 >
                     <div className="min-w-0 pr-1">
                         <span className="block truncate font-bold text-xs text-stone-800 group-hover:text-clay-700">Tripo 3D</span>
                         <span className="block text-[10px] text-stone-400 group-hover:text-clay-500 truncate">Fast generator</span>
                     </div>
-                    <ArrowUpRight size={12} className="text-stone-400 group-hover:text-clay-600 shrink-0" />
+                    <ArrowUpRight size={13} className="text-stone-400 group-hover:text-clay-600 shrink-0" />
                 </a>
             </div>
 

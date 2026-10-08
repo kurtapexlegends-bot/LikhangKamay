@@ -95,34 +95,34 @@ export default function SuppliesMobileCards({
                             <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-stone-100">
                                 <Link
                                     href={route('seller.supply-hub.index', { search: supply.name })}
-                                    className="p-2 text-stone-700 hover:text-white hover:bg-stone-900 border border-stone-200 rounded-xl transition min-w-[36px] min-h-[36px] flex items-center justify-center bg-white"
+                                    className="p-2 text-stone-700 hover:text-white hover:bg-stone-900 border border-stone-200 rounded-xl transition min-w-[44px] min-h-[44px] flex items-center justify-center bg-white"
                                     title="Source on Supply Hub"
                                 >
-                                    <Store size={14} />
+                                    <Store size={15} />
                                 </Link>
                                 <button
                                     disabled={!canEditProcurement}
                                     onClick={() => onEdit(supply)}
-                                    className="p-2 text-clay-700 hover:bg-clay-50 border border-stone-200 rounded-xl transition min-w-[36px] min-h-[36px] flex items-center justify-center bg-white disabled:opacity-50 cursor-pointer"
+                                    className="p-2 text-clay-700 hover:bg-clay-50 border border-stone-200 rounded-xl transition min-w-[44px] min-h-[44px] flex items-center justify-center bg-white disabled:opacity-50 cursor-pointer"
                                     title="Edit Supply"
                                 >
-                                    <Pencil size={14} />
+                                    <Pencil size={15} />
                                 </button>
                                 <button
                                     disabled={!canEditStockRequests}
                                     onClick={() => onRequestRestock(supply)}
-                                    className="p-2 text-stone-500 hover:bg-stone-100 border border-stone-200 rounded-xl transition min-w-[36px] min-h-[36px] flex items-center justify-center bg-white disabled:opacity-50 cursor-pointer"
+                                    className="p-2 text-stone-500 hover:bg-stone-100 border border-stone-200 rounded-xl transition min-w-[44px] min-h-[44px] flex items-center justify-center bg-white disabled:opacity-50 cursor-pointer"
                                     title="Request Restock"
                                 >
-                                    <Banknote size={14} />
+                                    <Banknote size={15} />
                                 </button>
                                 <button
                                     disabled={!canEditProcurement}
                                     onClick={() => onDelete(supply)}
-                                    className="p-2 text-rose-600 hover:bg-rose-50 border border-stone-200 rounded-xl transition min-w-[36px] min-h-[36px] flex items-center justify-center bg-white disabled:opacity-50 cursor-pointer"
+                                    className="p-2 text-rose-600 hover:bg-rose-50 border border-stone-200 rounded-xl transition min-w-[44px] min-h-[44px] flex items-center justify-center bg-white disabled:opacity-50 cursor-pointer"
                                     title="Delete"
                                 >
-                                    <Trash2 size={14} />
+                                    <Trash2 size={15} />
                                 </button>
                             </div>
                         </motion.div>

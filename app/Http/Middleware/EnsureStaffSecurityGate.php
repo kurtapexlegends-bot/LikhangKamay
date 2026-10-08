@@ -69,6 +69,7 @@ class EnsureStaffSecurityGate
     protected array $completedRoutePrefixes = [
         'staff.dashboard',
         'staff.deliveries',
+        'deliveries.',
         'team-messages.',
         'profile.',
         'notifications.',

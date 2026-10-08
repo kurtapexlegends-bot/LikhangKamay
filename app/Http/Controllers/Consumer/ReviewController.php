@@ -122,7 +122,7 @@ class ReviewController extends Controller
 
             if ($review->photos) {
                 foreach ($review->photos as $oldPhoto) {
-                    Storage::disk('public')->delete($oldPhoto);
+                    StorageUrl::delete($oldPhoto);
                 }
             }
         } else {
@@ -141,6 +141,12 @@ class ReviewController extends Controller
     public function destroy(int $id)
     {
         $review = Review::where('user_id', Auth::id())->findOrFail($id);
+
+        if ($review->photos) {
+            foreach ($review->photos as $photo) {
+                StorageUrl::delete($photo);
+            }
+        }
 
         $review->delete();
 

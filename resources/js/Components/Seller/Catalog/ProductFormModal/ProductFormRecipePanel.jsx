@@ -38,14 +38,14 @@ export default function ProductFormRecipePanel({
                         <button
                             type="button"
                             onClick={() => setData("production_method", "resell")}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition min-h-[36px] ${data.production_method === "resell" ? "bg-white text-clay-700 shadow-sm" : "text-stone-500 hover:text-stone-700"}`}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold transition min-h-[44px] ${data.production_method === "resell" ? "bg-white text-clay-700 shadow-sm" : "text-stone-500 hover:text-stone-700"}`}
                         >
                             Ready-to-Sell
                         </button>
                         <button
                             type="button"
                             onClick={() => setData("production_method", "manufactured")}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition min-h-[36px] ${data.production_method === "manufactured" ? "bg-white text-clay-700 shadow-sm" : "text-stone-500 hover:text-stone-700"}`}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold transition min-h-[44px] ${data.production_method === "manufactured" ? "bg-white text-clay-700 shadow-sm" : "text-stone-500 hover:text-stone-700"}`}
                         >
                             Crafted / Made with Materials
                         </button>

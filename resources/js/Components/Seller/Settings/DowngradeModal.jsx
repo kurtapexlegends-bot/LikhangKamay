@@ -107,7 +107,7 @@ export default function DowngradeModal({
                             <button
                                 type="button"
                                 onClick={handleClose}
-                                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-stone-600 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 min-h-[38px]"
+                                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-stone-600 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 min-h-[44px]"
                             >
                                 Keep Current Plan
                             </button>
@@ -115,7 +115,7 @@ export default function DowngradeModal({
                                 type="button"
                                 onClick={() => onScheduleRenewal?.(targetPlan?.value)}
                                 disabled={isProcessing}
-                                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-xl transition-all shadow-sm min-h-[38px] disabled:opacity-50"
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 rounded-xl transition-all shadow-sm min-h-[44px] disabled:opacity-50"
                             >
                                 {isProcessing ? 'Scheduling...' : `Set ${formatPlanName(targetPlan?.value)} as Renewal Plan`}
                                 {!isProcessing && <ArrowRight size={13} />}
@@ -169,7 +169,7 @@ export default function DowngradeModal({
                             <button
                                 type="button"
                                 onClick={handleClose}
-                                className="w-full sm:w-auto px-4 py-2.5 text-xs font-medium text-stone-600 bg-white border border-stone-300 rounded-xl hover:bg-stone-50 min-h-[38px]"
+                                className="w-full sm:w-auto px-4 py-2.5 text-xs font-medium text-stone-600 bg-white border border-stone-300 rounded-xl hover:bg-stone-50 min-h-[44px]"
                             >
                                 Cancel
                             </button>
@@ -177,7 +177,7 @@ export default function DowngradeModal({
                                 type="button"
                                 onClick={confirmDowngrade}
                                 disabled={isProcessing}
-                                className={`w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-white rounded-xl transition-all min-h-[38px] ${
+                                className={`w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-white rounded-xl transition-all min-h-[44px] ${
                                     isProcessing ? 'bg-stone-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'
                                 }`}
                             >

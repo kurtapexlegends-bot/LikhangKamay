@@ -94,7 +94,7 @@ export default function SuppliesDesktopTable({
                                         <div className="flex items-center justify-end gap-1">
                                             <Link
                                                 href={route('seller.supply-hub.index', { search: supply.name })}
-                                                className="p-2 text-stone-700 hover:text-white hover:bg-stone-900 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs"
+                                                className="p-2 text-stone-700 hover:text-white hover:bg-stone-900 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center bg-white shadow-2xs"
                                                 title="Source on Supply Hub"
                                             >
                                                 <Store size={14} />
@@ -102,7 +102,7 @@ export default function SuppliesDesktopTable({
                                             <button
                                                 disabled={!canEditProcurement}
                                                 onClick={() => onEdit(supply)}
-                                                className="p-2 text-clay-700 hover:text-clay-900 hover:bg-clay-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                                                className="p-2 text-clay-700 hover:text-clay-900 hover:bg-clay-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                                                 title="Edit Supply"
                                             >
                                                 <Pencil size={14} />
@@ -110,7 +110,7 @@ export default function SuppliesDesktopTable({
                                             <button
                                                 disabled={!canEditStockRequests}
                                                 onClick={() => onRequestRestock(supply)}
-                                                className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                                                className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                                                 title="Request Restock"
                                             >
                                                 <Banknote size={14} />
@@ -118,7 +118,7 @@ export default function SuppliesDesktopTable({
                                             <button
                                                 disabled={!canEditProcurement}
                                                 onClick={() => onDelete(supply)}
-                                                className="p-2 text-rose-600 hover:bg-rose-50 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                                                className="p-2 text-rose-600 hover:bg-rose-50 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                                                 title="Delete"
                                             >
                                                 <Trash2 size={14} />

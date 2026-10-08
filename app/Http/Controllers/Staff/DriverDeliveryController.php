@@ -309,9 +309,11 @@ class DriverDeliveryController extends Controller
 
         $isBuyer = $order->user_id === $user->id;
         $isSeller = $order->artisan_id === $user->id;
+        $isAssignedDriver = $delivery->driver_user_id === $user->id ||
+            ($user->employee && $delivery->driver_employee_id === $user->employee->id);
         $isSuperAdmin = in_array($user->role, ['super_admin', 'admin'], true);
 
-        if (!$isBuyer && !$isSeller && !$isSuperAdmin) {
+        if (!$isBuyer && !$isSeller && !$isAssignedDriver && !$isSuperAdmin) {
             return response()->json(['error' => 'Unauthorized access to delivery telemetry.'], 403);
         }
 

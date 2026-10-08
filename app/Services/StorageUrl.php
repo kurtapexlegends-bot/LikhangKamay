@@ -33,10 +33,7 @@ class StorageUrl
 
         // Strip any accidental leading '/storage/' or 'storage/' prefix
         $cleanPath = preg_replace('#^/?storage/#', '', $path);
-
-        $defaultDisk = (string) config('filesystems.default', 'public');
-        $publicDriver = (string) config('filesystems.disks.public.driver', 'local');
-        $disk = ($defaultDisk === 's3' || $publicDriver === 's3') ? 's3' : 'public';
+        $disk = self::disk();
 
         try {
             /** @var \Illuminate\Filesystem\FilesystemAdapter $adapter */
@@ -44,6 +41,35 @@ class StorageUrl
             return $adapter->url($cleanPath);
         } catch (\Throwable $e) {
             return asset('storage/' . ltrim($cleanPath, '/'));
+        }
+    }
+
+    /**
+     * Resolve the active storage disk (s3 in production/cloud, public locally).
+     */
+    public static function disk(): string
+    {
+        $defaultDisk = (string) config('filesystems.default', 'public');
+        $publicDriver = (string) config('filesystems.disks.public.driver', 'local');
+
+        return ($defaultDisk === 's3' || $publicDriver === 's3') ? 's3' : 'public';
+    }
+
+    /**
+     * Safely delete a file from the active storage disk.
+     */
+    public static function delete(?string $path): bool
+    {
+        if (empty($path)) {
+            return false;
+        }
+
+        $cleanPath = preg_replace('#^/?storage/#', '', $path);
+
+        try {
+            return Storage::disk(self::disk())->delete($cleanPath);
+        } catch (\Throwable $e) {
+            return false;
         }
     }
 }

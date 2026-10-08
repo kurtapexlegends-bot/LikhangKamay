@@ -139,21 +139,21 @@ export default function DeliveryRouteMapModal({
                             href={googleMapsUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2 text-xs font-bold text-white hover:bg-stone-800 transition shadow-2xs min-h-[38px]"
+                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-stone-900 px-4 py-2.5 text-xs font-bold text-white hover:bg-stone-800 transition shadow-2xs min-h-[44px]"
                         >
-                            <Navigation size={13} className="text-clay-400" />
+                            <Navigation size={14} className="text-clay-400" />
                             <span>Google Maps</span>
-                            <ExternalLink size={12} className="text-stone-400" />
+                            <ExternalLink size={13} className="text-stone-400" />
                         </a>
                         <a
                             href={wazeUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 transition shadow-2xs min-h-[38px]"
+                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-xs font-bold text-stone-700 hover:bg-stone-100 transition shadow-2xs min-h-[44px]"
                         >
-                            <Navigation size={13} className="text-stone-500" />
+                            <Navigation size={14} className="text-stone-500" />
                             <span>Waze</span>
-                            <ExternalLink size={12} className="text-stone-400" />
+                            <ExternalLink size={13} className="text-stone-400" />
                         </a>
                     </div>
                 </div>
