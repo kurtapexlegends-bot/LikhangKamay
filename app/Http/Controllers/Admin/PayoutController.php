@@ -30,171 +30,20 @@ class PayoutController extends Controller
     {
         Gate::authorize('admin-action');
 
-        // 1. Fetch approved artisans
-        $artisanUsers = User::where('role', 'artisan')
-            ->where('artisan_status', 'approved')
-            ->orderBy('shop_name', 'asc')
-            ->get();
+        $artisans = $this->ledgerService->getArtisansPayoutLedgerSummary();
+        $payoutHistory = $this->getPayoutHistory();
+        $metrics = $this->calculatePayoutMetrics($artisans);
 
-        $artisanIds = $artisanUsers->pluck('id')->all();
+        return Inertia::render('Admin/Payouts/PayoutManager', [
+            'artisans' => $artisans,
+            'payoutHistory' => $payoutHistory,
+            'metrics' => $metrics,
+        ]);
+    }
 
-        // 1a. Pre-aggregate completed sales metrics
-        $completedSalesAggregates = Order::whereIn('artisan_id', $artisanIds)
-            ->where('status', 'Completed')
-            ->selectRaw('artisan_id, SUM(merchandise_subtotal) as gross_sales, SUM(platform_commission_amount) as platform_fees, SUM(seller_net_amount) as net_sales')
-            ->groupBy('artisan_id')
-            ->get()
-            ->keyBy('artisan_id');
-
-        // 1b. Pre-aggregate COD completed sales (cash collected directly by artisan/courier, excluded from platform payouts)
-        $codSalesAggregates = Order::whereIn('artisan_id', $artisanIds)
-            ->where('status', 'Completed')
-            ->where('payment_method', 'COD')
-            ->selectRaw('artisan_id, SUM(seller_net_amount) as cod_sales')
-            ->groupBy('artisan_id')
-            ->get()
-            ->keyBy('artisan_id');
-
-        // 1c. Pre-aggregate stock request expenses
-        $stockExpenseAggregates = DB::table('stock_requests')
-            ->whereIn('user_id', $artisanIds)
-            ->whereIn('status', [
-                \App\Models\StockRequest::STATUS_ACCOUNTING_APPROVED,
-                \App\Models\StockRequest::STATUS_ORDERED,
-                \App\Models\StockRequest::STATUS_PARTIALLY_RECEIVED,
-                \App\Models\StockRequest::STATUS_RECEIVED,
-                \App\Models\StockRequest::STATUS_COMPLETED,
-            ])
-            ->selectRaw('user_id, SUM(total_cost) as total_stock_expenses')
-            ->groupBy('user_id')
-            ->get()
-            ->keyBy('user_id');
-
-        // 1d. Pre-aggregate payroll expenses
-        $payrollExpenseAggregates = DB::table('payrolls')
-            ->whereIn('user_id', $artisanIds)
-            ->where('status', 'Paid')
-            ->selectRaw('user_id, SUM(total_amount) as total_payroll_expenses')
-            ->groupBy('user_id')
-            ->get()
-            ->keyBy('user_id');
-
-        // 1e. Pre-aggregate completed payouts
-        $payoutAggregates = DB::table('payouts')
-            ->whereIn('user_id', $artisanIds)
-            ->where('status', 'Completed')
-            ->selectRaw('user_id, SUM(amount) as total_payouts')
-            ->groupBy('user_id')
-            ->get()
-            ->keyBy('user_id');
-
-        // 1f. Pre-aggregate dispute holds
-        $disputeHoldAggregates = Order::whereIn('artisan_id', $artisanIds)
-            ->where('status', 'Completed')
-            ->where(function ($query) {
-                $query->whereHas('dispute', function ($q) {
-                    $q->whereIn('status', ['open', 'escalated', 'under_review']);
-                })->orWhere(function ($q) {
-                    $q->whereNotNull('return_reason')
-                      ->whereNull('replacement_resolved_at')
-                      ->where('status', '!=', 'Refunded');
-                });
-            })
-            ->selectRaw('artisan_id, SUM(seller_net_amount) as total_held')
-            ->groupBy('artisan_id')
-            ->get()
-            ->keyBy('artisan_id');
-
-        // 1g. Pre-aggregate orders in progress
-        $ordersInProgressAggregates = Order::whereIn('artisan_id', $artisanIds)
-            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
-            ->selectRaw('artisan_id, SUM(seller_net_amount) as total_in_progress')
-            ->groupBy('artisan_id')
-            ->get()
-            ->keyBy('artisan_id');
-
-        // 1h. Pre-fetch recent completed orders
-        $recentOrdersGrouped = Order::whereIn('artisan_id', $artisanIds)
-            ->where('status', 'Completed')
-            ->select('id', 'artisan_id', 'order_number', 'customer_name', 'merchandise_subtotal', 'platform_commission_amount', 'seller_net_amount', 'created_at')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->groupBy('artisan_id');
-
-        $artisans = $artisanUsers->map(function ($user) use (
-            $completedSalesAggregates,
-            $codSalesAggregates,
-            $stockExpenseAggregates,
-            $payrollExpenseAggregates,
-            $payoutAggregates,
-            $disputeHoldAggregates,
-            $ordersInProgressAggregates,
-            $recentOrdersGrouped
-        ) {
-            $sales = $completedSalesAggregates->get($user->id);
-            $grossSales = (float) ($sales?->gross_sales ?? 0);
-            $platformFees = (float) ($sales?->platform_fees ?? 0);
-            $netSales = (float) ($sales?->net_sales ?? 0);
-
-            $codSales = (float) ($codSalesAggregates->get($user->id)?->cod_sales ?? 0);
-            $onlineSales = max(0.00, $netSales - $codSales);
-
-            $stockExpenses = (float) ($stockExpenseAggregates->get($user->id)?->total_stock_expenses ?? 0);
-            $payrollExpenses = (float) ($payrollExpenseAggregates->get($user->id)?->total_payroll_expenses ?? 0);
-            $totalExpenses = $stockExpenses + $payrollExpenses;
-
-            $payouts = (float) ($payoutAggregates->get($user->id)?->total_payouts ?? 0);
-            $heldForDispute = (float) ($disputeHoldAggregates->get($user->id)?->total_held ?? 0);
-            $ordersInProgress = (float) ($ordersInProgressAggregates->get($user->id)?->total_in_progress ?? 0);
-
-            $baseFunds = (float) ($user->base_funds ?? 0);
-            $currentBalance = $baseFunds + $netSales - $totalExpenses - $payouts;
-            $readyForPayout = max(0.00, $onlineSales - $totalExpenses - $payouts - $heldForDispute);
-            $readyForPayout = min($readyForPayout, max(0.00, $currentBalance));
-
-            $recentOrders = ($recentOrdersGrouped->get($user->id) ?? collect())
-                ->take(10)
-                ->map(fn($o) => [
-                    'id' => $o->id,
-                    'order_number' => $o->order_number,
-                    'customer_name' => $o->customer_name,
-                    'gross' => (float) $o->merchandise_subtotal,
-                    'fee' => (float) $o->platform_commission_amount,
-                    'net' => (float) $o->seller_net_amount,
-                    'date' => $o->created_at?->format('M d, Y') ?? 'N/A',
-                ])
-                ->values();
-
-            return [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'premium_tier' => $user->premium_tier,
-                'avatar' => $user->avatar,
-                'avatar_url' => $user->avatar_url,
-                'updated_at' => $user->updated_at?->toIso8601String(),
-                'shop_name' => $user->shop_name,
-                'shop_slug' => $user->shop_slug,
-                'payout_method' => $user->payout_method ?? 'GCash',
-                'payout_account_name' => $user->payout_account_name ?? '',
-                'payout_account_number' => $user->payout_account_number ?? '',
-                'has_payout_account' => !empty($user->payout_account_number),
-                'balance' => $readyForPayout,
-                'ready_for_payout' => $readyForPayout,
-                'ledger_balance' => $currentBalance,
-                'gross_sales' => $grossSales,
-                'platform_fees' => $platformFees,
-                'net_sales' => $netSales,
-                'payouts' => $payouts,
-                'orders_in_progress' => $ordersInProgress,
-                'held_for_dispute' => $heldForDispute,
-                'recent_orders' => $recentOrders,
-            ];
-        });
-
-        // 2. Fetch payout history
-        $payoutHistory = Payout::with('user:id,shop_name,shop_slug,name,role,premium_tier,avatar,updated_at')
+    private function getPayoutHistory()
+    {
+        return Payout::with('user:id,shop_name,shop_slug,name,role,premium_tier,avatar,updated_at')
             ->orderBy('created_at', 'desc')
             ->paginate(15)
             ->through(fn($payout) => [
@@ -220,26 +69,24 @@ class PayoutController extends Controller
                 'created_at' => $payout->created_at->format('M d, Y h:i A'),
                 'created_at_raw' => $payout->created_at->toIso8601String(),
             ]);
+    }
 
-        // 3. Compute KPI metrics
+    private function calculatePayoutMetrics(\Illuminate\Support\Collection $artisans): array
+    {
         $totalOwed = (float) $artisans->sum('ready_for_payout');
         $totalSettled = (float) DB::table('payouts')->where('status', 'Completed')->sum('amount');
         $totalPaid = (float) Payout::where('status', 'Completed')->sum('amount');
         $totalPlatformFees = (float) DB::table('orders')->where('status', 'Completed')->sum('platform_commission_amount');
         $artisansOwedCount = $artisans->where('ready_for_payout', '>', 0)->count();
 
-        return Inertia::render('Admin/Payouts/PayoutManager', [
-            'artisans' => $artisans,
-            'payoutHistory' => $payoutHistory,
-            'metrics' => [
-                'total_settled' => $totalSettled,
-                'total_platform_fees_collected' => $totalPlatformFees,
-                'total_owed' => $totalOwed,
-                'total_paid' => $totalPaid,
-                'artisans_owed_count' => $artisansOwedCount,
-                'total_artisans_count' => $artisans->count(),
-            ],
-        ]);
+        return [
+            'total_settled' => $totalSettled,
+            'total_platform_fees_collected' => $totalPlatformFees,
+            'total_owed' => $totalOwed,
+            'total_paid' => $totalPaid,
+            'artisans_owed_count' => $artisansOwedCount,
+            'total_artisans_count' => $artisans->count(),
+        ];
     }
 
     /**

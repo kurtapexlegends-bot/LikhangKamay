@@ -52,183 +52,187 @@ class ArtisanSetupController extends Controller
         $user = $request->user();
         $step = $request->input('current_step');
 
-        // --- STEP 1: SHOP INFO ---
-        if ($step == 1) {
-            $validated = $request->validate([
-                'shop_name' => ['required', 'string', 'min:3', 'max:30', Rule::unique('users', 'shop_name')->ignore($user->id)],
-                'phone_number' => 'required|string|max:20',
-                'street_address' => 'required|string|max:255',
-                'region' => 'required|string|max:255',
-                'city' => 'required|string',
-                'zip_code' => 'required|string|max:10',
-                'barangay' => 'required|string', 
-            ]);
+        return match ((int) $step) {
+            1 => $this->handleStepOne($user, $request),
+            2 => $this->handleStepTwo($user, $request),
+            3 => $this->handleStepThree($user, $request),
+            default => back()->with('error', 'Invalid step'),
+        };
+    }
 
-            $user->update([
-                'shop_name' => $validated['shop_name'],
+    private function handleStepOne(UserModel $user, Request $request)
+    {
+        $validated = $request->validate([
+            'shop_name' => ['required', 'string', 'min:3', 'max:30', Rule::unique('users', 'shop_name')->ignore($user->id)],
+            'phone_number' => 'required|string|max:20',
+            'street_address' => 'required|string|max:255',
+            'region' => 'required|string|max:255',
+            'city' => 'required|string',
+            'zip_code' => 'required|string|max:10',
+            'barangay' => 'required|string', 
+        ]);
+
+        $user->update([
+            'shop_name' => $validated['shop_name'],
+            'phone_number' => $validated['phone_number'],
+            'street_address' => $validated['street_address'],
+            'barangay' => $validated['barangay'],
+            'city' => $validated['city'],
+            'region' => $validated['region'],
+            'zip_code' => $validated['zip_code'],
+        ]);
+
+        if (!$user->addresses()->exists()) {
+            $user->addresses()->create([
+                'label' => 'Shop',
+                'address_type' => 'office',
+                'recipient_name' => $user->name ?? trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: 'Artisan',
                 'phone_number' => $validated['phone_number'],
                 'street_address' => $validated['street_address'],
                 'barangay' => $validated['barangay'],
                 'city' => $validated['city'],
                 'region' => $validated['region'],
-                'zip_code' => $validated['zip_code'],
-            ]);
-
-            if (!$user->addresses()->exists()) {
-                $user->addresses()->create([
-                    'label' => 'Shop',
-                    'address_type' => 'office',
-                    'recipient_name' => $user->name ?? trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: 'Artisan',
-                    'phone_number' => $validated['phone_number'],
+                'postal_code' => $validated['zip_code'],
+                'full_address' => StructuredAddress::formatPhilippineAddress([
                     'street_address' => $validated['street_address'],
                     'barangay' => $validated['barangay'],
                     'city' => $validated['city'],
                     'region' => $validated['region'],
                     'postal_code' => $validated['zip_code'],
-                    'full_address' => StructuredAddress::formatPhilippineAddress([
-                        'street_address' => $validated['street_address'],
-                        'barangay' => $validated['barangay'],
-                        'city' => $validated['city'],
-                        'region' => $validated['region'],
-                        'postal_code' => $validated['zip_code'],
-                    ]),
-                    'is_default' => true,
-                ]);
-            }
-
-            return back(); 
+                ]),
+                'is_default' => true,
+            ]);
         }
 
-        // --- STEP 2: LEGAL FILES ---
-        if ($step == 2) {
-            $docs = ['business_permit', 'dti_registration', 'valid_id', 'tin_id'];
-            $rules = [];
+        return back(); 
+    }
 
-            foreach ($docs as $docKey) {
-                $hasExisting = !empty($user->{$docKey});
-                $rules[$docKey] = [
-                    $hasExisting ? 'nullable' : 'required',
-                    function ($attribute, $value, $fail) {
-                        if ($value === null) {
-                            return;
-                        }
-                        if ($value instanceof \Illuminate\Http\UploadedFile) {
-                            $mime = $value->getMimeType();
-                            $validMimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-                            if (!in_array($mime, $validMimes, true)) {
-                                $fail("The {$attribute} must be a file of type: jpg, jpeg, png, pdf.");
-                            }
-                            if ($value->getSize() > 4096 * 1024) {
-                                $fail("The {$attribute} may not be greater than 4MB.");
-                            }
-                        } elseif (is_string($value)) {
-                            if (!str_starts_with($value, 'legal_docs/')) {
-                                $fail("The {$attribute} is an invalid document reference.");
-                            }
-                        } else {
-                            $fail("The {$attribute} is invalid.");
-                        }
-                    },
-                ];
-            }
+    private function handleStepTwo(UserModel $user, Request $request)
+    {
+        $docs = ['business_permit', 'dti_registration', 'valid_id', 'tin_id'];
+        $rules = [];
 
-            $request->validate($rules);
-
-            $documentFlags = $user->document_flags ?? [];
-            $upload = function ($key) use ($request, $user, &$documentFlags) {
-                if ($request->hasFile($key)) {
-                    $file = $request->file($key);
-                    $flags = [];
-
-                    // Check file size (suspiciously small)
-                    if ($file->getSize() < 5120) { // < 5KB
-                        $flags[] = 'empty_or_corrupt';
+        foreach ($docs as $docKey) {
+            $hasExisting = !empty($user->{$docKey});
+            $rules[$docKey] = [
+                $hasExisting ? 'nullable' : 'required',
+                function ($attribute, $value, $fail) {
+                    if ($value === null) {
+                        return;
                     }
-
-                    // Check image resolution if it's an image
-                    if (str_starts_with($file->getMimeType(), 'image/')) {
-                        try {
-                            $realPath = $file->getRealPath();
-                            $dimensions = ($realPath && file_exists($realPath)) ? @getimagesize($realPath) : null;
-                            if ($dimensions) {
-                                $width = $dimensions[0];
-                                $height = $dimensions[1];
-                                if ($width < 300 || $height < 300) {
-                                    $flags[] = 'low_resolution';
-                                }
-                            }
-                        } catch (\Throwable $e) {
-                            // Defensive guard: never fail upload if metadata reading encounters I/O issues
+                    if ($value instanceof \Illuminate\Http\UploadedFile) {
+                        $mime = $value->getMimeType();
+                        $validMimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+                        if (!in_array($mime, $validMimes, true)) {
+                            $fail("The {$attribute} must be a file of type: jpg, jpeg, png, pdf.");
                         }
+                        if ($value->getSize() > 4096 * 1024) {
+                            $fail("The {$attribute} may not be greater than 4MB.");
+                        }
+                    } elseif (is_string($value)) {
+                        if (!str_starts_with($value, 'legal_docs/')) {
+                            $fail("The {$attribute} is an invalid document reference.");
+                        }
+                    } else {
+                        $fail("The {$attribute} is invalid.");
                     }
+                },
+            ];
+        }
 
-                    $documentFlags[$key] = $flags;
-                    return $file->store('legal_docs', 'public');
+        $request->validate($rules);
+
+        $documentFlags = $user->document_flags ?? [];
+        $upload = function ($key) use ($request, $user, &$documentFlags) {
+            if ($request->hasFile($key)) {
+                $file = $request->file($key);
+                $flags = [];
+
+                if ($file->getSize() < 5120) { // < 5KB
+                    $flags[] = 'empty_or_corrupt';
                 }
 
-                if ($request->filled($key) && is_string($request->input($key))) {
-                    $path = $request->input($key);
-                    if (str_starts_with($path, 'legal_docs/')) {
-                        return $path;
+                if (str_starts_with($file->getMimeType(), 'image/')) {
+                    try {
+                        $realPath = $file->getRealPath();
+                        $dimensions = ($realPath && file_exists($realPath)) ? @getimagesize($realPath) : null;
+                        if ($dimensions) {
+                            $width = $dimensions[0];
+                            $height = $dimensions[1];
+                            if ($width < 300 || $height < 300) {
+                                $flags[] = 'low_resolution';
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        // Defensive guard: never fail upload if metadata reading encounters I/O issues
                     }
                 }
 
-                return $user->{$key};
-            };
-
-            $user->update([
-                'business_permit' => $upload('business_permit'),
-                'dti_registration' => $upload('dti_registration'),
-                'valid_id' => $upload('valid_id'),
-                'tin_id' => $upload('tin_id'),
-                'document_flags' => $documentFlags,
-            ]);
-
-            return back();
-        }
-
-        // --- STEP 3: PAYMENT DETAILS ---
-        if ($step == 3) {
-            $validated = $request->validate([
-                'payout_method' => 'required|string|max:50',
-                'payout_account_name' => 'required|string|max:100',
-                'payout_account_number' => 'required|string|max:100',
-            ]);
-
-            $user->update([
-                'payout_method' => $validated['payout_method'],
-                'payout_account_name' => $validated['payout_account_name'],
-                'payout_account_number' => $validated['payout_account_number'],
-                'setup_completed_at' => now(),
-                'artisan_status' => 'pending',
-                'artisan_rejection_reason' => null,
-            ]);
-
-            ArtisanStatusLog::create([
-                'user_id' => $user->id,
-                'previous_status' => $user->artisan_status,
-                'new_status' => 'pending',
-            ]);
-
-            \App\Models\PlatformActivity::create([
-                'user_id' => $user->id,
-                'action' => 'artisan_registered',
-                'description' => 'A new artisan shop applied: ' . $user->shop_name,
-                'metadata' => ['shop_name' => $user->shop_name]
-            ]);
-
-            $emailResult = $this->sendApplicationEmails($user);
-            
-            if ($emailResult === 'failed_send') {
-                return redirect()
-                    ->route('artisan.pending')
-                    ->with('warning', 'Application submitted, but the admin notification email could not be sent.');
+                $documentFlags[$key] = $flags;
+                return $file->store('legal_docs', 'public');
             }
-            
-            return redirect()->route('artisan.pending');
-        }
 
-        return back()->with('error', 'Invalid step');
+            if ($request->filled($key) && is_string($request->input($key))) {
+                $path = $request->input($key);
+                if (str_starts_with($path, 'legal_docs/')) {
+                    return $path;
+                }
+            }
+
+            return $user->{$key};
+        };
+
+        $user->update([
+            'business_permit' => $upload('business_permit'),
+            'dti_registration' => $upload('dti_registration'),
+            'valid_id' => $upload('valid_id'),
+            'tin_id' => $upload('tin_id'),
+            'document_flags' => $documentFlags,
+        ]);
+
+        return back();
+    }
+
+    private function handleStepThree(UserModel $user, Request $request)
+    {
+        $validated = $request->validate([
+            'payout_method' => 'required|string|max:50',
+            'payout_account_name' => 'required|string|max:100',
+            'payout_account_number' => 'required|string|max:100',
+        ]);
+
+        $user->update([
+            'payout_method' => $validated['payout_method'],
+            'payout_account_name' => $validated['payout_account_name'],
+            'payout_account_number' => $validated['payout_account_number'],
+            'setup_completed_at' => now(),
+            'artisan_status' => 'pending',
+            'artisan_rejection_reason' => null,
+        ]);
+
+        ArtisanStatusLog::create([
+            'user_id' => $user->id,
+            'previous_status' => $user->artisan_status,
+            'new_status' => 'pending',
+        ]);
+
+        app(\App\Actions\Audit\RecordAuditActivity::class)->execute(
+            action: 'artisan_registered',
+            description: 'A new artisan shop applied: ' . $user->shop_name,
+            subject: $user,
+            diff: ['shop_name' => $user->shop_name],
+            actorId: $user->id
+        );
+
+        $emailResult = $this->sendApplicationEmails($user);
+        
+        if ($emailResult === 'failed_send') {
+            return redirect()
+                ->route('artisan.pending')
+                ->with('warning', 'Application submitted, but the admin notification email could not be sent.');
+        }
+        
+        return redirect()->route('artisan.pending');
     }
 
     public function dismissWelcome(Request $request)

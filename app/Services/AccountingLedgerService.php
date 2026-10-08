@@ -675,4 +675,164 @@ class AccountingLedgerService
             'requests' => $pendingRequests
         ];
     }
+
+    /**
+     * Pre-aggregate and format financial ledger metrics for all approved artisans for admin payouts.
+     */
+    public function getArtisansPayoutLedgerSummary(): \Illuminate\Support\Collection
+    {
+        $artisanUsers = User::where('role', 'artisan')
+            ->where('artisan_status', 'approved')
+            ->orderBy('shop_name', 'asc')
+            ->get();
+
+        $artisanIds = $artisanUsers->pluck('id')->all();
+
+        $completedSalesAggregates = Order::whereIn('artisan_id', $artisanIds)
+            ->where('status', 'Completed')
+            ->selectRaw('artisan_id, SUM(merchandise_subtotal) as gross_sales, SUM(platform_commission_amount) as platform_fees, SUM(seller_net_amount) as net_sales')
+            ->groupBy('artisan_id')
+            ->get()
+            ->keyBy('artisan_id');
+
+        $codSalesAggregates = Order::whereIn('artisan_id', $artisanIds)
+            ->where('status', 'Completed')
+            ->where('payment_method', 'COD')
+            ->selectRaw('artisan_id, SUM(seller_net_amount) as cod_sales')
+            ->groupBy('artisan_id')
+            ->get()
+            ->keyBy('artisan_id');
+
+        $stockExpenseAggregates = DB::table('stock_requests')
+            ->whereIn('user_id', $artisanIds)
+            ->whereIn('status', [
+                StockRequest::STATUS_ACCOUNTING_APPROVED,
+                StockRequest::STATUS_ORDERED,
+                StockRequest::STATUS_PARTIALLY_RECEIVED,
+                StockRequest::STATUS_RECEIVED,
+                StockRequest::STATUS_COMPLETED,
+            ])
+            ->selectRaw('user_id, SUM(total_cost) as total_stock_expenses')
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
+
+        $payrollExpenseAggregates = DB::table('payrolls')
+            ->whereIn('user_id', $artisanIds)
+            ->where('status', 'Paid')
+            ->selectRaw('user_id, SUM(total_amount) as total_payroll_expenses')
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
+
+        $payoutAggregates = DB::table('payouts')
+            ->whereIn('user_id', $artisanIds)
+            ->where('status', 'Completed')
+            ->selectRaw('user_id, SUM(amount) as total_payouts')
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
+
+        $disputeHoldAggregates = Order::whereIn('artisan_id', $artisanIds)
+            ->where('status', 'Completed')
+            ->where(function ($query) {
+                $query->whereHas('dispute', function ($q) {
+                    $q->whereIn('status', ['open', 'escalated', 'under_review']);
+                })->orWhere(function ($q) {
+                    $q->whereNotNull('return_reason')
+                      ->whereNull('replacement_resolved_at')
+                      ->where('status', '!=', 'Refunded');
+                });
+            })
+            ->selectRaw('artisan_id, SUM(seller_net_amount) as total_held')
+            ->groupBy('artisan_id')
+            ->get()
+            ->keyBy('artisan_id');
+
+        $ordersInProgressAggregates = Order::whereIn('artisan_id', $artisanIds)
+            ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
+            ->selectRaw('artisan_id, SUM(seller_net_amount) as total_in_progress')
+            ->groupBy('artisan_id')
+            ->get()
+            ->keyBy('artisan_id');
+
+        $recentOrdersGrouped = Order::whereIn('artisan_id', $artisanIds)
+            ->where('status', 'Completed')
+            ->select('id', 'artisan_id', 'order_number', 'customer_name', 'merchandise_subtotal', 'platform_commission_amount', 'seller_net_amount', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('artisan_id');
+
+        return $artisanUsers->map(function ($user) use (
+            $completedSalesAggregates,
+            $codSalesAggregates,
+            $stockExpenseAggregates,
+            $payrollExpenseAggregates,
+            $payoutAggregates,
+            $disputeHoldAggregates,
+            $ordersInProgressAggregates,
+            $recentOrdersGrouped
+        ) {
+            $sales = $completedSalesAggregates->get($user->id);
+            $grossSales = (float) ($sales?->gross_sales ?? 0);
+            $platformFees = (float) ($sales?->platform_fees ?? 0);
+            $netSales = (float) ($sales?->net_sales ?? 0);
+
+            $codSales = (float) ($codSalesAggregates->get($user->id)?->cod_sales ?? 0);
+            $onlineSales = max(0.00, $netSales - $codSales);
+
+            $stockExpenses = (float) ($stockExpenseAggregates->get($user->id)?->total_stock_expenses ?? 0);
+            $payrollExpenses = (float) ($payrollExpenseAggregates->get($user->id)?->total_payroll_expenses ?? 0);
+            $totalExpenses = $stockExpenses + $payrollExpenses;
+
+            $payouts = (float) ($payoutAggregates->get($user->id)?->total_payouts ?? 0);
+            $heldForDispute = (float) ($disputeHoldAggregates->get($user->id)?->total_held ?? 0);
+            $ordersInProgress = (float) ($ordersInProgressAggregates->get($user->id)?->total_in_progress ?? 0);
+
+            $baseFunds = (float) ($user->base_funds ?? 0);
+            $currentBalance = $baseFunds + $netSales - $totalExpenses - $payouts;
+            $readyForPayout = max(0.00, $onlineSales - $totalExpenses - $payouts - $heldForDispute);
+            $readyForPayout = min($readyForPayout, max(0.00, $currentBalance));
+
+            $recentOrders = ($recentOrdersGrouped->get($user->id) ?? collect())
+                ->take(10)
+                ->map(fn($o) => [
+                    'id' => $o->id,
+                    'order_number' => $o->order_number,
+                    'customer_name' => $o->customer_name,
+                    'gross' => (float) $o->merchandise_subtotal,
+                    'fee' => (float) $o->platform_commission_amount,
+                    'net' => (float) $o->seller_net_amount,
+                    'date' => $o->created_at?->format('M d, Y') ?? 'N/A',
+                ])
+                ->values();
+
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'premium_tier' => $user->premium_tier,
+                'avatar' => $user->avatar,
+                'avatar_url' => $user->avatar_url,
+                'updated_at' => $user->updated_at?->toIso8601String(),
+                'shop_name' => $user->shop_name,
+                'shop_slug' => $user->shop_slug,
+                'payout_method' => $user->payout_method ?? 'GCash',
+                'payout_account_name' => $user->payout_account_name ?? '',
+                'payout_account_number' => $user->payout_account_number ?? '',
+                'has_payout_account' => !empty($user->payout_account_number),
+                'balance' => $readyForPayout,
+                'ready_for_payout' => $readyForPayout,
+                'ledger_balance' => $currentBalance,
+                'gross_sales' => $grossSales,
+                'platform_fees' => $platformFees,
+                'net_sales' => $netSales,
+                'payouts' => $payouts,
+                'orders_in_progress' => $ordersInProgress,
+                'held_for_dispute' => $heldForDispute,
+                'recent_orders' => $recentOrders,
+            ];
+        });
+    }
 }

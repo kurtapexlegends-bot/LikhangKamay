@@ -56,47 +56,7 @@ class PaymentController extends Controller
             return redirect()->back()->with('error', 'Payment failed: Minimum amount for online payment is PHP 20.00.');
         }
 
-        $lineItems = [];
-        $calculatedTotal = 0;
-
-        foreach ($order->items as $item) {
-            $lineItems[] = [
-                'currency' => 'PHP',
-                'amount' => (int) round($item->price * 100),
-                'description' => $item->product_name,
-                'name' => $item->product_name,
-                'quantity' => $item->quantity,
-                'images' => [\App\Services\StorageUrl::url($item->product_img, asset('images/placeholder.svg'))],
-            ];
-
-            $calculatedTotal += $item->price * $item->quantity;
-        }
-
-        if ((float) $order->convenience_fee_amount > 0) {
-            $lineItems[] = [
-                'currency' => 'PHP',
-                'amount' => (int) round(((float) $order->convenience_fee_amount) * 100),
-                'description' => 'Delivery and order handling care',
-                'name' => 'Delivery & Handling Care',
-                'quantity' => 1,
-            ];
-
-            $calculatedTotal += (float) $order->convenience_fee_amount;
-        }
-
-        $shippingFeeAmount = $order->getResolvedShippingFeeAmount();
-
-        if ($shippingFeeAmount > 0) {
-            $lineItems[] = [
-                'currency' => 'PHP',
-                'amount' => (int) round($shippingFeeAmount * 100),
-                'description' => 'Estimated delivery fee for this order',
-                'name' => 'Shipping Fee',
-                'quantity' => 1,
-            ];
-
-            $calculatedTotal += $shippingFeeAmount;
-        }
+        [$lineItems, $calculatedTotal] = $this->buildCheckoutLineItems($order);
 
         if ((float) $order->total_amount !== (float) $calculatedTotal) {
             $order->update(['total_amount' => $calculatedTotal]);
@@ -137,7 +97,6 @@ class PaymentController extends Controller
     public function success(Request $request)
     {
         $orderId = $request->query('order_id');
-
         $order = Order::where('order_number', $orderId)->firstOrFail();
 
         if ($order->payment_status === 'paid') {
@@ -178,64 +137,6 @@ class PaymentController extends Controller
                 );
             }
 
-            $isPaid = ($attributes['payment_status'] ?? 'unpaid') === 'paid';
-            $hasPaidPayment = false;
-            $paymentId = null;
-
-            $detectedMethod = null;
-            $resolveMethodFromPayment = function ($payment) {
-                $sourceType = $payment['attributes']['source']['type']
-                    ?? ($payment['source']['type']
-                    ?? ($payment['attributes']['payment_method_type'] ?? null));
-                return match (strtolower((string) $sourceType)) {
-                    'paymaya', 'maya' => 'Maya',
-                    'gcash' => 'GCash',
-                    'card' => 'Card',
-                    'grab_pay' => 'GrabPay',
-                    default => null,
-                };
-            };
-
-            foreach (($session['included'] ?? []) as $included) {
-                $includedType = $included['type'] ?? null;
-                $includedStatus = $included['attributes']['status'] ?? null;
-                if ($includedType === 'payment' && $includedStatus === 'paid') {
-                    $hasPaidPayment = true;
-                    $paymentId = $included['id'] ?? null;
-                    $detectedMethod = $resolveMethodFromPayment($included);
-                    break;
-                }
-            }
-
-            if (!$hasPaidPayment && !empty($attributes['payments']) && is_array($attributes['payments'])) {
-                foreach ($attributes['payments'] as $payment) {
-                    $paymentStatus = $payment['status'] ?? ($payment['attributes']['status'] ?? null);
-                    if ($paymentStatus === 'paid') {
-                        $hasPaidPayment = true;
-                        $paymentId = $payment['id'] ?? ($payment['attributes']['id'] ?? null);
-                        $detectedMethod = $resolveMethodFromPayment($payment);
-                        break;
-                    }
-                }
-            }
-
-            if (!$paymentId && !empty($attributes['payments']) && is_array($attributes['payments'])) {
-                $firstPayment = reset($attributes['payments']);
-                $paymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
-                if (!$detectedMethod) {
-                    $detectedMethod = $resolveMethodFromPayment($firstPayment);
-                }
-            }
-
-            $sessionStatus = $attributes['status'] ?? 'pending';
-
-            \Illuminate\Support\Facades\Log::info('PayMongo Session Check', [
-                'order' => $orderId,
-                'payment_status' => $attributes['payment_status'] ?? 'unknown',
-                'session_status' => $sessionStatus,
-                'has_paid_payment' => $hasPaidPayment,
-            ]);
-
             if (!$this->canInitiateOnlinePayment($order)) {
                 return $this->redirectAfterPaymentResolution(
                     $order,
@@ -245,42 +146,13 @@ class PaymentController extends Controller
                 );
             }
 
-            if ($isPaid || $hasPaidPayment) {
-                $shouldSendReceipt = false;
+            $paymentDetails = $this->extractPaymentDetailsFromSession($session, $orderId);
 
-                DB::transaction(function () use ($paymentId, $detectedMethod, &$order, &$shouldSendReceipt) {
-                    $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
-                    if (!$lockedOrder) {
-                        return;
-                    }
-
-                    $order = $lockedOrder;
-                    $wasUnpaid = $lockedOrder->payment_status !== 'paid';
-                    $updateData = [];
-
-                    if ($wasUnpaid) {
-                        $updateData['payment_status'] = 'paid';
-                        $updateData['payment_method'] = $detectedMethod ?: ($lockedOrder->payment_method ?: 'GCash');
-                        $shouldSendReceipt = true;
-                    } elseif ($detectedMethod && $lockedOrder->payment_method !== $detectedMethod) {
-                        $updateData['payment_method'] = $detectedMethod;
-                    }
-
-                    if ($paymentId && empty($lockedOrder->payment_id)) {
-                        $updateData['payment_id'] = $paymentId;
-                    }
-
-                    if (!empty($updateData)) {
-                        $lockedOrder->update($updateData);
-                    }
-                });
-
-                if ($shouldSendReceipt) {
-                    $this->sendPaymentReceipt($order->fresh());
-                }
+            if ($paymentDetails['isPaid'] || $paymentDetails['hasPaidPayment']) {
+                $order = $this->finalizePaidOrder($order, $paymentDetails['paymentId'], $paymentDetails['detectedMethod']);
 
                 return $this->redirectAfterPaymentResolution(
-                    $order->fresh(),
+                    $order,
                     'success',
                     'Payment successful! Order #' . $orderId . ' is now paid.',
                     'Payment verified successfully. Sign in to view your updated order.'
@@ -303,6 +175,113 @@ class PaymentController extends Controller
                 'Payment verification failed. Sign in and contact support if you were charged.'
             );
         }
+    }
+
+    private function extractPaymentDetailsFromSession(array $session, string $orderId): array
+    {
+        $attributes = $session['attributes'] ?? [];
+        $isPaid = ($attributes['payment_status'] ?? 'unpaid') === 'paid';
+        $hasPaidPayment = false;
+        $paymentId = null;
+        $detectedMethod = null;
+
+        $resolveMethodFromPayment = function ($payment) {
+            $sourceType = $payment['attributes']['source']['type']
+                ?? ($payment['source']['type']
+                ?? ($payment['attributes']['payment_method_type'] ?? null));
+            return match (strtolower((string) $sourceType)) {
+                'paymaya', 'maya' => 'Maya',
+                'gcash' => 'GCash',
+                'card' => 'Card',
+                'grab_pay' => 'GrabPay',
+                default => null,
+            };
+        };
+
+        foreach (($session['included'] ?? []) as $included) {
+            $includedType = $included['type'] ?? null;
+            $includedStatus = $included['attributes']['status'] ?? null;
+            if ($includedType === 'payment' && $includedStatus === 'paid') {
+                $hasPaidPayment = true;
+                $paymentId = $included['id'] ?? null;
+                $detectedMethod = $resolveMethodFromPayment($included);
+                break;
+            }
+        }
+
+        if (!$hasPaidPayment && !empty($attributes['payments']) && is_array($attributes['payments'])) {
+            foreach ($attributes['payments'] as $payment) {
+                $paymentStatus = $payment['status'] ?? ($payment['attributes']['status'] ?? null);
+                if ($paymentStatus === 'paid') {
+                    $hasPaidPayment = true;
+                    $paymentId = $payment['id'] ?? ($payment['attributes']['id'] ?? null);
+                    $detectedMethod = $resolveMethodFromPayment($payment);
+                    break;
+                }
+            }
+        }
+
+        if (!$paymentId && !empty($attributes['payments']) && is_array($attributes['payments'])) {
+            $firstPayment = reset($attributes['payments']);
+            $paymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
+            if (!$detectedMethod) {
+                $detectedMethod = $resolveMethodFromPayment($firstPayment);
+            }
+        }
+
+        $sessionStatus = $attributes['status'] ?? 'pending';
+
+        \Illuminate\Support\Facades\Log::info('PayMongo Session Check', [
+            'order' => $orderId,
+            'payment_status' => $attributes['payment_status'] ?? 'unknown',
+            'session_status' => $sessionStatus,
+            'has_paid_payment' => $hasPaidPayment,
+        ]);
+
+        return [
+            'isPaid' => $isPaid,
+            'hasPaidPayment' => $hasPaidPayment,
+            'paymentId' => $paymentId,
+            'detectedMethod' => $detectedMethod,
+        ];
+    }
+
+    private function finalizePaidOrder(Order $order, ?string $paymentId, ?string $detectedMethod): Order
+    {
+        $shouldSendReceipt = false;
+
+        DB::transaction(function () use ($paymentId, $detectedMethod, &$order, &$shouldSendReceipt) {
+            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
+            if (!$lockedOrder) {
+                return;
+            }
+
+            $order = $lockedOrder;
+            $wasUnpaid = $lockedOrder->payment_status !== 'paid';
+            $updateData = [];
+
+            if ($wasUnpaid) {
+                $updateData['payment_status'] = 'paid';
+                $updateData['payment_method'] = $detectedMethod ?: ($lockedOrder->payment_method ?: 'GCash');
+                $shouldSendReceipt = true;
+            } elseif ($detectedMethod && $lockedOrder->payment_method !== $detectedMethod) {
+                $updateData['payment_method'] = $detectedMethod;
+            }
+
+            if ($paymentId && empty($lockedOrder->payment_id)) {
+                $updateData['payment_id'] = $paymentId;
+            }
+
+            if (!empty($updateData)) {
+                $lockedOrder->update($updateData);
+            }
+        });
+
+        if ($shouldSendReceipt) {
+            $this->sendPaymentReceipt($order->fresh());
+        }
+
+        return $order->fresh();
     }
 
     /**
@@ -390,5 +369,52 @@ class PaymentController extends Controller
                 'order_id' => $order->id,
             ]);
         }
+    }
+
+    private function buildCheckoutLineItems(Order $order): array
+    {
+        $lineItems = [];
+        $calculatedTotal = 0;
+
+        foreach ($order->items as $item) {
+            $lineItems[] = [
+                'currency' => 'PHP',
+                'amount' => (int) round($item->price * 100),
+                'description' => $item->product_name,
+                'name' => $item->product_name,
+                'quantity' => $item->quantity,
+                'images' => [\App\Services\StorageUrl::url($item->product_img, asset('images/placeholder.svg'))],
+            ];
+
+            $calculatedTotal += $item->price * $item->quantity;
+        }
+
+        if ((float) $order->convenience_fee_amount > 0) {
+            $lineItems[] = [
+                'currency' => 'PHP',
+                'amount' => (int) round(((float) $order->convenience_fee_amount) * 100),
+                'description' => 'Delivery and order handling care',
+                'name' => 'Delivery & Handling Care',
+                'quantity' => 1,
+            ];
+
+            $calculatedTotal += (float) $order->convenience_fee_amount;
+        }
+
+        $shippingFeeAmount = $order->getResolvedShippingFeeAmount();
+
+        if ($shippingFeeAmount > 0) {
+            $lineItems[] = [
+                'currency' => 'PHP',
+                'amount' => (int) round($shippingFeeAmount * 100),
+                'description' => 'Estimated delivery fee for this order',
+                'name' => 'Shipping Fee',
+                'quantity' => 1,
+            ];
+
+            $calculatedTotal += $shippingFeeAmount;
+        }
+
+        return [$lineItems, $calculatedTotal];
     }
 }
