@@ -230,7 +230,15 @@ export default function OrderListItemCard({
                                                 className="h-10 w-10 rounded-lg border border-stone-300/80 bg-white overflow-hidden shadow-2xs hover:opacity-80 transition"
                                                 title="View unboxing proof"
                                             >
-                                                <img src={photo} alt={`Proof ${i + 1}`} className="h-full w-full object-cover" />
+                                                <img
+                                                    src={photo}
+                                                    alt={`Proof ${i + 1}`}
+                                                    className="h-full w-full object-cover"
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = '/images/placeholder.svg';
+                                                    }}
+                                                />
                                             </a>
                                         ))}
                                     </div>

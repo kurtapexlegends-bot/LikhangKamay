@@ -21,7 +21,15 @@ export default function Reviews({ reviews = [] }) {
                                 <div className="flex gap-4 items-start mb-4">
                                     <div className="w-16 h-16 rounded-2xl bg-stone-100 overflow-hidden shrink-0 border border-stone-50">
                                         {review.product?.image ? (
-                                            <img src={review.product.image} alt="" className="w-full h-full object-cover" />
+                                            <img
+                                                src={review.product.image}
+                                                alt={review.product?.name || ''}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    e.target.onerror = null;
+                                                    e.target.src = '/images/placeholder.svg';
+                                                }}
+                                            />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-stone-300">
                                                 <Package size={24} />

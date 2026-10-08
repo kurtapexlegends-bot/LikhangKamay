@@ -193,9 +193,17 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
                     
                     {/* LOGO */}
                     <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-2.5 flex-shrink-0 group">
-                        <img src={platform.logo} alt="Logo" className={`object-contain transition-all duration-300 ${isScrolled ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-9 h-9 sm:w-10 sm:h-10'}`} />
+                        <img
+                            src={platform?.logo || '/images/logo.png'}
+                            alt="Logo"
+                            className={`object-contain transition-all duration-300 ${isScrolled ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-9 h-9 sm:w-10 sm:h-10'}`}
+                            onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = '/images/logo.png';
+                            }}
+                        />
                         <div className={`flex min-w-0 flex-col transition-all duration-300 ${isScrolled ? 'opacity-0 w-0 overflow-hidden sm:opacity-100 sm:w-auto' : 'opacity-100 w-auto'}`}>
-                            <span className={`truncate font-serif font-bold text-gray-900 leading-none tracking-tight transition-all duration-300 ${isScrolled ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'}`}>{platform.name}</span>
+                            <span className={`truncate font-serif font-bold text-gray-900 leading-none tracking-tight transition-all duration-300 ${isScrolled ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'}`}>{platform?.name || 'LikhangKamay'}</span>
                             <span className={`hidden sm:block font-bold tracking-widest uppercase mt-0.5 text-clay-600 transition-all duration-300 ${isScrolled ? 'text-[8px]' : 'text-[10px]'}`}>Artisan Marketplace</span>
                         </div>
                     </Link>
@@ -284,9 +292,17 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
                 <div className="flex md:hidden items-center justify-between w-full h-14">
                     {/* Logo & Serif Branding */}
                     <Link href="/" className="flex items-center gap-2 group min-w-0">
-                        <img src={platform.logo} alt="Logo" className="w-7 h-7 sm:w-8 sm:h-8 object-contain" />
+                        <img
+                            src={platform?.logo || '/images/logo.png'}
+                            alt="Logo"
+                            className="w-7 h-7 sm:w-8 sm:h-8 object-contain"
+                            onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = '/images/logo.png';
+                            }}
+                        />
                         <span className="font-serif font-extrabold text-stone-900 text-base sm:text-lg tracking-tight truncate leading-none">
-                            {platform.name}
+                            {platform?.name || 'LikhangKamay'}
                         </span>
                     </Link>
 

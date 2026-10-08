@@ -226,7 +226,15 @@ export default function DisputeInspectorContent({
                                                 onClick={() => openLightbox(proofPhotos, pIdx)}
                                                 className="relative group border border-stone-200 bg-white rounded-xl overflow-hidden h-16 w-16 shadow-2xs hover:ring-2 hover:ring-clay-500 transition-all shrink-0 cursor-pointer"
                                             >
-                                                <img src={photoUrl} className="h-full w-full object-cover" alt={`Proof ${pIdx + 1}`} />
+                                                <img
+                                                    src={photoUrl}
+                                                    className="h-full w-full object-cover"
+                                                    alt={`Proof ${pIdx + 1}`}
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = '/images/placeholder.svg';
+                                                    }}
+                                                />
                                                 <div className="absolute inset-0 bg-stone-900/20 group-hover:bg-stone-900/40 transition-colors flex items-center justify-center text-white opacity-0 group-hover:opacity-100">
                                                     <Eye size={14} />
                                                 </div>
@@ -312,7 +320,15 @@ export default function DisputeInspectorContent({
                                                 onClick={() => openLightbox(sellerPhotos, sIdx)}
                                                 className="relative group border border-stone-200 bg-white rounded-xl overflow-hidden h-16 w-16 shadow-2xs hover:ring-2 hover:ring-indigo-500 transition-all shrink-0 cursor-pointer"
                                             >
-                                                <img src={photoUrl} className="h-full w-full object-cover" alt={`Packing Photo ${sIdx + 1}`} />
+                                                <img
+                                                    src={photoUrl}
+                                                    className="h-full w-full object-cover"
+                                                    alt={`Packing Photo ${sIdx + 1}`}
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = '/images/placeholder.svg';
+                                                    }}
+                                                />
                                                 <div className="absolute inset-0 bg-stone-900/20 group-hover:bg-stone-900/40 transition-colors flex items-center justify-center text-white opacity-0 group-hover:opacity-100">
                                                     <Eye size={14} />
                                                 </div>

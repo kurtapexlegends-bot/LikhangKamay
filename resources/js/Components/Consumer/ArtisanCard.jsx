@@ -7,7 +7,16 @@ export default React.memo(function ArtisanCard({ name, location, rating, image, 
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-clay-900/5 group cursor-pointer animate-in fade-in duration-500">
             {/* Cover Image */}
             <div className="h-32 bg-gray-100 overflow-hidden relative">
-                <img src={image} alt={name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                <img
+                    src={image || '/images/placeholder.svg'}
+                    alt={name}
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/images/placeholder.svg';
+                    }}
+                />
             </div>
             
             {/* Artisan Info */}
@@ -17,7 +26,16 @@ export default React.memo(function ArtisanCard({ name, location, rating, image, 
                     <div className="h-16 w-16 rounded-full border-4 border-white bg-clay-100 shadow-sm overflow-hidden flex items-center justify-center">
                          {/* Avatar Logic */}
                          {avatar ? (
-                            <img src={avatar} alt={name} loading="lazy" className="w-full h-full object-cover" />
+                            <img
+                                src={avatar}
+                                alt={name}
+                                loading="lazy"
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = '/images/placeholder.svg';
+                                }}
+                            />
                          ) : (
                             <span className="text-2xl font-bold text-clay-600 uppercase">
                                 {name.charAt(0)}

@@ -24,11 +24,12 @@ class BulkApproveArtisans
 
         $count = 0;
 
-        foreach ($ids as $id) {
-            $artisan = User::where('role', 'artisan')->where('artisan_status', 'pending')->find($id);
-            if (!$artisan) {
-                continue;
-            }
+        $artisans = User::where('role', 'artisan')
+            ->where('artisan_status', 'pending')
+            ->whereIn('id', $ids)
+            ->get();
+
+        foreach ($artisans as $artisan) {
 
             DB::transaction(function () use ($artisan, $adminId) {
                 $artisan->update([

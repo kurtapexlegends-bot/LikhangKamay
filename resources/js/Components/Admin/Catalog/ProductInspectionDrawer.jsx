@@ -294,7 +294,15 @@ export default function ProductInspectionDrawer({
                                     selectedImage === coverUrl || !selectedImage ? 'ring-2 ring-clay-600 border-transparent' : 'border-stone-200 hover:border-stone-400'
                                 }`}
                             >
-                                <img src={coverUrl} alt="Cover" className="w-full h-full object-cover" />
+                                <img
+                                    src={coverUrl}
+                                    alt="Cover"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = '/images/placeholder.svg';
+                                    }}
+                                />
                             </button>
                             {galleryUrls.map((gUrl, idx) => (
                                 <button
@@ -305,7 +313,15 @@ export default function ProductInspectionDrawer({
                                         selectedImage === gUrl ? 'ring-2 ring-clay-600 border-transparent' : 'border-stone-200 hover:border-stone-400'
                                     }`}
                                 >
-                                    <img src={gUrl} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                                    <img
+                                        src={gUrl}
+                                        alt={`Gallery ${idx + 1}`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = '/images/placeholder.svg';
+                                        }}
+                                    />
                                 </button>
                             ))}
                         </div>

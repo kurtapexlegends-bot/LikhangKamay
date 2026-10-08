@@ -82,7 +82,15 @@ export default function BuyerMobileSearchSheet({
                                 className="flex items-center gap-3 py-3 hover:bg-stone-100/40 px-1 rounded-xl transition-colors"
                             >
                                 <div className="w-10 h-10 rounded-lg bg-stone-100 overflow-hidden flex-shrink-0 border border-stone-200/55">
-                                    <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                                    <img
+                                        src={p.image || '/images/placeholder.svg'}
+                                        alt={p.name}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = '/images/placeholder.svg';
+                                        }}
+                                    />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <p className="text-xs font-bold text-stone-950 truncate leading-snug">{p.name}</p>

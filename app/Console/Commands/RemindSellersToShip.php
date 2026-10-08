@@ -19,7 +19,8 @@ class RemindSellersToShip extends Command
         $this->info('Checking for stale shipments...');
 
         // Find orders: Accepted, older than 3 days, reminder NOT sent
-        $orders = \App\Models\Order::where('status', 'Accepted')
+        $orders = \App\Models\Order::with('artisan')
+            ->where('status', 'Accepted')
             ->where('shipment_reminder_sent', \Illuminate\Support\Facades\DB::raw('false'))
             ->where('accepted_at', '<', now()->subDays(3))
             ->get();
@@ -31,10 +32,7 @@ class RemindSellersToShip extends Command
 
         foreach ($orders as $order) {
             /** @var \App\Models\Order $order */
-            
-            // Get Artisan (Seller)
-            // Note: product->artisan_id might be better, but order has artisan_id directly
-            $artisan = \App\Models\User::find($order->artisan_id);
+            $artisan = $order->artisan;
 
             if ($artisan && $artisan->email) {
                 try {

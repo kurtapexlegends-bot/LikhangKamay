@@ -14,7 +14,8 @@ class CancelUnpaidOrders extends Command
         $this->info('Checking for unpaid orders...');
 
         // Find non-COD orders that are still pending and older than 2 hours.
-        $orders = \App\Models\Order::where('status', 'Pending')
+        $orders = \App\Models\Order::with(['items.product.supply'])
+            ->where('status', 'Pending')
             ->where('payment_status', 'pending')
             ->where('payment_method', '!=', 'COD') // Only affects non-COD
             ->where('created_at', '<', now()->subHours(2))
@@ -30,13 +31,12 @@ class CancelUnpaidOrders extends Command
             \Illuminate\Support\Facades\DB::transaction(function () use ($order) {
                 // 1. Restore Stock & Promotions
                 foreach ($order->items as $item) {
-                     $product = \App\Models\Product::find($item->product_id);
+                     $product = $item->product;
                      if ($product) {
                          $product->increment('stock', $item->quantity);
-                         $product->refresh();
 
                          if ($product->track_as_supply && $product->supply) {
-                             $product->supply->update(['quantity' => $product->stock]);
+                             $product->supply->update(['quantity' => $product->fresh()->stock]);
                          }
 
                           $targetDiscountId = $item->discount_id ?: ($product->has_discount && $product->discount_info ? ($product->discount_info['id'] ?? null) : null);

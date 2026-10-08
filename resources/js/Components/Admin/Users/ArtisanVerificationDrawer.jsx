@@ -187,7 +187,15 @@ export default function ArtisanVerificationDrawer({
                                                     {doc.url.endsWith('.pdf') ? (
                                                         <div className="w-full h-full flex items-center justify-center bg-white"><FileText size={24} className="text-clay-200" /></div>
                                                     ) : (
-                                                        <img src={doc.url} alt={doc.label} className="w-full h-full object-cover" />
+                                                        <img
+                                                            src={doc.url}
+                                                            alt={doc.label}
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => {
+                                                                e.target.onerror = null;
+                                                                e.target.src = '/images/placeholder.svg';
+                                                            }}
+                                                        />
                                                     )}
                                                     <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 group-hover:bg-black/10 group-hover:opacity-100 transition duration-200">
                                                         <Eye size={20} className="text-white drop-shadow-md" />

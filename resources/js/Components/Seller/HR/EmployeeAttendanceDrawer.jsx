@@ -339,7 +339,15 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
                                                         <X size={16} />
                                                     </button>
                                                 </div>
-                                                <img src={selectedPhoto} alt="Clock-in selfie proof" className="w-full rounded-2xl object-cover border border-stone-200 max-h-[380px] shadow-xs" />
+                                                <img
+                                                    src={selectedPhoto}
+                                                    alt="Clock-in selfie proof"
+                                                    className="w-full rounded-2xl object-cover border border-stone-200 max-h-[380px] shadow-xs"
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = '/images/placeholder.svg';
+                                                    }}
+                                                />
                                             </div>
                                         </div>
                                     )}

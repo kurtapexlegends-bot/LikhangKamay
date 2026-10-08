@@ -1,5 +1,6 @@
+/* global route */
 import React, { useMemo } from 'react';
-import { Head, useForm, Link } from '@inertiajs/react';
+import { Head, useForm, Link, router } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, LogOut, AlertTriangle, ChevronDown, Store, ShieldCheck, CreditCard } from 'lucide-react';
 import axios from 'axios';
@@ -82,7 +83,7 @@ export default function ArtisanSetup({ auth, rejectionReason }) {
                     return;
                 }
 
-                window.location.href = '/artisan/pending';
+                router.visit(route('artisan.pending'));
             },
             onError: (payload) => console.error('Submission Errors:', payload),
         });

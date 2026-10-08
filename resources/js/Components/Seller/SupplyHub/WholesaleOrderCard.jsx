@@ -89,7 +89,15 @@ export default function WholesaleOrderCard({
                 <div className="flex items-center gap-2.5 min-w-0">
                     <div className="h-8 w-8 rounded-full bg-clay-100 border border-clay-200 flex items-center justify-center overflow-hidden shrink-0 text-clay-700 font-black text-xs">
                         {order.customer_avatar ? (
-                            <img src={order.customer_avatar} alt={order.customer} className="h-full w-full object-cover" />
+                            <img
+                                src={order.customer_avatar}
+                                alt={order.customer}
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = '/images/placeholder.svg';
+                                }}
+                            />
                         ) : (
                             order.customer?.charAt(0) || 'A'
                         )}
