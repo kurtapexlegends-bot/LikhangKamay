@@ -8,7 +8,7 @@ use App\Models\ReviewDispute;
 use App\Models\FlaggedContent;
 use App\Models\User;
 use App\Models\Product;
-use App\Models\PlatformActivity;
+use App\Actions\Audit\RecordAuditActivity;
 use App\Notifications\ReviewModerationStatusNotification;
 use App\Notifications\ProductModerationNotification;
 use App\Notifications\UserDisciplinaryNotification;
@@ -182,12 +182,12 @@ class ModerationController extends Controller
                 ));
             }
 
-            PlatformActivity::create([
-                'user_id' => Auth::id(),
-                'action' => 'review_dispute_' . $validated['status'],
-                'description' => "Moderator marked review dispute #{$reviewDispute->id} as {$validated['status']}.",
-                'metadata' => ['review_dispute_id' => $reviewDispute->id, 'review_id' => $review->id, 'status' => $validated['status']]
-            ]);
+            app(RecordAuditActivity::class)->execute(
+                action: 'review_dispute_' . $validated['status'],
+                description: "Moderator marked review dispute #{$reviewDispute->id} as {$validated['status']}.",
+                subject: $reviewDispute,
+                diff: ['review_dispute_id' => $reviewDispute->id, 'review_id' => $review->id, 'status' => $validated['status']]
+            );
         });
 
         return back()->with('success', 'Moderation request updated.');
@@ -243,12 +243,12 @@ class ModerationController extends Controller
             'resolved_at' => now(),
         ]);
 
-        PlatformActivity::create([
-            'user_id' => Auth::id(),
-            'action' => 'content_flag_resolved',
-            'description' => 'Moderator resolved flag on ' . strtolower(class_basename($flag->reportable_type)) . ' ID ' . $flag->reportable_id . '.',
-            'metadata' => ['flag_id' => $flag->id, 'reportable_type' => $flag->reportable_type, 'reportable_id' => $flag->reportable_id]
-        ]);
+        app(RecordAuditActivity::class)->execute(
+            action: 'content_flag_resolved',
+            description: 'Moderator resolved flag on ' . strtolower(class_basename($flag->reportable_type)) . ' ID ' . $flag->reportable_id . '.',
+            subject: $flag,
+            diff: ['flag_id' => $flag->id, 'reportable_type' => $flag->reportable_type, 'reportable_id' => $flag->reportable_id]
+        );
 
         return back()->with('success', 'Content flag marked as resolved.');
     }
@@ -280,12 +280,12 @@ class ModerationController extends Controller
             'resolved_at' => now(),
         ]);
 
-        PlatformActivity::create([
-            'user_id' => Auth::id(),
-            'action' => 'product_takedown',
-            'description' => "Moderator took down product ID {$flag->reportable_id} following content flag #{$flag->id}.",
-            'metadata' => ['flag_id' => $flag->id, 'product_id' => $flag->reportable_id]
-        ]);
+        app(RecordAuditActivity::class)->execute(
+            action: 'product_takedown',
+            description: "Moderator took down product ID {$flag->reportable_id} following content flag #{$flag->id}.",
+            subject: $flag,
+            diff: ['flag_id' => $flag->id, 'product_id' => $flag->reportable_id]
+        );
 
         return back()->with('success', 'Product taken down and flag resolved.');
     }
@@ -323,12 +323,12 @@ class ModerationController extends Controller
             'resolved_at' => now(),
         ]);
 
-        PlatformActivity::create([
-            'user_id' => Auth::id(),
-            'action' => 'user_suspended',
-            'description' => "Moderator suspended user ID {$userId} following content flag #{$flag->id}.",
-            'metadata' => ['flag_id' => $flag->id, 'user_id' => $userId]
-        ]);
+        app(RecordAuditActivity::class)->execute(
+            action: 'user_suspended',
+            description: "Moderator suspended user ID {$userId} following content flag #{$flag->id}.",
+            subject: $flag,
+            diff: ['flag_id' => $flag->id, 'user_id' => $userId]
+        );
 
         return back()->with('success', 'User suspended and flag resolved.');
     }
@@ -347,12 +347,12 @@ class ModerationController extends Controller
             'resolved_at' => now(),
         ]);
 
-        PlatformActivity::create([
-            'user_id' => Auth::id(),
-            'action' => 'content_flag_dismissed',
-            'description' => 'Moderator dismissed flag on ' . strtolower(class_basename($flag->reportable_type)) . ' ID ' . $flag->reportable_id . '.',
-            'metadata' => ['flag_id' => $flag->id, 'reportable_type' => $flag->reportable_type, 'reportable_id' => $flag->reportable_id]
-        ]);
+        app(RecordAuditActivity::class)->execute(
+            action: 'content_flag_dismissed',
+            description: 'Moderator dismissed flag on ' . strtolower(class_basename($flag->reportable_type)) . ' ID ' . $flag->reportable_id . '.',
+            subject: $flag,
+            diff: ['flag_id' => $flag->id, 'reportable_type' => $flag->reportable_type, 'reportable_id' => $flag->reportable_id]
+        );
 
         return back()->with('success', 'Content flag dismissed.');
     }

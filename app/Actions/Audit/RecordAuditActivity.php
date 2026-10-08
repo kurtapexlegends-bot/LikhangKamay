@@ -29,13 +29,13 @@ class RecordAuditActivity
     ): PlatformActivity {
         $req = $request ?: (app()->bound('request') ? request() : null);
 
-        $metadata = [
+        $metadata = array_merge([
             'subject_type' => $subject ? get_class($subject) : null,
             'subject_id' => $subject?->getKey(),
             'diff' => $diff,
             'ip_address' => $req?->ip(),
             'user_agent' => $req?->userAgent() ? substr((string) $req->userAgent(), 0, 255) : null,
-        ];
+        ], $diff);
 
         return PlatformActivity::create([
             'user_id' => $actorId ?? auth()->id(),

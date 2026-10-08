@@ -33,12 +33,11 @@ class FlaggedContentController extends Controller
 
         FlaggedContent::create($validated);
 
-        \App\Models\PlatformActivity::create([
-            'user_id' => Auth::id(),
-            'action' => 'content_flagged',
-            'description' => 'User flagged ' . strtolower(class_basename($validated['reportable_type'])) . ' ID ' . $validated['reportable_id'] . ' for moderation.',
-            'metadata' => ['reportable_type' => $validated['reportable_type'], 'reportable_id' => $validated['reportable_id']]
-        ]);
+        app(\App\Actions\Audit\RecordAuditActivity::class)->execute(
+            action: 'content_flagged',
+            description: 'User flagged ' . strtolower(class_basename($validated['reportable_type'])) . ' ID ' . $validated['reportable_id'] . ' for moderation.',
+            diff: ['reportable_type' => $validated['reportable_type'], 'reportable_id' => $validated['reportable_id']]
+        );
 
         return back()->with('success', 'Thank you. The content has been reported for review.');
     }

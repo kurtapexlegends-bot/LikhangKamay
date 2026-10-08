@@ -9,6 +9,8 @@ use App\Models\Review;
 use App\Notifications\NewReviewNotification;
 use App\Services\StorageUrl;
 use App\Support\RichTextSanitizer;
+use App\Http\Requests\Consumer\StoreReviewRequest;
+use App\Http\Requests\Consumer\UpdateReviewRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -41,19 +43,12 @@ class ReviewController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreReviewRequest $request)
     {
         if (Auth::check() && Auth::user()->isSuspended()) {
             $days = Auth::user()->daysRemainingSuspension();
             abort(403, "Your account is temporarily suspended for {$days} day(s). You cannot post reviews at this time.");
         }
-
-        $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:1000',
-            'photos.*' => 'nullable|image|max:4096',
-        ]);
 
         $orderQuery = \App\Models\Order::query()
             ->where('user_id', Auth::id())
@@ -104,15 +99,9 @@ class ReviewController extends Controller
         return back()->with('success', 'Review submitted successfully!');
     }
 
-    public function update(Request $request, int $id)
+    public function update(UpdateReviewRequest $request, int $id)
     {
         $review = Review::where('user_id', Auth::id())->findOrFail($id);
-
-        $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:1000',
-            'photos.*' => 'nullable|image|max:4096',
-        ]);
 
         if ($request->hasFile('photos')) {
             $photoPaths = [];

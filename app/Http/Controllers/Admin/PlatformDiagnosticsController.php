@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\PlatformActivity;
+use App\Actions\Audit\RecordAuditActivity;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -231,11 +232,12 @@ class PlatformDiagnosticsController extends Controller
         $item = $model::onlyTrashed()->findOrFail($validated['id']);
         $item->restore();
 
-        PlatformActivity::create([
-            'user_id' => Auth::id(),
-            'action' => 'item_restored',
-            'description' => "Super Admin restored soft-deleted {$validated['type']} (ID: {$validated['id']}).",
-        ]);
+        app(RecordAuditActivity::class)->execute(
+            action: 'item_restored',
+            description: "Super Admin restored soft-deleted {$validated['type']} (ID: {$validated['id']}).",
+            subject: $item,
+            diff: ['id' => $validated['id'], 'type' => $validated['type']]
+        );
 
         return back()->with('success', "{$validated['type']} restored successfully.");
     }
@@ -268,11 +270,12 @@ class PlatformDiagnosticsController extends Controller
         $item = $model::onlyTrashed()->findOrFail($validated['id']);
         $item->forceDelete();
 
-        PlatformActivity::create([
-            'user_id' => Auth::id(),
-            'action' => 'item_permanently_deleted',
-            'description' => "Super Admin permanently deleted {$validated['type']} (ID: {$validated['id']}).",
-        ]);
+        app(RecordAuditActivity::class)->execute(
+            action: 'item_permanently_deleted',
+            description: "Super Admin permanently deleted {$validated['type']} (ID: {$validated['id']}).",
+            subject: $item,
+            diff: ['id' => $validated['id'], 'type' => $validated['type']]
+        );
 
         return back()->with('success', "{$validated['type']} permanently deleted.");
     }
