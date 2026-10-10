@@ -55,8 +55,9 @@ return [
 
     // @see: https://docs.sentry.io/platforms/php/guides/laravel/configuration/options/#ignore_transactions
     'ignore_transactions' => [
-        // Ignore Laravel's default health URL
+        // Ignore Laravel's default health URL and serverless warmup ping
         '/up',
+        '/ping',
     ],
 
     // Breadcrumb specific configuration

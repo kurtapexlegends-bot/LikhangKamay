@@ -24,7 +24,7 @@ export default defineConfig({
         react(),
     ],
     build: {
-        chunkSizeWarningLimit: 900,
+        chunkSizeWarningLimit: 1400,
         rollupOptions: {
             output: {
                 manualChunks(id) {
