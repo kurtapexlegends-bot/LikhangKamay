@@ -14,7 +14,20 @@ use Inertia\Inertia;
 if (app()->environment('local')) {
     Route::get('/dev/preview-auth', function (\Illuminate\Http\Request $request) {
         $role = $request->query('role', 'super_admin');
-        $user = User::where('role', $role)->first() ?? User::where('role', 'super_admin')->first();
+        $userId = $request->query('user_id');
+        $email = $request->query('email');
+
+        if ($userId) {
+            $user = User::find($userId);
+        } elseif ($email) {
+            $user = User::where('email', $email)->first();
+        } elseif ($role === 'artisan') {
+            $user = User::where('role', 'artisan')->where('artisan_status', 'approved')->where('premium_tier', 'super_premium')->first()
+                ?? User::where('role', 'artisan')->where('artisan_status', 'approved')->first()
+                ?? User::where('role', 'artisan')->first();
+        } else {
+            $user = User::where('role', $role)->first() ?? User::where('role', 'super_admin')->first();
+        }
         if ($user) {
             Auth::guard('web')->login($user, true);
             $request->session()->regenerate();
@@ -649,7 +662,8 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/trash/permanent-delete', [\App\Http\Controllers\Admin\PlatformDiagnosticsController::class, 'permanentDeleteItem'])->name('admin.trash.permanent-delete');
 
     // Global Taxonomy Engine
-    Route::get('/taxonomy', fn() => redirect()->route('admin.settings.index', ['tab' => 'taxonomy']))->name('admin.taxonomy.index');
+    Route::get('/categories', [\App\Http\Controllers\Admin\CatalogController::class, 'categories'])->name('admin.categories.index');
+    Route::get('/taxonomy', fn() => redirect()->route('admin.categories.index'))->name('admin.taxonomy.index');
     Route::post('/taxonomy', [\App\Http\Controllers\Admin\CatalogController::class, 'storeTaxonomy'])->name('admin.taxonomy.store');
     Route::patch('/taxonomy/{category}', [\App\Http\Controllers\Admin\CatalogController::class, 'updateTaxonomy'])->name('admin.taxonomy.update');
     Route::delete('/taxonomy/{category}', [\App\Http\Controllers\Admin\CatalogController::class, 'destroyTaxonomy'])->name('admin.taxonomy.destroy');

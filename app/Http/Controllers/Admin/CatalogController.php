@@ -25,6 +25,10 @@ class CatalogController extends Controller
     {
         Gate::authorize('admin-action');
 
+        if ($request->query('tab') === 'categories') {
+            return redirect()->route('admin.categories.index');
+        }
+
         $statusFilter = $request->input('product_status', 'pending_review');
         $shopFilter = $request->input('shop_id');
         $search = $request->input('search');
@@ -68,10 +72,11 @@ class CatalogController extends Controller
             ->get();
 
         return Inertia::render('Admin/Catalog/CatalogManager', [
-            'categories' => $request->query('tab') === 'categories'
-                ? Category::withCount('products')->orderBy('name')->get()
-                : Inertia::defer(fn() => Category::withCount('products')->orderBy('name')->get()),
-            'requests' => SponsorshipRequest::with(['user:id,name,shop_name', 'product:id,name,slug,cover_photo_path'])
+            'categories' => Inertia::defer(fn() => Category::withCount('products')->orderBy('name')->get()),
+            'requests' => SponsorshipRequest::with([
+                'user:id,name,email,shop_name,created_at,role,artisan_status',
+                'product:id,user_id,name,slug,description,category,status,price,stock,sold,rating,reviews_count,cover_photo_path,gallery_paths,model_3d_path,is_sponsored,sponsored_until,created_at'
+            ])
                 ->latest()
                 ->paginate(10, ['*'], 'requests_page'),
             'products' => $productQuery->paginate(10, ['*'], 'products_page'),
@@ -82,6 +87,18 @@ class CatalogController extends Controller
                 'shop_id' => $shopFilter,
                 'search' => $search
             ]
+        ]);
+    }
+
+    /**
+     * Display dedicated Categories & Taxonomy management dashboard
+     */
+    public function categories(Request $request)
+    {
+        Gate::authorize('admin-action');
+
+        return Inertia::render('Admin/Catalog/CategoriesPage', [
+            'categories' => Category::withCount('products')->orderBy('name')->get(),
         ]);
     }
 

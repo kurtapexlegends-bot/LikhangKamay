@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, Clock, Check } from "lucide-react";
+import DatePicker from "@/Components/DatePicker";
 
 export default function DiscountScheduleCard({
     name,
@@ -171,18 +172,14 @@ export default function DiscountScheduleCard({
                     </div>
                     <div className="grid grid-cols-5 gap-2">
                         <div className="col-span-3">
-                            <input
-                                type="date"
-                                min={minStart.split('T')[0]}
+                            <DatePicker
+                                minDate={minStart.split('T')[0]}
                                 value={getDatePart(draftStartAt)}
-                                onChange={(e) => updateStartDate(e.target.value)}
+                                onChange={(newDate) => updateStartDate(newDate)}
                                 disabled={isEditingExisting}
-                                className={`w-full text-xs rounded-xl border-stone-200 focus:border-clay-500 focus:ring-clay-500 bg-white min-h-[42px] px-2.5 font-medium ${
-                                    isEditingExisting ? "bg-stone-100/70 text-stone-500 cursor-not-allowed border-stone-200" : ""
-                                } ${
-                                    isPastStart ? "border-rose-400 text-rose-700 bg-rose-50" : ""
-                                }`}
-                                required
+                                hasError={Boolean(isPastStart)}
+                                placeholder="Start date"
+                                className="min-h-[42px]"
                             />
                         </div>
                         <div className="col-span-2">
@@ -209,15 +206,13 @@ export default function DiscountScheduleCard({
                     </label>
                     <div className="grid grid-cols-5 gap-2">
                         <div className="col-span-3">
-                            <input
-                                type="date"
-                                min={getDatePart(draftStartAt) || minStart.split('T')[0]}
+                            <DatePicker
+                                minDate={getDatePart(draftStartAt) || minStart.split('T')[0]}
                                 value={getDatePart(draftEndAt)}
-                                onChange={(e) => updateEndDate(e.target.value)}
-                                className={`w-full text-xs rounded-xl border-stone-200 focus:border-clay-500 focus:ring-clay-500 bg-white min-h-[42px] px-2.5 font-medium ${
-                                    isInvalidEnd ? "border-rose-400 text-rose-700 bg-rose-50" : ""
-                                }`}
-                                required
+                                onChange={(newDate) => updateEndDate(newDate)}
+                                hasError={Boolean(isInvalidEnd)}
+                                placeholder="End date"
+                                className="min-h-[42px]"
                             />
                         </div>
                         <div className="col-span-2">

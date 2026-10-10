@@ -382,6 +382,9 @@ class AccountingLedgerService
             'rejection_reason' => $request->rejection_reason,
             'amount' => $amount,
             'quantity' => (int) $request->quantity,
+            'needed_by_date' => $request->needed_by_date ? (is_string($request->needed_by_date) ? substr($request->needed_by_date, 0, 10) : $request->needed_by_date->format('Y-m-d')) : null,
+            'urgency_level' => $request->urgency_level ?? StockRequest::URGENCY_ROUTINE,
+            'notes' => $request->notes,
             'requester' => $this->serializeRequester($requester),
             'activity' => $this->buildActivitySummary(
                 $request->status,

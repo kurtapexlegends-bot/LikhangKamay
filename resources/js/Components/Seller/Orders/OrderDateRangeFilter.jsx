@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
+import DatePicker from '@/Components/DatePicker';
 
 export default function OrderDateRangeFilter({
     startDate = '',
@@ -71,26 +72,22 @@ export default function OrderDateRangeFilter({
                 </div>
             </div>
 
-            <div className="flex items-center bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-clay-100 focus-within:border-clay-500 transition-all h-[42px]">
-                <label className="flex flex-1 h-full items-center gap-2 px-3 hover:bg-stone-50 transition cursor-pointer min-h-[42px] min-w-0">
-                    <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 shrink-0">From</span>
-                    <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="min-w-0 flex-1 bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
-                    />
-                </label>
-                <div className="h-full w-px bg-stone-200 shrink-0"></div>
-                <label className="flex flex-1 h-full items-center gap-2 px-3 hover:bg-stone-50 transition cursor-pointer min-h-[42px] min-w-0">
-                    <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400 shrink-0">To</span>
-                    <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="min-w-0 flex-1 bg-transparent text-xs font-bold text-stone-700 border-none outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
-                    />
-                </label>
+            <div className="grid grid-cols-2 gap-2">
+                <DatePicker
+                    prefix="From"
+                    value={startDate}
+                    onChange={setStartDate}
+                    placeholder="Start date"
+                    maxDate={endDate || undefined}
+                />
+                <DatePicker
+                    prefix="To"
+                    value={endDate}
+                    onChange={setEndDate}
+                    placeholder="End date"
+                    minDate={startDate || undefined}
+                    align="right"
+                />
             </div>
         </div>
     );

@@ -31,6 +31,10 @@ class SystemSettingsController extends Controller
             return redirect()->route('admin.monetization');
         }
 
+        if (request()->query('tab') === 'taxonomy' || request()->query('tab') === 'categories') {
+            return redirect()->route('admin.categories.index');
+        }
+
         try {
             return Inertia::render('Admin/Layout/SystemConfig/SystemConfig', array_merge(
                 $this->orchestrator->getConfigDashboardData(),

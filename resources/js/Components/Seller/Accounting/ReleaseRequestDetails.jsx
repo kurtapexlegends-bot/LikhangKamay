@@ -280,7 +280,25 @@ export default function ReleaseRequestDetails({
                                 { label: 'Supply', value: item.supply?.name },
                                 { label: 'Category', value: item.supply?.category },
                                 { label: 'Supplier', value: item.supply?.supplier || 'Not provided' },
-                                { label: 'Unit', value: item.supply?.unit || 'N/A' }
+                                { label: 'Unit', value: item.supply?.unit || 'N/A' },
+                                {
+                                    label: 'Needed By',
+                                    value: item.needed_by_date ? formatDate(item.needed_by_date) : 'Flexible'
+                                },
+                                {
+                                    label: 'Urgency',
+                                    value: (
+                                        <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                                            item.urgency_level === 'immediate'
+                                                ? 'border-rose-200 bg-rose-50 text-rose-700'
+                                                : item.urgency_level === 'soon'
+                                                ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                                : 'border-stone-200 bg-stone-100 text-stone-700'
+                                        }`}>
+                                            {item.urgency_level ? String(item.urgency_level).toUpperCase() : 'ROUTINE'}
+                                        </span>
+                                    )
+                                }
                             ]}
                         />
 
@@ -309,6 +327,13 @@ export default function ReleaseRequestDetails({
                             ]}
                         />
                     </div>
+
+                    {item.notes && (
+                        <div className="mt-3.5 rounded-xl border border-stone-200 bg-[#FDFBF9] p-3.5">
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Requester Context & Notes</p>
+                            <p className="mt-1 text-xs text-stone-700 font-medium leading-relaxed">{item.notes}</p>
+                        </div>
+                    )}
                 </div>
             )}
 

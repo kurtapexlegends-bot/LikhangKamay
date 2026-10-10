@@ -52,6 +52,16 @@ export default function StockRequestsTable({
                                         #{req.id}
                                     </span>
                                     <StatusBadge status={req.status} />
+                                    {req.urgency_level === 'immediate' && (
+                                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-md">
+                                            Urgent
+                                        </span>
+                                    )}
+                                    {req.urgency_level === 'soon' && (
+                                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">
+                                            High Priority
+                                        </span>
+                                    )}
                                 </div>
                                 <h4 className="mt-2 text-sm font-black text-stone-900 truncate">
                                     {req.supply?.name || 'Item'}
@@ -59,6 +69,11 @@ export default function StockRequestsTable({
                                 <p className="text-[11px] text-stone-500 font-medium mt-0.5">
                                     {req.supply?.category && <span className="font-semibold text-stone-700">{req.supply.category} • </span>}
                                     Requested by <span className="font-bold text-stone-700">{req.requester?.name || 'Store Owner'}</span>
+                                    {req.needed_by_date && (
+                                        <span className="block text-[10px] text-stone-400 font-semibold mt-0.5">
+                                            Needed by {req.needed_by_date}
+                                        </span>
+                                    )}
                                 </p>
                             </div>
                         </div>
@@ -145,10 +160,27 @@ export default function StockRequestsTable({
                                     </span>
                                 </td>
                                 <td className="px-4 py-3.5 align-middle">
-                                    <p className="font-black text-stone-900 text-sm leading-snug">{req.supply?.name || 'Item'}</p>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <p className="font-black text-stone-900 text-sm leading-snug">{req.supply?.name || 'Item'}</p>
+                                        {req.urgency_level === 'immediate' && (
+                                            <span className="text-[9px] font-extrabold uppercase tracking-widest text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded">
+                                                Urgent
+                                            </span>
+                                        )}
+                                        {req.urgency_level === 'soon' && (
+                                            <span className="text-[9px] font-extrabold uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                                                High Priority
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="text-[11px] text-stone-500 font-medium mt-0.5">
                                         {req.supply?.category && <span className="text-stone-700 font-semibold">{req.supply.category} • </span>}
                                         By <span className="font-bold text-stone-700">{req.requester?.name || 'Store Owner'}</span>
+                                        {req.needed_by_date && (
+                                            <span className="text-stone-400 font-semibold ml-1.5">
+                                                &bull; Needed by {req.needed_by_date}
+                                            </span>
+                                        )}
                                     </p>
                                 </td>
                                 <td className="px-4 py-3.5 align-middle whitespace-nowrap">

@@ -89,6 +89,40 @@ class CategoryCollisionTest extends TestCase
         $this->assertEquals('old-clay', $currentCategory->fresh()->slug);
     }
 
+    public function test_super_admin_can_access_dedicated_categories_page(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        Category::create(['name' => 'Textiles', 'slug' => 'textiles']);
+
+        $response = $this->actingAs($admin)->get(route('admin.categories.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Admin/Catalog/CategoriesPage')
+            ->has('categories', 1)
+        );
+    }
+
+    public function test_legacy_taxonomy_and_catalog_category_tabs_redirect_to_dedicated_categories_page(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        // 1. Legacy /taxonomy
+        $this->actingAs($admin)
+            ->get(route('admin.taxonomy.index'))
+            ->assertRedirect(route('admin.categories.index'));
+
+        // 2. /catalog?tab=categories
+        $this->actingAs($admin)
+            ->get(route('admin.catalog.index', ['tab' => 'categories']))
+            ->assertRedirect(route('admin.categories.index'));
+
+        // 3. /settings?tab=taxonomy
+        $this->actingAs($admin)
+            ->get(route('admin.settings.index', ['tab' => 'taxonomy']))
+            ->assertRedirect(route('admin.categories.index'));
+    }
+
     private function makeProduct(User $seller, array $overrides = []): Product
     {
         return Product::create(array_merge([

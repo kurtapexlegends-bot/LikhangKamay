@@ -2,15 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Award, Package, ShoppingBag, Star, FolderTree } from 'lucide-react';
+import { Award, Package, ShoppingBag, Star } from 'lucide-react';
 
 // Extracted Subcomponents
 import CatalogKPIs from '@/Components/Admin/Catalog/CatalogKPIs';
 import SponsorshipRequestsTable from '@/Components/Admin/Catalog/SponsorshipRequestsTable';
 import ProductModerationTable from '@/Components/Admin/Catalog/ProductModerationTable';
-import CategoryManager from '@/Components/Admin/Catalog/CategoryManager';
 
-export default function CatalogManager({ categories = [], requests, products, filters, statusCounts, shops = [] }) {
+export default function CatalogManager({ requests, products, filters, statusCounts, shops = [] }) {
     const { url } = usePage();
     const activeTab = useMemo(() => {
         if (typeof window === 'undefined') return 'moderation';
@@ -34,9 +33,8 @@ export default function CatalogManager({ categories = [], requests, products, fi
     const uniqueShops = useMemo(() => new Set(requestRows.map(r => r.user?.id).filter(Boolean)).size, [requestRows]);
 
     const tabs = [
-        { id: 'moderation', label: 'Product Approvals', icon: ShoppingBag, count: statusCounts?.pending },
+        { id: 'moderation', label: 'Product Approvals', icon: ShoppingBag, count: statusCounts?.pending_review ?? statusCounts?.pending },
         { id: 'sponsorships', label: 'Sponsorship Requests', icon: Star, count: pendingRequests > 0 ? pendingRequests : null },
-        { id: 'categories', label: 'Categories & Taxonomy', icon: FolderTree, count: categories?.length ?? null },
     ];
 
     return (
@@ -111,20 +109,6 @@ export default function CatalogManager({ categories = [], requests, products, fi
                         >
                             {/* Product Moderation Table */}
                             <ProductModerationTable products={products} filters={filters} statusCounts={statusCounts} shops={shops} />
-                        </motion.div>
-                    )}
-
-                    {activeTab === 'categories' && (
-                        <motion.div
-                            key="categories-tab"
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 5 }}
-                            transition={{ duration: 0.2 }}
-                            className="space-y-6"
-                        >
-                            {/* Category & Taxonomy Manager */}
-                            <CategoryManager categories={categories} />
                         </motion.div>
                     )}
                 </AnimatePresence>

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { router } from '@inertiajs/react';
-import { Clock, Award, Package, Check, X, CheckCircle2, XCircle } from 'lucide-react';
+import { Clock, Award, Package, Check, X, CheckCircle2, XCircle, Eye } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import CompactPagination from '@/Components/CompactPagination';
 import EmptyState from '@/Components/WorkspaceEmptyState';
 import BulkActionPill, { ActionTooltip } from '@/Components/Admin/Layout/BulkActionPill';
 import SponsorshipDecisionModal from '@/Components/Admin/Catalog/SponsorshipDecisionModal';
+import SponsorshipInspectionDrawer from '@/Components/Admin/Catalog/SponsorshipInspectionDrawer';
 import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
 
 export default function SponsorshipRequestsTable({ requests }) {
@@ -16,6 +17,7 @@ export default function SponsorshipRequestsTable({ requests }) {
     const [pendingActionId, setPendingActionId] = useState(null);
     const [recentlyUpdatedId, setRecentlyUpdatedId] = useState(null);
     const [modalData, setModalData] = useState({ isOpen: false, type: null, request: null });
+    const [inspectRequest, setInspectRequest] = useState(null);
     const [requestRows, setRequestRows] = useState(requests?.data || []);
     const [rejectionReason, setRejectionReason] = useState('');
     const [selectedRequestIds, setSelectedRequestIds] = useState([]);
@@ -123,6 +125,72 @@ export default function SponsorshipRequestsTable({ requests }) {
             setProcessingSponsorship(true);
             processSequentialSponsorships(idsToProcess, type, rejectionReason.trim());
         }
+    };
+
+    const handleDrawerApprove = (req) => {
+        setProcessingSponsorship(true);
+        setPendingActionId(req.id);
+        router.post(route('admin.sponsorships.approve', req.id), {}, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                const processedAt = new Date().toISOString();
+                setRequestRows((currentRows) => currentRows.map((row) => (
+                    row.id === req.id
+                        ? {
+                            ...row,
+                            status: 'approved',
+                            approved_at: processedAt,
+                            updated_at: processedAt,
+                        }
+                        : row
+                )));
+                setRecentlyUpdatedId(req.id);
+                setInspectRequest(null);
+                addToast('Sponsorship approved successfully for 7 days.', 'success');
+                setSelectedRequestIds(prev => prev.filter(id => id !== req.id));
+            },
+            onError: (err) => {
+                addToast(err?.error || err?.message || 'Failed to approve sponsorship.', 'error');
+            },
+            onFinish: () => {
+                setProcessingSponsorship(false);
+                setPendingActionId(null);
+            }
+        });
+    };
+
+    const handleDrawerReject = (req, reason) => {
+        setProcessingSponsorship(true);
+        setPendingActionId(req.id);
+        router.post(route('admin.sponsorships.reject', req.id), { rejection_reason: reason }, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                const processedAt = new Date().toISOString();
+                setRequestRows((currentRows) => currentRows.map((row) => (
+                    row.id === req.id
+                        ? {
+                            ...row,
+                            status: 'rejected',
+                            rejection_reason: reason,
+                            updated_at: processedAt,
+                        }
+                        : row
+                )));
+                setRecentlyUpdatedId(req.id);
+                setInspectRequest(null);
+                addToast('Sponsorship request declined.', 'success');
+                setSelectedRequestIds(prev => prev.filter(id => id !== req.id));
+            },
+            onError: (err) => {
+                addToast(err?.error || err?.message || 'Failed to decline sponsorship.', 'error');
+            },
+            onFinish: () => {
+                setProcessingSponsorship(false);
+                setPendingActionId(null);
+            }
+        });
     };
 
     const processSequentialSponsorships = (ids, type, reason = '') => {
@@ -266,30 +334,18 @@ export default function SponsorshipRequestsTable({ requests }) {
 
                                     {/* Action row */}
                                     <div className="pt-2 border-t border-stone-100">
-                                        {req.status === 'pending' ? (
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleSponsorshipAction(req, 'reject')}
-                                                    disabled={processingSponsorship && pendingActionId === req.id}
-                                                    className="flex-1 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200/60 disabled:opacity-50 min-h-[40px] flex items-center justify-center"
-                                                >
-                                                    {processingSponsorship && pendingActionId === req.id && modalData.type === 'reject' ? 'Declining...' : 'Decline'}
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleSponsorshipAction(req, 'approve')}
-                                                    disabled={processingSponsorship && pendingActionId === req.id}
-                                                    className="flex-1 py-2 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition shadow-xs rounded-xl disabled:opacity-50 min-h-[40px] flex items-center justify-center"
-                                                >
-                                                    {processingSponsorship && pendingActionId === req.id && modalData.type === 'approve' ? 'Approving...' : 'Approve'}
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <p className="text-right text-[10px] text-stone-400 font-medium">
-                                                Processed on {new Date(req.approved_at || req.updated_at).toLocaleDateString()}
-                                            </p>
-                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => setInspectRequest(req)}
+                                            className={`w-full py-2.5 px-3 text-xs font-bold rounded-xl transition border min-h-[44px] flex items-center justify-center gap-2 active:scale-95 ${
+                                                req.status === 'pending'
+                                                    ? 'bg-clay-600 text-white hover:bg-clay-700 border-clay-600 shadow-2xs'
+                                                    : 'bg-stone-100 text-stone-700 hover:bg-stone-200/70 border-stone-200'
+                                            }`}
+                                        >
+                                            <Eye size={15} />
+                                            <span>{req.status === 'pending' ? 'Inspect & Decide' : 'View Inspection'}</span>
+                                        </button>
                                     </div>
                                 </div>
                             ))}
@@ -394,31 +450,18 @@ export default function SponsorshipRequestsTable({ requests }) {
                                             )}
                                         </td>
                                         <td className="py-4 px-6 align-middle text-right">
-                                            {req.status === 'pending' ? (
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleSponsorshipAction(req, 'reject')}
-                                                        disabled={processingSponsorship && pendingActionId === req.id}
-                                                        className="px-3.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200/60 hover:border-rose-300 disabled:opacity-50 min-h-[36px]"
-                                                    >
-                                                        {processingSponsorship && pendingActionId === req.id && modalData.type === 'reject' ? 'Declining...' : 'Decline'}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleSponsorshipAction(req, 'approve')}
-                                                        disabled={processingSponsorship && pendingActionId === req.id}
-                                                        className="px-4 py-1.5 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition-all shadow-xs rounded-xl disabled:opacity-50 min-h-[36px]"
-                                                    >
-                                                        {processingSponsorship && pendingActionId === req.id && modalData.type === 'approve' ? 'Approving...' : 'Approve'}
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <div className="text-right text-[10px] text-stone-400 font-medium leading-relaxed">
-                                                    Processed on<br/>
-                                                    {new Date(req.approved_at || req.updated_at).toLocaleDateString()}
-                                                </div>
-                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => setInspectRequest(req)}
+                                                className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition border min-h-[36px] inline-flex items-center gap-1.5 active:scale-95 ${
+                                                    req.status === 'pending'
+                                                        ? 'bg-clay-50 text-clay-800 border-clay-200 hover:bg-clay-100 shadow-2xs'
+                                                        : 'bg-stone-100 text-stone-700 border-stone-200 hover:bg-stone-200/70'
+                                                }`}
+                                            >
+                                                <Eye size={13} />
+                                                <span>{req.status === 'pending' ? 'Inspect Request' : 'Inspect'}</span>
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
@@ -461,6 +504,16 @@ export default function SponsorshipRequestsTable({ requests }) {
                 setRejectionReason={setRejectionReason}
                 onClose={() => setModalData({ isOpen: false, type: null, request: null })}
                 onConfirm={confirmSponsorshipAction}
+            />
+
+            {/* Inspection Drawer */}
+            <SponsorshipInspectionDrawer
+                isOpen={Boolean(inspectRequest)}
+                request={inspectRequest}
+                onClose={() => setInspectRequest(null)}
+                onApprove={handleDrawerApprove}
+                onReject={handleDrawerReject}
+                isProcessing={processingSponsorship}
             />
 
             {/* Bulk Sticky Action Bar */}

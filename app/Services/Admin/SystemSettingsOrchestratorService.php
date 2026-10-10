@@ -38,7 +38,6 @@ class SystemSettingsOrchestratorService
             'settings' => $this->getSystemSettings(),
             'metrics' => $this->getMonetizationMetrics(),
             'recentSubscribers' => $this->getRecentSubscribers(),
-            'categories' => Category::withCount('products')->orderBy('name')->get(),
             'trashQueue' => $trashData['queue'],
             'trashStats' => $trashData['stats'],
         ];

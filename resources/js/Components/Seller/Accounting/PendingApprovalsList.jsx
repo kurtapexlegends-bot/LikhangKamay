@@ -81,6 +81,16 @@ export default function PendingApprovalsList({
                                         <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${typeTone(item.type)}`}>
                                             {item.type === 'payroll' ? 'People & Payroll' : 'Inventory'}
                                         </span>
+                                        {item.type !== 'payroll' && item.urgency_level === 'immediate' && (
+                                            <span className="inline-flex items-center rounded border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-rose-700">
+                                                Urgent Payout
+                                            </span>
+                                        )}
+                                        {item.type !== 'payroll' && item.urgency_level === 'soon' && (
+                                            <span className="inline-flex items-center rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-amber-700">
+                                                High Priority
+                                            </span>
+                                        )}
                                         <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
                                             #{item.id} &bull; {formatDate(item.created_at)}
                                         </span>
@@ -99,6 +109,14 @@ export default function PendingApprovalsList({
                                         <span>
                                             {item.type === 'payroll' ? `${item.employee_count} Employees` : `${item.quantity} ${item.supply?.unit || ''}`}
                                         </span>
+                                        {item.needed_by_date && (
+                                            <>
+                                                <span className="h-1 w-1 rounded-full bg-stone-300" />
+                                                <span className={item.urgency_level === 'immediate' ? 'font-bold text-rose-700' : 'text-stone-600 font-semibold'}>
+                                                    Needed by {formatDate(item.needed_by_date)}
+                                                </span>
+                                            </>
+                                        )}
                                         {item.activity?.submitted_at && (
                                             <>
                                                 <span className="h-1 w-1 rounded-full bg-stone-300" />

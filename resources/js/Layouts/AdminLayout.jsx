@@ -205,7 +205,7 @@ export default function AdminLayout({ title, children }) {
                 },
                 { name: 'Product Approvals', href: route('admin.catalog.index', { tab: 'moderation' }), icon: ShoppingBag, current: isTabActive('admin.catalog.index', 'moderation', url) },
                 { name: 'Sponsorships', href: route('admin.catalog.index', { tab: 'sponsorships' }), icon: Star, current: isTabActive('admin.catalog.index', 'sponsorships', url) },
-                { name: 'Categories & Taxonomy', href: route('admin.catalog.index', { tab: 'categories' }), icon: FolderTree, current: isTabActive('admin.catalog.index', 'categories', url) || isTabActive('admin.settings.index', 'taxonomy', url) },
+                { name: 'Categories', href: route('admin.categories.index'), icon: FolderTree, current: route().current('admin.categories.*') || route().current('admin.taxonomy.*') || isTabActive('admin.catalog.index', 'categories', url) || isTabActive('admin.settings.index', 'taxonomy', url) },
             ]
         },
         {
@@ -367,12 +367,13 @@ export default function AdminLayout({ title, children }) {
                                     'User Directory': "Manage platform users, staff profiles, and account notices.",
                                     'Artisan Applications': "Review and approve artisan registration applications or request revisions.",
                                     'Product Approvals': "Review and approve new handmade product submissions before they go live.",
+                                    'Categories': "Manage product categories, navigation taxonomy, and catalog structure.",
                                     'Category Manager': "Manage product categories and tags.",
                                     'Sponsorships': "Manage sponsored product campaigns.",
                                     'Content Safety': "Review user-reported flags, safety queues, and disputed reviews.",
                                     'Order Disputes': "Review and resolve return and refund claims between customers and artisans.",
                                     'Deleted Items': "Restore or permanently delete removed database records.",
-                                    'System Config': "Manage platform operations, subscription plans, email automation, and categories."
+                                    'System Config': "Manage platform operations, subscription plans, and email automation."
                                 }[resolvedTitle] || ""}
                             </p>
                         </div>

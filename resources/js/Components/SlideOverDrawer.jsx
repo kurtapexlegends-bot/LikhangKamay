@@ -4,8 +4,10 @@ import { X } from 'lucide-react';
 
 export default function SlideOverDrawer({
     show = false,
+    isOpen,
     onClose,
     title,
+    subtitle,
     children,
     footer = null,
     widthClass = 'max-w-md', // Default to medium width, can be overridden with 'max-w-2xl', etc.
@@ -13,6 +15,7 @@ export default function SlideOverDrawer({
     heightClass = 'max-h-[85vh]', // Default bottom sheet height on mobile/tablet
     position = 'bottom' // 'bottom' (bottom sheet on mobile, right on desktop) or 'right' (right drawer on all screens)
 }) {
+    const isVisible = Boolean(show || isOpen);
     const isRight = position === 'right';
 
     const panelClass = isRight 
@@ -24,7 +27,7 @@ export default function SlideOverDrawer({
         : 'rounded-t-2xl lg:rounded-t-none lg:h-full';
 
     return (
-        <Transition show={show} as={Fragment}>
+        <Transition show={isVisible} as={Fragment}>
             <Dialog as="div" className="relative z-[120]" onClose={onClose}>
                 {/* Backdrop */}
                 <TransitionChild
@@ -61,9 +64,16 @@ export default function SlideOverDrawer({
                                         {/* Header */}
                                         {title && (
                                             <div className="flex items-center justify-between border-b border-stone-100 px-6 py-5 shrink-0">
-                                                <h2 className="text-lg font-bold text-stone-900 tracking-tight">
-                                                    {title}
-                                                </h2>
+                                                <div>
+                                                    <h2 className="text-lg font-bold text-stone-900 tracking-tight">
+                                                        {title}
+                                                    </h2>
+                                                    {subtitle && (
+                                                        <p className="mt-0.5 text-xs text-stone-500 font-medium">
+                                                            {subtitle}
+                                                        </p>
+                                                    )}
+                                                </div>
                                                 <button
                                                     type="button"
                                                     className="rounded-full p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors focus:outline-none focus:ring-2 focus:ring-clay-500/50 min-h-[44px] min-w-[44px] flex items-center justify-center"

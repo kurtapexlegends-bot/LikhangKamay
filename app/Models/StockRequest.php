@@ -17,6 +17,10 @@ class StockRequest extends Model
     const STATUS_COMPLETED = 'completed';
     const STATUS_REJECTED = 'rejected';
 
+    const URGENCY_ROUTINE = 'routine';
+    const URGENCY_SOON = 'soon';
+    const URGENCY_IMMEDIATE = 'immediate';
+
     protected $fillable = [
         'user_id',
         'requested_by_user_id',
@@ -24,9 +28,18 @@ class StockRequest extends Model
         'quantity',
         'total_cost',
         'status',
+        'needed_by_date',
+        'urgency_level',
+        'notes',
         'received_quantity',
         'transferred_quantity',
         'rejection_reason',
+    ];
+
+    protected $casts = [
+        'needed_by_date' => 'date:Y-m-d',
+        'quantity' => 'integer',
+        'total_cost' => 'decimal:2',
     ];
 
     public function user()

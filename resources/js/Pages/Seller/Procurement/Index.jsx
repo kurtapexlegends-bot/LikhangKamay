@@ -47,6 +47,10 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
     const [supplyToRequest, setSupplyToRequest] = useState(null);
     
     const [requestQuantity, setRequestQuantity] = useState(0);
+    const [neededByDate, setNeededByDate] = useState('');
+    const [urgencyLevel, setUrgencyLevel] = useState('routine');
+    const [requestNotes, setRequestNotes] = useState('');
+    const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
     const [actionNotice, setActionNotice] = useState(null);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [filterCategory, setFilterCategory] = useState('all');
@@ -176,20 +180,33 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
     const handleRequestRestockClick = (supply) => {
         setSupplyToRequest(supply);
         setRequestQuantity(supply.min_stock * 2);
+        setNeededByDate('');
+        setUrgencyLevel('routine');
+        setRequestNotes('');
         setShowConfirmRequest(true);
     };
 
     const handleRequestRestockSubmit = () => {
-        if (!canEditStockRequests) return;
-        router.post(route('supplies.request', supplyToRequest.id), { quantity: requestQuantity }, { 
+        if (!canEditStockRequests || !supplyToRequest) return;
+        setIsSubmittingRequest(true);
+        router.post(route('supplies.request', supplyToRequest.id), {
+            quantity: requestQuantity,
+            needed_by_date: neededByDate || null,
+            urgency_level: urgencyLevel,
+            notes: requestNotes || null,
+        }, { 
             preserveScroll: true,
             onSuccess: () => {
                 setShowConfirmRequest(false);
                 setActionNotice(null);
+                addToast('Restock request submitted to Finance.', 'success');
             },
             onError: () => {
                 setActionNotice('Restock request could not be submitted right now.');
                 addToast('Restock request failed.', 'error');
+            },
+            onFinish: () => {
+                setIsSubmittingRequest(false);
             }
         });
     };
@@ -338,7 +355,14 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
                 supply={supplyToRequest}
                 requestQuantity={requestQuantity}
                 setRequestQuantity={setRequestQuantity}
+                neededByDate={neededByDate}
+                setNeededByDate={setNeededByDate}
+                urgencyLevel={urgencyLevel}
+                setUrgencyLevel={setUrgencyLevel}
+                notes={requestNotes}
+                setNotes={setRequestNotes}
                 onSubmit={handleRequestRestockSubmit}
+                isSubmitting={isSubmittingRequest}
             />
 
             <DeleteSupplyModal 

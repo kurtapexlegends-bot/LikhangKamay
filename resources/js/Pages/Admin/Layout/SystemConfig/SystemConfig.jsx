@@ -6,13 +6,11 @@ import { useToast } from '@/Components/ToastContext';
 import { 
     Settings, 
     ShieldCheck, 
-    FolderTree, 
     RotateCcw
 } from 'lucide-react';
 
 import GeneralPlatformTab from './GeneralPlatformTab';
 import SystemOperationsTab from './SystemOperationsTab';
-import CategoryManager from '@/Components/Admin/Catalog/CategoryManager';
 import TrashRestorationTable from '@/Components/Admin/Compliance/TrashRestorationTable';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 
@@ -177,7 +175,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     const tabs = [
         { id: 'branding', name: 'General & Platform', icon: Settings },
         { id: 'plans', name: 'Subscription Tiers', icon: ShieldCheck },
-        { id: 'taxonomy', name: 'Categories & Tags', icon: FolderTree },
         { id: 'trash', name: 'Deleted Items', icon: RotateCcw, count: trashQueue?.length || 0 },
     ];
 
@@ -257,18 +254,6 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                             availablePlanModules={settings?.available_plan_modules || []}
                             onSubmit={submit}
                         />
-                    )}
-
-                    {activeTab === 'taxonomy' && (
-                        <motion.div
-                            key="taxonomy-tab"
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 5 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <CategoryManager categories={categories} />
-                        </motion.div>
                     )}
 
                     {activeTab === 'trash' && (

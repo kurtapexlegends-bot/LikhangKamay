@@ -212,6 +212,9 @@ class ProcurementController extends Controller
 
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1',
+            'needed_by_date' => 'nullable|date|after_or_equal:today',
+            'urgency_level' => 'nullable|string|in:routine,soon,immediate',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         // Phase 1: The Stopper (Max Stock Validation)
@@ -228,11 +231,21 @@ class ProcurementController extends Controller
             'supply_id' => $supply->id,
             'quantity' => $validated['quantity'],
             'total_cost' => $totalCost,
-            'status' => 'pending'
+            'status' => 'pending',
+            'needed_by_date' => $validated['needed_by_date'] ?? null,
+            'urgency_level' => $validated['urgency_level'] ?? StockRequest::URGENCY_ROUTINE,
+            'notes' => $validated['notes'] ?? null,
         ]));
 
         $requesterName = $this->sellerActor()->name ?: 'A staff member';
-        $message = "{$requesterName} submitted a stock request for {$supply->name} for accounting approval.";
+        $urgencyLabel = match ($stockRequest->urgency_level) {
+            StockRequest::URGENCY_IMMEDIATE => '[URGENT] ',
+            StockRequest::URGENCY_SOON => '[High Priority] ',
+            default => '',
+        };
+        $neededDateText = $stockRequest->needed_by_date ? (is_string($stockRequest->needed_by_date) ? date('M d, Y', strtotime($stockRequest->needed_by_date)) : $stockRequest->needed_by_date->format('M d, Y')) : null;
+        $neededSuffix = $neededDateText ? " (Needed by {$neededDateText})" : '';
+        $message = "{$urgencyLabel}{$requesterName} submitted a stock request for {$supply->name}{$neededSuffix} for accounting approval.";
 
         $this->accountingRecipientsForSeller()->each(function ($recipient) use ($stockRequest, $message) {
             $recipient->notify(new AccountingApprovalRequestedNotification(
