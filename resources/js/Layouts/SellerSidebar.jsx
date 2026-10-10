@@ -13,6 +13,7 @@ import SidebarPlanPromo from '@/Components/Seller/Sidebar/SidebarPlanPromo';
 import CategoryGroup from '@/Components/Seller/Sidebar/CategoryGroup';
 import NavItem from '@/Components/Seller/Sidebar/NavItem';
 import StaffAttendanceDock from '@/Components/Seller/Sidebar/StaffAttendanceDock';
+import SidebarResizeHandle from '@/Components/Common/SidebarResizeHandle';
 
 const GROUPS_STORAGE_KEY = 'seller_sidebar_expanded_groups_v1';
 const GEAR_HINT_STORAGE_KEY = 'seller_sidebar_gear_hint_seen_v1';
@@ -58,7 +59,19 @@ const getInitialExpandedGroups = (active) => {
     return defaultGroups;
 };
 
-export default function SellerSidebar({ active, user, mobileOpen = false, onClose = () => {}, isCollapsed = false, onToggleCollapse = () => {} }) {
+export default function SellerSidebar({
+    active,
+    user,
+    mobileOpen = false,
+    onClose = () => {},
+    isCollapsed = false,
+    onToggleCollapse = () => {},
+    sidebarWidth,
+    isDragging = false,
+    isDesktop = true,
+    onStartResize = () => {},
+    onResetWidth = () => {}
+}) {
     const { sellerSubscription, sellerSidebar, attendance, pendingApprovalsCount } = usePage().props;
 
     const currentTierKey = sellerSubscription?.tierKey
@@ -257,7 +270,20 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                 />
             )}
 
-            <aside className={`fixed inset-y-0 left-0 z-50 ${isCollapsed ? 'w-16' : 'w-52'} bg-white border-r border-clay-100/50 shadow-2xl lg:shadow-none flex flex-col transform-gpu will-change-transform transition-[width,transform] duration-200 ease-out lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside 
+                style={isDesktop ? { width: `${sidebarWidth}px` } : undefined}
+                className={`fixed inset-y-0 left-0 z-50 w-64 max-w-[80vw] lg:max-w-none bg-white border-r border-clay-100/50 shadow-2xl lg:shadow-none flex flex-col transform-gpu will-change-transform ${
+                    isDragging ? 'select-none transition-none' : 'transition-[width,transform] duration-300 ease-out'
+                } lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+            >
+                {/* Desktop Drag Resize Handle */}
+                <SidebarResizeHandle
+                    onMouseDown={onStartResize}
+                    onDoubleClick={onResetWidth}
+                    isDragging={isDragging}
+                    isCollapsed={isCollapsed}
+                />
+
                 {/* Desktop Collapse Toggle Button */}
                 <button
                     onClick={() => onToggleCollapse(!isCollapsed)}
@@ -267,18 +293,18 @@ export default function SellerSidebar({ active, user, mobileOpen = false, onClos
                     <ChevronLeft size={12} className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
                 </button>
 
-                <div className={`relative flex shrink-0 items-center border-b border-clay-100/30 bg-transparent py-3 transition-[padding] duration-300 ${
-                    isCollapsed ? 'px-5 justify-center' : 'px-4 justify-between'
+                <div className={`relative flex shrink-0 items-center border-b border-clay-100/30 bg-transparent py-3 min-w-0 overflow-hidden transition-[padding] duration-300 ${
+                    isCollapsed ? 'px-5 justify-center' : 'px-4 pr-7 justify-between'
                 }`}>
-                    <div className="flex min-w-0 items-center">
+                    <div className="flex min-w-0 items-center overflow-hidden">
                         <img 
                             src="/images/logo.png" 
                             alt="LikhangKamay" 
                             className="w-6 h-6 object-contain shrink-0"
                             loading="lazy"
                         />
-                        <span className={`font-serif text-base font-bold text-gray-900 tracking-tight truncate overflow-hidden transition-[max-width,opacity,margin-left] duration-300 ${
-                            isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[120px] opacity-100 ml-2'
+                        <span className={`font-serif text-base font-bold text-gray-900 tracking-tight truncate overflow-hidden min-w-0 transition-[max-width,opacity,margin-left] duration-300 ${
+                            isCollapsed ? 'max-w-0 opacity-0 ml-0 pointer-events-none' : 'max-w-full opacity-100 ml-2'
                         }`}>
                             LikhangKamay
                         </span>

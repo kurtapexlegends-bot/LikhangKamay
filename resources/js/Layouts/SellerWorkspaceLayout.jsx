@@ -4,6 +4,7 @@ import SellerSidebar from '@/Layouts/SellerSidebar';
 import DisciplinaryStatusBanner from '@/Components/DisciplinaryStatusBanner';
 import SellerTermsModal from '@/Components/SellerTermsModal';
 import ScrollToTop from '@/Components/ScrollToTop';
+import { useResizableSidebar } from '@/hooks/useResizableSidebar';
 
 const SellerWorkspaceShellContext = createContext({
     openSidebar: () => {},
@@ -24,6 +25,24 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
             window.localStorage.setItem('seller_sidebar_collapsed_v1', value ? 'true' : 'false');
         }
     };
+
+    const {
+        width: sidebarWidth,
+        isDragging: isSidebarDragging,
+        isDesktop,
+        startResizing: handleStartSidebarResize,
+        resetWidth: handleResetSidebarWidth,
+    } = useResizableSidebar({
+        storageKey: 'seller_sidebar_width_v1',
+        collapseStorageKey: 'seller_sidebar_collapsed_v1',
+        defaultWidth: 220,
+        minExpandedWidth: 180,
+        maxWidth: 360,
+        collapsedWidth: 64,
+        snapThreshold: 130,
+        isCollapsed,
+        onToggleCollapse: handleToggleCollapse,
+    });
 
     // Reset scroll position on route transitions across persistent layout pages
     React.useEffect(() => {
@@ -92,7 +111,7 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
                 Skip to main content
             </a>
             <DisciplinaryStatusBanner />
-            <div className="h-screen overflow-hidden bg-[#FDFBF9] flex font-sans text-gray-800 relative">
+            <div className="h-screen overflow-hidden bg-[#FDFBF9] flex font-sans text-gray-800 relative" style={{ '--sidebar-width': `${sidebarWidth}px` }}>
                 {/* Clean Subtle Background (No infinite heavy GPU blur repaints) */}
                 <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-30">
                     <div className="absolute top-[-5%] left-[-5%] w-[35%] h-[35%] rounded-full bg-clay-100/60 blur-[60px]" />
@@ -106,16 +125,22 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
                     onClose={() => setSidebarOpen(false)}
                     isCollapsed={isCollapsed}
                     onToggleCollapse={handleToggleCollapse}
+                    sidebarWidth={sidebarWidth}
+                    isDragging={isSidebarDragging}
+                    isDesktop={isDesktop}
+                    onStartResize={handleStartSidebarResize}
+                    onResetWidth={handleResetSidebarWidth}
                 />
 
                 <main 
                     scroll-region="true" 
                     id="seller-main-content"
                     tabIndex={-1}
-                    className={`flex min-w-0 flex-1 flex-col overscroll-contain transition-[margin] duration-200 ease-out focus:outline-none ${
-                        overflowHidden ? 'overflow-hidden' : 'overflow-y-auto [scrollbar-gutter:stable]'
+                    style={isDesktop ? { marginLeft: `${sidebarWidth}px` } : undefined}
+                    className={`flex min-w-0 flex-1 flex-col overscroll-contain focus:outline-none ${
+                        isSidebarDragging ? 'transition-none' : 'transition-[margin] duration-300 cubic-bezier(0.4, 0, 0.2, 1)'
                     } ${
-                        isCollapsed ? 'lg:ml-16' : 'lg:ml-52'
+                        overflowHidden ? 'overflow-hidden' : 'overflow-y-auto [scrollbar-gutter:stable]'
                     }`}
                 >
                     <div className={`max-w-[90rem] mx-auto w-full flex-1 flex flex-col min-w-0 ${

@@ -20,7 +20,7 @@ function NavItem({ href, icon: Icon, active, children, compact, onClick, isColla
             ref={itemRef}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
-            className="w-full"
+            className="w-full flex justify-center"
         >
             <Link
                 href={href}
@@ -28,9 +28,9 @@ function NavItem({ href, icon: Icon, active, children, compact, onClick, isColla
                 preserveScroll
                 onClick={onClick}
                 className={`group relative flex items-center rounded-lg text-xs font-bold transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
-                    isCollapsed ? 'justify-center px-2' : 'px-4'
+                    isCollapsed ? 'w-10 h-10 justify-center p-0' : 'w-full px-4'
                 } ${
-                    compact ? 'py-2' : 'py-2.5'
+                    compact ? (isCollapsed ? '' : 'py-2') : (isCollapsed ? '' : 'py-2.5')
                 } ${active ? 'bg-clay-600 text-white shadow-sm' : 'text-gray-600 hover:bg-clay-50 hover:text-clay-700 active:bg-clay-100'}`}
                 title={isCollapsed && typeof children === 'string' ? (hasBadge ? `${children} (${badgeDisplay})` : children) : undefined}
             >
@@ -42,10 +42,10 @@ function NavItem({ href, icon: Icon, active, children, compact, onClick, isColla
                         </span>
                     )}
                 </div>
-                <span className={`overflow-hidden transition-[max-width,opacity,margin-left] duration-200 flex items-center whitespace-nowrap ${
-                    isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-xs opacity-100 ml-3 flex-1 justify-between'
+                <span className={`overflow-hidden transition-[max-width,opacity,margin-left] duration-200 flex items-center whitespace-nowrap min-w-0 ${
+                    isCollapsed ? 'max-w-0 opacity-0 ml-0 hidden' : 'max-w-xs opacity-100 ml-3 flex-1 justify-between'
                 }`}>
-                    <span>{children}</span>
+                    <span className="truncate">{children}</span>
                     {hasBadge && (
                         <span className={`inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-md leading-none transition-colors ml-2 ${
                             badgeDisplay === 'Elite'

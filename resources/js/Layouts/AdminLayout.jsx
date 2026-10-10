@@ -8,7 +8,9 @@ import NotificationDropdown from '@/Components/NotificationDropdown';
 import GlobalSearch from '@/Components/Consumer/GlobalSearch';
 import ActivityHistoryDrawer from '@/Components/ActivityHistoryDrawer';
 import ScrollToTop from '@/Components/ScrollToTop';
+import SidebarResizeHandle from '@/Components/Common/SidebarResizeHandle';
 import { useRealtime } from '@/hooks/useRealtime';
+import { useResizableSidebar } from '@/hooks/useResizableSidebar';
 import {
     LayoutDashboard,
     Users,
@@ -80,7 +82,7 @@ const resolveActiveGroup = (path, search = '') => {
 
     if (path.includes('dashboard') || path.includes('insights') || path.includes('operations') || path.includes('monetization') || path.includes('subscriptions')) return 'Operations Hub';
     if (path.includes('users') || path.includes('pending') || path.includes('catalog')) return 'Marketplace';
-    if (path.includes('moderation') || path.includes('compliance') || path.includes('disputes')) return 'Safety & Compliance';
+    if (path.includes('moderation') || path.includes('compliance') || path.includes('disputes')) return 'Compliance';
     if (path.includes('settings')) return 'System Settings';
     return null;
 };
@@ -89,6 +91,7 @@ const getInitialExpandedGroups = () => {
     const defaultGroups = {
         'Operations Hub': true,
         'Marketplace': true,
+        'Compliance': true,
         'Safety & Compliance': true,
         'System Settings': true,
     };
@@ -130,13 +133,12 @@ export default function AdminLayout({ title, children }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState(() => getInitialExpandedGroups());
+    const [activeTooltip, setActiveTooltip] = useState(null);
 
     const [isCollapsed, setIsCollapsed] = useState(() => {
         if (typeof window === 'undefined') return false;
         return window.localStorage.getItem('admin_sidebar_collapsed_v1') === 'true';
     });
-
-    const [activeTooltip, setActiveTooltip] = useState(null);
 
     const handleToggleCollapse = (value) => {
         setIsCollapsed(value);
@@ -144,6 +146,24 @@ export default function AdminLayout({ title, children }) {
             window.localStorage.setItem('admin_sidebar_collapsed_v1', value ? 'true' : 'false');
         }
     };
+
+    const {
+        width: sidebarWidth,
+        isDragging: isSidebarDragging,
+        isDesktop,
+        startResizing: handleStartSidebarResize,
+        resetWidth: handleResetSidebarWidth,
+    } = useResizableSidebar({
+        storageKey: 'admin_sidebar_width_v1',
+        collapseStorageKey: 'admin_sidebar_collapsed_v1',
+        defaultWidth: 220,
+        minExpandedWidth: 180,
+        maxWidth: 360,
+        collapsedWidth: 64,
+        snapThreshold: 130,
+        isCollapsed,
+        onToggleCollapse: handleToggleCollapse,
+    });
 
     const handleTooltipShow = (e, text, subtext = null) => {
         if (!isCollapsed) return;
@@ -209,7 +229,7 @@ export default function AdminLayout({ title, children }) {
             ]
         },
         {
-            title: 'Safety & Compliance',
+            title: 'Compliance',
             items: [
                 { 
                     name: 'Content Safety', 
@@ -251,7 +271,7 @@ export default function AdminLayout({ title, children }) {
             >
                 Skip to main content
             </a>
-            <div className="flex-1 flex">
+            <div className="flex-1 flex" style={{ '--sidebar-width': `${sidebarWidth}px` }}>
                 <Head title={resolvedTitle ? `${resolvedTitle} - Admin` : 'Admin Panel'} />
 
                 {/* Mobile Sidebar Overlay */}
@@ -263,12 +283,23 @@ export default function AdminLayout({ title, children }) {
             )}
 
             {/* Sidebar Navigation */}
-            <aside className={`
-                fixed inset-y-0 left-0 z-[100] bg-white border-r border-clay-100 transition-[width,transform] duration-300 cubic-bezier(0.4, 0, 0.2, 1) will-change-[width]
-                lg:translate-x-0 flex flex-col
-                ${isCollapsed ? 'w-16' : 'w-52'}
-                ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-            `}>
+            <aside 
+                style={isDesktop ? { width: `${sidebarWidth}px` } : undefined}
+                className={`
+                    fixed inset-y-0 left-0 z-[100] bg-white border-r border-clay-100 flex flex-col
+                    w-64 max-w-[80vw] lg:max-w-none lg:translate-x-0
+                    ${isSidebarDragging ? 'select-none transition-none' : 'transition-[width,transform] duration-300 cubic-bezier(0.4, 0, 0.2, 1) will-change-[width]'}
+                    ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+                `}
+            >
+                {/* Desktop Drag Resize Handle */}
+                <SidebarResizeHandle
+                    onMouseDown={handleStartSidebarResize}
+                    onDoubleClick={handleResetSidebarWidth}
+                    isDragging={isSidebarDragging}
+                    isCollapsed={isCollapsed}
+                />
+
                 {/* Desktop Collapse Toggle Button */}
                 <button
                     onClick={() => handleToggleCollapse(!isCollapsed)}
@@ -279,17 +310,17 @@ export default function AdminLayout({ title, children }) {
                 </button>
 
                 {/* Brand Header */}
-                <div className={`px-5 py-4 border-b border-stone-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center transition-[padding] duration-300 ${
-                    isCollapsed ? 'justify-center' : 'justify-between'
+                <div className={`py-4 border-b border-stone-50 shrink-0 bg-white/50 backdrop-blur-sm relative flex items-center min-w-0 overflow-hidden transition-[padding] duration-300 ${
+                    isCollapsed ? 'px-2 justify-center' : 'px-5 pr-7 justify-between'
                 }`}>
-                    <Link href={route('admin.dashboard')} className="flex items-center group">
+                    <Link href={route('admin.dashboard')} className="flex items-center group min-w-0 overflow-hidden">
                         <img
                             src={usePage().props.platform.logo}
                             alt={usePage().props.platform.name}
                             className="w-7 h-7 object-contain transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110 shrink-0"
                         />
-                        <span className={`font-serif text-lg font-bold text-stone-900 tracking-tight truncate overflow-hidden transition-[max-width,opacity,margin-left] duration-300 ${
-                            isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[120px] opacity-100 ml-2'
+                        <span className={`font-serif text-lg font-bold text-stone-900 tracking-tight truncate overflow-hidden min-w-0 transition-[max-width,opacity,margin-left] duration-300 ${
+                            isCollapsed ? 'max-w-0 opacity-0 ml-0 pointer-events-none hidden' : 'max-w-full opacity-100 ml-2.5'
                         }`}>{usePage().props.platform.name}</span>
                     </Link>
 
@@ -340,9 +371,12 @@ export default function AdminLayout({ title, children }) {
             </aside>
 
             {/* Main Content Area */}
-            <div className={`flex-1 flex flex-col min-w-0 transition-[margin-left] duration-300 cubic-bezier(0.4, 0, 0.2, 1) will-change-[margin-left] ${
-                isCollapsed ? 'lg:ml-16' : 'lg:ml-52'
-            }`}>
+            <div 
+                style={isDesktop ? { marginLeft: `${sidebarWidth}px` } : undefined}
+                className={`flex-1 flex flex-col min-w-0 will-change-[margin-left] ${
+                    isSidebarDragging ? 'transition-none' : 'transition-[margin-left] duration-300 cubic-bezier(0.4, 0, 0.2, 1)'
+                }`}
+            >
                 {/* Header (Desktop & Mobile) */}
                 <header className="bg-white/80 backdrop-blur-xl border-b border-stone-100 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40 transition-all duration-300">
                     <div className="flex min-w-0 items-center gap-3 sm:gap-4">
@@ -476,7 +510,7 @@ const CategoryGroup = ({ title, open, onToggle, isFirst, children, isCollapsed }
             : isFirst ? 'mt-1.5' : 'mt-4'
     }`}>
         <div className={`overflow-hidden transition-[max-height,opacity] duration-300 ${
-            isCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-10 opacity-100'
+            isCollapsed ? 'max-h-0 opacity-0 pointer-events-none hidden' : 'max-h-10 opacity-100'
         }`}>
             <motion.button
                 type="button"
@@ -484,7 +518,7 @@ const CategoryGroup = ({ title, open, onToggle, isFirst, children, isCollapsed }
                 whileTap={{ scale: 0.98 }}
                 className="flex w-full items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-stone-400 transition-all hover:text-stone-600 focus:outline-none"
             >
-                <span>{title}</span>
+                <span className="truncate pr-1">{title}</span>
                 <ChevronDown
                     size={12}
                     className={`transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${open ? '' : '-rotate-90'}`}
@@ -510,7 +544,7 @@ const NavItem = ({ href, icon: Icon, active, badge, onClick, children, isCollaps
         <div 
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
-            className="w-full"
+            className="w-full flex justify-center"
         >
             <MotionLink
                 href={href}
@@ -519,8 +553,8 @@ const NavItem = ({ href, icon: Icon, active, badge, onClick, children, isCollaps
                 onClick={onClick}
                 whileTap={{ scale: 0.98 }}
                 className={`
-                    flex items-center rounded-xl text-xs font-bold transition-[background-color,color,box-shadow,padding] duration-300
-                    ${isCollapsed ? 'px-2 py-2.5 justify-center' : 'px-3.5 py-2.5 justify-start'}
+                    flex items-center rounded-xl text-xs font-bold transition-[background-color,color,box-shadow,padding,width] duration-200
+                    ${isCollapsed ? 'w-10 h-10 justify-center p-0' : 'w-full px-3.5 py-2.5 justify-start'}
                     ${active
                         ? 'bg-clay-600 text-white shadow-[0_4px_12px_rgba(182,107,76,0.25)]'
                         : 'text-stone-500 hover:bg-clay-50 hover:text-clay-700 group'}
@@ -530,19 +564,19 @@ const NavItem = ({ href, icon: Icon, active, badge, onClick, children, isCollaps
                     <Icon
                         size={18}
                         strokeWidth={2.5}
-                        className={`transition-colors duration-300 ${active ? 'text-white' : 'text-stone-400 group-hover:text-clay-600'}`}
+                        className={`transition-colors duration-200 ${active ? 'text-white' : 'text-stone-400 group-hover:text-clay-600'}`}
                     />
                 </div>
-                <span className={`overflow-hidden transition-[max-width,opacity,margin-left] duration-300 flex items-center whitespace-nowrap ${
-                    isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3'
+                <span className={`overflow-hidden transition-[max-width,opacity,margin-left] duration-200 flex items-center whitespace-nowrap min-w-0 ${
+                    isCollapsed ? 'max-w-0 opacity-0 ml-0 hidden' : 'max-w-xs opacity-100 ml-3 flex-1 justify-between'
                 }`}>
-                    {children}
+                    <span className="truncate">{children}</span>
                 </span>
                 {badge && (
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-[colors,opacity,max-width] duration-300 ml-auto ${
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-[colors,opacity,max-width] duration-200 ml-auto ${
                         active ? 'bg-white/20 text-white ring-1 ring-white/30' : 'bg-clay-100 text-clay-700'
                     } ${
-                        isCollapsed ? 'max-w-0 opacity-0 px-0 ml-0' : 'max-w-[30px] opacity-100'
+                        isCollapsed ? 'max-w-0 opacity-0 px-0 ml-0 hidden' : 'max-w-[30px] opacity-100'
                     }`}>
                         {badge}
                     </span>

@@ -50,8 +50,8 @@ function SidebarPlanPromo({
                         ) : (
                             <Zap size={isCollapsed ? 16 : 13} className="text-stone-400 fill-stone-200 transition-[width,height] duration-300 shrink-0" />
                         )}
-                        <span className={`tracking-wide overflow-hidden transition-[max-width,opacity,margin-left] duration-300 whitespace-nowrap ${
-                            isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[150px] opacity-100 ml-1.5'
+                        <span className={`tracking-wide overflow-hidden transition-[max-width,opacity,margin-left] duration-300 whitespace-nowrap min-w-0 ${
+                            isCollapsed ? 'max-w-0 opacity-0 ml-0 hidden' : 'max-w-[150px] opacity-100 ml-1.5'
                         }`}>
                             {entitlement.tierLabel} Plan
                         </span>

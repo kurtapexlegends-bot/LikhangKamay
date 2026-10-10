@@ -16,7 +16,7 @@ function CategoryGroup({ title, open, onToggle, children, isCollapsed }) {
                     onClick={onToggle}
                     className="flex w-full items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-stone-600 transition-colors hover:text-stone-800 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"
                 >
-                    <span>{title}</span>
+                    <span className="truncate pr-1">{title}</span>
                     <ChevronRight
                         size={13}
                         className={`transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
