@@ -6,7 +6,9 @@ import { useToast } from '@/Components/ToastContext';
 import { 
     Settings, 
     ShieldCheck, 
-    RotateCcw
+    RotateCcw,
+    Mail,
+    Send
 } from 'lucide-react';
 
 import GeneralPlatformTab from './GeneralPlatformTab';
@@ -40,9 +42,12 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     const [activeTab, setActiveTab] = useState(() => {
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
-            return params.get('tab') || 'branding';
+            const tabParam = params.get('tab');
+            if (tabParam === 'branding' || !tabParam) return 'branding_contact';
+            if (tabParam === 'email') return 'branding_smtp';
+            return tabParam;
         }
-        return 'branding';
+        return 'branding_contact';
     });
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -173,7 +178,9 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
     };
 
     const tabs = [
-        { id: 'branding', name: 'General & Platform', icon: Settings },
+        { id: 'branding_contact', name: 'Contact & Socials', icon: Mail },
+        { id: 'branding_ops', name: 'Platform & Operations', icon: Settings },
+        { id: 'branding_smtp', name: 'Email Engine', icon: Send },
         { id: 'plans', name: 'Subscription Tiers', icon: ShieldCheck },
         { id: 'trash', name: 'Deleted Items', icon: RotateCcw, count: trashQueue?.length || 0 },
     ];
@@ -184,8 +191,8 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
 
             <div className="space-y-6 pb-20">
                 {/* Main Tabs Navigation Bar with Security Session Indicator */}
-                <div className="border-b border-stone-200/80 -mx-4 px-4 sm:mx-0 sm:px-0 flex flex-wrap items-center justify-between gap-3">
-                    <nav className="flex space-x-2 sm:space-x-4 overflow-x-auto no-scrollbar scroll-smooth">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-xl w-full sm:w-fit overflow-x-auto no-scrollbar scroll-smooth">
                         {tabs.map((tab) => {
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
@@ -195,25 +202,25 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                                     type="button"
                                     onClick={() => handleTabChange(tab.id)}
                                     className={`
-                                        flex items-center gap-2 py-3 px-3 sm:px-4 border-b-2 font-bold text-xs sm:text-sm whitespace-nowrap transition-all outline-none cursor-pointer
+                                        flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap outline-none min-h-[38px] shrink-0 snap-start active:scale-95 cursor-pointer
                                         ${isActive 
-                                            ? 'border-clay-700 text-clay-700' 
-                                            : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300'}
+                                            ? 'bg-white text-stone-900 shadow-2xs font-bold ring-1 ring-stone-900/5' 
+                                            : 'text-stone-500 hover:text-stone-700 hover:bg-stone-200/50'}
                                     `}
                                 >
-                                    <Icon size={16} className={isActive ? 'text-clay-700' : 'text-stone-400'} />
+                                    <Icon size={13} className={isActive ? 'text-clay-700' : 'text-stone-400'} />
                                     <span>{tab.name}</span>
                                     {tab.count !== undefined && tab.count > 0 && (
-                                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${isActive ? 'bg-clay-100 text-clay-800' : 'bg-stone-100 text-stone-600'}`}>
+                                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${isActive ? 'bg-clay-100 text-clay-800' : 'bg-stone-200 text-stone-600'}`}>
                                             {tab.count}
                                         </span>
                                     )}
                                 </button>
                             );
                         })}
-                    </nav>
+                    </div>
 
-                    <div className="py-2 shrink-0">
+                    <div className="shrink-0">
                         {sessionAuthActive ? (
                             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-2xs">
                                 <ShieldCheck size={13} className="text-emerald-600" />
@@ -230,8 +237,10 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
 
                 {/* Tab Content Panels */}
                 <AnimatePresence mode="wait">
-                    {activeTab === 'branding' && (
+                    {['branding_contact', 'branding_ops', 'branding_smtp'].includes(activeTab) && (
                         <GeneralPlatformTab
+                            key={activeTab}
+                            activeSubTab={activeTab}
                             data={data}
                             setData={setData}
                             updateNested={updateNested}
@@ -284,7 +293,7 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                             : "System configuration changes will apply immediately. Security session is active (verified within last 15 min).")
                         : (activeTab === 'plans' 
                             ? "Are you sure you want to update subscription plans? Lowering limits will automatically move excess active listings to draft for affected artisans."
-                            : "Are you sure you want to update the system configuration? Branding and operational settings will apply immediately to all active processes.")}
+                            : "Are you sure you want to update the system configuration? Operational settings and parameters will apply immediately to all active processes.")}
                     icon={activeTab === 'plans' ? ShieldCheck : Settings}
                     iconBg="bg-clay-50 text-clay-700"
                     confirmText={activeTab === 'plans' ? "Apply Plan Changes" : "Apply Config Changes"}

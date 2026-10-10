@@ -1,20 +1,25 @@
 /* eslint-disable react/no-unknown-property */
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Stage, Html, useProgress } from '@react-three/drei';
 import GLTFModel from './GLTFModel';
 import { Loader2, Box, RotateCcw, ZoomIn, ZoomOut, Sparkles } from 'lucide-react';
 import { ThreeDModelBoundary, ThreeDModelUnavailable } from './ThreeDModelBoundary';
 import CraftDimensionOverlay from './CraftDimensionOverlay';
-import RealWorldScaleBenchmark, { getRecommendedBenchmarkId } from './RealWorldScaleBenchmark';
+import RealWorldScaleBenchmark, { getRecommendedBenchmarkId, getBenchmarkFraming } from './RealWorldScaleBenchmark';
 
-function CameraController({ zoom }) {
+function CameraController({ zoom, targetX = 0, targetY = 0, controlsRef }) {
     const { camera } = useThree();
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/immutability
         camera.zoom = zoom;
+        camera.position.set(targetX + 0.35, targetY + 0.2, camera.position.z);
         camera.updateProjectionMatrix();
-    }, [zoom, camera]);
+
+        if (controlsRef?.current) {
+            controlsRef.current.target.set(targetX, targetY, 0);
+            controlsRef.current.update();
+        }
+    }, [zoom, targetX, targetY, camera, controlsRef]);
     return null;
 }
 
@@ -43,6 +48,7 @@ export default function ProductViewer3D({
     // Auto-select initial spatially optimal benchmark based on craft height
     const [benchmarkType, setBenchmarkType] = useState(() => getRecommendedBenchmarkId(dimensions?.height));
     const [unit, setUnit] = useState('cm');
+    const controlsRef = useRef(null);
 
     // Sync auto-selection if product dimensions change
     useEffect(() => {
@@ -50,6 +56,14 @@ export default function ProductViewer3D({
             setBenchmarkType(getRecommendedBenchmarkId(dimensions.height));
         }
     }, [dimensions?.height]);
+
+    // Compute dynamic camera target & zoom framing when comparing against real-world benchmarks
+    const framing = useMemo(() => {
+        if (!showScaleBenchmark) {
+            return { targetX: 0, targetY: 0, optimalZoom: 1.0 };
+        }
+        return getBenchmarkFraming(benchmarkType, dimensions?.height);
+    }, [showScaleBenchmark, benchmarkType, dimensions?.height]);
 
     function Loader() {
         const { progress } = useProgress();
@@ -73,33 +87,36 @@ export default function ProductViewer3D({
         </group>
     );
 
-    return (
-        <div className={`relative bg-gradient-to-b from-gray-50 to-gray-100 rounded-2xl overflow-hidden ${compact ? 'h-64' : 'h-96'} ${className}`}>
-            <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
-                <div className="bg-white/90 backdrop-blur px-2.5 py-1 rounded-full border border-gray-200 text-[10px] font-bold text-clay-600 flex items-center gap-1.5 shadow-sm uppercase tracking-wide">
-                    <Box size={12} /> 3D View
-                </div>
-                <button
-                    type="button"
-                    onClick={() => setShowScaleBenchmark(!showScaleBenchmark)}
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1.5 transition shadow-sm cursor-pointer ${
-                        showScaleBenchmark ? 'bg-amber-500 text-stone-950 border-amber-500' : 'bg-white/90 backdrop-blur text-stone-700 border-gray-200 hover:bg-white'
-                    }`}
-                    title={showScaleBenchmark ? 'Hide Real-World Scale' : 'Compare with Real-Life Benchmark'}
-                >
-                    <Sparkles size={11} className={showScaleBenchmark ? 'text-stone-950' : 'text-amber-500'} />
-                    <span>Real-Life Scale</span>
-                </button>
-            </div>
+    const hasCustomHeight = className.includes('h-');
+    const defaultHeightClass = compact ? 'h-64 sm:h-72' : 'h-80 sm:h-96 min-h-[320px]';
 
-            {!compact && (
+    return (
+        <div className={`relative bg-gradient-to-b from-gray-50 to-gray-100 rounded-2xl overflow-hidden ${hasCustomHeight ? '' : defaultHeightClass} ${className}`}>
+            {!showScaleBenchmark && (
+                <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
+                    <div className="bg-white/90 backdrop-blur px-2.5 py-1 rounded-full border border-gray-200 text-[10px] font-bold text-clay-600 flex items-center gap-1.5 shadow-sm uppercase tracking-wide">
+                        <Box size={12} /> 3D View
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setShowScaleBenchmark(true)}
+                        className="px-2.5 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1.5 transition shadow-sm cursor-pointer bg-white/90 backdrop-blur text-stone-700 border-gray-200 hover:bg-white"
+                        title="Compare with Real-Life Benchmark"
+                    >
+                        <Sparkles size={11} className="text-amber-500" />
+                        <span>Real-Life Scale</span>
+                    </button>
+                </div>
+            )}
+
+            {!compact && !showScaleBenchmark && (
                 <div className="absolute top-3 right-3 z-10 flex flex-col gap-1 bg-white/90 backdrop-blur p-1 rounded-xl border border-gray-200 shadow-sm">
                     <button
-                        onClick={() => setShowScaleBenchmark(!showScaleBenchmark)}
-                        className={`p-2 rounded-lg transition cursor-pointer ${showScaleBenchmark ? 'bg-amber-100 text-amber-800' : 'hover:bg-gray-100 text-gray-600'}`}
-                        title={showScaleBenchmark ? 'Hide Real-World Scale' : 'Compare with Real-Life Benchmark'}
+                        onClick={() => setShowScaleBenchmark(true)}
+                        className="p-2 rounded-lg transition cursor-pointer hover:bg-gray-100 text-gray-600"
+                        title="Compare with Real-Life Benchmark"
                     >
-                        <Sparkles size={14} className={showScaleBenchmark ? 'text-amber-700' : 'text-stone-500'} />
+                        <Sparkles size={14} className="text-stone-500" />
                     </button>
                     <button
                         onClick={() => setAutoRotate(!autoRotate)}
@@ -146,7 +163,12 @@ export default function ProductViewer3D({
                     gl={{ preserveDrawingBuffer: true, antialias: true }}
                     className="cursor-grab active:cursor-grabbing"
                 >
-                    <CameraController zoom={zoom} />
+                    <CameraController
+                        zoom={framing.optimalZoom * zoom}
+                        targetX={framing.targetX}
+                        targetY={framing.targetY}
+                        controlsRef={controlsRef}
+                    />
                     <Suspense fallback={<Loader />}>
                         <Stage preset="rembrandt" intensity={0.5} adjustCamera={false}>
                             <group>
@@ -165,10 +187,12 @@ export default function ProductViewer3D({
                         </Stage>
                     </Suspense>
                     <OrbitControls
-                        autoRotate={autoRotate}
+                        ref={controlsRef}
+                        autoRotate={autoRotate && !showScaleBenchmark}
                         autoRotateSpeed={2}
                         enableZoom={true}
                         enablePan={false}
+                        maxPolarAngle={Math.PI / 2 + 0.05}
                     />
                 </Canvas>
             </ThreeDModelBoundary>

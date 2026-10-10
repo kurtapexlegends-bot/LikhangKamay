@@ -75,7 +75,7 @@ class CatalogController extends Controller
             'categories' => Inertia::defer(fn() => Category::withCount('products')->orderBy('name')->get()),
             'requests' => SponsorshipRequest::with([
                 'user:id,name,email,shop_name,created_at,role,artisan_status',
-                'product:id,user_id,name,slug,description,category,status,price,stock,sold,rating,reviews_count,cover_photo_path,gallery_paths,model_3d_path,is_sponsored,sponsored_until,created_at'
+                'product:id,user_id,name,slug,description,category,status,price,stock,sold,rating,reviews_count,cover_photo_path,gallery_paths,model_3d_path,is_sponsored,sponsored_until,created_at,height,width'
             ])
                 ->latest()
                 ->paginate(10, ['*'], 'requests_page'),
@@ -290,12 +290,12 @@ class CatalogController extends Controller
         $sponsorshipRequest->user?->notify(new SponsorshipStatusNotification($sponsorshipRequest));
 
         PlatformActivity::log(
-            'sponsorship_declined',
-            "Administrator declined sponsorship for '{$sponsorshipRequest->product?->name}'.",
-            ['sponsorship_id' => $sponsorshipRequest->id, 'product_id' => $sponsorshipRequest->product_id, 'reason' => $validated['rejection_reason']]
+            'sponsorship_returned_with_feedback',
+            "Administrator returned sponsorship request for '{$sponsorshipRequest->product?->name}' with revision feedback.",
+            ['sponsorship_id' => $sponsorshipRequest->id, 'product_id' => $sponsorshipRequest->product_id, 'feedback' => $validated['rejection_reason']]
         );
 
-        return back()->with('success', 'Sponsorship request declined.');
+        return back()->with('success', 'Feedback sent and request returned to artisan.');
     }
 
     /**

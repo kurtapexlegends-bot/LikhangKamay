@@ -101,7 +101,7 @@ export default function DisciplinaryActionModal({ user, onClose, onSuccess }) {
                             </span>
                         ) : (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
-                                <CheckCircle2 size={13} /> Clean Standing (0 Strikes)
+                                <CheckCircle2 size={13} /> Clean Standing (No Active Notices)
                             </span>
                         )}
                     </div>
@@ -128,7 +128,7 @@ export default function DisciplinaryActionModal({ user, onClose, onSuccess }) {
                                     }`}
                                 >
                                     <div className="flex items-center gap-2 text-amber-800 font-bold text-xs">
-                                        <AlertTriangle size={14} /> Strike 1: Warning
+                                        <AlertTriangle size={14} /> Stage 1: Advisory Notice
                                     </div>
                                     <span className="text-[11px] text-stone-500 mt-1">
                                         Issue formal notice (#{nextWarningNumber})
@@ -147,7 +147,7 @@ export default function DisciplinaryActionModal({ user, onClose, onSuccess }) {
                                     }`}
                                 >
                                     <div className="flex items-center gap-2 text-rose-800 font-bold text-xs">
-                                        <Clock size={14} /> Strike 2: Suspend
+                                        <Clock size={14} /> Stage 2: Temporary Hold
                                     </div>
                                     <span className="text-[11px] text-stone-500 mt-1">
                                         Temporary pause for X days
@@ -166,7 +166,7 @@ export default function DisciplinaryActionModal({ user, onClose, onSuccess }) {
                                     }`}
                                 >
                                     <div className="flex items-center gap-2 text-rose-950 font-bold text-xs">
-                                        <Ban size={14} /> Strike 3: Deactivate
+                                        <Ban size={14} /> Stage 3: Account Closure
                                     </div>
                                     <span className="text-[11px] text-stone-500 mt-1">
                                         Permanent deactivation

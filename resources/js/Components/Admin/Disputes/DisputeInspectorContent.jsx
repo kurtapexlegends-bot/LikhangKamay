@@ -388,8 +388,8 @@ export default function DisputeInspectorContent({
                         disabled={isSubmitting}
                         className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white border border-stone-200 text-stone-700 rounded-xl text-xs font-bold hover:bg-stone-50 transition shadow-2xs min-h-[38px] cursor-pointer disabled:opacity-50 shrink-0"
                     >
-                        <X size={13} className="text-rose-600" />
-                        <span>Decline Claim (Release to Seller)</span>
+                        <Store size={13} className="text-stone-600" />
+                        <span>Release Escrow to Artisan</span>
                     </button>
 
                     <button

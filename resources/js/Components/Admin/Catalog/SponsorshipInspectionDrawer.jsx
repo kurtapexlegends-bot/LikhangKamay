@@ -8,7 +8,8 @@ import {
     Rotate3d, 
     Image as ImageIcon, 
     Store, 
-    Tag
+    Tag,
+    RotateCcw
 } from 'lucide-react';
 import { formatMoney } from '@/utils/accountingFormatters';
 import { resolveImageUrl } from '@/lib/media';
@@ -58,7 +59,7 @@ export default function SponsorshipInspectionDrawer({
         }
 
         if (!rejectionReason.trim()) {
-            setValidationError('Please provide a reason for declining the sponsorship.');
+            setValidationError('Please share constructive feedback for the artisan before returning this request.');
             return;
         }
 
@@ -96,14 +97,14 @@ export default function SponsorshipInspectionDrawer({
                     {showRejectInput && (
                         <div className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
                             <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-500">
-                                Reason for Declining (Required)
+                                Feedback for Artisan (Required)
                             </label>
                             <textarea
                                 rows={2}
                                 value={rejectionReason}
                                 onChange={(e) => setRejectionReason(e.target.value)}
-                                placeholder="Explain why the sponsorship cannot be approved (e.g. poor image quality, misleading description, stock issues)..."
-                                className="w-full rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs text-stone-800 placeholder-stone-400 focus:border-rose-400 focus:ring-rose-400"
+                                placeholder="Share constructive notes (e.g. lighting needs improvement, missing craft dimensions, low inventory)..."
+                                className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs text-stone-800 placeholder-stone-400 focus:border-amber-500 focus:ring-amber-500"
                                 autoFocus
                             />
                         </div>
@@ -116,12 +117,12 @@ export default function SponsorshipInspectionDrawer({
                             disabled={isProcessing}
                             className={`flex-1 py-2.5 px-4 text-xs font-bold rounded-xl transition border min-h-[44px] flex items-center justify-center gap-1.5 ${
                                 showRejectInput
-                                    ? 'bg-rose-600 text-white hover:bg-rose-700 border-rose-600 shadow-sm'
-                                    : 'text-rose-600 bg-rose-50/80 hover:bg-rose-100/70 border-rose-200'
+                                    ? 'bg-amber-600 text-white hover:bg-amber-700 border-amber-600 shadow-sm'
+                                    : 'text-amber-800 bg-amber-50 hover:bg-amber-100/80 border-amber-250/70'
                             }`}
                         >
-                            <XCircle size={15} />
-                            <span>{showRejectInput ? (isProcessing ? 'Submitting Decline...' : 'Confirm Decline') : 'Decline Request'}</span>
+                            <RotateCcw size={15} />
+                            <span>{showRejectInput ? (isProcessing ? 'Sending Feedback...' : 'Send Feedback & Return') : 'Return with Feedback'}</span>
                         </button>
 
                         <button
@@ -203,7 +204,7 @@ export default function SponsorshipInspectionDrawer({
                         )}
                     </div>
 
-                    <div className="w-full h-72 rounded-2xl border border-stone-200 bg-stone-50 overflow-hidden relative flex items-center justify-center">
+                    <div className="w-full h-80 sm:h-96 rounded-2xl border border-stone-200 bg-stone-50 overflow-hidden relative flex items-center justify-center">
                         {viewingMode === '3d' && has3D && model3dUrl ? (
                             <div className="w-full h-full">
                                 <ThreeDModelBoundary
@@ -221,7 +222,13 @@ export default function SponsorshipInspectionDrawer({
                                     <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-xs text-stone-400">Loading 3D Canvas...</div>}>
                                         <ProductViewer3D 
                                             modelUrl={model3dUrl} 
-                                            adjustCamera={2.2}
+                                            productName={product?.name || 'Craft Piece'}
+                                            dimensions={{
+                                                height: product?.height,
+                                                width: product?.width,
+                                                depth: product?.depth
+                                            }}
+                                            className="w-full h-full"
                                         />
                                     </Suspense>
                                 </ThreeDModelBoundary>
@@ -362,13 +369,13 @@ export default function SponsorshipInspectionDrawer({
                     </div>
                 </div>
 
-                {/* Existing Decline Reason if already rejected */}
+                {/* Existing feedback if previously returned for revision */}
                 {request.status === 'rejected' && request.rejection_reason && (
-                    <div className="rounded-2xl border border-red-200 bg-red-50/80 p-4 text-xs space-y-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-red-600">
-                            Previous Decline Reason
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-xs space-y-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">
+                            Previous Feedback Provided to Artisan
                         </span>
-                        <p className="font-semibold text-red-900 leading-relaxed">
+                        <p className="font-semibold text-stone-900 leading-relaxed">
                             {request.rejection_reason}
                         </p>
                     </div>

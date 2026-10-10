@@ -53,9 +53,9 @@ export default function TermsOfService() {
             content: "Sellers may subscribe to Premium or Elite membership plans. All subscription fees are billed in advance on a monthly basis, processed securely via PayMongo, and are strictly non-refundable once processed. Tier entitlements include active product limits (3 for Standard, 10 for Premium, 50 for Elite), automated thank-you messages on order completion (Premium & Elite), and the Discounts & Campaign Engine (Elite) alongside Sponsorship credits. Upgrades are applied immediately upon payment. Cancellations prevent future auto-renewals while paid plan benefits remain 100% active until billing cycle completion; past payments will not be refunded. Downgrades take effect upon period completion and enforce standard listing caps and suspend staff access."
         },
         {
-            title: "User Conduct & Disciplinary Action",
+            title: "User Conduct & Account Standing",
             icon: AlertOctagon,
-            content: "Users agree not to post fraudulent information, harass others, manipulate reviews, or conduct off-platform fee circumvention. LikhangKamay enforces a 3-step disciplinary model: (1) Formal Warning with educational notice, (2) Temporary Suspension (3–30 days) pausing checkout, review submissions, or storefront discovery, and (3) Permanent Deactivation. Zero-tolerance offenses (payment fraud, severe harassment, counterfeit goods) bypass progressive strikes and result in immediate permanent account deactivation."
+            content: "Users agree not to post fraudulent information, harass others, manipulate reviews, or conduct off-platform fee circumvention. LikhangKamay enforces a 3-stage review model: (1) Stage 1: Advisory Notice with educational guidance, (2) Stage 2: Temporary Hold (3–30 days) pausing checkout, review submissions, or storefront discovery, and (3) Stage 3: Account Closure. Zero-tolerance offenses (payment fraud, severe harassment, counterfeit goods) bypass progressive stages and result in immediate account closure."
         },
         {
             title: "Intellectual Property",

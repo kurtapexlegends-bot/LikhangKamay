@@ -26,7 +26,7 @@ export default function SystemOperationsTab({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 5 }}
             transition={{ duration: 0.2 }}
-            className="space-y-6 mt-6"
+            className="space-y-6"
         >
             <form onSubmit={onSubmit} className="space-y-6">
                 {/* Top Command Bar with Live Save & Status */}

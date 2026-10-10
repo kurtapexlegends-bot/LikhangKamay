@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Save, 
-    Mail, 
-    Settings, 
     Percent, 
     CreditCard, 
     ChevronDown, 
@@ -15,6 +13,7 @@ import PlatformOpsForm from '@/Components/Admin/Layout/SystemConfig/PlatformOpsF
 import EmailStudioForm from '@/Components/Admin/Layout/SystemConfig/EmailStudioForm';
 
 export default function GeneralPlatformTab({
+    activeSubTab = 'branding_contact',
     data,
     setData,
     updateNested,
@@ -24,45 +23,18 @@ export default function GeneralPlatformTab({
     isDirty,
     onSubmit,
 }) {
-    const [activeSubTab, setActiveSubTab] = useState('branding_contact');
     const [showMobileNotes, setShowMobileNotes] = useState(false);
-
-    const subTabs = [
-        { id: 'branding_contact', name: 'Contact & Socials', icon: Mail },
-        { id: 'branding_ops', name: 'Platform & Operations', icon: Settings },
-        { id: 'branding_smtp', name: 'Email Engine', icon: Mail },
-    ];
 
     return (
         <motion.div
-            key="general-platform-tab"
+            key={activeSubTab}
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 5 }}
             transition={{ duration: 0.2 }}
         >
-            {/* Sub-tab Navigation Pill Header */}
-            <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-xl w-full sm:w-fit overflow-x-auto no-scrollbar scroll-smooth">
-                {subTabs.map((subTab) => (
-                    <button
-                        key={subTab.id}
-                        type="button"
-                        onClick={() => setActiveSubTab(subTab.id)}
-                        className={`
-                            flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap outline-none min-h-[38px] shrink-0 snap-start active:scale-95
-                            ${activeSubTab === subTab.id 
-                                ? 'bg-white text-stone-900 shadow-2xs font-bold ring-1 ring-stone-900/5' 
-                                : 'text-stone-500 hover:text-stone-700 hover:bg-stone-200/50'}
-                        `}
-                    >
-                        <subTab.icon size={13} className={activeSubTab === subTab.id ? 'text-clay-700' : 'text-stone-400'} />
-                        <span>{subTab.name}</span>
-                    </button>
-                ))}
-            </div>
-
             {activeSubTab === 'branding_smtp' ? (
-                <div className="mt-6">
+                <div>
                     <EmailStudioForm
                         data={data}
                         setData={setData}
@@ -72,7 +44,7 @@ export default function GeneralPlatformTab({
                 </div>
             ) : (
                 <>
-                    <form onSubmit={onSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                    <form onSubmit={onSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Left Column: Inputs */}
                         <div className="lg:col-span-2 space-y-6">
                             {activeSubTab === 'branding_contact' && (

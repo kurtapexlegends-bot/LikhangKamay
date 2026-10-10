@@ -174,23 +174,62 @@ function CoffeeMugMesh({ scaleHeight, positionX }) {
     );
 }
 
+/**
+ * Calculates dynamic spatial framing, mesh scaling, and camera zoom targets
+ * for side-by-side benchmark comparison.
+ */
+export function getBenchmarkFraming(benchmarkId, craftHeightCm) {
+    const resolvedCraftHeight = Math.max(Number(craftHeightCm) || 22, 4);
+    const selected = BENCHMARKS.find((b) => b.id === benchmarkId) || BENCHMARKS[0];
+
+    // Standardized craft model inside Stage is normalized to ~2.0 units (Y: -1.0 to 1.0)
+    const craftHeightUnits = 2.0;
+    const scaleHeight = craftHeightUnits * (selected.heightCm / resolvedCraftHeight);
+
+    // Compute width of benchmark in units
+    let benchmarkWidth = scaleHeight * 0.45;
+    if (selected.id === 'human') benchmarkWidth = scaleHeight * (42 / 170);
+    else if (selected.id === 'desk') benchmarkWidth = scaleHeight * (115 / 75);
+    else if (selected.id === 'mug') benchmarkWidth = scaleHeight * (8.2 / 9.5);
+    else if (selected.id === 'phone') benchmarkWidth = scaleHeight * (7.15 / 14.7);
+
+    // Position benchmark cleanly to the right of the craft (centered at X=0, radius ~0.6)
+    const craftHalfWidth = 0.6;
+    const gap = 0.35;
+    const positionX = Math.max(1.15, craftHalfWidth + gap + (benchmarkWidth / 2));
+
+    // Vertical bounds (ground plane at Y = -1.0)
+    const groundY = -1.0;
+    const maxTopY = Math.max(1.0, groundY + scaleHeight);
+    const totalHeight = maxTopY - groundY;
+    const centerY = (groundY + maxTopY) / 2;
+
+    // Horizontal bounds
+    const minLeftX = -0.7;
+    const maxRightX = positionX + (benchmarkWidth / 2);
+    const totalWidth = maxRightX - minLeftX;
+    const centerX = (minLeftX + maxRightX) / 2;
+
+    // Optimal zoom factoring overlay margins
+    const fitHeightZoom = 2.45 / Math.max(totalHeight, 2.0);
+    const fitWidthZoom = 2.75 / Math.max(totalWidth, 2.2);
+    const optimalZoom = Math.max(0.18, Math.min(1.0, Math.min(fitHeightZoom, fitWidthZoom)));
+
+    return {
+        scaleHeight,
+        benchmarkWidth,
+        positionX,
+        targetX: centerX,
+        targetY: centerY,
+        optimalZoom,
+    };
+}
+
 export default function RealWorldScaleBenchmark({
     benchmarkId = 'human',
     craftHeightCm = 22
 }) {
-    const resolvedCraftHeight = Math.max(Number(craftHeightCm) || 22, 4);
-    const selected = BENCHMARKS.find((b) => b.id === benchmarkId) || BENCHMARKS[0];
-    const scaleHeight = 2.0 * (selected.heightCm / resolvedCraftHeight);
-
-    // Compute approximate width to cleanly place beside craft at x = 0
-    let benchmarkWidth = scaleHeight * 0.5;
-    if (benchmarkId === 'human') benchmarkWidth = scaleHeight * (42 / 170);
-    else if (benchmarkId === 'desk') benchmarkWidth = scaleHeight * (115 / 75);
-    else if (benchmarkId === 'mug') benchmarkWidth = scaleHeight * (8.2 / 9.5);
-    else if (benchmarkId === 'phone') benchmarkWidth = scaleHeight * (7.15 / 14.7);
-
-    // Place benchmark beside the craft piece
-    const positionX = Math.max(1.25, 0.75 + (benchmarkWidth / 2));
+    const { scaleHeight, positionX } = getBenchmarkFraming(benchmarkId, craftHeightCm);
 
     if (benchmarkId === 'human') {
         return <HumanFigureMesh scaleHeight={scaleHeight} positionX={positionX} />;

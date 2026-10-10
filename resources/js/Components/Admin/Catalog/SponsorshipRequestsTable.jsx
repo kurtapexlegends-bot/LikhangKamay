@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { router } from '@inertiajs/react';
-import { Clock, Award, Package, Check, X, CheckCircle2, XCircle, Eye } from 'lucide-react';
+import { Clock, Award, Package, CheckCircle2, XCircle, Eye, Calendar, RotateCcw } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import CompactPagination from '@/Components/CompactPagination';
 import EmptyState from '@/Components/WorkspaceEmptyState';
-import BulkActionPill, { ActionTooltip } from '@/Components/Admin/Layout/BulkActionPill';
-import SponsorshipDecisionModal from '@/Components/Admin/Catalog/SponsorshipDecisionModal';
 import SponsorshipInspectionDrawer from '@/Components/Admin/Catalog/SponsorshipInspectionDrawer';
 import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
+import { formatMoney } from '@/utils/accountingFormatters';
 
 export default function SponsorshipRequestsTable({ requests }) {
     const { addToast } = useToast();
@@ -16,11 +15,8 @@ export default function SponsorshipRequestsTable({ requests }) {
     const [processingSponsorship, setProcessingSponsorship] = useState(false);
     const [pendingActionId, setPendingActionId] = useState(null);
     const [recentlyUpdatedId, setRecentlyUpdatedId] = useState(null);
-    const [modalData, setModalData] = useState({ isOpen: false, type: null, request: null });
     const [inspectRequest, setInspectRequest] = useState(null);
     const [requestRows, setRequestRows] = useState(requests?.data || []);
-    const [rejectionReason, setRejectionReason] = useState('');
-    const [selectedRequestIds, setSelectedRequestIds] = useState([]);
 
     useEffect(() => {
         if (requests?.data) {
@@ -49,84 +45,6 @@ export default function SponsorshipRequestsTable({ requests }) {
         });
     }, [requestRows, searchTerm, statusFilter]);
 
-    const pendingRequests = useMemo(() => filteredRequests.filter(r => r.status === 'pending'), [filteredRequests]);
-    const pendingRequestsCount = pendingRequests.length;
-
-    const handleSelectAllRequests = (e) => {
-        if (e.target.checked) {
-            setSelectedRequestIds(pendingRequests.map(r => r.id));
-        } else {
-            setSelectedRequestIds([]);
-        }
-    };
-
-    const handleSelectRequest = (id) => {
-        setSelectedRequestIds(prev =>
-            prev.includes(id)
-                ? prev.filter(rId => rId !== id)
-                : [...prev, id]
-        );
-    };
-
-    const handleSponsorshipAction = (request, type) => {
-        setRejectionReason('');
-        setModalData({ isOpen: true, type, request });
-    };
-
-    const confirmSponsorshipAction = () => {
-        const { type, request } = modalData;
-        const routeName = type === 'approve' ? 'admin.sponsorships.approve' : 'admin.sponsorships.reject';
-
-        if (type === 'reject' && !rejectionReason.trim()) {
-            addToast('A decline reason is required.', 'error');
-            return;
-        }
-
-        if (request) {
-            // Single Action
-            setProcessingSponsorship(true);
-            setPendingActionId(request.id);
-            router.post(route(routeName, request.id), type === 'reject' ? { rejection_reason: rejectionReason.trim() } : {}, {
-                preserveScroll: true,
-                preserveState: true,
-                onSuccess: () => {
-                    const processedAt = new Date().toISOString();
-                    setRequestRows((currentRows) => currentRows.map((row) => (
-                        row.id === request.id
-                            ? {
-                                ...row,
-                                status: type === 'approve' ? 'approved' : 'rejected',
-                                approved_at: type === 'approve' ? processedAt : null,
-                                rejection_reason: type === 'reject' ? rejectionReason.trim() : null,
-                                updated_at: processedAt,
-                            }
-                            : row
-                    )));
-                    setRecentlyUpdatedId(request.id);
-                    setRejectionReason('');
-                    setModalData({ isOpen: false, type: null, request: null });
-                    addToast(`Sponsorship ${type}d successfully.`, 'success');
-                    setSelectedRequestIds(prev => prev.filter(id => id !== request.id));
-                },
-                onError: (err) => {
-                    if (type === 'approve') {
-                        setModalData({ isOpen: false, type: null, request: null });
-                    }
-                    addToast(err.error || `Failed to ${type} sponsorship.`, 'error');
-                },
-                onFinish: () => {
-                    setProcessingSponsorship(false);
-                    setPendingActionId(null);
-                }
-            });
-        } else {
-            // Bulk Action
-            const idsToProcess = [...selectedRequestIds];
-            setProcessingSponsorship(true);
-            processSequentialSponsorships(idsToProcess, type, rejectionReason.trim());
-        }
-    };
-
     const handleDrawerApprove = (req) => {
         setProcessingSponsorship(true);
         setPendingActionId(req.id);
@@ -148,7 +66,6 @@ export default function SponsorshipRequestsTable({ requests }) {
                 setRecentlyUpdatedId(req.id);
                 setInspectRequest(null);
                 addToast('Sponsorship approved successfully for 7 days.', 'success');
-                setSelectedRequestIds(prev => prev.filter(id => id !== req.id));
             },
             onError: (err) => {
                 addToast(err?.error || err?.message || 'Failed to approve sponsorship.', 'error');
@@ -180,54 +97,14 @@ export default function SponsorshipRequestsTable({ requests }) {
                 )));
                 setRecentlyUpdatedId(req.id);
                 setInspectRequest(null);
-                addToast('Sponsorship request declined.', 'success');
-                setSelectedRequestIds(prev => prev.filter(id => id !== req.id));
+                addToast('Feedback sent and request returned to artisan.', 'success');
             },
             onError: (err) => {
-                addToast(err?.error || err?.message || 'Failed to decline sponsorship.', 'error');
+                addToast(err?.error || err?.message || 'Failed to submit feedback.', 'error');
             },
             onFinish: () => {
                 setProcessingSponsorship(false);
                 setPendingActionId(null);
-            }
-        });
-    };
-
-    const processSequentialSponsorships = (ids, type, reason = '') => {
-        if (ids.length === 0) {
-            setProcessingSponsorship(false);
-            setRejectionReason('');
-            setModalData({ isOpen: false, type: null, request: null });
-            setSelectedRequestIds([]);
-            addToast(`All selected sponsorship requests processed successfully.`, 'success');
-            return;
-        }
-
-        const id = ids[0];
-        const routeName = type === 'approve' ? 'admin.sponsorships.approve' : 'admin.sponsorships.reject';
-
-        router.post(route(routeName, id), type === 'reject' ? { rejection_reason: reason } : {}, {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                const processedAt = new Date().toISOString();
-                setRequestRows((currentRows) => currentRows.map((row) => (
-                    row.id === id
-                        ? {
-                            ...row,
-                            status: type === 'approve' ? 'approved' : 'rejected',
-                            approved_at: type === 'approve' ? processedAt : null,
-                            rejection_reason: type === 'reject' ? reason : null,
-                            updated_at: processedAt,
-                        }
-                        : row
-                )));
-                setRecentlyUpdatedId(id);
-                processSequentialSponsorships(ids.slice(1), type, reason);
-            },
-            onError: (err) => {
-                setProcessingSponsorship(false);
-                addToast(err.error || `Failed to process request ID ${id}. Bulk operation halted.`, 'error');
             }
         });
     };
@@ -242,8 +119,8 @@ export default function SponsorshipRequestsTable({ requests }) {
                 );
             case 'rejected':
                 return (
-                    <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-rose-200/60">
-                        <XCircle size={12} /> Declined
+                    <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-amber-250/70">
+                        <RotateCcw size={12} /> Needs Revision
                     </span>
                 );
             default:
@@ -259,7 +136,7 @@ export default function SponsorshipRequestsTable({ requests }) {
         { key: 'all', label: 'All Requests', count: requestRows.length },
         { key: 'pending', label: 'Pending', count: requestRows.filter(r => r.status === 'pending').length },
         { key: 'approved', label: 'Approved', count: requestRows.filter(r => r.status === 'approved').length },
-        { key: 'rejected', label: 'Declined', count: requestRows.filter(r => r.status === 'rejected').length },
+        { key: 'rejected', label: 'Needs Revision', count: requestRows.filter(r => r.status === 'rejected').length },
     ];
 
     return (
@@ -288,14 +165,6 @@ export default function SponsorshipRequestsTable({ requests }) {
                                 <div key={req.id} className="bg-white border border-stone-200/80 rounded-2xl p-4 shadow-2xs space-y-3 flex flex-col justify-between">
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex items-center gap-3 min-w-0">
-                                            {req.status === 'pending' && (
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedRequestIds.includes(req.id)}
-                                                    onChange={() => handleSelectRequest(req.id)}
-                                                    className="rounded border-stone-300 text-clay-600 focus:ring-clay-500 shrink-0"
-                                                />
-                                            )}
                                             <div className="w-12 h-12 rounded-xl border border-stone-200/80 bg-stone-50 shrink-0 flex items-center justify-center overflow-hidden">
                                                 {req.product?.img || req.product?.cover_photo_path ? (
                                                     <img
@@ -316,19 +185,35 @@ export default function SponsorshipRequestsTable({ requests }) {
                                                 <p className="text-[10px] text-stone-500 font-medium truncate mt-0.5">
                                                     Shop: {req.user?.shop_name || req.user?.name || 'Unknown'}
                                                 </p>
-                                                <p className="text-[9px] text-stone-400 font-medium">
-                                                    {new Date(req.created_at).toLocaleDateString()} at {new Date(req.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-[11px] font-bold text-stone-900">{formatMoney(req.product?.price || 0)}</span>
+                                                    <span className="text-stone-300">•</span>
+                                                    {Number(req.product?.stock || 0) > 0 ? (
+                                                        <span className="text-[10px] text-stone-500 font-medium">{req.product.stock} in stock</span>
+                                                    ) : (
+                                                        <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200/50">Out of stock</span>
+                                                    )}
+                                                </div>
+                                                <p className="text-[9px] text-stone-400 font-medium mt-1">
+                                                    Requested {new Date(req.created_at).toLocaleDateString()} at {new Date(req.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="shrink-0">
+                                        <div className="shrink-0 text-right space-y-1">
                                             {getStatusBadge(req.status)}
+                                            {req.status === 'approved' && req.product?.sponsored_until ? (
+                                                <p className="text-[9px] text-emerald-700 font-bold">
+                                                    Until {new Date(req.product.sponsored_until).toLocaleDateString()}
+                                                </p>
+                                            ) : req.status === 'pending' ? (
+                                                <p className="text-[9px] text-stone-400 font-medium">7-Day Run</p>
+                                            ) : null}
                                         </div>
                                     </div>
 
                                     {req.status === 'rejected' && req.rejection_reason && (
-                                        <p className="text-[11px] leading-relaxed text-red-700 bg-red-50/50 p-2 rounded-lg border border-red-100/60">
-                                            <span className="font-bold">Reason:</span> {req.rejection_reason}
+                                        <p className="text-[11px] leading-relaxed text-amber-900 bg-amber-50/70 p-2.5 rounded-lg border border-amber-200/70">
+                                            <span className="font-bold">Feedback:</span> {req.rejection_reason}
                                         </p>
                                     )}
 
@@ -367,16 +252,10 @@ export default function SponsorshipRequestsTable({ requests }) {
                     <table className="w-full min-w-[900px] text-left border-collapse">
                         <thead>
                             <tr className="bg-[#FDFBF9] border-b border-stone-200/80 text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                                <th className="py-3.5 px-6 w-12 text-center align-middle">
-                                    <input
-                                        type="checkbox"
-                                        onChange={handleSelectAllRequests}
-                                        checked={pendingRequestsCount > 0 && selectedRequestIds.length === pendingRequestsCount}
-                                        className="rounded border-stone-300 text-clay-600 focus:ring-clay-500"
-                                    />
-                                </th>
-                                <th className="py-3.5 px-6 text-[10px] font-bold uppercase tracking-wider text-stone-500 w-1/3">Product</th>
+                                <th className="py-3.5 px-6 text-[10px] font-bold uppercase tracking-wider text-stone-500">Product</th>
                                 <th className="py-3.5 px-6 text-[10px] font-bold uppercase tracking-wider text-stone-500">Seller</th>
+                                <th className="py-3.5 px-6 text-[10px] font-bold uppercase tracking-wider text-stone-500">Price & Stock</th>
+                                <th className="py-3.5 px-6 text-[10px] font-bold uppercase tracking-wider text-stone-500">Campaign</th>
                                 <th className="py-3.5 px-6 text-[10px] font-bold uppercase tracking-wider text-stone-500">Requested</th>
                                 <th className="py-3.5 px-6 text-[10px] font-bold uppercase tracking-wider text-stone-500">Status</th>
                                 <th className="py-3.5 px-6 text-[10px] font-bold uppercase tracking-wider text-stone-500 text-right">Actions</th>
@@ -393,16 +272,6 @@ export default function SponsorshipRequestsTable({ requests }) {
                                                 : 'hover:bg-stone-50/50'
                                         }`}
                                     >
-                                        <td className="py-4 px-6 text-center align-middle">
-                                            {req.status === 'pending' ? (
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedRequestIds.includes(req.id)}
-                                                    onChange={() => handleSelectRequest(req.id)}
-                                                    className="rounded border-stone-300 text-clay-600 focus:ring-clay-500"
-                                                />
-                                            ) : null}
-                                        </td>
                                         <td className="py-4 px-6 align-middle">
                                             <div className="flex items-center gap-3.5">
                                                 <div className="w-11 h-11 rounded-xl border border-stone-200/80 bg-stone-50 flex-shrink-0 flex items-center justify-center overflow-hidden">
@@ -420,17 +289,57 @@ export default function SponsorshipRequestsTable({ requests }) {
                                                         <Package size={16} className="text-stone-300" />
                                                     )}
                                                 </div>
-                                                <div className="max-w-[220px]">
+                                                <div className="max-w-[200px]">
                                                     <p className="text-xs sm:text-sm font-bold text-stone-900 truncate">{req.product?.name || 'Unknown Product'}</p>
-                                                    <p className="text-[10px] text-stone-500 mt-0.5 truncate">
-                                                        Shop: {req.user?.shop_name || req.user?.name || 'Unknown Shop'}
-                                                    </p>
+                                                    <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-stone-100 text-stone-600 truncate max-w-full">
+                                                        {req.product?.category || 'Handcrafted'}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 align-middle">
                                             <p className="text-xs sm:text-sm font-bold text-stone-900">{req.user?.shop_name || req.user?.name}</p>
                                             <p className="text-[10px] text-stone-400 font-medium">ID: {req.user?.id}</p>
+                                        </td>
+                                        <td className="py-4 px-6 align-middle">
+                                            <p className="text-xs sm:text-sm font-bold text-stone-900">
+                                                {formatMoney(req.product?.price || 0)}
+                                            </p>
+                                            <div className="mt-0.5">
+                                                {Number(req.product?.stock || 0) > 0 ? (
+                                                    <span className="text-[10px] text-stone-500 font-medium">
+                                                        {req.product.stock} in stock
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200/60 px-1.5 py-0.5 rounded">
+                                                        Out of stock
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6 align-middle">
+                                            {req.status === 'approved' ? (
+                                                req.product?.sponsored_until ? (
+                                                    <div>
+                                                        <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800">
+                                                            <Calendar size={12} className="text-emerald-600" />
+                                                            7-Day Run
+                                                        </span>
+                                                        <p className="text-[10px] text-stone-400 font-medium mt-0.5">
+                                                            Until {new Date(req.product.sponsored_until).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs font-bold text-stone-800">7-Day Run</span>
+                                                )
+                                            ) : req.status === 'pending' ? (
+                                                <div>
+                                                    <span className="text-xs font-bold text-stone-700">7 Days</span>
+                                                    <p className="text-[10px] text-stone-400 font-medium mt-0.5">On approval</p>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-stone-400 font-medium">—</span>
+                                            )}
                                         </td>
                                         <td className="py-4 px-6 align-middle text-xs text-stone-500 font-medium">
                                             {new Date(req.created_at).toLocaleDateString()}
@@ -439,8 +348,8 @@ export default function SponsorshipRequestsTable({ requests }) {
                                         <td className="py-4 px-6 align-middle">
                                             {getStatusBadge(req.status)}
                                             {req.status === 'rejected' && req.rejection_reason && (
-                                                <p className="mt-1.5 max-w-[240px] text-[11px] leading-relaxed text-red-700 bg-red-50/50 p-2 rounded-lg border border-red-100/60">
-                                                    <span className="font-bold">Reason:</span> {req.rejection_reason}
+                                                <p className="mt-1.5 max-w-[240px] text-[11px] leading-relaxed text-amber-900 bg-amber-50/70 p-2 rounded-lg border border-amber-200/70">
+                                                    <span className="font-bold">Feedback:</span> {req.rejection_reason}
                                                 </p>
                                             )}
                                             {recentlyUpdatedId === req.id && (
@@ -467,7 +376,7 @@ export default function SponsorshipRequestsTable({ requests }) {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="6" className="py-12">
+                                    <td colSpan="7" className="py-12">
                                         <EmptyState
                                             compact
                                             icon={Award}
@@ -494,18 +403,6 @@ export default function SponsorshipRequestsTable({ requests }) {
                 />
             )}
 
-            {/* Decision Modals */}
-            <SponsorshipDecisionModal
-                isOpen={modalData.isOpen}
-                type={modalData.type}
-                request={modalData.request}
-                processing={processingSponsorship}
-                rejectionReason={rejectionReason}
-                setRejectionReason={setRejectionReason}
-                onClose={() => setModalData({ isOpen: false, type: null, request: null })}
-                onConfirm={confirmSponsorshipAction}
-            />
-
             {/* Inspection Drawer */}
             <SponsorshipInspectionDrawer
                 isOpen={Boolean(inspectRequest)}
@@ -515,32 +412,6 @@ export default function SponsorshipRequestsTable({ requests }) {
                 onReject={handleDrawerReject}
                 isProcessing={processingSponsorship}
             />
-
-            {/* Bulk Sticky Action Bar */}
-            <BulkActionPill selectedCount={selectedRequestIds.length} onClear={() => setSelectedRequestIds([])}>
-                <ActionTooltip text="Approve Selected">
-                    <button
-                        onClick={() => setModalData({ isOpen: true, type: 'approve', request: null })}
-                        disabled={processingSponsorship}
-                        className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50/40 text-emerald-600 hover:bg-emerald-100/60 hover:text-emerald-700 transition-all duration-205 active:scale-90 shadow-sm"
-                    >
-                        <Check size={18} strokeWidth={2.5} />
-                    </button>
-                </ActionTooltip>
-
-                <ActionTooltip text="Decline Selected">
-                    <button
-                        onClick={() => {
-                            setRejectionReason('');
-                            setModalData({ isOpen: true, type: 'reject', request: null });
-                        }}
-                        disabled={processingSponsorship}
-                        className="flex h-10 w-10 items-center justify-center rounded-full border border-rose-100 bg-rose-50/40 text-rose-600 hover:bg-rose-100/60 hover:text-rose-700 transition-all duration-205 active:scale-90 shadow-sm"
-                    >
-                        <X size={18} />
-                    </button>
-                </ActionTooltip>
-            </BulkActionPill>
         </div>
     );
 }

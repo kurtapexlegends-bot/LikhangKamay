@@ -248,7 +248,7 @@ export default function ProductInspectionDrawer({
                         )}
                     </div>
 
-                    <div className="w-full h-72 rounded-2xl border border-stone-200 bg-stone-50 overflow-hidden relative flex items-center justify-center">
+                    <div className="w-full h-80 sm:h-96 rounded-2xl border border-stone-200 bg-stone-50 overflow-hidden relative flex items-center justify-center">
                         {viewingMode === '3d' && product.model_3d_path ? (
                             <div className="w-full h-full">
                                 <ThreeDModelBoundary
@@ -266,7 +266,13 @@ export default function ProductInspectionDrawer({
                                     <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-xs text-stone-400">Loading 3D Canvas...</div>}>
                                         <ProductViewer3D 
                                             modelUrl={product.model_3d_url} 
-                                            adjustCamera={2.2}
+                                            productName={product?.name || 'Craft Piece'}
+                                            dimensions={{
+                                                height: product?.height,
+                                                width: product?.width,
+                                                depth: product?.depth
+                                            }}
+                                            className="w-full h-full"
                                         />
                                     </Suspense>
                                 </ThreeDModelBoundary>

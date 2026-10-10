@@ -29,11 +29,11 @@
             @else
                 <h1 style="font-family: Georgia, Times, serif; font-size: 24px; font-weight: normal; color: #C2783F; margin-top: 0; margin-bottom: 20px;">Sponsorship Request Update</h1>
                 <p style="margin-top: 0; margin-bottom: 24px; font-size: 16px; color: #5C524A; line-height: 1.6;">
-                    We reviewed your sponsorship request for <strong>{{ $productName }}</strong>. Unfortunately, we could not approve it at this time.
+                    We reviewed your sponsorship request for <strong>{{ $productName }}</strong>. It needs a few adjustments before it can be featured:
                 </p>
                 @if($reason)
                     <div style="background-color: #F7F4F0; border: 1px solid #E7E1D8; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; text-align: left; font-size: 14px; color: #5C524A; line-height: 1.5;">
-                        <strong style="color: #2E2520; display: block; margin-bottom: 4px;">Decline Reason:</strong>
+                        <strong style="color: #2E2520; display: block; margin-bottom: 4px;">Review Team Feedback:</strong>
                         {{ $reason }}
                     </div>
                 @endif

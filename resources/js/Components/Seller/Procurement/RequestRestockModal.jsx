@@ -1,7 +1,7 @@
 import React from 'react';
 import Modal from '@/Components/Modal';
 import DatePicker from '@/Components/DatePicker';
-import { X, Banknote, ShoppingBag, Calendar, AlertCircle } from 'lucide-react';
+import { X, Banknote, ShoppingBag, Calendar } from 'lucide-react';
 import { formatMoney } from '@/utils/accountingFormatters';
 
 export default function RequestRestockModal({

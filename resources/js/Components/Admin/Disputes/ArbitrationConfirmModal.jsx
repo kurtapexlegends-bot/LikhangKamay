@@ -1,6 +1,6 @@
 import React from 'react';
 import Modal from '@/Components/Modal';
-import { CheckCircle2, XCircle, Loader2, Scale } from 'lucide-react';
+import { CheckCircle2, Store, Loader2, Scale } from 'lucide-react';
 
 export default function ArbitrationConfirmModal({
     isOpen,
@@ -26,14 +26,14 @@ export default function ArbitrationConfirmModal({
                             ? 'bg-clay-50 text-clay-700 border-clay-200' 
                             : decision === 'partial_refund'
                             ? 'bg-amber-50 text-amber-800 border-amber-200'
-                            : 'bg-rose-50 text-rose-700 border-rose-200'
+                            : 'bg-stone-100 text-stone-700 border-stone-200'
                     }`}>
                         {decision === 'refund' ? (
                             <CheckCircle2 size={20} />
                         ) : decision === 'partial_refund' ? (
                             <Scale size={20} />
                         ) : (
-                            <XCircle size={20} />
+                            <Store size={20} />
                         )}
                     </div>
                     <div>
@@ -42,7 +42,7 @@ export default function ArbitrationConfirmModal({
                                 ? 'Confirm Full Refund to Buyer' 
                                 : decision === 'partial_refund'
                                 ? 'Confirm Partial Refund (50% Split)'
-                                : 'Confirm Release Funds to Seller'}
+                                : 'Confirm Release Escrow to Artisan'}
                         </h3>
                         <p className="text-xs text-stone-500 mt-0.5">
                             Dispute #{dispute.id} · Order #{dispute.order?.order_number || dispute.order_id}
@@ -68,8 +68,8 @@ export default function ArbitrationConfirmModal({
                         </p>
                     ) : (
                         <p>
-                            You are about to <strong className="text-stone-900">decline this refund request</strong>. 
-                            The dispute will be closed and order funds will be released to{' '}
+                            You are about to <strong className="text-stone-900">resolve this dispute in the artisan's favor</strong>. 
+                            The dispute will be closed and escrowed order funds will be released to{' '}
                             <strong className="text-stone-900">{shopName}</strong>.
                         </p>
                     )}
@@ -96,7 +96,7 @@ export default function ArbitrationConfirmModal({
                                 ? 'bg-clay-700 hover:bg-clay-800'
                                 : decision === 'partial_refund'
                                 ? 'bg-amber-750 hover:bg-amber-850'
-                                : 'bg-rose-600 hover:bg-rose-700'
+                                : 'bg-stone-800 hover:bg-stone-900'
                         }`}
                     >
                         {isSubmitting && <Loader2 size={13} className="animate-spin text-white" />}
@@ -105,7 +105,7 @@ export default function ArbitrationConfirmModal({
                                 ? 'Confirm Full Refund' 
                                 : decision === 'partial_refund'
                                 ? 'Confirm 50% Refund' 
-                                : 'Confirm Release'}
+                                : 'Confirm Release Escrow to Artisan'}
                         </span>
                     </button>
                 </div>
