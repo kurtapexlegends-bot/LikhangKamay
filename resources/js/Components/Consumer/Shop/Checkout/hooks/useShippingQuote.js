@@ -10,6 +10,9 @@ export default function useShippingQuote({
         status: 'idle',
         totalShippingFee: 0,
         groups: {},
+        vehicles: {},
+        errorMessage: null,
+        fieldErrors: {},
     });
     const quoteRequestRef = useRef(0);
 
@@ -19,6 +22,9 @@ export default function useShippingQuote({
                 status: 'ready',
                 totalShippingFee: 0,
                 groups: {},
+                vehicles: {},
+                errorMessage: null,
+                fieldErrors: {},
             });
             return undefined;
         }
@@ -28,6 +34,9 @@ export default function useShippingQuote({
                 status: 'idle',
                 totalShippingFee: 0,
                 groups: {},
+                vehicles: {},
+                errorMessage: null,
+                fieldErrors: {},
             });
             return undefined;
         }
@@ -35,7 +44,12 @@ export default function useShippingQuote({
         const requestId = quoteRequestRef.current + 1;
         quoteRequestRef.current = requestId;
         const timeoutId = window.setTimeout(async () => {
-            setShippingQuote((current) => ({ ...current, status: 'loading' }));
+            setShippingQuote((current) => ({
+                ...current,
+                status: 'loading',
+                errorMessage: null,
+                fieldErrors: {},
+            }));
 
             try {
                 const response = await window.axios.post(route('checkout.shipping-quote'), {
@@ -74,15 +88,29 @@ export default function useShippingQuote({
                     totalShippingFee: Number(response.data.total_shipping_fee || 0),
                     groups: groupsBySellerId,
                     vehicles: vehiclesBySellerId,
+                    errorMessage: null,
+                    fieldErrors: {},
                 });
-            } catch {
+            } catch (error) {
                 if (quoteRequestRef.current !== requestId) return;
+
+                const responseData = error?.response?.data;
+                const fieldErrors = responseData?.errors || {};
+                let message = responseData?.message || '';
+
+                if ((!message || message.toLowerCase().includes('given data was invalid')) && Object.keys(fieldErrors).length > 0) {
+                    const firstKey = Object.keys(fieldErrors)[0];
+                    const firstVal = fieldErrors[firstKey];
+                    message = Array.isArray(firstVal) ? firstVal[0] : String(firstVal);
+                }
 
                 setShippingQuote({
                     status: 'error',
                     totalShippingFee: 0,
                     groups: {},
                     vehicles: {},
+                    errorMessage: message || 'Unable to calculate shipping quote. Please check your delivery address.',
+                    fieldErrors,
                 });
             }
         }, 350);

@@ -13,6 +13,11 @@ export default function MultiWorkshopPickupSection({
     errors = {},
     clearErrors,
 }) {
+    const disabledSellers = sellerGroups.filter((g) => {
+        const config = pickupConfigs?.[String(g.sellerId)];
+        return config && config.pickup_enabled === false;
+    });
+
     return (
         <div className="rounded-2xl border border-stone-200 bg-white p-3.5 sm:p-4 shadow-sm space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-stone-200/60 pb-2.5">
@@ -29,6 +34,16 @@ export default function MultiWorkshopPickupSection({
                     {Object.values(pickupSchedules).filter(s => s?.date && s?.time_slot).length} of {totalSellers} Scheduled
                 </span>
             </div>
+
+            {disabledSellers.length > 0 && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-900 space-y-1">
+                    {disabledSellers.map((seller) => (
+                        <p key={seller.sellerId} className="font-semibold leading-relaxed">
+                            {seller.shopName} does not offer workshop pick-up. Please switch to Standard Delivery or purchase their items separately.
+                        </p>
+                    ))}
+                </div>
+            )}
 
             {/* Workshop Selection Tabs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">

@@ -99,7 +99,8 @@ class CartService
             return $cart;
         }
 
-        $liveProducts = Product::with(['user:id,name,shop_name,city,deleted_at', 'discounts'])
+        $liveProducts = Product::withTrashed()
+            ->with(['user' => fn($q) => $q->withTrashed(), 'discounts'])
             ->whereIn('id', $productIds)
             ->get()
             ->keyBy('id');
@@ -109,8 +110,67 @@ class CartService
         foreach ($cart as &$item) {
             $liveProduct = $liveProducts->get($item['id']);
 
-            if (!$liveProduct) {
+            // 1. Deleted Product (hard-deleted, non-existent, or soft-deleted)
+            if (!$liveProduct || $liveProduct->trashed()) {
+                if (($item['is_available'] ?? true) !== false) {
+                    $item['is_available'] = false;
+                    $updatedCart = true;
+                }
+                $item['is_out_of_stock'] = false;
+                $item['stock'] = 0;
+                $item['unavailable_reason'] = 'Item is no longer available';
                 continue;
+            }
+
+            // 2. Delisted / Non-active Product Status
+            if ($liveProduct->status !== 'Active') {
+                if (($item['is_available'] ?? true) !== false) {
+                    $item['is_available'] = false;
+                    $updatedCart = true;
+                }
+                $item['is_out_of_stock'] = false;
+                $item['stock'] = (int) $liveProduct->stock;
+                $item['unavailable_reason'] = 'Item is currently unavailable';
+                continue;
+            }
+
+            // 3. Inactive / Soft-Deleted / Banned Seller
+            $seller = $liveProduct->user;
+            if (!$seller || $seller->trashed() || $seller->role !== 'artisan' || $seller->artisan_status !== 'approved' || (method_exists($seller, 'isBanned') && $seller->isBanned()) || (method_exists($seller, 'isSuspended') && $seller->isSuspended())) {
+                if (($item['is_available'] ?? true) !== false) {
+                    $item['is_available'] = false;
+                    $updatedCart = true;
+                }
+                $item['is_out_of_stock'] = false;
+                $item['stock'] = 0;
+                $item['unavailable_reason'] = 'Workshop is currently unavailable';
+                continue;
+            }
+
+            // 4. Stock Availability Check
+            if ((int) $liveProduct->stock <= 0) {
+                if (($item['is_available'] ?? true) !== false || ($item['is_out_of_stock'] ?? false) !== true) {
+                    $item['is_available'] = false;
+                    $item['is_out_of_stock'] = true;
+                    $updatedCart = true;
+                }
+                $item['stock'] = 0;
+                $item['unavailable_reason'] = 'Out of stock';
+            } else {
+                if (($item['is_available'] ?? false) !== true || ($item['is_out_of_stock'] ?? true) !== false) {
+                    $item['is_available'] = true;
+                    $item['is_out_of_stock'] = false;
+                    $item['unavailable_reason'] = null;
+                    $updatedCart = true;
+                }
+                $item['stock'] = (int) $liveProduct->stock;
+
+                // Adjust quantity if user has more than currently in stock
+                if ((int) ($item['qty'] ?? 1) > (int) $liveProduct->stock) {
+                    $item['qty'] = (int) $liveProduct->stock;
+                    $item['stock_warning'] = 'Quantity adjusted to remaining stock (' . $liveProduct->stock . ')';
+                    $updatedCart = true;
+                }
             }
 
             $effectivePrice = $liveProduct->is_b2b_supply
@@ -272,6 +332,10 @@ class CartService
                 'wholesale_min_qty' => $product->wholesale_min_qty ? (int) $product->wholesale_min_qty : null,
                 'is_b2b_supply' => (bool) $product->is_b2b_supply,
                 'weight' => (float) ($product->weight ?? 1.0),
+                'is_available' => true,
+                'is_out_of_stock' => false,
+                'unavailable_reason' => null,
+                'stock' => (int) $product->stock,
             ];
         }
 
@@ -383,6 +447,38 @@ class CartService
             'message' => 'Cart cleared.',
             'cart' => [],
             'cart_count' => 0,
+        ];
+    }
+
+    /**
+     * Remove all unavailable / out-of-stock items from the cart.
+     *
+     * @return array{success: bool, message: string, removed_count: int, cart: array, cart_count: int}
+     */
+    public function removeUnavailableItems(): array
+    {
+        $cart = $this->getCart();
+        $removedCount = 0;
+
+        foreach ($cart as $key => $item) {
+            if (isset($item['is_available']) && $item['is_available'] === false) {
+                unset($cart[$key]);
+                $removedCount++;
+            }
+        }
+
+        if ($removedCount > 0) {
+            Session::put('cart', $cart);
+        }
+
+        return [
+            'success' => true,
+            'message' => $removedCount > 0
+                ? "Removed {$removedCount} unavailable item(s) from your cart."
+                : "No unavailable items found in your cart.",
+            'removed_count' => $removedCount,
+            'cart' => $cart,
+            'cart_count' => (int) collect($cart)->sum('qty'),
         ];
     }
 

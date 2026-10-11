@@ -17,8 +17,15 @@ class PickupScheduleService
     /**
      * Get or initialize effective pickup schedule for an artisan.
      */
-    public function getEffectiveSchedule(User $seller): SellerPickupSchedule
+    public function getEffectiveSchedule(?User $seller): SellerPickupSchedule
     {
+        if (!$seller) {
+            $schedule = new SellerPickupSchedule();
+            $schedule->is_enabled = false;
+            $schedule->operating_days = [];
+            return $schedule;
+        }
+
         return $seller->getPickupSchedule();
     }
 
@@ -27,8 +34,12 @@ class PickupScheduleService
      *
      * @return array<string, mixed>|null
      */
-    public function getResolvedLocation(User $seller): ?array
+    public function getResolvedLocation(?User $seller): ?array
     {
+        if (!$seller) {
+            return null;
+        }
+
         $schedule = $this->getEffectiveSchedule($seller);
 
         /** @var SellerLocation|null $location */
@@ -102,10 +113,15 @@ class PickupScheduleService
     /**
      * Calculate earliest selectable pickup date respecting lead time and operating days.
      */
-    public function calculateEarliestPickupDate(User $seller, int $leadTimeDays = 0, ?Carbon $fromDate = null): Carbon
+    public function calculateEarliestPickupDate(?User $seller, int $leadTimeDays = 0, ?Carbon $fromDate = null): Carbon
     {
         $timezone = self::TIMEZONE;
         $current = $fromDate ? Carbon::parse($fromDate->toDateString(), $timezone)->startOfDay() : Carbon::now($timezone)->startOfDay();
+
+        if (!$seller) {
+            return $current->copy()->addDays(max(0, $leadTimeDays))->startOfDay();
+        }
+
         $schedule = $this->getEffectiveSchedule($seller);
         $operatingDays = $schedule->getEffectiveOperatingDays();
         if (empty($operatingDays) || !$schedule->is_enabled) {
@@ -160,8 +176,12 @@ class PickupScheduleService
      *
      * @return array<int, array<string, mixed>>
      */
-    public function getAvailableSlotsForDate(User $seller, Carbon|string $date): array
+    public function getAvailableSlotsForDate(?User $seller, Carbon|string $date): array
     {
+        if (!$seller) {
+            return [];
+        }
+
         $timezone = self::TIMEZONE;
         $carbonDate = is_string($date)
             ? Carbon::parse($date, $timezone)->startOfDay()
@@ -235,8 +255,19 @@ class PickupScheduleService
      *
      * @return array<string, mixed>
      */
-    public function getScheduleOverviewForBuyer(User $seller, int $leadTimeDays = 0, ?int $daysAhead = null): array
+    public function getScheduleOverviewForBuyer(?User $seller, int $leadTimeDays = 0, ?int $daysAhead = null): array
     {
+        if (!$seller) {
+            return [
+                'pickup_enabled' => false,
+                'seller_id' => null,
+                'shop_name' => 'Workshop',
+                'reason' => 'Store pickup schedule is temporarily unavailable.',
+                'location' => null,
+                'days' => [],
+            ];
+        }
+
         try {
             $timezone = self::TIMEZONE;
             $schedule = $this->getEffectiveSchedule($seller);
@@ -244,6 +275,8 @@ class PickupScheduleService
             if (!$schedule->is_enabled) {
                 return [
                     'pickup_enabled' => false,
+                    'seller_id' => $seller->id,
+                    'shop_name' => $seller->shop_name ?: $seller->name,
                     'reason' => 'Store pickup is currently unavailable for this artisan.',
                     'location' => null,
                     'days' => [],
@@ -312,6 +345,8 @@ class PickupScheduleService
             \Illuminate\Support\Facades\Log::warning('Pickup overview generation fallback: ' . $e->getMessage());
             return [
                 'pickup_enabled' => false,
+                'seller_id' => $seller?->id,
+                'shop_name' => $seller ? ($seller->shop_name ?: $seller->name) : 'Workshop',
                 'reason' => 'Store pickup schedule is temporarily unavailable.',
                 'location' => null,
                 'days' => [],
@@ -324,8 +359,15 @@ class PickupScheduleService
      *
      * @return array{valid: bool, error: string|null, slot: array<string, mixed>|null}
      */
-    public function validateSlotSelection(User $seller, string $dateString, string $slotIdentifier, int $leadTimeDays = 0): array
+    public function validateSlotSelection(?User $seller, string $dateString, string $slotIdentifier, int $leadTimeDays = 0): array
     {
+        if (!$seller) {
+            return [
+                'valid' => false,
+                'error' => 'Workshop pickup is unavailable for this artisan.',
+                'slot' => null,
+            ];
+        }
         $timezone = self::TIMEZONE;
 
         try {

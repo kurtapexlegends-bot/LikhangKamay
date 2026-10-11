@@ -22,15 +22,24 @@ class OrderWorkflowHelper
     {
         return collect($items)
             ->map(function (array $item) {
-                $product = Product::findOrFail($item['id']);
+                $productId = $item['id'] ?? null;
+                if (!$productId) {
+                    return null;
+                }
+
+                $product = Product::find($productId);
+                if (!$product) {
+                    return null;
+                }
 
                 return [
                     'id' => $product->id,
                     'artisan_id' => $product->artisan_id ?? $product->user_id,
-                    'qty' => (int) $item['qty'],
+                    'qty' => (int) ($item['qty'] ?? 1),
                     'variant' => $item['variant'] ?? null,
                 ];
             })
+            ->filter()
             ->groupBy('artisan_id');
     }
 

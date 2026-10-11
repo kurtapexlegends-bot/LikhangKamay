@@ -25,7 +25,7 @@ class QuoteShippingRequest extends FormRequest
     {
         return [
             'items' => ['required', 'array', 'min:1'],
-            'items.*.id' => ['required', 'integer', 'exists:products,id'],
+            'items.*.id' => ['required', 'integer'],
             'items.*.qty' => ['required', 'integer', 'min:1'],
             'shipping_method' => ['required', 'string', 'in:Delivery,Pick Up'],
             'selected_address_id' => ['nullable'],
@@ -36,6 +36,19 @@ class QuoteShippingRequest extends FormRequest
             'shipping_city' => ['nullable', 'string', 'max:255'],
             'shipping_region' => ['nullable', 'string', 'max:255'],
             'shipping_postal_code' => ['nullable', 'string', 'max:20'],
+        ];
+    }
+
+    /**
+     * Get custom error messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'items.required' => 'Your cart is empty. Please add items to proceed.',
+            'items.min' => 'Your cart is empty. Please add items to proceed.',
         ];
     }
 }

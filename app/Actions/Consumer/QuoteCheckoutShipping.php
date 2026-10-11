@@ -4,16 +4,21 @@ namespace App\Actions\Consumer;
 
 use App\Models\User;
 use App\Services\CheckoutShippingService;
+use App\Services\PickupScheduleService;
 use App\Support\OrderWorkflowHelper;
 use Illuminate\Http\Request;
 
 class QuoteCheckoutShipping
 {
     private $checkoutShippingService;
+    private $pickupScheduleService;
 
-    public function __construct(CheckoutShippingService $checkoutShippingService)
-    {
+    public function __construct(
+        CheckoutShippingService $checkoutShippingService,
+        ?PickupScheduleService $pickupScheduleService = null
+    ) {
         $this->checkoutShippingService = $checkoutShippingService;
+        $this->pickupScheduleService = $pickupScheduleService ?? app(PickupScheduleService::class);
     }
 
     /**
@@ -36,14 +41,22 @@ class QuoteCheckoutShipping
         $shippingContext = OrderWorkflowHelper::resolveCheckoutDeliveryContext($request, $buyer, false);
         $groupedItems = OrderWorkflowHelper::groupCheckoutItemsBySeller($request->input('items', []));
 
+        if ($groupedItems->isEmpty()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'items' => 'One or more items in your cart are no longer available. Please update your cart to proceed.',
+            ]);
+        }
+
         $groups = [];
         $totalShippingFee = 0.0;
 
         foreach ($groupedItems as $artisanId => $items) {
-            $seller = User::find($artisanId);
+            $seller = User::withTrashed()->find($artisanId);
 
-            if (!$seller) {
-                continue;
+            if (!$seller || $seller->trashed() || $seller->role !== 'artisan' || $seller->artisan_status !== 'approved' || $seller->isBanned() || $seller->isSuspended()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'items' => 'One or more items in your cart belong to an inactive workshop. Please update your cart to proceed.',
+                ]);
             }
 
             $pickupCandidates = $seller->getCourierPickupAddressCandidates();
@@ -75,6 +88,13 @@ class QuoteCheckoutShipping
 
             if ($isSameLocation) {
                 $shopName = $seller->shop_name ?: $seller->name;
+                $pickupSchedule = $this->pickupScheduleService->getEffectiveSchedule($seller);
+                if (!$pickupSchedule->is_enabled) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'shipping_address' => "The delivery address is identical to {$shopName}'s studio location. This workshop does not offer workshop pick-up; please provide a different delivery address.",
+                    ]);
+                }
+
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'shipping_address' => "The delivery address is identical to {$shopName}'s studio pickup location. Please select 'Pick Up' or provide a different delivery address.",
                 ]);

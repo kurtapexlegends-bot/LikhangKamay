@@ -117,6 +117,24 @@ class PlaceOrder
         $grandTotal = 0.0;
 
         foreach ($groupedItems as $artisanId => $items) {
+            $seller = User::withTrashed()->find((int) $artisanId);
+            if (!$seller || $seller->trashed() || $seller->role !== 'artisan' || $seller->artisan_status !== 'approved' || $seller->isBanned() || $seller->isSuspended()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'items' => 'One or more items in your cart belong to an inactive workshop. Please update your cart to proceed.',
+                ]);
+            }
+
+            if ($request->shipping_method === 'Pick Up') {
+                $schedule = $this->pickupScheduleService->getEffectiveSchedule($seller);
+                if (!$schedule->is_enabled) {
+                    $shopName = $seller->shop_name ?: $seller->name;
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        "pickup_schedules.{$artisanId}" => "{$shopName} does not offer workshop pick-up. Please switch to Standard Delivery or purchase their items separately.",
+                        'shipping_method' => "{$shopName} does not offer workshop pick-up. Please switch to Standard Delivery or purchase their items separately.",
+                    ]);
+                }
+            }
+
             $merchandiseSubtotal = 0;
 
             foreach ($items as $item) {
@@ -129,8 +147,6 @@ class PlaceOrder
                     }
                 }
             }
-
-            $seller = User::find((int) $artisanId);
 
             if ($request->shipping_method === 'Delivery' && $seller) {
                 $pickupCandidates = $seller->getCourierPickupAddressCandidates();
@@ -162,6 +178,13 @@ class PlaceOrder
 
                 if ($isSameLocation) {
                     $shopName = $seller->shop_name ?: $seller->name;
+                    $pickupSchedule = $this->pickupScheduleService->getEffectiveSchedule($seller);
+                    if (!$pickupSchedule->is_enabled) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'shipping_address' => "The delivery address is identical to {$shopName}'s studio location. This workshop does not offer workshop pick-up; please provide a different delivery address.",
+                        ]);
+                    }
+
                     throw \Illuminate\Validation\ValidationException::withMessages([
                         'shipping_address' => "The delivery address is identical to {$shopName}'s studio pickup location. Please select 'Pick Up' or provide a different delivery address.",
                     ]);
@@ -234,7 +257,12 @@ class PlaceOrder
                 $orderShippingAddress = $shippingAddress;
 
                 if ($request->shipping_method === 'Pick Up') {
-                    $seller = User::find((int) $artisanId);
+                    $seller = User::withTrashed()->find((int) $artisanId);
+                    if (!$seller) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'shipping_method' => 'One or more items belong to an inactive workshop. Please update your cart to proceed.',
+                        ]);
+                    }
                     $productIds = collect($items)->pluck('id')->all();
                     $maxLeadTime = (int) Product::whereIn('id', $productIds)->max('lead_time');
 
@@ -401,7 +429,7 @@ class PlaceOrder
             $order = $entry['order'];
             $artisanId = $entry['artisan_id'];
 
-            $seller = User::find($artisanId);
+            $seller = User::withTrashed()->find($artisanId);
             if ($seller && $seller->email) {
                 $order->loadMissing('items');
                 $this->sendMailSilently(
@@ -432,7 +460,7 @@ class PlaceOrder
         }
 
         foreach ($lowStockNotifications as $notif) {
-            $seller = User::find($notif['seller_id']);
+            $seller = User::withTrashed()->find($notif['seller_id']);
             if ($seller) {
                 $seller->notifySellerWorkspace(new \App\Notifications\LowStockNotification($notif['product']), 'products');
             }

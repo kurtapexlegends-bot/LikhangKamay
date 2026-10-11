@@ -172,6 +172,12 @@ export default function SwipeableCartItemRow({
                         )}
                         <p className="text-xs text-gray-400 mt-1">SKU: {item.sku || 'Unavailable'}</p>
                         <p className="text-xs text-gray-400 mt-0.5">Variant: {item.variant || 'Standard'}</p>
+                        {item.stock_warning && (
+                            <p className="text-[11px] text-amber-700 font-medium mt-1">{item.stock_warning}</p>
+                        )}
+                        {item.stock && item.stock <= 5 && !item.stock_warning && (
+                            <p className="text-[10px] text-amber-600 font-semibold mt-0.5">Only {item.stock} left</p>
+                        )}
 
                         {/* Inline button as mobile backup if swipe isn't used */}
                         <button 
@@ -218,8 +224,9 @@ export default function SwipeableCartItemRow({
                             <button
                                 type="button"
                                 onClick={() => onUpdateQty(cartKey, item.qty, 1, minQty)}
-                                disabled={isUpdating}
-                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                                disabled={isUpdating || (Boolean(item.stock) && item.qty >= item.stock)}
+                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                                title={item.stock && item.qty >= item.stock ? `Maximum available stock reached (${item.stock})` : 'Increase quantity'}
                             >
                                 <Plus size={12} />
                             </button>

@@ -48,6 +48,17 @@ if (app()->environment('local')) {
                             'qty' => 1,
                         ];
                     }
+                    if (str_contains($target, '/cart')) {
+                        $unavailKey = '99999:' . md5('out-of-stock');
+                        $cart[$unavailKey] = [
+                            'id' => 99999,
+                            'name' => 'Rustic Handwoven Basket (Sample)',
+                            'price' => 380,
+                            'variant' => 'Natural Tan',
+                            'cart_key' => $unavailKey,
+                            'qty' => 1,
+                        ];
+                    }
                     $request->session()->put('cart', $cart);
                 }
             }
@@ -433,6 +444,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::patch('/cart/update', [\App\Http\Controllers\Consumer\CartController::class, 'update'])->middleware('throttle:60,1')->name('cart.update');
         Route::delete('/cart/remove', [\App\Http\Controllers\Consumer\CartController::class, 'destroy'])->name('cart.destroy');
         Route::match(['post', 'delete'], '/cart/clear', [\App\Http\Controllers\Consumer\CartController::class, 'clear'])->name('cart.clear');
+        Route::match(['post', 'delete'], '/cart/clear-unavailable', [\App\Http\Controllers\Consumer\CartController::class, 'clearUnavailable'])->name('cart.clear-unavailable');
         Route::post('/cart/buy-again/{id}', [\App\Http\Controllers\Consumer\CartController::class, 'buyAgain'])->name('cart.buy-again'); // New
         Route::post('/cart/restore', [\App\Http\Controllers\Consumer\CartController::class, 'restore'])->name('cart.restore');
 

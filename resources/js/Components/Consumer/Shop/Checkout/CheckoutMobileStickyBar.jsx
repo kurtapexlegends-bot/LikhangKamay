@@ -38,11 +38,13 @@ export default function CheckoutMobileStickyBar({
                         <p className="text-[11px] text-stone-500">
                             {processing
                                 ? 'Submitting order...'
-                                : submitDisabled && shippingMethod === 'Delivery' && shippingQuote.status !== 'ready'
-                                    ? 'Delivery quote still needed'
-                                    : totalSellers > 1
-                                        ? `${totalSellers} split orders`
-                                        : 'Tap to view details'}
+                                : shippingMethod === 'Delivery' && shippingQuote.status === 'error'
+                                    ? 'Delivery quote unavailable'
+                                    : submitDisabled && shippingMethod === 'Delivery' && shippingQuote.status !== 'ready'
+                                        ? 'Delivery quote still needed'
+                                        : totalSellers > 1
+                                            ? `${totalSellers} split orders`
+                                            : 'Tap to view details'}
                         </p>
                     </div>
                     <button

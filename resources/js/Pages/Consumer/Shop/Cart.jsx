@@ -1,9 +1,11 @@
+/* global route */
 import React, { useEffect, useMemo, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import ShopLayout from '@/Layouts/ShopLayout';
 import StickyActionBar from '@/Components/StickyActionBar';
 import SwipeableCartItemRow from '@/Components/Consumer/Shop/SwipeableCartItemRow';
-import { Trash2, ShoppingBag, ArrowRight, ChevronRight, Package, ShieldCheck, Store, Loader2, Check, RotateCcw } from 'lucide-react';
+import UnavailableCartItemsSection from '@/Components/Consumer/Shop/UnavailableCartItemsSection';
+import { ShoppingBag, ArrowRight, ChevronRight, Package, ShieldCheck, Store, Loader2, Check, RotateCcw } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import useCartPersistence from '@/hooks/useCartPersistence';
@@ -12,7 +14,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 export default function Cart({ cart }) {
     const [updatingId, setUpdatingId] = useState(null);
     const [removingId, setRemovingId] = useState(null);
-    const [selectedItems, setSelectedItems] = useState(new Set());
+    const [isClearingUnavailable, setIsClearingUnavailable] = useState(false);
     const { addToast } = useToast();
     const { confirm, ConfirmationDialog } = useConfirm();
     const currency = useMemo(() => new Intl.NumberFormat('en-PH', {
@@ -33,32 +35,54 @@ export default function Cart({ cart }) {
     const cartItems = Object.values(cart || {});
     const getCartKey = (item) => item.cart_key || String(item.id);
 
+    // Split items into available and unavailable (Shopee/TikTok Shop pattern)
+    const availableItems = useMemo(() => cartItems.filter((item) => item.is_available !== false), [cartItems]);
+    const unavailableItems = useMemo(() => cartItems.filter((item) => item.is_available === false), [cartItems]);
+
+    // Initial selected items (select available items)
+    const [selectedItems, setSelectedItems] = useState(() => {
+        const items = Object.values(cart || {}).filter((item) => item.is_available !== false);
+        return new Set(items.map((item) => item.cart_key || String(item.id)));
+    });
+
     // Client-side cart persistence & session recovery
     const { savedBackup, isRestoring, restoreCart, dismissBackup } = useCartPersistence(cartItems);
 
-    // Initialize selected items on first render
+    // Keep selection synchronized with available items and purge unavailable items
     useEffect(() => {
-        if (selectedItems.size === 0 && cartItems.length > 0) {
-            setSelectedItems(new Set(cartItems.map((item) => getCartKey(item))));
-        }
-    }, [cartItems.length]);
+        setSelectedItems((prev) => {
+            if (prev.size === 0 && availableItems.length > 0) {
+                return new Set(availableItems.map((item) => getCartKey(item)));
+            }
+            const next = new Set();
+            for (const id of prev) {
+                if (availableItems.some((item) => getCartKey(item) === id)) {
+                    next.add(id);
+                }
+            }
+            if (next.size !== prev.size) {
+                return next;
+            }
+            return prev;
+        });
+    }, [availableItems]);
 
     const [activeStudioFilter, setActiveStudioFilter] = useState('all');
 
-    // Group items by seller
+    // Group available items by seller
     const groupedBySeller = useMemo(() => {
-        return cartItems.reduce((acc, item) => {
+        return availableItems.reduce((acc, item) => {
             const seller = item.shop_name || item.seller || 'Unknown Seller';
             if (!acc[seller]) acc[seller] = [];
             acc[seller].push(item);
             return acc;
         }, {});
-    }, [cartItems]);
+    }, [availableItems]);
 
-    // Calculate totals based on selected items only
+    // Calculate totals based on selected available items only
     const selectedCartItems = useMemo(() => {
-        return cartItems.filter((item) => selectedItems.has(getCartKey(item)));
-    }, [cartItems, selectedItems]);
+        return availableItems.filter((item) => selectedItems.has(getCartKey(item)));
+    }, [availableItems, selectedItems]);
 
     const totalAmount = useMemo(() => {
         return selectedCartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -76,11 +100,14 @@ export default function Cart({ cart }) {
         return Array.from(sellers);
     }, [selectedCartItems]);
 
-    // Check if all items are selected
-    const allSelected = cartItems.length > 0 && selectedItems.size === cartItems.length;
+    // Check if all available items are selected
+    const allSelected = availableItems.length > 0 && selectedItems.size === availableItems.length;
 
     // Toggle single item selection
     const toggleItem = (id) => {
+        const isAvailable = availableItems.some((item) => getCartKey(item) === String(id));
+        if (!isAvailable) return;
+
         const newSelected = new Set(selectedItems);
         const key = String(id);
 
@@ -92,19 +119,20 @@ export default function Cart({ cart }) {
         setSelectedItems(newSelected);
     };
 
-    // Toggle all items
+    // Toggle all available items
     const toggleAll = () => {
         if (allSelected) {
             setSelectedItems(new Set());
         } else {
-            setSelectedItems(new Set(cartItems.map((item) => getCartKey(item))));
+            setSelectedItems(new Set(availableItems.map((item) => getCartKey(item))));
         }
     };
 
     // Toggle all items from a specific seller
     const toggleSeller = (sellerItems) => {
-        const sellerIds = sellerItems.map((item) => getCartKey(item));
-        const allSellerSelected = sellerIds.every(id => selectedItems.has(id));
+        const sellerAvailableItems = sellerItems.filter((item) => item.is_available !== false);
+        const sellerIds = sellerAvailableItems.map((item) => getCartKey(item));
+        const allSellerSelected = sellerIds.length > 0 && sellerIds.every(id => selectedItems.has(id));
         
         const newSelected = new Set(selectedItems);
         if (allSellerSelected) {
@@ -139,12 +167,31 @@ export default function Cart({ cart }) {
             data: { id }, 
             preserveScroll: true,
             onSuccess: () => {
-                // Remove from selected items too
                 const newSelected = new Set(selectedItems);
                 newSelected.delete(id);
                 setSelectedItems(newSelected);
             },
             onFinish: () => setRemovingId(null),
+        });
+    };
+
+    const clearUnavailableItems = async () => {
+        if (unavailableItems.length === 0) return;
+        const ok = await confirm({
+            title: 'Clear Unavailable Items?',
+            message: `Remove all ${unavailableItems.length} unavailable piece${unavailableItems.length > 1 ? 's' : ''} from your cart?`,
+            confirmText: 'Clear Items',
+            intent: 'danger',
+        });
+        if (!ok) return;
+
+        setIsClearingUnavailable(true);
+        router.delete(route('cart.clear-unavailable'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                addToast(`Cleared ${unavailableItems.length} unavailable item(s).`, 'success');
+            },
+            onFinish: () => setIsClearingUnavailable(false),
         });
     };
 
@@ -154,9 +201,18 @@ export default function Cart({ cart }) {
             return;
         }
 
+        const validSelected = Array.from(selectedItems).filter((key) =>
+            availableItems.some((item) => getCartKey(item) === key)
+        );
+
+        if (validSelected.length === 0) {
+            addToast('Please select at least one available handcrafted piece to proceed.', 'error');
+            return;
+        }
+
         // Pass selected item IDs to checkout
         router.get(route('checkout.create'), { 
-            items: Array.from(selectedItems) 
+            items: validSelected 
         });
     };
 
@@ -199,139 +255,175 @@ export default function Cart({ cart }) {
                         {/* ========== LEFT: CART ITEMS ========== */}
                         <div className="lg:col-span-8 space-y-4">
                             
-                            {/* Cart Header */}
-                            <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
-                                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                                    <h1 className="text-lg font-semibold text-gray-900">
-                                        Shopping Cart
-                                        <span className="ml-2 text-sm font-normal text-gray-400">({cartItems.length} items)</span>
-                                    </h1>
-                                </div>
+                            {availableItems.length > 0 ? (
+                                /* Cart Header & Available Items */
+                                <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
+                                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                                        <h1 className="text-lg font-semibold text-gray-900">
+                                            Shopping Cart
+                                            <span className="ml-2 text-sm font-normal text-gray-400">({availableItems.length} available)</span>
+                                        </h1>
+                                    </div>
 
-                                {/* Studio Filter Tabs (when multiple sellers present) */}
-                                {Object.keys(groupedBySeller).length > 1 && (
-                                    <div className="px-4 py-2.5 bg-stone-50/80 border-b border-gray-100 flex items-center gap-2 overflow-x-auto no-scrollbar">
-                                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
-                                            <Store size={12} className="text-clay-600" /> Studios:
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => setActiveStudioFilter('all')}
-                                            className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition-all ${
-                                                activeStudioFilter === 'all'
-                                                    ? 'bg-clay-600 text-white shadow-2xs'
-                                                    : 'bg-white text-stone-600 border border-stone-200 hover:border-clay-300'
-                                            }`}
-                                        >
-                                            All Studios ({cartItems.length})
-                                        </button>
-                                        {Object.entries(groupedBySeller).map(([seller, items]) => (
+                                    {/* Studio Filter Tabs (when multiple sellers present) */}
+                                    {Object.keys(groupedBySeller).length > 1 && (
+                                        <div className="px-4 py-2.5 bg-stone-50/80 border-b border-gray-100 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                                            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                                                <Store size={12} className="text-clay-600" /> Studios:
+                                            </span>
                                             <button
-                                                key={seller}
                                                 type="button"
-                                                onClick={() => setActiveStudioFilter(seller)}
+                                                onClick={() => setActiveStudioFilter('all')}
                                                 className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition-all ${
-                                                    activeStudioFilter === seller
+                                                    activeStudioFilter === 'all'
                                                         ? 'bg-clay-600 text-white shadow-2xs'
                                                         : 'bg-white text-stone-600 border border-stone-200 hover:border-clay-300'
                                                 }`}
                                             >
-                                                {seller} ({items.length})
+                                                All Studios ({availableItems.length})
                                             </button>
-                                        ))}
+                                            {Object.entries(groupedBySeller).map(([seller, items]) => (
+                                                <button
+                                                    key={seller}
+                                                    type="button"
+                                                    onClick={() => setActiveStudioFilter(seller)}
+                                                    className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition-all ${
+                                                        activeStudioFilter === seller
+                                                            ? 'bg-clay-600 text-white shadow-2xs'
+                                                            : 'bg-white text-stone-600 border border-stone-200 hover:border-clay-300'
+                                                    }`}
+                                                >
+                                                    {seller} ({items.length})
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Table Header with Select All */}
+                                    <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase items-center">
+                                        <div className="col-span-6 flex items-center gap-3">
+                                            <button
+                                                onClick={toggleAll}
+                                                className={`w-4 h-4 rounded border flex items-center justify-center transition ${
+                                                    allSelected 
+                                                        ? 'bg-clay-600 border-clay-600 text-white' 
+                                                        : 'border-gray-300 hover:border-clay-400'
+                                                }`}
+                                            >
+                                                {allSelected && <Check size={12} />}
+                                            </button>
+                                            <span>Select All ({availableItems.length})</span>
+                                        </div>
+                                        <div className="col-span-2 text-center">Unit Price</div>
+                                        <div className="col-span-2 text-center">Quantity</div>
+                                        <div className="col-span-2 text-right">Total</div>
                                     </div>
-                                )}
 
-                                {/* Table Header with Select All */}
-                                <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase items-center">
-                                    <div className="col-span-6 flex items-center gap-3">
-                                        <button
-                                            onClick={toggleAll}
-                                            className={`w-4 h-4 rounded border flex items-center justify-center transition ${
-                                                allSelected 
-                                                    ? 'bg-clay-600 border-clay-600 text-white' 
-                                                    : 'border-gray-300 hover:border-clay-400'
-                                            }`}
-                                        >
-                                            {allSelected && <Check size={12} />}
-                                        </button>
-                                        <span>Select All ({cartItems.length})</span>
-                                    </div>
-                                    <div className="col-span-2 text-center">Unit Price</div>
-                                    <div className="col-span-2 text-center">Quantity</div>
-                                    <div className="col-span-2 text-right">Total</div>
-                                </div>
+                                    {/* Items grouped by seller */}
+                                    {Object.entries(groupedBySeller)
+                                        .filter(([seller]) => activeStudioFilter === 'all' || activeStudioFilter === seller)
+                                        .map(([seller, items], sellerIndex) => {
+                                        const sellerIds = items.map((item) => getCartKey(item));
+                                        const allSellerSelected = sellerIds.every(id => selectedItems.has(id));
+                                        const someSellerSelected = sellerIds.some(id => selectedItems.has(id));
 
-                                {/* Items grouped by seller */}
-                                {Object.entries(groupedBySeller)
-                                    .filter(([seller]) => activeStudioFilter === 'all' || activeStudioFilter === seller)
-                                    .map(([seller, items], sellerIndex) => {
-                                    const sellerIds = items.map((item) => getCartKey(item));
-                                    const allSellerSelected = sellerIds.every(id => selectedItems.has(id));
-                                    const someSellerSelected = sellerIds.some(id => selectedItems.has(id));
+                                        return (
+                                            <div key={seller}>
+                                                {/* Seller Header */}
+                                                <div className="px-4 py-2.5 bg-gray-50/70 border-t border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <button
+                                                            onClick={() => toggleSeller(items)}
+                                                            className={`w-4 h-4 rounded border flex items-center justify-center transition ${
+                                                                allSellerSelected 
+                                                                    ? 'bg-clay-600 border-clay-600 text-white' 
+                                                                    : someSellerSelected
+                                                                        ? 'bg-clay-200 border-clay-400'
+                                                                        : 'border-gray-300 hover:border-clay-400'
+                                                            }`}
+                                                        >
+                                                            {allSellerSelected && <Check size={12} />}
+                                                        </button>
+                                                        <Store size={14} className="text-clay-600" />
+                                                        <span className="text-sm font-bold text-gray-900">{seller}</span>
+                                                        {Object.keys(groupedBySeller).length > 1 && (
+                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-clay-50 text-clay-700 border border-clay-200/80">
+                                                                Studio Package {sellerIndex + 1}
+                                                            </span>
+                                                        )}
+                                                    </div>
 
-                                    return (
-                                        <div key={seller}>
-                                            {/* Seller Header */}
-                                            <div className="px-4 py-2.5 bg-gray-50/70 border-t border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
-                                                <div className="flex items-center gap-3">
-                                                    <button
-                                                        onClick={() => toggleSeller(items)}
-                                                        className={`w-4 h-4 rounded border flex items-center justify-center transition ${
-                                                            allSellerSelected 
-                                                                ? 'bg-clay-600 border-clay-600 text-white' 
-                                                                : someSellerSelected
-                                                                    ? 'bg-clay-200 border-clay-400'
-                                                                    : 'border-gray-300 hover:border-clay-400'
-                                                        }`}
-                                                    >
-                                                        {allSellerSelected && <Check size={12} />}
-                                                    </button>
-                                                    <Store size={14} className="text-clay-600" />
-                                                    <span className="text-sm font-bold text-gray-900">{seller}</span>
                                                     {Object.keys(groupedBySeller).length > 1 && (
-                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-clay-50 text-clay-700 border border-clay-200/80">
-                                                            Studio Package {sellerIndex + 1}
-                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const ids = new Set(items.map((item) => getCartKey(item)));
+                                                                setSelectedItems(ids);
+                                                            }}
+                                                            className="text-[11px] font-semibold text-clay-700 hover:text-clay-900 transition"
+                                                        >
+                                                            Checkout Only This Studio
+                                                        </button>
                                                     )}
                                                 </div>
 
-                                                {Object.keys(groupedBySeller).length > 1 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const ids = new Set(items.map((item) => getCartKey(item)));
-                                                            setSelectedItems(ids);
-                                                        }}
-                                                        className="text-[11px] font-semibold text-clay-700 hover:text-clay-900 transition"
-                                                    >
-                                                        Checkout Only This Studio
-                                                    </button>
-                                                )}
+                                                {/* Seller's Items */}
+                                                {items.map((item) => (
+                                                    <SwipeableCartItemRow
+                                                        key={getCartKey(item)}
+                                                        item={item}
+                                                        cartKey={getCartKey(item)}
+                                                        isSelected={selectedItems.has(getCartKey(item))}
+                                                        onToggle={toggleItem}
+                                                        onRemove={removeItem}
+                                                        onUpdateQty={updateQty}
+                                                        isRemoving={removingId === getCartKey(item)}
+                                                        isUpdating={updatingId === getCartKey(item)}
+                                                        currency={currency}
+                                                    />
+                                                ))}
                                             </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                /* When all items in cart are unavailable */
+                                <div className="bg-white rounded-2xl border border-stone-200/90 p-6 text-center shadow-2xs space-y-3">
+                                    <div className="w-12 h-12 mx-auto rounded-full bg-amber-50 text-amber-700 flex items-center justify-center">
+                                        <Package size={22} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h2 className="text-base font-bold text-stone-900">
+                                            No Available Pieces in Cart
+                                        </h2>
+                                        <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                                            All handcrafted items currently in your cart are out of stock or delisted. You can clear them below to discover new pieces.
+                                        </p>
+                                    </div>
+                                    <div className="pt-1 flex items-center justify-center gap-2">
+                                        <Link
+                                            href={route('shop.index')}
+                                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-clay-600 hover:bg-clay-700 text-white text-xs font-bold rounded-xl shadow-2xs transition active:scale-95 min-h-[38px]"
+                                        >
+                                            <span>Explore Artisan Shop</span>
+                                            <ArrowRight size={13} />
+                                        </Link>
+                                    </div>
+                                </div>
+                            )}
 
-                                            {/* Seller's Items */}
-                                            {items.map((item) => (
-                                                <SwipeableCartItemRow
-                                                    key={getCartKey(item)}
-                                                    item={item}
-                                                    cartKey={getCartKey(item)}
-                                                    isSelected={selectedItems.has(getCartKey(item))}
-                                                    onToggle={toggleItem}
-                                                    onRemove={removeItem}
-                                                    onUpdateQty={updateQty}
-                                                    isRemoving={removingId === getCartKey(item)}
-                                                    isUpdating={updatingId === getCartKey(item)}
-                                                    currency={currency}
-                                                />
-                                            ))}
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                            {/* Shopee / TikTok style Unavailable Items Section */}
+                            <UnavailableCartItemsSection
+                                items={unavailableItems}
+                                onRemove={removeItem}
+                                onClearAll={clearUnavailableItems}
+                                isClearing={isClearingUnavailable}
+                                removingId={removingId}
+                                currency={currency}
+                            />
 
                             {/* Continue Shopping */}
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-between items-center pt-2">
                                 <Link 
                                     href={route('shop.index')} 
                                     className="text-sm text-gray-500 hover:text-clay-600 transition flex items-center gap-1"
@@ -351,7 +443,7 @@ export default function Cart({ cart }) {
                                 <div className="p-4 space-y-3 text-sm">
                                     <div className="flex justify-between text-gray-500">
                                         <span>Selected Items</span>
-                                        <span className="text-gray-900">{selectedItems.size} of {cartItems.length}</span>
+                                        <span className="text-gray-900">{selectedItems.size} of {availableItems.length}</span>
                                     </div>
                                     <div className="flex justify-between text-gray-500">
                                         <span>Subtotal ({totalItems} items)</span>
@@ -387,7 +479,7 @@ export default function Cart({ cart }) {
                                                     <div className="space-y-0.5 leading-relaxed text-left">
                                                         <span className="font-bold text-amber-950 block">Multi-Workshop Order ({selectedSellers.length} Studios)</span>
                                                         <p className="text-[11px] text-amber-900">
-                                                            Your cart contains items from {selectedSellers.length} independent studios. Each artisan will prepare and ship their goods in a separate package with individual tracking.
+                                                             Your cart contains items from {selectedSellers.length} independent studios. Each artisan will prepare and ship their goods in a separate package with individual tracking.
                                                         </p>
                                                     </div>
                                                 </div>
@@ -395,18 +487,22 @@ export default function Cart({ cart }) {
 
                                             <button
                                                 onClick={proceedToCheckout}
-                                                disabled={selectedItems.size === 0}
+                                                disabled={selectedItems.size === 0 || availableItems.length === 0}
                                                 className="w-full h-11 bg-clay-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-clay-700 transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
                                             >
                                                 Checkout ({selectedItems.size})
                                                 <ArrowRight size={16} />
                                             </button>
 
-                                            {selectedItems.size === 0 && (
+                                            {availableItems.length === 0 ? (
+                                                <p className="text-xs text-amber-600 text-center mt-2">
+                                                    All items in your cart are currently unavailable
+                                                </p>
+                                            ) : selectedItems.size === 0 ? (
                                                 <p className="text-xs text-amber-600 text-center mt-2">
                                                     Please select at least one item to checkout
                                                 </p>
-                                            )}
+                                            ) : null}
                                         </>
                                     )}
                                 </div>
@@ -512,7 +608,7 @@ export default function Cart({ cart }) {
                         ) : (
                             <button
                                 onClick={proceedToCheckout}
-                                disabled={selectedItems.size === 0}
+                                disabled={selectedItems.size === 0 || availableItems.length === 0}
                                 className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-clay-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-clay-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 transition-all min-h-[44px]"
                             >
                                 <span>Checkout</span>

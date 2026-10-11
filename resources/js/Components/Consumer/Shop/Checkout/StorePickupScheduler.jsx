@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Calendar, Clock, MapPin, Store, AlertCircle, Info, ExternalLink, ChevronDown } from 'lucide-react';
 import PickupCalendarPopover from './PickupScheduler/PickupCalendarPopover';
-import PickupTimeSlotPopover from './PickupScheduler/PickupTimeSlotPopover';
 import PickupTimeSlotMatrix from './PickupScheduler/PickupTimeSlotMatrix';
 
 export default function StorePickupScheduler({
@@ -19,10 +18,8 @@ export default function StorePickupScheduler({
     const earliestFormatted = pickupConfig?.earliest_formatted || 'Soon';
 
     const [isDateOpen, setIsDateOpen] = useState(false);
-    const [isTimeOpen, setIsTimeOpen] = useState(false);
 
     const dateContainerRef = useRef(null);
-    const timeContainerRef = useRef(null);
 
     // Extract distinct year-months from available days
     const distinctMonths = useMemo(() => {
@@ -112,20 +109,16 @@ export default function StorePickupScheduler({
         }
     }, [days, isEnabled, selectedDate, selectedSlot, onSelectDate, onSelectSlot]);
 
-    // Close popovers on click outside
+    // Close calendar popover on click outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dateContainerRef.current && !dateContainerRef.current.contains(event.target)) {
                 setIsDateOpen(false);
             }
-            if (timeContainerRef.current && !timeContainerRef.current.contains(event.target)) {
-                setIsTimeOpen(false);
-            }
         };
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
                 setIsDateOpen(false);
-                setIsTimeOpen(false);
             }
         };
 
@@ -153,7 +146,6 @@ export default function StorePickupScheduler({
     const handleSelectSlotOption = (slot) => {
         if (!slot || !slot.is_available) return;
         onSelectSlot(slot.label);
-        setIsTimeOpen(false);
     };
 
     const handleMonthChange = (direction) => {
@@ -230,16 +222,13 @@ export default function StorePickupScheduler({
                 </div>
             )}
 
-            {/* Interactive Booking Tiles */}
+            {/* Interactive Booking Header: Date Selector & Selected Time Status */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 relative">
                 {/* Tile 1: Date Trigger */}
                 <div ref={dateContainerRef} className="relative">
                     <button
                         type="button"
-                        onClick={() => {
-                            setIsDateOpen((prev) => !prev);
-                            setIsTimeOpen(false);
-                        }}
+                        onClick={() => setIsDateOpen((prev) => !prev)}
                         className={`w-full text-left p-2.5 sm:p-3 rounded-xl border transition-all duration-200 flex items-center justify-between ${
                             isDateOpen
                                 ? 'border-clay-600 bg-clay-50/30 ring-2 ring-clay-600/10 shadow-2xs'
@@ -280,50 +269,35 @@ export default function StorePickupScheduler({
                     />
                 </div>
 
-                {/* Tile 2: Time Slot Trigger */}
-                <div ref={timeContainerRef} className="relative">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setIsTimeOpen((prev) => !prev);
-                            setIsDateOpen(false);
-                        }}
-                        disabled={!selectedDayObj || !selectedDayObj.slots || selectedDayObj.slots.length === 0}
-                        className={`w-full text-left p-2.5 sm:p-3 rounded-xl border transition-all duration-200 flex items-center justify-between disabled:opacity-60 disabled:cursor-not-allowed ${
-                            isTimeOpen
-                                ? 'border-clay-600 bg-clay-50/30 ring-2 ring-clay-600/10 shadow-2xs'
-                                : 'border-stone-200 bg-stone-50/40 hover:bg-stone-50 hover:border-clay-300'
-                        }`}
-                    >
-                        <div className="flex items-start gap-2.5 min-w-0">
-                            <div className="w-7 h-7 rounded-lg bg-white border border-stone-200 flex items-center justify-center text-clay-700 shrink-0 mt-0.5 shadow-2xs">
-                                <Clock size={13} />
-                            </div>
-                            <div className="min-w-0">
-                                <span className="block text-[9.5px] font-bold text-stone-400 uppercase tracking-wider">
-                                    Time Window
-                                </span>
-                                <span className="text-xs sm:text-[13px] font-bold text-stone-900 block truncate">
-                                    {selectedSlot || 'Select time slot'}
-                                </span>
-                                <span className="text-[9.5px] font-medium text-stone-500 block truncate">
-                                    {activeSlotObj
-                                        ? `${activeSlotObj.remaining_capacity} spot${activeSlotObj.remaining_capacity === 1 ? '' : 's'} available`
-                                        : 'Tap to pick time'}
-                                </span>
-                            </div>
+                {/* Tile 2: Selected Time Window Summary */}
+                <div className="p-2.5 sm:p-3 rounded-xl border border-stone-200 bg-stone-50/40 flex items-center justify-between">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-white border border-stone-200 flex items-center justify-center text-clay-700 shrink-0 mt-0.5 shadow-2xs">
+                            <Clock size={13} />
                         </div>
-
-                        <ChevronDown size={14} className={`text-stone-400 transition-transform duration-200 shrink-0 ml-2 ${isTimeOpen ? 'rotate-180 text-clay-600' : ''}`} />
-                    </button>
-
-                    {/* Popover Time Slot List */}
-                    <PickupTimeSlotPopover
-                        isTimeOpen={isTimeOpen}
-                        selectedDayObj={selectedDayObj}
-                        selectedSlot={selectedSlot}
-                        handleSelectSlotOption={handleSelectSlotOption}
-                    />
+                        <div className="min-w-0">
+                            <span className="block text-[9.5px] font-bold text-stone-400 uppercase tracking-wider">
+                                Time Window
+                            </span>
+                            <span className="text-xs sm:text-[13px] font-bold text-stone-900 block truncate">
+                                {selectedSlot || 'Select time slot below'}
+                            </span>
+                            <span className="text-[9.5px] font-medium text-stone-500 block truncate">
+                                {activeSlotObj
+                                    ? `${activeSlotObj.remaining_capacity} spot${activeSlotObj.remaining_capacity === 1 ? '' : 's'} available`
+                                    : 'Choose an available slot below'}
+                            </span>
+                        </div>
+                    </div>
+                    {selectedSlot ? (
+                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shrink-0">
+                            Selected
+                        </span>
+                    ) : (
+                        <span className="text-[10px] font-medium text-stone-400 shrink-0">
+                            Required
+                        </span>
+                    )}
                 </div>
             </div>
 

@@ -304,4 +304,236 @@ class CartPresentationTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('cart_count', 0);
     }
+
+    public function test_cart_identifies_and_flags_out_of_stock_and_deleted_products_with_availability_reasons(): void
+    {
+        /** @var User $buyer */
+        $buyer = User::factory()->create();
+        /** @var User $seller */
+        $seller = User::factory()->artisanApproved()->create();
+
+        // 1. Active Product
+        $activeProduct = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'AVAIL-001',
+            'name' => 'Active Clay Planter',
+            'category' => 'Pottery',
+            'status' => 'Active',
+            'price' => 500,
+            'cost_price' => 200,
+            'stock' => 10,
+            'lead_time' => 2,
+        ]);
+
+        // 2. Out of Stock Product (stock = 0)
+        $outOfStockProduct = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'OOS-001',
+            'name' => 'Sold Out Terracotta Cup',
+            'category' => 'Pottery',
+            'status' => 'Active',
+            'price' => 300,
+            'cost_price' => 100,
+            'stock' => 0,
+            'lead_time' => 2,
+        ]);
+
+        // 3. Soft-Deleted Product
+        $deletedProduct = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'DEL-001',
+            'name' => 'Discontinued Ceramic Plate',
+            'category' => 'Pottery',
+            'status' => 'Active',
+            'price' => 450,
+            'cost_price' => 150,
+            'stock' => 5,
+            'lead_time' => 2,
+        ]);
+        $deletedProduct->delete();
+
+        $activeCartKey = $activeProduct->id . ':standard';
+        $oosCartKey = $outOfStockProduct->id . ':standard';
+        $deletedCartKey = $deletedProduct->id . ':standard';
+
+        $response = $this->actingAs($buyer)
+            ->withSession([
+                'cart' => [
+                    $activeCartKey => [
+                        'id' => $activeProduct->id,
+                        'cart_key' => $activeCartKey,
+                        'name' => $activeProduct->name,
+                        'price' => 500,
+                        'qty' => 2,
+                    ],
+                    $oosCartKey => [
+                        'id' => $outOfStockProduct->id,
+                        'cart_key' => $oosCartKey,
+                        'name' => $outOfStockProduct->name,
+                        'price' => 300,
+                        'qty' => 1,
+                    ],
+                    $deletedCartKey => [
+                        'id' => $deletedProduct->id,
+                        'cart_key' => $deletedCartKey,
+                        'name' => $deletedProduct->name,
+                        'price' => 450,
+                        'qty' => 1,
+                    ],
+                ],
+            ])
+            ->get(route('cart.index'));
+
+        $response->assertOk();
+        $cart = session('cart', []);
+
+        $this->assertCount(3, $cart);
+
+        // Assert Active Item
+        $this->assertTrue($cart[$activeCartKey]['is_available']);
+        $this->assertFalse($cart[$activeCartKey]['is_out_of_stock']);
+        $this->assertNull($cart[$activeCartKey]['unavailable_reason']);
+
+        // Assert Out of Stock Item
+        $this->assertFalse($cart[$oosCartKey]['is_available']);
+        $this->assertTrue($cart[$oosCartKey]['is_out_of_stock']);
+        $this->assertSame('Out of stock', $cart[$oosCartKey]['unavailable_reason']);
+
+        // Assert Soft-Deleted Item
+        $this->assertFalse($cart[$deletedCartKey]['is_available']);
+        $this->assertFalse($cart[$deletedCartKey]['is_out_of_stock']);
+        $this->assertSame('Item is no longer available', $cart[$deletedCartKey]['unavailable_reason']);
+    }
+
+    public function test_cart_clear_unavailable_removes_only_unavailable_items_preserving_active_items(): void
+    {
+        /** @var User $buyer */
+        $buyer = User::factory()->create();
+        /** @var User $seller */
+        $seller = User::factory()->artisanApproved()->create();
+
+        $activeProduct = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'AVAIL-002',
+            'name' => 'Active Ceramic Pitcher',
+            'category' => 'Pottery',
+            'status' => 'Active',
+            'price' => 650,
+            'cost_price' => 300,
+            'stock' => 8,
+            'lead_time' => 2,
+        ]);
+
+        $oosProduct = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'OOS-002',
+            'name' => 'Sold Out Glazed Teapot',
+            'category' => 'Pottery',
+            'status' => 'Active',
+            'price' => 850,
+            'cost_price' => 400,
+            'stock' => 0,
+            'lead_time' => 2,
+        ]);
+
+        $activeKey = $activeProduct->id . ':standard';
+        $oosKey = $oosProduct->id . ':standard';
+
+        $sessionCart = [
+            $activeKey => [
+                'id' => $activeProduct->id,
+                'cart_key' => $activeKey,
+                'name' => $activeProduct->name,
+                'price' => 650,
+                'qty' => 1,
+            ],
+            $oosKey => [
+                'id' => $oosProduct->id,
+                'cart_key' => $oosKey,
+                'name' => $oosProduct->name,
+                'price' => 850,
+                'qty' => 1,
+            ],
+        ];
+
+        // Trigger cart sync first so availability flags are set in session
+        $this->actingAs($buyer)->withSession(['cart' => $sessionCart])->get(route('cart.index'));
+
+        // Execute clear unavailable endpoint
+        $response = $this->actingAs($buyer)->deleteJson(route('cart.clear-unavailable'));
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('removed_count', 1);
+
+        $cart = session('cart', []);
+        $this->assertCount(1, $cart);
+        $this->assertArrayHasKey($activeKey, $cart);
+        $this->assertArrayNotHasKey($oosKey, $cart);
+    }
+
+    public function test_prepare_checkout_excludes_out_of_stock_and_deleted_products(): void
+    {
+        /** @var User $buyer */
+        $buyer = User::factory()->create();
+        /** @var User $seller */
+        $seller = User::factory()->artisanApproved()->create();
+
+        $activeProduct = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'AVAIL-003',
+            'name' => 'Active Bowl',
+            'category' => 'Pottery',
+            'status' => 'Active',
+            'price' => 400,
+            'cost_price' => 150,
+            'stock' => 5,
+            'lead_time' => 1,
+        ]);
+
+        $deletedProduct = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'DEL-003',
+            'name' => 'Deleted Bowl',
+            'category' => 'Pottery',
+            'status' => 'Active',
+            'price' => 400,
+            'cost_price' => 150,
+            'stock' => 5,
+            'lead_time' => 1,
+        ]);
+        $deletedProduct->delete();
+
+        $activeKey = $activeProduct->id . ':standard';
+        $deletedKey = $deletedProduct->id . ':standard';
+
+        $sessionCart = [
+            $activeKey => [
+                'id' => $activeProduct->id,
+                'cart_key' => $activeKey,
+                'name' => $activeProduct->name,
+                'price' => 400,
+                'qty' => 1,
+            ],
+            $deletedKey => [
+                'id' => $deletedProduct->id,
+                'cart_key' => $deletedKey,
+                'name' => $deletedProduct->name,
+                'price' => 400,
+                'qty' => 1,
+            ],
+        ];
+
+        // Visiting checkout with both keys
+        $response = $this->actingAs($buyer)
+            ->withSession(['cart' => $sessionCart])
+            ->get(route('checkout.create', ['items' => [$activeKey, $deletedKey]]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Consumer/Shop/Checkout')
+            ->has('items', 1)
+            ->where('items.0.id', $activeProduct->id)
+        );
+    }
 }

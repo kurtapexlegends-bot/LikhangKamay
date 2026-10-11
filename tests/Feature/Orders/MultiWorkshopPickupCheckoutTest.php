@@ -171,4 +171,114 @@ class MultiWorkshopPickupCheckoutTest extends TestCase
 
         $response->assertSessionHasErrors(['pickup_schedules.' . $this->artisan2->id]);
     }
+
+    public function test_checkout_rejects_inactive_or_soft_deleted_workshop_with_clear_notice(): void
+    {
+        $this->artisan2->delete(); // Soft delete artisan2
+
+        // Session cart checkout preparation
+        $this->withSession([
+            'cart' => [
+                $this->product1->id => [
+                    'id' => $this->product1->id,
+                    'qty' => 1,
+                    'artisan_id' => $this->artisan1->id,
+                ],
+                $this->product2->id => [
+                    'id' => $this->product2->id,
+                    'qty' => 1,
+                    'artisan_id' => $this->artisan2->id,
+                ],
+            ],
+        ]);
+
+        $createResponse = $this->actingAs($this->buyer)->get(route('checkout.create'));
+        $createResponse->assertRedirect(route('cart.index'));
+        $createResponse->assertSessionHas('error', 'One or more items in your cart belong to an inactive workshop. Please update your cart to proceed.');
+
+        // Direct store submission rejection
+        $storeResponse = $this->actingAs($this->buyer)->post(route('checkout.store'), [
+            'shipping_method' => 'Pick Up',
+            'payment_method' => 'COD',
+            'total' => 800,
+            'items' => [
+                [
+                    'id' => $this->product1->id,
+                    'qty' => 1,
+                    'artisan_id' => $this->artisan1->id,
+                ],
+                [
+                    'id' => $this->product2->id,
+                    'qty' => 1,
+                    'artisan_id' => $this->artisan2->id,
+                ],
+            ],
+        ]);
+
+        $storeResponse->assertSessionHasErrors([
+            'items' => 'One or more items in your cart belong to an inactive workshop. Please update your cart to proceed.',
+        ]);
+    }
+
+    public function test_pickup_schedule_service_defensively_handles_null_seller(): void
+    {
+        $pickupService = app(PickupScheduleService::class);
+
+        // calculateEarliestPickupDate with null seller returns Carbon without throwing TypeError
+        $earliest = $pickupService->calculateEarliestPickupDate(null, 2);
+        $this->assertInstanceOf(Carbon::class, $earliest);
+
+        // validateSlotSelection with null seller returns invalid array without throwing TypeError
+        $validation = $pickupService->validateSlotSelection(null, '2026-10-15', 'slot_1', 2);
+        $this->assertFalse($validation['valid']);
+        $this->assertNotEmpty($validation['error']);
+
+        // getScheduleOverviewForBuyer with null seller returns pickup_enabled=false without throwing TypeError
+        $overview = $pickupService->getScheduleOverviewForBuyer(null);
+        $this->assertFalse($overview['pickup_enabled']);
+
+        // getAvailableSlotsForDate with null seller returns empty array
+        $slots = $pickupService->getAvailableSlotsForDate(null, Carbon::today());
+        $this->assertSame([], $slots);
+    }
+
+    public function test_order_workflow_helper_handles_missing_or_deleted_product_gracefully(): void
+    {
+        // Deleted or non-existent product ID
+        $grouped = \App\Support\OrderWorkflowHelper::groupCheckoutItemsBySeller([
+            ['id' => 999999, 'qty' => 1],
+            ['id' => $this->product1->id, 'qty' => 2],
+        ]);
+
+        $this->assertTrue($grouped->has($this->product1->user_id));
+        $this->assertCount(1, $grouped[$this->product1->user_id]);
+        $this->assertSame(2, $grouped[$this->product1->user_id][0]['qty']);
+    }
+
+    public function test_multi_workshop_pickup_rejects_when_seller_has_pickup_disabled_with_specific_shop_notice(): void
+    {
+        $this->artisan2->getPickupSchedule()->update(['is_enabled' => false]);
+
+        $response = $this->actingAs($this->buyer)->post(route('checkout.store'), [
+            'shipping_method' => 'Pick Up',
+            'payment_method' => 'COD',
+            'total' => 800,
+            'items' => [
+                [
+                    'id' => $this->product1->id,
+                    'qty' => 1,
+                    'artisan_id' => $this->artisan1->id,
+                ],
+                [
+                    'id' => $this->product2->id,
+                    'qty' => 1,
+                    'artisan_id' => $this->artisan2->id,
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors([
+            'pickup_schedules.' . $this->artisan2->id => "Vigan Heritage Pottery does not offer workshop pick-up. Please switch to Standard Delivery or purchase their items separately.",
+        ]);
+    }
 }

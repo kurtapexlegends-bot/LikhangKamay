@@ -46,4 +46,17 @@ class CheckoutRequest extends FormRequest
             'pickup_schedules' => 'nullable|array',
         ];
     }
+
+    /**
+     * Get custom error messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'items.*.id.exists' => 'One or more items in your cart are no longer available. Please update your cart to proceed.',
+            'items.required' => 'Your cart is empty. Please add items to proceed.',
+        ];
+    }
 }

@@ -55,19 +55,20 @@ class BuyerOrderController extends Controller
 
         $pickupScheduleService = app(\App\Services\PickupScheduleService::class);
         $pickupConfigs = [];
+        $sellerItems = collect($items)->groupBy('artisan_id');
 
-        try {
-            $sellerItems = collect($items)->groupBy('artisan_id');
-            foreach ($sellerItems as $artisanId => $sellerGroupItems) {
-                $seller = User::withTrashed()->find((int) $artisanId);
-                if ($seller) {
-                    $maxLeadTime = (int) $sellerGroupItems->max('lead_time');
-                    $pickupConfigs[(string) $artisanId] = $pickupScheduleService->getScheduleOverviewForBuyer($seller, $maxLeadTime);
-                }
+        foreach ($sellerItems as $artisanId => $sellerGroupItems) {
+            $seller = User::withTrashed()->find((int) $artisanId);
+            if (!$seller || $seller->trashed() || $seller->role !== 'artisan' || $seller->artisan_status !== 'approved' || $seller->isBanned() || $seller->isSuspended()) {
+                return redirect()->route('cart.index')->with('error', 'One or more items in your cart belong to an inactive workshop. Please update your cart to proceed.');
             }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Pickup overview generation fallback in controller: ' . $e->getMessage());
-            $pickupConfigs = [];
+
+            $maxLeadTime = (int) $sellerGroupItems->max('lead_time');
+            $pickupConfigs[(string) $artisanId] = rescue(
+                fn() => $pickupScheduleService->getScheduleOverviewForBuyer($seller, $maxLeadTime),
+                ['pickup_enabled' => false, 'seller_id' => $seller->id, 'shop_name' => $seller->shop_name ?: $seller->name, 'days' => []],
+                false
+            );
         }
 
         return Inertia::render('Consumer/Shop/Checkout', [

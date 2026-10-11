@@ -167,6 +167,28 @@ class CartController extends Controller
     }
 
     /**
+     * Clear all unavailable items from the cart.
+     */
+    public function clearUnavailable(Request $request): RedirectResponse|JsonResponse
+    {
+        $isApi = !$request->header('X-Inertia') && ($request->wantsJson() || $request->ajax());
+
+        $result = $this->cartService->removeUnavailableItems();
+
+        if ($isApi) {
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'],
+                'removed_count' => $result['removed_count'],
+                'cart' => $result['cart'],
+                'cart_count' => $result['cart_count'],
+            ]);
+        }
+
+        return redirect()->back()->with('success', $result['message']);
+    }
+
+    /**
      * Re-order items from a previous order into current cart.
      */
     public function buyAgain(int|string $orderId): RedirectResponse

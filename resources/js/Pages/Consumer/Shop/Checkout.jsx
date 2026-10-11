@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Head, useForm, usePage } from '@inertiajs/react';
+import { AlertTriangle } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
@@ -72,6 +73,15 @@ export default function Checkout({ auth, pricing }) {
 
     const primarySellerId = sellerGroups[0]?.sellerId;
     const primaryPickupConfig = pickupConfigs?.[String(primarySellerId)] || Object.values(pickupConfigs || {})[0] || null;
+
+    const sellersWithPickupDisabled = useMemo(() => {
+        return sellerGroups.filter((group) => {
+            const config = pickupConfigs?.[String(group.sellerId)];
+            return config && config.pickup_enabled === false;
+        });
+    }, [sellerGroups, pickupConfigs]);
+
+    const hasPickupDisabledSeller = sellersWithPickupDisabled.length > 0;
 
     // Multi-workshop pickup active tab
     const [activeWorkshopSellerId, setActiveWorkshopSellerId] = useState(primarySellerId);
@@ -215,6 +225,12 @@ export default function Checkout({ auth, pricing }) {
         }
     }, [data.shipping_address, data.selected_address_id, setData, structuredShippingPreview]);
 
+    useEffect(() => {
+        if (hasPickupDisabledSeller && data.shipping_method === 'Pick Up') {
+            setData('shipping_method', 'Delivery');
+        }
+    }, [hasPickupDisabledSeller, data.shipping_method, setData]);
+
     const needsDeliveryContactDetails = data.shipping_method === 'Delivery' && (!data.recipient_name.trim() || !data.phone_number.trim());
     const submitDisabled = processing;
 
@@ -255,16 +271,34 @@ export default function Checkout({ auth, pricing }) {
             }
 
             if (shippingQuote.status !== 'ready') {
-                addToast('Wait for the delivery quote before placing the order.', 'info');
+                if (shippingQuote.status === 'error') {
+                    const errorMsg = shippingQuote.errorMessage || 'Unable to calculate shipping quote. Please check your delivery address.';
+                    addToast(errorMsg, 'error');
+                } else {
+                    addToast('Wait for the delivery quote before placing the order.', 'info');
+                }
                 return;
             }
         } else if (data.shipping_method === 'Pick Up') {
             const localErrors = {};
+
+            if (hasPickupDisabledSeller) {
+                for (const group of sellersWithPickupDisabled) {
+                    localErrors[`pickup_schedules.${group.sellerId}`] = `${group.shopName} does not offer workshop pick-up. Please switch to Standard Delivery or purchase their items separately.`;
+                }
+                setError(localErrors);
+                addToast(
+                    `${sellersWithPickupDisabled[0].shopName} does not offer workshop pick-up. Please switch to Standard Delivery or purchase their items separately.`,
+                    'error'
+                );
+                return;
+            }
+
             if (totalSellers > 1) {
                 for (const group of sellerGroups) {
                     const config = pickupConfigs?.[String(group.sellerId)];
                     if (config && config.pickup_enabled === false) {
-                        localErrors[`pickup_schedules.${group.sellerId}`] = `${group.shopName} does not offer workshop pick-up.`;
+                        localErrors[`pickup_schedules.${group.sellerId}`] = `${group.shopName} does not offer workshop pick-up. Please switch to Standard Delivery or purchase their items separately.`;
                     } else {
                         const sched = pickupSchedules[String(group.sellerId)];
                         if (!sched?.date) {
@@ -275,11 +309,16 @@ export default function Checkout({ auth, pricing }) {
                     }
                 }
             } else {
-                if (!data.pickup_date) {
-                    localErrors.pickup_date = 'Please select a pickup date.';
-                }
-                if (!data.pickup_time_slot) {
-                    localErrors.pickup_time_slot = 'Please select an available pickup time window.';
+                const config = primaryPickupConfig;
+                if (config && config.pickup_enabled === false) {
+                    localErrors.pickup_date = `${sellerGroups[0]?.shopName || 'This workshop'} does not offer workshop pick-up. Please switch to Standard Delivery.`;
+                } else {
+                    if (!data.pickup_date) {
+                        localErrors.pickup_date = 'Please select a pickup date.';
+                    }
+                    if (!data.pickup_time_slot) {
+                        localErrors.pickup_time_slot = 'Please select an available pickup time window.';
+                    }
                 }
             }
 
@@ -320,19 +359,58 @@ export default function Checkout({ auth, pricing }) {
                         <ShippingMethodSelector 
                             shippingMethod={data.shipping_method} 
                             setShippingMethod={(val) => setData((current) => ({ ...current, ...val }))} 
+                            pickupDisabled={hasPickupDisabledSeller}
+                            disabledSellers={sellersWithPickupDisabled}
                         />
 
                         {/* 2. Shipping Address OR Workshop Pick Up Schedule */}
                         {data.shipping_method === 'Delivery' ? (
-                            <ShippingAddressSelector 
-                                auth={auth}
-                                data={data}
-                                setData={setData}
-                                errors={errors}
-                                setError={setError}
-                                clearErrors={clearErrors}
-                                needsDeliveryContactDetails={needsDeliveryContactDetails}
-                            />
+                            <>
+                                <ShippingAddressSelector 
+                                    auth={auth}
+                                    data={data}
+                                    setData={setData}
+                                    errors={errors}
+                                    setError={setError}
+                                    clearErrors={clearErrors}
+                                    needsDeliveryContactDetails={needsDeliveryContactDetails}
+                                />
+                                {shippingQuote.status === 'error' && (
+                                    <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-3.5 sm:p-4 text-xs text-rose-800 shadow-2xs space-y-2">
+                                        <div className="flex items-start gap-2.5">
+                                            <AlertTriangle size={16} className="text-rose-600 shrink-0 mt-0.5" />
+                                            <div className="space-y-1 flex-1">
+                                                <p className="font-bold text-rose-900 text-sm">
+                                                    Delivery Quote Unavailable
+                                                </p>
+                                                <p className="text-rose-700 leading-relaxed text-xs">
+                                                    {shippingQuote.errorMessage || 'Unable to calculate shipping quote. Please check your delivery address.'}
+                                                </p>
+                                                {shippingQuote.errorMessage?.toLowerCase().includes('identical') && !hasPickupDisabledSeller && (
+                                                    <div className="pt-1">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setData((prev) => ({
+                                                                ...prev,
+                                                                shipping_method: 'Pick Up',
+                                                                payment_method: 'COD',
+                                                            }))}
+                                                            className="inline-flex items-center gap-1.5 font-semibold text-clay-700 underline hover:text-clay-900 text-xs"
+                                                        >
+                                                            Switch to Store Pick Up instead
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                {(shippingQuote.errorMessage?.toLowerCase().includes('cavite') || shippingQuote.fieldErrors?.shipping_region || shippingQuote.fieldErrors?.shipping_city) && (
+                                                    <p className="text-[11px] text-rose-600 font-medium pt-0.5">
+                                                        Deliveries are strictly supported within the Province of Cavite. Please check your selected city and barangay.
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
                         ) : totalSellers > 1 ? (
                             <MultiWorkshopPickupSection
                                 sellerGroups={sellerGroups}

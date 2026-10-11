@@ -317,10 +317,10 @@ export default function OrderPricingSummary({
             {shippingMethod === 'Delivery' && shippingQuote.status === 'error' ? (
                 <div className="mt-3 rounded-xl border border-red-200 bg-red-50/40 p-3 text-xs">
                     <div className="flex gap-2 text-red-700">
-                        <AlertTriangle size={14} className="shrink-0 mt-0.5 animate-bounce" />
+                        <AlertTriangle size={14} className="shrink-0 mt-0.5" />
                         <div>
                             <p className="font-bold">Delivery Quote Failed</p>
-                            <p className="mt-0.5 text-rose-600 leading-relaxed text-[11px]">Unable to calculate shipping. Please verify your address or connection and try again.</p>
+                            <p className="mt-0.5 text-rose-600 leading-relaxed text-[11px]">{shippingQuote.errorMessage || 'Unable to calculate shipping. Please verify your address or connection and try again.'}</p>
                         </div>
                     </div>
                     <button

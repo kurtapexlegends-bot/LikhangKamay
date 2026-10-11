@@ -21,7 +21,7 @@ class PrepareCheckout
 
         // CASE 1: Buy Now (Single Product)
         if ($request->has('product_id')) {
-            $product = Product::with(['user', 'discounts'])->find($request->product_id);
+            $product = Product::with(['user' => fn($q) => $q->withTrashed(), 'discounts'])->find($request->product_id);
             $variant = trim((string) $request->input('variant', 'Standard')) ?: 'Standard';
 
             if ($product) {
@@ -71,10 +71,14 @@ class PrepareCheckout
 
             // Sync with live database effective prices
             $productIds = collect($items)->pluck('id')->filter()->unique()->all();
-            $liveProducts = Product::with(['user', 'discounts'])->whereIn('id', $productIds)->get()->keyBy('id');
+            $liveProducts = Product::with(['user' => fn($q) => $q->withTrashed(), 'discounts'])
+                ->whereIn('id', $productIds)
+                ->get()
+                ->keyBy('id');
 
-            foreach ($items as &$item) {
-                $live = $liveProducts->get($item['id']);
+            $syncedItems = [];
+            foreach ($items as $cartKey => $item) {
+                $live = $liveProducts->get($item['id'] ?? null);
                 if ($live) {
                     $itemQty = max(1, (int) ($item['qty'] ?? 1));
                     $item['price'] = $live->is_b2b_supply ? $live->getEffectiveB2BPrice($itemQty) : $live->effective_price;
@@ -91,8 +95,10 @@ class PrepareCheckout
                     $photo = $live->img ?: StorageUrl::url($live->cover_photo_path, '/images/placeholder.svg');
                     $item['img'] = $photo;
                     $item['image'] = $photo;
+                    $syncedItems[$cartKey] = $item;
                 }
             }
+            $items = $syncedItems;
 
             $items = array_values(array_map(function ($item, $cartKey) {
                 if (!isset($item['cart_key'])) {
