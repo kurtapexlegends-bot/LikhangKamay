@@ -88,7 +88,8 @@ Route::middleware(['auth', 'staff.security'])->group(function () {
     Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])
         ->name('password.confirm');
 
-    Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
+    Route::post('confirm-password', [ConfirmablePasswordController::class, 'store'])
+        ->middleware('throttle:5,1');
 
     Route::post('confirm-password-ajax', function (\Illuminate\Http\Request $request) {
         if (! \Illuminate\Support\Facades\Hash::check($request->password, $request->user()->password)) {

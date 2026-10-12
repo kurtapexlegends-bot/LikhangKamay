@@ -50,7 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
-            if ($request->query('debug_err') === 'true') {
+            if ($request->query('debug_err') === 'true' && config('app.debug')) {
                 return response()->json([
                     'error' => $exception->getMessage(),
                     'file' => $exception->getFile(),

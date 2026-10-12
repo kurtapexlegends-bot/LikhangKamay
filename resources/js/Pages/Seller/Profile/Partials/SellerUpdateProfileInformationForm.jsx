@@ -14,12 +14,12 @@ export default function SellerUpdateProfileInformation({
     status,
     className = '',
 }) {
-    const user = usePage().props.auth.user;
+    const user = usePage().props.auth?.user || {};
 
     const { data, setData, post, errors, processing, recentlySuccessful } =
         useForm({
-            name: user.name,
-            email: user.email,
+            name: user.name || '',
+            email: user.email || '',
             shop_name: user.shop_name || '',
             phone_number: user.phone_number || '',
             street_address: user.street_address || '',

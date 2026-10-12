@@ -315,13 +315,13 @@ export default function AdminLayout({ title, children }) {
                 }`}>
                     <Link href={route('admin.dashboard')} className="flex items-center group min-w-0 overflow-hidden">
                         <img
-                            src={usePage().props.platform.logo}
-                            alt={usePage().props.platform.name}
+                            src={usePage().props.platform?.logo || '/images/default-logo.png'}
+                            alt={usePage().props.platform?.name || 'LikhangKamay'}
                             className="w-7 h-7 object-contain transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110 shrink-0"
                         />
                         <span className={`font-serif text-lg font-bold text-stone-900 tracking-tight truncate overflow-hidden min-w-0 transition-[max-width,opacity,margin-left] duration-300 ${
                             isCollapsed ? 'max-w-0 opacity-0 ml-0 pointer-events-none hidden' : 'max-w-full opacity-100 ml-2.5'
-                        }`}>{usePage().props.platform.name}</span>
+                        }`}>{usePage().props.platform?.name || 'LikhangKamay'}</span>
                     </Link>
 
                     {/* Mobile Close Button */}

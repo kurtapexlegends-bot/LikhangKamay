@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { useRealtime } from '@/hooks/useRealtime';
 
 export default function AuthenticatedLayout({ header, children }) {
-    const user = usePage().props.auth.user;
+    const user = usePage().props.auth?.user || {};
     
     // Enable Real-time synchronization
     useRealtime();

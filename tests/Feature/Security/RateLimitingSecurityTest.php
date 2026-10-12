@@ -108,4 +108,51 @@ class RateLimitingSecurityTest extends TestCase
 
         $response->assertStatus(429);
     }
+
+    public function test_confirm_password_is_throttled_after_limit(): void
+    {
+        $this->actingAs($this->buyer);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/confirm-password', [
+                'password' => 'wrong-password',
+            ]);
+        }
+
+        $response = $this->post('/confirm-password', [
+            'password' => 'wrong-password',
+        ]);
+
+        $response->assertStatus(429);
+    }
+
+    public function test_debug_err_does_not_expose_stack_trace_when_debug_is_disabled(): void
+    {
+        $this->withExceptionHandling();
+        config(['app.debug' => false]);
+
+        \Illuminate\Support\Facades\Route::get('/test-error-endpoint-no-debug', function () {
+            abort(500, 'Sensitive internal error');
+        });
+
+        $response = $this->getJson('/test-error-endpoint-no-debug?debug_err=true');
+
+        $this->assertNull($response->json('trace'));
+        $this->assertNotEquals('Sensitive internal error', $response->json('error'));
+    }
+
+    public function test_debug_err_exposes_details_only_when_debug_is_enabled(): void
+    {
+        config(['app.debug' => true]);
+
+        \Illuminate\Support\Facades\Route::get('/test-error-endpoint-with-debug', function () {
+            throw new \RuntimeException('Explicit debug error');
+        });
+
+        $response = $this->get('/test-error-endpoint-with-debug?debug_err=true');
+
+        $response->assertStatus(500);
+        $this->assertEquals('Explicit debug error', $response->json('error'));
+        $this->assertNotNull($response->json('trace'));
+    }
 }
