@@ -53,12 +53,15 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
         if (!canEditThreeD) return;
 
         const extension = data.model?.name?.split('.').pop()?.toLowerCase();
+        const hasSeparateAssets = (data.model_assets || []).length > 0;
 
-        if (extension === 'glb') {
+        if (extension === 'glb' || (extension === 'gltf' && !hasSeparateAssets)) {
             setIsUploading(true);
             setUploadProgress(5);
             try {
-                const uploadContentType = extension === 'glb' ? 'model/gltf-binary' : (data.model.type || 'application/octet-stream');
+                const uploadContentType = extension === 'glb'
+                    ? 'model/gltf-binary'
+                    : (extension === 'gltf' ? 'model/gltf+json' : (data.model.type || 'application/octet-stream'));
                 // 1. Get presigned upload configuration from backend
                 const presignResponse = await axios.post(route('3d.presign'), {
                     filename: data.model.name,
@@ -100,7 +103,14 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
             return;
         }
 
-        // Fallback synchronous upload
+        // Multi-file .gltf bundle check against Vercel 4.5MB limit
+        const totalBundleBytes = (data.model?.size || 0) + (data.model_assets || []).reduce((acc, f) => acc + (f.size || 0), 0);
+        if (totalBundleBytes > 4 * 1024 * 1024) {
+            setFileError('Multi-file .gltf bundles over 4MB exceed server limits. Please convert and upload as a single self-contained .glb binary file.');
+            return;
+        }
+
+        // Fallback synchronous upload for bundles under 4MB
         const formData = new FormData();
         formData.append('model', data.model);
         formData.append('product_id', data.product_id);

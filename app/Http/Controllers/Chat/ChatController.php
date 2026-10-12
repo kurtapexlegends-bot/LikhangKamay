@@ -85,11 +85,16 @@ class ChatController extends Controller
 
         // Notify Receiver (Remove older unread notifications from same sender to prevent spam)
         try {
+            $isPgsql = $receiver->unreadNotifications()->getConnection()->getDriverName() === 'pgsql';
             $receiver->unreadNotifications()
                 ->where('type', \App\Notifications\NewMessageNotification::class)
-                ->where(function ($q) use ($senderId) {
-                    $q->where('data->sender_id', (string) $senderId)
-                      ->orWhere('data->sender_id', (int) $senderId);
+                ->where(function ($q) use ($senderId, $isPgsql) {
+                    if ($isPgsql) {
+                        $q->where('data->sender_id', (string) $senderId);
+                    } else {
+                        $q->where('data->sender_id', (string) $senderId)
+                          ->orWhere('data->sender_id', (int) $senderId);
+                    }
                 })
                 ->delete();
         } catch (\Throwable $e) {

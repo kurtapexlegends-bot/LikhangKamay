@@ -68,10 +68,16 @@ class PlatformActivity extends Model
 
     public function scopeForSubject($query, string $type, int|string $id)
     {
+        $driver = $query->getConnection()->getDriverName();
+
         return $query->where('metadata->subject_type', $type)
-            ->where(function ($q) use ($id) {
-                $q->where('metadata->subject_id', (int) $id)
-                    ->orWhere('metadata->subject_id', (string) $id);
+            ->where(function ($q) use ($id, $driver) {
+                if ($driver === 'pgsql') {
+                    $q->where('metadata->subject_id', (string) $id);
+                } else {
+                    $q->where('metadata->subject_id', (int) $id)
+                        ->orWhere('metadata->subject_id', (string) $id);
+                }
             });
     }
 

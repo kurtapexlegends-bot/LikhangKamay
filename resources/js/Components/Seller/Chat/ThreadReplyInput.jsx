@@ -15,6 +15,7 @@ export default function ThreadReplyInput({
 
     const [attachmentPreview, setAttachmentPreview] = useState(null);
     const [attachmentPreviewBroken, setAttachmentPreviewBroken] = useState(false);
+    const [fileSizeError, setFileSizeError] = useState(null);
 
     const form = useForm({
         parent_id: parent?.id || '',
@@ -95,11 +96,18 @@ export default function ThreadReplyInput({
     };
 
     const handleFileChange = async (event) => {
+        setFileSizeError(null);
         let file = event.target.files?.[0];
         if (!file) return;
 
         if (file.type.startsWith('image/')) {
             file = await compressImage(file);
+        }
+
+        if (file.size > 4 * 1024 * 1024) {
+            setFileSizeError('Files must be 4MB or smaller. Please choose a smaller file.');
+            if (event.target) event.target.value = '';
+            return;
         }
 
         if (attachmentPreview?.url) {
@@ -116,11 +124,14 @@ export default function ThreadReplyInput({
     };
 
     const removeAttachment = () => {
+        setFileSizeError(null);
         if (attachmentPreview?.url) {
             URL.revokeObjectURL(attachmentPreview.url);
         }
         form.setData('attachment', null);
         setAttachmentPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (imageInputRef.current) imageInputRef.current.value = '';
     };
 
     const handleSubmit = (e) => {
@@ -183,9 +194,9 @@ export default function ThreadReplyInput({
                 </div>
             )}
 
-            {form.errors.message && (
+            {(fileSizeError || form.errors.message || form.errors.attachment) && (
                 <p className="mb-1 inline-flex items-center gap-1.5 text-[9px] font-semibold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded">
-                    <AlertCircle size={10} /> {form.errors.message}
+                    <AlertCircle size={10} /> {fileSizeError || form.errors.message || form.errors.attachment}
                 </p>
             )}
 

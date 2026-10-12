@@ -96,13 +96,18 @@ class StoreTeamMessage
                 $memberIds = $members->pluck('id')->all();
 
                 try {
+                    $isPgsql = DB::connection()->getDriverName() === 'pgsql';
                     DB::table('notifications')
                         ->whereIn('notifiable_id', $memberIds)
                         ->where('notifiable_type', User::class)
                         ->where('type', NewTeamChannelMessageNotification::class)
-                        ->where(function ($q) use ($channel) {
-                            $q->where('data->team_channel_id', (string) $channel->id)
-                              ->orWhere('data->team_channel_id', (int) $channel->id);
+                        ->where(function ($q) use ($channel, $isPgsql) {
+                            if ($isPgsql) {
+                                $q->where('data->team_channel_id', (string) $channel->id);
+                            } else {
+                                $q->where('data->team_channel_id', (string) $channel->id)
+                                  ->orWhere('data->team_channel_id', (int) $channel->id);
+                            }
                         })
                         ->delete();
                 } catch (\Throwable $e) {
@@ -147,11 +152,16 @@ class StoreTeamMessage
         ]);
 
         try {
+            $isPgsql = $receiver->unreadNotifications()->getConnection()->getDriverName() === 'pgsql';
             $receiver->unreadNotifications()
                 ->where('type', NewTeamMessageNotification::class)
-                ->where(function ($q) use ($actor) {
-                    $q->where('data->sender_id', (string) $actor->id)
-                      ->orWhere('data->sender_id', (int) $actor->id);
+                ->where(function ($q) use ($actor, $isPgsql) {
+                    if ($isPgsql) {
+                        $q->where('data->sender_id', (string) $actor->id);
+                    } else {
+                        $q->where('data->sender_id', (string) $actor->id)
+                          ->orWhere('data->sender_id', (int) $actor->id);
+                    }
                 })
                 ->delete();
         } catch (\Throwable $e) {
@@ -247,13 +257,18 @@ class StoreTeamMessage
             $targetUserIds = $targetUsers->pluck('id')->all();
 
             try {
+                $isPgsql = DB::connection()->getDriverName() === 'pgsql';
                 DB::table('notifications')
                     ->whereIn('notifiable_id', $targetUserIds)
                     ->where('notifiable_type', User::class)
                     ->where('type', TeamMessageMentionedNotification::class)
-                    ->where(function ($q) use ($message) {
-                        $q->where('data->team_message_id', (string) $message->id)
-                          ->orWhere('data->team_message_id', (int) $message->id);
+                    ->where(function ($q) use ($message, $isPgsql) {
+                        if ($isPgsql) {
+                            $q->where('data->team_message_id', (string) $message->id);
+                        } else {
+                            $q->where('data->team_message_id', (string) $message->id)
+                              ->orWhere('data->team_message_id', (int) $message->id);
+                        }
                     })
                     ->delete();
 

@@ -74,6 +74,7 @@ export default function MessageInput({
     const setShowEmojiPicker = form ? internalSetShowEmojiPicker : propSetShowEmojiPicker;
 
     const [internalAttachmentPreview, internalSetAttachmentPreview] = useState(null);
+    const [fileSizeError, setFileSizeError] = useState(null);
     const attachmentPreview = form ? internalAttachmentPreview : propAttachmentPreview;
     const setAttachmentPreview = form ? internalSetAttachmentPreview : null;
 
@@ -271,12 +272,19 @@ export default function MessageInput({
     };
 
     const handleFileChange = async (event) => {
+        setFileSizeError(null);
         if (form) {
             let file = event.target.files?.[0];
             if (!file) return;
 
             if (file.type.startsWith('image/')) {
                 file = await compressImage(file);
+            }
+
+            if (file.size > 4 * 1024 * 1024) {
+                setFileSizeError('Files must be 4MB or smaller. Please choose a smaller file.');
+                if (event.target) event.target.value = '';
+                return;
             }
 
             if (attachmentPreview?.url) {
@@ -301,6 +309,9 @@ export default function MessageInput({
     };
 
     const removeAttachment = () => {
+        setFileSizeError(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (imageInputRef.current) imageInputRef.current.value = '';
         if (form) {
             if (attachmentPreview?.url) {
                 URL.revokeObjectURL(attachmentPreview.url);
@@ -375,10 +386,10 @@ export default function MessageInput({
                     removeAttachment={removeAttachment}
                 />
 
-                {(errors.message || errors.attachment) && (
+                {(fileSizeError || errors.message || errors.attachment) && (
                     <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-700">
                         <AlertCircle size={13} />
-                        {errors.message || errors.attachment}
+                        {fileSizeError || errors.message || errors.attachment}
                     </p>
                 )}
 

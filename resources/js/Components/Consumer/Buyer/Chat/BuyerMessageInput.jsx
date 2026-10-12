@@ -17,6 +17,7 @@ export default function BuyerMessageInput({ currentChatUser, form, userOrders = 
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [attachment, setAttachment] = useState(null);
     const [attachmentPreview, setAttachmentPreview] = useState(null);
+    const [attachmentError, setAttachmentError] = useState(null);
 
     const inputRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -148,10 +149,16 @@ export default function BuyerMessageInput({ currentChatUser, form, userOrders = 
     };
 
     const handleFileChange = async (e) => {
-        let file = e.target.files[0];
+        setAttachmentError(null);
+        let file = e.target.files?.[0];
         if (file) {
             if (file.type.startsWith('image/')) {
                 file = await compressImage(file);
+            }
+            if (file.size > 4 * 1024 * 1024) {
+                setAttachmentError('Files must be 4MB or smaller. Please choose a smaller file.');
+                if (e.target) e.target.value = '';
+                return;
             }
             revokeAttachmentPreview();
             setData('attachment', file);
@@ -168,10 +175,13 @@ export default function BuyerMessageInput({ currentChatUser, form, userOrders = 
     };
 
     const removeAttachment = () => {
+        setAttachmentError(null);
         revokeAttachmentPreview();
         setData('attachment', null);
         setAttachment(null);
         setAttachmentPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (imageInputRef.current) imageInputRef.current.value = '';
     };
 
     const onEmojiClick = (emojiObject) => {
@@ -228,6 +238,20 @@ export default function BuyerMessageInput({ currentChatUser, form, userOrders = 
                                 lazyLoadEmojis={true}
                             />
                         </Suspense>
+                    </div>
+                )}
+
+                {/* Attachment Error Banner */}
+                {attachmentError && (
+                    <div className="mb-2 p-2.5 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between text-xs text-red-700 animate-in fade-in">
+                        <span>{attachmentError}</span>
+                        <button
+                            type="button"
+                            onClick={() => setAttachmentError(null)}
+                            className="text-red-500 hover:text-red-700 ml-2"
+                        >
+                            <X size={14} />
+                        </button>
                     </div>
                 )}
 

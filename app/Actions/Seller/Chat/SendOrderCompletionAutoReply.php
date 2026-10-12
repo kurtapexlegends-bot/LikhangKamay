@@ -95,11 +95,16 @@ class SendOrderCompletionAutoReply
         // Send push notification & broadcast event
         if ($buyer) {
             try {
+                $isPgsql = $buyer->unreadNotifications()->getConnection()->getDriverName() === 'pgsql';
                 $buyer->unreadNotifications()
                     ->where('type', NewMessageNotification::class)
-                    ->where(function ($q) use ($seller) {
-                        $q->where('data->sender_id', (string) $seller->id)
-                          ->orWhere('data->sender_id', (int) $seller->id);
+                    ->where(function ($q) use ($seller, $isPgsql) {
+                        if ($isPgsql) {
+                            $q->where('data->sender_id', (string) $seller->id);
+                        } else {
+                            $q->where('data->sender_id', (string) $seller->id)
+                              ->orWhere('data->sender_id', (int) $seller->id);
+                        }
                     })
                     ->delete();
             } catch (\Throwable $e) {

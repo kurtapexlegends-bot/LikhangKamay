@@ -42,39 +42,7 @@ export default function ProofAnnotationModal({
     const imageObjRef = useRef(null);
     const currentPathRef = useRef([]);
 
-    // Load source image
-    useEffect(() => {
-        if (!isOpen || !imageUrl) return;
-
-        const img = new Image();
-        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-            img.crossOrigin = 'anonymous';
-        }
-        img.onload = () => {
-            imageObjRef.current = img;
-            initCanvas(img);
-        };
-        img.onerror = (err) => {
-            console.error('Failed to load annotation image:', err);
-        };
-        img.src = imageUrl;
-    }, [isOpen, imageUrl]);
-
-    // Handle Escape key
-    useEffect(() => {
-        if (!isOpen) return;
-        const handleKeyDown = (e) => {
-            if (e.key === 'Escape') {
-                e.stopPropagation();
-                e.preventDefault();
-                onClose();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown, true);
-        return () => window.removeEventListener('keydown', handleKeyDown, true);
-    }, [isOpen, onClose]);
-
-    const initCanvas = (img) => {
+    const initCanvas = useCallback((img) => {
         const canvas = canvasRef.current;
         if (!canvas || !img) return;
 
@@ -95,7 +63,39 @@ export default function ProofAnnotationModal({
         // Save initial state to history
         const initialState = ctx.getImageData(0, 0, canvas.width, canvas.height);
         setHistory([initialState]);
-    };
+    }, []);
+
+    // Load source image
+    useEffect(() => {
+        if (!isOpen || !imageUrl) return;
+
+        const img = new Image();
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+            img.crossOrigin = 'anonymous';
+        }
+        img.onload = () => {
+            imageObjRef.current = img;
+            initCanvas(img);
+        };
+        img.onerror = (err) => {
+            console.error('Failed to load annotation image:', err);
+        };
+        img.src = imageUrl;
+    }, [isOpen, imageUrl, initCanvas]);
+
+    // Handle Escape key
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                e.stopPropagation();
+                e.preventDefault();
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown, true);
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }, [isOpen, onClose]);
 
     const getCanvasCoordinates = (e) => {
         const canvas = canvasRef.current;

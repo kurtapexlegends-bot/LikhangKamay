@@ -149,6 +149,7 @@ export default function Chat({
         post,
         reset,
         processing,
+        errors,
         inputRef,
         fileInputRef,
         imageInputRef,
@@ -411,6 +412,7 @@ export default function Chat({
                                 post={post}
                                 reset={reset}
                                 processing={processing}
+                                errors={errors}
                                 inputRef={inputRef}
                                 fileInputRef={fileInputRef}
                                 imageInputRef={imageInputRef}

@@ -28,7 +28,7 @@ export default function useChatMessaging({
     const [attachmentPreview, setAttachmentPreview] = useState(null);
     const [pendingMessages, setPendingMessages] = useState([]);
 
-    const { data, setData, post, reset, processing } = useForm({
+    const { data, setData, post, reset, processing, errors, setError, clearErrors } = useForm({
         receiver_id: selectedUser?.id || '',
         message: '',
         attachment: null,
@@ -67,10 +67,16 @@ export default function useChatMessaging({
             e.target.value = '';
             return;
         }
+        clearErrors('attachment');
         let file = e.target.files[0];
         if (file) {
             if (file.type.startsWith('image/')) {
                 file = await compressImage(file);
+            }
+            if (file.size > 4 * 1024 * 1024) {
+                setError('attachment', 'Files must be 4MB or smaller. Please choose a smaller file.');
+                e.target.value = '';
+                return;
             }
             revokeAttachmentPreview();
             setData('attachment', file);
@@ -84,14 +90,17 @@ export default function useChatMessaging({
             setShowEmojiPicker(false);
             inputRef.current?.focus();
         }
-    }, [isMessagesReadOnly, revokeAttachmentPreview, setData, setShowEmojiPicker]);
+    }, [isMessagesReadOnly, revokeAttachmentPreview, setData, setShowEmojiPicker, setError, clearErrors]);
 
     const removeAttachment = useCallback(() => {
+        clearErrors('attachment');
         revokeAttachmentPreview();
         setData('attachment', null);
         setAttachment(null);
         setAttachmentPreview(null);
-    }, [revokeAttachmentPreview, setData]);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (imageInputRef.current) imageInputRef.current.value = '';
+    }, [revokeAttachmentPreview, setData, clearErrors]);
 
     const onEmojiClick = useCallback((emojiObject) => {
         if (isMessagesReadOnly) return;
@@ -174,6 +183,7 @@ export default function useChatMessaging({
         post,
         reset,
         processing,
+        errors,
         inputRef,
         fileInputRef,
         imageInputRef,
