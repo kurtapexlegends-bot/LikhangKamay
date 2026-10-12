@@ -5,7 +5,7 @@
 ## 1. System Architecture & Code Quality
 - **Backend Separation:** Controllers are strictly slim orchestrators (<50 lines/method). Delegate all database queries, aggregations, and business logic to dedicated `App\Services` or `App\Actions`.
 - **Requests & Audits:** Mandate Form Requests (`App\Http\Requests`) for write/update validation. Ban manual activity logging arrays in controllers; use model observers or background jobs.
-- **Frontend Modularity & Inertia SPA:** Enforce modular componentization (<500 lines/file) grouped by domain under `resources/js/Components/` and `Pages/`. Use absolute aliases (`@/types`, `@/lib`). Use `<Link>` and `router.visit()` (never raw `window.location.href` for internal routes). Enforce `preserveScroll: true` on modal/sheet form submissions to prevent disorienting jumps.
+- **Frontend Modularity & Inertia SPA:** Enforce modular componentization (<500 lines/file) grouped by domain under `resources/js/Components/` and `Pages/`. Use absolute aliases (`@/types`, `@/lib`). Use `<Link>` and `router.visit()` (never raw `window.location.href` for internal routes). Enforce `preserveScroll: true` on modal/sheet form submissions to prevent disorienting jumps. Hoist `useCallback` functions above `useEffect` hooks to prevent minified Temporal Dead Zone `ReferenceError` crashes. In `form.transform()`, preserve array fields (`curr.proof_photos || []`) without deletion.
 - **Code Standards, Testing & Scope:** DRY, SOLID, defensive guard clauses with early returns. Artisan workshops and delivery addresses are strictly Cavite-only (`\App\Support\CaviteAddress::class`). Ensure Inertia `useForm` keys match backend request/Eloquent columns with `onError` handlers. Pest/PHPUnit test coverage for backend services/actions; Vitest for frontend components.
 - **Anti-Over-Engineering & YAGNI:** Solve the exact problem requested without speculative abstractions. Never create premature design patterns, repository layers, generic wrapper interfaces, or unused parameters for theoretical future needs. Rely on native Laravel and React primitives first. Keep diffs surgical and proportional—never turn a 5-line bugfix into a multi-file architectural refactor.
 - **Security & Anti-IDOR Scoping:** Never query models with raw `Model::findOrFail($id)` in authenticated routes without scoping to the active user/tenant (`$request->user()->...`) or enforcing a Laravel Policy (`$this->authorize(...)`). Prevent unauthorized cross-user data manipulation.
@@ -17,7 +17,7 @@
 - **NEVER DESTROY DATA & Additive Migrations:** `migrate:fresh`, `migrate:reset`, and `db:wipe` are PERMANENTLY BANNED. Migrations must be purely additive using standard ANSI types (no vendor-locked column modifiers). Check existence with `Schema::hasColumn()` and always provide atomic `down()` methods.
 - **PostgreSQL Strict Typing Standard:** All Eloquent queries, models, scopes, and migrations must be written PostgreSQL-first:
   - Ban implicit boolean coercion: integer `1`/`0` is strictly illegal for PostgreSQL booleans (`SQLSTATE[42804]`). Always use boolean literals (`true`/`false`) or cast columns with `\App\Casts\PostgresCompatibleBoolean::class`.
-  - In JSON queries (`data->key`), always cast keys to strings for cross-DB compatibility.
+  - Cross-DB JSON queries (`data->key`): PostgreSQL translates `data->key` to `->>` (text), failing integer comparisons with `SQLSTATE[42804]`. MySQL enforces typed JSON matching. Always branch by driver (`$driver === 'pgsql'` queries string cast; MySQL queries both integer and string).
   - Comply with PostgreSQL `GROUP BY` column completeness in analytical rollups.
 - **Defensive Production Fallbacks:** Production data contains soft-deleted users, vacated workshops, and uninitialized settings. Critical consumer flows (Checkout, Cart, Browse, Orders) must employ defensive fallback guards:
   - Use `->withTrashed()` on necessary user/seller lookups so deactivated accounts do not break purchase flows or order histories.
@@ -25,6 +25,10 @@
 - **Data Safety & Config Caching:** Default to soft deletes for critical entities. Never call `env()` directly outside `config/` files; always access settings via `config('service.key')` to prevent silent null returns under `php artisan config:cache`.
 - **Performance & N+1:** Eager-load relations (`with()`, `loadMissing()`). Ban queries inside loops. Index all filtered/foreign columns. Cache frequent data with Laravel `Cache`.
 - **Serverless & Uploads:** Offload external APIs (Resend, Lalamove) to background queues (`QUEUE_CONNECTION=database`). Never put sub-daily crons in `vercel.json` (use external webhooks). Keep containers warm with 5m ping to `/ping`. Use presigned direct-to-storage PUT uploads for files >4.5MB (Vercel payload limit). Assume zero persistent local filesystem in production.
+- **Client-Side 4.5MB Payload Shield:** Every `<input type="file">` must enforce client-side protection before submission:
+  - Images: Compress on canvas (<400KB target). Strictly use `URL.createObjectURL(file)` with `URL.revokeObjectURL(url)` (never hold massive `readAsDataURL` base64 strings in memory to prevent mobile tab crashes).
+  - Non-image files (chat attachments, dispute docs, GLTF bundles): Enforce strict client-side 4MB early guard with inline error notice and input reset before sending via Inertia form `post()`.
+  - 3D Models / Heavy assets: Direct S3/R2 presigned PUT upload bypass.
 
 ## 3. UI/UX, Anti-AI Slop & Plain Language
 - **Aesthetic & Mobile-First:** Clean, minimalist, responsive mobile-first. Strictly use pre-configured Tailwind earthy tokens (`clay`, `stone`). No arbitrary CSS values. Enforce min 44×44px touch targets. Account for mobile virtual keyboards and safe areas (`safe-area-inset-bottom`) in modals and sheets.
