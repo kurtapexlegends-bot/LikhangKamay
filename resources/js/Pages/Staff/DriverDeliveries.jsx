@@ -221,16 +221,16 @@ export default function DriverDeliveries({
                                 <button
                                     type="button"
                                     onClick={() => setIsVerifyModalOpen(true)}
-                                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${
+                                    className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl border min-h-[38px] active:scale-95 transition-all ${
                                         driverProfile.is_vehicle_verified
                                             ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                             : "bg-amber-50 text-amber-800 border-amber-200"
                                     }`}
                                 >
                                     {driverProfile.is_vehicle_verified ? (
-                                        <ShieldCheck size={12} className="text-emerald-600" />
+                                        <ShieldCheck size={13} className="text-emerald-600" />
                                     ) : (
-                                        <ShieldAlert size={12} className="text-amber-600" />
+                                        <ShieldAlert size={13} className="text-amber-600" />
                                     )}
                                     <span>{driverProfile.is_vehicle_verified ? "Verified" : "Verify"}</span>
                                 </button>
@@ -238,9 +238,9 @@ export default function DriverDeliveries({
                                     <button
                                         type="button"
                                         onClick={() => setIsClockInModalOpen(true)}
-                                        className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-clay-600 rounded-lg px-2.5 py-1 shadow-2xs hover:bg-clay-700 active:scale-95 transition"
+                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-clay-600 rounded-xl px-3 py-1.5 shadow-2xs hover:bg-clay-700 active:scale-95 transition-all min-h-[38px]"
                                     >
-                                        <Clock size={11} />
+                                        <Clock size={12} />
                                         <span>Clock In</span>
                                     </button>
                                 )}
@@ -289,7 +289,7 @@ export default function DriverDeliveries({
                                     <button
                                         type="button"
                                         onClick={() => setActiveTab("active")}
-                                        className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
+                                        className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all min-h-[44px] sm:min-h-0 active:scale-95 ${
                                             activeTab === "active"
                                                 ? "bg-stone-900 text-white shadow-xs"
                                                 : "bg-white text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80"
@@ -306,7 +306,7 @@ export default function DriverDeliveries({
                                     <button
                                         type="button"
                                         onClick={() => setActiveTab("completed")}
-                                        className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
+                                        className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all min-h-[44px] sm:min-h-0 active:scale-95 ${
                                             activeTab === "completed"
                                                 ? "bg-stone-900 text-white shadow-xs"
                                                 : "bg-white text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80"

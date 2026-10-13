@@ -55,7 +55,7 @@ export default function OrderTableToolbar({
                         placeholder="Search order ID, buyer, address, or item (Press '/' to focus)..."
                         value={searchQuery}
                         onChange={(e) => handleSearch(e.target.value)}
-                        className="w-full pl-9 pr-8 py-2 bg-white border border-stone-200 rounded-xl text-xs hover:border-stone-300 focus:ring-4 focus:ring-clay-500/10 focus:border-clay-500 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-[38px]"
+                        className="w-full pl-9 pr-8 py-2 bg-white border border-stone-200 rounded-xl text-xs hover:border-stone-300 focus:ring-4 focus:ring-clay-500/10 focus:border-clay-500 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-[44px] sm:min-h-[38px]"
                     />
                     {isSearching ? (
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-clay-600">
@@ -79,9 +79,9 @@ export default function OrderTableToolbar({
             </div>
 
             {/* Right Controls: Select All Page + Export + Filters Popover */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap">
                 {/* Select All Page Checkbox */}
-                <label className="inline-flex h-[38px] items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-xs font-bold text-stone-700 hover:border-stone-300 hover:bg-stone-50 transition cursor-pointer select-none shadow-sm shrink-0">
+                <label className="inline-flex min-h-[44px] sm:min-h-[38px] sm:h-[38px] items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-xs font-bold text-stone-700 hover:border-stone-300 hover:bg-stone-50 transition cursor-pointer select-none shadow-sm shrink-0 active:scale-95">
                     <button
                         type="button"
                         onClick={toggleSelectAll}
@@ -104,7 +104,7 @@ export default function OrderTableToolbar({
                     href={route("orders.export")}
                     icon={Printer}
                     variant="secondary"
-                    className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs"
+                    className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs active:scale-95"
                 >
                     <span className="hidden sm:inline">Export</span>
                 </ExportButton>
@@ -114,7 +114,7 @@ export default function OrderTableToolbar({
                     <button
                         type="button"
                         onClick={handleOpenFilters}
-                        className={`inline-flex h-[38px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-bold transition-all shadow-sm active:scale-95 ${
+                        className={`inline-flex min-h-[44px] sm:min-h-[38px] sm:h-[38px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-bold transition-all shadow-sm active:scale-95 ${
                             activeFiltersCount > 0
                                 ? 'bg-clay-700 text-white border-clay-800 shadow-clay-200 hover:bg-clay-800'
                                 : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300 hover:bg-stone-50'

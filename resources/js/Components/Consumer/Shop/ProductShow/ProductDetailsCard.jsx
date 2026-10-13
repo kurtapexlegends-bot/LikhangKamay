@@ -106,10 +106,10 @@ export default function ProductDetailsCard({ product, productRating, onOpenHeigh
                                 <button
                                     type="button"
                                     onClick={onOpenHeightComparison}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] font-bold transition border border-stone-200 cursor-pointer self-start sm:self-auto shrink-0 shadow-2xs"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] font-bold transition-all active:scale-95 border border-stone-200 cursor-pointer self-start sm:self-auto shrink-0 shadow-2xs min-h-[44px] sm:min-h-0 sm:px-2.5 sm:py-1"
                                     title="Compare scale with an adult human and everyday items"
                                 >
-                                    <Ruler size={11} className="text-amber-600" />
+                                    <Ruler size={12} className="text-amber-600 shrink-0" />
                                     <span>Compare Scale</span>
                                 </button>
                             )}

@@ -115,7 +115,7 @@ export default function FulfillmentActionGroup({
                         <button
                             disabled={!canEditOrders || bomWarnings.length > 0}
                             onClick={() => initiateStatusUpdate(order.id, "Processing")}
-                            className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[38px] ${
+                            className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-[38px] ${
                                 bomWarnings.length > 0 ? "bg-stone-400 shadow-stone-200" : "bg-indigo-600 shadow-indigo-200/50 hover:bg-indigo-700"
                             }`}
                             type="button"
@@ -126,7 +126,7 @@ export default function FulfillmentActionGroup({
                         <button
                             disabled={!canEditOrders}
                             onClick={() => initiateStatusUpdate(order.id, "Rejected")}
-                            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-200/80 bg-red-50/60 px-3 py-1.5 text-xs font-bold text-red-600 transition-all hover:bg-red-100/60 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[34px]"
+                            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-200/80 bg-red-50/60 px-3 py-1.5 text-xs font-bold text-red-600 transition-all hover:bg-red-100/60 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-[34px]"
                             type="button"
                         >
                             <XCircle size={13} /> Decline Order
@@ -179,7 +179,7 @@ export default function FulfillmentActionGroup({
                             <button
                                 disabled={!canEditOrders}
                                 onClick={() => openShippingModal(order, "ship")}
-                                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 shadow-2xs transition-colors hover:bg-stone-50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 min-h-[38px]"
+                                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 shadow-2xs transition-all active:scale-95 hover:bg-stone-50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-[38px]"
                                 type="button"
                             >
                                 <PackageCheck size={15} /> Manual Tracking

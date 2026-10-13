@@ -52,7 +52,7 @@ export default function OrderCard({
             <button
                 type="button"
                 onClick={() => toggleOrderSelection(order.id)}
-                className="absolute left-1 top-2.5 z-10 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-all sm:left-3.5 sm:top-3.5 sm:h-7 sm:w-7 focus-visible:outline-none"
+                className="absolute left-0.5 top-2 z-10 flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-full transition-all active:scale-95 sm:left-3.5 sm:top-3.5 sm:h-7 sm:w-7 sm:min-h-0 sm:min-w-0 focus-visible:outline-none"
                 aria-label={`Select order ${order.id}`}
                 role="checkbox"
                 aria-checked={isSelected}

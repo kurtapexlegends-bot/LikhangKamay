@@ -25,7 +25,7 @@ export default function ProductActionsPanel({
                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
                             aria-label="Decrease quantity"
                             disabled={quantity <= 1}
-                            className="flex h-11 w-11 items-center justify-center rounded-l-xl border border-stone-200 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 sm:h-8 sm:w-8 sm:rounded-l-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex h-11 w-11 items-center justify-center rounded-l-xl border border-stone-200 transition-all hover:bg-stone-50 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 sm:h-8 sm:w-8 sm:rounded-l-lg disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Minus size={16} className="sm:w-3.5 sm:h-3.5" />
                         </button>
@@ -36,7 +36,7 @@ export default function ProductActionsPanel({
                             onClick={() => setQuantity(Math.min(product.stock || 99, quantity + 1))}
                             aria-label="Increase quantity"
                             disabled={quantity >= (product.stock || 99)}
-                            className="flex h-11 w-11 items-center justify-center rounded-r-xl border border-stone-200 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 sm:h-8 sm:w-8 sm:rounded-r-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex h-11 w-11 items-center justify-center rounded-r-xl border border-stone-200 transition-all hover:bg-stone-50 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 sm:h-8 sm:w-8 sm:rounded-r-lg disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Plus size={16} className="sm:w-3.5 sm:h-3.5" />
                         </button>
@@ -62,7 +62,7 @@ export default function ProductActionsPanel({
                         <button
                             onClick={addToCart}
                             disabled={product.stock === 0 || isAddingToCart}
-                            className={`flex h-11 sm:h-10 flex-1 items-center justify-center gap-2 rounded-lg border-2 border-clay-600 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
+                            className={`flex h-11 sm:h-10 flex-1 items-center justify-center gap-2 rounded-lg border-2 border-clay-600 text-sm font-bold transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
                                 addedToCart
                                     ? 'bg-emerald-500 border-emerald-500 text-white'
                                     : 'bg-white text-clay-600 hover:bg-clay-50'
@@ -79,7 +79,7 @@ export default function ProductActionsPanel({
                         <button
                             onClick={handleBuyNow}
                             disabled={product.stock === 0}
-                            className="h-11 sm:h-10 flex-1 rounded-lg bg-clay-600 text-sm font-bold text-white shadow-sm shadow-clay-200 transition-colors hover:bg-clay-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="h-11 sm:h-10 flex-1 rounded-lg bg-clay-600 text-sm font-bold text-white shadow-sm shadow-clay-200 transition-all hover:bg-clay-700 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Buy Now
                         </button>

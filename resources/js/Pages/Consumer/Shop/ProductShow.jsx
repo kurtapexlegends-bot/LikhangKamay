@@ -379,7 +379,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 type="button"
                                 onClick={handleChatSeller}
                                 aria-label={product?.viewer_can_chat_seller ? 'Open seller chat' : 'View seller chat policy'}
-                                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
+                                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
                                     product?.viewer_can_chat_seller
                                         ? 'border-stone-200 bg-white text-gray-700 hover:bg-stone-50'
                                         : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
@@ -390,7 +390,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             <button
                                 onClick={(e) => addToCart(e)}
                                 disabled={product.stock === 0 || isAddingToCart}
-                                className={`flex h-11 items-center justify-center gap-2 rounded-xl border-2 px-4 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
+                                className={`flex h-11 items-center justify-center gap-2 rounded-xl border-2 px-4 text-xs font-bold transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${
                                     addedToCart
                                         ? 'border-emerald-500 bg-emerald-500 text-white'
                                         : 'border-clay-600 bg-white text-clay-600'
@@ -401,7 +401,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                             <button
                                 onClick={handleBuyNow}
                                 disabled={product.stock === 0}
-                                className="flex h-11 items-center justify-center rounded-xl bg-clay-600 px-4 text-sm font-bold text-white shadow-sm shadow-clay-200 transition-colors hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="flex h-11 items-center justify-center rounded-xl bg-clay-600 px-4 text-sm font-bold text-white shadow-sm shadow-clay-200 transition-all hover:bg-clay-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 Buy Now
                             </button>

@@ -114,7 +114,7 @@ export default function ActiveDeliveryCard({
                             <button
                                 type="button"
                                 onClick={() => onCopyAddress(delivery.id, delivery.destination?.address)}
-                                className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition shadow-2xs"
+                                className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 sm:px-2.5 sm:py-1.5 text-[11px] font-bold text-stone-600 hover:text-stone-900 hover:bg-stone-50 active:scale-95 transition-all shadow-2xs min-h-[44px] sm:min-h-0"
                                 title="Copy Address"
                             >
                                 {copiedOrderId === delivery.id ? (

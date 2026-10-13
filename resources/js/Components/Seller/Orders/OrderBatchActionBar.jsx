@@ -29,7 +29,7 @@ export default function OrderBatchActionBar({
                             key={tab.key}
                             type="button"
                             onClick={() => handleTabChange(tab.key)}
-                            className={`px-3 py-2 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 min-h-[38px] sm:min-h-0 ${
+                            className={`px-3 py-2 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-1.5 shrink-0 min-h-[44px] sm:min-h-0 ${
                                 isActive
                                     ? "bg-white text-clay-800 shadow-xs font-black"
                                     : "text-stone-500 hover:text-stone-800 font-semibold"

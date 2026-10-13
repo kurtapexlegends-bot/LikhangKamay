@@ -233,14 +233,14 @@ export default function DriverVehicleVerifyModal({
                         type="button"
                         onClick={onClose}
                         disabled={isSubmitting}
-                        className="px-4 py-2 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-100 transition"
+                        className="px-4 py-2 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-100 transition-all min-h-[44px] sm:min-h-0 active:scale-95 flex items-center justify-center"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-clay-700 hover:bg-clay-800 transition disabled:opacity-50 shadow-xs"
+                        className="flex items-center justify-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-clay-700 hover:bg-clay-800 transition-all active:scale-95 disabled:opacity-50 shadow-xs min-h-[44px] sm:min-h-0"
                     >
                         {isSubmitting ? (
                             <LoaderCircle size={14} className="animate-spin" />
