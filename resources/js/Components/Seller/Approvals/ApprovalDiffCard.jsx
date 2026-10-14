@@ -253,7 +253,7 @@ export default function ApprovalDiffCard({ approval, onApprove, onReject, onInsp
                         <button
                             type="button"
                             onClick={() => onInspect(approval)}
-                            className="px-3 py-1.5 rounded-xl border border-stone-200 bg-white text-stone-700 text-xs font-bold hover:bg-stone-50 hover:text-stone-900 transition active:scale-95 min-h-[36px] flex items-center gap-1.5"
+                            className="px-3 py-1.5 rounded-xl border border-stone-200 bg-white text-stone-700 text-xs font-bold hover:bg-stone-50 hover:text-stone-900 transition active:scale-95 min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5"
                         >
                             <Eye size={13} /> Inspect
                         </button>
@@ -265,7 +265,7 @@ export default function ApprovalDiffCard({ approval, onApprove, onReject, onInsp
                                 type="button"
                                 onClick={() => onReject(approval)}
                                 disabled={processing}
-                                className="px-3 py-1.5 rounded-xl border border-rose-200/80 bg-rose-50/50 text-rose-700 text-xs font-bold hover:bg-rose-100 transition active:scale-95 disabled:opacity-50 min-h-[36px] flex items-center gap-1.5"
+                                className="px-3 py-1.5 rounded-xl border border-rose-200/80 bg-rose-50/50 text-rose-700 text-xs font-bold hover:bg-rose-100 transition active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5"
                             >
                                 <XCircle size={14} /> Decline
                             </button>
@@ -273,7 +273,7 @@ export default function ApprovalDiffCard({ approval, onApprove, onReject, onInsp
                                 type="button"
                                 onClick={() => onApprove(approval)}
                                 disabled={processing}
-                                className="px-3.5 py-1.5 rounded-xl bg-clay-600 hover:bg-clay-700 text-white text-xs font-bold shadow-xs transition active:scale-95 disabled:opacity-50 min-h-[36px] flex items-center gap-1.5"
+                                className="px-3.5 py-1.5 rounded-xl bg-clay-600 hover:bg-clay-700 text-white text-xs font-bold shadow-xs transition active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5"
                             >
                                 <CheckCircle2 size={14} /> Approve
                             </button>

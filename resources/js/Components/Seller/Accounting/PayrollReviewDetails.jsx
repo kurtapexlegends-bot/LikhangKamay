@@ -194,7 +194,7 @@ export default function PayrollReviewDetails({ item, inline = false }) {
                                 <button
                                     type="button"
                                     onClick={() => setSelectedAuditItem(line)}
-                                    className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-bold text-stone-700 transition min-h-[38px] active:scale-95"
+                                    className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-bold text-stone-700 transition min-h-[44px] active:scale-95"
                                     title="View calculation formula audit"
                                 >
                                     <Calculator size={13} />

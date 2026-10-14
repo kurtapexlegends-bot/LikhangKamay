@@ -97,7 +97,7 @@ export default function StockRequestsTable({
                                 <>
                                     <Link
                                         href={route('seller.supply-hub.index', { search: req.supply?.name })}
-                                        className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 min-h-[40px] px-3 bg-stone-900 text-white text-xs font-bold rounded-xl hover:bg-stone-800 transition-all active:scale-95 shadow-2xs"
+                                        className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 bg-stone-900 text-white text-xs font-bold rounded-xl hover:bg-stone-800 transition-all active:scale-95 shadow-2xs"
                                     >
                                         <Store size={13} />
                                         <span>Supply Hub</span>
@@ -105,7 +105,7 @@ export default function StockRequestsTable({
                                     <button 
                                         disabled={!canEdit || processingId === `ordered-${req.id}`}
                                         onClick={() => onMarkOrdered(req)} 
-                                        className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 min-h-[40px] px-3 bg-white border border-stone-200 text-stone-700 text-xs font-bold rounded-xl hover:bg-stone-50 transition-all active:scale-95 shadow-2xs disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 bg-white border border-stone-200 text-stone-700 text-xs font-bold rounded-xl hover:bg-stone-50 transition-all active:scale-95 shadow-2xs disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         <Truck size={13} /> 
                                         {processingId === `ordered-${req.id}` ? 'Updating...' : 'Mark Ordered'}
@@ -116,7 +116,7 @@ export default function StockRequestsTable({
                                 <button 
                                     disabled={!canEdit || processingId === `receive-${req.id}`} 
                                     onClick={() => onReceiveClick(req)} 
-                                    className="w-full inline-flex items-center justify-center gap-1.5 min-h-[40px] px-4 bg-amber-600 text-white text-xs font-bold rounded-xl hover:bg-amber-700 transition-all active:scale-95 shadow-2xs disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="w-full inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 bg-amber-600 text-white text-xs font-bold rounded-xl hover:bg-amber-700 transition-all active:scale-95 shadow-2xs disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <Package size={14} /> 
                                     {processingId === `receive-${req.id}` ? 'Receiving...' : 'Receive Material Intake'}
@@ -126,7 +126,7 @@ export default function StockRequestsTable({
                                 <button 
                                     disabled={!canEdit || processingId === `transfer-${req.id}`} 
                                     onClick={() => onTransferClick(req)} 
-                                    className="w-full inline-flex items-center justify-center gap-1.5 min-h-[40px] px-4 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 active:scale-95 shadow-2xs transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="w-full inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 active:scale-95 shadow-2xs transition-all disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <ArrowRight size={14} /> 
                                     {processingId === `transfer-${req.id}` ? 'Transferring...' : 'Transfer to Active Inventory'}

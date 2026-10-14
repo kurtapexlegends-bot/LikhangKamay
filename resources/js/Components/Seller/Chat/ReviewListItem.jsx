@@ -215,7 +215,7 @@ export default function ReviewListItem({
                                 <button 
                                     disabled={!canEditReviews} 
                                     onClick={() => canEditReviews && openEditReply(review.id, review.seller_reply)} 
-                                    className="p-1 text-stone-400 hover:text-clay-600 hover:bg-white rounded pl-1.5 pr-1.5 transition border border-transparent hover:border-stone-200 shadow-sm text-xs flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50 min-h-[32px] sm:min-h-0" 
+                                    className="p-1 text-stone-400 hover:text-clay-600 hover:bg-white rounded pl-1.5 pr-1.5 transition border border-transparent hover:border-stone-200 shadow-sm text-xs flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-0" 
                                     title="Edit Reply"
                                 >
                                     <Edit2 size={12} /> Edit
@@ -223,7 +223,7 @@ export default function ReviewListItem({
                                 <button 
                                     disabled={!canEditReviews} 
                                     onClick={() => canEditReviews && onConfirmDeleteReply(review.id)} 
-                                    className="p-1 text-stone-400 hover:text-rose-600 hover:bg-white rounded pl-1.5 pr-1.5 transition border border-transparent hover:border-rose-100 shadow-sm text-xs flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50 min-h-[32px] sm:min-h-0" 
+                                    className="p-1 text-stone-400 hover:text-rose-600 hover:bg-white rounded pl-1.5 pr-1.5 transition border border-transparent hover:border-rose-100 shadow-sm text-xs flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-0" 
                                     title="Delete Reply"
                                 >
                                     <Trash2 size={12} />
@@ -253,7 +253,7 @@ export default function ReviewListItem({
                                     type="button"
                                     disabled={!canEditReviews}
                                     onClick={() => setQuickReplyOpen((prev) => !prev)}
-                                    className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200/80 rounded-xl hover:bg-amber-100/80 active:scale-95 transition shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 min-h-[38px] sm:min-h-0"
+                                    className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200/80 rounded-xl hover:bg-amber-100/80 active:scale-95 transition shadow-2xs disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] sm:min-h-0"
                                     title="Choose a quick reply preset"
                                 >
                                     <Zap size={13} className="text-amber-500 fill-amber-500" /> Quick Reply

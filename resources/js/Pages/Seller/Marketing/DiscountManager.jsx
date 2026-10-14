@@ -197,7 +197,7 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                             <button
                                 type="button"
                                 onClick={handleOpenCreate}
-                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 h-[38px] min-h-[38px] text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 active:scale-95 shrink-0"
+                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 h-11 sm:h-[38px] min-h-[44px] sm:min-h-[38px] text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 active:scale-95 shrink-0"
                             >
                                 <Plus size={14} />
                                 <span className="hidden sm:inline">Create Campaign</span>
@@ -218,7 +218,7 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                     />
 
                     {/* MOBILE & TABLET CARD LIST VIEW (< lg) */}
-                    <div className="block lg:hidden p-3.5 sm:p-4 space-y-3.5 sm:space-y-4 bg-stone-50/40 rounded-b-3xl">
+                    <div className="block lg:hidden p-3.5 sm:p-4 space-y-3.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4 bg-stone-50/40 rounded-b-3xl">
                         {filteredDiscounts.length > 0 ? (
                             filteredDiscounts.map((discount) => {
                                 const now = new Date();
@@ -307,10 +307,11 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                                                     <button
                                                         type="button"
                                                         onClick={() => handleOpenEdit(discount)}
-                                                        className="w-8 h-8 rounded-xl bg-sky-50 text-sky-700 border border-sky-200/70 flex items-center justify-center active:scale-95 shadow-2xs"
+                                                        className="w-10 h-10 sm:w-8 sm:h-8 min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 rounded-xl bg-sky-50 text-sky-700 border border-sky-200/70 flex items-center justify-center active:scale-95 shadow-2xs"
                                                         title="Edit Campaign"
+                                                        aria-label="Edit Campaign"
                                                     >
-                                                        <Edit3 size={14} />
+                                                        <Edit3 size={15} />
                                                     </button>
                                                 )}
                                                 {discount.is_active && end >= now && (
@@ -318,10 +319,11 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                                                         type="button"
                                                         onClick={() => openConfirmDeactivate(discount)}
                                                         disabled={deactivatingId === discount.id}
-                                                        className="w-8 h-8 rounded-xl bg-rose-50 text-rose-700 border border-rose-200/70 flex items-center justify-center active:scale-95 disabled:opacity-40 shadow-2xs"
+                                                        className="w-10 h-10 sm:w-8 sm:h-8 min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 rounded-xl bg-rose-50 text-rose-700 border border-rose-200/70 flex items-center justify-center active:scale-95 disabled:opacity-40 shadow-2xs"
                                                         title="End Early"
+                                                        aria-label="End Early"
                                                     >
-                                                        <PowerOff size={14} />
+                                                        <PowerOff size={15} />
                                                     </button>
                                                 )}
                                             </div>
@@ -330,13 +332,15 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                                 );
                             })
                         ) : (
-                            <WorkspaceEmptyState
-                                compact
-                                align="top"
-                                icon={Tag}
-                                title="No promotional campaigns found"
-                                description="Create your first promotional discount campaign to boost seller sales."
-                            />
+                            <div className="sm:col-span-2">
+                                <WorkspaceEmptyState
+                                    compact
+                                    align="top"
+                                    icon={Tag}
+                                    title="No promotional campaigns found"
+                                    description="Create your first promotional discount campaign to boost seller sales."
+                                />
+                            </div>
                         )}
                     </div>
 
@@ -500,8 +504,9 @@ export default function DiscountManager({ discounts, stats, filters, products, a
             <button
                 type="button"
                 onClick={handleOpenCreate}
-                className="fixed bottom-6 right-4 z-40 bg-clay-600 text-white rounded-full p-4 shadow-xl active:scale-90 transition-transform sm:hidden flex items-center justify-center min-h-[52px] min-w-[52px]"
+                className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] right-4 z-40 bg-clay-600 text-white rounded-full p-3.5 shadow-xl active:scale-90 transition-transform md:hidden flex items-center justify-center min-h-[52px] min-w-[52px]"
                 title="Create Discount Campaign"
+                aria-label="Create Discount Campaign"
             >
                 <Plus size={22} />
             </button>

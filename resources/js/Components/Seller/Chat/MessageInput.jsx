@@ -345,7 +345,7 @@ export default function MessageInput({
     };
 
     return (
-        <div className="relative z-10 w-full shrink-0 border-t border-stone-200/80 bg-white p-3 shadow-xs sm:p-4">
+        <div className="relative z-10 w-full shrink-0 border-t border-stone-200/80 bg-white p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] shadow-xs sm:p-4 sm:pb-4">
             <div className="relative mx-auto flex w-full max-w-4xl flex-col">
                 <SlashCommandsList
                     ref={slashCommandsDropdownRef}

@@ -6,7 +6,7 @@ import SellerWorkspaceLayout, {
     useSellerWorkspaceShell,
 } from "@/Layouts/SellerWorkspaceLayout";
 import SellerHeader from "@/Layouts/SellerHeader";
-import { CheckCircle2, RotateCcw, Archive, AlertTriangle, AlertOctagon } from "lucide-react";
+import { CheckCircle2, RotateCcw, Archive, AlertTriangle, AlertOctagon, Plus } from "lucide-react";
 import SlideOverDrawer from "@/Components/SlideOverDrawer";
 import Modal from "@/Components/Modal";
 
@@ -140,6 +140,18 @@ export default function ProductManager({
                         />
                     )}
                 </div>
+
+                {state.canEditProducts && state.selectedProductIds.length === 0 && (
+                    <button
+                        type="button"
+                        onClick={state.openAddModal}
+                        aria-label="Add new product"
+                        className="fixed bottom-6 right-4 z-40 md:hidden flex items-center gap-2 rounded-full bg-clay-600 px-4 py-3 text-sm font-bold text-white shadow-xl shadow-clay-900/20 active:scale-95 transition-all hover:bg-clay-700 min-h-[48px] focus:outline-none focus:ring-2 focus:ring-clay-500 focus:ring-offset-2"
+                    >
+                        <Plus size={18} className="shrink-0" />
+                        <span>Add Product</span>
+                    </button>
+                )}
             </main>
 
             {/* Mobile Selection Drawer (Bulk actions bottom sheet drawer) */}
@@ -236,6 +248,8 @@ export default function ProductManager({
                 handleFileChange={state.handleFileChange}
                 handleModelAssetFolderChange={state.handleModelAssetFolderChange}
                 handleRemoveGalleryImage={state.handleRemoveGalleryImage}
+                handleRemoveCover={state.handleRemoveCover}
+                handleRemoveModel3D={state.handleRemoveModel3D}
                 handleStatusChange={state.handleStatusChange}
                 addRecipeItem={state.addRecipeItem}
                 removeRecipeItem={state.removeRecipeItem}

@@ -350,7 +350,7 @@ export default function ShopSettings({ auth, user, stats, locations = [], pickup
                                 </div>
                                 <a
                                     href={route('products.index')}
-                                    className="ml-0 inline-flex flex-1 sm:flex-none items-center justify-center rounded-lg bg-clay-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-clay-700 md:ml-2"
+                                    className="ml-0 inline-flex flex-1 sm:flex-none items-center justify-center rounded-lg bg-clay-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-clay-700 md:ml-2 min-h-[44px] sm:min-h-[36px]"
                                 >
                                     Manage
                                 </a>
@@ -415,7 +415,7 @@ export default function ShopSettings({ auth, user, stats, locations = [], pickup
                     </div>
 
                     {/* ── Floating Save Bar ── */}
-                    <div className="sticky bottom-0 z-30 border-t border-stone-100 bg-white/80 shadow-lg backdrop-blur-xl">
+                    <div className="sticky bottom-0 z-30 border-t border-stone-100 bg-white/80 shadow-lg backdrop-blur-xl pb-[env(safe-area-inset-bottom,0px)]">
                         <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
                             <p className="text-xs text-stone-400 hidden sm:block">
                                 {errors.banner_image && (

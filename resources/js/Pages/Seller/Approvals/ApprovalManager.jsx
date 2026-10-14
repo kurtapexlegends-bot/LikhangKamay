@@ -273,7 +273,7 @@ export default function ApprovalManager({
                                     type="button"
                                     onClick={handleOpenBatchModal}
                                     disabled={isBatchProcessing}
-                                    className="inline-flex items-center justify-center gap-1.5 px-3.5 h-[38px] min-h-[38px] rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 shadow-2xs transition active:scale-95 disabled:opacity-50 shrink-0"
+                                    className="inline-flex items-center justify-center gap-1.5 px-3.5 h-11 sm:h-[38px] min-h-[44px] sm:min-h-[38px] rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 shadow-2xs transition active:scale-95 disabled:opacity-50 shrink-0"
                                 >
                                     <Zap size={14} />
                                     <span className="hidden sm:inline">Batch Approve ({approvalList.length})</span>
@@ -396,14 +396,14 @@ export default function ApprovalManager({
                             <button
                                 type="button"
                                 onClick={() => setDeclineModal({ isOpen: false, approval: null, reason: '' })}
-                                className="px-4 py-2 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-100 transition min-h-[38px]"
+                                className="px-4 py-2 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-100 transition min-h-[44px] sm:min-h-[38px]"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={handleConfirmDecline}
-                                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition min-h-[38px]"
+                                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition min-h-[44px] sm:min-h-[38px]"
                             >
                                 Confirm Decline
                             </button>

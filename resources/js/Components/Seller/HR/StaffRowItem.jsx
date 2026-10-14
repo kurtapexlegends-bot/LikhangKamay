@@ -93,7 +93,7 @@ export default function StaffRowItem({
                             <button
                                 type="button"
                                 onClick={() => openAttendanceModal(emp)}
-                                className="inline-flex items-center gap-1 rounded-lg border border-stone-200/80 bg-stone-50/70 px-2 py-1 text-[11px] font-bold text-stone-700 hover:border-clay-300 hover:bg-[#FCF7F2] transition shadow-2xs whitespace-nowrap cursor-pointer"
+                                className="inline-flex items-center gap-1 rounded-xl border border-stone-200/80 bg-stone-50/70 px-2.5 py-1.5 text-[11px] font-bold text-stone-700 hover:border-clay-300 hover:bg-[#FCF7F2] transition shadow-2xs whitespace-nowrap cursor-pointer min-h-[44px]"
                                 title="View attendance dates calendar"
                             >
                                 <CalendarDays size={12} className="text-clay-600 shrink-0" />
@@ -106,28 +106,28 @@ export default function StaffRowItem({
 
                     {/* Action Icon Group */}
                     {canEditHrRecords && (
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
                             <Link
                                 href={route('hr.employees.time-card', emp.id)}
-                                className="p-2 text-sky-600 hover:text-sky-800 hover:bg-sky-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs active:scale-95"
+                                className="p-2.5 text-sky-600 hover:text-sky-800 hover:bg-sky-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center bg-white shadow-2xs active:scale-95"
                                 title="Time-Card Audit Logs"
                             >
-                                <Clock3 size={14} />
+                                <Clock3 size={15} />
                             </Link>
                             <button
                                 onClick={() => openEditModal(emp)}
                                 aria-label={`Update ${emp.name}`}
-                                className="p-2 text-clay-700 hover:text-clay-900 hover:bg-clay-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs active:scale-95 cursor-pointer"
+                                className="p-2.5 text-clay-700 hover:text-clay-900 hover:bg-clay-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center bg-white shadow-2xs active:scale-95 cursor-pointer"
                                 title="Update Data"
                                 type="button"
                             >
-                                <Pencil size={14} />
+                                <Pencil size={15} />
                             </button>
                             <button
                                 onClick={() => onToggleSuspension?.(emp)}
                                 disabled={isDisabled}
                                 aria-label={suspendTooltip}
-                                className={`p-2 rounded-xl border min-w-[36px] min-h-[36px] flex items-center justify-center transition-all duration-200 bg-white shadow-2xs active:scale-95 cursor-pointer ${
+                                className={`p-2.5 rounded-xl border min-w-[44px] min-h-[44px] flex items-center justify-center transition-all duration-200 bg-white shadow-2xs active:scale-95 cursor-pointer ${
                                     isDisabled
                                         ? 'cursor-not-allowed border-stone-200 text-stone-300 shadow-none'
                                         : isSuspended
@@ -137,7 +137,7 @@ export default function StaffRowItem({
                                 title={suspendTooltip}
                                 type="button"
                             >
-                                {isSuspended ? <UserCheck size={14} /> : <UserX size={14} />}
+                                {isSuspended ? <UserCheck size={15} /> : <UserX size={15} />}
                             </button>
                         </div>
                     )}

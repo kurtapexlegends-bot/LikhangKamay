@@ -131,7 +131,7 @@ export default function PayrollRunShow({ payroll }) {
                 ]}
             />
 
-            <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <main className="mx-auto max-w-7xl w-full min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
                 {/* Horizontal Swiping Summary Cards on Mobile */}
                 <div className="flex overflow-x-auto pb-2 gap-3 flex-nowrap snap-x snap-mandatory md:grid md:grid-cols-3 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
                     <div className="w-[82vw] max-w-[280px] shrink-0 snap-center md:w-auto">
@@ -236,7 +236,7 @@ export default function PayrollRunShow({ payroll }) {
                                         <button
                                             type="button"
                                             onClick={() => setPayslipModalItem(item)}
-                                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-clay-50 hover:bg-clay-100 border border-clay-100 text-xs font-bold text-clay-700 transition active:scale-[0.98]"
+                                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-clay-50 hover:bg-clay-100 border border-clay-100 text-xs font-bold text-clay-700 transition active:scale-[0.98] min-h-[44px]"
                                         >
                                             <Printer size={14} />
                                             Official Payslip
@@ -244,7 +244,7 @@ export default function PayrollRunShow({ payroll }) {
                                         <button
                                             type="button"
                                             onClick={() => toggleExpandedRow(item.id)}
-                                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-stone-100 hover:bg-stone-200/70 text-xs font-bold text-stone-700 transition"
+                                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200/70 text-xs font-bold text-stone-700 transition active:scale-[0.98] min-h-[44px]"
                                         >
                                             {isExpanded ? (
                                                 <>

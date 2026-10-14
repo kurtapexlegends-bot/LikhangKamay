@@ -300,6 +300,18 @@ export default function ProcurementIndex({ auth, supplies, totalItems, lowStockI
                         onDelete={handleDeleteClick}
                         onOpenAddSupply={openAddModal}
                     />
+
+                    {canEditProcurement && (
+                        <button
+                            type="button"
+                            onClick={openAddModal}
+                            aria-label="Add new raw material"
+                            className="fixed bottom-6 right-4 z-40 md:hidden flex items-center gap-2 rounded-full bg-clay-600 px-4 py-3 text-sm font-bold text-white shadow-xl shadow-clay-900/20 active:scale-95 transition-all hover:bg-clay-700 min-h-[48px] focus:outline-none focus:ring-2 focus:ring-clay-500 focus:ring-offset-2"
+                        >
+                            <Plus size={18} className="shrink-0" />
+                            <span>Add Material</span>
+                        </button>
+                    )}
                 </main>
             </div>
 

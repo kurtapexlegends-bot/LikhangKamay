@@ -40,22 +40,22 @@ function SourcingCatalogToolbar({
                         value={searchInput ?? ''}
                         onChange={(e) => setSearchInput(e.target.value)}
                         placeholder="Search materials..."
-                        className="w-full pl-9 pr-8 py-2 rounded-xl border border-stone-200 bg-stone-50/50 text-xs text-stone-900 placeholder:text-stone-400 focus:border-clay-500 focus:bg-white focus:ring-1 focus:ring-clay-500 transition-all font-medium min-h-[38px]"
+                        className="w-full pl-9 pr-8 py-2 rounded-xl border border-stone-200 bg-stone-50/50 text-xs text-stone-900 placeholder:text-stone-400 focus:border-clay-500 focus:bg-white focus:ring-1 focus:ring-clay-500 transition-all font-medium min-h-[44px] sm:min-h-[38px]"
                     />
                     {searchInput && (
                         <button
                             type="button"
                             onClick={onClearSearch}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-0.5"
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1 min-w-[32px] min-h-[32px] flex items-center justify-center"
                             aria-label="Clear search"
                         >
-                            <X size={13} />
+                            <X size={14} />
                         </button>
                     )}
                 </form>
 
                 {/* Sort Dropdown */}
-                <div className="flex items-center gap-1 bg-stone-50 border border-stone-200 rounded-xl px-2 sm:px-2.5 py-1 shrink-0 min-h-[38px]">
+                <div className="flex items-center gap-1 bg-stone-50 border border-stone-200 rounded-xl px-2 sm:px-2.5 py-1 shrink-0 min-h-[44px] sm:min-h-[38px]">
                     <ArrowUpDown size={13} className="text-stone-400 shrink-0" />
                     <select
                         value={sort}
@@ -74,7 +74,7 @@ function SourcingCatalogToolbar({
                 <button
                     type="button"
                     onClick={onOpenMobileFilters}
-                    className={`lg:hidden flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition shrink-0 cursor-pointer min-h-[38px] ${
+                    className={`lg:hidden flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition shrink-0 cursor-pointer min-h-[44px] sm:min-h-[38px] ${
                         activeFiltersCount > 0
                             ? 'bg-clay-50 border-clay-300 text-clay-800'
                             : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'

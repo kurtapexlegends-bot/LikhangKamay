@@ -16,7 +16,7 @@ export default function BulkActionsBar({
     if (!mounted || selectedOrderIds.length === 0) return null;
 
     return createPortal(
-        <div className="fixed bottom-6 inset-x-0 z-[999] flex justify-center pointer-events-none px-4">
+        <div className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] inset-x-0 z-[999] flex justify-center pointer-events-none px-4">
             <motion.div
                 initial={{ y: 100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}

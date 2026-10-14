@@ -205,7 +205,7 @@ export default function ReleaseRequestDetails({
 
     // Container-Sticky Document Card Footer actions
     const footerActions = isPendingReview ? (
-        <div className="sticky bottom-4 z-20 rounded-xl border border-stone-200 bg-white/95 backdrop-blur-md shadow-lg overflow-hidden mt-4">
+        <div className="sticky bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] z-20 rounded-xl border border-stone-200 bg-white/95 backdrop-blur-md shadow-lg overflow-hidden mt-4">
             <div className="p-4 sm:p-4.5 bg-stone-50/90 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 w-full sm:w-auto">
                     <span className="text-[11px] text-stone-500 font-bold uppercase tracking-wider">Release Total:</span>
@@ -215,7 +215,7 @@ export default function ReleaseRequestDetails({
                     <input
                         type="text"
                         disabled={!canEditAccounting || !!reviewProcessing}
-                        className="w-full sm:w-72 rounded-xl border border-stone-200 bg-white py-2 px-3 text-xs font-medium text-stone-800 placeholder-stone-400 focus:border-stone-400 focus:ring-0 disabled:bg-stone-50 disabled:text-stone-400 shadow-2xs"
+                        className="w-full sm:w-72 rounded-xl border border-stone-200 bg-white py-2 px-3 text-xs font-medium text-stone-800 placeholder-stone-400 focus:border-stone-400 focus:ring-0 disabled:bg-stone-50 disabled:text-stone-400 shadow-2xs min-h-[44px]"
                         placeholder="Reason required to decline..."
                         value={rejectReason}
                         onChange={(event) => setRejectReason(event.target.value)}
@@ -226,7 +226,7 @@ export default function ReleaseRequestDetails({
                             type="button"
                             onClick={onReject}
                             disabled={!canEditAccounting || !rejectReason.trim() || !!reviewProcessing}
-                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition min-h-[44px]"
                         >
                             {reviewProcessing === 'reject' && <LoaderCircle size={14} className="animate-spin" />}
                             Decline
@@ -235,7 +235,7 @@ export default function ReleaseRequestDetails({
                             type="button"
                             onClick={onApprove}
                             disabled={!canEditAccounting || !!reviewProcessing}
-                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-stone-900 px-5 py-2 text-xs font-bold text-white hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
+                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-stone-900 px-5 py-2 text-xs font-bold text-white hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm min-h-[44px]"
                         >
                             {reviewProcessing === 'approve' && <LoaderCircle size={14} className="animate-spin" />}
                             {reviewProcessing === 'approve' ? 'Processing...' : 'Approve & Release Funds'}

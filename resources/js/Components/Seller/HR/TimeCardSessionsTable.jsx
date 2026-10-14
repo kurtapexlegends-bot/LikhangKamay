@@ -255,9 +255,10 @@ export default function TimeCardSessionsTable({
                                             distance: session.distance_meters,
                                             onSite: !isOffSite,
                                         })}
-                                        className="inline-flex items-center gap-1 text-[10px] font-bold text-clay-700 bg-clay-50 border border-clay-200/80 px-2 py-0.5 rounded-lg"
+                                        aria-label="View attendance photo"
+                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-clay-700 bg-clay-50 border border-clay-200/80 px-2.5 py-1.5 rounded-lg min-h-[36px] active:scale-95"
                                     >
-                                        <Eye size={10} /> Photo
+                                        <Eye size={12} /> Photo
                                     </button>
                                 )}
 
@@ -284,13 +285,13 @@ export default function TimeCardSessionsTable({
 
                             {/* Mobile action buttons */}
                             {canEdit && (
-                                <div className="flex items-center gap-2 pt-1 border-t border-stone-100">
+                                <div className="flex items-center gap-2 pt-1.5 border-t border-stone-100">
                                     {!isApproved && (
                                         <button
                                             type="button"
                                             disabled={submittingActionId === session.id}
                                             onClick={() => onApproveSession(session.id)}
-                                            className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 py-2 rounded-xl transition min-h-[38px] active:scale-[0.98]"
+                                            className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 py-2.5 rounded-xl transition min-h-[44px] active:scale-[0.98]"
                                         >
                                             <Check size={13} /> Approve
                                         </button>
@@ -300,7 +301,7 @@ export default function TimeCardSessionsTable({
                                             type="button"
                                             disabled={submittingActionId === session.id}
                                             onClick={() => onOpenRejectModal(session.id)}
-                                            className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 py-2 rounded-xl transition min-h-[38px] active:scale-[0.98]"
+                                            className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 py-2.5 rounded-xl transition min-h-[44px] active:scale-[0.98]"
                                         >
                                             <Ban size={13} /> Decline
                                         </button>

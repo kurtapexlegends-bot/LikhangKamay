@@ -37,7 +37,7 @@ export default function StockRequestsFilter({
             onResetFilters={() => setSearchTerm('')}
             containerClassName="mb-4"
             extraActions={
-                <span className="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-600 shadow-2xs shrink-0 min-h-[38px] sm:min-h-0">
+                <span className="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-600 shadow-2xs shrink-0 min-h-[44px] sm:min-h-0">
                     {filteredCount} visible
                 </span>
             }

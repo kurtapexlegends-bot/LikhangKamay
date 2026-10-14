@@ -67,9 +67,9 @@ export default function OverviewTab({
     }, [categoryData]);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full min-w-0 flex-1">
             {/* Level 1: Key Performance Indicators */}
-            <div>
+            <div className="w-full min-w-0">
                 <StaggerContainer 
                     className="flex overflow-x-auto pb-2.5 gap-3.5 sm:gap-4 lg:gap-5 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0"
                 >

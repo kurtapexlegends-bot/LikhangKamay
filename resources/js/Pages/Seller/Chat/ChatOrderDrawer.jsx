@@ -66,7 +66,8 @@ export default function ChatOrderDrawer({
                     <button 
                         type="button"
                         onClick={onClose}
-                        className="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer"
+                        className="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+                        aria-label="Close drawer"
                     >
                         <X size={16} />
                     </button>
@@ -78,7 +79,7 @@ export default function ChatOrderDrawer({
                         <button
                             type="button"
                             onClick={() => setActiveTab('order')}
-                            className={`flex-1 py-3 text-center transition ${
+                            className={`flex-1 py-3 min-h-[44px] flex items-center justify-center text-center transition ${
                                 activeTab === 'order'
                                     ? 'border-b-2 border-clay-600 text-clay-700 bg-clay-50/30'
                                     : 'text-stone-400 hover:text-stone-600'
@@ -90,7 +91,7 @@ export default function ChatOrderDrawer({
                     <button
                         type="button"
                         onClick={() => setActiveTab('profile')}
-                        className={`flex-1 py-3 text-center transition ${
+                        className={`flex-1 py-3 min-h-[44px] flex items-center justify-center text-center transition ${
                             activeTab === 'profile'
                                 ? 'border-b-2 border-clay-600 text-clay-700 bg-clay-50/30'
                                 : 'text-stone-400 hover:text-stone-600'
@@ -101,7 +102,7 @@ export default function ChatOrderDrawer({
                     <button
                         type="button"
                         onClick={() => setActiveTab('files')}
-                        className={`flex-1 py-3 text-center transition flex items-center justify-center gap-1 ${
+                        className={`flex-1 py-3 min-h-[44px] text-center transition flex items-center justify-center gap-1 ${
                             activeTab === 'files'
                                 ? 'border-b-2 border-clay-600 text-clay-700 bg-clay-50/30'
                                 : 'text-stone-400 hover:text-stone-600'

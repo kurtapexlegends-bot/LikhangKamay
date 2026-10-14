@@ -210,7 +210,7 @@ export default function MyListings({
                     extraActions={
                         <Link
                             href={route('products.index')}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-clay-600 px-3 py-2 sm:py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition min-h-[42px] sm:min-h-[38px] active:scale-95"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-clay-600 px-3 py-2 sm:py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition min-h-[44px] sm:min-h-[38px] active:scale-95"
                             title="Create new product or raw material"
                         >
                             <Plus size={13} />
@@ -410,7 +410,7 @@ export default function MyListings({
                                 <button
                                     type="button"
                                     onClick={() => openEditModal(product)}
-                                    className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-800 text-xs font-bold transition shadow-2xs cursor-pointer active:scale-95"
+                                    className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-800 text-xs font-bold transition shadow-2xs cursor-pointer active:scale-95 min-h-[44px]"
                                 >
                                     <Edit3 size={13} className="text-clay-600" />
                                     <span>Configure Wholesale</span>

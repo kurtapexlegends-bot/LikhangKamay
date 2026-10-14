@@ -34,7 +34,8 @@ export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuCl
                 <div className="flex min-w-0 items-center gap-2 sm:gap-3 flex-1">
                     <button
                         onClick={handleMenuClick}
-                        className="lg:hidden min-w-[40px] min-h-[40px] flex items-center justify-center text-gray-500 hover:text-clay-600 transition-all active:scale-95 shrink-0"
+                        aria-label="Open navigation menu"
+                        className="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-500 hover:text-clay-600 transition-all active:scale-95 shrink-0"
                     >
                         <Menu size={22} />
                     </button>

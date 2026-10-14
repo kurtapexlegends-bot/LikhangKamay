@@ -285,14 +285,14 @@ export default function TimeCardAudit({ auth, employee, summary, selectedMonth, 
                                 type="month"
                                 value={month}
                                 onChange={(e) => handleMonthChange(e.target.value)}
-                                className="rounded-xl border border-stone-200 bg-stone-50/70 px-3 py-1.5 text-xs font-bold text-stone-800 outline-none focus:border-clay-500 focus:bg-white transition shadow-2xs"
+                                className="rounded-xl border border-stone-200 bg-stone-50/70 px-3 py-2 text-xs font-bold text-stone-800 outline-none focus:border-clay-500 focus:bg-white transition shadow-2xs min-h-[44px]"
                             />
                         </div>
                         <Link
                             href={route('hr.index')}
-                            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl transition min-h-[32px]"
+                            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl transition min-h-[44px] active:scale-95 shadow-2xs"
                         >
-                            <ArrowLeft size={13} /> Back
+                            <ArrowLeft size={14} /> Back
                         </Link>
                     </div>
                 </div>

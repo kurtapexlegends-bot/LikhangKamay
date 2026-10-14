@@ -196,7 +196,7 @@ export default function StockRequestIndex({ auth, requests }) {
                             <div className="flex items-center gap-2">
                                 <Link
                                     href={route('seller.supply-hub.index')}
-                                    className="hidden sm:inline-flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 h-[38px] min-h-[38px] text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition shadow-2xs"
+                                    className="hidden sm:inline-flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 min-h-[44px] sm:min-h-[38px] text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition shadow-2xs"
                                     title="Browse Wholesale Supply Hub"
                                 >
                                     <Store size={14} className="text-clay-600" />
@@ -205,7 +205,7 @@ export default function StockRequestIndex({ auth, requests }) {
                                 {canEditStockRequests && (
                                     <Link 
                                         href={route('procurement.index')} 
-                                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 h-[38px] min-h-[38px] text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition active:scale-95"
+                                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 min-h-[44px] sm:min-h-[38px] text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition active:scale-95"
                                         title="Request stock from inventory"
                                     >
                                         <ShoppingBag size={13} />
