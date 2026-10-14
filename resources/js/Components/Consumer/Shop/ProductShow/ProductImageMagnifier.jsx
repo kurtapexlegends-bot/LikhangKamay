@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ZoomIn, ZoomOut } from 'lucide-react';
 
-export default function ProductImageMagnifier({ src, alt, id }) {
+export default function ProductImageMagnifier({ src, alt, id, onOpenLightbox }) {
     const [position, setPosition] = useState({ x: 50, y: 50 });
     const [isMagnifying, setIsMagnifying] = useState(false);
     const [zoomLevel, setZoomLevel] = useState(2.5);
+    const containerRef = useRef(null);
 
     const handleMouseMove = (e) => {
         if (!isMagnifying) return;
@@ -14,21 +15,36 @@ export default function ProductImageMagnifier({ src, alt, id }) {
         setPosition({ x, y });
     };
 
-    const handleWheel = (e) => {
-        if (!isMagnifying) return;
-        e.preventDefault();
-        setZoomLevel(prev => {
-            const newZoom = prev - e.deltaY * 0.005;
-            return Math.min(Math.max(newZoom, 1.5), 5.0);
-        });
-    };
+    // Native non-passive wheel listener so e.preventDefault() prevents page scrolling during zoom
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container || !isMagnifying) return;
+
+        const onWheelNative = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setZoomLevel(prev => {
+                const newZoom = prev - e.deltaY * 0.005;
+                return Math.min(Math.max(newZoom, 1.5), 5.0);
+            });
+        };
+
+        container.addEventListener('wheel', onWheelNative, { passive: false });
+        return () => {
+            container.removeEventListener('wheel', onWheelNative);
+        };
+    }, [isMagnifying]);
 
     return (
         <div 
+            ref={containerRef}
             className={`w-full h-full relative overflow-hidden group ${isMagnifying ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
             onMouseMove={handleMouseMove}
-            onWheel={handleWheel}
             onClick={() => setIsMagnifying(!isMagnifying)}
+            onDoubleClick={(e) => {
+                e.stopPropagation();
+                onOpenLightbox?.();
+            }}
             onMouseLeave={() => setIsMagnifying(false)}
         >
             <img
@@ -44,14 +60,14 @@ export default function ProductImageMagnifier({ src, alt, id }) {
                 }}
             />
             {/* Overlay Hint */}
-            <div className={`absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg transition-opacity duration-300 flex items-center gap-1.5 ${isMagnifying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+            <div className={`absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg transition-opacity duration-300 flex items-center gap-2 ${isMagnifying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                 {isMagnifying ? (
                     <>
                         <ZoomOut size={12} /> Click to close • Scroll to zoom
                     </>
                 ) : (
                     <>
-                        <ZoomIn size={12} /> Click to magnify
+                        <ZoomIn size={12} /> Click to zoom
                     </>
                 )}
             </div>

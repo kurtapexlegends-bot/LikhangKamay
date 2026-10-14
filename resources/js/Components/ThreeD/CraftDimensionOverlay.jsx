@@ -17,9 +17,9 @@ export default function CraftDimensionOverlay({
 }) {
     if (!isOpen) return null;
 
-    const resolvedHeight = Math.max(Number(height) || 22, 4);
-    const resolvedWidth = Math.max(Number(width) || 16, 4);
-    const resolvedDepth = Math.max(Number(depth) || Math.round(resolvedWidth * 0.85), 3);
+    const resolvedHeight = Math.min(Math.max(Number(height) || 22, 1), 200);
+    const resolvedWidth = Math.min(Math.max(Number(width) || 16, 1), 200);
+    const resolvedDepth = Math.min(Math.max(Number(depth) || Math.round(resolvedWidth * 0.85), 1), 200);
 
     const formatDim = (valCm) => {
         if (unit === 'in') {
@@ -64,30 +64,30 @@ export default function CraftDimensionOverlay({
         <div className="absolute inset-0 pointer-events-none z-20 flex flex-col justify-between p-2 sm:p-3 select-none">
             {/* Unified Sleek Top Bar */}
             <div className="flex items-center justify-between gap-2 pointer-events-auto">
-                <div className="flex items-center gap-2 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-stone-900/90 backdrop-blur-md text-stone-200 border border-stone-800 shadow-md text-xs font-bold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                    <span>Scale Reference</span>
-                    <span className="text-[10px] text-stone-400 font-normal truncate max-w-[110px] sm:max-w-xs">
-                        ({productName})
-                    </span>
+                <div 
+                    className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-stone-900/90 backdrop-blur-md text-stone-200 border border-stone-800 shadow-md text-xs font-bold min-w-0 shrink"
+                    title={`Scale reference for ${productName}`}
+                >
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                    <span className="truncate">Scale Reference</span>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                     {/* Launch Full 2D Height Chart Modal */}
                     {onOpenHeightChart && (
                         <button
                             type="button"
                             onClick={onOpenHeightChart}
-                            className="flex items-center gap-1.5 px-2.5 py-1 sm:py-1.5 rounded-xl bg-stone-850 hover:bg-stone-800 text-stone-200 hover:text-white border border-stone-700/80 text-xs font-bold transition shadow-sm cursor-pointer"
+                            className="flex items-center gap-1 px-2.5 py-1 sm:py-1.5 rounded-xl bg-stone-850 hover:bg-stone-800 text-stone-200 hover:text-white border border-stone-700/80 text-xs font-bold transition shadow-sm cursor-pointer shrink-0 min-h-[32px]"
                             title="Open full human height comparison chart"
                         >
-                            <Ruler size={12} className="text-amber-400" />
-                            <span className="hidden sm:inline">Height Chart</span>
+                            <Ruler size={13} className="text-amber-400 shrink-0" />
+                            <span className="hidden xl:inline">Height Chart</span>
                         </button>
                     )}
 
                     {/* Unit Toggle */}
-                    <div className="flex items-center bg-stone-900/90 backdrop-blur-md p-0.5 rounded-xl border border-stone-800 shadow-sm text-xs">
+                    <div className="flex items-center bg-stone-900/90 backdrop-blur-md p-0.5 rounded-xl border border-stone-800 shadow-sm text-xs shrink-0">
                         <button
                             type="button"
                             onClick={() => onToggleUnit?.('cm')}
@@ -112,7 +112,7 @@ export default function CraftDimensionOverlay({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="p-1.5 rounded-xl bg-stone-900/90 backdrop-blur-md text-stone-400 hover:text-white border border-stone-800 shadow-sm transition cursor-pointer"
+                        className="p-1.5 rounded-xl bg-stone-900/90 backdrop-blur-md text-stone-400 hover:text-white border border-stone-800 shadow-sm transition cursor-pointer shrink-0 min-h-[32px] min-w-[32px] flex items-center justify-center"
                         title="Close scale reference"
                     >
                         <X size={14} />

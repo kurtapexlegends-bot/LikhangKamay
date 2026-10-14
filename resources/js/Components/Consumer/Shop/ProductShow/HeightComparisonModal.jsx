@@ -4,6 +4,93 @@ import { X, Ruler, Sparkles, RefreshCw, MoveHorizontal, ArrowUpRight } from 'luc
 
 const MAX_CHART_HEIGHT_CM = 220; // 220 cm scale covers up to 7ft 2in
 
+function CraftSilhouette({ category = '', productName = '', width = 16, height = 22 }) {
+    const text = `${category} ${productName}`.toLowerCase();
+    const aspectRatio = Number(width) / (Number(height) || 1);
+    
+    // 1. Drinkware (cups, mugs, espresso, tumblers)
+    if (text.includes('cup') || text.includes('mug') || text.includes('espresso') || text.includes('drinkware') || text.includes('tumbler')) {
+        return (
+            <svg viewBox="0 0 100 120" preserveAspectRatio="none" className="w-full h-full drop-shadow-lg" fill="none">
+                <path
+                    d="M 18 10 L 82 10 C 80 50, 76 98, 70 114 C 68 118, 32 118, 30 114 C 24 98, 20 50, 18 10 Z"
+                    fill="#b45309"
+                    stroke="#d97706"
+                    strokeWidth="3"
+                />
+                <path
+                    d="M 80 28 C 98 28, 98 80, 74 80"
+                    stroke="#d97706"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    fill="none"
+                />
+            </svg>
+        );
+    }
+
+    // 2. Planters & Pots / Bowls / Tableware / Trays
+    if (text.includes('planter') || text.includes('pot') || text.includes('bowl') || text.includes('tableware') || text.includes('plate') || text.includes('dish') || text.includes('tray')) {
+        return (
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full drop-shadow-lg" fill="none">
+                <path
+                    d="M 8 12 L 92 12 C 92 18, 86 24, 82 40 C 76 75, 70 94, 65 96 C 63 98, 37 98, 35 96 C 30 94, 24 75, 18 40 C 14 24, 8 18, 8 12 Z"
+                    fill="#b45309"
+                    stroke="#d97706"
+                    strokeWidth="3"
+                />
+            </svg>
+        );
+    }
+
+    // 3. Bags / Baskets / Weaving
+    if (text.includes('bag') || text.includes('basket') || text.includes('tote') || text.includes('bayong') || text.includes('weaving')) {
+        return (
+            <svg viewBox="0 0 100 120" preserveAspectRatio="none" className="w-full h-full drop-shadow-lg" fill="none">
+                <path
+                    d="M 32 30 C 32 6, 68 6, 68 30"
+                    stroke="#d97706"
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    fill="none"
+                />
+                <path
+                    d="M 15 30 L 85 30 L 76 112 C 75 116, 25 116, 24 112 Z"
+                    fill="#b45309"
+                    stroke="#d97706"
+                    strokeWidth="3"
+                />
+            </svg>
+        );
+    }
+
+    // 4. Wide Craft Fallback (Trays, charcuterie boards, shallow dishes when aspect ratio is wide)
+    if (aspectRatio > 1.6) {
+        return (
+            <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="w-full h-full drop-shadow-lg" fill="none">
+                <path
+                    d="M 6 15 L 94 15 C 92 35, 88 52, 80 56 C 76 58, 24 58, 20 56 C 12 52, 8 35, 6 15 Z"
+                    fill="#b45309"
+                    stroke="#d97706"
+                    strokeWidth="3"
+                />
+            </svg>
+        );
+    }
+
+    // 5. Default Fallback: Classic Artisanal Pottery Vessel
+    return (
+        <svg viewBox="0 0 100 120" preserveAspectRatio="none" className="w-full h-full drop-shadow-lg" fill="none">
+            <path
+                d="M 38 4 C 42 2, 58 2, 62 4 C 64 8, 62 18, 58 22 C 78 35, 88 75, 82 108 C 80 116, 20 116, 18 108 C 12 75, 22 35, 42 22 C 38 18, 36 8, 38 4 Z"
+                fill="#b45309"
+                stroke="#d97706"
+                strokeWidth="2.5"
+            />
+        </svg>
+    );
+}
+
 function HeightComparisonContent({
     onClose = () => {},
     productName = 'Craft Piece',
@@ -11,8 +98,8 @@ function HeightComparisonContent({
     initialWidth = 16,
     category = 'Craft'
 }) {
-    const baseHeight = Math.max(Number(initialHeight) || 22, 2);
-    const baseWidth = Math.max(Number(initialWidth) || 16, 2);
+    const baseHeight = Math.min(Math.max(Number(initialHeight) || 22, 1), 200);
+    const baseWidth = Math.min(Math.max(Number(initialWidth) || 16, 1), 200);
 
     const [testHeight, setTestHeight] = useState(baseHeight);
     const [testWidth, setTestWidth] = useState(baseWidth);
@@ -98,46 +185,46 @@ function HeightComparisonContent({
     return (
         <div className="flex flex-col w-full text-stone-100">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-stone-800 bg-stone-950/70">
-                <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-3.5 border-b border-stone-800 bg-stone-950/70 gap-2">
+                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 mr-1">
                     <div className="w-8 h-8 rounded-xl bg-clay-500/10 border border-clay-500/30 flex items-center justify-center text-clay-400 shrink-0">
                         <Ruler size={16} />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                            <h3 className="text-sm sm:text-base font-bold text-white tracking-wide">
+                            <h3 className="text-xs sm:text-base font-bold text-white tracking-wide truncate">
                                 Real-Life Scale & Height Comparison
                             </h3>
-                            <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-stone-800 text-[10px] font-semibold text-stone-300 border border-stone-700">
+                            <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-stone-800 text-[10px] font-semibold text-stone-300 border border-stone-700 shrink-0">
                                 {category}
                             </span>
                         </div>
-                        <p className="text-[11px] text-stone-400 truncate max-w-xs sm:max-w-md">
+                        <p className="text-[10px] sm:text-[11px] text-stone-400 truncate">
                             {productName} compared against an adult human and everyday benchmarks
                         </p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                     {/* Unit Switcher */}
-                    <div className="flex items-center bg-stone-800/90 p-0.5 rounded-xl border border-stone-700/80 text-xs">
+                    <div className="flex items-center bg-stone-800/90 p-0.5 rounded-xl border border-stone-700/80 text-xs shrink-0">
                         <button
                             type="button"
                             onClick={() => setUnit('cm')}
-                            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                            className={`px-1.5 sm:px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
                                 unit === 'cm' ? 'bg-clay-600 text-white shadow-xs' : 'text-stone-400 hover:text-white'
                             }`}
                         >
-                            Metric (CM)
+                            <span className="hidden sm:inline">Metric </span>(CM)
                         </button>
                         <button
                             type="button"
                             onClick={() => setUnit('in')}
-                            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                            className={`px-1.5 sm:px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
                                 unit === 'in' ? 'bg-clay-600 text-white shadow-xs' : 'text-stone-400 hover:text-white'
                             }`}
                         >
-                            Imperial (IN)
+                            <span className="hidden sm:inline">Imperial </span>(IN)
                         </button>
                     </div>
 
@@ -145,7 +232,7 @@ function HeightComparisonContent({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="p-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-white transition cursor-pointer"
+                        className="p-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-white transition cursor-pointer shrink-0"
                         aria-label="Close"
                     >
                         <X size={18} />
@@ -357,14 +444,7 @@ function HeightComparisonContent({
                                             </div>
 
                                             {/* Craft Silhouette */}
-                                            <svg viewBox="0 0 100 120" className="w-full h-full drop-shadow-lg" fill="none">
-                                                <path
-                                                    d="M 38 4 C 42 2, 58 2, 62 4 C 64 8, 62 18, 58 22 C 78 35, 88 75, 82 108 C 80 116, 20 116, 18 108 C 12 75, 22 35, 42 22 C 38 18, 36 8, 38 4 Z"
-                                                    fill="#b45309"
-                                                    stroke="#d97706"
-                                                    strokeWidth="2"
-                                                />
-                                            </svg>
+                                            <CraftSilhouette category={category} productName={productName} width={testWidth} height={testHeight} />
                                         </div>
                                     )}
                                 </div>
@@ -392,14 +472,7 @@ function HeightComparisonContent({
                                     </div>
 
                                     {/* Craft Silhouette */}
-                                    <svg viewBox="0 0 100 120" className="w-full h-full drop-shadow-xl" fill="none">
-                                        <path
-                                            d="M 38 4 C 42 2, 58 2, 62 4 C 64 8, 62 18, 58 22 C 78 35, 88 75, 82 108 C 80 116, 20 116, 18 108 C 12 75, 22 35, 42 22 C 38 18, 36 8, 38 4 Z"
-                                            fill="#b45309"
-                                            stroke="#d97706"
-                                            strokeWidth="2"
-                                        />
-                                    </svg>
+                                    <CraftSilhouette category={category} productName={productName} width={testWidth} height={testHeight} />
 
                                     <span className="absolute -bottom-5 text-[9px] font-bold text-clay-300 truncate max-w-[120px] text-center">
                                         {productName}
@@ -461,7 +534,7 @@ function HeightComparisonContent({
                         </div>
                         <input
                             type="range"
-                            min="5"
+                            min="1"
                             max="200"
                             value={testHeight}
                             onChange={(e) => setTestHeight(Number(e.target.value))}
@@ -482,8 +555,8 @@ function HeightComparisonContent({
                         </div>
                         <input
                             type="range"
-                            min="5"
-                            max="150"
+                            min="1"
+                            max="200"
                             value={testWidth}
                             onChange={(e) => setTestWidth(Number(e.target.value))}
                             className="w-full accent-clay-500 cursor-pointer h-1.5 bg-stone-750 rounded-lg"

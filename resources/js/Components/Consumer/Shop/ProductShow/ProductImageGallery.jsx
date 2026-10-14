@@ -1,6 +1,7 @@
-import React, { lazy, Suspense, useRef, useEffect } from 'react';
-import { Image as ImageIcon, Box, Flag, Heart, Loader2 } from 'lucide-react';
+import React, { lazy, Suspense, useRef, useEffect, useState } from 'react';
+import { Image as ImageIcon, Box, Flag, Heart, Loader2, Maximize2 } from 'lucide-react';
 import ProductImageMagnifier from './ProductImageMagnifier';
+import ProductImageLightboxModal from './ProductImageLightboxModal';
 import { ThreeDModelBoundary, ThreeDModelUnavailable } from '@/Components/ThreeD/ThreeDModelBoundary';
 
 const ProductViewer3D = lazy(() => import('@/Components/ThreeD/ProductViewer3D'));
@@ -19,6 +20,9 @@ export default function ProductImageGallery({
     setIsReporting,
     onOpenHeightComparison,
 }) {
+    const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+    const [lightboxInitialMode, setLightboxInitialMode] = useState('image');
+    const [isScaleBenchmarkActive, setIsScaleBenchmarkActive] = useState(false);
     const scrollRef = useRef(null);
 
     const handleScroll = (e) => {
@@ -47,8 +51,25 @@ export default function ProductImageGallery({
 
     return (
         <div className="p-3.5 sm:p-4 lg:col-span-5 lg:border-r lg:border-gray-100">
-            {/* Main Image */}
+            {/* Main Image & 3D Container */}
             <div className="relative aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3">
+                {/* Expand / View Fullscreen Button (Active for 2D Photo Mode) */}
+                {viewMode === 'image' && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setLightboxInitialMode('image');
+                            setIsLightboxOpen(true);
+                        }}
+                        aria-label="Make picture bigger in fullscreen lightbox"
+                        title="Make picture bigger"
+                        className="absolute top-3 left-3 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-stone-900/80 hover:bg-stone-900 text-white text-xs font-bold backdrop-blur-md border border-white/10 shadow-md transition-all active:scale-95 cursor-pointer min-h-[38px] group"
+                    >
+                        <Maximize2 size={14} className="text-stone-300 group-hover:text-white transition-colors" />
+                        <span className="hidden sm:inline">Expand</span>
+                    </button>
+                )}
+
                 {viewMode === 'image' ? (
                     <>
                         {/* Desktop/Tablet View */}
@@ -57,6 +78,7 @@ export default function ProductImageGallery({
                                 id="main-product-image"
                                 src={gallery[activeImageIndex] || '/images/placeholder.svg'} 
                                 alt={product.name} 
+                                onOpenLightbox={() => setIsLightboxOpen(true)}
                             />
                         </div>
 
@@ -68,7 +90,14 @@ export default function ProductImageGallery({
                                 onScroll={handleScroll}
                             >
                                 {gallery.map((img, index) => (
-                                    <div key={index} className="w-full h-full shrink-0 snap-center">
+                                    <div 
+                                        key={index} 
+                                        className="w-full h-full shrink-0 snap-center cursor-pointer"
+                                        onClick={() => {
+                                            setActiveImageIndex(index);
+                                            setIsLightboxOpen(true);
+                                        }}
+                                    >
                                         <img 
                                             src={img} 
                                             alt={`${product.name} - image ${index + 1}`}
@@ -114,7 +143,24 @@ export default function ProductImageGallery({
                                     depth: product.depth
                                 }}
                                 onOpenHeightChart={onOpenHeightComparison}
+                                onScaleBenchmarkChange={setIsScaleBenchmarkActive}
                                 compact
+                                hideBadge
+                                topLeftAction={
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setLightboxInitialMode('3d');
+                                            setIsLightboxOpen(true);
+                                        }}
+                                        aria-label="Expand 3D interactive viewer in fullscreen"
+                                        title="Expand 3D view"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-stone-900/80 hover:bg-stone-900 text-white text-xs font-bold backdrop-blur-md border border-white/10 shadow-md transition-all active:scale-95 cursor-pointer min-h-[38px] group shrink-0"
+                                    >
+                                        <Maximize2 size={14} className="text-stone-300 group-hover:text-white transition-colors" />
+                                        <span className="hidden sm:inline">Expand 3D</span>
+                                    </button>
+                                }
                                 className="h-full rounded-none border-0 bg-gradient-to-b from-gray-50 to-white"
                             />
                         </Suspense>
@@ -122,8 +168,8 @@ export default function ProductImageGallery({
                 )}
 
                 {/* View Toggle */}
-                {product.has3D && (
-                    <div className="absolute top-3 right-3 flex bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                {product.has3D && (viewMode === 'image' || !isScaleBenchmarkActive) && (
+                    <div className="absolute top-3 right-3 z-10 flex bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <button
                             onClick={() => setViewMode('image')}
                             aria-label="Show product images"
@@ -206,6 +252,25 @@ export default function ProductImageGallery({
                     {wishlistLabel}
                 </button>
             </div>
+
+            {/* Full-Screen Photo & 3D Lightbox Modal */}
+            <ProductImageLightboxModal
+                isOpen={isLightboxOpen}
+                onClose={() => setIsLightboxOpen(false)}
+                productName={product.name}
+                gallery={gallery}
+                activeIndex={activeImageIndex}
+                onChangeIndex={setActiveImageIndex}
+                has3D={Boolean(product.has3D)}
+                modelUrl={product.model_3d_url || product.model_url}
+                dimensions={{
+                    height: product.height,
+                    width: product.width,
+                    depth: product.depth,
+                }}
+                onOpenHeightComparison={onOpenHeightComparison}
+                initialMode={lightboxInitialMode}
+            />
         </div>
     );
 }

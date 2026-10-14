@@ -115,6 +115,17 @@ export default function ProductDetailsCard({ product, productRating, onOpenHeigh
                             )}
                         </div>
                     )}
+                    {product.weight > 0 && (
+                        <div className="flex flex-col sm:flex-row sm:items-baseline">
+                            <span className="text-stone-400 font-bold uppercase tracking-wider mb-0.5 sm:w-24 sm:mb-0 text-[9px]">Weight</span>
+                            <span className="text-stone-700 font-bold truncate">
+                                {Number(product.weight) >= 1000 ? `${(Number(product.weight) / 1000).toFixed(1)} kg` : `${product.weight} g`}
+                                <span className="text-stone-400 text-[10px] font-normal ml-1">
+                                    ({(Number(product.weight) / 453.592).toFixed(1)} lbs)
+                                </span>
+                            </span>
+                        </div>
+                    )}
                     {product.firing_method && (
                         <div className="flex flex-col sm:flex-row sm:items-baseline">
                             <span className="text-stone-400 font-bold uppercase tracking-wider mb-0.5 sm:w-24 sm:mb-0 text-[9px]">Firing</span>

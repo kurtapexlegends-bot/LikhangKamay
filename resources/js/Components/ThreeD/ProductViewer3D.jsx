@@ -1,4 +1,4 @@
-/* eslint-disable react/no-unknown-property */
+/* eslint-disable react/no-unknown-property, react-hooks/immutability */
 import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Stage, Html, useProgress } from '@react-three/drei';
@@ -39,11 +39,19 @@ export default function ProductViewer3D({
     compact = false,
     className = '',
     dimensions = null,
-    onOpenHeightChart
+    onOpenHeightChart,
+    topLeftAction = null,
+    hideBadge = false,
+    onScaleBenchmarkChange = null
 }) {
     const [autoRotate, setAutoRotate] = useState(true);
     const [zoom, setZoom] = useState(1.0);
     const [showScaleBenchmark, setShowScaleBenchmark] = useState(false);
+    
+    // Notify parent when 3D scale benchmark overlay opens or closes
+    useEffect(() => {
+        onScaleBenchmarkChange?.(showScaleBenchmark);
+    }, [showScaleBenchmark, onScaleBenchmarkChange]);
     
     // Auto-select initial spatially optimal benchmark based on craft height
     const [benchmarkType, setBenchmarkType] = useState(() => getRecommendedBenchmarkId(dimensions?.height));
@@ -94,17 +102,20 @@ export default function ProductViewer3D({
         <div className={`relative bg-gradient-to-b from-gray-50 to-gray-100 rounded-2xl overflow-hidden ${hasCustomHeight ? '' : defaultHeightClass} ${className}`}>
             {!showScaleBenchmark && (
                 <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
-                    <div className="bg-white/90 backdrop-blur px-2.5 py-1 rounded-full border border-gray-200 text-[10px] font-bold text-clay-600 flex items-center gap-1.5 shadow-sm uppercase tracking-wide">
-                        <Box size={12} /> 3D View
-                    </div>
+                    {topLeftAction}
+                    {!hideBadge && (
+                        <div className="bg-white/90 backdrop-blur px-2.5 py-1.5 rounded-xl border border-gray-200 text-[10px] font-bold text-clay-600 flex items-center gap-1.5 shadow-xs uppercase tracking-wide min-h-[38px]">
+                            <Box size={13} /> 3D View
+                        </div>
+                    )}
                     <button
                         type="button"
                         onClick={() => setShowScaleBenchmark(true)}
-                        className="px-2.5 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1.5 transition shadow-sm cursor-pointer bg-white/90 backdrop-blur text-stone-700 border-gray-200 hover:bg-white"
+                        className="px-2.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition shadow-xs cursor-pointer bg-white/90 backdrop-blur text-stone-700 border-gray-200 hover:bg-white active:scale-95 min-h-[38px] shrink-0"
                         title="Compare with Real-Life Benchmark"
                     >
-                        <Sparkles size={11} className="text-amber-500" />
-                        <span>Real-Life Scale</span>
+                        <Sparkles size={13} className="text-amber-500" />
+                        <span className="hidden sm:inline">Real-Life Scale</span>
                     </button>
                 </div>
             )}
