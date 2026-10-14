@@ -76,7 +76,7 @@ export default function ProductFormModal({
                             const currentIndex = tabs.indexOf(activeFormTab);
                             setActiveFormTab(tabs[currentIndex + 1]);
                         } else {
-                            submitProduct(e);
+                            submitProduct(e, "Active");
                         }
                     }
                 }}
@@ -217,15 +217,27 @@ export default function ProductFormModal({
                             </button>
                         )}
 
+                        <button
+                            type="button"
+                            onClick={(e) => submitProduct(e, "Draft")}
+                            disabled={!canEditProducts || processing}
+                            className="px-5 py-2.5 border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 rounded-xl text-sm font-bold transition min-h-[44px] sm:min-h-0 disabled:opacity-50"
+                        >
+                            Save as Draft
+                        </button>
+
                         {activeFormTab === "Media" ? (
                             <PrimaryButton
-                                type="submit"
+                                type="button"
+                                onClick={(e) => submitProduct(e, "Active")}
                                 className="px-8 py-2.5 rounded-xl shadow-lg shadow-clay-500/20 min-h-[44px] sm:min-h-0 justify-center"
                                 disabled={!canEditProducts || processing}
                             >
                                 {processing
                                     ? "Saving..."
-                                    : data.id
+                                    : data.status === "rejected" || data.status === "flagged"
+                                    ? "Resubmit for Review"
+                                    : data.id && (data.status === "Active" || data.status === "pending_review")
                                     ? "Save Changes"
                                     : "Publish Product"}
                             </PrimaryButton>

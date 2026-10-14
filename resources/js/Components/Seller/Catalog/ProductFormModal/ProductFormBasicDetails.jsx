@@ -55,7 +55,7 @@ export default function ProductFormBasicDetails({
                     />
                 </div>
 
-                <div>
+                <div className={data.id ? "" : "md:col-span-2"}>
                     <InputLabel value="Category *" />
                     <select
                         className={modalSelectClass}
@@ -77,10 +77,13 @@ export default function ProductFormBasicDetails({
                     <InputError message={errors.category} className="mt-2" />
                 </div>
 
-                <div>
-                    <InputLabel value="Status" />
+                {data.id && (
+                    <div>
+                        <InputLabel value="Status" />
                     {(() => {
                         const isAlreadyActive = selectedProduct?.status === "Active";
+                        const isPending = selectedProduct?.status === "pending_review";
+                        const isRejected = selectedProduct?.status === "rejected" || selectedProduct?.status === "flagged";
                         const isOverPlanLimit = !isAlreadyActive && Boolean(subscription && subscription.limit && (subscription.activeCount >= subscription.limit));
                         const cannotBeActive = !activationReadiness.canActivate || isOverPlanLimit;
 
@@ -92,32 +95,46 @@ export default function ProductFormBasicDetails({
                                     value={data.status}
                                     onChange={(e) => handleStatusChange(e.target.value)}
                                 >
-                                    <option value="Active" disabled={cannotBeActive}>
-                                        {isOverPlanLimit
-                                            ? "Active (Plan limit reached)"
-                                            : !activationReadiness.canActivate
-                                            ? "Active (Missing required media)"
-                                            : "Active"}
+                                    {/* If currently under admin review */}
+                                    {isPending && (
+                                        <option value="pending_review">Pending Review (Under Moderation)</option>
+                                    )}
+
+                                    {/* If already approved and live */}
+                                    {isAlreadyActive && (
+                                        <option value="Active">Active (Live in Shop)</option>
+                                    )}
+
+                                    {/* If in draft or archived, allow submitting for review */}
+                                    {!isAlreadyActive && !isPending && !isRejected && (
+                                        <option value="Active" disabled={cannotBeActive}>
+                                            {isOverPlanLimit
+                                                ? "Submit for Review (Plan limit reached)"
+                                                : !activationReadiness.canActivate
+                                                ? "Submit for Review (Missing required media)"
+                                                : "Submit for Review"}
+                                        </option>
+                                    )}
+
+                                    {/* If rejected / needs revision */}
+                                    {isRejected && (
+                                        <option value={selectedProduct.status}>
+                                            {selectedProduct.status === "rejected" ? "Needs Revision" : "Flagged"}
+                                        </option>
+                                    )}
+
+                                    <option value="Draft">
+                                        {isPending ? "Withdraw to Draft" : "Draft"}
                                     </option>
-                                    <option value="Draft">Draft</option>
                                     <option value="Archived">Archived</option>
-                                    {data.status === "pending_review" && (
-                                        <option value="pending_review">Pending Review</option>
-                                    )}
-                                    {data.status === "rejected" && (
-                                        <option value="rejected">Needs Revision</option>
-                                    )}
-                                    {data.status === "flagged" && (
-                                        <option value="flagged">Flagged</option>
-                                    )}
                                 </select>
 
-                                {/* Explanatory notification when Active cannot be selected */}
-                                {cannotBeActive && data.status !== "Active" && (
+                                {/* Explanatory notification when Submit for Review cannot be selected */}
+                                {!isPending && !isRejected && cannotBeActive && data.status !== "Active" && (
                                     <div className="mt-2.5 rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-900 space-y-1.5 animate-fadeIn">
                                         <div className="flex items-center gap-1.5 font-bold text-amber-900">
                                             <AlertCircle size={14} className="shrink-0 text-amber-600" />
-                                            <span>Why can't this product be active?</span>
+                                            <span>Why can't this product be submitted?</span>
                                         </div>
                                         <ul className="list-disc list-inside space-y-1 text-[11px] text-amber-800/90 pl-0.5 font-medium">
                                             {!activationReadiness.canActivate && (
@@ -150,17 +167,11 @@ export default function ProductFormBasicDetails({
                                     </div>
                                 )}
 
-                                {data.status === "Active" && (
-                                    <div className={`mt-2 rounded-xl border px-3 py-2 flex items-center gap-2 ${activationReadiness.canActivate ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
-                                        {activationReadiness.canActivate ? (
-                                            <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
-                                        ) : (
-                                            <AlertCircle size={15} className="text-amber-600 shrink-0" />
-                                        )}
-                                        <p className={`text-[11px] font-bold ${activationReadiness.canActivate ? "text-emerald-700" : "text-amber-700"}`}>
-                                            {activationReadiness.canActivate
-                                                ? "Ready for Active listing"
-                                                : `Missing for Active: ${activationReadiness.missingLabels.join(", ")}`}
+                                {data.status === "Active" && isAlreadyActive && (
+                                    <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 flex items-center gap-2">
+                                        <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                                        <p className="text-[11px] font-bold text-emerald-700">
+                                            Live on marketplace
                                         </p>
                                     </div>
                                 )}
@@ -193,6 +204,7 @@ export default function ProductFormBasicDetails({
                         </div>
                     )}
                 </div>
+                )}
 
                 <div className="md:col-span-2 border-t border-gray-100 pt-6 mt-2">
                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">

@@ -58,6 +58,7 @@ Webhooks from the Lalamove API dispatch events that update the `status` of `Orde
 *   [CourierAddressResolver.php](file:///c:/laragon/www/LikhangKamay/app/Support/CourierAddressResolver.php): Helper class resolving address details to Lalamove location payload structures.
 
 ### Logistics Domain Services
+*   [VehicleTypeResolver.php](file:///c:/laragon/www/LikhangKamay/app/Services/VehicleTypeResolver.php): Dynamically resolves courier vehicle tiers (Motorcycle, Sedan, MPV, Van) based on aggregate order dimensions, weight (grams for retail crafts, kg for wholesale supplies), and volumetric cubic thresholds.
 *   [OrderLogisticsService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OrderLogisticsService.php): Manages quotation requests, driver dispatch requests, and cancellation refunds.
 *   [CheckoutShippingService.php](file:///c:/laragon/www/LikhangKamay/app/Services/CheckoutShippingService.php): Computes and validates courier fees on checkout.
 *   [PickupScheduleService.php](file:///c:/laragon/www/LikhangKamay/app/Services/PickupScheduleService.php): Resolves effective pickup slots, operating days, and booking availability across multi-workshop artisan locations with defensive fallback handling.

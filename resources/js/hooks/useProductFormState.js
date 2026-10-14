@@ -274,27 +274,25 @@ export default function useProductFormState({
     };
 
     useEffect(() => {
-        if (!activationReadiness.canActivate && data.status === "Active") {
-            setData("status", "Draft");
-        }
-    }, [data.status, activationReadiness.canActivate]);
-
-    useEffect(() => {
         return () => cleanupPreviews();
     }, []);
 
-    const submitProduct = async (e) => {
-        e.preventDefault();
+    const submitProduct = async (e, targetStatus = null) => {
+        if (e && typeof e.preventDefault === "function") {
+            e.preventDefault();
+        }
         if (!canEditProducts) return;
 
-        if (data.status === "Active" && !activationReadiness.canActivate) {
+        const effectiveStatus = targetStatus || (data.id ? (data.status || "Active") : (activationReadiness.canActivate ? "Active" : "Draft"));
+
+        if (effectiveStatus === "Active" && !activationReadiness.canActivate) {
             setActiveFormTab("Media");
-            addToast(`Active products require ${activationReadiness.missingLabels.join(", ")}.`, "error");
+            addToast(`Active listing requires ${activationReadiness.missingLabels.join(", ")}. Save as Draft or upload required media.`, "error");
             return;
         }
 
-        const isAddingNewActive = !data.id && data.status === "Active";
-        const isActivatingExisting = data.id && selectedProduct?.status !== "Active" && data.status === "Active";
+        const isAddingNewActive = !data.id && effectiveStatus === "Active";
+        const isActivatingExisting = data.id && selectedProduct?.status !== "Active" && effectiveStatus === "Active";
 
         if ((isAddingNewActive || isActivatingExisting) && subscription?.activeCount >= subscription?.limit) {
             setLimitModalOpen(true);
@@ -348,6 +346,7 @@ export default function useProductFormState({
         // 3. Transform Inertia payload to lightened payload for Vercel 4.5MB limit
         productForm.transform((currentData) => ({
             ...currentData,
+            status: effectiveStatus,
             cover_photo: compressedCover,
             gallery: compressedGallery,
             model_3d: model3dKeyOrFile,
@@ -367,13 +366,15 @@ export default function useProductFormState({
                 } else {
                     addToast("Failed to save product. Please check the form for errors.", "error");
                 }
-                const essentialsKeys = ["name", "category", "price", "stock"];
-                const detailsKeys = ["clay_type", "glaze_type"];
-                const mediaKeys = ["cover_photo", "model_3d"];
+                const essentialsKeys = ["sku", "name", "category", "price", "cost_price", "stock", "status", "description"];
+                const detailsKeys = ["clay_type", "glaze_type", "firing_method", "colors", "food_safe", "height", "width", "weight", "lead_time"];
+                const productionKeys = ["production_method", "recipes"];
+                const mediaKeys = ["cover_photo", "gallery", "model_3d"];
 
                 if (essentialsKeys.some((k) => err[k])) setActiveFormTab("Essentials");
                 else if (detailsKeys.some((k) => err[k])) setActiveFormTab("Details");
-                else if (mediaKeys.some((k) => err[k])) setActiveFormTab("Media");
+                else if (productionKeys.some((k) => err[k] || Object.keys(err).some((ek) => ek.startsWith("recipes.")))) setActiveFormTab("Production");
+                else if (mediaKeys.some((k) => err[k] || Object.keys(err).some((ek) => ek.startsWith("gallery.")))) setActiveFormTab("Media");
             },
             forceFormData: true,
         };

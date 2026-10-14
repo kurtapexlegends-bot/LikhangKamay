@@ -13,11 +13,16 @@ This document details the core Laravel Eloquent models, their database relations
 ### Key Attributes
 *   `sku` (string, unique product identification)
 *   `name`, `slug` (auto-generated from name on creation)
-*   `status` (Active, pending_review, Draft)
+*   `status` (Active, pending_review, Draft, rejected, flagged, Archived)
 *   `stock` (current inventory count)
 *   `sold` (lifetime item sales count)
 *   `price`, `cost_price` (currency amount values)
+*   `height`, `width` (numeric dimensions in cm, min 0.1, max 200)
+*   `weight` (numeric mass in grams for retail crafts, min 1, max 100,000 / 100 kg)
 *   `model_3d_path` (path to glb/gltf asset file)
+
+### Form Requests
+*   [StoreProductRequest.php](file:///c:/laragon/www/LikhangKamay/app/Http/Requests/Seller/StoreProductRequest.php), [UpdateProductRequest.php](file:///c:/laragon/www/LikhangKamay/app/Http/Requests/Seller/UpdateProductRequest.php): Enforce dimensional boundaries (0.1–200 cm), weight bounds (1–100,000 g), required media checks, tier quotas, and BOM tracking permission gates.
 
 ### Core Rules & Hooks
 1.  **3D Model Requirement**: Active seller products must have a registered 3D model path (`model_3d_path`), otherwise they are forced to `Draft` status.
