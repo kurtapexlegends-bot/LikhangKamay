@@ -41,9 +41,9 @@ class StoreProductRequest extends FormRequest
             'glaze_type' => ['nullable', 'string', 'max:100'],
             'firing_method' => ['nullable', 'string', 'max:100'],
             'colors' => ['nullable', 'array'],
-            'height' => ['nullable', 'numeric', 'min:0'],
-            'width' => ['nullable', 'numeric', 'min:0'],
-            'weight' => ['nullable', 'numeric', 'min:0'],
+            'height' => ['nullable', 'numeric', 'min:0.1', 'max:200'],
+            'width' => ['nullable', 'numeric', 'min:0.1', 'max:200'],
+            'weight' => ['nullable', 'numeric', 'min:1', 'max:100000'],
             'lead_time' => ['nullable', 'integer', 'min:0'],
             'status' => ['required', 'string'],
             'production_method' => ['nullable', 'string', 'in:resell,manufactured'],
@@ -55,6 +55,18 @@ class StoreProductRequest extends FormRequest
             'gallery.*' => ['nullable', 'image', 'max:4096'],
             'model_3d' => $threeDAssetService->getUploadRules(),
             ...$threeDAssetService->getAssetRules(),
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'height.min' => 'Product height must be at least 0.1 cm.',
+            'height.max' => 'Product height cannot exceed 200 cm (standard courier and doorway limit).',
+            'width.min' => 'Product width must be at least 0.1 cm.',
+            'width.max' => 'Product width cannot exceed 200 cm (standard courier and doorway limit).',
+            'weight.min' => 'Product weight must be at least 1 gram.',
+            'weight.max' => 'Product weight cannot exceed 100,000 grams (100 kg courier limit).',
         ];
     }
 

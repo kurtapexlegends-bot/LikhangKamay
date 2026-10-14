@@ -192,7 +192,7 @@ export default function InHouseDriverSelector({
                                                 {item.name || item.product_name}
                                                 {item.weight && (
                                                     <span className="text-[10px] text-stone-400 ml-1">
-                                                        ({Number(item.weight).toFixed(1)} kg)
+                                                        ({item.is_b2b_supply ? `${Number(item.weight).toFixed(1)} kg` : (Number(item.weight) >= 1000 ? `${(Number(item.weight) / 1000).toFixed(1)} kg` : `${Number(item.weight)} g`)})
                                                     </span>
                                                 )}
                                             </span>

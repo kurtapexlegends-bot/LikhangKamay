@@ -107,9 +107,15 @@ export default function DispatchOrderModal({
         }
         let raw = 0;
         items.forEach((it) => {
-            const w = Number(it.weight ?? (it.is_b2b_supply ? 2.5 : 1.0));
+            const rawWeight = Number(it.weight);
+            let itemWeightKg;
+            if (!isNaN(rawWeight) && rawWeight > 0) {
+                itemWeightKg = it.is_b2b_supply ? rawWeight : (rawWeight > 100 ? rawWeight / 1000.0 : rawWeight / 1000.0);
+            } else {
+                itemWeightKg = it.is_b2b_supply ? 2.5 : 1.0;
+            }
             const q = Number(it.qty ?? it.quantity ?? 1);
-            raw += w * q;
+            raw += itemWeightKg * q;
         });
         return Math.max(0.5, Math.round(raw * 1.1 * 10) / 10);
     })();

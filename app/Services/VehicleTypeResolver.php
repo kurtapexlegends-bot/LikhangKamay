@@ -74,11 +74,30 @@ class VehicleTypeResolver
             $product = $productId ? $productMap->get($productId) : null;
 
             $unitWeight = null;
+            $isB2B = (bool) (
+                (is_array($item) ? ($item['is_b2b_supply'] ?? false) : ($item->is_b2b_supply ?? false))
+                || ($product && $product->is_b2b_supply)
+            );
 
             if (is_array($item) && isset($item['weight']) && is_numeric($item['weight']) && (float) $item['weight'] > 0) {
-                $unitWeight = (float) $item['weight'];
+                $rawWeight = (float) $item['weight'];
+                // When callers pass weight > 100 on retail items, it is specified in grams.
+                $unitWeight = (!$isB2B && $rawWeight > 100) ? ($rawWeight / 1000.0) : $rawWeight;
             } elseif ($product && is_numeric($product->weight) && (float) $product->weight > 0) {
-                $unitWeight = (float) $product->weight;
+                $rawWeight = (float) $product->weight;
+                // Retail handcrafted products store weight in grams (e.g. 500g -> 0.5kg).
+                // B2B wholesale supplies store weight in kilograms directly.
+                if ($isB2B) {
+                    $unitWeight = $rawWeight;
+                } elseif ($rawWeight > 100) {
+                    $unitWeight = $rawWeight / 1000.0;
+                } elseif ($rawWeight < 1.0) {
+                    // Fractional float (e.g. 0.5 kg in test suites)
+                    $unitWeight = $rawWeight;
+                } else {
+                    // 1 to 100 grams for small artisan crafts (e.g. 25g earrings -> 0.025kg)
+                    $unitWeight = $rawWeight / 1000.0;
+                }
             }
 
             if ($unitWeight === null || $unitWeight <= 0) {

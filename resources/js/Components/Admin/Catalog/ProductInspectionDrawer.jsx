@@ -392,7 +392,7 @@ export default function ProductInspectionDrawer({
                             <div className="p-3.5 bg-stone-50/40 rounded-xl border border-stone-200/60">
                                 <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">Dimensions / Weight</p>
                                 <p className="text-xs font-bold text-stone-800 mt-1">
-                                    {product.height || product.width ? `${product.height || 0}x${product.width || 0} cm` : 'N/A'} {product.weight ? `(${product.weight} kg)` : ''}
+                                    {product.height || product.width ? `${product.height || 0}×${product.width || 0} cm` : 'N/A'} {product.weight ? `(${Number(product.weight) >= 1000 ? `${(Number(product.weight) / 1000).toFixed(1)} kg` : `${product.weight} g`})` : ''}
                                 </p>
                             </div>
                         </div>

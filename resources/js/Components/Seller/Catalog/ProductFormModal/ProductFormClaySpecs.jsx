@@ -85,46 +85,58 @@ export default function ProductFormClaySpecs({
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div>
-                        <InputLabel value="Height (cm)" />
+                        <div className="flex items-center justify-between">
+                            <InputLabel value="Height (cm)" />
+                            <span className="text-[11px] text-stone-400 font-medium">Max 200</span>
+                        </div>
                         <TextInput
                             type="number"
-                            min="0"
-                            step="any"
+                            min="0.1"
+                            max="200"
+                            step="0.1"
                             className={`${modalFieldClass} min-h-[44px] sm:min-h-0`}
                             value={data.height}
                             onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                             onChange={(e) => setData("height", e.target.value.replace(/-/g, ""))}
                             placeholder="0.00"
                         />
-                        <InputError message={errors?.height} className="mt-2" />
+                        <InputError message={errors?.height} className="mt-1" />
                     </div>
                     <div>
-                        <InputLabel value="Width (cm)" />
+                        <div className="flex items-center justify-between">
+                            <InputLabel value="Width (cm)" />
+                            <span className="text-[11px] text-stone-400 font-medium">Max 200</span>
+                        </div>
                         <TextInput
                             type="number"
-                            min="0"
-                            step="any"
+                            min="0.1"
+                            max="200"
+                            step="0.1"
                             className={`${modalFieldClass} min-h-[44px] sm:min-h-0`}
                             value={data.width}
                             onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                             onChange={(e) => setData("width", e.target.value.replace(/-/g, ""))}
                             placeholder="0.00"
                         />
-                        <InputError message={errors?.width} className="mt-2" />
+                        <InputError message={errors?.width} className="mt-1" />
                     </div>
                     <div>
-                        <InputLabel value="Weight (g)" />
+                        <div className="flex items-center justify-between">
+                            <InputLabel value="Weight (g)" />
+                            <span className="text-[11px] text-stone-400 font-medium">Max 100 kg</span>
+                        </div>
                         <TextInput
                             type="number"
-                            min="0"
-                            step="any"
+                            min="1"
+                            max="100000"
+                            step="1"
                             className={`${modalFieldClass} min-h-[44px] sm:min-h-0`}
                             value={data.weight}
                             onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                             onChange={(e) => setData("weight", e.target.value.replace(/-/g, ""))}
                             placeholder="0"
                         />
-                        <InputError message={errors?.weight} className="mt-2" />
+                        <InputError message={errors?.weight} className="mt-1" />
                     </div>
                 </div>
             </div>
