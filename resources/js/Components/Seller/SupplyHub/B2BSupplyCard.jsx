@@ -174,47 +174,49 @@ function B2BSupplyCard({
                     </div>
                 </div>
 
-                {/* Streamlined Single-Row Action Controls */}
-                <div className="pt-2 border-t border-stone-150 flex items-center gap-1 sm:gap-1.5">
-                    {/* Stepper */}
-                    <div className="flex items-center rounded-xl border border-stone-200 bg-stone-50/50 shrink-0 h-11 sm:h-[38px] min-h-[44px] sm:min-h-[38px]">
+                {/* Streamlined Action Controls */}
+                <div className="pt-2 border-t border-stone-150 flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-1">
+                        {/* Stepper */}
+                        <div className="flex-1 flex items-center justify-between rounded-xl border border-stone-200 bg-stone-50/50 shrink-0 h-10 sm:h-[38px] min-h-[40px] sm:min-h-[38px]">
+                            <button
+                                type="button"
+                                onClick={() => handleQtyChange(qty - 1)}
+                                disabled={qty <= minOrderQty}
+                                className="px-2.5 sm:px-2 min-w-[32px] sm:min-w-0 h-full text-stone-600 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition active:scale-95 flex items-center justify-center"
+                                aria-label="Decrease quantity"
+                            >
+                                <Minus size={11} />
+                            </button>
+                            <span className="px-1 text-xs font-bold text-stone-900 min-w-[18px] sm:min-w-[22px] text-center">{qty}</span>
+                            <button
+                                type="button"
+                                onClick={() => handleQtyChange(qty + 1)}
+                                disabled={qty >= (Number(item.stock) || 9999)}
+                                className="px-2.5 sm:px-2 min-w-[32px] sm:min-w-0 h-full text-stone-600 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition active:scale-95 flex items-center justify-center"
+                                aria-label="Increase quantity"
+                            >
+                                <Plus size={11} />
+                            </button>
+                        </div>
+
+                        {/* Cart Button */}
                         <button
                             type="button"
-                            onClick={() => handleQtyChange(qty - 1)}
-                            disabled={qty <= minOrderQty}
-                            className="px-2.5 sm:px-2 min-w-[34px] sm:min-w-0 h-full text-stone-600 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition active:scale-95 flex items-center justify-center"
-                            aria-label="Decrease quantity"
+                            onClick={() => onAddToCart && onAddToCart(item, qty)}
+                            className="h-10 w-10 sm:h-[38px] sm:w-[38px] min-h-[40px] min-w-[40px] sm:min-h-[38px] sm:min-w-[38px] flex items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-all shadow-2xs shrink-0 cursor-pointer active:scale-95"
+                            title="Add to Cart"
+                            aria-label="Add to cart"
                         >
-                            <Minus size={11} />
-                        </button>
-                        <span className="px-0.5 sm:px-1 text-[11px] sm:text-xs font-bold text-stone-900 min-w-[16px] sm:min-w-[22px] text-center">{qty}</span>
-                        <button
-                            type="button"
-                            onClick={() => handleQtyChange(qty + 1)}
-                            disabled={qty >= (Number(item.stock) || 9999)}
-                            className="px-2.5 sm:px-2 min-w-[34px] sm:min-w-0 h-full text-stone-600 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition active:scale-95 flex items-center justify-center"
-                            aria-label="Increase quantity"
-                        >
-                            <Plus size={11} />
+                            <ShoppingCart size={14} className="sm:w-3.5 sm:h-3.5" />
                         </button>
                     </div>
-
-                    {/* Cart Button */}
-                    <button
-                        type="button"
-                        onClick={() => onAddToCart && onAddToCart(item, qty)}
-                        className="h-11 w-11 sm:h-[38px] sm:w-[38px] min-h-[44px] min-w-[44px] sm:min-h-[38px] sm:min-w-[38px] flex items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-all shadow-2xs shrink-0 cursor-pointer active:scale-95"
-                        title="Add to Cart"
-                        aria-label="Add to cart"
-                    >
-                        <ShoppingCart size={14} className="sm:w-3.5 sm:h-3.5" />
-                    </button>
 
                     {/* Buy Button */}
                     <button
                         type="button"
                         onClick={handleQuickOrderClick}
-                        className="flex-1 h-11 sm:h-[38px] min-h-[44px] sm:min-h-[38px] flex items-center justify-center gap-1 rounded-xl bg-clay-600 px-2 sm:px-3 text-xs sm:text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-all min-w-0 cursor-pointer active:scale-95"
+                        className="w-full sm:w-auto sm:flex-1 h-10 sm:h-[38px] min-h-[40px] sm:min-h-[38px] flex items-center justify-center gap-1 rounded-xl bg-clay-600 px-3 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-all cursor-pointer active:scale-95"
                     >
                         <span>Order</span>
                         <ArrowUpRight size={13} className="sm:w-3.5 sm:h-3.5" />
