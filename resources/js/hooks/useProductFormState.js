@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useForm } from "@inertiajs/react";
 import useConstraintValidation from "@/hooks/useConstraintValidation";
-import { STANDARD_PRODUCT_CATEGORIES } from "@/utils/catalog";
 import { compressImage } from "@/utils/imageCompressor";
 import axios from "axios";
 
@@ -23,13 +22,12 @@ export default function useProductFormState({
     setSelectedResubmitProduct,
     setActiveFormTab,
 }) {
-    // Form setup for products
-    const productForm = useForm({
+    const getInitialProductData = (sku = "", category = defaultCategory) => ({
         id: null,
-        sku: "",
+        sku: sku || "",
         name: "",
         description: "",
-        category: defaultCategory,
+        category: category || defaultCategory,
         clay_type: "Stoneware",
         glaze_type: "Matte",
         firing_method: "Electric Kiln",
@@ -41,8 +39,9 @@ export default function useProductFormState({
         cost_price: "",
         stock: "",
         lead_time: 3,
-        status: "Active",
+        status: "Draft",
         cover_photo: null,
+        retained_gallery: [],
         gallery: [],
         model_3d: null,
         model_3d_assets: [],
@@ -52,6 +51,9 @@ export default function useProductFormState({
         recipes: [],
         track_as_supply: false,
     });
+
+    // Form setup for products
+    const productForm = useForm(getInitialProductData("", defaultCategory));
 
     const deductForm = useForm({
         quantity: "",
@@ -72,8 +74,8 @@ export default function useProductFormState({
         shouldValidateSku
     );
 
-    const [previews, setPreviews] = useState({ cover: null, gallery: [] });
-    const hasThreeDReady = Boolean(data.model_3d || data.model_3d_path);
+    const [previews, setPreviews] = useState({ cover: null, gallery: [], model_3d: null });
+    const hasThreeDReady = Boolean(data.model_3d || data.model_3d_path || previews.model_3d);
 
     const activationReadiness = useMemo(() => {
         const galleryImageCount = previews.gallery.length;
@@ -120,6 +122,7 @@ export default function useProductFormState({
     const cleanupPreviews = () => {
         revokeBlobUrl(previews.cover);
         (previews.gallery || []).forEach(revokeBlobUrl);
+        revokeBlobUrl(previews.model_3d);
     };
 
     const generateSKU = () =>
@@ -136,27 +139,8 @@ export default function useProductFormState({
         reset();
         clearErrors();
 
-        setPreviews({ cover: null, gallery: [] });
-        setData({
-            ...data,
-            id: null,
-            sku: generateSKU(),
-            cost_price: "",
-            category: defaultCategory,
-            clay_type: "Stoneware",
-            glaze_type: "Matte",
-            firing_method: "Electric Kiln",
-            status: "Draft",
-            lead_time: 3,
-            retained_gallery: [],
-            gallery: [],
-            model_3d: null,
-            model_3d_assets: [],
-            model_3d_asset_paths: [],
-            model_3d_path: null,
-            track_as_supply: false,
-            recipes: [],
-        });
+        setPreviews({ cover: null, gallery: [], model_3d: null });
+        setData(getInitialProductData(generateSKU(), defaultCategory));
         setActiveFormTab("Essentials");
         setProductModalOpen(true);
     };
@@ -168,17 +152,30 @@ export default function useProductFormState({
         clearErrors();
 
         setData({
-            ...product,
-            category: categories.includes(product.category) ? product.category : defaultCategory,
-            cost_price: product.cost_price || "",
+            id: product.id,
+            sku: product.sku || "",
+            name: product.name || "",
             description: product.description || "",
+            category: categories.includes(product.category) ? product.category : defaultCategory,
+            clay_type: product.clay_type || "Stoneware",
+            glaze_type: product.glaze_type || "Matte",
+            firing_method: product.firing_method || "Electric Kiln",
+            food_safe: typeof product.food_safe === "boolean" ? product.food_safe : true,
+            height: product.height !== null && product.height !== undefined ? product.height : "",
+            width: product.width !== null && product.width !== undefined ? product.width : "",
+            weight: product.weight !== null && product.weight !== undefined ? product.weight : "",
+            price: product.price !== null && product.price !== undefined ? product.price : "",
+            cost_price: product.cost_price || "",
+            stock: product.stock !== null && product.stock !== undefined ? product.stock : "",
+            lead_time: product.lead_time || 3,
+            status: product.model_3d_path || product.status !== "Active" ? product.status : "Draft",
             retained_gallery: product.gallery_paths || [],
             cover_photo: null,
             gallery: [],
             model_3d: null,
             model_3d_assets: [],
             model_3d_asset_paths: [],
-            status: product.model_3d_path || product.status !== "Active" ? product.status : "Draft",
+            model_3d_path: product.model_3d_path || null,
             track_as_supply: product.track_as_supply || false,
             production_method: product.production_method || "resell",
             recipes: product.recipes || [],
@@ -191,11 +188,14 @@ export default function useProductFormState({
             return `/storage/${urlOrPath.replace(/^\/+/, '').replace(/^storage\//, '')}`;
         };
 
+        const model3dUrl = product.model_3d_url || (product.model_3d_path ? resolveStorageUrl(product.model_3d_path) : null);
+
         setPreviews({
             cover: product.cover_photo_url || product.img || resolveStorageUrl(product.cover_photo_path),
             gallery: product.gallery_urls && product.gallery_urls.length > 0 
                 ? product.gallery_urls 
                 : (product.gallery_paths ? product.gallery_paths.map(resolveStorageUrl) : []),
+            model_3d: model3dUrl,
         });
         setActiveFormTab("Essentials");
         setProductModalOpen(true);
@@ -203,6 +203,10 @@ export default function useProductFormState({
 
     const closeProductModal = () => {
         cleanupPreviews();
+        setSelectedProduct(null);
+        reset();
+        clearErrors();
+        setData(getInitialProductData("", defaultCategory));
         setProductModalOpen(false);
     };
 
@@ -227,12 +231,41 @@ export default function useProductFormState({
                 cover: compressedCover ? URL.createObjectURL(compressedCover) : null,
             }));
         } else if (field === "model_3d") {
+            if (previews.model_3d) revokeBlobUrl(previews.model_3d);
             setData("model_3d", file);
             setData("model_3d_assets", []);
             setData("model_3d_asset_paths", []);
+            setPreviews((prev) => ({
+                ...prev,
+                model_3d: file ? URL.createObjectURL(file) : null,
+            }));
         } else {
             setData(field, file);
         }
+    };
+
+    const handleRemoveCover = () => {
+        if (previews.cover) revokeBlobUrl(previews.cover);
+        setData("cover_photo", null);
+        setPreviews((prev) => ({
+            ...prev,
+            cover: null,
+        }));
+    };
+
+    const handleRemoveModel3D = () => {
+        if (previews.model_3d) revokeBlobUrl(previews.model_3d);
+        setData((prev) => ({
+            ...prev,
+            model_3d: null,
+            model_3d_path: null,
+            model_3d_assets: [],
+            model_3d_asset_paths: [],
+        }));
+        setPreviews((prev) => ({
+            ...prev,
+            model_3d: null,
+        }));
     };
 
     const handleModelAssetFolderChange = (event) => {
@@ -466,6 +499,8 @@ export default function useProductFormState({
         handleFileChange,
         handleModelAssetFolderChange,
         handleRemoveGalleryImage,
+        handleRemoveCover,
+        handleRemoveModel3D,
         submitProduct,
         handleStatusChange,
         addRecipeItem,

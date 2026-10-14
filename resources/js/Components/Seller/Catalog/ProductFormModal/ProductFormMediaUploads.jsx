@@ -1,22 +1,70 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
 import External3DToolLink from "@/Components/ThreeD/External3DToolLink";
-import { CheckCircle, ListTodo, Check, Plus, Cuboid, X, FolderOpen, Folder } from "lucide-react";
+import ProductImageLightboxModal from "@/Components/Consumer/Shop/ProductShow/ProductImageLightboxModal";
+import { resolveImageUrl } from "@/lib/media";
+import {
+    CheckCircle,
+    ListTodo,
+    Check,
+    Plus,
+    Cuboid,
+    X,
+    FolderOpen,
+    Folder,
+    Maximize2,
+    Eye,
+} from "lucide-react";
 
 export default function ProductFormMediaUploads({
     data,
-    setData,
     errors,
     activationReadiness,
     previews,
     handleFileChange,
     handleModelAssetFolderChange,
     handleRemoveGalleryImage,
+    handleRemoveCover,
+    handleRemoveModel3D,
 }) {
+    const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
+    const [lightboxMode, setLightboxMode] = useState("image");
+
+    // Aggregate all uploaded images for the carousel lightbox
+    const allPhotos = useMemo(() => {
+        const photos = [];
+        if (previews?.cover) {
+            photos.push(previews.cover);
+        }
+        if (Array.isArray(previews?.gallery)) {
+            previews.gallery.forEach((url) => {
+                if (url) photos.push(url);
+            });
+        }
+        return photos;
+    }, [previews]);
+
+    // 3D Model URL for interactive 3D lightbox
+    const model3dUrl = useMemo(() => {
+        if (previews?.model_3d) return previews.model_3d;
+        if (data?.model_3d_path) return resolveImageUrl(data.model_3d_path, "");
+        return null;
+    }, [previews, data.model_3d_path]);
+
+    const has3D = Boolean(data?.model_3d || data?.model_3d_path || previews?.model_3d);
+
+    const openLightbox = (index = 0, mode = "image") => {
+        setLightboxIndex(index);
+        setLightboxMode(mode);
+        setIsLightboxOpen(true);
+    };
+
     return (
         <div className="space-y-6 animate-fadeIn">
-            <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden mb-6">
+            {/* Activation Checklist */}
+            <div className="rounded-2xl border border-stone-200 bg-white shadow-xs overflow-hidden">
                 <div className={`px-6 py-5 border-b ${activationReadiness.canActivate ? "bg-emerald-50/50 border-emerald-100" : "bg-stone-50/50 border-stone-100"}`}>
                     <div className="flex items-center justify-between">
                         <div>
@@ -93,28 +141,75 @@ export default function ProductFormMediaUploads({
                 </div>
             </div>
 
+            {/* Media Upload Header with Fullscreen Carousel Action */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+                <div>
+                    <h4 className="text-sm font-bold text-stone-900">Media Uploads</h4>
+                    <p className="text-xs text-stone-500">Add photography and a 3D model asset for your handcrafted piece.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    {allPhotos.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => openLightbox(0, "image")}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-200 shadow-2xs transition min-h-[44px] cursor-pointer"
+                        >
+                            <Maximize2 size={14} className="text-clay-600" />
+                            <span>View Carousel ({allPhotos.length})</span>
+                        </button>
+                    )}
+                    {has3D && (
+                        <button
+                            type="button"
+                            onClick={() => openLightbox(0, "3d")}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-clay-700 bg-clay-50 hover:bg-clay-100 border border-clay-200 shadow-2xs transition min-h-[44px] cursor-pointer"
+                        >
+                            <Cuboid size={14} />
+                            <span>Preview 3D</span>
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Upload Controls Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Cover Photo */}
                 <div>
                     <InputLabel value="Cover Photo (Main)" className="mb-2" />
                     <div className="relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 hover:border-clay-400 transition group bg-gray-50">
-                        {previews.cover ? (
+                        {previews?.cover ? (
                             <>
                                 <img
                                     src={previews.cover}
                                     alt="Cover"
                                     className="w-full h-full object-cover"
                                 />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2 p-3">
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            setData("cover_photo", null);
-                                            handleFileChange({ target: { files: [] } }, "cover_photo");
-                                        }}
-                                        className="bg-white text-rose-600 px-4 py-3.5 rounded-xl text-xs font-bold shadow-lg hover:bg-rose-50 transition min-h-[44px]"
+                                        onClick={() => openLightbox(0, "image")}
+                                        className="bg-white text-stone-800 px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-lg hover:bg-stone-50 transition min-h-[44px] flex items-center gap-1.5 cursor-pointer"
+                                        title="View in Carousel"
                                     >
-                                        Remove Photo
+                                        <Eye size={14} className="text-clay-600" />
+                                        <span>View</span>
+                                    </button>
+                                    <label className="bg-white text-stone-800 px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-lg hover:bg-stone-50 transition cursor-pointer min-h-[44px] flex items-center justify-center">
+                                        Replace
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/webp,image/jpeg,image/png"
+                                            onChange={(e) => handleFileChange(e, "cover_photo")}
+                                        />
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveCover}
+                                        className="bg-white text-rose-600 px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-lg hover:bg-rose-50 transition min-h-[44px] cursor-pointer"
+                                        title="Remove Cover Photo"
+                                    >
+                                        Remove
                                     </button>
                                 </div>
                             </>
@@ -146,39 +241,46 @@ export default function ProductFormMediaUploads({
                     <div>
                         <div className="flex items-center justify-between mb-2">
                             <InputLabel value="Gallery Images" />
-                            <span className={`text-[10px] font-bold ${previews.gallery.length < 3 ? "text-orange-500" : previews.gallery.length > 5 ? "text-rose-500" : "text-emerald-600"}`}>
-                                {previews.gallery.length < 3
+                            <span className={`text-[10px] font-bold ${previews?.gallery?.length < 3 ? "text-orange-500" : previews?.gallery?.length > 5 ? "text-rose-500" : "text-emerald-600"}`}>
+                                {previews?.gallery?.length < 3
                                     ? `Add ${3 - previews.gallery.length} more (Min 3)`
-                                    : previews.gallery.length > 5
+                                    : previews?.gallery?.length > 5
                                     ? `Exceeds max (Max 5)`
                                     : "Perfect (3-5 images)"}
                             </span>
                         </div>
 
-                        {/* grid-to-scroll applied for mobile: horizontal scrolling overflow-x-auto flex-nowrap */}
                         <div className="flex flex-row overflow-x-auto gap-3 pb-3 scrollbar-thin flex-nowrap sm:grid sm:grid-cols-3 sm:gap-2 sm:overflow-visible sm:flex-wrap">
-                            {previews.gallery.map((preview, idx) => (
-                                <div key={idx} className="relative w-28 h-28 sm:w-auto sm:h-auto sm:aspect-square rounded-lg overflow-hidden border border-gray-200 group flex-shrink-0">
+                            {previews?.gallery?.map((preview, idx) => (
+                                <div key={idx} className="relative w-28 h-28 sm:w-auto sm:h-auto sm:aspect-square rounded-xl overflow-hidden border border-gray-200 group flex-shrink-0">
                                     <img
                                         src={preview}
                                         className="w-full h-full object-cover"
                                         alt={`Preview ${idx + 1}`}
                                     />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1.5 p-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => openLightbox(idx + (previews.cover ? 1 : 0), "image")}
+                                            className="w-9 h-9 flex items-center justify-center bg-white text-stone-700 rounded-full shadow-lg hover:bg-stone-50 transition drop-shadow min-h-[36px] min-w-[36px] cursor-pointer"
+                                            title="View in carousel"
+                                        >
+                                            <Eye size={15} />
+                                        </button>
                                         <button
                                             type="button"
                                             onClick={() => handleRemoveGalleryImage(idx)}
-                                            className="w-10 h-10 flex items-center justify-center bg-white text-rose-600 rounded-full shadow-lg hover:bg-rose-50 transition drop-shadow min-h-[44px] min-w-[44px]"
+                                            className="w-9 h-9 flex items-center justify-center bg-white text-rose-600 rounded-full shadow-lg hover:bg-rose-50 transition drop-shadow min-h-[36px] min-w-[36px] cursor-pointer"
                                             title="Remove image"
                                         >
-                                            <X size={16} strokeWidth={3} />
+                                            <X size={15} strokeWidth={2.5} />
                                         </button>
                                     </div>
                                 </div>
                             ))}
 
-                            {previews.gallery.length < 5 && (
-                                <label className="w-28 h-28 sm:w-auto sm:h-auto sm:aspect-square rounded-lg border-2 border-dashed border-gray-200 hover:border-clay-400 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition min-h-[44px] flex-shrink-0">
+                            {(!previews?.gallery || previews.gallery.length < 5) && (
+                                <label className="w-28 h-28 sm:w-auto sm:h-auto sm:aspect-square rounded-xl border-2 border-dashed border-gray-200 hover:border-clay-400 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition min-h-[44px] flex-shrink-0">
                                     <Plus size={20} className="text-gray-400 mb-1" />
                                     <span className="text-[10px] font-bold text-gray-500">
                                         Add
@@ -199,12 +301,12 @@ export default function ProductFormMediaUploads({
                         <InputLabel value="3D Model" className="mb-2" />
                         {data.model_3d ? (
                             <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white rounded-lg text-emerald-600 shadow-sm">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="p-2 bg-white rounded-lg text-emerald-600 shadow-2xs shrink-0">
                                         <Check size={16} />
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-sm font-bold text-emerald-800 truncate max-w-[150px]">
+                                        <p className="text-sm font-bold text-emerald-800 truncate max-w-[140px] sm:max-w-[180px]">
                                             {data.model_3d instanceof File ? data.model_3d.name : (typeof data.model_3d === 'string' ? data.model_3d.split('/').pop() : '3D Model')}
                                         </p>
                                         <p className="text-[10px] text-emerald-600">
@@ -212,42 +314,80 @@ export default function ProductFormMediaUploads({
                                         </p>
                                     </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setData("model_3d", null)}
-                                    className="text-emerald-600 hover:text-emerald-800 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                                >
-                                    <X size={16} />
-                                </button>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => openLightbox(0, "3d")}
+                                        className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-800 bg-white border border-emerald-200 hover:bg-emerald-100/60 transition min-h-[36px] cursor-pointer"
+                                        title="Preview 3D Model"
+                                    >
+                                        Preview
+                                    </button>
+                                    <label className="cursor-pointer text-xs font-bold text-emerald-700 hover:underline min-h-[36px] px-2 flex items-center justify-center">
+                                        Replace
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept=".glb,.gltf"
+                                            onChange={(e) => handleFileChange(e, "model_3d")}
+                                        />
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveModel3D}
+                                        className="text-emerald-600 hover:text-emerald-800 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer"
+                                        title="Remove 3D Model"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
                             </div>
                         ) : data.model_3d_path ? (
                             <div className="flex items-center justify-between p-3 bg-sky-50 border border-sky-100 rounded-xl">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white rounded-lg text-sky-600 shadow-sm">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="p-2 bg-white rounded-lg text-sky-600 shadow-2xs shrink-0">
                                         <Cuboid size={16} />
                                     </div>
-                                    <div>
+                                    <div className="min-w-0">
                                         <p className="text-sm font-bold text-sky-800">
-                                            Current Model
+                                            Current Saved Model
                                         </p>
                                         <p className="text-[10px] text-sky-600">
-                                            Replace it with a new file.
+                                            Available in 3D & scale viewer.
                                         </p>
                                     </div>
                                 </div>
-                                <label className="cursor-pointer text-xs font-bold text-sky-600 hover:underline min-h-[44px] min-w-[44px] flex items-center justify-center">
-                                    Replace
-                                    <input
-                                        type="file"
-                                        className="hidden"
-                                        accept=".glb,.gltf"
-                                        onChange={(e) => handleFileChange(e, "model_3d")}
-                                    />
-                                </label>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => openLightbox(0, "3d")}
+                                        className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-sky-800 bg-white border border-sky-200 hover:bg-sky-100/60 transition min-h-[36px] cursor-pointer"
+                                        title="Preview 3D Model"
+                                    >
+                                        Preview
+                                    </button>
+                                    <label className="cursor-pointer text-xs font-bold text-sky-600 hover:underline min-h-[36px] px-2 flex items-center justify-center">
+                                        Replace
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept=".glb,.gltf"
+                                            onChange={(e) => handleFileChange(e, "model_3d")}
+                                        />
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveModel3D}
+                                        className="text-stone-400 hover:text-rose-600 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center transition cursor-pointer"
+                                        title="Remove 3D Model"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             <label className="flex items-center gap-3 p-3 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-clay-400 hover:bg-gray-50 transition group min-h-[44px]">
-                                <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-white group-hover:shadow-sm transition">
+                                <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-white group-hover:shadow-xs transition">
                                     <Cuboid size={20} className="text-gray-400 group-hover:text-clay-600" />
                                 </div>
                                 <div className="flex-1">
@@ -322,6 +462,25 @@ export default function ProductFormMediaUploads({
                     </div>
                 </div>
             </div>
+
+            {/* Lightbox Carousel Modal: Provides expansive, un-cramped photo carousel and 3D preview with real-life scale */}
+            {isLightboxOpen && (
+                <ProductImageLightboxModal
+                    isOpen={isLightboxOpen}
+                    onClose={() => setIsLightboxOpen(false)}
+                    productName={data.name || "Handcrafted Product"}
+                    gallery={allPhotos}
+                    activeIndex={lightboxIndex}
+                    onChangeIndex={setLightboxIndex}
+                    has3D={has3D}
+                    modelUrl={model3dUrl}
+                    dimensions={{
+                        height: data.height,
+                        width: data.width,
+                    }}
+                    initialMode={lightboxMode}
+                />
+            )}
         </div>
     );
 }

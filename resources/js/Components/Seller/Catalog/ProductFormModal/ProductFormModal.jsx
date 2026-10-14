@@ -32,6 +32,8 @@ export default function ProductFormModal({
     handleFileChange,
     handleModelAssetFolderChange,
     handleRemoveGalleryImage,
+    handleRemoveCover,
+    handleRemoveModel3D,
     handleStatusChange,
     addRecipeItem,
     removeRecipeItem,
@@ -182,13 +184,14 @@ export default function ProductFormModal({
                     {activeFormTab === "Media" && (
                         <ProductFormMediaUploads
                             data={data}
-                            setData={setData}
                             errors={errors}
                             activationReadiness={activationReadiness}
                             previews={previews}
                             handleFileChange={handleFileChange}
                             handleModelAssetFolderChange={handleModelAssetFolderChange}
                             handleRemoveGalleryImage={handleRemoveGalleryImage}
+                            handleRemoveCover={handleRemoveCover}
+                            handleRemoveModel3D={handleRemoveModel3D}
                         />
                     )}
                 </div>

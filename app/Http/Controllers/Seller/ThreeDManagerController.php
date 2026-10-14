@@ -27,7 +27,7 @@ class ThreeDManagerController extends Controller
         $models = Product::where('user_id', $sellerId)
             ->whereNotNull('model_3d_path')
             ->where('model_3d_path', '!=', '')
-            ->select(['id', 'name', 'model_3d_path', 'cover_photo_path', 'status', 'updated_at'])
+            ->select(['id', 'name', 'model_3d_path', 'cover_photo_path', 'status', 'height', 'width', 'updated_at'])
             ->orderBy('updated_at', 'desc')
             ->get()
             ->map(function ($product) {
@@ -39,6 +39,8 @@ class ThreeDManagerController extends Controller
                     'url' => \App\Services\StorageUrl::url($product->model_3d_path),
                     'thumbnail' => \App\Services\StorageUrl::url($product->cover_photo_path),
                     'status' => $product->status,
+                    'height' => $product->height,
+                    'width' => $product->width,
                     'date' => $product->updated_at->format('M d, Y'),
                     'size' => $this->formatBytes($sizeBytes),
                     'size_bytes' => $sizeBytes,

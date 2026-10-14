@@ -7,12 +7,12 @@ import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabil
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import {
-    UploadCloud, Cuboid, Rotate3d, Trash2, Search, X,
+    UploadCloud, Cuboid, Trash2, Search, X,
     Package, AlertTriangle
 } from 'lucide-react';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 
-const ThreeDCanvasViewer = lazy(() => import('@/Components/Seller/Catalog/ThreeDCanvasViewer'));
+const ProductViewer3D = lazy(() => import('@/Components/ThreeD/ProductViewer3D'));
 const ThreeDUploadModal = lazy(() => import('@/Components/Seller/Catalog/ThreeDUploadModal'));
 
 export default function ThreeDManager({ auth, models = [], products = [], storage = { percent: 0, used: '0MB', max: '500MB' } }) {
@@ -67,40 +67,47 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                     <ReadOnlyCapabilityNotice label="3D assets are read only for your account. Upload and delete actions are disabled." />
                 )}
                 <div className="flex min-h-0 flex-1 flex-col gap-5 lg:flex-row">
-                    <div className="flex-1 bg-gradient-to-b from-stone-50 to-stone-100 rounded-3xl border border-stone-200 relative overflow-hidden shadow-inner flex flex-col group">
-                        {activeModel ? (
-                            <div className="absolute top-4 left-4 z-10 bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-stone-200 text-[10px] font-black uppercase tracking-widest text-stone-600 flex items-center gap-2 shadow-sm">
-                                <div className={`w-2 h-2 rounded-full ${activeModel.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></div>
-                                {activeModel.name}
-                            </div>
-                        ) : (
-                            <div className="absolute top-4 left-4 z-10 bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-stone-200 text-[10px] font-black uppercase tracking-widest text-stone-400 shadow-sm">
-                                No Model Selected
-                            </div>
-                        )}
-
-                        {activeModel && (
-                            <button
-                                type="button"
-                                onClick={() => handleDelete(activeModel.id)}
-                                disabled={!canEditThreeD}
-                                className="absolute top-4 right-4 z-10 p-2 bg-white/70 backdrop-blur-md border border-stone-200 rounded-xl text-stone-600 hover:bg-rose-50 hover:text-rose-500 transition shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
-                                title="Delete Asset"
-                            >
-                                <Trash2 size={18} />
-                            </button>
-                        )}
-
-                        <div className="flex-1 w-full h-full cursor-grab active:cursor-grabbing">
-                            <Suspense fallback={<div className="h-full w-full flex items-center justify-center text-stone-400">Loading 3D Canvas...</div>}>
-                                <ThreeDCanvasViewer modelUrl={activeModel?.url} />
-                            </Suspense>
-                        </div>
-
-                        <div className="absolute bottom-3 left-0 right-0 text-center pointer-events-none">
-                            <span className="inline-flex items-center gap-1.5 bg-black/50 text-white px-2.5 py-1 rounded-full text-[10px] font-medium">
-                                <Rotate3d size={12} /> Drag to rotate
-                            </span>
+                    <div className="flex-1 bg-gradient-to-b from-stone-50 to-stone-100 rounded-3xl border border-stone-200 relative overflow-hidden shadow-inner flex flex-col group min-h-[400px]">
+                        <div className="flex-1 w-full h-full relative">
+                            {activeModel ? (
+                                <Suspense fallback={<div className="h-full w-full flex items-center justify-center text-stone-400">Loading 3D Canvas...</div>}>
+                                    <ProductViewer3D
+                                        key={activeModel.id}
+                                        modelUrl={activeModel.url}
+                                        productName={activeModel.name}
+                                        dimensions={{
+                                            height: activeModel.height,
+                                            width: activeModel.width,
+                                        }}
+                                        topLeftAction={
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="bg-white/90 backdrop-blur px-3 py-1.5 rounded-xl border border-stone-200 text-[10px] font-black uppercase tracking-widest text-stone-700 flex items-center gap-2 shadow-xs min-h-[44px]">
+                                                    <div className={`w-2 h-2 rounded-full ${activeModel.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></div>
+                                                    <span>{activeModel.name}</span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDelete(activeModel.id)}
+                                                    disabled={!canEditThreeD}
+                                                    aria-label="Delete 3D Asset"
+                                                    className="p-2 bg-white/90 backdrop-blur border border-stone-200 rounded-xl text-stone-600 hover:bg-rose-50 hover:text-rose-600 transition shadow-xs disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer active:scale-95"
+                                                    title="Delete 3D Asset"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        }
+                                        hideBadge
+                                        className="h-full w-full rounded-3xl border-0 bg-transparent"
+                                    />
+                                </Suspense>
+                            ) : (
+                                <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center text-stone-400">
+                                    <Cuboid size={48} className="text-stone-300 mb-3" />
+                                    <p className="font-bold text-stone-600 text-sm">No 3D Model Selected</p>
+                                    <p className="text-xs text-stone-400 mt-1">Select a model from your library on the right to inspect.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
