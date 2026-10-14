@@ -97,7 +97,11 @@ async function capture() {
 
         const authUrl = `http://127.0.0.1:8000/dev/preview-auth?role=${encodeURIComponent(role)}&redirect=${encodeURIComponent(targetRoute)}`;
         console.log(`[Remote Preview] Establishing session as ${role}...`);
-        await page.goto(authUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+        try {
+            await page.goto(authUrl, { waitUntil: 'load', timeout: 15000 });
+        } catch (e) {
+            console.log('[Remote Preview] page.goto notice:', e.message);
+        }
         console.log('[Remote Preview] Current URL:', page.url());
         console.log('[Remote Preview] Page Title:', await page.title());
 
