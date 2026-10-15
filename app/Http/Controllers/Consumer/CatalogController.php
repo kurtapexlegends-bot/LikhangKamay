@@ -57,64 +57,22 @@ class CatalogController extends Controller
      */
     public function index(Request $request, CatalogService $catalogService)
     {
+        $perPage = $this->resolvePerPage($request);
+
         try {
             $user = $request->user();
-            $isDefaultRequest = !$request->filled('search') &&
-                                (!$request->filled('category') || $request->category === 'All') &&
-                                !$request->filled('price_min') &&
-                                !$request->filled('price_max') &&
-                                !$request->filled('locations') &&
-                                !$request->filled('materials') &&
-                                !$request->filled('min_rating') &&
-                                !$request->boolean('followed_only') &&
-                                (!$request->filled('sort') || $request->sort === 'newest') &&
-                                ((int) $request->get('page', 1) === 1);
-
-            if ($isDefaultRequest) {
-                $cacheData = Cache::remember('shop_catalog_default_page_1', 600, function () use ($request, $catalogService) {
-                    $query = $catalogService->buildCatalogQuery($request->all());
-                    $paginator = $query->paginate(20)->withQueryString();
-                    $paginator->through(fn ($product) => $catalogService->serializeCatalogProduct($product));
-
-                    return [
-                        'items' => $paginator->items(),
-                        'total' => $paginator->total(),
-                        'per_page' => $paginator->perPage(),
-                        'current_page' => $paginator->currentPage(),
-                        'last_page' => $paginator->lastPage(),
-                    ];
-                });
-
-                $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
-                    $cacheData['items'],
-                    $cacheData['total'],
-                    $cacheData['per_page'],
-                    $cacheData['current_page'],
-                    ['path' => $request->url(), 'query' => $request->query()]
-                );
-            } else {
-                $query = $catalogService->buildCatalogQuery($request->all(), $user);
-                $paginator = $query->paginate(20)->withQueryString();
-                $paginator->through(fn ($product) => $catalogService->serializeCatalogProduct($product));
-            }
+            $paginator = $catalogService->paginateCatalog($request, $user, $perPage);
 
             $sponsoredResults = collect($paginator->items())
-                ->filter(fn($p) => $p['is_sponsored'])
+                ->filter(fn($p) => !empty($p['is_sponsored']))
                 ->values();
 
             $metadata = $catalogService->getCatalogMetadata();
 
-        } catch (\Exception $e) {
-            $paginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
-            $sponsoredResults = [];
-            $metadata = [
-                'categories' => ['All'],
-                'locations' => [],
-                'materials' => [],
-                'categoryCounts' => [],
-                'materialCounts' => [],
-                'locationCounts' => [],
-            ];
+        } catch (\Throwable $e) {
+            $paginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage);
+            $sponsoredResults = collect();
+            $metadata = $catalogService->getEmptyCatalogMetadata();
             
             if (config('app.debug')) {
                 report($e);
@@ -131,9 +89,33 @@ class CatalogController extends Controller
             'materialCounts' => $metadata['materialCounts'] ?? [],
             'locationCounts' => $metadata['locationCounts'] ?? [],
             'filters' => $request->only([
-                'search', 'category', 'price_min', 'price_max', 'sort', 'locations', 'materials', 'min_rating', 'followed_only'
+                'search', 'category', 'price_min', 'price_max', 'sort', 'locations', 'materials', 'min_rating', 'followed_only', 'per_page'
             ])
         ]);
+    }
+
+    /**
+     * Resolve pagination item density based on explicit per_page request or mobile User-Agent.
+     */
+    public function resolvePerPage(Request $request): int
+    {
+        if ($request->filled('per_page')) {
+            $requested = (int) $request->input('per_page');
+            if ($requested >= 6 && $requested <= 48) {
+                return $requested;
+            }
+        }
+
+        if ($request->header('Sec-CH-UA-Mobile') === '?1') {
+            return 12;
+        }
+
+        $userAgent = (string) $request->header('User-Agent');
+        if (preg_match('/(android|iphone|ipod|ipad|windows phone|mobile|blackberry|opera mini)/i', $userAgent)) {
+            return 12;
+        }
+
+        return 24;
     }
 
     /**

@@ -259,7 +259,7 @@ class DiscountService
      */
     protected function clearSellerProductCaches(int $sellerId, array $productIds = []): void
     {
-        Cache::forget('shop_catalog_default_page_1');
+        \App\Services\CatalogService::clearCatalogDefaultCache();
         Cache::forget("seller_{$sellerId}_products");
         Cache::forget("seller_{$sellerId}_best_sellers");
         Cache::forget("seller_{$sellerId}_stats");

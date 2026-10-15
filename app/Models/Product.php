@@ -279,6 +279,8 @@ class Product extends Model
 
         static::saved(function ($product) {
             \Illuminate\Support\Facades\Cache::forget('shop_catalog_default_page_1');
+            \Illuminate\Support\Facades\Cache::forget('shop_catalog_default_page_1_12');
+            \Illuminate\Support\Facades\Cache::forget('shop_catalog_default_page_1_24');
             \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_products");
             \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_best_sellers");
             \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_stats");
@@ -302,6 +304,8 @@ class Product extends Model
 
         static::deleted(function ($product) {
             \Illuminate\Support\Facades\Cache::forget('shop_catalog_default_page_1');
+            \Illuminate\Support\Facades\Cache::forget('shop_catalog_default_page_1_12');
+            \Illuminate\Support\Facades\Cache::forget('shop_catalog_default_page_1_24');
             \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_products");
             \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_best_sellers");
             \Illuminate\Support\Facades\Cache::forget("seller_{$product->user_id}_stats");
@@ -403,7 +407,13 @@ class Product extends Model
             ->where('status', 'Active')
             ->where('id', '!=', $this->id)
             ->where('category', $this->category)
-            ->with(['user', 'discounts'])
+            ->select([
+                'id', 'user_id', 'name', 'slug', 'price', 'category', 'clay_type',
+                'glaze_type', 'firing_method', 'cover_photo_path', 'rating',
+                'reviews_count', 'sold', 'is_sponsored', 'sponsored_until',
+                'status', 'is_b2b_supply', 'created_at',
+            ])
+            ->with(['user:id,name,shop_name,city', 'discounts'])
             ->orderByRaw("
                 CASE
                     WHEN user_id = ? THEN 1
@@ -433,7 +443,12 @@ class Product extends Model
                 ->where('status', 'Active')
                 ->where('id', '!=', $this->id)
                 ->whereNotIn('id', $preferredMatches->pluck('id'))
-                ->with(['user', 'discounts'])
+                ->select([
+                    'id', 'user_id', 'name', 'slug', 'price', 'category', 'clay_type',
+                    'cover_photo_path', 'rating', 'reviews_count', 'sold',
+                    'is_sponsored', 'sponsored_until', 'status', 'is_b2b_supply', 'created_at',
+                ])
+                ->with(['user:id,name,shop_name,city', 'discounts'])
                 ->orderByRaw("
                     CASE
                         WHEN category = ? THEN 1
@@ -463,8 +478,8 @@ class Product extends Model
                     'rating' => (float) ($relatedProduct->rating ?? 0),
                     'reviews_count' => $relatedProduct->reviews_count ?? 0,
                     'sold' => $relatedProduct->sold,
-                    'location' => $relatedProduct->user->city ?? 'Philippines',
-                    'seller' => $relatedProduct->user->shop_name ?? $relatedProduct->user->name ?? 'LikhangKamay Artisan',
+                    'location' => $relatedProduct->user?->city ?? 'Philippines',
+                    'seller' => $relatedProduct->user?->shop_name ?? $relatedProduct->user?->name ?? 'LikhangKamay Artisan',
                     'has_discount' => $relatedProduct->has_discount,
                     'discount_info' => $relatedProduct->discount_info,
                     'is_sponsored' => $relatedProduct->is_sponsored && $relatedProduct->sponsored_until && \Carbon\Carbon::parse($relatedProduct->sponsored_until)->isFuture(),

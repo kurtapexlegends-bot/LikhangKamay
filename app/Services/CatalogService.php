@@ -12,12 +12,37 @@ use Illuminate\Support\Facades\DB;
 class CatalogService
 {
     /**
+     * Columns required strictly for product browse cards, stripping heavy rich text, dimensions, and raw metadata.
+     */
+    public const CATALOG_CARD_COLUMNS = [
+        'products.id',
+        'products.user_id',
+        'products.name',
+        'products.slug',
+        'products.price',
+        'products.stock',
+        'products.category',
+        'products.clay_type',
+        'products.rating',
+        'products.reviews_count',
+        'products.sold',
+        'products.cover_photo_path',
+        'products.is_sponsored',
+        'products.sponsored_until',
+        'products.status',
+        'products.is_b2b_supply',
+        'products.deleted_at',
+        'products.created_at',
+    ];
+
+    /**
      * Get sponsored products for the homepage.
      */
     public function getSponsoredProducts(): array
     {
         return Cache::remember('home_sponsored_products', 1800, function () {
-            return Product::with(['user', 'discounts'])
+            return Product::with(['user:id,name,shop_name,shop_slug,city', 'discounts'])
+                ->select(self::CATALOG_CARD_COLUMNS)
                 ->approved()
                 ->retailOnly()
                 ->whereHas('user', function ($q) {
@@ -40,7 +65,8 @@ class CatalogService
     public function getFeaturedProducts(array $sponsoredProductIds = []): array
     {
         $pool = Cache::remember('home_featured_products_pool', 1800, function () {
-            return Product::with(['user', 'discounts'])
+            return Product::with(['user:id,name,shop_name,shop_slug,city', 'discounts'])
+                ->select(self::CATALOG_CARD_COLUMNS)
                 ->approved()
                 ->retailOnly()
                 ->whereHas('user', function ($q) {
@@ -115,13 +141,17 @@ class CatalogService
             }
 
             $storeIds = $topStores->pluck('user_id')->all();
-            $sellers = User::whereIn('id', $storeIds)->get()->keyBy('id');
+            $sellers = User::whereIn('id', $storeIds)
+                ->select(['id', 'name', 'shop_name', 'shop_slug', 'avatar', 'premium_tier'])
+                ->get()
+                ->keyBy('id');
 
             // Load top products per seller cleanly without query-wide limit bugs
             $productsBySeller = Product::approved()
                 ->retailOnly()
                 ->whereIn('user_id', $storeIds)
-                ->with(['user', 'discounts'])
+                ->select(self::CATALOG_CARD_COLUMNS)
+                ->with(['user:id,name,shop_name,shop_slug,city', 'discounts'])
                 ->orderByDesc('sold')
                 ->orderByDesc('rating')
                 ->orderByDesc('created_at')
@@ -178,7 +208,8 @@ class CatalogService
             return [];
         }
 
-        return Product::with(['user', 'discounts'])
+        return Product::with(['user:id,name,shop_name,shop_slug,city', 'discounts'])
+            ->select(self::CATALOG_CARD_COLUMNS)
             ->approved()
             ->retailOnly()
             ->whereIn('user_id', $followedShopIds)
@@ -210,7 +241,8 @@ class CatalogService
                       $cq->where('document_type', 'seller_terms');
                   });
             })
-            ->with(['user', 'discounts']);
+            ->select(self::CATALOG_CARD_COLUMNS)
+            ->with(['user:id,name,shop_name,shop_slug,city', 'discounts']);
 
         if (!empty($filters['followed_only'])) {
             $followedShopIds = [];
@@ -322,12 +354,12 @@ class CatalogService
             'rating' => (float) ($product->rating ?? 0),
             'img' => $product->img,
             'slug' => $product->slug,
-            'seller_slug' => $product->user->shop_slug ?? null,
-            'seller_name' => $product->user->shop_name ?? $product->user->name ?? 'LikhangKamay Artisan',
+            'seller_slug' => $product->user?->shop_slug ?? null,
+            'seller_name' => $product->user?->shop_name ?? $product->user?->name ?? 'LikhangKamay Artisan',
         ];
 
         if (!$shortMode) {
-            $data['location'] = $product->user->city ?? 'Philippines';
+            $data['location'] = $product->user?->city ?? 'Philippines';
             $data['category'] = $product->category;
         }
 
@@ -455,12 +487,85 @@ class CatalogService
             'reviews_count' => $product->reviews_count ?? 0,
             'sold' => $product->sold ?? 0,
             'image' => $product->img,
-            'seller' => $product->user->shop_name ?? $product->user->name ?? 'LikhangKamay Artisan',
-            'seller_slug' => $product->user->shop_slug,
-            'location' => $product->user->city ?? 'Philippines',
+            'seller' => $product->user?->shop_name ?? $product->user?->name ?? 'LikhangKamay Artisan',
+            'seller_slug' => $product->user?->shop_slug,
+            'location' => $product->user?->city ?? 'Philippines',
             'clay_type' => $product->clay_type,
             'is_new' => $product->created_at ? $product->created_at->diffInDays(now()) < 7 : false,
             'is_sponsored' => $product->is_sponsored && $product->sponsored_until && \Carbon\Carbon::parse($product->sponsored_until)->isFuture(),
         ];
+    }
+
+    /**
+     * Paginate catalog with mobile-density-aware default caching.
+     */
+    public function paginateCatalog(Request $request, ?User $user, int $perPage): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        $isDefaultRequest = !$request->filled('search') &&
+                            (!$request->filled('category') || $request->category === 'All') &&
+                            !$request->filled('price_min') &&
+                            !$request->filled('price_max') &&
+                            !$request->filled('locations') &&
+                            !$request->filled('materials') &&
+                            !$request->filled('min_rating') &&
+                            !$request->boolean('followed_only') &&
+                            (!$request->filled('sort') || $request->sort === 'newest') &&
+                            ((int) $request->get('page', 1) === 1);
+
+        if ($isDefaultRequest) {
+            $cacheKey = $perPage === 24 ? 'shop_catalog_default_page_1' : "shop_catalog_default_page_1_{$perPage}";
+            $cacheData = Cache::remember($cacheKey, 600, function () use ($request, $perPage) {
+                $query = $this->buildCatalogQuery($request->all());
+                $paginator = $query->paginate($perPage)->withQueryString();
+                $paginator->through(fn ($product) => $this->serializeCatalogProduct($product));
+
+                return [
+                    'items' => $paginator->items(),
+                    'total' => $paginator->total(),
+                    'per_page' => $paginator->perPage(),
+                    'current_page' => $paginator->currentPage(),
+                    'last_page' => $paginator->lastPage(),
+                ];
+            });
+
+            return new \Illuminate\Pagination\LengthAwarePaginator(
+                $cacheData['items'],
+                $cacheData['total'],
+                $cacheData['per_page'],
+                $cacheData['current_page'],
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        }
+
+        $query = $this->buildCatalogQuery($request->all(), $user);
+        $paginator = $query->paginate($perPage)->withQueryString();
+        $paginator->through(fn ($product) => $this->serializeCatalogProduct($product));
+
+        return $paginator;
+    }
+
+    /**
+     * Safe empty fallback metadata structure.
+     */
+    public function getEmptyCatalogMetadata(): array
+    {
+        return [
+            'categories' => ['All'],
+            'locations' => [],
+            'materials' => [],
+            'categoryCounts' => [],
+            'materialCounts' => [],
+            'locationCounts' => [],
+        ];
+    }
+
+    /**
+     * Bust default catalog cached pages across mobile and desktop densities.
+     */
+    public static function clearCatalogDefaultCache(): void
+    {
+        Cache::forget('shop_catalog_default_page_1');
+        Cache::forget('shop_catalog_default_page_1_12');
+        Cache::forget('shop_catalog_default_page_1_24');
     }
 }

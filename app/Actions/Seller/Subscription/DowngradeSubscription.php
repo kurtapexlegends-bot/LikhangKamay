@@ -73,7 +73,7 @@ class DowngradeSubscription
                 $this->suspendStaffForStandardDowngrade($userRecord);
             }
 
-            \Illuminate\Support\Facades\Cache::forget('shop_catalog_default_page_1');
+            \App\Services\CatalogService::clearCatalogDefaultCache();
             \Illuminate\Support\Facades\Cache::forget("seller_{$userRecord->id}_products");
             \Illuminate\Support\Facades\Cache::forget("seller_{$userRecord->id}_best_sellers");
             \Illuminate\Support\Facades\Cache::forget("seller_{$userRecord->id}_stats");

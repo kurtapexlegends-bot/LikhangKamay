@@ -45,6 +45,9 @@ class ShopController extends Controller
             return Product::query()
                 ->where('user_id', $seller->id)
                 ->where('status', 'Active')
+                ->select([
+                    'id', 'slug', 'name', 'price', 'category', 'rating', 'sold', 'cover_photo_path', 'created_at',
+                ])
                 ->latest()
                 ->get()
                 ->map(function ($product) {
@@ -68,6 +71,9 @@ class ShopController extends Controller
                 ->where('user_id', $seller->id)
                 ->where('status', 'Active')
                 ->where('sold', '>', 0)
+                ->select([
+                    'id', 'slug', 'name', 'price', 'rating', 'sold', 'cover_photo_path',
+                ])
                 ->orderByDesc('sold')
                 ->take(5)
                 ->get()

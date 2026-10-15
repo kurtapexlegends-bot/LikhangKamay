@@ -237,7 +237,7 @@ class SuperAdminService
         $user->save();
 
         if ($user->isArtisan()) {
-            Cache::forget('shop_catalog_default_page_1');
+            \App\Services\CatalogService::clearCatalogDefaultCache();
             Cache::forget("seller_{$user->id}_products");
             Cache::forget("seller_{$user->id}_best_sellers");
             Cache::forget("seller_{$user->id}_stats");
