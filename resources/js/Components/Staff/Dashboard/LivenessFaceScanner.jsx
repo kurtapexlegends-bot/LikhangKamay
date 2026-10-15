@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as faceapi from '@vladmandic/face-api';
-import { RefreshCw, AlertCircle, Check } from 'lucide-react';
+import { RefreshCw, AlertCircle, Check, Mail } from 'lucide-react';
 import { generateChallengeSequence } from './livenessChallengeConfig';
 import LivenessChallengePrompt from './LivenessChallengePrompt';
+import { loadCachedFaceModels } from '@/lib/faceModelCache';
 
-export default function LivenessFaceScanner({ onVerified, onError }) {
+export default function LivenessFaceScanner({ onVerified, onError, onRequestOtpFallback }) {
     const videoRef = useRef(null);
     const streamRef = useRef(null);
     const isCompletedRef = useRef(false);
@@ -31,6 +32,7 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
     const [cameraReady, setCameraReady] = useState(false);
     const [modelLoading, setModelLoading] = useState(true);
     const [cameraError, setCameraError] = useState(null);
+    const [showSlowNotice, setShowSlowNotice] = useState(false);
     
     // UI state
     const [faceDetected, setFaceDetected] = useState(false);
@@ -108,15 +110,30 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
         }
     }, [stopCamera]);
 
-    // Load lightweight face-api models from /models/face
+    // 5-second timer to offer Email Security Code fallback if models or camera take longer than normal
+    useEffect(() => {
+        if (cameraReady && !modelLoading) {
+            setShowSlowNotice(false);
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            if (modelLoading || !cameraReady) {
+                setShowSlowNotice(true);
+            }
+        }, 5000);
+
+        return () => clearTimeout(timer);
+    }, [cameraReady, modelLoading]);
+
+    // Load lightweight face-api models with CacheStorage caching
     useEffect(() => {
         let isMounted = true;
 
         const loadModels = async () => {
             try {
                 setModelLoading(true);
-                await faceapi.nets.tinyFaceDetector.loadFromUri('/models/face');
-                await faceapi.nets.faceLandmark68TinyNet.loadFromUri('/models/face');
+                await loadCachedFaceModels('/models/face');
 
                 if (isMounted) {
                     isModelLoadedRef.current = true;
@@ -545,6 +562,25 @@ export default function LivenessFaceScanner({ onVerified, onError }) {
                 currentChallenge={currentChallenge}
                 onRestart={handleRestart}
             />
+
+            {/* 5-Second Slow-Connection Fallback Prompt */}
+            {showSlowNotice && onRequestOtpFallback && scanPhase !== 'completed' && (
+                <div className="w-full max-w-[310px] mt-2.5 p-2.5 rounded-xl bg-amber-50/95 border border-amber-200/90 shadow-2xs flex items-center justify-between gap-2 text-left">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <Mail size={15} className="text-amber-600 shrink-0" />
+                        <p className="text-[11px] text-stone-700 leading-tight">
+                            Camera taking longer than usual?
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onRequestOtpFallback}
+                        className="px-2.5 py-1 text-[10px] font-bold text-white bg-amber-600 hover:bg-amber-700 active:scale-95 rounded-lg shrink-0 transition shadow-2xs cursor-pointer"
+                    >
+                        Use Email Code
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

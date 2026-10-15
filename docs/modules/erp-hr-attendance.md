@@ -42,6 +42,17 @@ stateDiagram-v2
     *   **Past Days Capping**: If a session remains unclosed from a past day, it is retroactively closed, capping its length at the last recorded sign of life + 15 minutes.
     *   **Resume Work Gate**: Closed timeout sessions set `close_reason = inactivity_timeout`. When the user attempts to click a dashboard module, they are blocked by a **Resume Prompt** overlay until they authenticate.
 
+### Field Staff Clock-In & Low-Bandwidth Resilience
+*   **Split Cockpit Modal**: [StaffClockInModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Staff/Dashboard/StaffClockInModal.jsx) orchestrates clock-in workflows via a 2-step cockpit:
+    *   **Step 1 (Identity)**: [ClockInIdentityCard.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Staff/Dashboard/ClockIn/ClockInIdentityCard.jsx) with quick face scan or email security code.
+    *   **Step 2 (Geofence)**: [ClockInGeofenceCard.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Staff/Dashboard/ClockIn/ClockInGeofenceCard.jsx) with high-accuracy GPS distance verification.
+*   **Face-API Weight Caching ([faceModelCache.js](file:///c:/laragon/www/LikhangKamay/resources/js/lib/faceModelCache.js))**:
+    *   Intercepts face detection model requests via `faceapi.env.monkeyPatch({ fetch: cachedModelFetch })` and stores weight files in browser `CacheStorage` (`face-api-weights-v1`).
+    *   Subsequent visits in low-reception concrete workshops load model weights instantly from local disk (<50ms) without consuming cellular data.
+*   **5-Second Fallback Prompt to Email Security Code (OTP)**:
+    *   Both [LivenessFaceScanner.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Staff/Dashboard/LivenessFaceScanner.jsx) and [ClockInIdentityCard.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Staff/Dashboard/ClockIn/ClockInIdentityCard.jsx) monitor model and camera initialization time.
+    *   If initialization exceeds 5 seconds over spotty cellular links, an inline prompt banner surfaces offering an immediate switch to **Email Security Code**, bypassing camera stalls.
+
 ---
 
 ## 3. Payroll Calculations

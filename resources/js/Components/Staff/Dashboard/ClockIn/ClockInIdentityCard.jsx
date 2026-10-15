@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Camera, Mail, Send, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import ErrorBoundary from '@/Components/ErrorBoundary';
 
@@ -22,6 +22,23 @@ export default function ClockInIdentityCard({
     setCapturedPhoto,
     setCameraError,
 }) {
+    const [isChunkLoadingSlow, setIsChunkLoadingSlow] = useState(false);
+
+    useEffect(() => {
+        if (!isOpen || useOtpFallback || capturedPhoto) {
+            setIsChunkLoadingSlow(false);
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            if (!useOtpFallback && !capturedPhoto) {
+                setIsChunkLoadingSlow(true);
+            }
+        }, 5000);
+
+        return () => clearTimeout(timer);
+    }, [isOpen, useOtpFallback, capturedPhoto]);
+
     return (
         <div className={`flex flex-col space-y-2.5 ${
             activeMobileTab === 'selfie' ? 'block' : 'hidden md:flex'
@@ -136,9 +153,29 @@ export default function ClockInIdentityCard({
                         )}
                     >
                         <Suspense fallback={
-                            <div className="flex flex-col items-center justify-center p-8 gap-3 min-h-[290px] w-full">
+                            <div className="flex flex-col items-center justify-center p-6 gap-3 min-h-[290px] w-full text-center">
                                 <Loader2 className="animate-spin text-clay-600" size={32} />
                                 <span className="text-xs text-stone-500 font-medium">Loading camera & face check...</span>
+                                {isChunkLoadingSlow && (
+                                    <div className="mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200/90 flex items-center justify-between gap-2.5 max-w-xs text-left shadow-2xs animate-fade-in">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <Mail size={15} className="text-amber-600 shrink-0" />
+                                            <p className="text-[11px] text-stone-700 leading-tight">
+                                                Taking longer than usual?
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setUseOtpFallback(true);
+                                                if (!otpSent) handleRequestOtp();
+                                            }}
+                                            className="px-2.5 py-1 text-[10px] font-bold text-white bg-amber-600 hover:bg-amber-700 active:scale-95 rounded-lg shrink-0 transition shadow-2xs cursor-pointer"
+                                        >
+                                            Use Email Code
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         }>
                             <LivenessFaceScanner
@@ -148,6 +185,10 @@ export default function ClockInIdentityCard({
                                 }}
                                 onError={(err) => {
                                     setCameraError(err);
+                                }}
+                                onRequestOtpFallback={() => {
+                                    setUseOtpFallback(true);
+                                    if (!otpSent) handleRequestOtp();
                                 }}
                             />
                         </Suspense>
