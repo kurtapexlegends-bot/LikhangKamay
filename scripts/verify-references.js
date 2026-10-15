@@ -152,6 +152,9 @@ export function auditReferences(filesToScan = null) {
 
                 if (rootIdentifier) {
                     const name = rootIdentifier.name;
+                    if (name === 'this') {
+                        return;
+                    }
                     if (!pathNode.scope.hasBinding(name) && !BROWSER_GLOBALS.has(name)) {
                         issues.push({
                             file: relativePath,
