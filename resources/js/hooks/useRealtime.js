@@ -18,7 +18,9 @@ export const useRealtime = () => {
     const initialReloadFinished = useRef(false);
     const isReloadingRef = useRef(false);
     const isDegradedRef = useRef(isDegraded);
-    isDegradedRef.current = isDegraded;
+    useEffect(() => {
+        isDegradedRef.current = isDegraded;
+    }, [isDegraded]);
 
     // Track when notifications prop changes to display visual toasts for newly received unread items
     useEffect(() => {

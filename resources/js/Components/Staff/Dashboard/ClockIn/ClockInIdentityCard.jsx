@@ -26,7 +26,7 @@ export default function ClockInIdentityCard({
 
     useEffect(() => {
         if (!isOpen || useOtpFallback || capturedPhoto) {
-            setIsChunkLoadingSlow(false);
+            setIsChunkLoadingSlow((prev) => (prev ? false : prev));
             return;
         }
 

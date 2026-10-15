@@ -36,6 +36,7 @@ const REACT_PRIMITIVES = new Set([
     'createContext',
     'forwardRef',
     'memo',
+    'Fragment',
 ]);
 
 const BROWSER_GLOBALS = new Set([
@@ -127,18 +128,40 @@ export function auditReferences(filesToScan = null) {
                     }
                 }
             },
-            JSXIdentifier(pathNode) {
-                const name = pathNode.node.name;
-                // Check if a JSX tag is a capitalized component or React primitive that is unimported
-                if (REACT_PRIMITIVES.has(name) && !pathNode.scope.hasBinding(name)) {
-                    issues.push({
-                        file: relativePath,
-                        type: 'UNDEFINED_PRIMITIVE',
-                        name,
-                        line: pathNode.node.loc?.start.line,
-                        column: pathNode.node.loc?.start.column,
-                        message: `Missing import for React component/primitive '<${name} />'`,
-                    });
+            JSXOpeningElement(pathNode) {
+                const tagNode = pathNode.node.name;
+                let rootIdentifier = null;
+
+                if (tagNode.type === 'JSXIdentifier') {
+                    // Standard React components begin with an uppercase letter: <Box />, <Icon />, etc.
+                    // Lowercase tags (<div />, <span />, <svg />, etc.) are native HTML/SVG elements.
+                    if (/^[A-Z]/.test(tagNode.name)) {
+                        rootIdentifier = tagNode;
+                    }
+                } else if (tagNode.type === 'JSXMemberExpression') {
+                    // Member expressions like <motion.div>, <React.Fragment>, <Menu.Item>
+                    // The leftmost root object must be defined in scope.
+                    let curr = tagNode;
+                    while (curr.type === 'JSXMemberExpression') {
+                        curr = curr.object;
+                    }
+                    if (curr.type === 'JSXIdentifier') {
+                        rootIdentifier = curr;
+                    }
+                }
+
+                if (rootIdentifier) {
+                    const name = rootIdentifier.name;
+                    if (!pathNode.scope.hasBinding(name) && !BROWSER_GLOBALS.has(name)) {
+                        issues.push({
+                            file: relativePath,
+                            type: 'UNDEFINED_COMPONENT',
+                            name,
+                            line: rootIdentifier.loc?.start.line,
+                            column: rootIdentifier.loc?.start.column,
+                            message: `Missing import or declaration for JSX component '<${name} ...>'`,
+                        });
+                    }
                 }
             },
         });

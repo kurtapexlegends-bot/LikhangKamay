@@ -6,6 +6,7 @@ import {
     CheckCircle2, 
     AlertTriangle, 
     Rotate3d, 
+    Box,
     Image as ImageIcon, 
     Store, 
     Tag, 
