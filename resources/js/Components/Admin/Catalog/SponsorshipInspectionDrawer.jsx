@@ -18,6 +18,7 @@ import { formatMoney } from '@/utils/accountingFormatters';
 import { resolveImageUrl } from '@/lib/media';
 import ProductImageLightboxModal from '@/Components/Consumer/Shop/ProductShow/ProductImageLightboxModal';
 import { ThreeDModelBoundary, ThreeDModelUnavailable } from '@/Components/ThreeD/ThreeDModelBoundary';
+import useNetworkStatus from '@/hooks/useNetworkStatus';
 
 const ProductViewer3D = lazy(() => import('@/Components/ThreeD/ProductViewer3D'));
 
@@ -29,6 +30,11 @@ export default function SponsorshipInspectionDrawer({
     onReject,
     isProcessing = false
 }) {
+    const { isDegraded } = useNetworkStatus();
+    const [hasConfirmed3D, setHasConfirmed3D] = useState(false);
+    const isLowBandwidth = isDegraded || (typeof navigator !== 'undefined' && Boolean(navigator.connection?.saveData));
+    const showLowBandwidthPrompt = isLowBandwidth && !hasConfirmed3D;
+
     const [prevRequestId, setPrevRequestId] = useState(request?.id);
     const [viewingMode, setViewingMode] = useState('image'); // 'image' | '3d'
     const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -46,6 +52,7 @@ export default function SponsorshipInspectionDrawer({
         setShowRejectInput(false);
         setRejectionReason('');
         setValidationError('');
+        setHasConfirmed3D(false);
     }
 
     const product = request?.product;
@@ -261,49 +268,71 @@ export default function SponsorshipInspectionDrawer({
 
                     <div className="w-full h-80 sm:h-96 rounded-2xl border border-stone-200 bg-stone-50 overflow-hidden relative flex items-center justify-center group">
                         {viewingMode === '3d' && has3D && model3dUrl ? (
-                            <div className="w-full h-full relative">
-                                <ThreeDModelBoundary
-                                    resetKey={model3dUrl}
-                                    fallback={({ onRetry }) => (
-                                        <ThreeDModelUnavailable
-                                            compact
-                                            title="3D Canvas unavailable"
-                                            description="Could not load the 3D preview."
-                                            onRetry={onRetry}
-                                            className="h-full"
-                                        />
-                                    )}
-                                >
-                                    <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-xs text-stone-400">Loading 3D Canvas...</div>}>
-                                        <ProductViewer3D 
-                                            modelUrl={model3dUrl} 
-                                            productName={product?.name || 'Craft Piece'}
-                                            dimensions={{
-                                                height: product?.height,
-                                                width: product?.width,
-                                                depth: product?.depth
-                                            }}
-                                            compact
-                                            hideBadge
-                                            topLeftAction={
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openLightbox(0, '3d')}
-                                                    className="px-2.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition shadow-xs cursor-pointer bg-white/90 backdrop-blur text-stone-700 border-gray-200 hover:bg-white active:scale-95 min-h-[38px] shrink-0"
-                                                    title="Open interactive 3D inspector with real-life scale ruler"
-                                                >
-                                                    <Maximize2 size={13} className="text-clay-600" />
-                                                    <span>Enlarge 3D & Scale</span>
-                                                </button>
-                                            }
-                                            className="w-full h-full"
-                                        />
-                                    </Suspense>
-                                </ThreeDModelBoundary>
-                            </div>
+                            showLowBandwidthPrompt ? (
+                                <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-stone-50">
+                                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mb-3 shadow-2xs">
+                                        <Box size={24} />
+                                    </div>
+                                    <h4 className="text-xs font-bold text-stone-900 mb-1">Slow Cellular Connection</h4>
+                                    <p className="text-[11px] text-stone-500 max-w-xs mb-4 leading-relaxed">
+                                        Interactive 3D craft inspection requires additional mobile data (~1.5–3.5 MB).
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => setHasConfirmed3D(true)}
+                                        className="px-4 py-2.5 rounded-xl bg-clay-600 hover:bg-clay-700 active:scale-95 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition cursor-pointer min-h-[44px]"
+                                    >
+                                        <Box size={14} />
+                                        <span>Load 3D View</span>
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="w-full h-full relative">
+                                    <ThreeDModelBoundary
+                                        resetKey={model3dUrl}
+                                        fallback={({ onRetry }) => (
+                                            <ThreeDModelUnavailable
+                                                compact
+                                                title="3D Canvas unavailable"
+                                                description="Could not load the 3D preview."
+                                                onRetry={onRetry}
+                                                className="h-full"
+                                            />
+                                        )}
+                                    >
+                                        <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-xs text-stone-400">Loading 3D Canvas...</div>}>
+                                            <ProductViewer3D 
+                                                modelUrl={model3dUrl} 
+                                                productName={product?.name || 'Craft Piece'}
+                                                dimensions={{
+                                                    height: product?.height,
+                                                    width: product?.width,
+                                                    depth: product?.depth
+                                                }}
+                                                compact
+                                                hideBadge
+                                                topLeftAction={
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openLightbox(0, '3d')}
+                                                        className="px-2.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition shadow-xs cursor-pointer bg-white/90 backdrop-blur text-stone-700 border-gray-200 hover:bg-white active:scale-95 min-h-[38px] shrink-0"
+                                                        title="Open interactive 3D inspector with real-life scale ruler"
+                                                    >
+                                                        <Maximize2 size={13} className="text-clay-600" />
+                                                        <span>Enlarge 3D & Scale</span>
+                                                    </button>
+                                                }
+                                                className="w-full h-full"
+                                            />
+                                        </Suspense>
+                                    </ThreeDModelBoundary>
+                                </div>
+                            )
                         ) : (
                             <div className="relative w-full h-full flex items-center justify-center">
                                 <img
+                                    loading="lazy"
+                                    decoding="async"
                                     src={activeImageUrl}
                                     alt={product?.name || 'Product'}
                                     onClick={() => openLightbox(activeImageIndex, 'image')}
@@ -358,6 +387,8 @@ export default function SponsorshipInspectionDrawer({
                                     }`}
                                 >
                                     <img
+                                        loading="lazy"
+                                        decoding="async"
                                         src={imgUrl}
                                         alt={`Thumbnail ${idx + 1}`}
                                         className="w-full h-full object-cover"

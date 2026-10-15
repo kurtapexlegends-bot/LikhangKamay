@@ -71,3 +71,12 @@ To maintain a bespoke, developer-crafted aesthetic:
 *   **Debouncing**: All text searches that send AJAX queries to the server must be debounced (300-400ms delay) to prevent rate limit exhaustion.
 *   **Client-Side Performance**: Heavy list filtering (e.g. Catalog, HR Directory, Order Lists, Supplies, Discounts) must be wrapped in React `useMemo` hooks to ensure zero stuttering during keystroke search queries.
 
+---
+
+## 6. Media Loading & Low-Bandwidth Resilience
+
+*   **Asynchronous Decoding & Lazy Loading**:
+    All non-hero secondary media, review attachments, dispute proofs, and order history item thumbnails must declare `loading="lazy"` and `decoding="async"` to prevent offscreen network contention on low-bandwidth mobile connections.
+*   **Low-Bandwidth 3D Model Guard**:
+    Interactive 3D GLB assets (~1.5–3.5 MB) in consumer galleries ([ProductImageGallery.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Consumer/Shop/ProductShow/ProductImageGallery.jsx)) and admin drawers ([ProductInspectionDrawer.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Admin/Catalog/ProductInspectionDrawer.jsx)) detect connection degradation via [useNetworkStatus.js](file:///c:/laragon/www/LikhangKamay/resources/js/hooks/useNetworkStatus.js) and `navigator.connection.saveData`. When degraded, automatic downloading is intercepted by a lightweight notice card requiring explicit user confirmation ("Load 3D Model").
+

@@ -238,6 +238,8 @@ export default function OrderListItemCard({
                                                 title="View unboxing proof in carousel"
                                             >
                                                 <img
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     src={resolveImageUrl(photo)}
                                                     alt={`Proof ${i + 1}`}
                                                     className="h-full w-full object-cover"

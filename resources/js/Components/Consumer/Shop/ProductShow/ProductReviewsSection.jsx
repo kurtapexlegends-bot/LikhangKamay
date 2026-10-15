@@ -95,6 +95,8 @@ export default function ProductReviewsSection({
                                                             title={`View photo ${i + 1} of ${review.photos.length} in carousel`}
                                                         >
                                                             <img 
+                                                                loading="lazy"
+                                                                decoding="async"
                                                                 src={photoUrl} 
                                                                 alt="Review Attachment" 
                                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" 
@@ -225,6 +227,8 @@ export default function ProductReviewsSection({
                                                     {currentReviewPhotos.map((photo, i) => (
                                                         <div key={`${photo}-${i}`} className="w-10 h-10 rounded overflow-hidden border border-gray-200">
                                                             <img
+                                                                loading="lazy"
+                                                                decoding="async"
                                                                 src={resolveImageUrl(photo)}
                                                                 alt="Current review"
                                                                 className="w-full h-full object-cover"

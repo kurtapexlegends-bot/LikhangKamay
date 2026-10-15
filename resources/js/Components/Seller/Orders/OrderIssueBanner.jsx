@@ -68,6 +68,8 @@ export default function OrderIssueBanner({ order, issueSummary }) {
                                             title={`Inspect buyer proof photo ${i + 1} in carousel`}
                                         >
                                             <img
+                                                loading="lazy"
+                                                decoding="async"
                                                 src={photoUrl}
                                                 alt={`Dispute proof ${i + 1}`}
                                                 className="h-full w-full object-cover"

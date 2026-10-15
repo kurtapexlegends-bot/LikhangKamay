@@ -1,8 +1,10 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { router } from "@inertiajs/react";
 import { isLalamoveManagedOrder } from "@/utils/sellerOrderHelpers";
 
 export default function useOrderPolling(paginatedOrders) {
+    const isReloadingRef = useRef(false);
+
     const hasActiveCourierTracking = useMemo(() => {
         if (!Array.isArray(paginatedOrders)) return false;
         
@@ -22,19 +24,42 @@ export default function useOrderPolling(paginatedOrders) {
             return undefined;
         }
 
-        const intervalId = window.setInterval(() => {
-            if (document.hidden || !navigator.onLine) {
-                return;
-            }
+        let isMounted = true;
 
+        const reloadOrders = () => {
+            if (isReloadingRef.current || !isMounted) return;
+            if (document.hidden || !navigator.onLine) return;
+
+            isReloadingRef.current = true;
             router.reload({
                 only: ["orders"],
                 preserveState: true,
                 preserveScroll: true,
+                onFinish: () => {
+                    isReloadingRef.current = false;
+                },
             });
-        }, 15000);
+        };
 
-        return () => window.clearInterval(intervalId);
+        const intervalId = window.setInterval(reloadOrders, 15000);
+
+        // Wake up immediately when tab gains focus instead of waiting up to 15 seconds
+        const handleVisibilityChange = () => {
+            if (!document.hidden && navigator.onLine) {
+                reloadOrders();
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        window.addEventListener("focus", handleVisibilityChange);
+
+        return () => {
+            isMounted = false;
+            isReloadingRef.current = false;
+            window.clearInterval(intervalId);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            window.removeEventListener("focus", handleVisibilityChange);
+        };
     }, [hasActiveCourierTracking]);
 
     return { hasActiveCourierTracking };

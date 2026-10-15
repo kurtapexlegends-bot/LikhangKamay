@@ -125,9 +125,15 @@ LikhangKamay uses a dual-layer real-time architecture to deliver live updates se
 1.  **Primary Channel (Supabase & WebSockets)**:
     *   Listens for `postgres_changes` on the `notifications` and `orders` tables.
     *   Listens for private chat broadcasts via Laravel Echo (`chat.{id}`, `team-chat.{id}`).
-2.  **Continuous Heartbeat Fallback**:
-    *   If Supabase or Echo WebSockets disconnect, timeout, or error, the client automatically starts a background synchronization heartbeat (2.5s on active conversations, 4s on inboxes, and 5s on dashboards/orders/ERP modules).
+2.  **Adaptive Polling Fallback ([useRealtime.js](file:///c:/laragon/www/LikhangKamay/resources/js/hooks/useRealtime.js))**:
+    *   If Supabase or Echo WebSockets disconnect, the client automatically starts recursive fallback polling.
+    *   **In-Flight Mutex Guard**: Uses `isReloadingRef` to ensure an unresolved slow reload skips subsequent ticks, preventing HTTP request stacking on high-latency links.
+    *   **Adaptive Cadence**: 5 seconds on normal connections; dynamically backs off to **18 seconds** when network degradation is detected (`isDegraded === true` from [useNetworkStatus.js](file:///c:/laragon/www/LikhangKamay/resources/js/hooks/useNetworkStatus.js)).
+    *   **Background Tab Sleep**: Completely suspends polling when `document.hidden === true` or offline to preserve mobile battery and prevent lambda exhaustion.
 3.  **Instant Window Focus Synchronization**:
-    *   Whenever the user refocuses the window or switches back to the browser tab (`visibilitychange` / `focus`), an immediate sync request updates notification badges and counters without page refreshes.
-4.  **Cross-Database JSON Compatibility**:
+    *   Whenever the user refocuses the window or switches back to the browser tab (`visibilitychange` / `focus`), an immediate sync request updates notification badges and counters without page refreshes, and resumes fallback polling if disconnected.
+4.  **Courier Tracking Polling ([useOrderPolling.js](file:///c:/laragon/www/LikhangKamay/resources/js/hooks/useOrderPolling.js))**:
+    *   Active delivery tracking periodically queries order state (15s cadence) with in-flight lock protection.
+    *   Sleeps during background tab state and immediately refreshes on tab refocus.
+5.  **Cross-Database JSON Compatibility**:
     *   The `notifications.data` column uses native `jsonb` on PostgreSQL and `json` on MySQL, allowing robust JSON path filters (`data->sender_id`) without syntax errors.

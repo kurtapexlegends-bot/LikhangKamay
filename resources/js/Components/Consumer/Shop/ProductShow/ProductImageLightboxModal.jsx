@@ -404,6 +404,7 @@ export default function ProductImageLightboxModal({
                                         key={currentImage}
                                         src={currentImage}
                                         alt={`${productName} photo ${activeIndex + 1}`}
+                                        decoding="async"
                                         className="max-h-[58vh] sm:max-h-[64vh] md:max-h-[70vh] max-w-[94vw] w-auto h-auto object-contain rounded-xl shadow-2xl transition-transform duration-200"
                                         style={{
                                             transform: `scale(${zoom}) rotate(${rotation}deg) translate(${pan.x}px, ${pan.y}px)`,
@@ -452,6 +453,8 @@ export default function ProductImageLightboxModal({
                                                 <img
                                                     src={img}
                                                     alt=""
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     className="w-full h-full object-cover"
                                                     onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
                                                 />

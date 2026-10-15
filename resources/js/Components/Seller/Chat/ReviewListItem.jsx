@@ -209,6 +209,8 @@ export default function ReviewListItem({
                                     title={`View customer photo ${idx + 1} in carousel`}
                                 >
                                     <img
+                                        loading="lazy"
+                                        decoding="async"
                                         src={photoUrl}
                                         alt={`Review photo ${idx + 1}`}
                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"

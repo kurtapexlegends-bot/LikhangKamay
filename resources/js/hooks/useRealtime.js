@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { supabase } from '@/utils/supabase';
 import { useToast } from '@/Components/ToastContext';
+import useNetworkStatus from '@/hooks/useNetworkStatus';
 
 /**
  * useRealtime hook
@@ -11,9 +12,13 @@ import { useToast } from '@/Components/ToastContext';
 export const useRealtime = () => {
     const { auth, notifications, currentChatUser, currentChannel } = usePage().props;
     const { addToast } = useToast();
+    const { isDegraded } = useNetworkStatus();
     const user = auth?.user;
     const prevNotificationsRef = useRef(undefined);
     const initialReloadFinished = useRef(false);
+    const isReloadingRef = useRef(false);
+    const isDegradedRef = useRef(isDegraded);
+    isDegradedRef.current = isDegraded;
 
     // Track when notifications prop changes to display visual toasts for newly received unread items
     useEffect(() => {
@@ -65,8 +70,9 @@ export const useRealtime = () => {
         let sellerNotificationChannel = null;
         let orderChannel = null;
         let adminChannel = null;
-        let fallbackPollInterval = null;
+        let fallbackPollTimeout = null;
         let isRealtimeSubscribed = false;
+        let isDisposed = false;
 
         const getPollKeys = () => {
             const reloadKeys = ['notifications', 'unreadNotificationCount', 'unreadMessageCount'];
@@ -103,23 +109,73 @@ export const useRealtime = () => {
         };
 
         const executeSync = () => {
+            if (isReloadingRef.current || isDisposed) return;
+            if (typeof document !== 'undefined' && document.hidden) return;
+            if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+
+            isReloadingRef.current = true;
             router.reload({
                 only: getPollKeys(),
                 preserveScroll: true,
                 preserveState: true,
                 showProgress: false,
+                onFinish: () => {
+                    isReloadingRef.current = false;
+                },
             });
         };
 
+        const scheduleFallbackPoll = (delayMs) => {
+            if (isDisposed) return;
+            if (fallbackPollTimeout) {
+                clearTimeout(fallbackPollTimeout);
+                fallbackPollTimeout = null;
+            }
+
+            fallbackPollTimeout = setTimeout(() => {
+                if (isDisposed || isRealtimeSubscribed) return;
+
+                if (typeof document !== 'undefined' && document.hidden) {
+                    // Sleep while tab is backgrounded; wake up on focus/visibilitychange
+                    return;
+                }
+                if (typeof navigator !== 'undefined' && !navigator.onLine) {
+                    return;
+                }
+
+                if (isReloadingRef.current) {
+                    // Previous reload is still in flight; defer next tick
+                    scheduleFallbackPoll(3500);
+                    return;
+                }
+
+                isReloadingRef.current = true;
+                router.reload({
+                    only: getPollKeys(),
+                    preserveScroll: true,
+                    preserveState: true,
+                    showProgress: false,
+                    onFinish: () => {
+                        isReloadingRef.current = false;
+                        if (!isDisposed && !isRealtimeSubscribed) {
+                            const nextDelay = isDegradedRef.current ? 18000 : 5000;
+                            scheduleFallbackPoll(nextDelay);
+                        }
+                    },
+                });
+            }, delayMs);
+        };
+
         const startFallbackPolling = () => {
-            if (fallbackPollInterval) return;
-            fallbackPollInterval = setInterval(executeSync, 5000);
+            if (fallbackPollTimeout) return;
+            const initialDelay = isDegradedRef.current ? 18000 : 5000;
+            scheduleFallbackPoll(initialDelay);
         };
 
         const stopFallbackPolling = () => {
-            if (fallbackPollInterval) {
-                clearInterval(fallbackPollInterval);
-                fallbackPollInterval = null;
+            if (fallbackPollTimeout) {
+                clearTimeout(fallbackPollTimeout);
+                fallbackPollTimeout = null;
             }
         };
 
@@ -272,14 +328,19 @@ export const useRealtime = () => {
 
             // Visibility / focus event listener for immediate sync
             const handleFocusSync = () => {
-                if (!document.hidden) {
+                if (typeof document !== 'undefined' && !document.hidden && typeof navigator !== 'undefined' && navigator.onLine) {
                     executeSync();
+                    if (!isRealtimeSubscribed) {
+                        startFallbackPolling();
+                    }
                 }
             };
             window.addEventListener('focus', handleFocusSync);
             document.addEventListener('visibilitychange', handleFocusSync);
 
             return () => {
+                isDisposed = true;
+                isReloadingRef.current = false;
                 clearTimeout(connectionGuard);
                 window.removeEventListener('focus', handleFocusSync);
                 document.removeEventListener('visibilitychange', handleFocusSync);
@@ -293,14 +354,17 @@ export const useRealtime = () => {
             startFallbackPolling();
 
             const handleFocusSync = () => {
-                if (!document.hidden) {
+                if (typeof document !== 'undefined' && !document.hidden && typeof navigator !== 'undefined' && navigator.onLine) {
                     executeSync();
+                    startFallbackPolling();
                 }
             };
             window.addEventListener('focus', handleFocusSync);
             document.addEventListener('visibilitychange', handleFocusSync);
 
             return () => {
+                isDisposed = true;
+                isReloadingRef.current = false;
                 window.removeEventListener('focus', handleFocusSync);
                 document.removeEventListener('visibilitychange', handleFocusSync);
                 stopFallbackPolling();

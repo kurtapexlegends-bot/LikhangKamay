@@ -27,6 +27,8 @@ export default function OrderCardItems({ order }) {
                     >
                         <div className="w-11 h-11 bg-white rounded-lg border border-stone-200 overflow-hidden shrink-0 shadow-2xs">
                             <img 
+                                loading="lazy"
+                                decoding="async"
                                 src={item.img} 
                                 alt={item.name} 
                                 className="w-full h-full object-cover"
@@ -49,11 +51,13 @@ export default function OrderCardItems({ order }) {
                         <div key={idx} className="flex items-center gap-3.5 p-3 transition-colors hover:bg-white w-full min-w-0">
                             <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-lg border border-stone-200 overflow-hidden shrink-0 shadow-2xs">
                                 <img 
+                                    loading="lazy"
+                                    decoding="async"
                                     src={item.img} 
                                     alt={item.name} 
                                     className="w-full h-full object-cover"
                                     onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
-                                								/>
+                                />
                             </div>
                             <div className="flex-1 min-w-0 flex flex-row items-center justify-between gap-3">
                                 <div className="min-w-0 flex-1">

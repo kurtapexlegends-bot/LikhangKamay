@@ -3,6 +3,7 @@ import { Image as ImageIcon, Box, Flag, Heart, Loader2, Maximize2 } from 'lucide
 import ProductImageMagnifier from './ProductImageMagnifier';
 import ProductImageLightboxModal from './ProductImageLightboxModal';
 import { ThreeDModelBoundary, ThreeDModelUnavailable } from '@/Components/ThreeD/ThreeDModelBoundary';
+import useNetworkStatus from '@/hooks/useNetworkStatus';
 
 const ProductViewer3D = lazy(() => import('@/Components/ThreeD/ProductViewer3D'));
 
@@ -20,6 +21,11 @@ export default function ProductImageGallery({
     setIsReporting,
     onOpenHeightComparison,
 }) {
+    const { isDegraded } = useNetworkStatus();
+    const [hasConfirmed3D, setHasConfirmed3D] = useState(false);
+    const isLowBandwidth = isDegraded || (typeof navigator !== 'undefined' && Boolean(navigator.connection?.saveData));
+    const showLowBandwidthPrompt = isLowBandwidth && !hasConfirmed3D;
+
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
     const [lightboxInitialMode, setLightboxInitialMode] = useState('image');
     const [isScaleBenchmarkActive, setIsScaleBenchmarkActive] = useState(false);
@@ -99,6 +105,8 @@ export default function ProductImageGallery({
                                         }}
                                     >
                                         <img 
+                                            loading={index === 0 ? 'eager' : 'lazy'}
+                                            decoding="async"
                                             src={img} 
                                             alt={`${product.name} - image ${index + 1}`}
                                             className="w-full h-full object-cover"
@@ -115,6 +123,24 @@ export default function ProductImageGallery({
                             )}
                         </div>
                     </>
+                ) : showLowBandwidthPrompt ? (
+                    <div className="flex flex-col h-full items-center justify-center bg-gradient-to-b from-stone-50 to-white p-6 text-center">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mb-3 shadow-2xs">
+                            <Box size={24} />
+                        </div>
+                        <h4 className="text-xs font-bold text-stone-900 mb-1">Slow Cellular Connection</h4>
+                        <p className="text-[11px] text-stone-500 max-w-xs mb-4 leading-relaxed">
+                            Interactive 3D craft models require additional mobile data (~1.5–3.5 MB).
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setHasConfirmed3D(true)}
+                            className="px-4 py-2.5 rounded-xl bg-clay-600 hover:bg-clay-700 active:scale-95 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition cursor-pointer min-h-[44px]"
+                        >
+                            <Box size={14} />
+                            <span>Load 3D Model</span>
+                        </button>
+                    </div>
                 ) : (
                     <ThreeDModelBoundary
                         resetKey={product.model_3d_url || product.model_url}
@@ -209,6 +235,8 @@ export default function ProductImageGallery({
                         }`}
                     >
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={img}
                             alt=""
                             className="w-full h-full object-cover"
