@@ -44,7 +44,7 @@ class VerifySubscriptionPayment
             }
 
             $attributes = $session['attributes'] ?? [];
-            $referenceNumber = $attributes['reference_number'] ?? null;
+            $referenceNumber = $attributes['reference_number'] ?? ($attributes['metadata']['reference_number'] ?? null);
 
             if ($referenceNumber && $referenceNumber !== $tx->reference_number) {
                 Log::warning('Subscription PayMongo reference mismatch', [
@@ -134,7 +134,7 @@ class VerifySubscriptionPayment
             $tx = SubscriptionTransaction::lockForUpdate()->findOrFail($transaction->id);
 
             $attributes = $session['attributes'] ?? [];
-            $referenceNumber = $attributes['reference_number'] ?? null;
+            $referenceNumber = $attributes['reference_number'] ?? ($attributes['metadata']['reference_number'] ?? null);
 
             if ($referenceNumber && $referenceNumber !== $tx->reference_number) {
                 Log::warning('Subscription PayMongo reference mismatch during reconciliation', [

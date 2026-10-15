@@ -41,8 +41,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user ? array_merge(
                     $user->only([
-                        'id', 'name', 'first_name', 'last_name', 'email', 'role', 'staff_role_preset_key',
-                        'shop_name', 'shop_slug', 'avatar', 'avatar_url', 'banner_image', 'banner_image_url',
+                        'id', 'name', 'first_name', 'last_name', 'email', 'email_verified_at', 'role', 'staff_role_preset_key',
+                        'shop_name', 'shop_slug', 'bio', 'avatar', 'avatar_url', 'banner_image', 'banner_image_url',
                         'artisan_status', 'artisan_rejection_reason', 'premium_tier', 'payout_method',
                         'payout_account_name', 'approved_at', 'artisan_welcomed',
                         'street_address', 'saved_address', 'barangay', 'city', 'region', 'zip_code', 'phone_number',

@@ -34,6 +34,8 @@ class HandleInertiaRequestsSanitizationTest extends TestCase
                     ->where('has_dti_registration', true)
                     ->where('has_valid_id', true)
                     ->where('has_tin_id', true)
+                    ->has('email_verified_at')
+                    ->has('bio')
                     // Must strip raw document columns and URLs
                     ->missing('payout_account_number')
                     ->missing('business_permit')
@@ -106,6 +108,16 @@ class HandleInertiaRequestsSanitizationTest extends TestCase
                         ->has('valid_id_url')
                         ->has('tin_id_url');
                 });
+        });
+    }
+
+    public function test_guest_receives_null_auth_user(): void
+    {
+        $response = $this->get(route('home'));
+
+        $response->assertOk();
+        $response->assertInertia(function (Assert $page) {
+            $page->where('auth.user', null);
         });
     }
 }

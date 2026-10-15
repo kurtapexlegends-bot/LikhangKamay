@@ -285,6 +285,10 @@ class InHouseDispatchService
                 throw new RuntimeException('Unauthorized to complete this delivery.');
             }
 
+            if ($lockedDelivery->status === OrderDelivery::STATUS_COMPLETED) {
+                return $lockedDelivery;
+            }
+
             $podPhotoPath = null;
             if ($podPhoto instanceof UploadedFile) {
                 $podPhotoPath = $podPhoto->store('delivery_proofs/' . date('Y/m'), 'public');

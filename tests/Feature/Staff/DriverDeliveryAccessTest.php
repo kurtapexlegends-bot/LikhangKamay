@@ -412,4 +412,92 @@ class DriverDeliveryAccessTest extends TestCase
             'Illegitimate delivery completion attempt'
         );
     }
+
+    public function test_assigned_driver_can_update_telemetry_for_own_delivery(): void
+    {
+        $buyer = User::factory()->create(['role' => 'buyer']);
+        $order = Order::create([
+            'order_number' => 'ORD-TELEM-AUTH-1',
+            'user_id' => $buyer->id,
+            'artisan_id' => $this->premiumSeller->id,
+            'customer_name' => $buyer->name,
+            'status' => 'Accepted',
+            'shipping_method' => 'Delivery',
+            'shipping_recipient_name' => 'Maria Clara',
+            'shipping_contact_phone' => '09181112233',
+            'shipping_address' => '123 Bonifacio St, Taguig',
+            'total_amount' => 850.00,
+            'payment_status' => 'paid',
+            'payment_method' => 'gcash',
+        ]);
+
+        $dispatchService = app(InHouseDispatchService::class);
+        $delivery = $dispatchService->dispatchOrderWithDriver(
+            $order,
+            $this->driverEmployee->id,
+            $this->premiumSeller,
+            'Deliver safely'
+        );
+
+        $response = $this->actingAs($this->driverUser)
+            ->putJson(route('staff.deliveries.telemetry', $delivery->id), [
+                'latitude' => 14.3294,
+                'longitude' => 120.9367,
+                'heading' => 180,
+                'speed_kph' => 45.5,
+            ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'telemetry' => [
+                    'latitude' => 14.3294,
+                    'longitude' => 120.9367,
+                ],
+            ]);
+
+        $fresh = $delivery->fresh();
+        $this->assertEquals(14.3294, $fresh->current_latitude);
+        $this->assertEquals(120.9367, $fresh->current_longitude);
+        $this->assertEquals(180, $fresh->heading);
+        $this->assertEquals(45.5, $fresh->speed_kph);
+    }
+
+    public function test_complete_delivery_is_idempotent(): void
+    {
+        $buyer = User::factory()->create(['role' => 'buyer']);
+        $order = Order::create([
+            'order_number' => 'ORD-IDEMPOTENT-1',
+            'user_id' => $buyer->id,
+            'artisan_id' => $this->premiumSeller->id,
+            'customer_name' => $buyer->name,
+            'status' => 'Accepted',
+            'shipping_method' => 'Delivery',
+            'shipping_recipient_name' => 'Maria Clara',
+            'shipping_contact_phone' => '09181112233',
+            'shipping_address' => '123 Bonifacio St, Taguig',
+            'total_amount' => 850.00,
+            'payment_status' => 'paid',
+            'payment_method' => 'gcash',
+        ]);
+
+        $dispatchService = app(InHouseDispatchService::class);
+        $delivery = $dispatchService->dispatchOrderWithDriver(
+            $order,
+            $this->driverEmployee->id,
+            $this->premiumSeller,
+            'First run'
+        );
+
+        $photo = UploadedFile::fake()->image('proof.jpg', 600, 600);
+        $firstResult = $dispatchService->completeDelivery($delivery, $this->driverUser, $photo, 'First delivery notes');
+        $this->assertSame(OrderDelivery::STATUS_COMPLETED, $firstResult->status);
+
+        $eventCountAfterFirst = $delivery->events()->count();
+
+        // Second completion call should be idempotent and return without duplicating events or throwing
+        $secondResult = $dispatchService->completeDelivery($delivery, $this->driverUser, $photo, 'Second run attempt');
+        $this->assertSame(OrderDelivery::STATUS_COMPLETED, $secondResult->status);
+        $this->assertSame($eventCountAfterFirst, $delivery->events()->count());
+    }
 }

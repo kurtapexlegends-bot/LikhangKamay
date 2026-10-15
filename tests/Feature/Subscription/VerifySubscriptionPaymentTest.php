@@ -87,11 +87,13 @@ class VerifySubscriptionPaymentTest extends TestCase
                 ],
             ]);
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('reference_mismatch');
-
         $action = new VerifySubscriptionPayment();
-        $action->verifySuccess($transaction, $payMongoMock, app(SubscriptionService::class));
+        try {
+            $action->verifySuccess($transaction, $payMongoMock, app(SubscriptionService::class));
+            $this->fail('Expected reference_mismatch exception was not thrown.');
+        } catch (\Exception $e) {
+            $this->assertSame('reference_mismatch', $e->getMessage());
+        }
 
         $this->assertSame(SubscriptionTransaction::STATUS_PENDING, $transaction->fresh()->status);
         $this->assertSame('free', $artisan->fresh()->premium_tier);
@@ -125,11 +127,13 @@ class VerifySubscriptionPaymentTest extends TestCase
                 ],
             ]);
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('not_paid');
-
         $action = new VerifySubscriptionPayment();
-        $action->verifySuccess($transaction, $payMongoMock, app(SubscriptionService::class));
+        try {
+            $action->verifySuccess($transaction, $payMongoMock, app(SubscriptionService::class));
+            $this->fail('Expected not_paid exception was not thrown.');
+        } catch (\Exception $e) {
+            $this->assertSame('not_paid', $e->getMessage());
+        }
 
         $this->assertSame(SubscriptionTransaction::STATUS_PENDING, $transaction->fresh()->status);
         $this->assertSame('free', $artisan->fresh()->premium_tier);
@@ -188,5 +192,45 @@ class VerifySubscriptionPaymentTest extends TestCase
 
         $action = new VerifySubscriptionPayment();
         $action->verifySuccess($transaction, $payMongoMock, app(SubscriptionService::class));
+    }
+
+    public function test_verify_success_accepts_reference_number_in_metadata(): void
+    {
+        $artisan = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'free',
+        ]);
+
+        $transaction = SubscriptionTransaction::create([
+            'user_id' => $artisan->id,
+            'reference_number' => 'SUB-META-REF-777',
+            'from_plan' => 'free',
+            'to_plan' => 'premium',
+            'amount' => 199.00,
+            'currency' => 'PHP',
+            'status' => SubscriptionTransaction::STATUS_PENDING,
+            'paymongo_session_id' => 'cs_meta_session_777',
+        ]);
+
+        $payMongoMock = $this->createMock(PayMongoService::class);
+        $payMongoMock->expects($this->once())
+            ->method('retrieveCheckoutSession')
+            ->with('cs_meta_session_777')
+            ->willReturn([
+                'attributes' => [
+                    'reference_number' => null,
+                    'metadata' => [
+                        'reference_number' => 'SUB-META-REF-777',
+                    ],
+                    'payment_status' => 'paid',
+                    'status' => 'active',
+                ],
+            ]);
+
+        $action = new VerifySubscriptionPayment();
+        $result = $action->verifySuccess($transaction, $payMongoMock, app(SubscriptionService::class));
+
+        $this->assertSame('applied', $result);
+        $this->assertSame(SubscriptionTransaction::STATUS_PAID, $transaction->fresh()->status);
+        $this->assertSame('premium', $artisan->fresh()->premium_tier);
     }
 }
