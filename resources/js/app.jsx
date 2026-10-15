@@ -67,6 +67,8 @@ Sentry.init({
   ],
   ignoreErrors: [
     "Cannot read properties of undefined (reading 'startTime')",
+    "Cannot read properties of undefined (reading 'M_ID')",
+    /Cannot read properties of undefined \(reading ['"]M_ID['"]\)/,
     "reportAllChanges",
   ],
   // Performance Monitoring
@@ -75,6 +77,16 @@ Sentry.init({
   replaysSessionSampleRate: import.meta.env.PROD ? 0.05 : 0.1,
   replaysOnErrorSampleRate: 1.0,
 });
+
+// Suppress unhandled rejections from injected browser extension scripts (e.g. 200.js wallet probes)
+if (typeof window !== 'undefined') {
+    window.addEventListener('unhandledrejection', (event) => {
+        const msg = event?.reason?.message || '';
+        if (typeof msg === 'string' && msg.includes('M_ID')) {
+            event.preventDefault();
+        }
+    });
+}
 
 createInertiaApp({
     title: (title) => {
