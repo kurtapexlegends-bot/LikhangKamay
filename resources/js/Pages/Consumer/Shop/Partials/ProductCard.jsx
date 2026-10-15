@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
+import useNetworkStatus from '@/hooks/useNetworkStatus';
 import { Star, Award } from 'lucide-react';
 import { hasRating, formatRating } from '@/utils/rating';
 import { trackSponsorshipEvent } from '@/utils/sponsorshipTracking';
@@ -8,6 +9,7 @@ import DiscountCountdownBadge from '@/Components/Consumer/DiscountCountdownBadge
 import { resolveImageUrl } from '@/lib/media';
 
 export default function ProductCard({ product, sponsoredPlacement, previewOnly = false }) {
+    const { canPrefetch } = useNetworkStatus();
     const hasActiveDiscount = (product.has_discount || Boolean(product.discount_info)) && product.discount_info?.end_at;
     const targetUrl = previewOnly
         ? route('products.index', { search: product.name })
@@ -16,6 +18,7 @@ export default function ProductCard({ product, sponsoredPlacement, previewOnly =
     return (
         <Link 
             href={targetUrl} 
+            prefetch={canPrefetch ? 'hover' : false} 
             data-sponsored-placement={product.is_sponsored ? sponsoredPlacement : undefined}
             data-sponsored-product-id={product.is_sponsored ? product.id : undefined}
             onClick={() => {

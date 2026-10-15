@@ -4,6 +4,7 @@ import { Link, usePage, router } from '@inertiajs/react';
 import axios from 'axios';
 import NotificationDropdown from '@/Components/NotificationDropdown';
 import { useRealtime } from '@/hooks/useRealtime';
+import useNetworkStatus from '@/hooks/useNetworkStatus';
 import { MessageCircle, Search, X } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import MobileDock from '@/Layouts/MobileDock';
@@ -18,6 +19,7 @@ import ScrollToTop from '@/Components/ScrollToTop';
 export default function BuyerNavbar({ hideMobileDock = false }) {
     // Enable Real-time synchronization
     useRealtime();
+    const { canPrefetch } = useNetworkStatus();
 
     const { auth, cartCount, sellerSidebar, unreadMessageCount, platform } = usePage().props;
     const user = auth?.user;
@@ -281,8 +283,8 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
                             </>
                         ) : (
                             <div className="flex items-center gap-1.5 sm:gap-2">
-                                <Link href={route('login')} prefetch="hover" className="px-3 sm:px-4 py-2 text-sm font-bold text-gray-600 hover:text-clay-600 transition-all active:scale-95">Log In</Link>
-                                <Link href={route('register')} prefetch="hover" className="px-3 sm:px-4 py-2 bg-clay-600 text-white rounded-full text-sm font-bold hover:bg-clay-700 transition-all active:scale-95">Sign Up</Link>
+                                <Link href={route('login')} prefetch={canPrefetch ? 'hover' : false} className="px-3 sm:px-4 py-2 text-sm font-bold text-gray-600 hover:text-clay-600 transition-all active:scale-95">Log In</Link>
+                                <Link href={route('register')} prefetch={canPrefetch ? 'hover' : false} className="px-3 sm:px-4 py-2 bg-clay-600 text-white rounded-full text-sm font-bold hover:bg-clay-700 transition-all active:scale-95">Sign Up</Link>
                             </div>
                         )}
                     </div>

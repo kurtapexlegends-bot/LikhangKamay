@@ -1,8 +1,10 @@
 import React, { memo, useEffect, useRef } from 'react';
 import { Link } from '@inertiajs/react';
+import useNetworkStatus from '@/hooks/useNetworkStatus';
 
-function NavItem({ href, icon: Icon, active, children, compact, onClick, isCollapsed, onMouseEnter, onMouseLeave, badge }) {
+function NavItem({ href, icon: Icon, active, children, compact, onClick, isCollapsed, onMouseEnter, onMouseLeave, badge, prefetch }) {
     const itemRef = useRef(null);
+    const { canPrefetch } = useNetworkStatus();
 
     useEffect(() => {
         if (active && itemRef.current) {
@@ -24,7 +26,7 @@ function NavItem({ href, icon: Icon, active, children, compact, onClick, isColla
         >
             <Link
                 href={href}
-                prefetch="hover"
+                prefetch={prefetch !== undefined ? prefetch : (canPrefetch ? 'hover' : false)}
                 preserveScroll
                 onClick={onClick}
                 className={`group relative flex items-center rounded-lg text-xs font-bold transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 ${

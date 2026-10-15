@@ -10,6 +10,7 @@ import ActivityHistoryDrawer from '@/Components/ActivityHistoryDrawer';
 import ScrollToTop from '@/Components/ScrollToTop';
 import SidebarResizeHandle from '@/Components/Common/SidebarResizeHandle';
 import { useRealtime } from '@/hooks/useRealtime';
+import useNetworkStatus from '@/hooks/useNetworkStatus';
 import { useResizableSidebar } from '@/hooks/useResizableSidebar';
 import {
     LayoutDashboard,
@@ -539,7 +540,8 @@ const CategoryGroup = ({ title, open, onToggle, isFirst, children, isCollapsed }
     </div>
 );
 
-const NavItem = ({ href, icon: Icon, active, badge, onClick, children, isCollapsed, onMouseEnter, onMouseLeave }) => {
+const NavItem = ({ href, icon: Icon, active, badge, onClick, children, isCollapsed, onMouseEnter, onMouseLeave, prefetch }) => {
+    const { canPrefetch } = useNetworkStatus();
     return (
         <div 
             onMouseEnter={onMouseEnter}
@@ -548,7 +550,7 @@ const NavItem = ({ href, icon: Icon, active, badge, onClick, children, isCollaps
         >
             <MotionLink
                 href={href}
-                prefetch="hover"
+                prefetch={prefetch !== undefined ? prefetch : (canPrefetch ? 'hover' : false)}
                 preserveScroll
                 onClick={onClick}
                 whileTap={{ scale: 0.98 }}

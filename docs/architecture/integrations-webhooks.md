@@ -137,3 +137,34 @@ LikhangKamay uses a dual-layer real-time architecture to deliver live updates se
     *   Sleeps during background tab state and immediately refreshes on tab refocus.
 5.  **Cross-Database JSON Compatibility**:
     *   The `notifications.data` column uses native `jsonb` on PostgreSQL and `json` on MySQL, allowing robust JSON path filters (`data->sender_id`) without syntax errors.
+
+---
+
+## 6. Client Transport Resilience & Prefetching Strategy
+
+To safeguard user experience and prevent data loss over high-latency or metered cellular networks in Philippine provinces, LikhangKamay enforces a resilient client transport policy.
+
+### Axios Request Timeout & Idempotent GET Retry
+*   **Target File**: [bootstrap.js](file:///c:/laragon/www/LikhangKamay/resources/js/bootstrap.js)
+*   **Request Timeout**: Configured at `window.axios.defaults.timeout = 12000` (12 seconds), keeping client execution safely below Vercel's 15-second serverless execution ceiling.
+*   **Idempotent Retry Policy**:
+    *   **Scope**: Strictly restricted to idempotent `GET` requests (`config.method.toLowerCase() === 'get'`). Mutating verbs (`POST`, `PUT`, `PATCH`, `DELETE`) are **never retried** to guarantee absolute protection against duplicate orders, double payments, or duplicate stock movements.
+    *   **Cancellation Safety**: Aborted requests (`axios.isCancel(error)` or `config.signal.aborted`) reject immediately without retry, preventing unmount leaks.
+    *   **Transient Error Interception**: Automatically catches `ECONNABORTED` (timeout), `ERR_NETWORK`, socket drops (`!response`), and gateway errors (`502`, `503`, `504`).
+    *   **Backoff Schedule**: Maximum of 2 retries (total 3 attempts) using jittered exponential backoff:
+        $$\text{delay} = 1000 \times 1.5^{\text{attempt} - 1} + \text{jitter}(0..350\text{ms})$$
+    *   **Degradation Notification**: On transient drops, dispatches `window.dispatchEvent(new CustomEvent('network-degraded'))`, seamlessly coordinating with UI components and `useRealtime`.
+
+### Conditional Link Hover Prefetching
+*   **Target Hook**: [useNetworkStatus.js](file:///c:/laragon/www/LikhangKamay/resources/js/hooks/useNetworkStatus.js)
+*   **Singleton Reactive Store**: Uses React 18 `useSyncExternalStore` with a module-level singleton subscriber to eliminate duplicate event listeners across hundreds of mounted components.
+*   **Prefetch Evaluation**:
+    *   `canPrefetch = isOnline && !isDegraded && !saveData`
+    *   Detects cellular Data Saver mode (`navigator.connection.saveData`) and slow 2G cellular bands (`navigator.connection.effectiveType === 'slow-2g' || '2g'`).
+    *   Subscribes to browser `online`, `offline`, `network-degraded`, and Network Information `change` events.
+*   **Protected UI Call-Sites**:
+    *   **Buyer Header**: [BuyerNavbar.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Layouts/BuyerNavbar.jsx) conditionally prefetches login/register links.
+    *   **Seller Sidebar**: [NavItem.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Sidebar/NavItem.jsx) dynamically gates dashboard route prefetching.
+    *   **Admin Console**: [AdminLayout.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Layouts/AdminLayout.jsx) conditionally prefetches admin workspace modules.
+    *   **Shop Catalog**: [ProductCard.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Consumer/Shop/Partials/ProductCard.jsx) dynamically disables hover page prefetching on cellular/slow links, preserving user data quotas while preserving instant navigation on broadband desktop.
+
