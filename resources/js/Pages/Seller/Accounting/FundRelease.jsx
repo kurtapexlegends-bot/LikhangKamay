@@ -309,7 +309,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                         />
 
                         {/* Missing Payout Alert */}
-                        {auth.user?.role === 'artisan' && Number(finances.readyForPayout || 0) > 0 && !auth.user?.payout_account_number && (
+                        {auth.user?.role === 'artisan' && Number(finances.readyForPayout || 0) > 0 && !(auth.user?.has_payout_account ?? Boolean(auth.user?.payout_account_number)) && (
                             <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
                                 <div className="flex items-start sm:items-center gap-2.5">
                                     <div className="p-1.5 rounded-lg bg-amber-100 text-amber-700 shrink-0">

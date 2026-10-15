@@ -252,4 +252,164 @@ class DriverDeliveryAccessTest extends TestCase
                 'status' => $delivery->status,
             ]);
     }
+
+    public function test_cross_shop_driver_cannot_update_telemetry_for_other_shop_delivery(): void
+    {
+        $otherSeller = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'premium',
+            'shop_name' => 'Other Woodcraft Shop',
+            'modules_enabled' => ['hr' => true],
+        ]);
+        $otherEmployee = Employee::create([
+            'user_id' => $otherSeller->id,
+            'name' => 'Other Driver',
+            'role' => 'Logistics / Driver',
+            'status' => 'Active',
+            'salary' => 10000,
+            'join_date' => now()->toDateString(),
+        ]);
+        $otherDriver = User::factory()->staff($otherSeller)->create([
+            'employee_id' => $otherEmployee->id,
+            'staff_role_preset_key' => 'driver',
+        ]);
+
+        $buyer = User::factory()->create(['role' => 'buyer']);
+        $order = Order::create([
+            'order_number' => 'ORD-OTHER-101',
+            'user_id' => $buyer->id,
+            'artisan_id' => $otherSeller->id,
+            'customer_name' => $buyer->name,
+            'status' => 'Accepted',
+            'shipping_method' => 'Delivery',
+            'shipping_recipient_name' => 'Test Buyer',
+            'shipping_contact_phone' => '09181112233',
+            'shipping_address' => '456 Cavite St, Imus',
+            'total_amount' => 500.00,
+            'payment_status' => 'paid',
+            'payment_method' => 'gcash',
+        ]);
+
+        $dispatchService = app(InHouseDispatchService::class);
+        $delivery = $dispatchService->dispatchOrderWithDriver(
+            $order,
+            $otherEmployee->id,
+            $otherSeller,
+            'Handle with care'
+        );
+
+        // Current driver ($this->driverUser) belongs to $this->premiumSeller, attempting to update $otherSeller's delivery
+        $response = $this->actingAs($this->driverUser)
+            ->putJson(route('staff.deliveries.telemetry', $delivery->id), [
+                'latitude' => 14.3294,
+                'longitude' => 120.9367,
+            ]);
+
+        $response->assertStatus(403)
+            ->assertJson(['error' => 'Unauthorized to broadcast telemetry for this delivery.']);
+    }
+
+    public function test_cross_shop_owner_cannot_update_telemetry_for_other_shop_delivery(): void
+    {
+        $otherSeller = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'premium',
+            'shop_name' => 'Second Shop',
+            'modules_enabled' => ['hr' => true],
+        ]);
+        $buyer = User::factory()->create(['role' => 'buyer']);
+        $order = Order::create([
+            'order_number' => 'ORD-OWNER-IDOR',
+            'user_id' => $buyer->id,
+            'artisan_id' => $otherSeller->id,
+            'customer_name' => $buyer->name,
+            'status' => 'Accepted',
+            'shipping_method' => 'Delivery',
+            'shipping_recipient_name' => 'Buyer Two',
+            'shipping_contact_phone' => '09181112233',
+            'shipping_address' => '789 Cavite St, Bacoor',
+            'total_amount' => 700.00,
+            'payment_status' => 'paid',
+            'payment_method' => 'gcash',
+        ]);
+
+        $otherEmployee = Employee::create([
+            'user_id' => $otherSeller->id,
+            'name' => 'Second Driver',
+            'role' => 'Logistics / Driver',
+            'status' => 'Active',
+            'salary' => 10000,
+            'join_date' => now()->toDateString(),
+        ]);
+
+        $dispatchService = app(InHouseDispatchService::class);
+        $delivery = $dispatchService->dispatchOrderWithDriver(
+            $order,
+            $otherEmployee->id,
+            $otherSeller,
+            'Fragile pottery'
+        );
+
+        // $this->premiumSeller attempts to update telemetry for $otherSeller's delivery
+        $response = $this->actingAs($this->premiumSeller)
+            ->putJson(route('staff.deliveries.telemetry', $delivery->id), [
+                'latitude' => 14.3294,
+                'longitude' => 120.9367,
+            ]);
+
+        $response->assertStatus(403)
+            ->assertJson(['error' => 'Unauthorized to broadcast telemetry for this delivery.']);
+    }
+
+    public function test_unauthorized_staff_cannot_complete_other_shop_delivery(): void
+    {
+        $otherSeller = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'premium',
+            'shop_name' => 'Unrelated Pottery Shop',
+            'modules_enabled' => ['hr' => true],
+        ]);
+        $buyer = User::factory()->create(['role' => 'buyer']);
+        $order = Order::create([
+            'order_number' => 'ORD-STAFF-IDOR',
+            'user_id' => $buyer->id,
+            'artisan_id' => $otherSeller->id,
+            'customer_name' => $buyer->name,
+            'status' => 'Accepted',
+            'shipping_method' => 'Delivery',
+            'shipping_recipient_name' => 'Buyer Three',
+            'shipping_contact_phone' => '09181112233',
+            'shipping_address' => '101 Cavite St, Kawit',
+            'total_amount' => 900.00,
+            'payment_status' => 'paid',
+            'payment_method' => 'gcash',
+        ]);
+
+        $otherEmployee = Employee::create([
+            'user_id' => $otherSeller->id,
+            'name' => 'Unrelated Driver',
+            'role' => 'Logistics / Driver',
+            'status' => 'Active',
+            'salary' => 10000,
+            'join_date' => now()->toDateString(),
+        ]);
+
+        $dispatchService = app(InHouseDispatchService::class);
+        $delivery = $dispatchService->dispatchOrderWithDriver(
+            $order,
+            $otherEmployee->id,
+            $otherSeller,
+            'Deliver prompt'
+        );
+
+        $photo = UploadedFile::fake()->image('proof.jpg', 600, 600);
+
+        // Attempt completion using an unauthorized driver from another shop ($this->driverUser)
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unauthorized to complete this delivery.');
+
+        $dispatchService->completeDelivery(
+            $delivery,
+            $this->driverUser,
+            $photo,
+            'Illegitimate delivery completion attempt'
+        );
+    }
 }

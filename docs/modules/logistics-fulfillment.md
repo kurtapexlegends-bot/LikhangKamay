@@ -68,8 +68,13 @@ Webhooks from the Lalamove API dispatch events that update the `status` of `Orde
 *   [SellerPickupSchedule.php](file:///c:/laragon/www/LikhangKamay/app/Models/SellerPickupSchedule.php): Configures weekly operating schedules, slot durations, and capacity per artisan workshop. Uses `PostgresCompatibleBoolean` cast on `is_enabled` and `scopeEnabled` scope for strict cross-DB compatibility, with defensive `->withTrashed()` scoping on artisan and workshop location relations.
 *   [PrepareCheckout.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Consumer/PrepareCheckout.php): Orchestrates single and multi-artisan checkout workflows, ensuring null-safe seller resolution and pickup schedule attachment.
 
+### In-House Fleet & Driver Telemetry Security
+*   [InHouseDispatchService.php](file:///c:/laragon/www/LikhangKamay/app/Services/Logistics/InHouseDispatchService.php): Manages studio driver dispatching, milestone progression, and POD completion. Enforces strict organizational boundary scoping: only the assigned driver, the verified shop owner (`isSellerOwner()` with matching `artisan_id`), or scoped shop staff can complete deliveries. Cross-shop completion attempts are rejected with `RuntimeException`.
+*   [DriverDeliveryController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Staff/DriverDeliveryController.php): Controls the driver deliveries console and live telemetry broadcasts. `updateTelemetry` (`PUT /staff/deliveries/{id}/telemetry`) verifies that the broadcasting user is either the assigned driver or the authenticated shop owner of the specific order, rejecting cross-shop IDOR broadcasts with HTTP 403. Telemetry fetching is restricted to buyer, shop owner, assigned driver, or platform admin.
+
 ### Logistics Controllers
 *   [LalamoveDeliveryController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/LalamoveDeliveryController.php): Manages explicit seller actions to dispatch Lalamove riders and fetch delivery pricing.
+*   [DriverDeliveryController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Staff/DriverDeliveryController.php): Driver portal console for assigned drops, telemetry broadcasts, and vehicle verification.
 *   [OrderPrintController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/OrderPrintController.php): Manages PDF generation and formatting for physical shipping waybills.
 
 ### Logistics Notifications

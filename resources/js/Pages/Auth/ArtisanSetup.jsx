@@ -10,7 +10,7 @@ import ShopDetailsStep from '@/Pages/Auth/Partials/ShopDetailsStep';
 import DocumentsStep from '@/Pages/Auth/Partials/DocumentsStep';
 import PaymentStep from '@/Pages/Auth/Partials/PaymentStep';
 
-export default function ArtisanSetup({ auth, rejectionReason }) {
+export default function ArtisanSetup({ auth, rejectionReason, existingDocuments, existingPayoutAccountNumber }) {
     const user = auth?.user || {};
     const [step, setStep] = React.useState(1);
     const [showRejection, setShowRejection] = React.useState(true);
@@ -38,7 +38,7 @@ export default function ArtisanSetup({ auth, rejectionReason }) {
         tin_id: null,
         payout_method: user.payout_method || 'GCash',
         payout_account_name: user.payout_account_name || '',
-        payout_account_number: user.payout_account_number || '',
+        payout_account_number: existingPayoutAccountNumber || user.payout_account_number || '',
     });
 
     const [shopNameValidation, setShopNameValidation] = React.useState({ isValid: null, message: '' });
@@ -284,6 +284,7 @@ export default function ArtisanSetup({ auth, rejectionReason }) {
                                         processing={processing}
                                         setStep={setStep}
                                         auth={auth}
+                                        existingDocuments={existingDocuments}
                                     />
                                 )}
 

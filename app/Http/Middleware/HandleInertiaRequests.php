@@ -36,18 +36,6 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
-        /** @var \Illuminate\Filesystem\FilesystemAdapter|null $storage */
-        $storage = null;
-        try {
-            $storage = \Illuminate\Support\Facades\Storage::disk('public');
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Failed to resolve public storage disk in HandleInertiaRequests: ' . $e->getMessage());
-        }
-
-        $urlHelper = function (?string $path) {
-            return \App\Services\StorageUrl::url($path);
-        };
-
         return [
             ...parent::share($request),
             'auth' => [
@@ -56,18 +44,15 @@ class HandleInertiaRequests extends Middleware
                         'id', 'name', 'first_name', 'last_name', 'email', 'role', 'staff_role_preset_key',
                         'shop_name', 'shop_slug', 'avatar', 'avatar_url', 'banner_image', 'banner_image_url',
                         'artisan_status', 'artisan_rejection_reason', 'premium_tier', 'payout_method',
-                        'payout_account_name', 'payout_account_number', 'approved_at', 'artisan_welcomed',
+                        'payout_account_name', 'approved_at', 'artisan_welcomed',
                         'street_address', 'saved_address', 'barangay', 'city', 'region', 'zip_code', 'phone_number',
                     ]),
                     [
-                        'business_permit' => $user->business_permit,
-                        'business_permit_url' => $urlHelper($user->business_permit),
-                        'dti_registration' => $user->dti_registration,
-                        'dti_registration_url' => $urlHelper($user->dti_registration),
-                        'valid_id' => $user->valid_id,
-                        'valid_id_url' => $urlHelper($user->valid_id),
-                        'tin_id' => $user->tin_id,
-                        'tin_id_url' => $urlHelper($user->tin_id),
+                        'has_payout_account' => !empty($user->payout_account_number),
+                        'has_business_permit' => !empty($user->business_permit),
+                        'has_dti_registration' => !empty($user->dti_registration),
+                        'has_valid_id' => !empty($user->valid_id),
+                        'has_tin_id' => !empty($user->tin_id),
                     ]
                 ) : null,
                 'isStaff' => $user?->isStaff() ?? false,

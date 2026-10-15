@@ -41,8 +41,19 @@ class ArtisanSetupController extends Controller
             return redirect()->route('artisan.pending');
         }
         
+        $urlHelper = function (?string $path) {
+            return \App\Services\StorageUrl::url($path);
+        };
+
         return Inertia::render('Auth/ArtisanSetup', [
             'rejectionReason' => $user->artisan_rejection_reason,
+            'existingDocuments' => [
+                'business_permit_url' => $urlHelper($user->business_permit),
+                'dti_registration_url' => $urlHelper($user->dti_registration),
+                'valid_id_url' => $urlHelper($user->valid_id),
+                'tin_id_url' => $urlHelper($user->tin_id),
+            ],
+            'existingPayoutAccountNumber' => $user->payout_account_number,
         ]);
     }
 

@@ -249,13 +249,19 @@ class DriverDeliveryController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $delivery = OrderDelivery::where('id', $id)
+        $delivery = OrderDelivery::with('order')
+            ->where('id', $id)
             ->where('provider', OrderDelivery::PROVIDER_IN_HOUSE)
             ->firstOrFail();
 
-        $isOwner = $user->isSellerOwner();
-        $isAssignedDriver = $delivery->driver_user_id === $user->id ||
-            ($user->employee && $delivery->driver_employee_id === $user->employee->id);
+        $effectiveSellerId = $user->getEffectiveSellerId();
+        $orderArtisanId = $delivery->order?->artisan_id;
+        $isOwner = $user->isSellerOwner()
+            && $effectiveSellerId !== null
+            && $orderArtisanId !== null
+            && (int) $orderArtisanId === (int) $effectiveSellerId;
+        $isAssignedDriver = ($delivery->driver_user_id && (int) $delivery->driver_user_id === (int) $user->id) ||
+            ($user->employee && (int) $delivery->driver_employee_id === (int) $user->employee->id);
 
         if (!$isOwner && !$isAssignedDriver) {
             return response()->json(['error' => 'Unauthorized to broadcast telemetry for this delivery.'], 403);
@@ -307,10 +313,11 @@ class DriverDeliveryController extends Controller
             return response()->json(['error' => 'Order not found.'], 404);
         }
 
-        $isBuyer = $order->user_id === $user->id;
-        $isSeller = $order->artisan_id === $user->id;
-        $isAssignedDriver = $delivery->driver_user_id === $user->id ||
-            ($user->employee && $delivery->driver_employee_id === $user->employee->id);
+        $isBuyer = (int) $order->user_id === (int) $user->id;
+        $effectiveSellerId = $user->getEffectiveSellerId();
+        $isSeller = $effectiveSellerId !== null && (int) $order->artisan_id === (int) $effectiveSellerId;
+        $isAssignedDriver = ($delivery->driver_user_id && (int) $delivery->driver_user_id === (int) $user->id) ||
+            ($user->employee && (int) $delivery->driver_employee_id === (int) $user->employee->id);
         $isSuperAdmin = in_array($user->role, ['super_admin', 'admin'], true);
 
         if (!$isBuyer && !$isSeller && !$isAssignedDriver && !$isSuperAdmin) {

@@ -274,11 +274,14 @@ class InHouseDispatchService
                 throw new RuntimeException('No order associated with this delivery record.');
             }
 
-            // Authorization: either the assigned driver staff user or the shop owner
-            $isAssignedDriver = $lockedDelivery->driver_user_id && (int) $lockedDelivery->driver_user_id === (int) $actor->id;
-            $isShopOwner = (int) $order->artisan_id === (int) $actor->getEffectiveSellerId();
+            // Authorization: either the assigned driver staff user, shop owner, or scoped shop staff
+            $isAssignedDriver = ($lockedDelivery->driver_user_id && (int) $lockedDelivery->driver_user_id === (int) $actor->id) ||
+                ($actor->employee && (int) $lockedDelivery->driver_employee_id === (int) $actor->employee->id);
+            $effectiveSellerId = $actor->getEffectiveSellerId();
+            $isShopOwner = $actor->isSellerOwner() && $effectiveSellerId !== null && (int) $order->artisan_id === (int) $effectiveSellerId;
+            $isShopStaff = $actor->isStaff() && $effectiveSellerId !== null && (int) $order->artisan_id === (int) $effectiveSellerId;
 
-            if (!$isAssignedDriver && !$isShopOwner && !$actor->isStaff()) {
+            if (!$isAssignedDriver && !$isShopOwner && !$isShopStaff) {
                 throw new RuntimeException('Unauthorized to complete this delivery.');
             }
 

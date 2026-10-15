@@ -77,7 +77,7 @@ Handled by the [DowngradeSubscription.php](file:///c:/laragon/www/LikhangKamay/a
 
 ### Core Business Actions
 *   [InitiateSubscriptionUpgrade.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Subscription/InitiateSubscriptionUpgrade.php): Starts checkout sessions on PayMongo and logs pending payment requests.
-*   [VerifySubscriptionPayment.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Subscription/VerifySubscriptionPayment.php): Queries PayMongo session state to reconcile pending upgrades.
+*   [VerifySubscriptionPayment.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Subscription/VerifySubscriptionPayment.php): Reconciles and verifies subscription upgrade payments. Executes external PayMongo checkout session retrieval decoupled from the database transaction, then safely locks the `SubscriptionTransaction` record with `lockForUpdate()`, validates payment and reference matching, and activates the plan.
 *   [DowngradeSubscription.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Subscription/DowngradeSubscription.php): Enforces listing capping, staffs suspensions, and safety routing redirects on downgrade.
 *   [ApproveArtisan.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Admin/Users/ApproveArtisan.php), [BulkApproveArtisans.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Admin/Users/BulkApproveArtisans.php), [RejectArtisan.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Admin/Users/RejectArtisan.php): Modifies onboarding application status logs.
 

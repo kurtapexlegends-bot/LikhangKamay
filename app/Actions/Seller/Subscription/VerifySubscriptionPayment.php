@@ -25,7 +25,17 @@ class VerifySubscriptionPayment
         PayMongoService $payMongoService,
         SubscriptionService $subscriptionService
     ): string {
-        return DB::transaction(function () use ($transaction, $payMongoService, $subscriptionService) {
+        if ($transaction->status === SubscriptionTransaction::STATUS_PAID) {
+            return 'already_paid';
+        }
+
+        if (!$transaction->paymongo_session_id) {
+            throw new \Exception('missing_session_id');
+        }
+
+        $session = $payMongoService->retrieveCheckoutSession($transaction->paymongo_session_id);
+
+        return DB::transaction(function () use ($transaction, $session, $subscriptionService) {
             // lock transaction
             $tx = SubscriptionTransaction::lockForUpdate()->findOrFail($transaction->id);
 
@@ -33,11 +43,6 @@ class VerifySubscriptionPayment
                 return 'already_paid';
             }
 
-            if (!$tx->paymongo_session_id) {
-                throw new \Exception('missing_session_id');
-            }
-
-            $session = $payMongoService->retrieveCheckoutSession($tx->paymongo_session_id);
             $attributes = $session['attributes'] ?? [];
             $referenceNumber = $attributes['reference_number'] ?? null;
 
