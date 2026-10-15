@@ -2,29 +2,71 @@ import React, { useRef, useEffect, useMemo, Suspense } from 'react';
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { useGLTF, useAnimations } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
+import {
+    DRACO_LOCAL_DECODER_PATH,
+    DRACO_CDN_DECODER_PATH,
+    DRACO_DEFAULT_DECODER_PATH,
+    KTX2_TRANSCODER_PATH,
+    getSharedDRACOLoader,
+    getSharedKTX2Loader,
+    configureGLTFExtensions,
+} from './threeLoaders';
+
+export {
+    DRACO_LOCAL_DECODER_PATH,
+    DRACO_CDN_DECODER_PATH,
+    DRACO_DEFAULT_DECODER_PATH,
+    KTX2_TRANSCODER_PATH,
+    getSharedDRACOLoader,
+    getSharedKTX2Loader,
+    configureGLTFExtensions,
+};
+
+// Configure default global decoder path on useGLTF
+try {
+    if (typeof useGLTF.setDecoderPath === 'function') {
+        useGLTF.setDecoderPath(DRACO_DEFAULT_DECODER_PATH);
+    }
+} catch {
+    // Ignore in non-browser runtimes
+}
 
 /**
  * GLTFModel Component
  * Loads and displays a .glb/.gltf 3D model, normalizing its physical display height
  * to 2.0 Three.js units and grounding its base cleanly at y = -1.0 without mutating the scene object.
+ * Fully supports Draco geometry compression and KTX2 texture transcoding for cellular links.
  * 
  * @param {string} url - Path to the .glb file
  * @param {number} scale - Optional user scale factor (default: 1)
  * @param {array} position - [x, y, z] position offset (default: [0, 0, 0])
  * @param {array} rotation - [x, y, z] rotation in radians (default: [0, 0, 0])
+ * @param {string} dracoPath - Optional custom Draco decoder path
  */
 export default function GLTFModel({ 
     url, 
     scale = 1, 
     position = [0, 0, 0], 
     rotation = [0, 0, 0],
+    dracoPath = DRACO_DEFAULT_DECODER_PATH,
     ...props 
 }) {
     const groupRef = useRef();
-    
-    const { scene, animations } = useGLTF(url, true, true, (loader) => {
-        loader.setCrossOrigin('anonymous');
-    });
+    const gl = useThree((state) => state?.gl);
+
+    if (gl) {
+        getSharedKTX2Loader(gl);
+    }
+
+    const { scene, animations } = useGLTF(
+        url,
+        dracoPath,
+        true,
+        (loader) => {
+            configureGLTFExtensions(loader, gl, dracoPath);
+        }
+    );
     const { actions } = useAnimations(animations, groupRef);
 
     // Deep clone the scene hierarchy per instance so multiple viewers
@@ -118,9 +160,9 @@ export default function GLTFModel({
     );
 }
 
-GLTFModel.preload = (url) => {
-    useGLTF.preload(url, true, true, (loader) => {
-        loader.setCrossOrigin('anonymous');
+GLTFModel.preload = (url, dracoPath = DRACO_DEFAULT_DECODER_PATH) => {
+    useGLTF.preload(url, dracoPath, true, (loader) => {
+        configureGLTFExtensions(loader, null, dracoPath);
     });
 };
 

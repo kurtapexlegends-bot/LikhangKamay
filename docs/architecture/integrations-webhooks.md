@@ -168,3 +168,36 @@ To safeguard user experience and prevent data loss over high-latency or metered 
     *   **Admin Console**: [AdminLayout.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Layouts/AdminLayout.jsx) conditionally prefetches admin workspace modules.
     *   **Shop Catalog**: [ProductCard.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Consumer/Shop/Partials/ProductCard.jsx) dynamically disables hover page prefetching on cellular/slow links, preserving user data quotas while preserving instant navigation on broadband desktop.
 
+---
+
+## 7. Static Asset Shell & 3D Compression Pipeline
+
+To support reliable offline fallback and accelerate heavy 3D craft model loading over provincial 3G/4G connections, LikhangKamay implements a lightweight Service Worker static shell and a native Draco/KTX2 asset decompression pipeline.
+
+### Lightweight Service Worker Shell ([public/sw.js](file:///c:/laragon/www/LikhangKamay/public/sw.js))
+*   **Target Scope**: Root scope (`/`) with strict production gating (`import.meta.env.PROD` in [resources/js/app.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/app.jsx)).
+*   **Cache Strategy**:
+    *   **Cache-First**: Applied to immutable hashed Vite bundles (`/build/assets/*`), local Draco decoder binaries (`/draco/*`), static illustrations/images (`/images/*`), and demo models (`/models/*`).
+    *   **Pre-cached Fallbacks**: Automatically pre-caches `/images/placeholder.svg`, `/images/no-image.png`, `/favicon.ico`, and Draco WebAssembly binaries on worker installation.
+    *   **Image Offline Fallback**: In the event of a network drop when loading non-cached secondary images, intercepts the error and returns the cached `/images/placeholder.svg`.
+*   **Critical Safety Guards (Zero-Stale-HTML Guarantee)**:
+    *   **Inertia State Protection**: All requests containing header `X-Inertia: true` or requesting HTML navigation (`mode === 'navigate'`) completely bypass the Service Worker cache. This ensures session-bound CSRF tokens and page props are never poisoned by stale cached HTML.
+    *   **Dynamic API Exclusion**: Strict network bypass for `/api/*`, `/webhooks/*`, `/sanctum/*`, `/broadcasting/*`, `/auth/*`, `/login`, `/logout`, `/register`, and `/ping`.
+    *   **Mutating Request Safety**: Non-GET requests (`POST`, `PUT`, `DELETE`, `PATCH`) bypass the worker unconditionally.
+*   **Edge CDN Cache-Control ([vercel.json](file:///c:/laragon/www/LikhangKamay/vercel.json))**:
+    *   `/sw.js`: Configured with `cache-control: public, max-age=0, must-revalidate` and `Service-Worker-Allowed: /` to prevent browser caching of the worker script.
+    *   `/draco/(.*)`: Configured with `cache-control: public, max-age=31536000, immutable` for 1-year edge CDN caching.
+
+### 3D Compression Pipeline ([threeLoaders.js](file:///c:/laragon/www/LikhangKamay/resources/js/Components/ThreeD/threeLoaders.js), [GLTFModel.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/ThreeD/GLTFModel.jsx))
+*   **Draco Mesh Decompression**:
+    *   Hosted static binaries located at [public/draco/gltf/](file:///c:/laragon/www/LikhangKamay/public/draco/gltf/) (`draco_decoder.wasm`, `draco_decoder_gltf.wasm`, `draco_decoder.js`, `draco_wasm_wrapper.js`) avoid cross-origin roundtrips and enable offline mesh parsing.
+    *   Managed by module singleton `getSharedDRACOLoader(dracoPath)` in `threeLoaders.js`, attaching seamlessly to any standard Three.js `GLTFLoader` or `@react-three/drei` loader without manual setup.
+    *   Standard fallback route to Google CDN (`https://www.gstatic.com/draco/versioned/decoders/1.5.7/`).
+    *   Reduces 3D mesh geometry data payload by **60% to 80%**, saving mobile megabytes.
+*   **KTX2 Basis Texture Transcoding**:
+    *   Managed by module singleton `getSharedKTX2Loader(gl)`, preventing worker pool proliferation across simultaneous viewer instances.
+    *   Configures transcoding via pmndrs basis transcoder CDN (`https://cdn.jsdelivr.net/gh/pmndrs/drei-assets@master/basis/`).
+    *   Detects WebGL GPU compressed texture extensions (ASTC, ETC2, DXT, BPTC, PVRTC) via `ktx2Loader.detectSupport(gl)` for zero-overhead direct VRAM uploading.
+*   **Viewer Fallback & Preloading**:
+    *   Exported `preloadProduct3D(url)` in [ProductViewer3D.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/ThreeD/ProductViewer3D.jsx) enables speculative preloading on high-speed connections.
+    *   [ThreeDModelBoundary.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/ThreeD/ThreeDModelBoundary.jsx) catches malformed models or network connection drops, providing an interactive retry button without unmounting parent components.

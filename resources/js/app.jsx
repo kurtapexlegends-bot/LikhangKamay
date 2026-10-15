@@ -105,3 +105,25 @@ createInertiaApp({
         showSpinner: false,
     },
 });
+
+// Register Lightweight Static Shell Service Worker in production
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator && (import.meta.env.PROD || (typeof process !== 'undefined' && process?.env?.NODE_ENV === 'production'))) {
+    const registerSW = () => {
+        navigator.serviceWorker
+            .register('/sw.js', { scope: '/' })
+            .then((registration) => {
+                setInterval(() => {
+                    registration.update().catch(() => {});
+                }, 60 * 60 * 1000);
+            })
+            .catch((err) => {
+                console.debug('[SW] Service worker registration skipped:', err);
+            });
+    };
+
+    if (document.readyState === 'complete') {
+        registerSW();
+    } else {
+        window.addEventListener('load', registerSW);
+    }
+}

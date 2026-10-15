@@ -245,3 +245,9 @@ export default function ProductViewer3D({
         </div>
     );
 }
+
+export const preloadProduct3D = (url, dracoPath) => {
+    if (url) {
+        GLTFModel.preload(url, dracoPath);
+    }
+};
