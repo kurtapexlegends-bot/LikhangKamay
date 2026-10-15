@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useState, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stage, Html, useProgress } from '@react-three/drei';
 import GLTFModel from '@/Components/ThreeD/GLTFModel';
@@ -35,6 +35,17 @@ export default function ThreeDCanvasViewer({
     resetKey,
     suspenseFallback = <Loader />
 }) {
+    const [canvasKey, setCanvasKey] = useState(0);
+
+    const handleCanvasCreated = useCallback(({ gl }) => {
+        const handleContextLost = (event) => {
+            event.preventDefault();
+            console.warn('WebGL context lost, recovering canvas instance.');
+            setCanvasKey((prev) => prev + 1);
+        };
+        gl.domElement.addEventListener('webglcontextlost', handleContextLost, false);
+    }, []);
+
     const defaultFallback = ({ onRetry }) => (
         <ThreeDModelUnavailable
             title="Saved 3D asset unavailable"
@@ -50,6 +61,8 @@ export default function ThreeDCanvasViewer({
             fallback={fallback || defaultFallback}
         >
             <Canvas 
+                key={canvasKey}
+                onCreated={handleCanvasCreated}
                 shadows 
                 dpr={[1, 2]} 
                 camera={{ position: [0, 0, 4], fov: 50 }}

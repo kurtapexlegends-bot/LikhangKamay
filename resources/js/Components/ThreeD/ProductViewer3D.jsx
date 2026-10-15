@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unknown-property, react-hooks/immutability */
-import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
+import React, { Suspense, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Stage, Html, useProgress } from '@react-three/drei';
 import GLTFModel from './GLTFModel';
@@ -56,7 +56,17 @@ export default function ProductViewer3D({
     // Auto-select initial spatially optimal benchmark based on craft height
     const [benchmarkType, setBenchmarkType] = useState(() => getRecommendedBenchmarkId(dimensions?.height));
     const [unit, setUnit] = useState('cm');
+    const [canvasKey, setCanvasKey] = useState(0);
     const controlsRef = useRef(null);
+
+    const handleCanvasCreated = useCallback(({ gl }) => {
+        const handleContextLost = (event) => {
+            event.preventDefault();
+            console.warn('WebGL context lost, recovering canvas instance.');
+            setCanvasKey((prev) => prev + 1);
+        };
+        gl.domElement.addEventListener('webglcontextlost', handleContextLost, false);
+    }, []);
 
     // Sync auto-selection if product dimensions change
     useEffect(() => {
@@ -101,7 +111,7 @@ export default function ProductViewer3D({
     return (
         <div className={`relative bg-gradient-to-b from-gray-50 to-gray-100 rounded-2xl overflow-hidden ${hasCustomHeight ? '' : defaultHeightClass} ${className}`}>
             {!showScaleBenchmark && (
-                <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
+                <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 flex-wrap max-w-[calc(100%-4.5rem)]">
                     {topLeftAction}
                     {!hideBadge && (
                         <div className="bg-white/90 backdrop-blur px-2.5 py-1.5 rounded-xl border border-gray-200 text-[10px] font-bold text-clay-600 flex items-center gap-1.5 shadow-xs uppercase tracking-wide min-h-[38px]">
@@ -168,6 +178,8 @@ export default function ProductViewer3D({
                 )}
             >
                 <Canvas
+                    key={canvasKey}
+                    onCreated={handleCanvasCreated}
                     shadows
                     dpr={[1, 2]}
                     camera={{ position: [0.35, 0.2, 5.0], fov: 42 }}

@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useMemo, Suspense } from 'react';
 import * as THREE from 'three';
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { useGLTF, useAnimations } from '@react-three/drei';
 
 /**
@@ -26,10 +27,15 @@ export default function GLTFModel({
     });
     const { actions } = useAnimations(animations, groupRef);
 
-    // Compute and lock unscaled raw bounds exactly once per scene URL
-    const rawBoundsRef = useRef(null);
+    // Deep clone the scene hierarchy per instance so multiple viewers
+    // (e.g. background drawer and fullscreen lightbox modal) each maintain
+    // their own independent node hierarchy without reparenting or stealing nodes.
+    const clonedScene = useMemo(() => {
+        if (!scene) return null;
+        return SkeletonUtils.clone(scene);
+    }, [scene]);
 
-    // Compute normalization transform once from clean scene bounds
+    // Compute normalization transform from clean scene bounds
     const { normalizedScale, normalizedPosition } = useMemo(() => {
         if (!scene) {
             return {
@@ -38,45 +44,37 @@ export default function GLTFModel({
             };
         }
 
-        if (!rawBoundsRef.current) {
-            // Measure intrinsic, unscaled geometry bounds directly from scene meshes
-            const box = new THREE.Box3();
-            scene.traverse((child) => {
-                if (child.isMesh && child.geometry) {
-                    if (!child.geometry.boundingBox) {
-                        child.geometry.computeBoundingBox();
-                    }
-                    const b = child.geometry.boundingBox.clone();
-                    b.applyMatrix4(child.matrix);
-                    box.union(b);
+        // Measure intrinsic, unscaled geometry bounds directly from scene meshes
+        const box = new THREE.Box3();
+        scene.traverse((child) => {
+            if (child.isMesh && child.geometry) {
+                if (!child.geometry.boundingBox) {
+                    child.geometry.computeBoundingBox();
                 }
-            });
-
-            if (box.isEmpty()) {
-                box.setFromObject(scene);
+                const b = child.geometry.boundingBox.clone();
+                b.applyMatrix4(child.matrix);
+                box.union(b);
             }
+        });
 
-            const size = new THREE.Vector3();
-            box.getSize(size);
-            const center = new THREE.Vector3();
-            box.getCenter(center);
-
-            rawBoundsRef.current = {
-                rawHeight: size.y > 0.0001 ? size.y : 1.0,
-                center: [center.x, center.y, center.z],
-                minY: box.min.y
-            };
+        if (box.isEmpty()) {
+            box.setFromObject(scene);
         }
 
-        const { rawHeight, center, minY } = rawBoundsRef.current;
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+
+        const rawHeight = size.y > 0.0001 ? size.y : 1.0;
         // Standardize craft model height to exactly 2.0 Three.js units (spanning y = -1.0 to +1.0)
         const autoScale = (2.0 / rawHeight) * (typeof scale === 'number' ? scale : 1.0);
 
         // Center on X and Z, and anchor the bottom base directly to ground level y = -1.0
         const autoPos = [
-            -center[0] * autoScale + (position[0] || 0),
-            -minY * autoScale - 1.0 + (position[1] || 0),
-            -center[2] * autoScale + (position[2] || 0)
+            -center.x * autoScale + (position[0] || 0),
+            -box.min.y * autoScale - 1.0 + (position[1] || 0),
+            -center.z * autoScale + (position[2] || 0)
         ];
 
         return {
@@ -86,9 +84,9 @@ export default function GLTFModel({
     }, [scene, scale, position]);
 
     useEffect(() => {
-        if (!scene) return;
+        if (!clonedScene) return;
 
-        scene.traverse((child) => {
+        clonedScene.traverse((child) => {
             if (child.isMesh) {
                 child.castShadow = true;
                 child.receiveShadow = true;
@@ -97,35 +95,7 @@ export default function GLTFModel({
                 }
             }
         });
-
-        return () => {
-            scene.traverse((child) => {
-                if (child.isMesh) {
-                    if (child.geometry && typeof child.geometry.dispose === 'function') {
-                        child.geometry.dispose();
-                    }
-                    if (child.material) {
-                        const materials = Array.isArray(child.material) ? child.material : [child.material];
-                        materials.forEach((mat) => {
-                            const textureKeys = [
-                                'map', 'lightMap', 'bumpMap', 'normalMap', 'specularMap',
-                                'envMap', 'alphaMap', 'aoMap', 'displacementMap',
-                                'emissiveMap', 'gradientMap', 'metalnessMap', 'roughnessMap'
-                            ];
-                            textureKeys.forEach((key) => {
-                                if (mat[key] && typeof mat[key].dispose === 'function') {
-                                    mat[key].dispose();
-                                }
-                            });
-                            if (typeof mat.dispose === 'function') {
-                                mat.dispose();
-                            }
-                        });
-                    }
-                }
-            });
-        };
-    }, [scene]);
+    }, [clonedScene]);
     
     useEffect(() => {
         if (animations && animations.length > 0 && actions) {
@@ -136,13 +106,13 @@ export default function GLTFModel({
         }
     }, [actions, animations]);
 
-    if (!scene) return null;
+    if (!clonedScene) return null;
 
-    // Wrap in group with transform so we never mutate scene.scale or scene.position
+    // Wrap in group with dispose={null} so R3F doesn't dispose cached assets on unmount
     return (
-        <group ref={groupRef} {...props}>
+        <group ref={groupRef} {...props} dispose={null}>
             <group scale={normalizedScale} position={normalizedPosition} rotation={rotation}>
-                <primitive object={scene} />
+                <primitive object={clonedScene} />
             </group>
         </group>
     );

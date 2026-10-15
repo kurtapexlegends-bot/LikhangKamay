@@ -1,24 +1,23 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useMemo, Suspense, lazy } from 'react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import { 
     CheckCircle2, 
     XCircle, 
     ShieldAlert, 
     Clock, 
-    Package, 
-    DollarSign, 
     Box, 
     Tag, 
-    User, 
-    Sparkles, 
-    Calendar,
-    Flame,
-    FileText,
-    Check,
-    Rotate3d,
-    Image as ImageIcon
+    Flame, 
+    FileText, 
+    Rotate3d, 
+    Image as ImageIcon,
+    ChevronLeft,
+    ChevronRight,
+    Maximize2
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
+import { resolveImageUrl } from '@/lib/media';
+import ProductImageLightboxModal from '@/Components/Consumer/Shop/ProductShow/ProductImageLightboxModal';
 import { ThreeDModelBoundary, ThreeDModelUnavailable } from '@/Components/ThreeD/ThreeDModelBoundary';
 
 const ProductViewer3D = lazy(() => import('@/Components/ThreeD/ProductViewer3D'));
@@ -32,23 +31,54 @@ export default function ProductInspectionDrawer({
     onFlag,
     isProcessing = false
 }) {
+    const [prevProductId, setPrevProductId] = useState(product?.id);
     const [viewingMode, setViewingMode] = useState('image'); // 'image' | '3d'
-    const [selectedImage, setSelectedImage] = useState(null);
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+    const [lightboxMode, setLightboxMode] = useState('image');
     const [feedback, setFeedback] = useState('');
     const [actionError, setActionError] = useState('');
 
-    useEffect(() => {
-        setSelectedImage(null);
+    if (product?.id !== prevProductId) {
+        setPrevProductId(product?.id);
+        setActiveImageIndex(0);
         setViewingMode('image');
         setFeedback('');
         setActionError('');
-    }, [product?.id]);
+        setIsLightboxOpen(false);
+    }
+
+    const coverUrl = product?.img || (product?.cover_photo_path ? resolveImageUrl(product.cover_photo_path) : '/images/placeholder.svg');
+    const rawGalleryUrls = (product?.gallery_urls && product.gallery_urls.length > 0)
+        ? product.gallery_urls
+        : (product?.gallery_paths || []).map(path => resolveImageUrl(path));
+
+    const allImages = useMemo(() => {
+        const list = [coverUrl, ...rawGalleryUrls].filter(Boolean);
+        return Array.from(new Set(list));
+    }, [coverUrl, rawGalleryUrls]);
+
+    const activeImageUrl = allImages[activeImageIndex] || coverUrl;
+    const has3D = Boolean(product?.model_3d_path || product?.model_3d_url);
+    const model3dUrl = product?.model_3d_url || (product?.model_3d_path ? resolveImageUrl(product.model_3d_path) : null);
+
+    const handlePrevImage = (e) => {
+        e?.stopPropagation();
+        setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
+    };
+
+    const handleNextImage = (e) => {
+        e?.stopPropagation();
+        setActiveImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
+    };
+
+    const openLightbox = (index = 0, mode = 'image') => {
+        setActiveImageIndex(index);
+        setLightboxMode(mode);
+        setIsLightboxOpen(true);
+    };
 
     if (!product) return null;
-
-    const coverUrl = product.img || '/images/placeholder.svg';
-    const galleryUrls = product.gallery_urls || [];
-    const activeImageUrl = selectedImage || coverUrl;
 
     const handleApprove = () => {
         setActionError('');
@@ -222,37 +252,59 @@ export default function ProductInspectionDrawer({
 
                 {/* Media Section (Images / 3D Model Toggle) */}
                 <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold uppercase tracking-wider text-stone-600">Product Media</label>
-                        {product.model_3d_path && (
-                            <div className="flex items-center bg-stone-100 p-1 rounded-xl border border-stone-200">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-stone-600">Product Media</label>
+                            {allImages.length > 0 && (
+                                <span className="text-[10px] font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-full border border-stone-200">
+                                    {allImages.length} {allImages.length === 1 ? 'photo' : 'photos'}
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {allImages.length > 0 && (
                                 <button
                                     type="button"
-                                    onClick={() => setViewingMode('image')}
-                                    className={`px-2.5 py-1 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all ${
-                                        viewingMode === 'image' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'
-                                    }`}
+                                    onClick={() => openLightbox(activeImageIndex, viewingMode)}
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-xl text-stone-700 bg-white hover:bg-stone-50 border border-stone-200 shadow-2xs transition min-h-[36px] cursor-pointer"
+                                    title="Open expansive fullscreen carousel"
                                 >
-                                    <ImageIcon size={14} /> Photos
+                                    <Maximize2 size={13} className="text-clay-600" />
+                                    <span>View Carousel</span>
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setViewingMode('3d')}
-                                    className={`px-2.5 py-1 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all ${
-                                        viewingMode === '3d' ? 'bg-clay-600 text-white shadow-sm' : 'text-stone-500 hover:text-stone-800'
-                                    }`}
-                                >
-                                    <Rotate3d size={14} /> 3D Canvas
-                                </button>
-                            </div>
-                        )}
+                            )}
+
+                            {has3D && (
+                                <div className="flex items-center bg-stone-100 p-1 rounded-xl border border-stone-200">
+                                    <button
+                                        type="button"
+                                        onClick={() => setViewingMode('image')}
+                                        className={`px-2.5 py-1 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all ${
+                                            viewingMode === 'image' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'
+                                        }`}
+                                    >
+                                        <ImageIcon size={14} /> Photos
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setViewingMode('3d')}
+                                        className={`px-2.5 py-1 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all ${
+                                            viewingMode === '3d' ? 'bg-clay-600 text-white shadow-sm' : 'text-stone-500 hover:text-stone-800'
+                                        }`}
+                                    >
+                                        <Rotate3d size={14} /> 3D Canvas
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="w-full h-80 sm:h-96 rounded-2xl border border-stone-200 bg-stone-50 overflow-hidden relative flex items-center justify-center">
-                        {viewingMode === '3d' && product.model_3d_path ? (
-                            <div className="w-full h-full">
+                    <div className="w-full h-80 sm:h-96 rounded-2xl border border-stone-200 bg-stone-50 overflow-hidden relative flex items-center justify-center group">
+                        {viewingMode === '3d' && has3D && model3dUrl ? (
+                            <div className="w-full h-full relative">
                                 <ThreeDModelBoundary
-                                    resetKey={product.model_3d_url}
+                                    resetKey={model3dUrl}
                                     fallback={({ onRetry }) => (
                                         <ThreeDModelUnavailable
                                             compact
@@ -265,63 +317,90 @@ export default function ProductInspectionDrawer({
                                 >
                                     <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-xs text-stone-400">Loading 3D Canvas...</div>}>
                                         <ProductViewer3D 
-                                            modelUrl={product.model_3d_url} 
+                                            modelUrl={model3dUrl} 
                                             productName={product?.name || 'Craft Piece'}
                                             dimensions={{
                                                 height: product?.height,
                                                 width: product?.width,
                                                 depth: product?.depth
                                             }}
+                                            compact
+                                            hideBadge
+                                            topLeftAction={
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openLightbox(0, '3d')}
+                                                    className="px-2.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition shadow-xs cursor-pointer bg-white/90 backdrop-blur text-stone-700 border-gray-200 hover:bg-white active:scale-95 min-h-[38px] shrink-0"
+                                                    title="Open interactive 3D inspector with real-life scale ruler"
+                                                >
+                                                    <Maximize2 size={13} className="text-clay-600" />
+                                                    <span>Enlarge 3D & Scale</span>
+                                                </button>
+                                            }
                                             className="w-full h-full"
                                         />
                                     </Suspense>
                                 </ThreeDModelBoundary>
                             </div>
                         ) : (
-                            <img
-                                src={activeImageUrl}
-                                alt={product.name}
-                                className="w-full h-full object-contain p-2"
-                                onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = '/images/placeholder.svg';
-                                }}
-                            />
-                        )}
-                    </div>
-
-                    {/* Gallery Thumbnail Strip */}
-                    {galleryUrls.length > 0 && viewingMode === 'image' && (
-                        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                            <button
-                                type="button"
-                                onClick={() => setSelectedImage(coverUrl)}
-                                className={`w-14 h-14 rounded-xl border shrink-0 overflow-hidden transition-all ${
-                                    selectedImage === coverUrl || !selectedImage ? 'ring-2 ring-clay-600 border-transparent' : 'border-stone-200 hover:border-stone-400'
-                                }`}
-                            >
+                            <div className="relative w-full h-full flex items-center justify-center">
                                 <img
-                                    src={coverUrl}
-                                    alt="Cover"
-                                    className="w-full h-full object-cover"
+                                    src={activeImageUrl}
+                                    alt={product.name}
+                                    onClick={() => openLightbox(activeImageIndex, 'image')}
+                                    className="w-full h-full object-contain p-2 cursor-pointer hover:opacity-95 transition"
+                                    title="Click to open expansive carousel"
                                     onError={(e) => {
                                         e.target.onerror = null;
                                         e.target.src = '/images/placeholder.svg';
                                     }}
                                 />
-                            </button>
-                            {galleryUrls.map((gUrl, idx) => (
+
+                                {allImages.length > 1 && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={handlePrevImage}
+                                            aria-label="Previous photo"
+                                            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-stone-900/60 hover:bg-stone-900/80 text-white flex items-center justify-center backdrop-blur-xs transition shadow-md active:scale-95 z-10 cursor-pointer"
+                                        >
+                                            <ChevronLeft size={20} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleNextImage}
+                                            aria-label="Next photo"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-stone-900/60 hover:bg-stone-900/80 text-white flex items-center justify-center backdrop-blur-xs transition shadow-md active:scale-95 z-10 cursor-pointer"
+                                        >
+                                            <ChevronRight size={20} />
+                                        </button>
+                                        <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-stone-900/70 backdrop-blur-xs text-white text-[11px] font-bold shadow-xs flex items-center gap-1.5 z-10 pointer-events-none">
+                                            <ImageIcon size={12} className="text-stone-300" />
+                                            <span>{activeImageIndex + 1} / {allImages.length}</span>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Gallery Thumbnail Strip */}
+                    {allImages.length > 1 && viewingMode === 'image' && (
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                            {allImages.map((imgUrl, idx) => (
                                 <button
                                     key={idx}
                                     type="button"
-                                    onClick={() => setSelectedImage(gUrl)}
-                                    className={`w-14 h-14 rounded-xl border shrink-0 overflow-hidden transition-all ${
-                                        selectedImage === gUrl ? 'ring-2 ring-clay-600 border-transparent' : 'border-stone-200 hover:border-stone-400'
+                                    onClick={() => setActiveImageIndex(idx)}
+                                    className={`w-14 h-14 rounded-xl border shrink-0 overflow-hidden transition-all cursor-pointer ${
+                                        activeImageIndex === idx
+                                            ? 'ring-2 ring-clay-600 border-transparent shadow-xs'
+                                            : 'border-stone-200 hover:border-stone-400 opacity-70 hover:opacity-100'
                                     }`}
                                 >
                                     <img
-                                        src={gUrl}
-                                        alt={`Gallery ${idx + 1}`}
+                                        src={imgUrl}
+                                        alt={`Thumbnail ${idx + 1}`}
                                         className="w-full h-full object-cover"
                                         onError={(e) => {
                                             e.target.onerror = null;
@@ -438,6 +517,26 @@ export default function ProductInspectionDrawer({
                     )}
                 </div>
             </div>
+
+            {/* Lightbox Carousel Modal: Expansive zoom, pan, rotate, scale measurement, 3D orbit */}
+            {isLightboxOpen && (
+                <ProductImageLightboxModal
+                    isOpen={isLightboxOpen}
+                    onClose={() => setIsLightboxOpen(false)}
+                    productName={product?.name || 'Craft Listing'}
+                    gallery={allImages}
+                    activeIndex={activeImageIndex}
+                    onChangeIndex={setActiveImageIndex}
+                    has3D={has3D}
+                    modelUrl={model3dUrl}
+                    dimensions={{
+                        height: product?.height,
+                        width: product?.width,
+                        depth: product?.depth
+                    }}
+                    initialMode={lightboxMode}
+                />
+            )}
         </SlideOverDrawer>
     );
 }
