@@ -36,6 +36,8 @@ stateDiagram-v2
     The seller can respond using `sellerRespond()` inside [DisputeController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Core/DisputeController.php), submitting a proposed resolution and explanation.
 2.  **Refund Escalation**:
     If unresolved, disputes can be escalated. The super admin makes the final binding decision (`admin_decision` = Approved/Refunded or Rejected).
+3.  **Dispute Evidence Carousel**:
+    Admins inspect buyer return and damaged parcel photos through [DisputeLightboxModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Admin/Disputes/DisputeLightboxModal.jsx) mounted in [DisputeEscalationDashboard.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Admin/Disputes/DisputeEscalationDashboard.jsx), supporting full thumbnail navigation, zoom, and multi-photo switching.
 
 ---
 
