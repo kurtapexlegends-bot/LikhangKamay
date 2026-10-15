@@ -1,9 +1,10 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Star, Image as ImageIcon, ShieldAlert, Pin, PinOff, Edit2, Trash2, AlertCircle, Reply, Zap, Send } from 'lucide-react';
-import Dropdown from '@/Components/Dropdown';
 import UserAvatar from '@/Components/UserAvatar';
 import RichTextEditor from '@/Components/Seller/Chat/RichTextEditor';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
+import ProductImageLightboxModal from '@/Components/Consumer/Shop/ProductShow/ProductImageLightboxModal';
+import { resolveImageUrl } from '@/lib/media';
 import { moderationStatusLabel, moderationOutcomeLabel, moderationOutcomeTone } from '@/utils/reviewHelpers';
 
 export default function ReviewListItem({
@@ -26,7 +27,10 @@ export default function ReviewListItem({
 }) {
     const [isMobile, setIsMobile] = useState(false);
     const [quickReplyOpen, setQuickReplyOpen] = useState(false);
+    const [lightboxState, setLightboxState] = useState({ open: false, index: 0 });
     const quickReplyRef = useRef(null);
+
+    const reviewPhotos = (review?.photos || []).map(p => resolveImageUrl(p));
 
     useEffect(() => {
         if (!quickReplyOpen) return;
@@ -194,16 +198,29 @@ export default function ReviewListItem({
                         </div>
                     )}
 
-                    {review.photos && review.photos.length > 0 && (
+                    {reviewPhotos.length > 0 && (
                         <div className="flex gap-2 mt-2 mb-3 overflow-x-auto pb-1 flex-nowrap">
-                            {review.photos.map((photo, idx) => (
-                                <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden border border-stone-200 shrink-0">
+                            {reviewPhotos.map((photoUrl, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setLightboxState({ open: true, index: idx })}
+                                    className="w-16 h-16 rounded-xl overflow-hidden border border-stone-200 hover:border-clay-500 hover:ring-2 hover:ring-clay-500/20 shrink-0 transition-all cursor-pointer relative group"
+                                    title={`View customer photo ${idx + 1} in carousel`}
+                                >
                                     <img
-                                        src={photo.startsWith('http') ? photo : `/storage/${photo}`}
+                                        src={photoUrl}
                                         alt={`Review photo ${idx + 1}`}
-                                        className="w-full h-full object-cover cursor-pointer hover:opacity-90 animate-page-enter"
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = '/images/placeholder.svg';
+                                        }}
                                     />
-                                </div>
+                                    <div className="absolute inset-0 bg-stone-900/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                        <ImageIcon size={14} />
+                                    </div>
+                                </button>
                             ))}
                         </div>
                     )}
@@ -366,6 +383,19 @@ export default function ReviewListItem({
                     )}
                 </div>
             </div>
+
+            {/* Review Photos Lightbox Carousel Modal */}
+            {lightboxState.open && reviewPhotos.length > 0 && (
+                <ProductImageLightboxModal
+                    isOpen={lightboxState.open}
+                    onClose={() => setLightboxState(prev => ({ ...prev, open: false }))}
+                    productName={`Review by ${review.user?.name || 'Customer'}`}
+                    gallery={reviewPhotos}
+                    activeIndex={lightboxState.index}
+                    onChangeIndex={(idx) => setLightboxState(prev => ({ ...prev, index: idx }))}
+                    has3D={false}
+                />
+            )}
         </div>
     );
 }

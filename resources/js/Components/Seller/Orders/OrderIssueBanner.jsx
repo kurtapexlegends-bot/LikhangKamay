@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Camera as CameraIcon } from "lucide-react";
 import { formatTimelineStamp } from "@/utils/orderHelpers";
 import { resolveImageUrl } from "@/lib/media";
+import ProductImageLightboxModal from "@/Components/Consumer/Shop/ProductShow/ProductImageLightboxModal";
 
 export default function OrderIssueBanner({ order, issueSummary }) {
+    const [lightboxState, setLightboxState] = useState({ open: false, photos: [], index: 0, title: '' });
+
     if (!issueSummary) return null;
 
     const Icon = issueSummary.icon;
@@ -46,18 +49,23 @@ export default function OrderIssueBanner({ order, issueSummary }) {
                     {issueSummary.proofPhotos && issueSummary.proofPhotos.length > 0 && (
                         <div className="mt-3">
                             <span className="font-bold uppercase tracking-wider text-stone-400 text-[10px] block mb-1">
-                                Buyer Proof Photos
+                                Buyer Proof Photos ({issueSummary.proofPhotos.length})
                             </span>
                             <div className="flex flex-nowrap overflow-x-auto gap-2 py-1 scrollbar-none">
                                 {issueSummary.proofPhotos.map((photo, i) => {
                                     const photoUrl = resolveImageUrl(photo);
                                     return (
-                                        <a
+                                        <button
                                             key={`${order.id}-dispute-proof-${i}`}
-                                            href={photoUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-stone-200 hover:border-stone-400 transition"
+                                            type="button"
+                                            onClick={() => setLightboxState({
+                                                open: true,
+                                                photos: issueSummary.proofPhotos.map(p => resolveImageUrl(p)),
+                                                index: i,
+                                                title: `Order #${order.order_number || order.id} Buyer Proof`
+                                            })}
+                                            className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-stone-200 hover:border-clay-500 hover:ring-2 hover:ring-clay-500/20 transition cursor-pointer"
+                                            title={`Inspect buyer proof photo ${i + 1} in carousel`}
                                         >
                                             <img
                                                 src={photoUrl}
@@ -67,7 +75,7 @@ export default function OrderIssueBanner({ order, issueSummary }) {
                                                     e.target.src = "/images/placeholder.svg";
                                                 }}
                                             />
-                                        </a>
+                                        </button>
                                     );
                                 })}
                             </div>
@@ -75,18 +83,36 @@ export default function OrderIssueBanner({ order, issueSummary }) {
                     )}
 
                     {issueSummary.proofHref && (
-                        <a
-                            href={issueSummary.proofHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-2.5 inline-flex items-center justify-center gap-1 rounded-full border border-white/80 bg-white/80 px-2 py-1 text-[9px] font-bold text-stone-700 hover:bg-white min-h-[44px]"
+                        <button
+                            type="button"
+                            onClick={() => setLightboxState({
+                                open: true,
+                                photos: [resolveImageUrl(issueSummary.proofHref)],
+                                index: 0,
+                                title: `Order #${order.order_number || order.id} Return Proof`
+                            })}
+                            className="mt-2.5 inline-flex items-center justify-center gap-1 rounded-full border border-white/80 bg-white/80 px-2.5 py-1 text-[9px] font-bold text-stone-700 hover:bg-white hover:border-stone-300 transition min-h-[44px] cursor-pointer"
+                            title="Inspect return proof in carousel"
                         >
-                            <CameraIcon size={10} />
+                            <CameraIcon size={12} className="text-clay-600" />
                             {issueSummary.proofLabel}
-                        </a>
+                        </button>
                     )}
                 </div>
             </div>
+
+            {/* Proof Photos Lightbox Carousel Modal */}
+            {lightboxState.open && lightboxState.photos.length > 0 && (
+                <ProductImageLightboxModal
+                    isOpen={lightboxState.open}
+                    onClose={() => setLightboxState(prev => ({ ...prev, open: false }))}
+                    productName={lightboxState.title}
+                    gallery={lightboxState.photos}
+                    activeIndex={lightboxState.index}
+                    onChangeIndex={(idx) => setLightboxState(prev => ({ ...prev, index: idx }))}
+                    has3D={false}
+                />
+            )}
         </div>
     );
 }

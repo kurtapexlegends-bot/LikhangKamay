@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { MapPin, PackageCheck, AlertTriangle, Store, Clock, Navigation } from 'lucide-react';
 import CourierTrackingCard from '../CourierTrackingCard';
 import HandoffVerificationPin from '../HandoffVerificationPin';
+import ProductImageLightboxModal from '@/Components/Consumer/Shop/ProductShow/ProductImageLightboxModal';
+import { resolveImageUrl } from '@/lib/media';
 import { buyerDeliverySummary, buyerIssueSummary, buyerProofLabel, humanizeAddressType } from '@/utils/orderHelpers';
 
 // Subcomponents
@@ -25,6 +27,7 @@ export default function OrderListItemCard({
     );
     const [isTimelineExpanded, setIsTimelineExpanded] = useState(false);
     const [isCourierTrackingExpanded, setIsCourierTrackingExpanded] = useState(isTransitDelivery);
+    const [lightboxState, setLightboxState] = useState({ open: false, photos: [], index: 0, title: '' });
 
     const deliverySummary = buyerDeliverySummary(order);
     const issueSummary = buyerIssueSummary(order);
@@ -222,16 +225,20 @@ export default function OrderListItemCard({
                                 {issueSummary.proofPhotos?.length > 0 && (
                                     <div className="flex items-center gap-1">
                                         {issueSummary.proofPhotos.map((photo, i) => (
-                                            <a
+                                            <button
                                                 key={i}
-                                                href={photo}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="h-10 w-10 rounded-lg border border-stone-300/80 bg-white overflow-hidden shadow-2xs hover:opacity-80 transition"
-                                                title="View unboxing proof"
+                                                type="button"
+                                                onClick={() => setLightboxState({
+                                                    open: true,
+                                                    photos: issueSummary.proofPhotos.map(p => resolveImageUrl(p)),
+                                                    index: i,
+                                                    title: `Order #${order.order_number || order.id} Proof Photos`
+                                                })}
+                                                className="h-10 w-10 rounded-lg border border-stone-300/80 bg-white overflow-hidden shadow-2xs hover:border-clay-500 hover:ring-2 hover:ring-clay-500/20 transition cursor-pointer"
+                                                title="View unboxing proof in carousel"
                                             >
                                                 <img
-                                                    src={photo}
+                                                    src={resolveImageUrl(photo)}
                                                     alt={`Proof ${i + 1}`}
                                                     className="h-full w-full object-cover"
                                                     onError={(e) => {
@@ -239,20 +246,24 @@ export default function OrderListItemCard({
                                                         e.target.src = '/images/placeholder.svg';
                                                     }}
                                                 />
-                                            </a>
+                                            </button>
                                         ))}
                                     </div>
                                 )}
                                 {!issueSummary.proofPhotos?.length && issueSummary.proofHref && (
-                                    <a
-                                        href={issueSummary.proofHref}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="h-10 w-10 rounded-lg border border-stone-300/80 bg-white overflow-hidden shadow-2xs hover:opacity-80 transition flex items-center justify-center"
-                                        title={issueSummary.proofLabel || "View Return Proof"}
+                                    <button
+                                        type="button"
+                                        onClick={() => setLightboxState({
+                                            open: true,
+                                            photos: [resolveImageUrl(issueSummary.proofHref)],
+                                            index: 0,
+                                            title: `Order #${order.order_number || order.id} Return Proof`
+                                        })}
+                                        className="h-10 w-10 rounded-lg border border-stone-300/80 bg-white overflow-hidden shadow-2xs hover:border-clay-500 hover:ring-2 hover:ring-clay-500/20 transition flex items-center justify-center cursor-pointer"
+                                        title={issueSummary.proofLabel || "View Return Proof in carousel"}
                                     >
                                         <PackageCheck size={16} className="text-clay-600" />
-                                    </a>
+                                    </button>
                                 )}
                             </div>
                         </div>
@@ -300,6 +311,19 @@ export default function OrderListItemCard({
                 onOpenEscalateModal={onOpenEscalateModal}
                 onOpenRatingModal={onOpenRatingModal}
             />
+
+            {/* Order Proof Lightbox Carousel Modal */}
+            {lightboxState.open && lightboxState.photos.length > 0 && (
+                <ProductImageLightboxModal
+                    isOpen={lightboxState.open}
+                    onClose={() => setLightboxState(prev => ({ ...prev, open: false }))}
+                    productName={lightboxState.title}
+                    gallery={lightboxState.photos}
+                    activeIndex={lightboxState.index}
+                    onChangeIndex={(idx) => setLightboxState(prev => ({ ...prev, index: idx }))}
+                    has3D={false}
+                />
+            )}
         </div>
     );
 }

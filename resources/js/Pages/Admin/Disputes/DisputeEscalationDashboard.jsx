@@ -325,8 +325,10 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                 onClose={() => setLightboxState(prev => ({ ...prev, open: false }))}
                 photos={lightboxState.photos}
                 currentIndex={lightboxState.currentIndex}
+                onChangeIndex={(idx) => setLightboxState(prev => ({ ...prev, currentIndex: idx }))}
                 onNext={nextPhoto}
                 onPrev={prevPhoto}
+                title={`Dispute #${activeInspectorDispute?.id || ''} Evidence`}
             />
 
             {/* Arbitration Confirmation Modal */}

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { Star, Pin, Trash2, Pencil } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { compressImage } from '@/utils/imageCompressor';
 import { resolveImageUrl } from '@/lib/media';
+import ProductImageLightboxModal from './ProductImageLightboxModal';
 
 export default function ProductReviewsSection({
     product,
@@ -23,6 +24,7 @@ export default function ProductReviewsSection({
     reviewPhotoPreviewUrls,
     currentReviewPhotos,
 }) {
+    const [activeReviewGallery, setActiveReviewGallery] = useState({ open: false, photos: [], index: 0, title: '' });
     return (
         <div className="mt-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
             <h2 className="text-base font-bold text-gray-900 mb-4 pb-3 border-b border-gray-100 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -77,15 +79,28 @@ export default function ProductReviewsSection({
                                                 {review.photos.map((photo, i) => {
                                                     const photoUrl = resolveImageUrl(photo);
                                                     return (
-                                                        <div key={i} className="w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-gray-100 cursor-pointer hover:opacity-90 transition shadow-sm">
+                                                        <button 
+                                                            key={i} 
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const allPhotos = review.photos.map(p => resolveImageUrl(p));
+                                                                setActiveReviewGallery({
+                                                                    open: true,
+                                                                    photos: allPhotos,
+                                                                    index: i,
+                                                                    title: `Review by ${review.user?.name || 'Customer'}`
+                                                                });
+                                                            }}
+                                                            className="w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-gray-100 hover:border-clay-500 hover:ring-2 hover:ring-clay-500/20 cursor-pointer transition shadow-2xs relative group"
+                                                            title={`View photo ${i + 1} of ${review.photos.length} in carousel`}
+                                                        >
                                                             <img 
                                                                 src={photoUrl} 
                                                                 alt="Review Attachment" 
-                                                                className="w-full h-full object-cover" 
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" 
                                                                 onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/placeholder.svg'; }}
-                                                                onClick={() => window.open(photoUrl, '_blank')}
                                                             />
-                                                        </div>
+                                                        </button>
                                                     );
                                                 })}
                                             </div>
@@ -266,6 +281,19 @@ export default function ProductReviewsSection({
                     </div>
                 </div>
             </div>
+
+            {/* Review Photos Lightbox Carousel Modal */}
+            {activeReviewGallery.open && activeReviewGallery.photos.length > 0 && (
+                <ProductImageLightboxModal
+                    isOpen={activeReviewGallery.open}
+                    onClose={() => setActiveReviewGallery(prev => ({ ...prev, open: false }))}
+                    productName={activeReviewGallery.title}
+                    gallery={activeReviewGallery.photos}
+                    activeIndex={activeReviewGallery.index}
+                    onChangeIndex={(idx) => setActiveReviewGallery(prev => ({ ...prev, index: idx }))}
+                    has3D={false}
+                />
+            )}
         </div>
     );
 }

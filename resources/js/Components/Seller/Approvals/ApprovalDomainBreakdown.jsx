@@ -215,8 +215,15 @@ export default function ApprovalDomainBreakdown({
                                 <button 
                                     key={idx} 
                                     type="button"
-                                    onClick={() => onViewDocument ? onViewDocument({ url: photo, title: `Evidence Attachment #${idx + 1}`, type: 'image' }) : window.open(photo, '_blank')}
-                                    className="block aspect-square rounded-xl overflow-hidden border border-stone-200 bg-stone-100 hover:opacity-90 transition cursor-pointer"
+                                    onClick={() => onViewDocument ? onViewDocument({ 
+                                        url: photo, 
+                                        gallery: payload.evidence_photos,
+                                        activeIndex: idx,
+                                        title: `Evidence Attachment #${idx + 1} of ${payload.evidence_photos.length}`, 
+                                        type: 'image' 
+                                    }) : window.open(photo, '_blank')}
+                                    className="block aspect-square rounded-xl overflow-hidden border border-stone-200 bg-stone-100 hover:border-clay-500 hover:ring-2 hover:ring-clay-500/20 transition cursor-pointer"
+                                    title={`Inspect evidence photo ${idx + 1} in carousel`}
                                 >
                                     <img src={photo} alt={`Evidence #${idx + 1}`} className="w-full h-full object-cover" />
                                 </button>

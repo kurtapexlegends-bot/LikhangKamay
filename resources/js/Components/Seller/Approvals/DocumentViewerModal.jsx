@@ -1,11 +1,25 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ExternalLink, FileText, Image as ImageIcon } from 'lucide-react';
+import ProductImageLightboxModal from '@/Components/Consumer/Shop/ProductShow/ProductImageLightboxModal';
+import { resolveImageUrl } from '@/lib/media';
 
 export default function DocumentViewerModal({
     isOpen = false,
     onClose,
     doc = null,
 }) {
+    const [prevDoc, setPrevDoc] = useState(doc);
+    const [activeIndex, setActiveIndex] = useState(
+        doc && typeof doc === 'object' && typeof doc.activeIndex === 'number' ? doc.activeIndex : 0
+    );
+
+    if (doc !== prevDoc) {
+        setPrevDoc(doc);
+        setActiveIndex(
+            doc && typeof doc === 'object' && typeof doc.activeIndex === 'number' ? doc.activeIndex : 0
+        );
+    }
+
     useEffect(() => {
         if (!isOpen) return;
         const handleKeyDown = (e) => {
@@ -19,11 +33,30 @@ export default function DocumentViewerModal({
 
     if (!isOpen || !doc) return null;
 
-    const docUrl = typeof doc === 'string' ? doc : doc.url;
-    const docTitle = (typeof doc === 'object' && doc.title) ? doc.title : 'Document Preview';
-    const isImage = typeof doc === 'object' && doc.type ? doc.type === 'image' : (
+    const docUrl = typeof doc === 'string' ? doc : doc?.url;
+    const docTitle = (typeof doc === 'object' && doc?.title) ? doc.title : 'Document Preview';
+    const isImage = typeof doc === 'object' && doc?.type ? doc.type === 'image' : (
         docUrl && (/\.(jpe?g|png|webp|gif|svg)(\?.*)?$/i.test(docUrl) || docUrl.startsWith('data:image/') || docUrl.startsWith('blob:'))
     );
+
+    const gallery = (doc && typeof doc === 'object' && Array.isArray(doc.gallery))
+        ? doc.gallery.map(resolveImageUrl)
+        : (isImage && docUrl ? [resolveImageUrl(docUrl)] : []);
+
+    // For image evidence, render the expansive carousel lightbox with zoom, pan and rotate
+    if (isImage && gallery.length > 0) {
+        return (
+            <ProductImageLightboxModal
+                isOpen={isOpen}
+                onClose={onClose}
+                productName={docTitle}
+                gallery={gallery}
+                activeIndex={activeIndex}
+                onChangeIndex={setActiveIndex}
+                has3D={false}
+            />
+        );
+    }
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
@@ -57,34 +90,22 @@ export default function DocumentViewerModal({
 
                 {/* Modal Body */}
                 <div className="p-4 sm:p-6 overflow-y-auto flex-1 flex items-center justify-center bg-stone-100/50 min-h-[260px]">
-                    {isImage ? (
-                        <img
-                            src={docUrl}
-                            alt={docTitle}
-                            className="max-h-[60vh] w-auto max-w-full rounded-xl object-contain shadow-sm border border-stone-200 bg-white"
-                            onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = '/images/placeholder.svg';
-                            }}
-                        />
-                    ) : (
-                        <div className="text-center p-8 bg-white rounded-2xl border border-stone-200 shadow-2xs max-w-sm">
-                            <FileText size={48} className="mx-auto text-clay-600/60 mb-3" />
-                            <h4 className="text-sm font-bold text-stone-900 mb-1">{docTitle}</h4>
-                            <p className="text-xs text-stone-500 mb-4">
-                                Preview not available directly. Open or download to inspect file.
-                            </p>
-                            <a
-                                href={docUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-clay-600 text-white font-bold text-xs hover:bg-clay-700 transition"
-                            >
-                                <ExternalLink size={13} />
-                                <span>Open File</span>
-                            </a>
-                        </div>
-                    )}
+                    <div className="text-center p-8 bg-white rounded-2xl border border-stone-200 shadow-2xs max-w-sm">
+                        <FileText size={48} className="mx-auto text-clay-600/60 mb-3" />
+                        <h4 className="text-sm font-bold text-stone-900 mb-1">{docTitle}</h4>
+                        <p className="text-xs text-stone-500 mb-4">
+                            Preview not available directly. Open or download to inspect file.
+                        </p>
+                        <a
+                            href={docUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-clay-600 text-white font-bold text-xs hover:bg-clay-700 transition cursor-pointer"
+                        >
+                            <ExternalLink size={13} />
+                            <span>Open File</span>
+                        </a>
+                    </div>
                 </div>
 
                 {/* Modal Footer */}
