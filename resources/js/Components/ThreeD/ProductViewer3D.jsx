@@ -1,6 +1,7 @@
 /* eslint-disable react/no-unknown-property, react-hooks/immutability */
 import React, { Suspense, useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import * as THREE from 'three';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stage, Html, useProgress } from '@react-three/drei';
 import GLTFModel from './GLTFModel';
 import { Loader2, Box, RotateCcw, ZoomIn, ZoomOut, Sparkles } from 'lucide-react';
@@ -8,18 +9,69 @@ import { ThreeDModelBoundary, ThreeDModelUnavailable } from './ThreeDModelBounda
 import CraftDimensionOverlay from './CraftDimensionOverlay';
 import RealWorldScaleBenchmark, { getRecommendedBenchmarkId, getBenchmarkFraming } from './RealWorldScaleBenchmark';
 
-function CameraController({ zoom, targetX = 0, targetY = 0, controlsRef }) {
+function CameraController({ targetPos, targetLookAt, userZoom = 1.0, controlsRef }) {
     const { camera } = useThree();
-    useEffect(() => {
-        camera.zoom = zoom;
-        camera.position.set(targetX + 0.35, targetY + 0.2, camera.position.z);
-        camera.updateProjectionMatrix();
+    const animRef = useRef({
+        active: false,
+        targetPos: new THREE.Vector3(0.35, 0.2, 4.8),
+        targetLookAt: new THREE.Vector3(0, 0, 0),
+    });
+    const isInteractingRef = useRef(false);
 
-        if (controlsRef?.current) {
-            controlsRef.current.target.set(targetX, targetY, 0);
+    // Track user drag on OrbitControls to avoid fighting manual inspection
+    useEffect(() => {
+        const controls = controlsRef?.current;
+        if (!controls) return;
+
+        const onStart = () => {
+            isInteractingRef.current = true;
+            animRef.current.active = false;
+        };
+        const onEnd = () => {
+            isInteractingRef.current = false;
+        };
+
+        controls.addEventListener('start', onStart);
+        controls.addEventListener('end', onEnd);
+        return () => {
+            controls.removeEventListener('start', onStart);
+            controls.removeEventListener('end', onEnd);
+        };
+    }, [controlsRef]);
+
+    // When framing target changes, initiate smooth glide
+    useEffect(() => {
+        if (!targetPos || !targetLookAt) return;
+        animRef.current.targetPos.copy(targetPos);
+        animRef.current.targetLookAt.copy(targetLookAt);
+        animRef.current.active = true;
+    }, [targetPos, targetLookAt]);
+
+    // Update user manual zoom (+ / - buttons)
+    useEffect(() => {
+        camera.zoom = userZoom;
+        camera.updateProjectionMatrix();
+    }, [userZoom, camera]);
+
+    useFrame((_, delta) => {
+        if (!animRef.current.active || isInteractingRef.current) return;
+        if (!controlsRef?.current) return;
+
+        const lerpFactor = Math.min(delta * 6.0, 1.0);
+        camera.position.lerp(animRef.current.targetPos, lerpFactor);
+        controlsRef.current.target.lerp(animRef.current.targetLookAt, lerpFactor);
+        controlsRef.current.update();
+
+        const posDist = camera.position.distanceTo(animRef.current.targetPos);
+        const lookDist = controlsRef.current.target.distanceTo(animRef.current.targetLookAt);
+        if (posDist < 0.02 && lookDist < 0.02) {
+            camera.position.copy(animRef.current.targetPos);
+            controlsRef.current.target.copy(animRef.current.targetLookAt);
             controlsRef.current.update();
+            animRef.current.active = false;
         }
-    }, [zoom, targetX, targetY, camera, controlsRef]);
+    });
+
     return null;
 }
 
@@ -48,6 +100,12 @@ export default function ProductViewer3D({
     const [zoom, setZoom] = useState(1.0);
     const [showScaleBenchmark, setShowScaleBenchmark] = useState(false);
     
+    // Reset zoom and open scale comparison
+    const handleOpenScaleBenchmark = useCallback(() => {
+        setZoom(1.0);
+        setShowScaleBenchmark(true);
+    }, []);
+
     // Notify parent when 3D scale benchmark overlay opens or closes
     useEffect(() => {
         onScaleBenchmarkChange?.(showScaleBenchmark);
@@ -75,12 +133,19 @@ export default function ProductViewer3D({
         }
     }, [dimensions?.height]);
 
-    // Compute dynamic camera target & zoom framing when comparing against real-world benchmarks
+    // Compute dynamic camera target & distance framing when comparing against real-world benchmarks
     const framing = useMemo(() => {
         if (!showScaleBenchmark) {
-            return { targetX: 0, targetY: 0, optimalZoom: 1.0 };
+            return {
+                targetPos: new THREE.Vector3(0.35, 0.2, 4.8),
+                targetLookAt: new THREE.Vector3(0, 0, 0),
+            };
         }
-        return getBenchmarkFraming(benchmarkType, dimensions?.height);
+        const data = getBenchmarkFraming(benchmarkType, dimensions?.height);
+        return {
+            targetPos: new THREE.Vector3(data.cameraX, data.cameraY, data.cameraZ),
+            targetLookAt: new THREE.Vector3(data.targetX, data.targetY, 0),
+        };
     }, [showScaleBenchmark, benchmarkType, dimensions?.height]);
 
     function Loader() {
@@ -120,7 +185,7 @@ export default function ProductViewer3D({
                     )}
                     <button
                         type="button"
-                        onClick={() => setShowScaleBenchmark(true)}
+                        onClick={handleOpenScaleBenchmark}
                         className="px-2.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition shadow-xs cursor-pointer bg-white/90 backdrop-blur text-stone-700 border-gray-200 hover:bg-white active:scale-95 min-h-[38px] shrink-0"
                         title="Compare with Real-Life Benchmark"
                     >
@@ -133,7 +198,7 @@ export default function ProductViewer3D({
             {!compact && !showScaleBenchmark && (
                 <div className="absolute top-3 right-3 z-10 flex flex-col gap-1 bg-white/90 backdrop-blur p-1 rounded-xl border border-gray-200 shadow-sm">
                     <button
-                        onClick={() => setShowScaleBenchmark(true)}
+                        onClick={handleOpenScaleBenchmark}
                         className="p-2 rounded-lg transition cursor-pointer hover:bg-gray-100 text-gray-600"
                         title="Compare with Real-Life Benchmark"
                     >
@@ -182,32 +247,33 @@ export default function ProductViewer3D({
                     onCreated={handleCanvasCreated}
                     shadows
                     dpr={[1, 2]}
-                    camera={{ position: [0.35, 0.2, 5.0], fov: 42 }}
+                    camera={{ position: [0.35, 0.2, 4.8], fov: 42, near: 0.1, far: 1000 }}
                     gl={{ preserveDrawingBuffer: true, antialias: true }}
                     className="cursor-grab active:cursor-grabbing"
                 >
                     <CameraController
-                        zoom={framing.optimalZoom * zoom}
-                        targetX={framing.targetX}
-                        targetY={framing.targetY}
+                        targetPos={framing.targetPos}
+                        targetLookAt={framing.targetLookAt}
+                        userZoom={zoom}
                         controlsRef={controlsRef}
                     />
                     <Suspense fallback={<Loader />}>
                         <Stage preset="rembrandt" intensity={0.5} adjustCamera={false}>
-                            <group>
-                                {modelUrl ? (
-                                    <GLTFModel url={modelUrl} />
-                                ) : (
-                                    <PlaceholderModel />
-                                )}
-                                {showScaleBenchmark && (
-                                    <RealWorldScaleBenchmark
-                                        benchmarkId={benchmarkType}
-                                        craftHeightCm={dimensions?.height || 22}
-                                    />
-                                )}
-                            </group>
+                            {modelUrl ? (
+                                <GLTFModel url={modelUrl} />
+                            ) : (
+                                <PlaceholderModel />
+                            )}
                         </Stage>
+                        {showScaleBenchmark && (
+                            <group>
+                                <directionalLight position={[5, 10, 7]} intensity={0.4} />
+                                <RealWorldScaleBenchmark
+                                    benchmarkId={benchmarkType}
+                                    craftHeightCm={dimensions?.height || 22}
+                                />
+                            </group>
+                        )}
                     </Suspense>
                     <OrbitControls
                         ref={controlsRef}

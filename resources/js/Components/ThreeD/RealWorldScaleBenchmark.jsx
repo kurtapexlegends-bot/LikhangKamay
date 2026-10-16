@@ -51,6 +51,12 @@ function HumanFigureMesh({ scaleHeight, positionX }) {
 
     return (
         <group position={[positionX, -1.0, 0]}>
+            {/* Ground contact shadow disc */}
+            <mesh position={[0, 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <circleGeometry args={[width * 0.85, 32]} />
+                <meshBasicMaterial color="#000000" opacity={0.25} transparent depthWrite={false} />
+            </mesh>
+
             {/* Head */}
             <mesh position={[0, height - headRadius, 0]} castShadow receiveShadow>
                 <sphereGeometry args={[headRadius, 16, 16]} />
@@ -98,6 +104,12 @@ function DeskMesh({ scaleHeight, positionX }) {
 
     return (
         <group position={[positionX, -1.0, 0]}>
+            {/* Ground contact shadow */}
+            <mesh position={[0, 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <planeGeometry args={[width * 1.08, depth * 1.08]} />
+                <meshBasicMaterial color="#000000" opacity={0.22} transparent depthWrite={false} />
+            </mesh>
+
             {/* Tabletop */}
             <mesh position={[0, height - (height * 0.025), 0]} castShadow receiveShadow>
                 <boxGeometry args={[width, height * 0.05, depth]} />
@@ -132,6 +144,12 @@ function SmartphoneMesh({ scaleHeight, positionX }) {
 
     return (
         <group position={[positionX, -1.0 + height / 2, 0]}>
+            {/* Ground contact shadow */}
+            <mesh position={[0, -height / 2 + 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <planeGeometry args={[width * 1.35, depth * 2.8]} />
+                <meshBasicMaterial color="#000000" opacity={0.25} transparent depthWrite={false} />
+            </mesh>
+
             {/* Phone Body */}
             <mesh castShadow receiveShadow>
                 <boxGeometry args={[width, height, depth]} />
@@ -153,6 +171,12 @@ function CoffeeMugMesh({ scaleHeight, positionX }) {
 
     return (
         <group position={[positionX, -1.0 + height / 2, 0]}>
+            {/* Ground contact shadow */}
+            <mesh position={[0, -height / 2 + 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <circleGeometry args={[radius * 1.25, 32]} />
+                <meshBasicMaterial color="#000000" opacity={0.25} transparent depthWrite={false} />
+            </mesh>
+
             {/* Mug Body */}
             <mesh castShadow receiveShadow>
                 <cylinderGeometry args={[radius, radius * 0.92, height, 32]} />
@@ -175,14 +199,14 @@ function CoffeeMugMesh({ scaleHeight, positionX }) {
 }
 
 /**
- * Calculates dynamic spatial framing, mesh scaling, and camera zoom targets
- * for side-by-side benchmark comparison.
+ * Calculates dynamic spatial framing, mesh scaling, and comfortable camera targets
+ * for side-by-side benchmark comparison without crowding or extreme fisheye zoom.
  */
 export function getBenchmarkFraming(benchmarkId, craftHeightCm) {
-    const resolvedCraftHeight = Math.max(Number(craftHeightCm) || 22, 4);
+    const resolvedCraftHeight = Math.max(Number(craftHeightCm) || 22, 1);
     const selected = BENCHMARKS.find((b) => b.id === benchmarkId) || BENCHMARKS[0];
 
-    // Standardized craft model inside Stage is normalized to ~2.0 units (Y: -1.0 to 1.0)
+    // Standardized craft model is normalized to 2.0 units (spanning Y: -1.0 to +1.0)
     const craftHeightUnits = 2.0;
     const scaleHeight = craftHeightUnits * (selected.heightCm / resolvedCraftHeight);
 
@@ -190,12 +214,12 @@ export function getBenchmarkFraming(benchmarkId, craftHeightCm) {
     let benchmarkWidth = scaleHeight * 0.45;
     if (selected.id === 'human') benchmarkWidth = scaleHeight * (42 / 170);
     else if (selected.id === 'desk') benchmarkWidth = scaleHeight * (115 / 75);
-    else if (selected.id === 'mug') benchmarkWidth = scaleHeight * (8.2 / 9.5);
-    else if (selected.id === 'phone') benchmarkWidth = scaleHeight * (7.15 / 14.7);
+    else if (selected.id === 'mug') benchmarkWidth = Math.max(scaleHeight * (8.2 / 9.5), 0.35);
+    else if (selected.id === 'phone') benchmarkWidth = Math.max(scaleHeight * (7.15 / 14.7), 0.45);
 
-    // Position benchmark cleanly to the right of the craft (centered at X=0, radius ~0.6)
+    // Position benchmark cleanly to the right of the craft (craft centered at X=0, radius ~0.6)
     const craftHalfWidth = 0.6;
-    const gap = 0.35;
+    const gap = Math.max(0.35, scaleHeight * 0.06);
     const positionX = Math.max(1.15, craftHalfWidth + gap + (benchmarkWidth / 2));
 
     // Vertical bounds (ground plane at Y = -1.0)
@@ -210,18 +234,27 @@ export function getBenchmarkFraming(benchmarkId, craftHeightCm) {
     const totalWidth = maxRightX - minLeftX;
     const centerX = (minLeftX + maxRightX) / 2;
 
-    // Optimal zoom factoring overlay margins
-    const fitHeightZoom = 2.45 / Math.max(totalHeight, 2.0);
-    const fitWidthZoom = 2.75 / Math.max(totalWidth, 2.2);
-    const optimalZoom = Math.max(0.18, Math.min(1.0, Math.min(fitHeightZoom, fitWidthZoom)));
+    // Optimal camera distance factoring vertical FOV (42 deg) and HUD overlay clearances
+    // The top bar and bottom dock cover ~40-45% of vertical viewport; leaving 50-55% open height.
+    const distForHeight = totalHeight / (2 * 0.38386 * 0.48); // ~2.7 * totalHeight
+    const distForWidth = totalWidth / (2 * 0.38386 * 0.95 * 0.72); // ~1.9 * totalWidth
+    const optimalDistance = Math.max(5.8, Math.max(distForHeight, distForWidth));
+
+    // Adjust targetY downward so objects sit in the open, unobstructed region above the bottom dock
+    const targetY = centerY - (totalHeight * 0.08) - 0.15;
+    const targetX = centerX;
 
     return {
         scaleHeight,
         benchmarkWidth,
         positionX,
-        targetX: centerX,
-        targetY: centerY,
-        optimalZoom,
+        targetX,
+        targetY,
+        optimalDistance,
+        cameraX: targetX + (optimalDistance * 0.04),
+        cameraY: targetY + (optimalDistance * 0.07),
+        cameraZ: optimalDistance,
+        optimalZoom: 1.0,
     };
 }
 
