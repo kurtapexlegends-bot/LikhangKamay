@@ -16,6 +16,7 @@ export default React.memo(function ProductCard({ id, slug, href, onQuickView, on
                     loading="lazy"
                     decoding="async"
                     className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-in-out"
+                    onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
                 />
 
                 {/* Top Left Overlay: Compact Live Countdown Badge */}

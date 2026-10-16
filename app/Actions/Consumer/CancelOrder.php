@@ -30,22 +30,22 @@ class CancelOrder
      */
     public function execute(string $id, User $buyer, string $reason = 'buyer_cancelled', ?string $details = null): void
     {
-        DB::transaction(function () use ($id, $buyer, $reason, $details) {
-            $order = Order::lockForUpdate()->where('id', $id)
+        $order = DB::transaction(function () use ($id, $buyer, $reason, $details) {
+            $lockedOrder = Order::lockForUpdate()->where('id', $id)
                 ->where('user_id', $buyer->id)
                 ->with('items')
                 ->firstOrFail();
 
-            $isPending = $order->status === 'Pending';
-            $isWithinGracePeriod = $order->status === 'Accepted'
-                && $order->accepted_at !== null
-                && $order->accepted_at->greaterThanOrEqualTo(now()->subMinutes(15));
+            $isPending = $lockedOrder->status === 'Pending';
+            $isWithinGracePeriod = $lockedOrder->status === 'Accepted'
+                && $lockedOrder->accepted_at !== null
+                && $lockedOrder->accepted_at->greaterThanOrEqualTo(now()->subMinutes(15));
 
             if (!$isPending && !$isWithinGracePeriod) {
                 throw new \RuntimeException('Orders can only be cancelled while pending or within 15 minutes of acceptance before processing begins.');
             }
 
-            foreach ($order->items as $item) {
+            foreach ($lockedOrder->items as $item) {
                 $product = Product::lockForUpdate()->find($item->product_id);
                 if ($product) {
                     $product->increment('stock', $item->quantity);
@@ -75,81 +75,91 @@ class CancelOrder
                 'cancellation_reason' => $details ? "{$reason}: {$details}" : $reason,
             ];
 
-            // Online Payment (PayMongo GCash/Card) Refund Trigger
-            if ($order->payment_status === 'paid') {
-                if (empty($order->payment_id) && !empty($order->paymongo_session_id)) {
-                    try {
-                        $session = $this->payMongoService->retrieveCheckoutSession($order->paymongo_session_id);
-                        $payments = $session['attributes']['payments'] ?? [];
-                        if (is_array($payments) && !empty($payments)) {
-                            $firstPayment = reset($payments);
-                            $resolvedPaymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
-                            if ($resolvedPaymentId) {
-                                $order->payment_id = $resolvedPaymentId;
-                                $updateData['payment_id'] = $resolvedPaymentId;
-                            }
-                        }
-                    } catch (\Throwable $e) {
-                        Log::warning("Failed resolving PayMongo payment_id from session {$order->paymongo_session_id}: " . $e->getMessage());
-                    }
-                }
-
-                $refundProcessed = false;
-                if ($order->payment_id) {
-                    try {
-                        $amountInCents = (int) round(((float) $order->total_amount) * 100);
-                        $refundResult = $this->payMongoService->createRefund(
-                            paymentId: $order->payment_id,
-                            amountInCents: $amountInCents,
-                            reason: 'requested_by_customer',
-                            notes: "Order {$order->order_number} cancelled by buyer ({$reason})"
-                        );
-                        if ($refundResult) {
-                            $refundProcessed = true;
-                            Log::info("PayMongo refund created for order {$order->id}", ['refund_id' => $refundResult['id'] ?? null]);
-                        } else {
-                            Log::warning("PayMongo refund returned null/empty for cancelled order {$order->id}");
-                        }
-                    } catch (\Throwable $e) {
-                        Log::warning("PayMongo automated refund exception for order {$order->id}: " . $e->getMessage());
-                    }
-                }
-
-                if (app()->environment('testing') && empty($order->payment_id)) {
-                    $refundProcessed = true;
-                }
-
-                $updateData['payment_status'] = $refundProcessed ? 'refunded' : 'refund_pending';
+            if ($lockedOrder->payment_status === 'paid') {
+                $updateData['payment_status'] = 'refund_pending';
             }
-            
-            $order->update($updateData);
 
-            if ($buyer->email) {
-                $reasonDescription = match ($reason) {
-                    'change_delivery_address' => 'Need to change delivery address',
-                    'reschedule_pickup' => 'Need to change pickup schedule or time window',
-                    'cannot_visit_store' => 'Unable to visit artisan studio / store in person',
-                    'modify_order_items' => 'Need to modify items or quantities',
-                    'ordered_by_mistake' => 'Order placed by mistake',
-                    'found_better_price' => 'Found alternative / better deal',
-                    'delivery_time_too_long' => 'Delivery time is too long',
-                    default => $details ?: 'Cancelled by customer.',
-                };
+            $lockedOrder->update($updateData);
 
+            return $lockedOrder;
+        });
+
+        $order->refresh();
+
+        // Online Payment (PayMongo GCash/Card) Refund Trigger outside DB::transaction
+        if ($order->payment_status === 'refund_pending') {
+            if (empty($order->payment_id) && !empty($order->paymongo_session_id)) {
                 try {
-                    $mailer = \Illuminate\Support\Facades\Mail::to($buyer->email);
-                    $mailable = new \App\Mail\OrderCancelled($order, $reasonDescription);
-                    if (app()->environment('production') && config('queue.default') !== 'sync') {
-                        $mailer->queue($mailable);
-                    } else {
-                        $mailer->send($mailable);
+                    $session = $this->payMongoService->retrieveCheckoutSession($order->paymongo_session_id);
+                    $payments = $session['attributes']['payments'] ?? [];
+                    if (is_array($payments) && !empty($payments)) {
+                        $firstPayment = reset($payments);
+                        $resolvedPaymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
+                        if ($resolvedPaymentId) {
+                            $order->payment_id = $resolvedPaymentId;
+                            $order->save();
+                        }
                     }
                 } catch (\Throwable $e) {
-                    report($e);
-                    \Illuminate\Support\Facades\Log::warning('Failed to dispatch order cancellation email: ' . $e->getMessage());
+                    Log::warning("Failed resolving PayMongo payment_id from session {$order->paymongo_session_id}: " . $e->getMessage());
                 }
             }
-        });
+
+            $refundProcessed = false;
+            if ($order->payment_id) {
+                try {
+                    $amountInCents = (int) round(((float) $order->total_amount) * 100);
+                    $refundResult = $this->payMongoService->createRefund(
+                        paymentId: $order->payment_id,
+                        amountInCents: $amountInCents,
+                        reason: 'requested_by_customer',
+                        notes: "Order {$order->order_number} cancelled by buyer ({$reason})"
+                    );
+                    if ($refundResult) {
+                        $refundProcessed = true;
+                        Log::info("PayMongo refund created for order {$order->id}", ['refund_id' => $refundResult['id'] ?? null]);
+                    } else {
+                        Log::warning("PayMongo refund returned null/empty for cancelled order {$order->id}");
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning("PayMongo automated refund exception for order {$order->id}: " . $e->getMessage());
+                }
+            }
+
+            if (app()->environment('testing') && empty($order->payment_id)) {
+                $refundProcessed = true;
+            }
+
+            if ($refundProcessed) {
+                $order->update(['payment_status' => 'refunded']);
+            }
+        }
+
+        if ($buyer->email) {
+            $reasonDescription = match ($reason) {
+                'change_delivery_address' => 'Need to change delivery address',
+                'reschedule_pickup' => 'Need to change pickup schedule or time window',
+                'cannot_visit_store' => 'Unable to visit artisan studio / store in person',
+                'modify_order_items' => 'Need to modify items or quantities',
+                'ordered_by_mistake' => 'Order placed by mistake',
+                'found_better_price' => 'Found alternative / better deal',
+                'delivery_time_too_long' => 'Delivery time is too long',
+                default => $details ?: 'Cancelled by customer.',
+            };
+
+            try {
+                $mailer = \Illuminate\Support\Facades\Mail::to($buyer->email);
+                $mailable = new \App\Mail\OrderCancelled($order, $reasonDescription);
+                if (app()->environment('production') && config('queue.default') !== 'sync') {
+                    $mailer->queue($mailable);
+                } else {
+                    $mailer->send($mailable);
+                }
+            } catch (\Throwable $e) {
+                report($e);
+                \Illuminate\Support\Facades\Log::warning('Failed to dispatch order cancellation email: ' . $e->getMessage());
+            }
+        }
     }
 }
 

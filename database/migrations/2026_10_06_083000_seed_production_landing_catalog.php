@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Category;
 use App\Models\Product;
@@ -15,7 +16,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (app()->environment('testing')) {
+        $connectionName = $this->getConnection() ?: DB::getDefaultConnection();
+        $isPretending = rescue(fn () => DB::connection($connectionName)->pretending(), false);
+
+        if (app()->environment('testing') || $isPretending || $connectionName === 'verify_pgsql') {
             return;
         }
 

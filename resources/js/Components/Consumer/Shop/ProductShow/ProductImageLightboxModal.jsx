@@ -12,6 +12,7 @@ import {
     Loader2
 } from 'lucide-react';
 import { ThreeDModelBoundary, ThreeDModelUnavailable } from '@/Components/ThreeD/ThreeDModelBoundary';
+import useNetworkStatus from '@/hooks/useNetworkStatus';
 
 const ProductViewer3D = lazy(() => import('@/Components/ThreeD/ProductViewer3D'));
 
@@ -28,6 +29,10 @@ export default function ProductImageLightboxModal({
     onOpenHeightComparison,
     initialMode = 'image',
 }) {
+    const { isDegraded } = useNetworkStatus();
+    const isLowBandwidth = isDegraded || (typeof navigator !== 'undefined' && Boolean(navigator.connection?.saveData));
+    const hasPreloaded3DRef = useRef(false);
+
     const [viewMode, setViewMode] = useState(initialMode || 'image');
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
@@ -49,6 +54,16 @@ export default function ProductImageLightboxModal({
         setRotation(0);
         setPan({ x: 0, y: 0 });
     }, []);
+
+    const handlePreload3D = useCallback(() => {
+        if (hasPreloaded3DRef.current || isLowBandwidth || !has3D || !modelUrl) return;
+        hasPreloaded3DRef.current = true;
+        import('@/Components/ThreeD/ProductViewer3D').then((module) => {
+            module?.preloadProduct3D?.(modelUrl);
+        }).catch(() => {
+            // Silently ignore prefetch/offline errors
+        });
+    }, [has3D, modelUrl, isLowBandwidth]);
 
     // Auto-scroll active thumbnail into view
     useEffect(() => {
@@ -470,6 +485,9 @@ export default function ProductImageLightboxModal({
                                         <button
                                             type="button"
                                             onClick={handleSelect3D}
+                                            onMouseEnter={handlePreload3D}
+                                            onFocus={handlePreload3D}
+                                            onTouchStart={handlePreload3D}
                                             aria-label="View 3D interactive model"
                                             title="View 3D interactive model"
                                             className={`relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl overflow-hidden transition-all duration-200 active:scale-95 flex flex-col items-center justify-center gap-0.5 ${

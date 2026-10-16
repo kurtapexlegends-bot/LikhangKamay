@@ -43,6 +43,7 @@ Webhooks from the Lalamove API dispatch events that update the `status` of `Orde
     1.  Sets the order status to `Cancelled`.
     2.  Restores product inventory stock and decrements sales numbers.
     3.  Initiates online payment refunds if the transaction is non-COD.
+    *Note: In `OrderLogisticsService.php`, `autoCancelFailedDelivery` commits all database mutations and releases row locks within `DB::transaction()` before dispatching external PayMongo refund API requests, eliminating connection hold times and row lock contention.*
 
 ### Concurrency & Dispatch Mutex Locking
 *   **Courier Dispatch Atomic Mutex**: In [OrderLogisticsService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OrderLogisticsService.php), both `bookLalamoveDelivery` and `bookReplacementExchange` acquire an atomic cache lock (`lalamove_booking:{$order->id}`, 30s) prior to API quotation and booking. Rapid concurrent clicks or retries are rejected with a safe user-facing message, preventing duplicate dispatch orders and double-billing on Lalamove's platform. The `finally` block wraps `$lock->release()` inside `rescue(fn () => $lock->release(), report: false)` so cache connection flickers during release do not trigger unhandled exceptions after a successful booking.

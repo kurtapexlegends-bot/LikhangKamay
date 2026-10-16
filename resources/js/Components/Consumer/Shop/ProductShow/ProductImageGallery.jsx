@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useRef, useEffect, useState } from 'react';
+import React, { lazy, Suspense, useRef, useEffect, useState, useCallback } from 'react';
 import { Image as ImageIcon, Box, Flag, Heart, Loader2, Maximize2 } from 'lucide-react';
 import ProductImageMagnifier from './ProductImageMagnifier';
 import ProductImageLightboxModal from './ProductImageLightboxModal';
@@ -30,6 +30,20 @@ export default function ProductImageGallery({
     const [lightboxInitialMode, setLightboxInitialMode] = useState('image');
     const [isScaleBenchmarkActive, setIsScaleBenchmarkActive] = useState(false);
     const scrollRef = useRef(null);
+    const hasPreloaded3DRef = useRef(false);
+
+    const handlePreload3D = useCallback(() => {
+        if (hasPreloaded3DRef.current || isLowBandwidth) return;
+        const modelUrl = product.model_3d_url || product.model_url;
+        if (!modelUrl) return;
+
+        hasPreloaded3DRef.current = true;
+        import('@/Components/ThreeD/ProductViewer3D').then((module) => {
+            module?.preloadProduct3D?.(modelUrl);
+        }).catch(() => {
+            // Silently ignore prefetch/offline errors
+        });
+    }, [product.model_3d_url, product.model_url, isLowBandwidth]);
 
     const handleScroll = (e) => {
         const width = e.target.offsetWidth;
@@ -208,6 +222,9 @@ export default function ProductImageGallery({
                         </button>
                         <button
                             onClick={() => setViewMode('3d')}
+                            onMouseEnter={handlePreload3D}
+                            onFocus={handlePreload3D}
+                            onTouchStart={handlePreload3D}
                             aria-label="Show 3D product view"
                             title="Show 3D product view"
                             className={`flex items-center justify-center h-11 px-4 lg:h-8 lg:px-3 text-xs font-bold transition ${
@@ -247,6 +264,9 @@ export default function ProductImageGallery({
                 {product.has3D && (
                     <button
                         onClick={() => setViewMode('3d')}
+                        onMouseEnter={handlePreload3D}
+                        onFocus={handlePreload3D}
+                        onTouchStart={handlePreload3D}
                         aria-label="Show 3D product view"
                         title="Show 3D product view"
                         className={`flex-shrink-0 w-16 h-16 rounded-xl border-2 flex items-center justify-center transition ${

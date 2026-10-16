@@ -398,7 +398,7 @@ class OrderLogisticsService
 
     public function autoCancelFailedDelivery(OrderDelivery $delivery): bool
     {
-        return DB::transaction(function () use ($delivery) {
+        $transactionResult = DB::transaction(function () use ($delivery) {
             if ($delivery->order_id) {
                 Order::query()->lockForUpdate()->find($delivery->order_id);
             }
@@ -454,50 +454,7 @@ class OrderLogisticsService
             $shouldMarkRefunded = $order->payment_method !== 'COD' && $order->payment_status === 'paid';
 
             if ($shouldMarkRefunded) {
-                if (empty($order->payment_id) && !empty($order->paymongo_session_id)) {
-                    try {
-                        $payMongo = app(\App\Services\PayMongoService::class);
-                        $session = $payMongo->retrieveCheckoutSession($order->paymongo_session_id);
-                        $payments = $session['attributes']['payments'] ?? [];
-                        if (is_array($payments) && !empty($payments)) {
-                            $firstPayment = reset($payments);
-                            $resolvedPaymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
-                            if ($resolvedPaymentId) {
-                                $order->payment_id = $resolvedPaymentId;
-                                $updateData['payment_id'] = $resolvedPaymentId;
-                            }
-                        }
-                    } catch (\Throwable $e) {
-                        Log::warning("Failed resolving PayMongo payment_id from session {$order->paymongo_session_id}: " . $e->getMessage());
-                    }
-                }
-
-                $refundProcessed = false;
-                if ($order->payment_id) {
-                    try {
-                        $amountInCents = (int) round(((float) $order->total_amount) * 100);
-                        $refundResult = app(\App\Services\PayMongoService::class)->createRefund(
-                            paymentId: $order->payment_id,
-                            amountInCents: $amountInCents,
-                            reason: 'requested_by_customer',
-                            notes: "Order {$order->order_number} auto-cancelled after delivery hold expired"
-                        );
-                        if ($refundResult) {
-                            $refundProcessed = true;
-                            Log::info("PayMongo refund created for auto-cancelled order {$order->id}", ['refund_id' => $refundResult['id'] ?? null]);
-                        } else {
-                            Log::warning("PayMongo refund returned null/empty for auto-cancelled order {$order->id}");
-                        }
-                    } catch (\Throwable $e) {
-                        Log::warning("PayMongo automated refund exception for auto-cancelled order {$order->id}: " . $e->getMessage());
-                    }
-                }
-
-                if (app()->environment('testing') && empty($order->payment_id)) {
-                    $refundProcessed = true;
-                }
-
-                $updateData['payment_status'] = $refundProcessed ? 'refunded' : 'refund_pending';
+                $updateData['payment_status'] = 'refund_pending';
             }
 
             $order->update($updateData);
@@ -507,33 +464,98 @@ class OrderLogisticsService
                 'failure_reason' => $lockedDelivery->failure_reason ?: 'Delivery failed and was automatically cancelled after the hold window.',
             ]);
 
-            if ($order->user && $order->user->email) {
+            return [$order, $shouldMarkRefunded];
+        });
+
+        if ($transactionResult === false) {
+            return false;
+        }
+
+        if ($transactionResult === true) {
+            return true;
+        }
+
+        /** @var Order $order */
+        [$order, $shouldMarkRefunded] = $transactionResult;
+
+        $order->refresh();
+        $order->loadMissing(['user', 'artisan']);
+
+        if ($shouldMarkRefunded) {
+            if (empty($order->payment_id) && !empty($order->paymongo_session_id)) {
                 try {
-                    \Illuminate\Support\Facades\Mail::to($order->user->email)->send(new \App\Mail\OrderCancelled($order, 'Failed delivery hold period expired.'));
+                    $payMongo = app(\App\Services\PayMongoService::class);
+                    $session = $payMongo->retrieveCheckoutSession($order->paymongo_session_id);
+                    $payments = $session['attributes']['payments'] ?? [];
+                    if (is_array($payments) && !empty($payments)) {
+                        $firstPayment = reset($payments);
+                        $resolvedPaymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
+                        if ($resolvedPaymentId) {
+                            $order->payment_id = $resolvedPaymentId;
+                            $order->save();
+                        }
+                    }
                 } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::warning("Failed to send order cancellation mail: " . $e->getMessage());
+                    Log::warning("Failed resolving PayMongo payment_id from session {$order->paymongo_session_id}: " . $e->getMessage());
                 }
             }
 
-            $buyerUrl = route('my-orders.index');
-            $sellerUrl = route('orders.index');
+            $refundProcessed = false;
+            if ($order->payment_id) {
+                try {
+                    $amountInCents = (int) round(((float) $order->total_amount) * 100);
+                    $refundResult = app(\App\Services\PayMongoService::class)->createRefund(
+                        paymentId: $order->payment_id,
+                        amountInCents: $amountInCents,
+                        reason: 'requested_by_customer',
+                        notes: "Order {$order->order_number} auto-cancelled after delivery hold expired"
+                    );
+                    if ($refundResult) {
+                        $refundProcessed = true;
+                        Log::info("PayMongo refund created for auto-cancelled order {$order->id}", ['refund_id' => $refundResult['id'] ?? null]);
+                    } else {
+                        Log::warning("PayMongo refund returned null/empty for auto-cancelled order {$order->id}");
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning("PayMongo automated refund exception for auto-cancelled order {$order->id}: " . $e->getMessage());
+                }
+            }
 
-            $order->user?->notify(new OrderDeliveryUpdateNotification(
-                $order,
-                'Order cancelled after failed delivery',
-                'The courier could not complete delivery, so the order was automatically cancelled.',
-                $buyerUrl
-            ));
+            if (app()->environment('testing') && empty($order->payment_id)) {
+                $refundProcessed = true;
+            }
 
-            $order->artisan?->notify(new OrderDeliveryUpdateNotification(
-                $order,
-                'Delivery Auto-Cancelled',
-                'This order was automatically cancelled after an unresolved delivery issue.',
-                $sellerUrl
-            ));
+            if ($refundProcessed) {
+                $order->update(['payment_status' => 'refunded']);
+            }
+        }
 
-            return true;
-        });
+        if ($order->user && $order->user->email) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($order->user->email)->send(new \App\Mail\OrderCancelled($order, 'Failed delivery hold period expired.'));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Failed to send order cancellation mail: " . $e->getMessage());
+            }
+        }
+
+        $buyerUrl = route('my-orders.index');
+        $sellerUrl = route('orders.index');
+
+        $order->user?->notify(new OrderDeliveryUpdateNotification(
+            $order,
+            'Order cancelled after failed delivery',
+            'The courier could not complete delivery, so the order was automatically cancelled.',
+            $buyerUrl
+        ));
+
+        $order->artisan?->notify(new OrderDeliveryUpdateNotification(
+            $order,
+            'Delivery Auto-Cancelled',
+            'This order was automatically cancelled after an unresolved delivery issue.',
+            $sellerUrl
+        ));
+
+        return true;
     }
 
     public function bookingRequirements(Order $order, User $seller): array

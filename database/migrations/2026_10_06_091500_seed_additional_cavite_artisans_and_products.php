@@ -21,7 +21,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (app()->environment('testing')) {
+        $connectionName = $this->getConnection() ?: DB::getDefaultConnection();
+        $isPretending = rescue(fn () => DB::connection($connectionName)->pretending(), false);
+
+        if (app()->environment('testing') || $isPretending || $connectionName === 'verify_pgsql') {
             return;
         }
 

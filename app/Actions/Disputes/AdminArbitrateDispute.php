@@ -30,7 +30,7 @@ class AdminArbitrateDispute
     {
         Gate::authorize('admin-action');
 
-        DB::transaction(function () use ($disputeId, $decision, $adminNotes, $actor) {
+        $arbitrationData = DB::transaction(function () use ($disputeId, $decision, $adminNotes) {
             $dispute = Dispute::lockForUpdate()->findOrFail($disputeId);
             $order = Order::lockForUpdate()->findOrFail($dispute->order_id);
 
@@ -38,56 +38,10 @@ class AdminArbitrateDispute
                 throw new \Exception('This dispute is not escalated for arbitration.');
             }
 
-            $refundGatewayStatus = 'skipped';
-            $refundGatewayId = null;
+            $wasOnlinePayment = $order->payment_id || ($order->payment_status === 'paid' && $order->payment_method !== 'COD');
 
             if ($decision === 'refund' || $decision === 'partial_refund') {
                 $isPartial = $decision === 'partial_refund';
-                $refundMultiplier = $isPartial ? 0.5 : 1.0;
-                $targetRefundAmount = round(((float) $order->total_amount) * $refundMultiplier, 2);
-
-                // Trigger PayMongo automated refund for online payment
-                if ($order->payment_id || ($order->payment_status === 'paid' && $order->payment_method !== 'COD')) {
-                    if (empty($order->payment_id) && !empty($order->paymongo_session_id)) {
-                        try {
-                            $session = app(\App\Services\PayMongoService::class)->retrieveCheckoutSession($order->paymongo_session_id);
-                            $payments = $session['attributes']['payments'] ?? [];
-                            if (is_array($payments) && !empty($payments)) {
-                                $firstPayment = reset($payments);
-                                $resolvedPaymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
-                                if ($resolvedPaymentId) {
-                                    $order->payment_id = $resolvedPaymentId;
-                                    $order->save();
-                                }
-                            }
-                        } catch (\Throwable $e) {
-                            \Illuminate\Support\Facades\Log::warning("Failed resolving PayMongo payment_id from session {$order->paymongo_session_id}: " . $e->getMessage());
-                        }
-                    }
-
-                    if ($order->payment_id) {
-                        try {
-                            $amountInCents = (int) round($targetRefundAmount * 100);
-                            $refundResult = app(\App\Services\PayMongoService::class)->createRefund(
-                                paymentId: $order->payment_id,
-                                amountInCents: $amountInCents,
-                                reason: 'requested_by_customer',
-                                notes: "Order {$order->order_number} arbitrated " . ($isPartial ? "partial (50%) refund" : "full refund") . " approved by admin: {$adminNotes}"
-                            );
-                            if ($refundResult) {
-                                $refundGatewayStatus = 'success';
-                                $refundGatewayId = $refundResult['id'] ?? null;
-                                \Illuminate\Support\Facades\Log::info("PayMongo refund created for order {$order->id}", ['refund_id' => $refundGatewayId]);
-                            } else {
-                                $refundGatewayStatus = 'failed';
-                                \Illuminate\Support\Facades\Log::warning("PayMongo refund returned empty/failed for order {$order->id}");
-                            }
-                        } catch (\Throwable $e) {
-                            $refundGatewayStatus = 'failed';
-                            \Illuminate\Support\Facades\Log::warning("PayMongo automated refund exception for dispute order {$order->id}: " . $e->getMessage());
-                        }
-                    }
-                }
 
                 // Refund order
                 $dispute->update([
@@ -101,55 +55,6 @@ class AdminArbitrateDispute
                     'status' => 'Refunded',
                     'payment_status' => $isPartial ? 'partially_refunded' : 'refunded',
                 ]);
-
-                // Notify buyer and seller
-                $buyer = $order->user;
-                if ($buyer) {
-                    $noticeTitle = $isPartial ? "Partial Refund Approved: Order #{$order->order_number}" : "Refund Approved: Order #{$order->order_number}";
-                    $noticeMsg = $isPartial 
-                        ? "Platform support approved a 50% partial refund (PHP " . number_format($targetRefundAmount, 2) . ") for Order #{$order->order_number}. Funds will return to your account."
-                        : "Platform support approved a full refund for Order #{$order->order_number}. Funds will be refunded to your original payment method.";
-                    $buyer->notify(new DisputeStatusNotification(
-                        'dispute_arbitrated_refund',
-                        $noticeTitle,
-                        $noticeMsg,
-                        route('my-orders.index')
-                    ));
-                    $this->sendMailSilently($buyer->email, new RefundProcessed($order));
-                }
-
-                $seller = User::find($order->artisan_id);
-                if ($seller) {
-                    $sellerNoticeTitle = $isPartial ? "Dispute Settled: Partial Refund (PHP " . number_format($targetRefundAmount, 2) . ")" : "Refund Issued: Order #{$order->order_number}";
-                    $sellerNoticeMsg = $isPartial
-                        ? "Platform support settled the dispute for Order #{$order->order_number} with a 50% split. PHP " . number_format($targetRefundAmount, 2) . " has been released to your shop."
-                        : "Platform support approved a full refund for Order #{$order->order_number}. Escrow funds have been returned to the customer.";
-                    $seller->notify(new DisputeStatusNotification(
-                        'dispute_arbitrated_refund',
-                        $sellerNoticeTitle,
-                        $sellerNoticeMsg,
-                        route('orders.index')
-                    ));
-                }
-
-                // Log activity
-                SellerActivityLog::recordEvent([
-                    'seller_owner_id' => $order->artisan_id,
-                    'actor_user_id' => $actor->id,
-                    'actor_type' => 'system',
-                    'category' => 'operations',
-                    'module' => 'orders',
-                    'event_type' => $isPartial ? 'dispute_arbitrated_partial_refund' : 'dispute_arbitrated_refund',
-                    'severity' => 'warning',
-                    'status' => 'refunded',
-                    'title' => $isPartial ? 'Partial Refund Settled' : 'Refund Approved',
-                    'summary' => "Platform support approved " . ($isPartial ? "a 50% partial refund" : "a full refund") . " for Order #{$order->order_number}.",
-                    'subject_type' => Order::class,
-                    'subject_id' => $order->id,
-                    'subject_label' => $order->order_number,
-                    'reference' => $order->customer_name,
-                    'amount_label' => 'PHP ' . number_format($targetRefundAmount, 2),
-                ]);
             } elseif ($decision === 'reject') {
                 // Reject claim, restore order status back to Completed
                 $dispute->update([
@@ -162,63 +67,175 @@ class AdminArbitrateDispute
                 $order->update([
                     'status' => 'Completed',
                 ]);
-
-                // Notify buyer and seller
-                $buyer = $order->user;
-                if ($buyer) {
-                    $buyer->notify(new DisputeStatusNotification(
-                        'dispute_arbitrated_rejected',
-                        "Return Request Closed: Order #{$order->order_number}",
-                        "Platform support reviewed Order #{$order->order_number} and concluded the return request. Funds have been released to the artisan.",
-                        route('my-orders.index')
-                    ));
-                    $this->sendMailSilently($buyer->email, new \App\Mail\DisputeArbitratedSellerWins($order, $adminNotes));
-                }
-
-                $seller = User::find($order->artisan_id);
-                if ($seller) {
-                    $seller->notify(new DisputeStatusNotification(
-                        'dispute_arbitrated_rejected',
-                        "Return Review Concluded: Funds Released",
-                        "Platform support closed the return review for Order #{$order->order_number} in your favor. Funds have been released to your shop balance.",
-                        route('orders.index')
-                    ));
-                }
-
-                // Log activity
-                SellerActivityLog::recordEvent([
-                    'seller_owner_id' => $order->artisan_id,
-                    'actor_user_id' => $actor->id,
-                    'actor_type' => 'system',
-                    'category' => 'operations',
-                    'module' => 'orders',
-                    'event_type' => 'dispute_arbitrated_rejected',
-                    'severity' => 'info',
-                    'status' => 'completed',
-                    'title' => 'Dispute Closed (Funds Released)',
-                    'summary' => "Platform support closed the dispute for Order #{$order->order_number} and released escrow funds to the shop.",
-                    'subject_type' => Order::class,
-                    'subject_id' => $order->id,
-                    'subject_label' => $order->order_number,
-                    'reference' => $order->customer_name,
-                    'amount_label' => 'PHP ' . number_format((float) $order->total_amount, 2),
-                ]);
             }
 
-            PlatformActivity::create([
-                'user_id' => $actor->id,
-                'action' => 'dispute_arbitrated',
-                'description' => "Super Admin arbitrated dispute #{$disputeId} with decision '{$decision}' for Order #{$order->order_number}.",
-                'metadata' => [
-                    'dispute_id' => $disputeId,
-                    'order_id' => $order->id,
-                    'order_number' => $order->order_number,
-                    'decision' => $decision,
-                    'refund_gateway_status' => $refundGatewayStatus,
-                    'refund_gateway_id' => $refundGatewayId,
-                ],
-            ]);
+            return [$dispute, $order, $wasOnlinePayment];
         });
+
+        /** @var Dispute $dispute */
+        /** @var Order $order */
+        [$dispute, $order, $wasOnlinePayment] = $arbitrationData;
+
+        $dispute->refresh();
+        $order->refresh();
+        $order->loadMissing('user');
+
+        $refundGatewayStatus = 'skipped';
+        $refundGatewayId = null;
+
+        if ($decision === 'refund' || $decision === 'partial_refund') {
+            $isPartial = $decision === 'partial_refund';
+            $refundMultiplier = $isPartial ? 0.5 : 1.0;
+            $targetRefundAmount = round(((float) $order->total_amount) * $refundMultiplier, 2);
+
+            // Trigger PayMongo automated refund for online payment outside DB::transaction
+            if ($order->payment_id || $wasOnlinePayment) {
+                if (empty($order->payment_id) && !empty($order->paymongo_session_id)) {
+                    try {
+                        $session = app(\App\Services\PayMongoService::class)->retrieveCheckoutSession($order->paymongo_session_id);
+                        $payments = $session['attributes']['payments'] ?? [];
+                        if (is_array($payments) && !empty($payments)) {
+                            $firstPayment = reset($payments);
+                            $resolvedPaymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
+                            if ($resolvedPaymentId) {
+                                $order->payment_id = $resolvedPaymentId;
+                                $order->save();
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning("Failed resolving PayMongo payment_id from session {$order->paymongo_session_id}: " . $e->getMessage());
+                    }
+                }
+
+                if ($order->payment_id) {
+                    try {
+                        $amountInCents = (int) round($targetRefundAmount * 100);
+                        $refundResult = app(\App\Services\PayMongoService::class)->createRefund(
+                            paymentId: $order->payment_id,
+                            amountInCents: $amountInCents,
+                            reason: 'requested_by_customer',
+                            notes: "Order {$order->order_number} arbitrated " . ($isPartial ? "partial (50%) refund" : "full refund") . " approved by admin: {$adminNotes}"
+                        );
+                        if ($refundResult) {
+                            $refundGatewayStatus = 'success';
+                            $refundGatewayId = $refundResult['id'] ?? null;
+                            \Illuminate\Support\Facades\Log::info("PayMongo refund created for order {$order->id}", ['refund_id' => $refundGatewayId]);
+                        } else {
+                            $refundGatewayStatus = 'failed';
+                            \Illuminate\Support\Facades\Log::warning("PayMongo refund returned empty/failed for order {$order->id}");
+                        }
+                    } catch (\Throwable $e) {
+                        $refundGatewayStatus = 'failed';
+                        \Illuminate\Support\Facades\Log::warning("PayMongo automated refund exception for dispute order {$order->id}: " . $e->getMessage());
+                    }
+                }
+            }
+
+            // Notify buyer and seller
+            $buyer = $order->user;
+            if ($buyer) {
+                $noticeTitle = $isPartial ? "Partial Refund Approved: Order #{$order->order_number}" : "Refund Approved: Order #{$order->order_number}";
+                $noticeMsg = $isPartial 
+                    ? "Platform support approved a 50% partial refund (PHP " . number_format($targetRefundAmount, 2) . ") for Order #{$order->order_number}. Funds will return to your account."
+                    : "Platform support approved a full refund for Order #{$order->order_number}. Funds will be refunded to your original payment method.";
+                $buyer->notify(new DisputeStatusNotification(
+                    'dispute_arbitrated_refund',
+                    $noticeTitle,
+                    $noticeMsg,
+                    route('my-orders.index')
+                ));
+                $this->sendMailSilently($buyer->email, new RefundProcessed($order));
+            }
+
+            $seller = User::find($order->artisan_id);
+            if ($seller) {
+                $sellerNoticeTitle = $isPartial ? "Dispute Settled: Partial Refund (PHP " . number_format($targetRefundAmount, 2) . ")" : "Refund Issued: Order #{$order->order_number}";
+                $sellerNoticeMsg = $isPartial
+                    ? "Platform support settled the dispute for Order #{$order->order_number} with a 50% split. PHP " . number_format($targetRefundAmount, 2) . " has been released to your shop."
+                    : "Platform support approved a full refund for Order #{$order->order_number}. Escrow funds have been returned to the customer.";
+                $seller->notify(new DisputeStatusNotification(
+                    'dispute_arbitrated_refund',
+                    $sellerNoticeTitle,
+                    $sellerNoticeMsg,
+                    route('orders.index')
+                ));
+            }
+
+            // Log activity
+            SellerActivityLog::recordEvent([
+                'seller_owner_id' => $order->artisan_id,
+                'actor_user_id' => $actor->id,
+                'actor_type' => 'system',
+                'category' => 'operations',
+                'module' => 'orders',
+                'event_type' => $isPartial ? 'dispute_arbitrated_partial_refund' : 'dispute_arbitrated_refund',
+                'severity' => 'warning',
+                'status' => 'refunded',
+                'title' => $isPartial ? 'Partial Refund Settled' : 'Refund Approved',
+                'summary' => "Platform support approved " . ($isPartial ? "a 50% partial refund" : "a full refund") . " for Order #{$order->order_number}.",
+                'subject_type' => Order::class,
+                'subject_id' => $order->id,
+                'subject_label' => $order->order_number,
+                'reference' => $order->customer_name,
+                'amount_label' => 'PHP ' . number_format($targetRefundAmount, 2),
+            ]);
+        } elseif ($decision === 'reject') {
+            // Reject claim, restore order status back to Completed
+            // Notify buyer and seller
+            $buyer = $order->user;
+            if ($buyer) {
+                $buyer->notify(new DisputeStatusNotification(
+                    'dispute_arbitrated_rejected',
+                    "Return Request Closed: Order #{$order->order_number}",
+                    "Platform support reviewed Order #{$order->order_number} and concluded the return request. Funds have been released to the artisan.",
+                    route('my-orders.index')
+                ));
+                $this->sendMailSilently($buyer->email, new \App\Mail\DisputeArbitratedSellerWins($order, $adminNotes));
+            }
+
+            $seller = User::find($order->artisan_id);
+            if ($seller) {
+                $seller->notify(new DisputeStatusNotification(
+                    'dispute_arbitrated_rejected',
+                    "Return Review Concluded: Funds Released",
+                    "Platform support closed the return review for Order #{$order->order_number} in your favor. Funds have been released to your shop balance.",
+                    route('orders.index')
+                ));
+            }
+
+            // Log activity
+            SellerActivityLog::recordEvent([
+                'seller_owner_id' => $order->artisan_id,
+                'actor_user_id' => $actor->id,
+                'actor_type' => 'system',
+                'category' => 'operations',
+                'module' => 'orders',
+                'event_type' => 'dispute_arbitrated_rejected',
+                'severity' => 'info',
+                'status' => 'completed',
+                'title' => 'Dispute Closed (Funds Released)',
+                'summary' => "Platform support closed the dispute for Order #{$order->order_number} and released escrow funds to the shop.",
+                'subject_type' => Order::class,
+                'subject_id' => $order->id,
+                'subject_label' => $order->order_number,
+                'reference' => $order->customer_name,
+                'amount_label' => 'PHP ' . number_format((float) $order->total_amount, 2),
+            ]);
+        }
+
+        PlatformActivity::create([
+            'user_id' => $actor->id,
+            'action' => 'dispute_arbitrated',
+            'description' => "Super Admin arbitrated dispute #{$disputeId} with decision '{$decision}' for Order #{$order->order_number}.",
+            'metadata' => [
+                'dispute_id' => $disputeId,
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'decision' => $decision,
+                'refund_gateway_status' => $refundGatewayStatus,
+                'refund_gateway_id' => $refundGatewayId,
+            ],
+        ]);
     }
 
     /**

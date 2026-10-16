@@ -251,3 +251,5 @@ export const preloadProduct3D = (url, dracoPath) => {
         GLTFModel.preload(url, dracoPath);
     }
 };
+
+ProductViewer3D.preload = preloadProduct3D;
