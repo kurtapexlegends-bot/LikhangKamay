@@ -231,6 +231,17 @@ export default function useProductFormState({
                 cover: compressedCover ? URL.createObjectURL(compressedCover) : null,
             }));
         } else if (field === "model_3d") {
+            const MAX_MODEL_BYTES = 4 * 1024 * 1024; // 4MB ceiling for serverless multipart payload
+            if (file && file.size > MAX_MODEL_BYTES) {
+                e.target.value = "";
+                if (typeof addToast === "function") {
+                    addToast(
+                        "3D model file exceeds 4MB serverless payload limit. Please compress textures or optimize the model.",
+                        "error"
+                    );
+                }
+                return;
+            }
             if (previews.model_3d) revokeBlobUrl(previews.model_3d);
             setData("model_3d", file);
             setData("model_3d_assets", []);

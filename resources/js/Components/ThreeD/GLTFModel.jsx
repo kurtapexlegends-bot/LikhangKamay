@@ -32,6 +32,53 @@ try {
     // Ignore in non-browser runtimes
 }
 
+// Active mounted instance reference counter per model URL.
+// When multiple viewers (e.g. background drawer and fullscreen lightbox modal)
+// view the same model, we must not dispose shared geometry/material GPU buffers
+// while other instances are still mounted. When the last instance unmounts,
+// we safely dispose WebGL geometries/materials and evict the URL from useGLTF cache.
+const activeModelUrlRefs = new Map();
+
+function retainModelUrl(url) {
+    if (!url) return;
+    const current = activeModelUrlRefs.get(url) || 0;
+    activeModelUrlRefs.set(url, current + 1);
+}
+
+function releaseModelUrl(url, scene) {
+    if (!url) return;
+    const current = (activeModelUrlRefs.get(url) || 1) - 1;
+    if (current <= 0) {
+        activeModelUrlRefs.delete(url);
+        if (scene) {
+            scene.traverse((child) => {
+                if (child.isMesh) {
+                    if (child.geometry && typeof child.geometry.dispose === 'function') {
+                        child.geometry.dispose();
+                    }
+                    if (child.material) {
+                        const materials = Array.isArray(child.material) ? child.material : [child.material];
+                        materials.forEach((mat) => {
+                            if (typeof mat.dispose === 'function') {
+                                mat.dispose();
+                            }
+                        });
+                    }
+                }
+            });
+        }
+        if (typeof useGLTF.clear === 'function') {
+            try {
+                useGLTF.clear(url);
+            } catch {
+                // Ignore in non-browser runtimes
+            }
+        }
+    } else {
+        activeModelUrlRefs.set(url, current);
+    }
+}
+
 /**
  * GLTFModel Component
  * Loads and displays a .glb/.gltf 3D model, normalizing its physical display height
@@ -149,23 +196,11 @@ export default function GLTFModel({
     }, [actions, animations]);
 
     useEffect(() => {
+        retainModelUrl(url);
         return () => {
-            if (clonedScene) {
-                clonedScene.traverse((child) => {
-                    if (child.isMesh) {
-                        if (child.geometry) child.geometry.dispose();
-                        if (child.material) {
-                            if (Array.isArray(child.material)) {
-                                child.material.forEach((mat) => mat.dispose());
-                            } else {
-                                child.material.dispose();
-                            }
-                        }
-                    }
-                });
-            }
+            releaseModelUrl(url, scene);
         };
-    }, [clonedScene]);
+    }, [url, scene]);
 
     if (!clonedScene) return null;
 

@@ -39,9 +39,29 @@ router.on('invalid', (event) => {
 
 // Auto-recover from Vite deployment skew (stale dynamic chunk 404s after new Vercel deployments)
 if (typeof window !== 'undefined') {
+    const VITE_RELOAD_KEY = 'vite_preload_reloaded';
+
     window.addEventListener('vite:preloadError', (event) => {
         event.preventDefault();
-        window.location.reload();
+        try {
+            const hasReloaded = sessionStorage.getItem(VITE_RELOAD_KEY);
+            if (!hasReloaded) {
+                sessionStorage.setItem(VITE_RELOAD_KEY, 'true');
+                window.location.reload();
+                return;
+            }
+        } catch {
+            // Ignore sessionStorage access errors in restricted contexts
+        }
+        console.error('Dynamic chunk failed to load after reload retry:', event?.payload || event);
+    });
+
+    router.on('success', () => {
+        try {
+            sessionStorage.removeItem(VITE_RELOAD_KEY);
+        } catch {
+            // Ignore storage access errors in restricted iframe/incognito modes
+        }
     });
 }
 
