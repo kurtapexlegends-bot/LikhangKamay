@@ -44,7 +44,22 @@ class OrderLogisticsService
                 throw new \RuntimeException('Lalamove booking is available for delivery orders only.');
             }
 
-            if (!in_array($order->status, ['Accepted', 'Processing'], true)) {
+            $order->load('delivery');
+            $hasTerminallyFailedDelivery = $order->delivery && (
+                $order->delivery->terminal_failed_at !== null
+                || in_array(strtoupper((string) $order->delivery->status), [
+                    OrderDelivery::STATUS_CANCELED,
+                    OrderDelivery::STATUS_REJECTED,
+                    OrderDelivery::STATUS_EXPIRED,
+                ], true)
+            );
+
+            $allowedStatuses = ['Accepted', 'Processing'];
+            if ($hasTerminallyFailedDelivery) {
+                $allowedStatuses[] = 'Shipped';
+            }
+
+            if (!in_array($order->status, $allowedStatuses, true)) {
                 throw new \RuntimeException('Only accepted or processing orders can be booked with Lalamove.');
             }
 
@@ -52,14 +67,13 @@ class OrderLogisticsService
                 return $this->performBookReplacementExchange($order, $seller);
             }
 
-            $order->load('delivery');
-            if ($order->delivery?->external_order_id) {
+            if ($order->delivery?->external_order_id && !$hasTerminallyFailedDelivery) {
                 throw new \RuntimeException('This order already has a Lalamove delivery.');
             }
 
             return $this->performBookLalamoveDelivery($order, $seller);
         } finally {
-            $lock->release();
+            rescue(fn () => $lock->release(), report: false);
         }
     }
 
@@ -204,7 +218,7 @@ class OrderLogisticsService
         try {
             return $this->performBookReplacementExchange($order, $seller);
         } finally {
-            $lock->release();
+            rescue(fn () => $lock->release(), report: false);
         }
     }
 
@@ -585,9 +599,18 @@ class OrderLogisticsService
             /** @var Order $lockedOrder */
             $lockedOrder = Order::query()->with('delivery')->lockForUpdate()->findOrFail($order->id);
 
+            $hasTerminallyFailedDelivery = $lockedOrder->delivery && (
+                $lockedOrder->delivery->terminal_failed_at !== null
+                || in_array(strtoupper((string) $lockedOrder->delivery->status), [
+                    OrderDelivery::STATUS_CANCELED,
+                    OrderDelivery::STATUS_REJECTED,
+                    OrderDelivery::STATUS_EXPIRED,
+                ], true)
+            );
+
             if ($this->isReplacementExchange($lockedOrder)) {
                 $delivery = $lockedOrder->delivery ?: new OrderDelivery(['order_id' => $lockedOrder->id]);
-            } elseif ($lockedOrder->delivery?->external_order_id) {
+            } elseif ($lockedOrder->delivery?->external_order_id && !$hasTerminallyFailedDelivery) {
                 return $lockedOrder->delivery;
             } else {
                 $delivery = $lockedOrder->delivery ?: new OrderDelivery(['order_id' => $lockedOrder->id]);
@@ -610,6 +633,9 @@ class OrderLogisticsService
                 'order_payload' => $lalamoveOrder,
                 'latest_payload' => $lalamoveOrder,
                 'is_pod_enabled' => true,
+                'terminal_failed_at' => null,
+                'auto_cancelled_at' => null,
+                'failure_reason' => null,
             ]);
             $delivery->save();
 

@@ -43,6 +43,9 @@ if (typeof window !== 'undefined') {
 
     window.addEventListener('vite:preloadError', (event) => {
         event.preventDefault();
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            return;
+        }
         try {
             const hasReloaded = sessionStorage.getItem(VITE_RELOAD_KEY);
             if (!hasReloaded) {
@@ -70,6 +73,13 @@ if (typeof document !== 'undefined') {
     let lastActiveTime = Date.now();
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
+            if (typeof sessionStorage !== 'undefined') {
+                try {
+                    sessionStorage.removeItem('vite_preload_reloaded');
+                } catch {
+                    // Ignore storage access errors
+                }
+            }
             const idleMinutes = (Date.now() - lastActiveTime) / 60000;
             if (idleMinutes > 20) {
                 if (window.axios) {
@@ -128,6 +138,15 @@ createInertiaApp({
         ),
     setup({ el, App, props }) {
         const root = createRoot(el);
+
+        // Clear deployment skew reload guard once root mounts so subsequent chunk failures can recover
+        if (typeof sessionStorage !== 'undefined') {
+            try {
+                sessionStorage.removeItem('vite_preload_reloaded');
+            } catch {
+                // Ignore storage access errors in restricted iframe/incognito modes
+            }
+        }
 
         root.render(
             <ErrorBoundary>

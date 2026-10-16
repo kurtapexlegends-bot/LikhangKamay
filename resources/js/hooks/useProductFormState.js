@@ -65,6 +65,8 @@ export default function useProductFormState({
     });
 
     const { data, setData, post, processing, errors, reset, clearErrors } = productForm;
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const combinedProcessing = Boolean(processing || isSubmitting);
 
     const shouldValidateSku = !data.id || (selectedProduct && data.sku !== selectedProduct.sku);
     const skuValidation = useConstraintValidation(
@@ -357,6 +359,8 @@ export default function useProductFormState({
             return;
         }
 
+        setIsSubmitting(true);
+
         // 1. Direct-to-Storage upload for 3D model if it's a File
         let model3dKeyOrFile = data.model_3d;
         if (data.model_3d instanceof File) {
@@ -383,6 +387,7 @@ export default function useProductFormState({
                 } catch (err) {
                     console.error("Direct 3D upload failed during product listing:", err);
                     addToast("Failed to upload 3D model. Please try again.", "error");
+                    setIsSubmitting(false);
                     return;
                 }
             }
@@ -401,6 +406,36 @@ export default function useProductFormState({
             );
         }
 
+        // Calculate total aggregate multipart payload size of all raw File instances being sent via Inertia
+        let totalPayloadBytes = 0;
+        if (compressedCover instanceof File) {
+            totalPayloadBytes += compressedCover.size || 0;
+        }
+        if (Array.isArray(compressedGallery)) {
+            compressedGallery.forEach((f) => {
+                if (f instanceof File) {
+                    totalPayloadBytes += f.size || 0;
+                }
+            });
+        }
+        if (Array.isArray(data.model_3d_assets)) {
+            data.model_3d_assets.forEach((f) => {
+                if (f instanceof File) {
+                    totalPayloadBytes += f.size || 0;
+                }
+            });
+        }
+        if (model3dKeyOrFile instanceof File) {
+            totalPayloadBytes += model3dKeyOrFile.size || 0;
+        }
+
+        const MAX_MULTIPART_BYTES = 4 * 1024 * 1024; // 4MB serverless payload limit
+        if (totalPayloadBytes > MAX_MULTIPART_BYTES) {
+            setIsSubmitting(false);
+            addToast("Total upload payload exceeds 4MB serverless limit. Please compress images or companion assets.", "error");
+            return;
+        }
+
         // 3. Transform Inertia payload to lightened payload for Vercel 4.5MB limit
         productForm.transform((currentData) => ({
             ...currentData,
@@ -414,10 +449,12 @@ export default function useProductFormState({
 
         const options = {
             onSuccess: () => {
+                setIsSubmitting(false);
                 closeProductModal();
                 reset();
             },
             onError: (err) => {
+                setIsSubmitting(false);
                 console.error("Validation Failed:", err);
                 if (err.limit) {
                     setLimitModalOpen(true);
@@ -433,6 +470,9 @@ export default function useProductFormState({
                 else if (detailsKeys.some((k) => err[k])) setActiveFormTab("Details");
                 else if (productionKeys.some((k) => err[k] || Object.keys(err).some((ek) => ek.startsWith("recipes.")))) setActiveFormTab("Production");
                 else if (mediaKeys.some((k) => err[k] || Object.keys(err).some((ek) => ek.startsWith("gallery.")))) setActiveFormTab("Media");
+            },
+            onFinish: () => {
+                setIsSubmitting(false);
             },
             forceFormData: true,
         };
@@ -511,7 +551,7 @@ export default function useProductFormState({
         resubmitForm,
         data,
         setData,
-        processing,
+        processing: combinedProcessing,
         errors,
         reset,
         clearErrors,

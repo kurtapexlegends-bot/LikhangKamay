@@ -169,4 +169,61 @@ class CheckoutUserConcurrencyLockTest extends TestCase
         $this->assertTrue($testLock->get(), 'Checkout lock remained held after order placement.');
         $testLock->release();
     }
+
+    public function test_checkout_completes_even_if_lock_release_fails(): void
+    {
+        Mail::fake();
+        Notification::fake();
+
+        $seller = User::factory()->artisanApproved()->create();
+        $buyer = User::factory()->create();
+
+        $product = Product::create([
+            'user_id' => $seller->id,
+            'sku' => 'LOCK-004',
+            'name' => 'Lock Fail Test Product',
+            'category' => 'Home Decor',
+            'status' => 'Active',
+            'price' => 200,
+            'cost_price' => 100,
+            'stock' => 5,
+            'lead_time' => 3,
+            'track_as_supply' => false,
+        ]);
+
+        $mockLock = \Mockery::mock(\Illuminate\Contracts\Cache\Lock::class);
+        $mockLock->shouldReceive('get')->once()->andReturn(true);
+        $mockLock->shouldReceive('release')->once()->andThrow(new \RuntimeException('Redis connection dropped'));
+
+        $cacheMock = \Mockery::mock(Cache::getFacadeRoot())->makePartial();
+        $cacheMock->shouldReceive('lock')
+            ->with("checkout:user:{$buyer->id}", 15)
+            ->once()
+            ->andReturn($mockLock);
+        Cache::swap($cacheMock);
+
+        $placeOrder = app(PlaceOrder::class);
+        $request = new Request([
+            'items' => [
+                [
+                    'id' => $product->id,
+                    'artisan_id' => $seller->id,
+                    'name' => $product->name,
+                    'qty' => 1,
+                    'price' => 200,
+                ],
+            ],
+            'shipping_method' => 'Pick Up',
+            'payment_method' => 'COD',
+            'total' => 200,
+        ]);
+
+        // Must not throw despite $mockLock->release() throwing
+        $placeOrder->execute($request, $buyer);
+
+        $this->assertDatabaseHas('orders', [
+            'user_id' => $buyer->id,
+            'total_amount' => 200,
+        ]);
+    }
 }

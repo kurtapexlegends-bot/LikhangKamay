@@ -36,11 +36,17 @@ try {
 // When multiple viewers (e.g. background drawer and fullscreen lightbox modal)
 // view the same model, we must not dispose shared geometry/material GPU buffers
 // while other instances are still mounted. When the last instance unmounts,
-// we safely dispose WebGL geometries/materials and evict the URL from useGLTF cache.
+// we safely dispose WebGL geometries/materials and evict the URL from useGLTF cache
+// after a 1000ms debounce to protect view transitions and Suspense remounts.
 const activeModelUrlRefs = new Map();
+const modelDisposalTimers = new Map();
 
 function retainModelUrl(url) {
     if (!url) return;
+    if (modelDisposalTimers.has(url)) {
+        clearTimeout(modelDisposalTimers.get(url));
+        modelDisposalTimers.delete(url);
+    }
     const current = activeModelUrlRefs.get(url) || 0;
     activeModelUrlRefs.set(url, current + 1);
 }
@@ -50,34 +56,46 @@ function releaseModelUrl(url, scene) {
     const current = (activeModelUrlRefs.get(url) || 1) - 1;
     if (current <= 0) {
         activeModelUrlRefs.delete(url);
-        if (scene) {
-            scene.traverse((child) => {
-                if (child.isMesh) {
-                    if (child.geometry && typeof child.geometry.dispose === 'function') {
-                        child.geometry.dispose();
-                    }
-                    if (child.material) {
-                        const materials = Array.isArray(child.material) ? child.material : [child.material];
-                        materials.forEach((mat) => {
-                            if (typeof mat.dispose === 'function') {
-                                mat.dispose();
-                            }
-                        });
-                    }
-                }
-            });
+        if (modelDisposalTimers.has(url)) {
+            clearTimeout(modelDisposalTimers.get(url));
         }
-        if (typeof useGLTF.clear === 'function') {
-            try {
-                useGLTF.clear(url);
-            } catch {
-                // Ignore in non-browser runtimes
+        const timerId = setTimeout(() => {
+            modelDisposalTimers.delete(url);
+            if ((activeModelUrlRefs.get(url) || 0) > 0) {
+                return;
             }
-        }
+            if (scene) {
+                scene.traverse((child) => {
+                    if (child.isMesh) {
+                        if (child.geometry && typeof child.geometry.dispose === 'function') {
+                            child.geometry.dispose();
+                        }
+                        if (child.material) {
+                            const materials = Array.isArray(child.material) ? child.material : [child.material];
+                            materials.forEach((mat) => {
+                                if (typeof mat.dispose === 'function') {
+                                    mat.dispose();
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+            if (typeof useGLTF.clear === 'function') {
+                try {
+                    useGLTF.clear(url);
+                } catch {
+                    // Ignore in non-browser runtimes
+                }
+            }
+        }, 1000);
+        modelDisposalTimers.set(url, timerId);
     } else {
         activeModelUrlRefs.set(url, current);
     }
 }
+
+export { activeModelUrlRefs, modelDisposalTimers, retainModelUrl, releaseModelUrl };
 
 /**
  * GLTFModel Component

@@ -66,14 +66,19 @@ function simulateHandleModel3dFileChange({
     return true;
 }
 
-// Test the Vite preload error sessionStorage reload loop guard
+// Test the Vite preload error sessionStorage reload loop guard with offline check
 function simulateVitePreloadErrorHandler({
     sessionStorageStore,
     windowLocation,
     event,
+    isOnline = true,
 }) {
     const VITE_RELOAD_KEY = 'vite_preload_reloaded';
     event.preventDefault();
+
+    if (!isOnline) {
+        return 'offline_skipped';
+    }
 
     try {
         const hasReloaded = sessionStorageStore.getItem(VITE_RELOAD_KEY);
@@ -87,6 +92,89 @@ function simulateVitePreloadErrorHandler({
     }
 
     return 'blocked_infinite_loop';
+}
+
+// Test aggregate multipart payload shield (4MB serverless ceiling)
+function simulateAggregateMultipartPayloadGuard({
+    compressedCover,
+    compressedGallery = [],
+    model3dAssets = [],
+    model3dFile = null,
+    addToast,
+    setIsSubmitting,
+}) {
+    let totalPayloadBytes = 0;
+    if (compressedCover && typeof compressedCover.size === 'number') {
+        totalPayloadBytes += compressedCover.size;
+    }
+    if (Array.isArray(compressedGallery)) {
+        compressedGallery.forEach((f) => {
+            if (f && typeof f.size === 'number') totalPayloadBytes += f.size;
+        });
+    }
+    if (Array.isArray(model3dAssets)) {
+        model3dAssets.forEach((f) => {
+            if (f && typeof f.size === 'number') totalPayloadBytes += f.size;
+        });
+    }
+    if (model3dFile && typeof model3dFile.size === 'number') {
+        totalPayloadBytes += model3dFile.size;
+    }
+
+    const MAX_MULTIPART_BYTES = 4 * 1024 * 1024;
+    if (totalPayloadBytes > MAX_MULTIPART_BYTES) {
+        if (typeof setIsSubmitting === 'function') setIsSubmitting(false);
+        if (typeof addToast === 'function') {
+            addToast("Total upload payload exceeds 4MB serverless limit. Please compress images or companion assets.", "error");
+        }
+        return false;
+    }
+
+    return true;
+}
+
+// Test WebGL reference counting with 1000ms debounce
+function simulateModelRefCounting() {
+    const activeModelUrlRefs = new Map();
+    const modelDisposalTimers = new Map();
+    let disposedCount = 0;
+
+    function retainModelUrl(url) {
+        if (!url) return;
+        if (modelDisposalTimers.has(url)) {
+            clearTimeout(modelDisposalTimers.get(url));
+            modelDisposalTimers.delete(url);
+        }
+        const current = activeModelUrlRefs.get(url) || 0;
+        activeModelUrlRefs.set(url, current + 1);
+    }
+
+    function releaseModelUrl(url, timeoutMs = 50) {
+        if (!url) return;
+        const current = (activeModelUrlRefs.get(url) || 1) - 1;
+        if (current <= 0) {
+            activeModelUrlRefs.delete(url);
+            if (modelDisposalTimers.has(url)) {
+                clearTimeout(modelDisposalTimers.get(url));
+            }
+            const timerId = setTimeout(() => {
+                modelDisposalTimers.delete(url);
+                if ((activeModelUrlRefs.get(url) || 0) > 0) return;
+                disposedCount++;
+            }, timeoutMs);
+            modelDisposalTimers.set(url, timerId);
+        } else {
+            activeModelUrlRefs.set(url, current);
+        }
+    }
+
+    return {
+        activeModelUrlRefs,
+        modelDisposalTimers,
+        getDisposedCount: () => disposedCount,
+        retainModelUrl,
+        releaseModelUrl,
+    };
 }
 
 test('blocks companion 3D asset folders exceeding 4MB', () => {
@@ -241,4 +329,155 @@ test('prevents infinite reload loops on dynamic chunk preload failure', () => {
     // Navigation success clears the flag for future deploys
     mockSessionStorage.removeItem('vite_preload_reloaded');
     assert.equal(mockSessionStorage.getItem('vite_preload_reloaded'), null);
+});
+
+test('skips reload on vite:preloadError when offline', () => {
+    const memoryStorage = new Map();
+    const mockSessionStorage = {
+        getItem: (k) => memoryStorage.get(k) || null,
+        setItem: (k, v) => memoryStorage.set(k, String(v)),
+        removeItem: (k) => memoryStorage.delete(k),
+    };
+
+    let reloadCalled = false;
+    const mockLocation = {
+        reload: () => {
+            reloadCalled = true;
+        },
+    };
+
+    const mockEvent = {
+        preventDefault: () => {},
+    };
+
+    const result = simulateVitePreloadErrorHandler({
+        sessionStorageStore: mockSessionStorage,
+        windowLocation: mockLocation,
+        event: mockEvent,
+        isOnline: false,
+    });
+
+    assert.equal(result, 'offline_skipped');
+    assert.equal(reloadCalled, false, 'reload() should not be invoked when offline');
+    assert.equal(mockSessionStorage.getItem('vite_preload_reloaded'), null);
+});
+
+test('blocks aggregate multipart payload exceeding 4MB', () => {
+    let toastMessage = null;
+    let toastType = null;
+    let isSubmitting = true;
+
+    // 1MB cover + 2MB gallery (2 x 1MB) + 1.5MB companion assets = 4.5MB > 4MB
+    const cover = { name: 'cover.jpg', size: 1.0 * 1024 * 1024 };
+    const gallery = [
+        { name: 'g1.jpg', size: 1.0 * 1024 * 1024 },
+        { name: 'g2.jpg', size: 1.0 * 1024 * 1024 },
+    ];
+    const assets = [
+        { name: 'texture.png', size: 1.5 * 1024 * 1024 },
+    ];
+
+    const allowed = simulateAggregateMultipartPayloadGuard({
+        compressedCover: cover,
+        compressedGallery: gallery,
+        model3dAssets: assets,
+        model3dFile: null,
+        addToast: (msg, type) => {
+            toastMessage = msg;
+            toastType = type;
+        },
+        setIsSubmitting: (val) => {
+            isSubmitting = val;
+        },
+    });
+
+    assert.equal(allowed, false);
+    assert.equal(isSubmitting, false);
+    assert.equal(toastType, 'error');
+    assert.match(toastMessage, /Total upload payload exceeds 4MB serverless limit/);
+});
+
+test('allows aggregate multipart payload within 4MB', () => {
+    let toastCalled = false;
+    let isSubmitting = true;
+
+    // 0.4MB cover + 1.2MB gallery (3 x 0.4MB) + 1.0MB companion assets = 2.6MB <= 4MB
+    const cover = { name: 'cover.jpg', size: 400 * 1024 };
+    const gallery = [
+        { name: 'g1.jpg', size: 400 * 1024 },
+        { name: 'g2.jpg', size: 400 * 1024 },
+        { name: 'g3.jpg', size: 400 * 1024 },
+    ];
+    const assets = [
+        { name: 'texture.png', size: 1.0 * 1024 * 1024 },
+    ];
+
+    const allowed = simulateAggregateMultipartPayloadGuard({
+        compressedCover: cover,
+        compressedGallery: gallery,
+        model3dAssets: assets,
+        model3dFile: null,
+        addToast: () => {
+            toastCalled = true;
+        },
+        setIsSubmitting: (val) => {
+            isSubmitting = val;
+        },
+    });
+
+    assert.equal(allowed, true);
+    assert.equal(isSubmitting, true);
+    assert.equal(toastCalled, false);
+});
+
+test('debounces WebGL geometry disposal and cancels timer if viewer remounts', async () => {
+    const {
+        activeModelUrlRefs,
+        modelDisposalTimers,
+        getDisposedCount,
+        retainModelUrl,
+        releaseModelUrl,
+    } = simulateModelRefCounting();
+
+    const modelUrl = 'https://assets.likhangkamay.test/pottery.glb';
+
+    // Viewer 1 mounts
+    retainModelUrl(modelUrl);
+    assert.equal(activeModelUrlRefs.get(modelUrl), 1);
+
+    // Viewer 1 unmounts (e.g. view transition or drawer closing)
+    releaseModelUrl(modelUrl, 60);
+    assert.equal(activeModelUrlRefs.get(modelUrl), undefined);
+    assert.equal(modelDisposalTimers.has(modelUrl), true, 'Disposal timer should be scheduled');
+    assert.equal(getDisposedCount(), 0, 'Should not dispose immediately');
+
+    // Sibling viewer 2 mounts within 20ms under Suspense / modal
+    await new Promise((r) => setTimeout(r, 20));
+    retainModelUrl(modelUrl);
+    assert.equal(modelDisposalTimers.has(modelUrl), false, 'Pending disposal timer should be cancelled');
+    assert.equal(activeModelUrlRefs.get(modelUrl), 1);
+
+    // Wait past original 60ms timer
+    await new Promise((r) => setTimeout(r, 70));
+    assert.equal(getDisposedCount(), 0, 'Geometries must remain intact and NOT disposed');
+});
+
+test('executes WebGL geometry disposal after debounce timeout expires on unmount', async () => {
+    const {
+        activeModelUrlRefs,
+        modelDisposalTimers,
+        getDisposedCount,
+        retainModelUrl,
+        releaseModelUrl,
+    } = simulateModelRefCounting();
+
+    const modelUrl = 'https://assets.likhangkamay.test/pottery.glb';
+
+    retainModelUrl(modelUrl);
+    releaseModelUrl(modelUrl, 40);
+
+    assert.equal(getDisposedCount(), 0, 'Not disposed immediately');
+    await new Promise((r) => setTimeout(r, 60));
+    assert.equal(getDisposedCount(), 1, 'Disposed after debounce timeout expires');
+    assert.equal(modelDisposalTimers.has(modelUrl), false);
 });

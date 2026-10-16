@@ -62,7 +62,7 @@ class PlaceOrder
         try {
             $this->performExecute($request, $buyer);
         } finally {
-            $lock->release();
+            rescue(fn () => $lock->release(), report: false);
         }
     }
 
