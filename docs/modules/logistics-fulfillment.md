@@ -44,6 +44,10 @@ Webhooks from the Lalamove API dispatch events that update the `status` of `Orde
     2.  Restores product inventory stock and decrements sales numbers.
     3.  Initiates online payment refunds if the transaction is non-COD.
 
+### Concurrency & Dispatch Mutex Locking
+*   **Courier Dispatch Atomic Mutex**: In [OrderLogisticsService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OrderLogisticsService.php), both `bookLalamoveDelivery` and `bookReplacementExchange` acquire an atomic cache lock (`lalamove_booking:{$order->id}`, 30s) prior to API quotation and booking. Rapid concurrent clicks or retries are rejected with a safe user-facing message, preventing duplicate dispatch orders and double-billing on Lalamove's platform.
+
+
 ---
 
 ## 3. Shipping Address Rules

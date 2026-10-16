@@ -93,5 +93,8 @@ Whenever a seller owner changes starting capital balances (`base_funds`), the ad
     `avg('rating') where is_hidden_from_marketplace = false`
 *   **Daily Analytics Rollup**:
     To prevent database lock contention during checkout transactions, financial rollups are saved in `SellerAnalyticsSnapshot` as a daily batch snapshot.
+*   **Sales Chart Accuracy**:
+    In [ShopAnalyticsMetricsService.php](file:///c:/laragon/www/LikhangKamay/app/Services/Analytics/ShopAnalyticsMetricsService.php), `getSalesChartData` resolves the "All Categories" timeline by querying `Order` directly to prevent 1:N `order_items` join multiplication of `seller_net_amount`. When filtered by a specific category, it accurately sums line item amounts (`order_items.price * order_items.quantity`).
 *   **Variable Throttling**:
     Global commission calculations lookup variables in `PlatformVariable` which are cached in-memory and invalidated only on change events.
+

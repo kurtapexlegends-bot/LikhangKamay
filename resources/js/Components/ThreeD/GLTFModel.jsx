@@ -148,6 +148,25 @@ export default function GLTFModel({
         }
     }, [actions, animations]);
 
+    useEffect(() => {
+        return () => {
+            if (clonedScene) {
+                clonedScene.traverse((child) => {
+                    if (child.isMesh) {
+                        if (child.geometry) child.geometry.dispose();
+                        if (child.material) {
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach((mat) => mat.dispose());
+                            } else {
+                                child.material.dispose();
+                            }
+                        }
+                    }
+                });
+            }
+        };
+    }, [clonedScene]);
+
     if (!clonedScene) return null;
 
     // Wrap in group with dispose={null} so R3F doesn't dispose cached assets on unmount

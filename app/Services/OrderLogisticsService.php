@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderShipped;
+use Illuminate\Support\Facades\Cache;
 
 class OrderLogisticsService
 {
@@ -31,23 +32,39 @@ class OrderLogisticsService
 
     public function bookLalamoveDelivery(Order $order, User $seller): OrderDelivery
     {
-        $seller->loadMissing('addresses');
-
-        if ($order->shipping_method !== 'Delivery') {
-            throw new \RuntimeException('Lalamove booking is available for delivery orders only.');
+        $lock = Cache::lock("lalamove_booking:{$order->id}", 30);
+        if (!$lock->get()) {
+            throw new \RuntimeException('Courier booking is already in progress for this order. Please wait a moment.');
         }
 
-        if (!in_array($order->status, ['Accepted', 'Processing'], true)) {
-            throw new \RuntimeException('Only accepted or processing orders can be booked with Lalamove.');
-        }
+        try {
+            $seller->loadMissing('addresses');
 
-        if ($this->isReplacementExchange($order)) {
-            return $this->bookReplacementExchange($order, $seller);
-        }
+            if ($order->shipping_method !== 'Delivery') {
+                throw new \RuntimeException('Lalamove booking is available for delivery orders only.');
+            }
 
-        if ($order->delivery?->external_order_id) {
-            throw new \RuntimeException('This order already has a Lalamove delivery.');
+            if (!in_array($order->status, ['Accepted', 'Processing'], true)) {
+                throw new \RuntimeException('Only accepted or processing orders can be booked with Lalamove.');
+            }
+
+            if ($this->isReplacementExchange($order)) {
+                return $this->performBookReplacementExchange($order, $seller);
+            }
+
+            $order->load('delivery');
+            if ($order->delivery?->external_order_id) {
+                throw new \RuntimeException('This order already has a Lalamove delivery.');
+            }
+
+            return $this->performBookLalamoveDelivery($order, $seller);
+        } finally {
+            $lock->release();
         }
+    }
+
+    private function performBookLalamoveDelivery(Order $order, User $seller): OrderDelivery
+    {
 
         $requirements = $this->bookingRequirements($order, $seller);
         if (!empty($requirements)) {
@@ -178,6 +195,20 @@ class OrderLogisticsService
     }
 
     public function bookReplacementExchange(Order $order, User $seller): OrderDelivery
+    {
+        $lock = Cache::lock("lalamove_booking:{$order->id}", 30);
+        if (!$lock->get()) {
+            throw new \RuntimeException('Courier booking is already in progress for this order. Please wait a moment.');
+        }
+
+        try {
+            return $this->performBookReplacementExchange($order, $seller);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function performBookReplacementExchange(Order $order, User $seller): OrderDelivery
     {
         $seller->loadMissing('addresses');
 

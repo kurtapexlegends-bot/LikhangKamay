@@ -37,6 +37,14 @@ router.on('invalid', (event) => {
     }
 });
 
+// Auto-recover from Vite deployment skew (stale dynamic chunk 404s after new Vercel deployments)
+if (typeof window !== 'undefined') {
+    window.addEventListener('vite:preloadError', (event) => {
+        event.preventDefault();
+        window.location.reload();
+    });
+}
+
 // Mobile background wake-up session refresh
 if (typeof document !== 'undefined') {
     let lastActiveTime = Date.now();

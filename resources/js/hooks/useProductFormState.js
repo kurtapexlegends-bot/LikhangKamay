@@ -270,6 +270,20 @@ export default function useProductFormState({
 
     const handleModelAssetFolderChange = (event) => {
         const selectedFiles = Array.from(event.target.files || []);
+        const totalSizeBytes = selectedFiles.reduce((acc, file) => acc + (file.size || 0), 0);
+        const MAX_FOLDER_BYTES = 4 * 1024 * 1024; // 4MB ceiling for serverless multipart payload
+
+        if (totalSizeBytes > MAX_FOLDER_BYTES) {
+            event.target.value = "";
+            if (typeof addToast === "function") {
+                addToast(
+                    "Companion 3D asset folder exceeds 4MB serverless payload limit. Please compress textures or optimize assets.",
+                    "error"
+                );
+            }
+            return;
+        }
+
         const mainModelName = data.model_3d?.name || "";
         const normalizedFiles = selectedFiles
             .filter((file) => file.name !== mainModelName)

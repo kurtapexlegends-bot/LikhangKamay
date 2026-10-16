@@ -78,24 +78,32 @@ class ShopAnalyticsMetricsService
 
     public function getSalesChartData(int $sellerId, string $categoryFilter): array
     {
-        $chartBaseQuery = function () use ($sellerId, $categoryFilter) {
-            $query = OrderItem::query()
+        $isAllCategories = ($categoryFilter === 'All Categories');
+
+        $chartBaseQuery = function () use ($sellerId, $categoryFilter, $isAllCategories) {
+            if ($isAllCategories) {
+                return Order::query()
+                    ->from('orders')
+                    ->where('orders.artisan_id', $sellerId)
+                    ->where('orders.status', 'Completed');
+            }
+
+            return OrderItem::query()
                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
                 ->join('products', 'order_items.product_id', '=', 'products.id')
                 ->where('orders.artisan_id', $sellerId)
-                ->where('orders.status', 'Completed');
-
-            if ($categoryFilter !== 'All Categories') {
-                $query->where('products.category', $categoryFilter);
-            }
-
-            return $query;
+                ->where('orders.status', 'Completed')
+                ->where('products.category', $categoryFilter);
         };
+
+        $sumExpr = $isAllCategories
+            ? 'SUM(orders.seller_net_amount)'
+            : 'SUM(order_items.price * order_items.quantity)';
 
         $monthExpr = $this->monthNumberExpression('orders.created_at');
         $monthlyRaw = $chartBaseQuery()
             ->where('orders.created_at', '>=', Carbon::now()->subMonths(5)->startOfMonth())
-            ->selectRaw("{$monthExpr} as month_num, SUM(orders.seller_net_amount) as value")
+            ->selectRaw("{$monthExpr} as month_num, {$sumExpr} as value")
             ->groupByRaw($monthExpr)
             ->orderByRaw($monthExpr)
             ->get()
@@ -116,7 +124,7 @@ class ShopAnalyticsMetricsService
 
         $yearExpr = $this->yearNumberExpression('orders.created_at');
         $yearlyRaw = $chartBaseQuery()
-            ->selectRaw("{$yearExpr} as year_num, SUM(orders.seller_net_amount) as value")
+            ->selectRaw("{$yearExpr} as year_num, {$sumExpr} as value")
             ->groupByRaw($yearExpr)
             ->orderByRaw($yearExpr)
             ->get()

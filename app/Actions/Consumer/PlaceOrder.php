@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use App\Services\PickupScheduleService;
 
 class PlaceOrder
@@ -52,6 +53,21 @@ class PlaceOrder
         if (!$buyer) {
             throw new \Illuminate\Auth\AuthenticationException('You must be logged in to place an order.');
         }
+
+        $lock = Cache::lock("checkout:user:{$buyer->id}", 15);
+        if (!$lock->get()) {
+            throw new \RuntimeException('An order is currently being processed for your account. Please wait a moment.');
+        }
+
+        try {
+            $this->performExecute($request, $buyer);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function performExecute(Request $request, User $buyer): void
+    {
 
         $shippingContext = $request->shipping_method === 'Delivery'
             ? OrderWorkflowHelper::resolveCheckoutDeliveryContext($request, $buyer, true)
