@@ -625,7 +625,7 @@ class OwnerApprovalService
                     } else {
                         $desc = $payload['replacement_description'] ?? 'Replacement approved by shop owner.';
                         $actor = $approval->reviewer ?? $approval->seller;
-                        $seller = $approval->seller ?? User::find($order->artisan_id);
+                        $seller = $approval->seller ?? User::withTrashed()->find($order->artisan_id);
                         app(\App\Actions\Seller\Orders\ApproveOrderReplacement::class)->execute($order, $desc, $actor, $seller);
                     }
                 }

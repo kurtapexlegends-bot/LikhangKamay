@@ -23,7 +23,7 @@ class SyncDeliveredB2BSupplies
 
         $order->loadMissing(['items.product', 'user']);
         $sellerId = $order->artisan_id ?: ($order->seller_id ?: null);
-        $seller = $sellerId ? User::find($sellerId) : null;
+        $seller = $sellerId ? User::withTrashed()->find($sellerId) : null;
         $supplierName = $seller?->shop_name ?: ($seller?->name ?: 'Artisan Supplier');
 
         foreach ($order->items as $item) {

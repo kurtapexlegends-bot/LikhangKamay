@@ -96,7 +96,7 @@ class ApproveOrderReplacement
             $order->refresh();
             $order->loadMissing(['delivery', 'user']);
 
-            $owner = $sellerOwner ?? ($actor->role === 'artisan' ? $actor : User::find($order->artisan_id));
+            $owner = $sellerOwner ?? ($actor->role === 'artisan' ? $actor : User::withTrashed()->find($order->artisan_id));
             $hasInHouseDelivery = ($previousDeliveryProvider === \App\Models\OrderDelivery::PROVIDER_IN_HOUSE)
                 || ($order->delivery && $order->delivery->provider === \App\Models\OrderDelivery::PROVIDER_IN_HOUSE);
             $hasStudioDrivers = $owner ? !empty(app(\App\Services\Logistics\InHouseDispatchService::class)->getDriversWithLiveAvailability($owner)) : false;

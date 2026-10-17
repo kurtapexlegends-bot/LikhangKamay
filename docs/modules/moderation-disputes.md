@@ -38,6 +38,8 @@ stateDiagram-v2
     If unresolved, disputes can be escalated. The super admin makes the final binding decision (`admin_decision` = Approved/Refunded or Rejected).
 3.  **Dispute Evidence Carousel**:
     Admins inspect buyer return and damaged parcel photos through [DisputeLightboxModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Admin/Disputes/DisputeLightboxModal.jsx) mounted in [DisputeEscalationDashboard.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Admin/Disputes/DisputeEscalationDashboard.jsx), supporting full thumbnail navigation, zoom, and multi-photo switching.
+4.  **Soft-Deleted & Inactive Seller Defensive Scoping**:
+    Dispute and post-purchase resolution actions ([BuyerInitiateDispute.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Disputes/BuyerInitiateDispute.php), [BuyerReactToDispute.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Disputes/BuyerReactToDispute.php), [AdminArbitrateDispute.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Disputes/AdminArbitrateDispute.php), [RequestOrderReturn.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Consumer/RequestOrderReturn.php), [ApproveOrderReplacement.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Orders/ApproveOrderReplacement.php)) query seller and buyer models using `User::withTrashed()->find()`. This guarantees that if a shop owner account has been deactivated or soft-deleted following an order, return notifications, activity audits, and replacement courier re-booking execute resiliently without null reference exceptions.
 
 ---
 

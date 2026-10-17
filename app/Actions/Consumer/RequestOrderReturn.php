@@ -77,7 +77,7 @@ class RequestOrderReturn
             );
 
             $order->load('items');
-            $seller = User::find($order->artisan_id);
+            $seller = User::withTrashed()->find($order->artisan_id);
             if ($seller && $seller->email) {
                 $this->sendMailSilently(
                     $seller->email,

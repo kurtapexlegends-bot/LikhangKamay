@@ -147,7 +147,7 @@ class AdminArbitrateDispute
                 $this->sendMailSilently($buyer->email, new RefundProcessed($order));
             }
 
-            $seller = User::find($order->artisan_id);
+            $seller = User::withTrashed()->find($order->artisan_id);
             if ($seller) {
                 $sellerNoticeTitle = $isPartial ? "Dispute Settled: Partial Refund (PHP " . number_format($targetRefundAmount, 2) . ")" : "Refund Issued: Order #{$order->order_number}";
                 $sellerNoticeMsg = $isPartial
@@ -193,7 +193,7 @@ class AdminArbitrateDispute
                 $this->sendMailSilently($buyer->email, new \App\Mail\DisputeArbitratedSellerWins($order, $adminNotes));
             }
 
-            $seller = User::find($order->artisan_id);
+            $seller = User::withTrashed()->find($order->artisan_id);
             if ($seller) {
                 $seller->notify(new DisputeStatusNotification(
                     'dispute_arbitrated_rejected',

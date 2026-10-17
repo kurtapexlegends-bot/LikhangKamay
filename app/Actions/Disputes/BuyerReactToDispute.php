@@ -99,7 +99,7 @@ class BuyerReactToDispute
         // Attempt auto-booking
         if ($order->shipping_method === 'Delivery') {
             try {
-                $seller = User::find($order->artisan_id);
+                $seller = User::withTrashed()->find($order->artisan_id);
                 app(OrderLogisticsService::class)->bookLalamoveDelivery($order, $seller);
             } catch (\Throwable $e) {
                 Log::warning("Failed to auto-book Lalamove: " . $e->getMessage());
@@ -126,7 +126,7 @@ class BuyerReactToDispute
         ]);
 
         // Notify seller
-        $seller = User::find($order->artisan_id);
+        $seller = User::withTrashed()->find($order->artisan_id);
         if ($seller) {
             $seller->notify(new ReplacementResolutionNotification($order, $dispute->seller_proposed_description ?? ''));
         }

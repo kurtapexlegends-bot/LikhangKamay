@@ -68,7 +68,7 @@ class SendOrderCompletionAutoReply
             return null;
         }
 
-        $buyer = User::find($order->user_id);
+        $buyer = User::withTrashed()->find($order->user_id);
         $buyerName = $buyer ? ($buyer->first_name ?: $buyer->name) : 'Valued Customer';
         $shopName = $seller->shop_name ?: $seller->name;
 
