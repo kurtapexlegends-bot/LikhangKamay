@@ -217,6 +217,10 @@ export default function ReportDetailsCard({
                                                     className="w-20 h-20 object-cover rounded-xl border border-stone-200/80 shrink-0" 
                                                     loading="lazy"
                                                     decoding="async"
+                                                    onError={(e) => {
+                                                        e.currentTarget.onerror = null;
+                                                        e.currentTarget.src = '/images/placeholder.svg';
+                                                    }}
                                                 />
                                             ) : (
                                                 <div className="w-20 h-20 rounded-xl bg-stone-100 border border-stone-200/80 flex items-center justify-center text-stone-400 shrink-0">

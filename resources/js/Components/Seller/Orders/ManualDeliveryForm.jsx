@@ -81,6 +81,10 @@ export default function ManualDeliveryForm({
                                 src={shippingModal.previewUrl}
                                 alt="Proof"
                                 className="h-40 w-full object-cover mx-auto rounded-lg shadow-sm"
+                                onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = '/images/placeholder.svg';
+                                }}
                             />
                             <div className="absolute inset-0 bg-stone-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px] rounded-lg">
                                 <span className="bg-white text-stone-900 px-4 py-2 rounded-xl text-xs font-bold shadow-lg">

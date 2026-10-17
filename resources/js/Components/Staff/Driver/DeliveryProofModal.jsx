@@ -179,6 +179,10 @@ export default function DeliveryProofModal({
                                         src={podPreview}
                                         alt="Proof Preview"
                                         className="max-h-48 mx-auto rounded-xl object-cover shadow-xs"
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = '/images/placeholder.svg';
+                                        }}
                                     />
                                     <p className="text-[11px] font-bold text-clay-700">
                                         Tap to retake photo

@@ -142,6 +142,10 @@ export default function ImageDiffSlider({
                             alt={afterLabel}
                             className="w-full h-full object-contain pointer-events-none"
                             draggable={false}
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = '/images/placeholder.svg';
+                            }}
                         />
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center bg-stone-950 text-stone-400 p-4 text-center">
@@ -169,6 +173,10 @@ export default function ImageDiffSlider({
                                 alt={beforeLabel}
                                 className="w-full h-full object-contain pointer-events-none"
                                 draggable={false}
+                                onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = '/images/placeholder.svg';
+                                }}
                             />
                         ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center bg-stone-900 text-stone-400 p-4 text-center">
@@ -240,7 +248,15 @@ export default function ImageDiffSlider({
                                                     : 'border-stone-200 opacity-60 hover:opacity-100'
                                             }`}
                                         >
-                                            <img src={optSrc} alt={`Option ${idx + 1}`} className="w-full h-full object-cover" />
+                                            <img
+                                                src={optSrc}
+                                                alt={`Option ${idx + 1}`}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    e.currentTarget.onerror = null;
+                                                    e.currentTarget.src = '/images/placeholder.svg';
+                                                }}
+                                            />
                                             {isSelected && (
                                                 <span className="absolute bottom-0 inset-x-0 bg-indigo-600 text-[8px] text-white text-center font-bold">
                                                     Active
@@ -274,7 +290,15 @@ export default function ImageDiffSlider({
                                                     : 'border-stone-200 opacity-60 hover:opacity-100'
                                             }`}
                                         >
-                                            <img src={optSrc} alt={`Proof ${idx + 1}`} className="w-full h-full object-cover" />
+                                            <img
+                                                src={optSrc}
+                                                alt={`Proof ${idx + 1}`}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    e.currentTarget.onerror = null;
+                                                    e.currentTarget.src = '/images/placeholder.svg';
+                                                }}
+                                            />
                                             {isSelected && (
                                                 <span className="absolute bottom-0 inset-x-0 bg-rose-600 text-[8px] text-white text-center font-bold">
                                                     Active

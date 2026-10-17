@@ -455,6 +455,10 @@ export default function LivenessFaceScanner({ onVerified, onError, onRequestOtpF
                         src={capturedPhoto}
                         alt="Captured Attendance Selfie"
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = '/images/placeholder.svg';
+                        }}
                     />
                 )}
 

@@ -161,6 +161,10 @@ export default function BuyerMessageWindow({
                                                                         ...galleryImages[index >= 0 ? index : 0]
                                                                     });
                                                                 }}
+                                                                onError={(e) => {
+                                                                    e.currentTarget.onerror = null;
+                                                                    e.currentTarget.src = '/images/placeholder.svg';
+                                                                }}
                                                             />
                                                         </div>
                                                     )}

@@ -11,6 +11,10 @@ export default function HeroSection() {
                     src="https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&q=80&w=1600" 
                     alt="Handcrafted Pottery" 
                     className="w-full h-full object-cover transform group-hover:scale-105 transition duration-700" 
+                    onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/images/placeholder.svg';
+                    }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-stone-900/40 to-transparent flex flex-col justify-end p-6 md:p-8 lg:p-10">
                     <span className="inline-block text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-clay-200 mb-2">
@@ -58,6 +62,10 @@ export default function HeroSection() {
                             src="https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&q=80&w=1600" 
                             alt="Handcrafted Pottery" 
                             className="w-full h-full object-cover" 
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = '/images/placeholder.svg';
+                            }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#FAF8F5] via-transparent to-transparent"></div>
                     </div>

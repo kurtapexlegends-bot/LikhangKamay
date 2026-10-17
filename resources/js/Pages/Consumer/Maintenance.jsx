@@ -18,6 +18,10 @@ export default function Maintenance() {
                             src={platform.logo} 
                             alt={platform.name} 
                             className="h-14 w-auto object-contain"
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = '/images/default-logo.png';
+                            }}
                         />
                         <h1 className="font-serif text-2xl font-bold text-stone-900 tracking-tight">
                             {platform.name}

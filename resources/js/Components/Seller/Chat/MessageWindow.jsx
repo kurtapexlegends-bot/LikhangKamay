@@ -158,6 +158,10 @@ export default function MessageWindow({
                                                                     });
                                                                 }
                                                             }}
+                                                            onError={(e) => {
+                                                                e.currentTarget.onerror = null;
+                                                                e.currentTarget.src = '/images/placeholder.svg';
+                                                            }}
                                                         />
                                                     </div>
                                                 )}

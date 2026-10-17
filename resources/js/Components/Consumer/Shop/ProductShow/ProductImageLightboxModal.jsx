@@ -439,7 +439,10 @@ export default function ProductImageLightboxModal({
                                             transform: `scale(${zoom}) rotate(${rotation}deg) translate(${pan.x}px, ${pan.y}px)`,
                                             filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.6))',
                                         }}
-                                        onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = '/images/placeholder.svg';
+                                        }}
                                         draggable={false}
                                     />
                                 </div>
@@ -485,7 +488,10 @@ export default function ProductImageLightboxModal({
                                                     loading="lazy"
                                                     decoding="async"
                                                     className="w-full h-full object-cover"
-                                                    onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
+                                                    onError={(e) => {
+                                                        e.currentTarget.onerror = null;
+                                                        e.currentTarget.src = '/images/placeholder.svg';
+                                                    }}
                                                 />
                                                 {isActive && (
                                                     <span className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-full bg-clay-400 ring-1 ring-white" />

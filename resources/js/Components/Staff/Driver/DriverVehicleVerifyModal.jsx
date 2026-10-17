@@ -201,6 +201,10 @@ export default function DriverVehicleVerifyModal({
                                         src={licensePreview || driverProfile.driver_license_photo_url}
                                         alt="License Preview"
                                         className="max-h-44 mx-auto rounded-xl object-contain shadow-xs bg-stone-100"
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = '/images/placeholder.svg';
+                                        }}
                                     />
                                     <p className="text-[11px] font-bold text-clay-700">
                                         {licensePreview ? "Tap to retake / change photo" : "Tap to update with new photo"}

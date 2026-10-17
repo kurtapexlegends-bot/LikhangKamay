@@ -171,7 +171,10 @@ export default function WholesaleOrderCard({
                                         src={item.img} 
                                         alt={item.name}
                                         className="h-full w-full object-cover"
-                                        onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = '/images/placeholder.svg';
+                                        }}
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">

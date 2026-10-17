@@ -300,7 +300,10 @@ export default function PrintReportView({
                                                         src={imageUrl} 
                                                         alt="" 
                                                         className="w-full h-full object-cover" 
-                                                        onError={(e) => { e.currentTarget.src = '/images/placeholder.svg'; }}
+                                                        onError={(e) => {
+                                                            e.currentTarget.onerror = null;
+                                                            e.currentTarget.src = '/images/placeholder.svg';
+                                                        }}
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-stone-400 bg-stone-100"><Package size={14} /></div>

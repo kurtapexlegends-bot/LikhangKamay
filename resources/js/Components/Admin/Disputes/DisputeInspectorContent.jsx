@@ -120,6 +120,10 @@ export default function DisputeInspectorContent({
                                                     alt={item.product_name}
                                                     className="w-10 h-10 object-cover rounded-lg border border-stone-200 shrink-0"
                                                     loading="lazy"
+                                                    onError={(e) => {
+                                                        e.currentTarget.onerror = null;
+                                                        e.currentTarget.src = '/images/placeholder.svg';
+                                                    }}
                                                 />
                                             ) : (
                                                 <div className="w-10 h-10 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400 shrink-0">

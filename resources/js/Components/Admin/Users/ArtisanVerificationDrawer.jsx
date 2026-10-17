@@ -104,6 +104,10 @@ export default function ArtisanVerificationDrawer({
                                         src={viewingArtisan.avatar_url}
                                         alt={viewingArtisan.shop_name}
                                         className="h-12 w-12 rounded-2xl object-cover border border-clay-100 shadow-sm shrink-0"
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = '/images/placeholder.svg';
+                                        }}
                                     />
                                 ) : (
                                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-clay-100 bg-clay-50 text-lg font-bold text-clay-700 shadow-sm shrink-0">
@@ -192,8 +196,8 @@ export default function ArtisanVerificationDrawer({
                                                             alt={doc.label}
                                                             className="w-full h-full object-cover"
                                                             onError={(e) => {
-                                                                e.target.onerror = null;
-                                                                e.target.src = '/images/placeholder.svg';
+                                                                e.currentTarget.onerror = null;
+                                                                e.currentTarget.src = '/images/placeholder.svg';
                                                             }}
                                                         />
                                                     )}
@@ -331,6 +335,10 @@ export default function ArtisanVerificationDrawer({
                                             transition: isDragging ? 'none' : 'transform 0.15s ease-out',
                                         }}
                                         className="max-h-full max-w-full rounded-lg object-contain select-none shadow-2xl"
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = '/images/placeholder.svg';
+                                        }}
                                     />
                                 </div>
                             )}

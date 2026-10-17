@@ -113,6 +113,7 @@ export default function ArtisanSetup({ auth, rejectionReason, existingDocuments,
                                 src="/images/logo.png"
                                 alt="LikhangKamay"
                                 className="h-9 w-9 object-contain"
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
                             />
                             <div>
                                 <h1 className="text-base font-bold text-stone-900 leading-tight">LikhangKamay</h1>

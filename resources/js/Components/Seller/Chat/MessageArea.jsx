@@ -347,6 +347,9 @@ export function Twemoji({ emoji, className = "w-4 h-4" }) {
             src={`https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${code}.svg`} 
             alt={emoji} 
             className={`${className} object-contain inline-block shrink-0`} 
+            onError={(e) => {
+                e.currentTarget.style.display = 'none';
+            }}
         />
     );
 }

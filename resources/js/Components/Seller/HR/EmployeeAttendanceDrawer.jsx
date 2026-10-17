@@ -196,6 +196,10 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
                                                                                             src={session.photo_url}
                                                                                             alt="Selfie proof"
                                                                                             className="h-11 w-11 rounded-xl object-cover border border-stone-200 cursor-pointer shadow-xs group-hover:opacity-85 transition"
+                                                                                            onError={(e) => {
+                                                                                                e.currentTarget.onerror = null;
+                                                                                                e.currentTarget.src = '/images/placeholder.svg';
+                                                                                            }}
                                                                                         />
                                                                                         <div className="absolute inset-0 rounded-xl bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white">
                                                                                             <Eye size={14} />
@@ -344,8 +348,8 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
                                                     alt="Clock-in selfie proof"
                                                     className="w-full rounded-2xl object-cover border border-stone-200 max-h-[380px] shadow-xs"
                                                     onError={(e) => {
-                                                        e.target.onerror = null;
-                                                        e.target.src = '/images/placeholder.svg';
+                                                        e.currentTarget.onerror = null;
+                                                        e.currentTarget.src = '/images/placeholder.svg';
                                                     }}
                                                 />
                                             </div>

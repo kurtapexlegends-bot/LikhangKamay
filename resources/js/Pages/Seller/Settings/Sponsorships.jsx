@@ -223,7 +223,10 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                                                         src={resolveImageUrl(p.cover_photo_path)} 
                                                                         alt="" 
                                                                         className="w-full h-full object-cover"
-                                                                        onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
+                                                                        onError={(e) => {
+                                                                            e.currentTarget.onerror = null;
+                                                                            e.currentTarget.src = '/images/placeholder.svg';
+                                                                        }}
                                                                     />
                                                                 ) : (
                                                                     <Package size={16} className="text-stone-300" />
@@ -295,7 +298,10 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                                             src={resolveImageUrl(req.product.cover_photo_path)}
                                                             alt=""
                                                             className="w-full h-full object-cover"
-                                                            onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
+                                                            onError={(e) => {
+                                                                e.currentTarget.onerror = null;
+                                                                e.currentTarget.src = '/images/placeholder.svg';
+                                                            }}
                                                         />
                                                     ) : (
                                                         <Package size={14} className="text-stone-300" />

@@ -73,7 +73,12 @@ export default function ErrorPage({ status = 404, message = null }) {
                 {/* Header */}
                 <header className="w-full max-w-5xl mx-auto flex items-center justify-between py-4">
                     <Link href="/" className="flex items-center gap-3 transition-transform hover:scale-[1.02] active:scale-95">
-                        <img src="/images/logo.png" alt="LikhangKamay" className="h-9 w-auto object-contain" />
+                        <img
+                            src="/images/logo.png"
+                            alt="LikhangKamay"
+                            className="h-9 w-auto object-contain"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
                         <span className="font-serif text-lg font-bold tracking-tight text-stone-900">LikhangKamay</span>
                     </Link>
                     <nav className="flex items-center gap-2">

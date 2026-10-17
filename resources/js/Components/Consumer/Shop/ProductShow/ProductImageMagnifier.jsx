@@ -52,7 +52,10 @@ export default function ProductImageMagnifier({ src, alt, id, onOpenLightbox }) 
                 src={src}
                 alt={alt}
                 loading="lazy"
-                onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
+                onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/images/placeholder.svg';
+                }}
                 className="w-full h-full object-cover transition-transform duration-200 ease-out"
                 style={{
                     transform: isMagnifying ? `scale(${zoomLevel})` : 'scale(1)',

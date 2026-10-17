@@ -178,7 +178,10 @@ export default function WholesaleInvoiceModal({
                                                         src={item.img}
                                                         alt={item.name}
                                                         className="h-8 w-8 rounded-lg object-cover border border-stone-200 shrink-0 print:hidden"
-                                                        onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
+                                                        onError={(e) => {
+                                                            e.currentTarget.onerror = null;
+                                                            e.currentTarget.src = '/images/placeholder.svg';
+                                                        }}
                                                     />
                                                 )}
                                                 <span className="truncate max-w-[220px] sm:max-w-none">{item.name}</span>

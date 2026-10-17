@@ -26,6 +26,10 @@ export default function ArtisanApprovalRow({
                                     src={artisan.avatar.startsWith('http') ? artisan.avatar : `/storage/${artisan.avatar}`}
                                     alt={artisan.name}
                                     className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = '/images/placeholder.svg';
+                                    }}
                                 />
                             ) : (
                                 artisan.name?.charAt(0).toUpperCase()
@@ -135,6 +139,10 @@ export default function ArtisanApprovalRow({
                                     src={artisan.avatar.startsWith('http') ? artisan.avatar : `/storage/${artisan.avatar}`}
                                     alt={artisan.name}
                                     className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = '/images/placeholder.svg';
+                                    }}
                                 />
                             ) : (
                                 artisan.name?.charAt(0).toUpperCase()

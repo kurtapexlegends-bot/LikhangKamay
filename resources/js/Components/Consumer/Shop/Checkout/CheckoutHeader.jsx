@@ -19,7 +19,12 @@ export default function CheckoutHeader({ isArtisan, totalSellers, sellerGroups =
                     </button>
                     <div className="h-4 w-px bg-stone-200" />
                     <Link href={isArtisan ? route('seller.supply-hub.index') : '/'} className="flex items-center gap-2 group">
-                        <img src="/images/logo.png" alt="Logo" className="h-6 w-6 object-contain" />
+                        <img
+                            src="/images/logo.png"
+                            alt="Logo"
+                            className="h-6 w-6 object-contain"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
                         <h1 className="font-serif text-base sm:text-lg font-bold text-stone-900 tracking-tight">
                             {isArtisan ? 'Materials Checkout' : 'Checkout'}
                         </h1>

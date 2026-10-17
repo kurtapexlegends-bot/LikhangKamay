@@ -384,8 +384,8 @@ export default function ProductInspectionDrawer({
                                     className="w-full h-full object-contain p-2 cursor-pointer hover:opacity-95 transition"
                                     title="Click to open expansive carousel"
                                     onError={(e) => {
-                                        e.target.onerror = null;
-                                        e.target.src = '/images/placeholder.svg';
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = '/images/placeholder.svg';
                                     }}
                                 />
 
@@ -438,8 +438,8 @@ export default function ProductInspectionDrawer({
                                         alt={`Thumbnail ${idx + 1}`}
                                         className="w-full h-full object-cover"
                                         onError={(e) => {
-                                            e.target.onerror = null;
-                                            e.target.src = '/images/placeholder.svg';
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = '/images/placeholder.svg';
                                         }}
                                     />
                                 </button>

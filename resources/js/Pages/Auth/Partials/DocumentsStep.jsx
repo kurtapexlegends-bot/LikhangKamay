@@ -369,7 +369,15 @@ const FileUploadField = React.memo(({ label, description, id, existingFileUrl, e
                 ) : previewUrl ? (
                     <div className="flex w-full flex-col items-center text-center">
                         <div className="relative mb-2.5 h-20 w-32 overflow-hidden rounded-lg border border-stone-200 bg-white shadow-xs flex items-center justify-center">
-                            <img src={previewUrl} alt="Document Preview" className="h-full w-full object-cover" />
+                            <img
+                                src={previewUrl}
+                                alt="Document Preview"
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = '/images/placeholder.svg';
+                                }}
+                            />
                         </div>
                         <p className="max-w-full truncate text-xs font-semibold text-stone-800">
                             Document on File (Photo)

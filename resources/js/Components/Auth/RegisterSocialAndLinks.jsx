@@ -35,7 +35,12 @@ export default function RegisterSocialAndLinks({ itemVariants }) {
                         </>
                     ) : (
                         <>
-                            <img src="/images/google-icon.svg" className="w-4 h-4 group-hover:scale-110 transition-transform" alt="Google" />
+                            <img
+                                src="/images/google-icon.svg"
+                                className="w-4 h-4 group-hover:scale-110 transition-transform"
+                                alt="Google"
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
                             <span className="text-[10px] font-bold uppercase tracking-widest text-stone-600 group-hover:text-stone-900 transition-colors">Google Account</span>
                         </>
                     )}

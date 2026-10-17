@@ -13,7 +13,15 @@ export default function Footer() {
                     <div className="col-span-2 md:col-span-1 text-left">
                         <div className="flex items-center justify-between md:justify-start gap-2 mb-2 md:mb-4">
                             <div className="flex items-center gap-2">
-                                <img src={platform.logo} className="h-7 md:h-8 w-auto" alt={platform.name} />
+                                <img
+                                    src={platform.logo}
+                                    className="h-7 md:h-8 w-auto"
+                                    alt={platform.name}
+                                    onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = '/images/default-logo.png';
+                                    }}
+                                />
                                 <span className="font-serif text-lg md:text-xl font-bold text-gray-900">{platform.name}</span>
                             </div>
                             

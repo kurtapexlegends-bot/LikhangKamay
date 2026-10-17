@@ -74,7 +74,8 @@ export default function OrderIssueBanner({ order, issueSummary }) {
                                                 alt={`Dispute proof ${i + 1}`}
                                                 className="h-full w-full object-cover"
                                                 onError={(e) => {
-                                                    e.target.src = "/images/placeholder.svg";
+                                                    e.currentTarget.onerror = null;
+                                                    e.currentTarget.src = '/images/placeholder.svg';
                                                 }}
                                             />
                                         </button>

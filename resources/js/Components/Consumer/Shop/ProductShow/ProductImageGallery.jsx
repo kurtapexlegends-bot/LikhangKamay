@@ -123,7 +123,10 @@ export default function ProductImageGallery({
                                             src={img} 
                                             alt={`${product.name} - image ${index + 1}`}
                                             className="w-full h-full object-cover"
-                                            onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
+                                            onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.src = '/images/placeholder.svg';
+                                            }}
                                         />
                                     </div>
                                 ))}
@@ -255,7 +258,10 @@ export default function ProductImageGallery({
                             src={img}
                             alt=""
                             className="w-full h-full object-cover"
-                            onError={(e) => { e.target.src = '/images/placeholder.svg'; }}
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = '/images/placeholder.svg';
+                            }}
                         />
                     </button>
                 ))}

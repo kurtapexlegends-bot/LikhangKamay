@@ -184,6 +184,10 @@ export default function EmployeeDriverLogisticsCard({
                             src={driverLicensePhotoUrl}
                             alt="Driver License"
                             className="w-full rounded-xl object-contain max-h-[70vh] bg-stone-50"
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = '/images/placeholder.svg';
+                            }}
                         />
                     </div>
                 </Modal>

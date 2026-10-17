@@ -319,6 +319,10 @@ export default function AdminLayout({ title, children }) {
                             src={usePage().props.platform?.logo || '/images/default-logo.png'}
                             alt={usePage().props.platform?.name || 'LikhangKamay'}
                             className="w-7 h-7 object-contain transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110 shrink-0"
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = '/images/default-logo.png';
+                            }}
                         />
                         <span className={`font-serif text-lg font-bold text-stone-900 tracking-tight truncate overflow-hidden min-w-0 transition-[max-width,opacity,margin-left] duration-300 ${
                             isCollapsed ? 'max-w-0 opacity-0 ml-0 pointer-events-none hidden' : 'max-w-full opacity-100 ml-2.5'

@@ -302,6 +302,7 @@ export default function SellerSidebar({
                             alt="LikhangKamay" 
                             className="w-6 h-6 object-contain shrink-0"
                             loading="lazy"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                         <span className={`font-serif text-base font-bold text-gray-900 tracking-tight truncate overflow-hidden min-w-0 transition-[max-width,opacity,margin-left] duration-300 ${
                             isCollapsed ? 'max-w-0 opacity-0 ml-0 pointer-events-none' : 'max-w-full opacity-100 ml-2'

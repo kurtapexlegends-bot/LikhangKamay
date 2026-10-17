@@ -35,7 +35,12 @@ export default function GuestLayout({ children, image, quote, quoteAuthor }) {
                 {/* Top Section: Logo & Branding */}
                 <div className="relative z-20 flex items-center gap-3">
                     <div className="bg-white/5 backdrop-blur-md border border-white/10 p-2.5 rounded-xl shadow-inner">
-                        <img src="/images/logo.png" alt="Logo" className="w-5 h-5 object-contain" />
+                        <img
+                            src="/images/logo.png"
+                            alt="Logo"
+                            className="w-5 h-5 object-contain"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
                     </div>
                     <span className="font-serif font-bold text-xl tracking-wider text-amber-50">LikhangKamay</span>
                 </div>
@@ -98,7 +103,12 @@ export default function GuestLayout({ children, image, quote, quoteAuthor }) {
                     <div className="lg:hidden flex flex-col items-center mb-8 justify-center text-center">
                         <div className="flex items-center gap-2.5 mb-2">
                             <div className="bg-clay-50 border border-clay-100/50 p-2 rounded-xl shadow-sm">
-                                <img src="/images/logo.png" alt="Logo" className="w-5 h-5 object-contain" />
+                                <img
+                                    src="/images/logo.png"
+                                    alt="Logo"
+                                    className="w-5 h-5 object-contain"
+                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
                             </div>
                             <span className="font-serif font-bold text-xl tracking-wider text-stone-900">LikhangKamay</span>
                         </div>

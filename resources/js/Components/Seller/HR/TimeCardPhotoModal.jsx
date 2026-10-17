@@ -32,6 +32,10 @@ export default function TimeCardPhotoModal({
                             src={photoData.url}
                             alt="Clock-in face verification"
                             className="w-full h-auto max-h-[380px] object-contain"
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = '/images/placeholder.svg';
+                            }}
                         />
                     </div>
 

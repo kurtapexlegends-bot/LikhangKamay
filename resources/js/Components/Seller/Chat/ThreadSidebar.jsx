@@ -102,6 +102,10 @@ export default function ThreadSidebar({
                                         src={parent.attachment_url || (parent.attachment_path.startsWith('http') || parent.attachment_path.startsWith('/storage') ? parent.attachment_path : `/storage/${parent.attachment_path}`)}
                                         alt="Thread parent attachment"
                                         className="max-h-24 w-full object-cover"
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = '/images/placeholder.svg';
+                                        }}
                                     />
                                 </div>
                             )}
@@ -232,6 +236,10 @@ export default function ThreadSidebar({
                                                     src={reply.attachment_url || (reply.attachment_path.startsWith('http') || reply.attachment_path.startsWith('/storage') ? reply.attachment_path : `/storage/${reply.attachment_path}`)}
                                                     alt="Thread reply attachment"
                                                     className="max-h-36 w-full object-contain"
+                                                    onError={(e) => {
+                                                        e.currentTarget.onerror = null;
+                                                        e.currentTarget.src = '/images/placeholder.svg';
+                                                    }}
                                                 />
                                             </div>
                                         )}
@@ -351,6 +359,9 @@ function Twemoji({ emoji, className = "w-3.5 h-3.5" }) {
             src={`https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${code}.svg`} 
             alt={emoji} 
             className={`${className} object-contain inline-block shrink-0`} 
+            onError={(e) => {
+                e.currentTarget.style.display = 'none';
+            }}
         />
     );
 }

@@ -261,7 +261,15 @@ export default function BuyerMessageInput({ currentChatUser, form, userOrders = 
                         <div className="flex items-center gap-3 overflow-hidden">
                             {attachmentPreview.type === 'image' ? (
                                 <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-gray-200 shadow-sm bg-white">
-                                    <img src={attachmentPreview.url} alt="Preview" className="w-full h-full object-cover" />
+                                    <img
+                                        src={attachmentPreview.url}
+                                        alt="Preview"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = '/images/placeholder.svg';
+                                        }}
+                                    />
                                 </div>
                             ) : (
                                 <div className="w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0 shadow-sm text-clay-500">

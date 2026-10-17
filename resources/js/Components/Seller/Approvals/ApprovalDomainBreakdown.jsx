@@ -225,7 +225,15 @@ export default function ApprovalDomainBreakdown({
                                     className="block aspect-square rounded-xl overflow-hidden border border-stone-200 bg-stone-100 hover:border-clay-500 hover:ring-2 hover:ring-clay-500/20 transition cursor-pointer"
                                     title={`Inspect evidence photo ${idx + 1} in carousel`}
                                 >
-                                    <img src={photo} alt={`Evidence #${idx + 1}`} className="w-full h-full object-cover" />
+                                    <img
+                                        src={photo}
+                                        alt={`Evidence #${idx + 1}`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = '/images/placeholder.svg';
+                                        }}
+                                    />
                                 </button>
                             ))}
                         </div>

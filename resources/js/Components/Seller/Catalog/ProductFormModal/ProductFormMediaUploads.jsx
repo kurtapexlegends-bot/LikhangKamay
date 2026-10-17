@@ -183,6 +183,10 @@ export default function ProductFormMediaUploads({
                                     src={previews.cover}
                                     alt="Cover"
                                     className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = '/images/placeholder.svg';
+                                    }}
                                 />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2 p-3">
                                     <button
@@ -257,6 +261,10 @@ export default function ProductFormMediaUploads({
                                         src={preview}
                                         className="w-full h-full object-cover"
                                         alt={`Preview ${idx + 1}`}
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = '/images/placeholder.svg';
+                                        }}
                                     />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1.5 p-2">
                                         <button

@@ -76,6 +76,10 @@ function ItemImage({ item }) {
             src={item.img}
             alt={item.name}
             className="h-14 w-14 rounded-2xl border border-stone-100 bg-stone-50 object-cover"
+            onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = '/images/placeholder.svg';
+            }}
         />
     );
 }

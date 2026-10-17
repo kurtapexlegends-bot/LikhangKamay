@@ -209,6 +209,10 @@ export default function MediaViewer({ show, media, onClose, mediaList = [], init
                                             alt="Media Content" 
                                             className="max-w-full max-h-[80vh] md:max-h-[85vh] object-contain rounded-xl pointer-events-none animate-in fade-in zoom-in-95 duration-500"
                                             onDragStart={(e) => e.preventDefault()}
+                                            onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.src = '/images/placeholder.svg';
+                                            }}
                                         />
                                     </div>
                                 </div>
