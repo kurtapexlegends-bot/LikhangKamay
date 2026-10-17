@@ -4,7 +4,8 @@ import { buyerCourierTrackingState, humanizeAddressType, buyerProofLabel } from 
 import BuyerDeliveryTrackingMap from './BuyerDeliveryTrackingMap';
 
 export default function CourierTrackingCard({ order, isExpanded, onToggle }) {
-    const hasDelivery = Boolean(order?.delivery);
+    const isReplacementExchange = order?.delivery?.flow_type === 'replacement_exchange';
+    const hasDelivery = Boolean(order?.delivery) && order?.status !== 'Pending' && (isReplacementExchange || !['Cancelled', 'Rejected'].includes(order?.status));
     const [isMapVisible, setIsMapVisible] = useState(
         ['ON_GOING', 'PICKED_UP', 'IN_TRANSIT'].includes(String(order?.delivery?.status || '').toUpperCase())
     );
@@ -13,7 +14,6 @@ export default function CourierTrackingCard({ order, isExpanded, onToggle }) {
 
     const delivery = order.delivery;
     const trackingState = buyerCourierTrackingState(order);
-    const isReplacementExchange = delivery.flow_type === 'replacement_exchange';
     const driverName = delivery.driver_name || 'Studio Courier';
     const vehiclePlate = delivery.vehicle_plate_number;
     const driverPhone = delivery.driver_phone;

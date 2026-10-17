@@ -7,7 +7,15 @@ export default function OrderCourierTracking({
     expandedCourierTrackings,
     toggleCourierTrackingExpansion
 }) {
-    if (!order.delivery) return null;
+    const isReplacementExchange = order?.delivery?.flow_type === "replacement_exchange";
+
+    if (
+        !order?.delivery ||
+        order.status === "Pending" ||
+        (!isReplacementExchange && ["Cancelled", "Rejected"].includes(order.status))
+    ) {
+        return null;
+    }
 
     const isExpanded = expandedCourierTrackings.has(order.id);
     const trackingState = sellerCourierTrackingState(order);

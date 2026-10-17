@@ -81,12 +81,11 @@ export default function ProductImageGallery({
                             setLightboxInitialMode('image');
                             setIsLightboxOpen(true);
                         }}
-                        aria-label="Make picture bigger in fullscreen lightbox"
-                        title="Make picture bigger"
-                        className="absolute top-3 left-3 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-stone-900/80 hover:bg-stone-900 text-white text-xs font-bold backdrop-blur-md border border-white/10 shadow-md transition-all active:scale-95 cursor-pointer min-h-[38px] group"
+                        aria-label="Expand image in fullscreen lightbox"
+                        title="Expand image fullscreen"
+                        className="absolute top-3 left-3 z-20 flex items-center justify-center w-[38px] h-[38px] rounded-xl bg-stone-900/80 hover:bg-stone-900 text-white backdrop-blur-md border border-white/10 shadow-md transition-all active:scale-95 cursor-pointer group"
                     >
-                        <Maximize2 size={14} className="text-stone-300 group-hover:text-white transition-colors" />
-                        <span className="hidden sm:inline">Expand</span>
+                        <Maximize2 size={16} className="text-stone-300 group-hover:text-white transition-colors" />
                     </button>
                 )}
 
@@ -195,10 +194,9 @@ export default function ProductImageGallery({
                                         }}
                                         aria-label="Expand 3D interactive viewer in fullscreen"
                                         title="Expand 3D view"
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-stone-900/80 hover:bg-stone-900 text-white text-xs font-bold backdrop-blur-md border border-white/10 shadow-md transition-all active:scale-95 cursor-pointer min-h-[38px] group shrink-0"
+                                        className="flex items-center justify-center w-[38px] h-[38px] rounded-xl bg-stone-900/80 hover:bg-stone-900 text-white backdrop-blur-md border border-white/10 shadow-md transition-all active:scale-95 cursor-pointer group shrink-0"
                                     >
-                                        <Maximize2 size={14} className="text-stone-300 group-hover:text-white transition-colors" />
-                                        <span className="hidden sm:inline">Expand 3D</span>
+                                        <Maximize2 size={16} className="text-stone-300 group-hover:text-white transition-colors" />
                                     </button>
                                 }
                                 className="h-full rounded-none border-0 bg-gradient-to-b from-gray-50 to-white"

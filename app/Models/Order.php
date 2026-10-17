@@ -82,6 +82,18 @@ class Order extends Model
         'shipment_reminder_sent' => \App\Casts\PostgresCompatibleBoolean::class,
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (Order $order) {
+            // Data Integrity Guard: An order in Pending state must never retain an active or orphaned delivery record
+            if ($order->status === 'Pending' && $order->id) {
+                \Illuminate\Support\Facades\DB::table('order_deliveries')
+                    ->where('order_id', $order->id)
+                    ->delete();
+            }
+        });
+    }
+
     // Relationship: Order has many Items
     public function items()
     {

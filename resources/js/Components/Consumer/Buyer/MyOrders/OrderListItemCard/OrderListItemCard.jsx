@@ -141,7 +141,7 @@ export default function OrderListItemCard({
                     )}
 
                     {order.shipping_method !== 'Pick Up' && (
-                        order.delivery ? (
+                        (order.delivery && order.status !== 'Pending') ? (
                             <CourierTrackingCard 
                                 order={order}
                                 isExpanded={isCourierTrackingExpanded}

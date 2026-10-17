@@ -148,6 +148,21 @@ export default function ProductViewer3D({
         };
     }, [showScaleBenchmark, benchmarkType, dimensions?.height]);
 
+    // Dynamic distance boundaries for smooth, bounded 3D zoom
+    const { minDistance, maxDistance } = useMemo(() => {
+        if (!showScaleBenchmark) {
+            return {
+                minDistance: 1.8,
+                maxDistance: 9.0,
+            };
+        }
+        const baseZ = framing.targetPos.z || 5.8;
+        return {
+            minDistance: Math.max(1.8, baseZ * 0.45),
+            maxDistance: Math.max(10.0, baseZ * 2.2),
+        };
+    }, [showScaleBenchmark, framing.targetPos.z]);
+
     function Loader() {
         const { progress } = useProgress();
 
@@ -171,10 +186,12 @@ export default function ProductViewer3D({
     );
 
     const hasCustomHeight = className.includes('h-');
-    const defaultHeightClass = compact ? 'h-64 sm:h-72' : 'h-80 sm:h-96 min-h-[320px]';
+    const defaultHeightClass = hasCustomHeight ? '' : (compact ? 'h-64 sm:h-72' : 'h-80 sm:h-96 min-h-[320px]');
+    const hasCustomBg = className.includes('bg-');
+    const defaultBgClass = hasCustomBg ? '' : 'bg-gradient-to-b from-gray-50 to-gray-100';
 
     return (
-        <div className={`relative bg-gradient-to-b from-gray-50 to-gray-100 rounded-2xl overflow-hidden ${hasCustomHeight ? '' : defaultHeightClass} ${className}`}>
+        <div className={`relative ${defaultBgClass} rounded-2xl overflow-hidden ${defaultHeightClass} ${className}`}>
             {!showScaleBenchmark && (
                 <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 flex-wrap max-w-[calc(100%-4.5rem)]">
                     {topLeftAction}
@@ -186,11 +203,11 @@ export default function ProductViewer3D({
                     <button
                         type="button"
                         onClick={handleOpenScaleBenchmark}
-                        className="px-2.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition shadow-xs cursor-pointer bg-white/90 backdrop-blur text-stone-700 border-gray-200 hover:bg-white active:scale-95 min-h-[38px] shrink-0"
-                        title="Compare with Real-Life Benchmark"
+                        aria-label="Compare with real-life benchmark scale"
+                        title="Compare with real-life scale"
+                        className="flex items-center justify-center w-[38px] h-[38px] rounded-xl border transition shadow-xs cursor-pointer bg-white/90 backdrop-blur text-stone-700 border-gray-200 hover:bg-white active:scale-95 shrink-0"
                     >
-                        <Sparkles size={13} className="text-amber-500" />
-                        <span className="hidden sm:inline">Real-Life Scale</span>
+                        <Sparkles size={16} className="text-amber-500" />
                     </button>
                 </div>
             )}
@@ -212,16 +229,22 @@ export default function ProductViewer3D({
                         <RotateCcw size={14} />
                     </button>
                     <button
-                        onClick={() => setZoom((currentZoom) => Math.min(currentZoom + 0.2, 2))}
-                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 cursor-pointer"
-                        title="Zoom In"
+                        type="button"
+                        onClick={() => setZoom((currentZoom) => Math.min(Number((currentZoom + 0.2).toFixed(1)), 2.4))}
+                        disabled={zoom >= 2.4}
+                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        title={zoom >= 2.4 ? 'Maximum zoom reached' : 'Zoom In'}
+                        aria-label="Zoom in 3D camera"
                     >
                         <ZoomIn size={14} />
                     </button>
                     <button
-                        onClick={() => setZoom((currentZoom) => Math.max(currentZoom - 0.2, 0.5))}
-                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 cursor-pointer"
-                        title="Zoom Out"
+                        type="button"
+                        onClick={() => setZoom((currentZoom) => Math.max(Number((currentZoom - 0.2).toFixed(1)), 0.6))}
+                        disabled={zoom <= 0.6}
+                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        title={zoom <= 0.6 ? 'Minimum zoom reached' : 'Zoom Out'}
+                        aria-label="Zoom out 3D camera"
                     >
                         <ZoomOut size={14} />
                     </button>
@@ -281,6 +304,11 @@ export default function ProductViewer3D({
                         autoRotateSpeed={2}
                         enableZoom={true}
                         enablePan={false}
+                        minDistance={minDistance}
+                        maxDistance={maxDistance}
+                        zoomSpeed={0.85}
+                        enableDamping={true}
+                        dampingFactor={0.08}
                         maxPolarAngle={Math.PI / 2 + 0.05}
                     />
                 </Canvas>

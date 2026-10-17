@@ -76,6 +76,14 @@ export const deliveryStatusConfig = (status) => {
 };
 
 export const buyerCourierTrackingState = (order) => {
+    if (order?.status === 'Pending') {
+        return {
+            label: 'Order Placed',
+            tone: 'border-stone-200 bg-stone-50 text-stone-600',
+            detail: 'Your order is waiting for shop acceptance.',
+        };
+    }
+
     const base = deliveryStatusConfig(order?.delivery?.status);
     const isReplacementExchange = order?.delivery?.flow_type === 'replacement_exchange';
 

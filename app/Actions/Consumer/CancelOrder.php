@@ -33,7 +33,7 @@ class CancelOrder
         $order = DB::transaction(function () use ($id, $buyer, $reason, $details) {
             $lockedOrder = Order::lockForUpdate()->where('id', $id)
                 ->where('user_id', $buyer->id)
-                ->with('items')
+                ->with(['items', 'delivery'])
                 ->firstOrFail();
 
             $isPending = $lockedOrder->status === 'Pending';
@@ -77,6 +77,14 @@ class CancelOrder
 
             if ($lockedOrder->payment_status === 'paid') {
                 $updateData['payment_status'] = 'refund_pending';
+            }
+
+            if ($lockedOrder->delivery && !$lockedOrder->delivery->isTerminalFailure() && $lockedOrder->delivery->status !== \App\Models\OrderDelivery::STATUS_COMPLETED) {
+                $lockedOrder->delivery->update([
+                    'status' => \App\Models\OrderDelivery::STATUS_CANCELED,
+                    'terminal_failed_at' => now(),
+                    'failure_reason' => 'Order cancelled by buyer',
+                ]);
             }
 
             $lockedOrder->update($updateData);

@@ -191,11 +191,17 @@ class OrderWorkflowHelper
      * Serialize a delivery model to array
      *
      * @param OrderDelivery|null $delivery
+     * @param string|null $orderStatus
      * @return array|null
      */
-    public static function serializeDelivery(?OrderDelivery $delivery): ?array
+    public static function serializeDelivery(?OrderDelivery $delivery, ?string $orderStatus = null): ?array
     {
         if (!$delivery) {
+            return null;
+        }
+
+        $resolvedStatus = $orderStatus ?? ($delivery->relationLoaded('order') ? $delivery->order?->status : null);
+        if ($resolvedStatus === 'Pending') {
             return null;
         }
 
@@ -317,7 +323,7 @@ class OrderWorkflowHelper
         $pushEntry('replacement_started', $order->replacement_started_at, 'Replacement started', $order->replacement_resolution_description ?: 'Seller approved a replacement workflow.');
         $pushEntry('replacement_resolved', $order->replacement_resolved_at, 'Replacement resolved', 'Buyer confirmed receipt of the replacement item.');
 
-        if ($order->relationLoaded('delivery') && $order->delivery) {
+        if ($order->status !== 'Pending' && $order->relationLoaded('delivery') && $order->delivery) {
             $order->delivery->loadMissing('events');
 
             $order->delivery->events

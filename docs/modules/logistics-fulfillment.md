@@ -47,8 +47,10 @@ Webhooks from the Lalamove API dispatch events that update the `status` of `Orde
 
 ### Concurrency & Dispatch Mutex Locking
 *   **Courier Dispatch Atomic Mutex**: In [OrderLogisticsService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OrderLogisticsService.php), both `bookLalamoveDelivery` and `bookReplacementExchange` acquire an atomic cache lock (`lalamove_booking:{$order->id}`, 30s) prior to API quotation and booking. Rapid concurrent clicks or retries are rejected with a safe user-facing message, preventing duplicate dispatch orders and double-billing on Lalamove's platform. The `finally` block wraps `$lock->release()` inside `rescue(fn () => $lock->release(), report: false)` so cache connection flickers during release do not trigger unhandled exceptions after a successful booking.
-*   **Terminally Failed Delivery Re-Booking**: If a delivery suffers terminal failure (`terminal_failed_at` is set, or status is `CANCELED`, `REJECTED`, or `EXPIRED`), sellers can re-book courier delivery even while the order remains in `Shipped` status. When re-booked, the delivery record is updated with the new Lalamove external order ID and tracking number while `terminal_failed_at`, `auto_cancelled_at`, and `failure_reason` are reset to null.
-
+### Pending Order Invariant & Orphan Purging
+*   **Zero Premature Delivery Tracking**: Orders in `Pending` state are awaiting shop acceptance and cannot have active logistics handling. [OrderWorkflowHelper.php](file:///c:/laragon/www/LikhangKamay/app/Support/OrderWorkflowHelper.php) suppresses `delivery` payloads and courier timeline events when `order.status === 'Pending'`.
+*   **Database Cleanup Hook**: The [Order.php](file:///c:/laragon/www/LikhangKamay/app/Models/Order.php) `booted()` event listener automatically purges any attached `order_deliveries` rows if an order is saved in `Pending` status.
+*   **Cancellation Synchronization**: In [UpdateOrderStatus.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Orders/UpdateOrderStatus.php) and [CancelOrder.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Consumer/CancelOrder.php), cancelling or rejecting an order immediately updates attached non-terminal deliveries to `CANCELED` with terminal failure timestamps.
 
 ---
 

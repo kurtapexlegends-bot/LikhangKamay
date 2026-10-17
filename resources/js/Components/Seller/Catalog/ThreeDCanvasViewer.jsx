@@ -76,7 +76,16 @@ export default function ThreeDCanvasViewer({
                             <DemoPottery scale={0.65} />
                         ) : null}
                     </Stage>
-                    <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={true} />
+                    <OrbitControls 
+                        autoRotate 
+                        autoRotateSpeed={2} 
+                        enableZoom={true} 
+                        minDistance={1.4}
+                        maxDistance={8.5}
+                        zoomSpeed={0.85}
+                        enableDamping={true}
+                        dampingFactor={0.08}
+                    />
                 </Suspense>
             </Canvas>
         </ThreeDModelBoundary>

@@ -78,11 +78,11 @@ export default function CraftDimensionOverlay({
                         <button
                             type="button"
                             onClick={onOpenHeightChart}
-                            className="flex items-center gap-1 px-2.5 py-1 sm:py-1.5 rounded-xl bg-stone-850 hover:bg-stone-800 text-stone-200 hover:text-white border border-stone-700/80 text-xs font-bold transition shadow-sm cursor-pointer shrink-0 min-h-[32px]"
-                            title="Open full human height comparison chart"
+                            aria-label="Open full human height comparison chart"
+                            title="Open human height comparison chart"
+                            className="w-8 h-8 rounded-xl bg-stone-850 hover:bg-stone-800 text-stone-200 hover:text-white border border-stone-700/80 transition shadow-sm cursor-pointer shrink-0 flex items-center justify-center"
                         >
-                            <Ruler size={13} className="text-amber-400 shrink-0" />
-                            <span className="hidden xl:inline">Height Chart</span>
+                            <Ruler size={14} className="text-amber-400" />
                         </button>
                     )}
 

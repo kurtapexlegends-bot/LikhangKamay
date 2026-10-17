@@ -234,11 +234,11 @@ export default function SponsorshipInspectionDrawer({
                                 <button
                                     type="button"
                                     onClick={() => openLightbox(activeImageIndex, viewingMode)}
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-xl text-stone-700 bg-white hover:bg-stone-50 border border-stone-200 shadow-2xs transition min-h-[36px] cursor-pointer"
-                                    title="Open expansive fullscreen carousel"
+                                    aria-label="Open fullscreen carousel"
+                                    title="Open fullscreen carousel"
+                                    className="flex items-center justify-center w-9 h-9 rounded-xl text-stone-700 bg-white hover:bg-stone-50 border border-stone-200 shadow-2xs transition cursor-pointer"
                                 >
-                                    <Maximize2 size={13} className="text-clay-600" />
-                                    <span>View Carousel</span>
+                                    <Maximize2 size={15} className="text-clay-600" />
                                 </button>
                             )}
 
@@ -247,20 +247,24 @@ export default function SponsorshipInspectionDrawer({
                                     <button
                                         type="button"
                                         onClick={() => setViewingMode('image')}
-                                        className={`px-2.5 py-1 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all ${
+                                        aria-label="Show product photos"
+                                        title="Show product photos"
+                                        className={`px-2.5 py-1.5 rounded-lg flex items-center justify-center transition-all ${
                                             viewingMode === 'image' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'
                                         }`}
                                     >
-                                        <ImageIcon size={14} /> Photos
+                                        <ImageIcon size={14} />
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setViewingMode('3d')}
-                                        className={`px-2.5 py-1 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all ${
+                                        aria-label="Show 3D canvas"
+                                        title="Show 3D canvas"
+                                        className={`px-2.5 py-1.5 rounded-lg flex items-center justify-center transition-all ${
                                             viewingMode === '3d' ? 'bg-clay-600 text-white shadow-sm' : 'text-stone-500 hover:text-stone-800'
                                         }`}
                                     >
-                                        <Rotate3d size={14} /> 3D Canvas
+                                        <Rotate3d size={14} />
                                     </button>
                                 </div>
                             )}

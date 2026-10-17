@@ -180,7 +180,7 @@ class GetBuyerOrders
             'receipt_url' => route('my-orders.receipt', $order->id),
             'tracking_number' => $order->tracking_number,
             'shipping_notes' => $order->shipping_notes,
-            'delivery' => OrderWorkflowHelper::serializeDelivery($order->delivery),
+            'delivery' => $order->status === 'Pending' ? null : OrderWorkflowHelper::serializeDelivery($order->delivery, $order->status),
             'cancelled_at' => $order->cancelled_at?->format('M d, Y h:i A'),
             'cancellation_reason' => $order->cancellation_reason,
             'received_at' => $order->received_at?->format('M d, Y h:i A'),

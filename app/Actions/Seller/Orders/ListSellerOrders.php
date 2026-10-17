@@ -265,7 +265,7 @@ class ListSellerOrders
                 'proof_of_delivery' => StorageUrl::url($order->proof_of_delivery),
                 'cancelled_at' => $order->cancelled_at?->format('M d, Y h:i A'),
                 'cancellation_reason' => $order->cancellation_reason,
-                'delivery' => OrderWorkflowHelper::serializeDelivery($order->delivery),
+                'delivery' => $order->status === 'Pending' ? null : OrderWorkflowHelper::serializeDelivery($order->delivery, $order->status),
                 'timeline' => OrderWorkflowHelper::buildOrderTimeline($order),
                 'can_book_lalamove' => in_array($order->status, ['Accepted', 'Processing'], true)
                     && $order->shipping_method === 'Delivery'

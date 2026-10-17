@@ -60,6 +60,14 @@ export const lalamoveStatusConfig = (status) => {
 };
 
 export const sellerCourierTrackingState = (order) => {
+    if (order?.status === "Pending") {
+        return {
+            label: "Pending Acceptance",
+            tone: "border-stone-200 bg-stone-50 text-stone-600",
+            detail: "Order has not yet been accepted by the shop.",
+        };
+    }
+
     const base = lalamoveStatusConfig(order?.delivery?.status);
     const isReplacementExchange =
         order?.delivery?.flow_type === "replacement_exchange";

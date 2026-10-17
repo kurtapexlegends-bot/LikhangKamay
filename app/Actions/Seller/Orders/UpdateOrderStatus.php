@@ -3,6 +3,7 @@
 namespace App\Actions\Seller\Orders;
 
 use App\Models\Order;
+use App\Models\OrderDelivery;
 use App\Models\User;
 use App\Models\Product;
 use App\Models\SellerActivityLog;
@@ -181,6 +182,21 @@ class UpdateOrderStatus
             } elseif ($status === 'Rejected') {
                 $updateData['cancelled_at'] = now();
                 $updateData['cancellation_reason'] = 'seller_rejected';
+            }
+
+            if (in_array($status, ['Cancelled', 'Rejected'], true)) {
+                if ($lockedOrder->delivery && !$lockedOrder->delivery->isTerminalFailure() && $lockedOrder->delivery->status !== OrderDelivery::STATUS_COMPLETED) {
+                    $lockedOrder->delivery->update([
+                        'status' => OrderDelivery::STATUS_CANCELED,
+                        'terminal_failed_at' => now(),
+                        'failure_reason' => $status === 'Rejected' ? 'Order rejected by seller' : 'Order cancelled by seller',
+                    ]);
+                }
+            }
+
+            if ($previousStatus === 'Pending' && $lockedOrder->delivery) {
+                $lockedOrder->delivery()->delete();
+                $lockedOrder->unsetRelation('delivery');
             }
 
             $lockedOrder->update($updateData);

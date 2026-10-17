@@ -46,52 +46,156 @@ export function getRecommendedBenchmarkId(craftHeightCm) {
 function HumanFigureMesh({ scaleHeight, positionX }) {
     const height = scaleHeight;
     const width = height * (42 / 170);
-    const depth = height * (22 / 170);
-    const headRadius = height * 0.062;
+    const headRadius = height * 0.056;
+
+    // Architectural Mannequin Materials
+    const skinColor = '#64748b';
+    const jointColor = '#475569';
+    const clothingColor = '#334155';
 
     return (
         <group position={[positionX, -1.0, 0]}>
             {/* Ground contact shadow disc */}
             <mesh position={[0, 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <circleGeometry args={[width * 0.85, 32]} />
-                <meshBasicMaterial color="#000000" opacity={0.25} transparent depthWrite={false} />
+                <circleGeometry args={[width * 0.95, 32]} />
+                <meshBasicMaterial color="#000000" opacity={0.28} transparent depthWrite={false} />
             </mesh>
 
-            {/* Head */}
-            <mesh position={[0, height - headRadius, 0]} castShadow receiveShadow>
-                <sphereGeometry args={[headRadius, 16, 16]} />
-                <meshStandardMaterial color="#64748b" roughness={0.6} />
+            {/* Head (Stylized Mannequin Oval) */}
+            <mesh position={[0, height - headRadius * 1.05, 0]} scale={[1, 1.18, 0.95]} castShadow receiveShadow>
+                <sphereGeometry args={[headRadius, 24, 24]} />
+                <meshStandardMaterial color={skinColor} roughness={0.4} metalness={0.1} />
             </mesh>
 
             {/* Neck */}
-            <mesh position={[0, height - headRadius * 2 - (height * 0.015), 0]} castShadow receiveShadow>
-                <cylinderGeometry args={[width * 0.1, width * 0.12, height * 0.035, 12]} />
-                <meshStandardMaterial color="#64748b" roughness={0.6} />
+            <mesh position={[0, height * 0.845, 0]} castShadow receiveShadow>
+                <cylinderGeometry args={[width * 0.09, width * 0.11, height * 0.045, 16]} />
+                <meshStandardMaterial color={skinColor} roughness={0.4} metalness={0.1} />
             </mesh>
 
-            {/* Shoulders & Upper Torso */}
-            <mesh position={[0, height * 0.78, 0]} castShadow receiveShadow>
-                <boxGeometry args={[width * 0.88, height * 0.12, depth * 0.45]} />
-                <meshStandardMaterial color="#475569" roughness={0.6} />
+            {/* Chest & Shoulders (Tapered architectural torso) */}
+            <mesh position={[0, height * 0.745, 0]} scale={[1, 1, 0.65]} castShadow receiveShadow>
+                <cylinderGeometry args={[width * 0.44, width * 0.35, height * 0.15, 16]} />
+                <meshStandardMaterial color={clothingColor} roughness={0.5} metalness={0.05} />
             </mesh>
 
-            {/* Main Torso */}
-            <mesh position={[0, height * 0.62, 0]} castShadow receiveShadow>
-                <boxGeometry args={[width * 0.72, height * 0.24, depth * 0.45]} />
-                <meshStandardMaterial color="#475569" roughness={0.6} />
+            {/* Waist & Midsection */}
+            <mesh position={[0, height * 0.625, 0]} scale={[1, 1, 0.65]} castShadow receiveShadow>
+                <cylinderGeometry args={[width * 0.34, width * 0.36, height * 0.10, 16]} />
+                <meshStandardMaterial color={clothingColor} roughness={0.5} metalness={0.05} />
             </mesh>
+
+            {/* Pelvis / Hips */}
+            <mesh position={[0, height * 0.53, 0]} scale={[1, 1, 0.68]} castShadow receiveShadow>
+                <cylinderGeometry args={[width * 0.36, width * 0.32, height * 0.09, 16]} />
+                <meshStandardMaterial color={clothingColor} roughness={0.5} metalness={0.05} />
+            </mesh>
+
+            {/* Left Arm (Relaxed at side) */}
+            <group position={[-width * 0.42, height * 0.77, 0]}>
+                {/* Shoulder Joint */}
+                <mesh castShadow receiveShadow>
+                    <sphereGeometry args={[width * 0.08, 16, 16]} />
+                    <meshStandardMaterial color={jointColor} roughness={0.35} metalness={0.15} />
+                </mesh>
+                {/* Upper Arm */}
+                <mesh position={[-width * 0.02, -height * 0.08, 0]} rotation={[0, 0, 0.06]} castShadow receiveShadow>
+                    <cylinderGeometry args={[width * 0.065, width * 0.055, height * 0.16, 12]} />
+                    <meshStandardMaterial color={skinColor} roughness={0.4} metalness={0.1} />
+                </mesh>
+                {/* Elbow Joint */}
+                <mesh position={[-width * 0.03, -height * 0.165, 0]} castShadow receiveShadow>
+                    <sphereGeometry args={[width * 0.055, 16, 16]} />
+                    <meshStandardMaterial color={jointColor} roughness={0.35} metalness={0.15} />
+                </mesh>
+                {/* Forearm */}
+                <mesh position={[-width * 0.025, -height * 0.245, 0.01]} rotation={[0.04, 0, 0.04]} castShadow receiveShadow>
+                    <cylinderGeometry args={[width * 0.052, width * 0.042, height * 0.15, 12]} />
+                    <meshStandardMaterial color={skinColor} roughness={0.4} metalness={0.1} />
+                </mesh>
+                {/* Hand */}
+                <mesh position={[-width * 0.02, -height * 0.33, 0.015]} scale={[0.6, 1.2, 0.8]} castShadow receiveShadow>
+                    <sphereGeometry args={[width * 0.042, 12, 12]} />
+                    <meshStandardMaterial color={skinColor} roughness={0.4} metalness={0.1} />
+                </mesh>
+            </group>
+
+            {/* Right Arm (Relaxed at side) */}
+            <group position={[width * 0.42, height * 0.77, 0]}>
+                {/* Shoulder Joint */}
+                <mesh castShadow receiveShadow>
+                    <sphereGeometry args={[width * 0.08, 16, 16]} />
+                    <meshStandardMaterial color={jointColor} roughness={0.35} metalness={0.15} />
+                </mesh>
+                {/* Upper Arm */}
+                <mesh position={[width * 0.02, -height * 0.08, 0]} rotation={[0, 0, -0.06]} castShadow receiveShadow>
+                    <cylinderGeometry args={[width * 0.065, width * 0.055, height * 0.16, 12]} />
+                    <meshStandardMaterial color={skinColor} roughness={0.4} metalness={0.1} />
+                </mesh>
+                {/* Elbow Joint */}
+                <mesh position={[width * 0.03, -height * 0.165, 0]} castShadow receiveShadow>
+                    <sphereGeometry args={[width * 0.055, 16, 16]} />
+                    <meshStandardMaterial color={jointColor} roughness={0.35} metalness={0.15} />
+                </mesh>
+                {/* Forearm */}
+                <mesh position={[width * 0.025, -height * 0.245, 0.01]} rotation={[0.04, 0, -0.04]} castShadow receiveShadow>
+                    <cylinderGeometry args={[width * 0.052, width * 0.042, height * 0.15, 12]} />
+                    <meshStandardMaterial color={skinColor} roughness={0.4} metalness={0.1} />
+                </mesh>
+                {/* Hand */}
+                <mesh position={[width * 0.02, -height * 0.33, 0.015]} scale={[0.6, 1.2, 0.8]} castShadow receiveShadow>
+                    <sphereGeometry args={[width * 0.042, 12, 12]} />
+                    <meshStandardMaterial color={skinColor} roughness={0.4} metalness={0.1} />
+                </mesh>
+            </group>
 
             {/* Left Leg */}
-            <mesh position={[-width * 0.22, height * 0.25, 0]} castShadow receiveShadow>
-                <cylinderGeometry args={[width * 0.11, width * 0.09, height * 0.5, 12]} />
-                <meshStandardMaterial color="#334155" roughness={0.6} />
-            </mesh>
+            <group position={[-width * 0.18, 0, 0]}>
+                {/* Thigh */}
+                <mesh position={[0, height * 0.385, 0]} castShadow receiveShadow>
+                    <cylinderGeometry args={[width * 0.11, width * 0.085, height * 0.21, 14]} />
+                    <meshStandardMaterial color={clothingColor} roughness={0.5} metalness={0.05} />
+                </mesh>
+                {/* Knee Joint */}
+                <mesh position={[0, height * 0.27, 0]} castShadow receiveShadow>
+                    <sphereGeometry args={[width * 0.082, 16, 16]} />
+                    <meshStandardMaterial color={jointColor} roughness={0.35} metalness={0.15} />
+                </mesh>
+                {/* Calf / Shin */}
+                <mesh position={[0, height * 0.155, 0]} castShadow receiveShadow>
+                    <cylinderGeometry args={[width * 0.08, width * 0.06, height * 0.21, 14]} />
+                    <meshStandardMaterial color={clothingColor} roughness={0.5} metalness={0.05} />
+                </mesh>
+                {/* Foot */}
+                <mesh position={[0, height * 0.022, height * 0.025]} castShadow receiveShadow>
+                    <boxGeometry args={[width * 0.12, height * 0.04, height * 0.09]} />
+                    <meshStandardMaterial color={jointColor} roughness={0.35} metalness={0.15} />
+                </mesh>
+            </group>
 
             {/* Right Leg */}
-            <mesh position={[width * 0.22, height * 0.25, 0]} castShadow receiveShadow>
-                <cylinderGeometry args={[width * 0.11, width * 0.09, height * 0.5, 12]} />
-                <meshStandardMaterial color="#334155" roughness={0.6} />
-            </mesh>
+            <group position={[width * 0.18, 0, 0]}>
+                {/* Thigh */}
+                <mesh position={[0, height * 0.385, 0]} castShadow receiveShadow>
+                    <cylinderGeometry args={[width * 0.11, width * 0.085, height * 0.21, 14]} />
+                    <meshStandardMaterial color={clothingColor} roughness={0.5} metalness={0.05} />
+                </mesh>
+                {/* Knee Joint */}
+                <mesh position={[0, height * 0.27, 0]} castShadow receiveShadow>
+                    <sphereGeometry args={[width * 0.082, 16, 16]} />
+                    <meshStandardMaterial color={jointColor} roughness={0.35} metalness={0.15} />
+                </mesh>
+                {/* Calf / Shin */}
+                <mesh position={[0, height * 0.155, 0]} castShadow receiveShadow>
+                    <cylinderGeometry args={[width * 0.08, width * 0.06, height * 0.21, 14]} />
+                    <meshStandardMaterial color={clothingColor} roughness={0.5} metalness={0.05} />
+                </mesh>
+                {/* Foot */}
+                <mesh position={[0, height * 0.022, height * 0.025]} castShadow receiveShadow>
+                    <boxGeometry args={[width * 0.12, height * 0.04, height * 0.09]} />
+                    <meshStandardMaterial color={jointColor} roughness={0.35} metalness={0.15} />
+                </mesh>
+            </group>
         </group>
     );
 }
@@ -168,31 +272,43 @@ function SmartphoneMesh({ scaleHeight, positionX }) {
 function CoffeeMugMesh({ scaleHeight, positionX }) {
     const height = scaleHeight;
     const radius = Math.max(height * (8.2 / 9.5) / 2, 0.12);
+    const handleRadius = height * 0.23;
+    const handleTube = height * 0.055;
 
     return (
         <group position={[positionX, -1.0 + height / 2, 0]}>
             {/* Ground contact shadow */}
             <mesh position={[0, -height / 2 + 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <circleGeometry args={[radius * 1.25, 32]} />
+                <circleGeometry args={[radius * 1.35, 32]} />
                 <meshBasicMaterial color="#000000" opacity={0.25} transparent depthWrite={false} />
             </mesh>
 
             {/* Mug Body */}
             <mesh castShadow receiveShadow>
                 <cylinderGeometry args={[radius, radius * 0.92, height, 32]} />
-                <meshStandardMaterial color="#f5f5f4" roughness={0.5} metalness={0.05} />
+                <meshStandardMaterial color="#f5f5f4" roughness={0.35} metalness={0.05} />
             </mesh>
 
-            {/* Mug Top Cavity */}
-            <mesh position={[0, height / 2 + 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <circleGeometry args={[radius * 0.85, 32]} />
-                <meshStandardMaterial color="#44403c" roughness={0.8} />
+            {/* Mug Top Cavity / Coffee Liquid */}
+            <mesh position={[0, height / 2 - (height * 0.03), 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <circleGeometry args={[radius * 0.82, 32]} />
+                <meshStandardMaterial color="#2d1e17" roughness={0.2} metalness={0.1} />
+            </mesh>
+            {/* Inner Rim Accent */}
+            <mesh position={[0, height / 2 + 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[radius * 0.82, radius, 32]} />
+                <meshStandardMaterial color="#f5f5f4" roughness={0.35} metalness={0.05} />
             </mesh>
 
-            {/* Handle */}
-            <mesh position={[radius + (height * 0.13), 0, 0]}>
-                <torusGeometry args={[height * 0.24, height * 0.07, 16, 32, Math.PI]} />
-                <meshStandardMaterial color="#f5f5f4" roughness={0.5} metalness={0.05} />
+            {/* Handle - firmly connected into mug cylinder at top and bottom */}
+            <mesh 
+                position={[radius * 0.82, 0, 0]} 
+                rotation={[0, 0, -Math.PI / 2]}
+                castShadow 
+                receiveShadow
+            >
+                <torusGeometry args={[handleRadius, handleTube, 16, 32, Math.PI]} />
+                <meshStandardMaterial color="#f5f5f4" roughness={0.35} metalness={0.05} />
             </mesh>
         </group>
     );
