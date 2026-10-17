@@ -122,6 +122,50 @@ async function main() {
     const outPath = path.resolve('tests/e2e/production_audit/audit_results.json');
     fs.writeFileSync(outPath, JSON.stringify(outputData, null, 2));
     console.log(`  Results saved to: ${outPath}`);
+
+    // Generate Obsidian documentation report
+    const mdLines = [
+        '# Production End-to-End Audit & Verification Matrix',
+        '',
+        `> **Target:** \`${PROD_URL}\`  `,
+        `> **Execution Date:** \`${new Date().toISOString()}\`  `,
+        `> **Duration:** \`${duration}s\`  `,
+        `> **Status:** **${collector.bugs.length === 0 && collector.results.filter(r => r.status === 'FAIL').length === 0 ? 'PASS (100% HEALTHY)' : 'ATTENTION REQUIRED'}**`,
+        '',
+        '## 1. Executive Summary',
+        '',
+        '| Metric | Value |',
+        '| :--- | :--- |',
+        `| **Total Scenarios Evaluated** | ${collector.results.length} |`,
+        `| **Passed Checks** | ${collector.results.filter(r => r.status === 'PASS').length} |`,
+        `| **Warnings** | ${collector.results.filter(r => r.status === 'WARN').length} |`,
+        `| **Failed Checks** | ${collector.results.filter(r => r.status === 'FAIL').length} |`,
+        `| **Active Bugs Logged** | ${collector.bugs.length} |`,
+        '',
+        '## 2. Bug & Failure Log',
+        ''
+    ];
+
+    if (collector.bugs.length === 0 && collector.results.filter(r => r.status === 'FAIL').length === 0) {
+        mdLines.push('Zero critical bugs or runtime failures detected across all user journeys.');
+    } else {
+        collector.bugs.forEach((b, i) => {
+            mdLines.push(`### Bug ${i + 1}: [${b.severity}] ${b.title}`);
+            mdLines.push(`- **Location:** ${b.url}`);
+            mdLines.push(`- **Description:** ${b.description}`);
+            mdLines.push(`- **Remediation:** ${b.recommendation || b.remediation || 'Inspect and resolve finding.'}`);
+            mdLines.push('');
+        });
+    }
+
+    mdLines.push('', '## 3. Detailed Results Matrix', '', '| Phase | Check Description | Status | Details |', '| :--- | :--- | :---: | :--- |');
+    collector.results.forEach(r => {
+        mdLines.push(`| ${r.phase} | ${r.testName || r.name} | **${r.status}** | ${r.message || r.details?.message || '-'} |`);
+    });
+
+    const docPath = path.resolve('docs/architecture/e2e-production-audit.md');
+    fs.writeFileSync(docPath, mdLines.join('\n'));
+    console.log(`  Obsidian Documentation synced to: ${docPath}`);
 }
 
 main().catch(err => {

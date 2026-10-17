@@ -7,16 +7,19 @@ export async function runPhase3(page, collector) {
 
     collector.attachListeners(page, 'Phase 3 - Seller');
 
-    // 3.1 Seller Login
+    // 3.1 Seller Login & Auth Verification
     try {
         const loggedIn = await loginAs(page, ACCOUNTS.seller.email, ACCOUNTS.seller.password);
         collector.recordResult('Phase 3', '3.1 Seller Authentication', loggedIn ? 'PASS' : 'FAIL', {
             message: `Current URL: ${page.url()}`
         });
         if (!loggedIn) {
-            collector.recordBug('HIGH', 'Seller Login Failed in Production', `${PROD_URL}/login`, 'Artisan credentials rejected', 'Check seller account status.');
+            collector.recordBug('HIGH', 'Seller Login Failed in Production', `${PROD_URL}/login`, 'Artisan credentials rejected', 'Check seller account status in production database.');
             return;
         }
+
+        // Validate Seller Inertia Session
+        await collector.verifyInertiaPage(page, 'Phase 3', '3.1 Seller Session Props', null, ['auth.user.email']);
     } catch (e) {
         collector.recordResult('Phase 3', '3.1 Seller Authentication', 'FAIL', { message: e.message });
         return;
@@ -25,7 +28,7 @@ export async function runPhase3(page, collector) {
     // 3.2 Seller Dashboard
     try {
         await page.goto(`${PROD_URL}/dashboard`, { waitUntil: 'networkidle2', timeout: 30000 });
-        await page.waitForSelector('main', { timeout: 10000 }).catch(() => null);
+        await collector.verifyInertiaPage(page, 'Phase 3', '3.2 Seller Dashboard Inertia Contract', 'Dashboard');
         const metricCards = await page.$$('[class*="grid"] > div, [class*="card"]');
         collector.recordResult('Phase 3', '3.2 Seller Dashboard Load', metricCards.length > 0 ? 'PASS' : 'WARN', {
             message: `Found ${metricCards.length} dashboard metric elements`
@@ -38,7 +41,7 @@ export async function runPhase3(page, collector) {
     // 3.3 Product Catalog Management
     try {
         await page.goto(`${PROD_URL}/products`, { waitUntil: 'networkidle2', timeout: 30000 });
-        await page.waitForSelector('main', { timeout: 10000 }).catch(() => null);
+        await collector.verifyInertiaPage(page, 'Phase 3', '3.3 Product Catalog Inertia Contract', 'Product', ['products']);
         const catalogLoaded = await page.$('table, [class*="product"], main') !== null;
         collector.recordResult('Phase 3', '3.3 Product Catalog Load', catalogLoaded ? 'PASS' : 'FAIL');
 
@@ -57,7 +60,7 @@ export async function runPhase3(page, collector) {
     // 3.4 3D Asset Manager
     try {
         await page.goto(`${PROD_URL}/3d-manager`, { waitUntil: 'networkidle2', timeout: 30000 });
-        await page.waitForSelector('main', { timeout: 10000 }).catch(() => null);
+        await collector.verifyInertiaPage(page, 'Phase 3', '3.4 3D Asset Manager Inertia Contract', '3d');
         const threeDLoaded = await page.$('main') !== null;
         collector.recordResult('Phase 3', '3.4 3D Asset Manager Load', threeDLoaded ? 'PASS' : 'FAIL');
         await collector.scanDomQuality(page, '3D Manager');

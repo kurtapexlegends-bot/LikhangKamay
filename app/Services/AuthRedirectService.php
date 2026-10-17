@@ -41,6 +41,10 @@ class AuthRedirectService
         if ($user->isArtisan()) {
             session()->forget('url.intended');
 
+            if ($user->isApproved()) {
+                return redirect()->route('dashboard');
+            }
+
             if (is_null($user->setup_completed_at) || $user->artisan_status === 'rejected') {
                 return redirect()->route('artisan.setup');
             }
@@ -164,6 +168,10 @@ class AuthRedirectService
         }
 
         if ($user->isArtisan()) {
+            if ($user->isApproved()) {
+                return route('dashboard', absolute: false);
+            }
+
             if (is_null($user->setup_completed_at) || $user->artisan_status === 'rejected') {
                 return route('artisan.setup', absolute: false);
             }

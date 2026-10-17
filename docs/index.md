@@ -18,6 +18,7 @@ Welcome to the LikhangKamay Second Brain vault. This documentation map is design
 *   **[[logistics-fulfillment|Logistics & Fulfillment]]**: Delivery metadata, Lalamove tracking, address formats, and delivery event timeline rollups.
 *   **[[system-auditing-analytics|System Auditing, Compliance & Analytics]]**: Activity logging, staff access audits, compliance agreements, capital adjustments, review moderation, and daily analytics snapshot rollups.
 *   **[[scheduled-jobs|Background Commands & Scheduler]]**: Cron-scheduled operations, payment resolutions, order timeouts, and automated reminders.
+*   **[[e2e-production-audit|Production End-to-End Audit & Verification Matrix]]**: Live browser automation results, Vercel serverless checks, and user journey telemetry.
 
 ## System Rules & Guidelines
 

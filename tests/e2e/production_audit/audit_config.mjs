@@ -2,12 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import puppeteer from 'puppeteer-core';
 
-export const PROD_URL = 'https://www.likhangkamay.app';
+export const PROD_URL = process.env.TARGET_URL || process.env.APP_URL || 'https://www.likhangkamay.app';
 
 export const ACCOUNTS = {
     seller: {
-        email: process.env.E2E_SELLER_EMAIL || 'kurtapexlegends@gmail.com',
-        password: process.env.E2E_SELLER_PASSWORD || 'password',
+        email: process.env.E2E_SELLER_EMAIL || 'artisan@likhangkamay.com',
+        password: process.env.E2E_SELLER_PASSWORD || 'LikhangKamay2026!',
         role: 'artisan'
     },
     buyer: {
@@ -37,15 +37,29 @@ export function resolveBrowserExecutable() {
 }
 
 export async function loginAs(page, email, password, expectedPath = '') {
-    await page.goto(`${PROD_URL}/login`, { waitUntil: 'networkidle2', timeout: 30000 });
-    await page.waitForSelector('input#email', { timeout: 15000 });
-    await page.type('input#email', email);
-    await page.type('input#password', password);
-    await page.keyboard.press('Enter');
-    await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 25000 }).catch(() => null);
-    await new Promise(r => setTimeout(r, 2000));
-    const currentUrl = page.url();
-    return !currentUrl.includes('/login');
+    for (let attempt = 1; attempt <= 2; attempt++) {
+        await page.goto(`${PROD_URL}/login`, { waitUntil: 'networkidle2', timeout: 30000 });
+        await page.waitForSelector('input#email', { timeout: 15000 });
+        await page.$eval('input#email', el => el.value = '').catch(() => null);
+        await page.$eval('input#password', el => el.value = '').catch(() => null);
+        await page.type('input#email', email);
+        await page.type('input#password', password);
+
+        const submitBtn = await page.$('button[type="submit"]');
+        if (submitBtn) {
+            await submitBtn.click();
+        } else {
+            await page.keyboard.press('Enter');
+        }
+
+        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 25000 }).catch(() => null);
+        await new Promise(r => setTimeout(r, 2000));
+        const currentUrl = page.url();
+        if (!currentUrl.includes('/login')) {
+            return true;
+        }
+    }
+    return !page.url().includes('/login');
 }
 
 export async function findElementByText(page, selector, textRegex) {
@@ -62,6 +76,25 @@ export async function findElementByText(page, selector, textRegex) {
     }
 }
 
+export async function getInertiaPage(page) {
+    try {
+        return await page.evaluate(() => {
+            const el = document.getElementById('app');
+            if (el && el.dataset && el.dataset.page) {
+                try {
+                    return JSON.parse(el.dataset.page);
+                } catch {}
+            }
+            if (window.__inertia && window.__inertia.page) {
+                return window.__inertia.page;
+            }
+            return null;
+        });
+    } catch {
+        return null;
+    }
+}
+
 export class AuditCollector {
     constructor() {
         this.results = [];
@@ -71,6 +104,54 @@ export class AuditCollector {
         this.panelistCritiques = [];
         this.bugs = [];
         this.startTime = Date.now();
+    }
+
+    async verifyInertiaPage(page, phase, testName, expectedComponent = null, requiredPropKeys = []) {
+        const inertia = await getInertiaPage(page);
+        if (!inertia) {
+            this.recordResult(phase, `${testName} [Inertia Init]`, 'FAIL', {
+                message: 'No Inertia page payload detected on #app dataset or window'
+            });
+            this.recordBug('HIGH', `Inertia Payload Missing: ${testName}`, page.url(), 'Page did not initialize Inertia dataset', 'Verify Inertia middleware and @inertia directive in app.blade.php');
+            return null;
+        }
+
+        if (expectedComponent) {
+            const componentMatches = inertia.component && inertia.component.toLowerCase().includes(expectedComponent.toLowerCase());
+            this.recordResult(phase, `${testName} [Component: ${inertia.component}]`, componentMatches ? 'PASS' : 'WARN', {
+                message: componentMatches ? `Matched expected component: ${expectedComponent}` : `Expected "${expectedComponent}", got "${inertia.component}"`
+            });
+        }
+
+        const missingKeys = [];
+        const props = inertia.props || {};
+        for (const key of requiredPropKeys) {
+            const parts = key.split('.');
+            let val = props;
+            for (const part of parts) {
+                if (val === undefined || val === null) {
+                    val = undefined;
+                    break;
+                }
+                val = val[part];
+            }
+            if (val === undefined) {
+                missingKeys.push(key);
+            }
+        }
+
+        if (missingKeys.length > 0) {
+            this.recordResult(phase, `${testName} [Inertia Props]`, 'FAIL', {
+                message: `Missing required Inertia props: ${missingKeys.join(', ')} (Component: ${inertia.component})`
+            });
+            this.recordBug('HIGH', `Missing Inertia Props on ${inertia.component}`, page.url(), `Required keys missing: ${missingKeys.join(', ')}`, 'Ensure controller passes all required props to Inertia::render()');
+        } else if (requiredPropKeys.length > 0) {
+            this.recordResult(phase, `${testName} [Inertia Props]`, 'PASS', {
+                message: `Verified props [${requiredPropKeys.join(', ')}] present`
+            });
+        }
+
+        return inertia;
     }
 
     recordResult(phase, testName, status, details = {}) {
@@ -198,14 +279,13 @@ export class AuditCollector {
                     }
                 });
 
-                // Anti-AI slop gradient check: scan cards and modals for rainbow/gradient borders
+                // Anti-AI slop gradient check: scan cards and modals for multi-color gradient border accents
                 const cards = document.querySelectorAll('.card, [class*="rounded-"], [class*="shadow-"], modal, [role="dialog"]');
                 const gradientBorderElements = [];
                 cards.forEach((el) => {
-                    const style = window.getComputedStyle(el);
-                    const bg = style.backgroundImage || '';
-                    if (bg.includes('gradient') && (bg.includes('rainbow') || (bg.includes('255,') && bg.includes('rgb(')))) {
-                        gradientBorderElements.push(el.className);
+                    const cls = el.className || '';
+                    if (typeof cls === 'string' && (cls.includes('border-gradient') || cls.includes('rainbow') || (cls.includes('border-') && cls.includes('via-purple')))) {
+                        gradientBorderElements.push(cls);
                     }
                 });
 

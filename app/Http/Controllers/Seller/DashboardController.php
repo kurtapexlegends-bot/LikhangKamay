@@ -98,16 +98,14 @@ class DashboardController extends Controller
             return redirect('/shop');
         }
 
-        if ($user->isArtisan() && is_null($user->setup_completed_at)) {
-            return redirect()->route('artisan.setup');
-        }
+        if ($user->isArtisan() && !$user->isApproved()) {
+            if (is_null($user->setup_completed_at) || $user->isRejected()) {
+                return redirect()->route('artisan.setup');
+            }
 
-        if ($user->isArtisan() && $user->isPendingApproval()) {
-            return redirect()->route('artisan.pending');
-        }
-
-        if ($user->isArtisan() && $user->isRejected()) {
-            return redirect()->route('artisan.setup');
+            if ($user->isPendingApproval()) {
+                return redirect()->route('artisan.pending');
+            }
         }
 
         return null;

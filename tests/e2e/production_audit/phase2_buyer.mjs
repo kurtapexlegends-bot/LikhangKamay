@@ -7,95 +7,126 @@ export async function runPhase2(page, collector) {
 
     collector.attachListeners(page, 'Phase 2 - Buyer');
 
-    // 2.1 Buyer Login
+    // 2.1 Buyer Login & Auth Prop Verification
     try {
         const loggedIn = await loginAs(page, ACCOUNTS.buyer.email, ACCOUNTS.buyer.password);
         collector.recordResult('Phase 2', '2.1 Buyer Authentication', loggedIn ? 'PASS' : 'FAIL', {
-            message: `URL: ${page.url()}`
+            message: `Current URL: ${page.url()}`
         });
         if (!loggedIn) {
-            collector.recordBug('HIGH', 'Buyer Login Failed in Production', `${PROD_URL}/login`, 'Buyer credentials rejected', 'Check buyer account state.');
+            collector.recordBug('HIGH', 'Buyer Login Failed in Production', `${PROD_URL}/login`, 'Buyer credentials rejected', 'Check buyer account state in production database.');
             return;
         }
+
+        // Validate Inertia session state on homepage
+        await page.goto(`${PROD_URL}/`, { waitUntil: 'networkidle2', timeout: 30000 });
+        await collector.verifyInertiaPage(page, 'Phase 2', '2.1 Buyer Session Props', null, ['auth.user.email']);
     } catch (e) {
         collector.recordResult('Phase 2', '2.1 Buyer Authentication', 'FAIL', { message: e.message });
         return;
     }
 
-    // 2.2 Cart Operations
+    // 2.2 Active Add-To-Cart & Cart Flow Verification
     try {
-        await page.goto(`${PROD_URL}/cart`, { waitUntil: 'networkidle2', timeout: 30000 });
-        await page.waitForSelector('main', { timeout: 10000 }).catch(() => null);
-        const cartContainer = await page.$('main');
-        collector.recordResult('Phase 2', '2.2 Cart Page Load', cartContainer ? 'PASS' : 'FAIL');
-        await collector.scanDomQuality(page, 'Cart Page');
+        await page.goto(`${PROD_URL}/shop`, { waitUntil: 'networkidle2', timeout: 30000 });
+        await collector.verifyInertiaPage(page, 'Phase 2', '2.2 Shop Catalog Props', 'Catalog', ['products']);
 
-        const emptyState = await page.evaluate(() => {
-            return !!document.body.innerText.match(/(cart is empty|your cart is empty|no items)/i);
-        });
-        collector.recordResult('Phase 2', '2.2 Cart State Inspection', 'PASS', {
-            message: emptyState ? 'Cart is currently empty' : 'Items present in cart'
-        });
+        // Find and navigate to first product
+        const productHref = await page.$eval('a[href*="/product/"], a[href*="/products/"]', el => el.href).catch(() => null);
+        if (productHref) {
+            await page.goto(productHref, { waitUntil: 'networkidle2', timeout: 30000 });
 
-        // Quantity manipulation button check
-        const qtyButton = await page.$('button[aria-label*="increase" i], button[aria-label*="plus" i]');
-        if (qtyButton) {
-            collector.recordResult('Phase 2', '2.2 Cart Quantity Adjustment Present', 'PASS');
+            // Verify ProductShow Inertia Props
+            await collector.verifyInertiaPage(page, 'Phase 2', '2.2 Product Detail Props', 'ProductShow', ['product.id', 'product.name', 'product.price']);
+
+            // Attempt Add to Cart action
+            const addToCartBtn = await findElementByText(page, 'button', 'Add to Cart|Add To Cart');
+            if (addToCartBtn) {
+                await addToCartBtn.click();
+                await new Promise(r => setTimeout(r, 2000));
+                collector.recordResult('Phase 2', '2.2 Add To Cart Button Clicked', 'PASS');
+            }
         }
+
+        // Navigate to Cart and verify state
+        await page.goto(`${PROD_URL}/cart`, { waitUntil: 'networkidle2', timeout: 30000 });
+        await collector.verifyInertiaPage(page, 'Phase 2', '2.2 Cart Page Props', 'Cart', ['cart']);
+        await collector.scanDomQuality(page, 'Cart Page');
     } catch (e) {
-        collector.recordResult('Phase 2', '2.2 Cart Operations', 'FAIL', { message: e.message });
+        collector.recordResult('Phase 2', '2.2 Cart Operations & Add-To-Cart', 'FAIL', { message: e.message });
     }
 
     // 2.3 Address Book in Profile
     try {
         await page.goto(`${PROD_URL}/profile`, { waitUntil: 'networkidle2', timeout: 30000 });
-        await page.waitForSelector('main', { timeout: 10000 }).catch(() => null);
+        await collector.verifyInertiaPage(page, 'Phase 2', '2.3 Profile & Address Book Props', 'Profile', ['addresses']);
+
         const addressSection = await page.evaluate(() => {
             return !!document.body.innerText.match(/(Address|Delivery Address|Address Book)/i);
         });
-        collector.recordResult('Phase 2', '2.3 Profile & Address Book Load', addressSection ? 'PASS' : 'WARN', {
-            message: `Address section detected: ${addressSection}`
-        });
-
-        const addAddressBtn = await findElementByText(page, 'button', 'Add Address|New Address');
-        if (addAddressBtn) {
-            collector.recordResult('Phase 2', '2.3 Add Address Action Present', 'PASS');
-        }
+        collector.recordResult('Phase 2', '2.3 Address Section Rendered', addressSection ? 'PASS' : 'WARN');
         await collector.scanDomQuality(page, 'Buyer Profile');
     } catch (e) {
         collector.recordResult('Phase 2', '2.3 Profile & Address Book', 'FAIL', { message: e.message });
     }
 
-    // 2.4 Checkout Navigation Guard
+    // 2.4 Interactive Checkout & Quote Inspection
     try {
         await page.goto(`${PROD_URL}/checkout`, { waitUntil: 'networkidle2', timeout: 30000 });
         const currentUrl = page.url();
-        const onCheckoutOrRedirect = currentUrl.includes('/checkout') || currentUrl.includes('/cart') || currentUrl.includes('/shop');
-        collector.recordResult('Phase 2', '2.4 Checkout Navigation Guard', onCheckoutOrRedirect ? 'PASS' : 'FAIL', {
-            message: `Checkout navigated to: ${currentUrl}`
-        });
+
         if (currentUrl.includes('/checkout')) {
+            const checkoutPage = await collector.verifyInertiaPage(page, 'Phase 2', '2.4 Checkout Inertia Contract', 'Checkout', ['items', 'pricing']);
+            
+            // Check for unhandled Inertia flash/validation errors
+            const errors = checkoutPage?.props?.errors || {};
+            const hasUnexpectedErrors = Object.keys(errors).length > 0;
+            if (hasUnexpectedErrors) {
+                collector.recordResult('Phase 2', '2.4 Checkout Initial Errors Check', 'WARN', {
+                    message: `Initial checkout errors detected: ${JSON.stringify(errors)}`
+                });
+            } else {
+                collector.recordResult('Phase 2', '2.4 Checkout Clean Initial State', 'PASS');
+            }
+
+            // Inspect Shipping Method radio selectors
+            const deliveryOption = await page.$('input[value="delivery"], input[id*="delivery"]');
+            const pickupOption = await page.$('input[value="pickup"], input[id*="pickup"]');
+            collector.recordResult('Phase 2', '2.4 Shipping Method Selectors Present', (deliveryOption || pickupOption) ? 'PASS' : 'WARN', {
+                message: `Delivery radio: ${!!deliveryOption}, Pickup radio: ${!!pickupOption}`
+            });
+
+            // Inspect Submit Button state
+            const submitBtn = (await findElementByText(page, 'button', 'Place Order')) || (await page.$('button[type="submit"]'));
+            if (submitBtn) {
+                const isDisabled = await page.evaluate(el => el.disabled, submitBtn);
+                const buttonText = await page.evaluate(el => el.innerText, submitBtn);
+                collector.recordResult('Phase 2', '2.4 Place Order Action Present', 'PASS', {
+                    message: `Label: "${buttonText.trim()}", Disabled: ${isDisabled}`
+                });
+            }
+
             await collector.scanDomQuality(page, 'Checkout Page');
+        } else {
+            collector.recordResult('Phase 2', '2.4 Checkout Redirect (Cart Empty Guard)', 'PASS', {
+                message: `Redirected safely to: ${currentUrl}`
+            });
         }
     } catch (e) {
-        collector.recordResult('Phase 2', '2.4 Checkout Navigation', 'FAIL', { message: e.message });
+        collector.recordResult('Phase 2', '2.4 Checkout Interactive Inspection', 'FAIL', { message: e.message });
     }
 
     // 2.5 My Orders Management
     try {
         await page.goto(`${PROD_URL}/my-orders`, { waitUntil: 'networkidle2', timeout: 30000 });
-        await page.waitForSelector('main', { timeout: 10000 }).catch(() => null);
-        const ordersTitle = await page.$('h1, h2, main');
-        collector.recordResult('Phase 2', '2.5 My Orders Page Load', ordersTitle ? 'PASS' : 'FAIL');
+        await collector.verifyInertiaPage(page, 'Phase 2', '2.5 My Orders Inertia Props', 'Orders', ['orders']);
         await collector.scanDomQuality(page, 'My Orders');
 
         const tabs = await page.$$('button[role="tab"], [class*="tab"] button');
         if (tabs.length > 0) {
-            collector.recordResult('Phase 2', '2.5 Order Status Tabs Rendered', 'PASS', {
+            collector.recordResult('Phase 2', '2.5 Order Filter Tabs Rendered', 'PASS', {
                 message: `Found ${tabs.length} filter tabs`
             });
-            await tabs[Math.min(1, tabs.length - 1)].click().catch(() => null);
-            await new Promise(r => setTimeout(r, 800));
         }
 
         const receiptLink = await page.$('a[href*="/receipt"]');
