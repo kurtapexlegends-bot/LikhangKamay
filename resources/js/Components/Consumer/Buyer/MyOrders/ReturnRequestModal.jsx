@@ -7,6 +7,7 @@ import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { compressImage } from '@/utils/imageCompressor';
 import ProofAnnotationModal from './ProofAnnotationModal';
+import { useToast } from '@/Components/ToastContext';
 
 export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoint = 'my-orders.dispute' }) {
     const { data, setData, post, processing, errors, reset, clearErrors, transform } = useForm({
@@ -16,6 +17,8 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
 
     const [previewUrls, setPreviewUrls] = useState([]);
     const [annotationTarget, setAnnotationTarget] = useState(null);
+    const [payloadError, setPayloadError] = useState(null);
+    const { addToast } = useToast() || {};
     const isMobileOrTablet = useMediaQuery('(max-width: 1023px)');
 
     const revokePreviews = () => {
@@ -54,6 +57,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
             clearErrors();
             revokePreviews();
             setPreviewUrls([]);
+            setPayloadError(null);
         }
     }, [isOpen]);
 
@@ -62,6 +66,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
     }, [previewUrls]);
 
     const handleFileChange = async (e) => {
+        setPayloadError(null);
         const files = Array.from(e.target.files || []);
         if (files.length + data.proof_photos.length > 5) {
             alert('You can upload up to 5 photos in total.');
@@ -78,6 +83,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
     };
 
     const handleRemoveFile = (index) => {
+        setPayloadError(null);
         const updatedFiles = [...data.proof_photos];
         updatedFiles.splice(index, 1);
         setData('proof_photos', updatedFiles);
@@ -92,6 +98,27 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        // Calculate cumulative byte size of raw File instances
+        let totalPayloadBytes = 0;
+        if (Array.isArray(data.proof_photos)) {
+            data.proof_photos.forEach((f) => {
+                if (f instanceof File) {
+                    totalPayloadBytes += f.size || 0;
+                }
+            });
+        }
+        const MAX_MULTIPART_BYTES = 4 * 1024 * 1024; // 4MB ceiling for serverless multipart payload
+        if (totalPayloadBytes > MAX_MULTIPART_BYTES) {
+            const errorMsg = 'Total proof photos payload exceeds 4MB serverless limit. Please compress or remove some photos.';
+            setPayloadError(errorMsg);
+            if (typeof addToast === 'function') {
+                addToast(errorMsg, 'error');
+            }
+            return;
+        }
+        setPayloadError(null);
+
         transform((curr) => ({
             ...curr,
             return_reason: curr.reason,
@@ -109,7 +136,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
     if (!order) return null;
 
     const reasonError = errors.reason || errors.return_reason;
-    const proofError = errors.proof_photos || errors.return_proof_image || errors.proof_photo;
+    const proofError = errors.proof_photos || errors.return_proof_image || errors.proof_photo || payloadError;
     const generalError = errors.message || errors.error;
 
     const renderFormContent = () => (
@@ -164,7 +191,15 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
                     <div className="mt-4 grid grid-cols-5 gap-2">
                         {previewUrls.map((url, index) => (
                             <div key={index} className="relative aspect-square rounded-lg border border-stone-200 overflow-hidden group">
-                                <img src={url} alt="Preview" className="h-full w-full object-cover" />
+                                <img
+                                    src={url}
+                                    alt="Preview"
+                                    className="h-full w-full object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = '/images/placeholder.svg';
+                                    }}
+                                />
                                 <button
                                     type="button"
                                     onClick={() => handleRemoveFile(index)}

@@ -4,6 +4,7 @@ import Modal from '@/Components/Modal';
 import { Star, Image as ImageIcon, X, Send, Loader2, Trash2, Pencil } from 'lucide-react';
 import { compressImage } from '@/utils/imageCompressor';
 import { useConfirm } from '@/hooks/useConfirm';
+import { useToast } from '@/Components/ToastContext';
 
 const StarRating = ({ rating, setRating, readOnly = false, size = 24 }) => {
     const [hover, setHover] = useState(0);
@@ -43,7 +44,9 @@ const ReviewForm = ({ item, onSuccess }) => {
     const [previewUrls, setPreviewUrls] = useState(existingReview?.photos || []);
     const [isDragging, setIsDragging] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [payloadError, setPayloadError] = useState(null);
     const { confirm, ConfirmationDialog } = useConfirm();
+    const { addToast } = useToast() || {};
 
     const { data, setData, post, processing, errors, reset, transform } = useForm({
         product_id: item.product_id,
@@ -73,6 +76,8 @@ const ReviewForm = ({ item, onSuccess }) => {
 
         if (!acceptedFiles.length) return;
 
+        setPayloadError(null);
+
         const compressedFiles = await Promise.all(
             acceptedFiles.map((file) => compressImage(file, 1600, 1600, 0.85))
         );
@@ -91,6 +96,7 @@ const ReviewForm = ({ item, onSuccess }) => {
     };
 
     const removePhoto = (index) => {
+        setPayloadError(null);
         const nextPhotos = [...data.photos];
         const nextPreviews = [...previewUrls];
         const preview = nextPreviews[index];
@@ -108,6 +114,26 @@ const ReviewForm = ({ item, onSuccess }) => {
 
     const submit = (e) => {
         e.preventDefault();
+
+        // Calculate cumulative byte size of raw File instances
+        let totalPayloadBytes = 0;
+        if (Array.isArray(data.photos)) {
+            data.photos.forEach((f) => {
+                if (f instanceof File) {
+                    totalPayloadBytes += f.size || 0;
+                }
+            });
+        }
+        const MAX_MULTIPART_BYTES = 4 * 1024 * 1024; // 4MB ceiling for serverless multipart payload
+        if (totalPayloadBytes > MAX_MULTIPART_BYTES) {
+            const errorMsg = 'Total upload payload exceeds 4MB serverless limit. Please compress or remove some photos.';
+            setPayloadError(errorMsg);
+            if (typeof addToast === 'function') {
+                addToast(errorMsg, 'error');
+            }
+            return;
+        }
+        setPayloadError(null);
 
         const options = {
             forceFormData: true,
@@ -160,10 +186,11 @@ const ReviewForm = ({ item, onSuccess }) => {
                 {processing && <Loader2 size={16} className="animate-spin text-clay-600" />}
             </div>
 
-            {Object.keys(errors).length > 0 && (
+            {(Object.keys(errors).length > 0 || payloadError) && (
                 <div className="mb-4 rounded-xl border border-red-100 bg-red-50 p-3 text-xs text-red-600 animate-pulse">
                     <p className="mb-1 font-bold">Please fix the following errors:</p>
                     <ul className="list-inside list-disc">
+                        {payloadError && <li>{payloadError}</li>}
                         {Object.values(errors).map((err, i) => <li key={i}>{err}</li>)}
                     </ul>
                 </div>
@@ -198,7 +225,15 @@ const ReviewForm = ({ item, onSuccess }) => {
                 <div className="flex flex-wrap gap-2">
                     {previewUrls.map((url, idx) => (
                         <div key={`${url}-${idx}`} className="group relative h-20 w-20 overflow-hidden rounded-xl border border-gray-200 shadow-sm">
-                            <img src={url} alt="Preview" className="h-full w-full object-cover" />
+                            <img
+                                src={url}
+                                alt="Preview"
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = '/images/placeholder.svg';
+                                }}
+                            />
                             {url.startsWith('blob:') && (
                                 <button
                                     type="button"
@@ -308,6 +343,10 @@ export default function RatingModal({ isOpen, onClose, order }) {
                                                 src={item.img}
                                                 alt={item.name}
                                                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                onError={(e) => {
+                                                    e.currentTarget.onerror = null;
+                                                    e.currentTarget.src = '/images/placeholder.svg';
+                                                }}
                                             />
                                         </div>
                                         <div className="min-w-0 flex-1">

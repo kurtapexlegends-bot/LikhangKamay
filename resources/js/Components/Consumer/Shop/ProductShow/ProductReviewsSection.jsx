@@ -6,6 +6,7 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { compressImage } from '@/utils/imageCompressor';
 import { resolveImageUrl } from '@/lib/media';
 import ProductImageLightboxModal from './ProductImageLightboxModal';
+import { useToast } from '@/Components/ToastContext';
 
 export default function ProductReviewsSection({
     product,
@@ -25,6 +26,31 @@ export default function ProductReviewsSection({
     currentReviewPhotos,
 }) {
     const [activeReviewGallery, setActiveReviewGallery] = useState({ open: false, photos: [], index: 0, title: '' });
+    const [payloadError, setPayloadError] = useState(null);
+    const { addToast } = useToast() || {};
+
+    const handleFormSubmit = (e) => {
+        e.preventDefault();
+        let totalPayloadBytes = 0;
+        if (Array.isArray(data.photos)) {
+            data.photos.forEach((f) => {
+                if (f instanceof File) {
+                    totalPayloadBytes += f.size || 0;
+                }
+            });
+        }
+        const MAX_MULTIPART_BYTES = 4 * 1024 * 1024; // 4MB ceiling for serverless multipart payload
+        if (totalPayloadBytes > MAX_MULTIPART_BYTES) {
+            const errorMsg = 'Total upload payload exceeds 4MB serverless limit. Please compress or remove some photos.';
+            setPayloadError(errorMsg);
+            if (typeof addToast === 'function') {
+                addToast(errorMsg, 'error');
+            }
+            return;
+        }
+        setPayloadError(null);
+        submitReview(e);
+    };
     return (
         <div className="mt-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
             <h2 className="text-base font-bold text-gray-900 mb-4 pb-3 border-b border-gray-100 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -152,9 +178,10 @@ export default function ProductReviewsSection({
                                     Reviews are disabled for pending artisan accounts.
                                 </div>
                             ) : canWriteReview ? (
-                                <form onSubmit={submitReview} className="space-y-3">
-                                    {Object.keys(errors).length > 0 && (
+                                <form onSubmit={handleFormSubmit} className="space-y-3">
+                                    {(Object.keys(errors).length > 0 || payloadError) && (
                                         <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
+                                            {payloadError && <p className="font-semibold">{payloadError}</p>}
                                             {Object.values(errors).map((error, index) => (
                                                 <p key={index}>{error}</p>
                                             ))}
@@ -199,6 +226,7 @@ export default function ProductReviewsSection({
                                             multiple 
                                             accept="image/*"
                                             onChange={async (e) => {
+                                                setPayloadError(null);
                                                 const rawFiles = Array.from(e.target.files || []).slice(0, 3);
                                                 const compressed = await Promise.all(
                                                     rawFiles.map((file) => compressImage(file, 1600, 1600, 0.85))
@@ -215,6 +243,7 @@ export default function ProductReviewsSection({
                                                             src={previewUrl}
                                                             alt="Preview" 
                                                             className="w-full h-full object-cover" 
+                                                            onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/placeholder.svg'; }}
                                                         />
                                                     </div>
                                                 ))}

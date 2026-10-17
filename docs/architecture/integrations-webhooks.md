@@ -201,3 +201,23 @@ To support reliable offline fallback and accelerate heavy 3D craft model loading
 *   **Viewer Fallback & Preloading**:
     *   Exported `preloadProduct3D(url)` in [ProductViewer3D.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/ThreeD/ProductViewer3D.jsx) enables speculative preloading on high-speed connections.
     *   [ThreeDModelBoundary.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/ThreeD/ThreeDModelBoundary.jsx) catches malformed models or network connection drops, providing an interactive retry button without unmounting parent components.
+
+---
+
+## 8. Client-Side Serverless Payload Shield (<4MB) & Media Fallbacks
+
+To ensure stability on Vercel Serverless (which enforces a strict 4.5MB edge gateway request payload ceiling) and prevent broken image layouts across low-bandwidth environments, LikhangKamay enforces client-side upload payload ceilings and one-shot error handling.
+
+### Multi-File Form Cumulative Byte Guards
+*   **Target Components**:
+    *   [RatingModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Consumer/RatingModal.jsx): Calculates cumulative byte size across attached review photo `File` instances (`sum(files.size) < 4MB`) before dispatching `post()`.
+    *   [ReturnRequestModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Consumer/Buyer/MyOrders/ReturnRequestModal.jsx): Enforces 4MB cumulative ceiling on return dispute proof attachments while preserving array transform structures.
+    *   [ProductReviewsSection.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Consumer/Shop/ProductShow/ProductReviewsSection.jsx): Enforces 4MB cumulative check with dual inline errors and toast alerts.
+    *   [useProductFormState.js](file:///c:/laragon/www/LikhangKamay/resources/js/hooks/useProductFormState.js): Enforces 4MB aggregate calculation across cover, gallery, and companion textures, with direct presigned S3/R2 PUT bypass for 3D GLTF bundles.
+
+### Standardized One-Shot Media `onError` Fallbacks
+*   All dynamic cloud storage and user-uploaded `<img>` elements implement standardized error cancellation:
+    ```javascript
+    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/placeholder.svg'; }}
+    ```
+*   Setting `onerror = null` guarantees that even if the fallback `/images/placeholder.svg` fails to load under a disconnected state, the browser thread does not enter a recursive event loop.

@@ -111,6 +111,24 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
 
     const submitReview = (e) => {
         e.preventDefault();
+
+        // Calculate cumulative byte size of raw File instances
+        let totalPayloadBytes = 0;
+        if (Array.isArray(reviewData.photos)) {
+            reviewData.photos.forEach((f) => {
+                if (f instanceof File) {
+                    totalPayloadBytes += f.size || 0;
+                }
+            });
+        }
+        const MAX_MULTIPART_BYTES = 4 * 1024 * 1024; // 4MB ceiling for serverless multipart payload
+        if (totalPayloadBytes > MAX_MULTIPART_BYTES) {
+            if (typeof addToast === 'function') {
+                addToast('Total review photos payload exceeds 4MB serverless limit. Please compress or remove some photos.', 'error');
+            }
+            return;
+        }
+
         const options = {
             forceFormData: true,
             preserveScroll: true,
