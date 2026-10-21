@@ -91,12 +91,12 @@ export async function runPhase1(page, collector) {
                 message: `Product: "${productTitle}", WebGL Canvas present: ${canvasExists}`
             });
 
-            // Inspect Recipe / "Crafted with Materials" drawer or badge
+            // Inspect Craft Transparency / Artisan Specifications drawer or badge
             const recipeInfo = await page.evaluate(() => {
-                return !!document.body.innerText.match(/(Materials|Recipe|Crafted with)/i);
+                return !!document.body.innerText.match(/(Handmade|Materials|Recipe|Crafted|Lead Time|Handled With Care)/i);
             });
             collector.recordResult('Phase 1', '1.3 Recipe Transparency Pill', recipeInfo ? 'PASS' : 'WARN', {
-                message: `Materials information visible: ${recipeInfo}`
+                message: `Artisan craft specifications visible: ${recipeInfo}`
             });
 
             // Inspect Add to Cart button

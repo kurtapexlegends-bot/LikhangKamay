@@ -6,8 +6,8 @@ export const PROD_URL = process.env.TARGET_URL || process.env.APP_URL || 'https:
 
 export const ACCOUNTS = {
     seller: {
-        email: process.env.E2E_SELLER_EMAIL || 'artisan@likhangkamay.com',
-        password: process.env.E2E_SELLER_PASSWORD || 'LikhangKamay2026!',
+        email: process.env.E2E_SELLER_EMAIL || 'test.artisan@likhangkamay.local',
+        password: process.env.E2E_SELLER_PASSWORD || 'LikhangKamayTest2026!',
         role: 'artisan'
     },
     buyer: {

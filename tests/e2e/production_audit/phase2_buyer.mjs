@@ -89,11 +89,11 @@ export async function runPhase2(page, collector) {
                 collector.recordResult('Phase 2', '2.4 Checkout Clean Initial State', 'PASS');
             }
 
-            // Inspect Shipping Method radio selectors
-            const deliveryOption = await page.$('input[value="delivery"], input[id*="delivery"]');
-            const pickupOption = await page.$('input[value="pickup"], input[id*="pickup"]');
+            // Inspect Shipping Method radio selectors (Standard Delivery or Workshop Pick Up)
+            const deliveryOption = await page.$('input[value="Delivery"], input[value="delivery" i], input[name="shipping_method"]');
+            const pickupOption = await page.$('input[value="Pick Up"], input[value="pickup" i]');
             collector.recordResult('Phase 2', '2.4 Shipping Method Selectors Present', (deliveryOption || pickupOption) ? 'PASS' : 'WARN', {
-                message: `Delivery radio: ${!!deliveryOption}, Pickup radio: ${!!pickupOption}`
+                message: `Delivery selector: ${!!deliveryOption}, Pickup selector: ${!!pickupOption}`
             });
 
             // Inspect Submit Button state
