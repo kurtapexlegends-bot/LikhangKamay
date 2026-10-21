@@ -308,5 +308,36 @@ class HomepageMerchandisingSourceTest extends TestCase
         $this->assertEquals($dateB->id, $newestResult[1]->id);
         $this->assertEquals($dateC->id, $newestResult[2]->id);
         $this->assertEquals($dateD->id, $newestResult[3]->id);
+
+        // Marketplace Standard: Default sorting without explicit parameter is 'popular'
+        $defaultResult = $service->buildCatalogQuery([])->get();
+        $this->assertEquals($dateD->id, $defaultResult[0]->id, 'Default sort should be popular (highest sold first)');
+
+        // Clean slate for out-of-stock deprioritization testing
+        Product::query()->delete();
+
+        // In-stock item with modest sales
+        $inStock = Product::forceCreate([
+            'user_id' => $seller->id, 'sku' => 'STOCK-IN', 'name' => 'In Stock Mug',
+            'category' => 'Drinkware', 'status' => 'Active', 'price' => 200,
+            'stock' => 5, 'sold' => 2, 'rating' => 4.0,
+        ]);
+
+        // Out-of-stock item with massive sales
+        $outOfStock = Product::forceCreate([
+            'user_id' => $seller->id, 'sku' => 'STOCK-OUT', 'name' => 'Sold Out Masterpiece',
+            'category' => 'Drinkware', 'status' => 'Active', 'price' => 50,
+            'stock' => 0, 'sold' => 500, 'rating' => 5.0,
+        ]);
+
+        // Out-of-stock must be placed at the end even with higher sales / rating in 'popular'
+        $popWithStock = $service->buildCatalogQuery(['sort' => 'popular'])->get();
+        $this->assertEquals($inStock->id, $popWithStock[0]->id);
+        $this->assertEquals($outOfStock->id, $popWithStock[1]->id);
+
+        // Out-of-stock must be placed at the end even with lower price in 'price_low'
+        $priceWithStock = $service->buildCatalogQuery(['sort' => 'price_low'])->get();
+        $this->assertEquals($inStock->id, $priceWithStock[0]->id);
+        $this->assertEquals($outOfStock->id, $priceWithStock[1]->id);
     }
 }

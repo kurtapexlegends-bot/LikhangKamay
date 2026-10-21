@@ -45,7 +45,7 @@ This document details the core Laravel Eloquent models, their database relations
 *   [ProductDetailResource.php](file:///c:/laragon/www/LikhangKamay/app/Http/Resources/Consumer/ProductDetailResource.php), [SellerProductResource.php](file:///c:/laragon/www/LikhangKamay/app/Http/Resources/Seller/SellerProductResource.php): Transforms Eloquent products into JSON formats.
 
 ### Product & Catalog Services
-*   [CatalogService.php](file:///c:/laragon/www/LikhangKamay/app/Services/CatalogService.php): Orchestrates high-level listing queries, categories filtering, and status gating.
+*   [CatalogService.php](file:///c:/laragon/www/LikhangKamay/app/Services/CatalogService.php): Orchestrates high-level listing queries, categories filtering, status gating, ANSI out-of-stock deprioritization (`CASE WHEN products.stock > 0 THEN 0 ELSE 1 END ASC`), search relevance boosting (direct shop name/title priority), and default popularity ranking.
 *   [ProductMediaService.php](file:///c:/laragon/www/LikhangKamay/app/Services/Catalog/ProductMediaService.php): Handles supabase file uploads and metadata updates.
 *   [ThreeDAssetService.php](file:///c:/laragon/www/LikhangKamay/app/Services/Catalog/ThreeDAssetService.php): Manages GLB/GLTF file checks and validation.
 *   [LocalImageTransformer.php](file:///c:/laragon/www/LikhangKamay/app/Services/LocalImageTransformer.php): Image optimization service.

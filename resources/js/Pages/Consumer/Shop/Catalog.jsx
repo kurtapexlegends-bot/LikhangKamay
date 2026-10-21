@@ -30,7 +30,7 @@ export default function Catalog(props) {
     const [minPrice, setMinPrice] = useState(safeFilters.price_min || '');
     const [maxPrice, setMaxPrice] = useState(safeFilters.price_max || '');
     const [activeCategory, setActiveCategory] = useState(safeFilters.category || 'All');
-    const [sortBy, setSortBy] = useState(safeFilters.sort || 'newest');
+    const [sortBy, setSortBy] = useState(safeFilters.sort || 'popular');
     const [searchTerm, setSearchTerm] = useState(safeFilters.search || '');
     const [followedOnly, setFollowedOnly] = useState(Boolean(safeFilters.followed_only));
 
@@ -64,7 +64,7 @@ export default function Catalog(props) {
         setSelectedMaterials(safeFilters.materials ? String(safeFilters.materials).split(',') : []);
         setMinRating(safeFilters.min_rating || '');
         setFollowedOnly(Boolean(safeFilters.followed_only));
-        setSortBy(safeFilters.sort || 'newest');
+        setSortBy(safeFilters.sort || 'popular');
     }, [props.products, props.filters]);
 
     const sponsoredProducts = Array.isArray(props.sponsoredProducts)
@@ -97,8 +97,8 @@ export default function Catalog(props) {
 
     // Sort options configuration
     const sortOptions = [
-        { value: 'newest', label: 'Newest Arrivals' },
         { value: 'popular', label: 'Most Popular' },
+        { value: 'newest', label: 'Newest Arrivals' },
         { value: 'rating', label: 'Highest Rated' },
         { value: 'price_low', label: 'Price: Low to High' },
         { value: 'price_high', label: 'Price: High to Low' },

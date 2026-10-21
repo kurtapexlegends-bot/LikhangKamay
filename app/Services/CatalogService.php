@@ -294,7 +294,7 @@ class CatalogService
             $query->where('rating', '>=', (float) $filters['min_rating']);
         }
 
-        $this->applyCatalogSorting($query, $filters['sort'] ?? null);
+        $this->applyCatalogSorting($query, $filters['sort'] ?? null, $filters['search'] ?? null);
 
         return $query;
     }
@@ -302,8 +302,20 @@ class CatalogService
     /**
      * Apply multi-layered tie-breaker sorting configurations.
      */
-    private function applyCatalogSorting(\Illuminate\Database\Eloquent\Builder $query, ?string $sort)
+    private function applyCatalogSorting(\Illuminate\Database\Eloquent\Builder $query, ?string $sort, ?string $search = null)
     {
+        // Deprioritize out-of-stock items across all sort modes (Shopee/Lazada marketplace standard)
+        $query->orderByRaw('CASE WHEN products.stock > 0 THEN 0 ELSE 1 END ASC');
+
+        // Relevance boost: Prioritize direct shop name or product title matches over description-only matches
+        if (!empty($search) && (empty($sort) || in_array($sort, ['popular', 'relevance', 'top_sales']))) {
+            $searchLower = '%' . mb_strtolower(trim($search)) . '%';
+            $query->orderByRaw(
+                'CASE WHEN (EXISTS (SELECT 1 FROM users WHERE users.id = products.user_id AND (LOWER(users.shop_name) LIKE ? OR LOWER(users.name) LIKE ?)) OR LOWER(products.name) LIKE ?) THEN 0 ELSE 1 END ASC',
+                [$searchLower, $searchLower, $searchLower]
+            );
+        }
+
         switch ($sort) {
             case 'price_low':
                 $query->orderBy('price', 'asc')
@@ -317,21 +329,23 @@ class CatalogService
                       ->orderByDesc('rating')
                       ->orderByDesc('created_at');
                 break;
-            case 'popular':
-                $query->orderByDesc('sold')
-                      ->orderByDesc('rating')
-                      ->orderByDesc('created_at');
+            case 'newest':
+            case 'latest':
+                $query->orderByDesc('created_at')
+                      ->orderByDesc('sold')
+                      ->orderByDesc('rating');
                 break;
             case 'rating':
                 $query->orderByDesc('rating')
                       ->orderByDesc('sold')
                       ->orderByDesc('created_at');
                 break;
-            case 'newest':
+            case 'popular':
+            case 'top_sales':
             default:
-                $query->orderByDesc('created_at')
-                      ->orderByDesc('sold')
-                      ->orderByDesc('rating');
+                $query->orderByDesc('sold')
+                      ->orderByDesc('rating')
+                      ->orderByDesc('created_at');
                 break;
         }
     }
@@ -509,7 +523,7 @@ class CatalogService
                             !$request->filled('materials') &&
                             !$request->filled('min_rating') &&
                             !$request->boolean('followed_only') &&
-                            (!$request->filled('sort') || $request->sort === 'newest') &&
+                            (!$request->filled('sort') || $request->sort === 'popular') &&
                             ((int) $request->get('page', 1) === 1);
 
         if ($isDefaultRequest) {
