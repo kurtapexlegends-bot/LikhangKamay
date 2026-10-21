@@ -22,6 +22,11 @@ class EnsureSellerWorkspaceAccess
 
         if ($user) {
             if ($user->isArtisan()) {
+                if ($user->isApproved() && $user->setup_completed_at === null) {
+                    $user->update([
+                        'setup_completed_at' => $user->approved_at ?? $user->created_at ?? now(),
+                    ]);
+                }
                 $user->enforceSubscriptionExpirationIfDue();
             } elseif ($user->isStaff() && $user->sellerOwner) {
                 if ($user->sellerOwner->enforceSubscriptionExpirationIfDue()) {

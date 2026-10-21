@@ -52,7 +52,7 @@ trait HasArtisanSubscriptions
     public function canAccessSellerOwnerRoutes(): bool
     {
         return $this->isArtisan()
-            && $this->setup_completed_at !== null
+            && ($this->setup_completed_at !== null || $this->isApproved())
             && !$this->isPendingApproval()
             && !$this->isRejected();
     }

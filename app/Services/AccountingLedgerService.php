@@ -65,16 +65,20 @@ class AccountingLedgerService
     public function buildFinancialSnapshot(User $seller): array
     {
         $userId = $seller->id;
+        $isTest = (bool) ($seller->is_test ?? false);
 
         $totalRevenue = (float) Order::where('artisan_id', $userId)
+            ->when(!$isTest, fn($q) => $q->where('is_test', \App\Casts\PostgresCompatibleBoolean::dbVal(false)))
             ->where('status', 'Completed')
             ->sum('seller_net_amount');
 
         $ordersInProgress = (float) Order::where('artisan_id', $userId)
+            ->when(!$isTest, fn($q) => $q->where('is_test', \App\Casts\PostgresCompatibleBoolean::dbVal(false)))
             ->whereIn('status', ['Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup'])
             ->sum('seller_net_amount');
 
         $heldForDispute = (float) Order::where('artisan_id', $userId)
+            ->when(!$isTest, fn($q) => $q->where('is_test', \App\Casts\PostgresCompatibleBoolean::dbVal(false)))
             ->where('status', 'Completed')
             ->where(function ($query) {
                 $query->whereHas('dispute', function ($q) {
@@ -98,6 +102,7 @@ class AccountingLedgerService
             ->sum('total_cost');
 
         $payrollExpenses = Payroll::where('user_id', $userId)
+            ->when(!$isTest, fn($q) => $q->where('is_test', \App\Casts\PostgresCompatibleBoolean::dbVal(false)))
             ->where('status', 'Paid')
             ->sum('total_amount');
 
@@ -107,6 +112,7 @@ class AccountingLedgerService
             ->sum('amount');
 
         $codRevenue = (float) Order::where('artisan_id', $userId)
+            ->when(!$isTest, fn($q) => $q->where('is_test', \App\Casts\PostgresCompatibleBoolean::dbVal(false)))
             ->where('status', 'Completed')
             ->where('payment_method', 'COD')
             ->sum('seller_net_amount');

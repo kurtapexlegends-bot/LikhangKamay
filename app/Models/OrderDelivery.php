@@ -57,9 +57,11 @@ class OrderDelivery extends Model
         'location_updated_at',
         'heading',
         'speed_kph',
+        'is_test',
     ];
 
     protected $casts = [
+        'is_test' => \App\Casts\PostgresCompatibleBoolean::class,
         'price_breakdown' => 'array',
         'quotation_payload' => 'array',
         'order_payload' => 'array',

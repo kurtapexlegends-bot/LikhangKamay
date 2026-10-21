@@ -15,6 +15,16 @@ export const ACCOUNTS = {
         password: process.env.E2E_BUYER_PASSWORD || 'password',
         role: 'buyer'
     },
+    staff: {
+        email: process.env.E2E_STAFF_EMAIL || 'test.staff@likhangkamay.local',
+        password: process.env.E2E_STAFF_PASSWORD || 'LikhangKamayTest2026!',
+        role: 'staff'
+    },
+    driver: {
+        email: process.env.E2E_DRIVER_EMAIL || 'test.driver@likhangkamay.local',
+        password: process.env.E2E_DRIVER_PASSWORD || 'LikhangKamayTest2026!',
+        role: 'driver'
+    },
     admin: {
         email: process.env.E2E_ADMIN_EMAIL || 'likhangkamaybusiness@gmail.com',
         password: process.env.E2E_ADMIN_PASSWORD || 'password',

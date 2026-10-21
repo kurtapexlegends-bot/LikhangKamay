@@ -62,7 +62,7 @@ return [
         'environment' => env('LALAMOVE_ENV', 'sandbox'),
         'market' => env('LALAMOVE_MARKET', 'PH'),
         'service_type' => env('LALAMOVE_SERVICE_TYPE', 'MOTORCYCLE'),
-        'webhook_secret' => env('LALAMOVE_WEBHOOK_SECRET'),
+        'webhook_secret' => env('LALAMOVE_WEBHOOK_SECRET', env('LALAMOVE_API_SECRET')),
         'timeout' => env('LALAMOVE_TIMEOUT', 5),
         'connect_timeout' => env('LALAMOVE_CONNECT_TIMEOUT', 2),
     ],

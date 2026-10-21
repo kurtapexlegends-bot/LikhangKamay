@@ -361,6 +361,7 @@ class PlaceOrder
                     'pickup_pin' => $pickupPin,
                     'pickup_location_id' => $pickupLocationId,
                     'pickup_location_snapshot' => $pickupLocationSnapshot,
+                    'is_test' => (bool) ($buyer->is_test ?? false),
                 ]));
 
                 foreach ($items as $item) {

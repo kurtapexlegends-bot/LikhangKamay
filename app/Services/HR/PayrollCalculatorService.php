@@ -207,6 +207,7 @@ class PayrollCalculatorService
                 'employee_count' => $employeeCount,
                 'status' => $isDraft ? 'Draft' : 'Pending',
                 'submitted_at' => $isDraft ? null : now(config('app.timezone')),
+                'is_test' => (bool) (($seller->is_test ?? false) || ($actor->is_test ?? false)),
             ]));
 
             foreach ($selectedItems as $item) {

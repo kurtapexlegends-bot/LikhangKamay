@@ -36,6 +36,7 @@ class BulkApproveArtisans
                     'artisan_status' => 'approved',
                     'approved_at' => now(),
                     'approved_by' => $adminId,
+                    'setup_completed_at' => $artisan->setup_completed_at ?? now(),
                 ]);
             });
 

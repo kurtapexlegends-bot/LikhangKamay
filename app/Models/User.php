@@ -192,6 +192,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'break_window_start',
         'break_window_end',
         'break_allowance_minutes',
+        'is_test',
     ];
 
     /**
@@ -240,6 +241,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'auto_reply_on_completion' => \App\Casts\PostgresCompatibleBoolean::class,
             'artisan_welcomed' => \App\Casts\PostgresCompatibleBoolean::class,
             'is_verified' => \App\Casts\PostgresCompatibleBoolean::class,
+            'is_test' => \App\Casts\PostgresCompatibleBoolean::class,
         ];
     }
 

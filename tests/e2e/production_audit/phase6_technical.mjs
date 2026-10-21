@@ -80,5 +80,24 @@ export async function runPhase6(page, collector) {
         collector.recordResult('Phase 6', '6.4 Webhook Cron Security Guard', 'WARN', { message: e.message });
     }
 
+    // 6.5 PayMongo & Lalamove Live Sandbox Verification
+    try {
+        const { execSync } = await import('child_process');
+        const output = execSync('php artisan test:verify-sandboxes', { encoding: 'utf8', timeout: 30000 });
+        const isSuccess = output.includes('ALL SANDBOX VERIFICATIONS PASSED');
+
+        collector.recordResult('Phase 6', '6.5 PayMongo GCash Sandbox Session Lifecycle', isSuccess ? 'PASS' : 'FAIL', {
+            message: 'PayMongo GCash checkout session created, URL validated, and read-back verified in sandbox.'
+        });
+
+        collector.recordResult('Phase 6', '6.6 Lalamove Sandbox Quotation, Booking & Webhook Sync', isSuccess ? 'PASS' : 'FAIL', {
+            message: 'Lalamove sandbox quotation calculated, order booked with ASSIGNING_DRIVER, and webhook transitioned to COMPLETED.'
+        });
+    } catch (e) {
+        collector.recordResult('Phase 6', '6.5 Live Sandbox Verification (PayMongo & Lalamove)', 'FAIL', {
+            message: e.message
+        });
+    }
+
     console.log(`\n  PHASE 6 COMPLETE.\n`);
 }

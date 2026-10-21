@@ -17,7 +17,12 @@ class Payroll extends Model
         'total_amount',
         'employee_count',
         'status',
-        'rejection_reason'
+        'rejection_reason',
+        'is_test',
+    ];
+
+    protected $casts = [
+        'is_test' => \App\Casts\PostgresCompatibleBoolean::class,
     ];
 
     public function user()

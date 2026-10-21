@@ -203,6 +203,7 @@ class InHouseDispatchService
                 'external_order_id' => $trackingNumber,
                 'dispatched_at' => now(),
                 'is_pod_enabled' => true,
+                'is_test' => (bool) ($lockedOrder->is_test ?? false),
             ]);
             $delivery->save();
 

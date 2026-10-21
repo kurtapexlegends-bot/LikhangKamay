@@ -55,10 +55,12 @@ class Order extends Model
         'pickup_date', 'pickup_time_slot', 'pickup_pin', 'pickup_location_id', 'pickup_location_snapshot',
         'return_reason', 'return_proof_image',
         'replacement_resolution_description', 'replacement_started_at', 'replacement_resolved_at',
+        'is_test',
     ];
 
     // Format date automatically for frontend (e.g., "Oct 24, 2025")
     protected $casts = [
+        'is_test' => \App\Casts\PostgresCompatibleBoolean::class,
         'created_at' => 'datetime:M d, Y • h:i A',
         'auto_complete_at' => 'datetime',
         'received_at' => 'datetime',
