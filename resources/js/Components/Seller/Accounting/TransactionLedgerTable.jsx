@@ -178,7 +178,7 @@ export default function TransactionLedgerTable({
                         description={
                             searchTerm || entryTypeFilter !== 'all'
                                 ? 'Try another search or clear the active filter to review more ledger history.'
-                                : 'Approved or rejected payroll and inventory releases will be recorded in this ledger.'
+                                : undefined
                         }
                     />
                 )}

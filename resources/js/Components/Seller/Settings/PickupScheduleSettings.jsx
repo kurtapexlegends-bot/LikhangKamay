@@ -392,9 +392,6 @@ export default function PickupScheduleSettings({ schedule, locations = [], canEd
                         </div>
                         <div>
                             <h3 className="text-sm font-black text-stone-900 tracking-tight">Store Pickup & Operating Hours</h3>
-                            <p className="text-xs text-stone-500 font-medium mt-0.5">
-                                Configure customer pickup days, operating windows, and reservation rules.
-                            </p>
                         </div>
                     </div>
 

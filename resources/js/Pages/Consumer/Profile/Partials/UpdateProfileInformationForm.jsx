@@ -103,9 +103,6 @@ export default function UpdateProfileInformation({
         <section className={className}>
             <header className="mb-6">
                 <h3 className="text-lg font-bold text-stone-900">Profile Information</h3>
-                <p className="mt-1 text-sm text-stone-500">
-                    Update your account's profile information and email address.
-                </p>
             </header>
 
             <form onSubmit={submit} className="space-y-6">

@@ -85,9 +85,6 @@ export default function UniformScheduleSection({
                             <Clock size={14} className="text-clay-600" />
                             Pickup Time Windows
                         </h4>
-                        <p className="text-xs text-stone-500 font-medium mt-1">
-                            Set customer pickup slots and order caps. Applies across all selected days.
-                        </p>
                     </div>
 
                     {canEdit && isEnabled && (

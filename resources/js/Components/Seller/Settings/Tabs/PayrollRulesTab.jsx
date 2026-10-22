@@ -129,9 +129,6 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                             <h3 className="text-base font-bold text-stone-900 tracking-tight">
                                 Work Schedule &amp; Daily Pay Rates
                             </h3>
-                            <p className="text-xs text-stone-500 font-medium">
-                                Choose how many days your shop operates to calculate daily wages automatically.
-                            </p>
                         </div>
                     </div>
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/70 text-[11px] font-bold self-start sm:self-auto">

@@ -179,10 +179,6 @@ export default function CategoryFormModal({
                     <h3 className="text-[10px] font-bold text-stone-900 uppercase tracking-wider">Add New Category</h3>
                 </div>
 
-                <p className="text-[10px] text-stone-500 leading-relaxed font-medium">
-                    Create a new global category to catalog artisan product listings on the marketplace.
-                </p>
-
                 {formBody}
             </div>
         );
@@ -196,10 +192,6 @@ export default function CategoryFormModal({
             position="bottom"
         >
             <div className="space-y-4 p-1">
-                <p className="text-xs text-stone-500 leading-relaxed font-medium">
-                    Create a new global category to catalog artisan product listings on the marketplace.
-                </p>
-
                 {formBody}
             </div>
         </SlideOverDrawer>

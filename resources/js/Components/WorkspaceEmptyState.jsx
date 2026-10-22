@@ -31,9 +31,11 @@ export default function WorkspaceEmptyState({
                 
                 <h3 className={`font-black tracking-tight text-stone-900 ${compact ? 'text-base' : 'text-2xl'}`}>{title}</h3>
                 
-                <p className={`mt-2 max-w-md mx-auto font-medium leading-relaxed text-stone-500 ${compact ? 'text-[11px]' : 'text-sm'}`}>
-                    {description}
-                </p>
+                {description && (
+                    <p className={`mt-2 max-w-md mx-auto font-medium leading-relaxed text-stone-500 ${compact ? 'text-[11px]' : 'text-sm'}`}>
+                        {description}
+                    </p>
+                )}
 
                 {(actionLabel || secondaryActionLabel) && (
                     <div className={`${compact ? 'mt-4' : 'mt-8'} flex flex-col items-center justify-center gap-3 sm:flex-row`}>

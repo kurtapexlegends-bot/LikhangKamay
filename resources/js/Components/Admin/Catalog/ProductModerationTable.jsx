@@ -24,13 +24,12 @@ const ModerationMetricCard = ({ title, value, icon: Icon, tone = 'amber' }) => {
     };
 
     return (
-        <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm flex items-start justify-between hover:shadow-md transition-all duration-200">
-            <div>
-                <p className="text-stone-550 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</p>
-                <h3 className="text-2xl font-black text-stone-900 tracking-tight">{value}</h3>
-                <p className="text-[10px] font-medium text-stone-400 mt-1">Listing count</p>
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200/80 shadow-2xs hover:shadow-xs hover:border-stone-300 transition-all duration-200 flex items-start justify-between gap-3 h-full">
+            <div className="min-w-0">
+                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1 truncate">{title}</p>
+                <h3 className="text-2xl font-bold text-stone-900 tracking-tight">{value}</h3>
             </div>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${tones[tone] || tones.amber}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${tones[tone] || tones.amber}`}>
                 <Icon size={18} />
             </div>
         </div>
@@ -216,7 +215,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
             
             {/* KPI Telemetry Cards Panel */}
             <div className="flex overflow-x-auto gap-4 pb-2.5 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-4 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
-                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto h-full">
                     <ModerationMetricCard 
                         title="Pending Review" 
                         value={statusCounts?.pending_review || 0} 
@@ -224,7 +223,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                         tone="amber" 
                     />
                 </div>
-                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto h-full">
                     <ModerationMetricCard 
                         title="Active Listings" 
                         value={statusCounts?.Active || 0} 
@@ -232,7 +231,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                         tone="emerald" 
                     />
                 </div>
-                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto h-full">
                     <ModerationMetricCard 
                         title="Flagged Listings" 
                         value={statusCounts?.flagged || 0} 
@@ -240,7 +239,7 @@ export default function ProductModerationTable({ products, filters, statusCounts
                         tone="rose" 
                     />
                 </div>
-                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto">
+                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto h-full">
                     <ModerationMetricCard 
                         title="Needs Revision" 
                         value={statusCounts?.rejected || 0} 
