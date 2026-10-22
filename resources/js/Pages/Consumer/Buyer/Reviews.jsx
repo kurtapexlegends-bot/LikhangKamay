@@ -9,9 +9,8 @@ export default function Reviews({ reviews = [] }) {
             <Head title="My Reviews" />
 
             <div className="max-w-3xl mx-auto py-10 px-4">
-                <div className="mb-8">
-                    <h1 className="text-2xl font-bold text-stone-900">My Reviews</h1>
-                    <p className="text-stone-500 text-sm">Manage the feedback you've shared with artisans.</p>
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-stone-900 tracking-tight">My Reviews</h1>
                 </div>
 
                 {reviews.length > 0 ? (

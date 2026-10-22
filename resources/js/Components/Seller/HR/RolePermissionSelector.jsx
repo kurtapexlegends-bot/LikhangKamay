@@ -245,9 +245,8 @@ export default function RolePermissionSelector({
         <div className="space-y-6">
             {/* Section 1: Role Preset Selection */}
             <div>
-                <div className="mb-3">
+                <div className="mb-2.5">
                     <h3 className="text-sm font-bold text-stone-900">User Permission Levels</h3>
-                    <p className="mt-0.5 text-xs text-stone-500">Select a role template to auto-configure workspace permissions.</p>
                 </div>
                 <div className="grid gap-2.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {rolePresets.map((preset) => (
@@ -265,11 +264,8 @@ export default function RolePermissionSelector({
 
             {/* Section 2: Specific Module Permissions */}
             <div className="border-t border-stone-200/70 pt-5 space-y-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h3 className="text-sm font-bold text-stone-900">Module Access Control</h3>
-                        <p className="mt-0.5 text-xs text-stone-500">Customize access rights per workspace module.</p>
-                    </div>
+                <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-sm font-bold text-stone-900">Module Access Control</h3>
                 </div>
 
                 {/* Summary Bar */}

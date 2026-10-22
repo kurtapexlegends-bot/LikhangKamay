@@ -79,8 +79,7 @@ export default function VerifyEmail({ status, verification }) {
                 {/* Header Section */}
                 <motion.div variants={itemVariants} className="text-left">
                     <span className="text-[9px] font-sans tracking-[0.25em] uppercase text-clay-600 font-bold mb-2 block">Security Check</span>
-                    <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight mb-1.5">Verify Your Email</h1>
-                    <p className="text-stone-400 text-xs font-medium">Enter the security code to access your studio.</p>
+                    <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight">Verify Your Email</h1>
                 </motion.div>
                 
                 {/* Success Message */}

@@ -71,13 +71,10 @@ export default function AccountProfileTab() {
             {/* User Info Card */}
             <form onSubmit={handleProfileSubmit} className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-2xs space-y-4">
                 <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-                    <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center text-stone-600">
+                    <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center text-stone-600 shrink-0">
                         <User size={20} />
                     </div>
-                    <div>
-                        <h3 className="text-base font-bold text-stone-900">Personal Information</h3>
-                        <p className="text-xs text-stone-500">Update your account display name and email address.</p>
-                    </div>
+                    <h3 className="text-base font-bold text-stone-900">Personal Information</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

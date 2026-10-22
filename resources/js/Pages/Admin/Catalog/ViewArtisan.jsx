@@ -31,7 +31,6 @@ export default function ViewArtisan({ artisan }) {
                         <UserAvatar user={artisan} className="h-14 w-14 border border-stone-200" />
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight text-stone-900">{artisan?.shop_name || artisan?.name}</h1>
-                            <p className="mt-1 text-sm text-stone-500">Detailed artisan application review.</p>
                         </div>
                     </div>
 

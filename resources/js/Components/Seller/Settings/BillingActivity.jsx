@@ -63,10 +63,7 @@ export default function BillingActivity({ recentTransactions = [] }) {
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-600">
                         <History size={16} />
                     </div>
-                    <div>
-                        <h3 className="text-[15px] font-black tracking-tight text-stone-900">Recent Billing Activity</h3>
-                        <p className="mt-0.5 text-[12px] text-stone-500">Review your subscription payment attempts and plan changes.</p>
-                    </div>
+                    <h3 className="text-[15px] font-black tracking-tight text-stone-900">Recent Billing Activity</h3>
                 </div>
 
                 <div className="flex items-center gap-2">

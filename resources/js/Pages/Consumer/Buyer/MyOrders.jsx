@@ -291,10 +291,7 @@ export default function MyOrders({ auth, orders }) {
                     <div className="flex-1 min-w-0 w-full">
                         {/* Page Header (Desktop version, hidden on mobile) */}
                         <div className="hidden lg:flex items-center justify-between mb-6">
-                            <div>
-                                <h1 className="text-xl font-black tracking-tight text-stone-900">My Purchases</h1>
-                                <p className="text-xs text-stone-500 mt-1">Track orders, delivery, and returns.</p>
-                            </div>
+                            <h1 className="text-xl font-black tracking-tight text-stone-900">My Purchases</h1>
                             <span className="text-xs bg-clay-100 text-clay-700 px-3 py-1 rounded-full font-bold">
                                 {getTabCount(activeTab)} Orders
                             </span>

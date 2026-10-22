@@ -283,7 +283,6 @@ export default function SuppliesTable({
                 show={isMobileFilterOpen}
                 onClose={() => setIsMobileFilterOpen(false)}
                 title="Filter Supplies"
-                subtitle="Select criteria to narrow down material inventory."
                 footer={
                     <div className="flex items-center justify-between w-full">
                         <button

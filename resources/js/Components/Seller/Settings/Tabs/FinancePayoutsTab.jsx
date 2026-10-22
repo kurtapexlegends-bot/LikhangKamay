@@ -100,10 +100,7 @@ export default function FinancePayoutsTab({ sellerOwner = {}, permissions = {} }
                 <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 shrink-0">
                     <Banknote size={20} />
                 </div>
-                <div>
-                    <h3 className="text-base font-bold text-stone-900">Finance &amp; Payout Settlement</h3>
-                    <p className="text-xs text-stone-500">Configure bank accounts and GCash / Maya details for weekly earnings disbursements.</p>
-                </div>
+                <h3 className="text-base font-bold text-stone-900">Finance &amp; Payout Settlement</h3>
             </div>
 
             {/* Security Banner */}

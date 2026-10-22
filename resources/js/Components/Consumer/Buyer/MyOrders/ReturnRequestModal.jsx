@@ -266,13 +266,10 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
                 >
                     <div className="p-6">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="p-3 bg-clay-100 text-clay-700 rounded-2xl">
+                            <div className="p-3 bg-clay-100 text-clay-700 rounded-2xl shrink-0">
                                 <RotateCcw size={24} />
                             </div>
-                            <div>
-                                <h2 className="text-xl font-bold text-stone-900">Request Item Return</h2>
-                                <p className="text-sm text-stone-500">Provide details and photos of the damaged item.</p>
-                            </div>
+                            <h2 className="text-xl font-bold text-stone-900 tracking-tight">Request Item Return</h2>
                         </div>
                         {renderFormContent()}
                     </div>

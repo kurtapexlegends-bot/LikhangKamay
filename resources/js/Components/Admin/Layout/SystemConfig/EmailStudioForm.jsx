@@ -43,11 +43,8 @@ export default function EmailStudioForm({ processing }) {
             {/* Header Sub-Navigation Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-100 pb-4">
                 <div className="flex items-center gap-2">
-                    <Sparkles className="text-clay-600" size={18} />
-                    <div>
-                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Email Studio &amp; Audience Broadcast</h3>
-                        <p className="text-[10px] text-stone-500 font-medium mt-0.5">Customize system templates, compose broadcast emails, and target specific user segments.</p>
-                    </div>
+                    <Sparkles className="text-clay-600 shrink-0" size={18} />
+                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Email Studio &amp; Audience Broadcast</h3>
                 </div>
 
                 <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl shrink-0 overflow-x-auto scrollbar-none no-scrollbar flex-nowrap py-1 scroll-smooth snap-x touch-pan-x min-w-0 max-w-full">

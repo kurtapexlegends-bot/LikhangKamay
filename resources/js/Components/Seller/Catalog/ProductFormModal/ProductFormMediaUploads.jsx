@@ -143,10 +143,7 @@ export default function ProductFormMediaUploads({
 
             {/* Media Upload Header with Fullscreen Carousel Action */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
-                <div>
-                    <h4 className="text-sm font-bold text-stone-900">Media Uploads</h4>
-                    <p className="text-xs text-stone-500">Add photography and a 3D model asset for your handcrafted piece.</p>
-                </div>
+                <h4 className="text-sm font-bold text-stone-900">Media Uploads</h4>
                 <div className="flex items-center gap-2">
                     {allPhotos.length > 0 && (
                         <button

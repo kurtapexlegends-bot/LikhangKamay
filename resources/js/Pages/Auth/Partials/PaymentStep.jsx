@@ -59,15 +59,12 @@ export default function PaymentStep({
 
     return (
         <form onSubmit={submit} className="p-6 sm:p-10">
-            <div className="mb-8">
+            <div className="mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-clay-50 border border-clay-200 text-clay-700 shadow-xs">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-clay-50 border border-clay-200 text-clay-700 shadow-xs shrink-0">
                         <CreditCard size={22} strokeWidth={2} />
                     </div>
-                    <div>
-                        <h2 className="text-xl font-bold text-stone-900 tracking-tight">Payout Details</h2>
-                        <p className="text-sm text-stone-500">Select where your sales revenue and order earnings will be deposited.</p>
-                    </div>
+                    <h2 className="text-xl font-bold text-stone-900 tracking-tight">Payout Details</h2>
                 </div>
             </div>
 

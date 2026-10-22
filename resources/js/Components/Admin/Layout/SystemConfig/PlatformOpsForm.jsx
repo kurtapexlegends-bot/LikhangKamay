@@ -12,10 +12,7 @@ export default function PlatformOpsForm({ data, setData }) {
                     <div className="w-7 h-7 rounded-lg bg-clay-50 border border-clay-200/60 flex items-center justify-center">
                         <Banknote className="text-clay-700" size={15} />
                     </div>
-                    <div>
-                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Financial Thresholds</h3>
-                        <p className="text-[10px] text-stone-400 font-medium">Configure system checkout fee percentages and payment thresholds.</p>
-                    </div>
+                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Financial Thresholds</h3>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-4">
@@ -47,10 +44,7 @@ export default function PlatformOpsForm({ data, setData }) {
                     <div className="w-7 h-7 rounded-lg bg-stone-100 border border-stone-200/80 flex items-center justify-center">
                         <ShieldAlert className="text-stone-700" size={15} />
                     </div>
-                    <div>
-                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Payments &amp; Maintenance</h3>
-                        <p className="text-[10px] text-stone-400 font-medium">Manage PayMongo payment processing and turn maintenance mode on or off.</p>
-                    </div>
+                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Payments &amp; Maintenance</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

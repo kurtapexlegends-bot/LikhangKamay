@@ -34,7 +34,7 @@
 ## 3. UI/UX, Anti-AI Slop & Plain Language
 - **Aesthetic & Mobile-First:** Clean, minimalist, responsive mobile-first. Strictly use pre-configured Tailwind earthy tokens (`clay`, `stone`). No arbitrary CSS values. Enforce min 44×44px touch targets. Account for mobile virtual keyboards and safe areas (`safe-area-inset-bottom`) in modals and sheets.
 - **Anti- "AI Slop":** Never use multi-color gradient border accents or gradient top stripes on cards/modals. Zero decorative emojis (use Lucide/Phosphor SVGs).
-- **Minimal Copy & No Redundant Labels:** Omit filler subheadings and obvious micro-captions under self-explanatory inputs (e.g. never add *"Enter your shop name"* under *"Shop Name"*).
+- **Cut Taglines, Helper Text & Redundant Labels:** Ban generic taglines, card/page subtitles (e.g., *"Manage your workshop orders and track deliveries"* under *"Orders"*), and filler micro-captions (e.g., never add *"Enter your shop name"* under *"Shop Name"*). If a screen needs explanatory text to make sense, fix the layout, typography hierarchy, and visual affordance instead. Reserve secondary text strictly for non-obvious technical constraints (e.g., *"Max 4MB per file"*, Cavite boundary rules) and active validation errors.
 - **Plain-Language Standard:** Ban developer/engineering jargon across all user-facing UI:
   - *"Store Location / Store Distance"* (not *"Geofence"*).
   - *"Quick Face Photo / Face Check"* (not *"Biometric 3D Liveness Calibration"*).

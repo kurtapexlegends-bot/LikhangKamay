@@ -32,15 +32,12 @@ export default function ShopDetailsStep({
 
     return (
         <form onSubmit={submit} className="p-6 sm:p-10">
-            <div className="mb-8">
+            <div className="mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-clay-50 border border-clay-200 text-clay-700 shadow-xs">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-clay-50 border border-clay-200 text-clay-700 shadow-xs shrink-0">
                         <Store size={22} strokeWidth={2} />
                     </div>
-                    <div>
-                        <h2 className="text-xl font-bold text-stone-900 tracking-tight">Shop Information</h2>
-                        <p className="text-sm text-stone-500">Provide your public brand name and workshop pickup address.</p>
-                    </div>
+                    <h2 className="text-xl font-bold text-stone-900 tracking-tight">Shop Information</h2>
                 </div>
             </div>
 
