@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
+use App\Models\Product;
 use App\Models\Review;
 use App\Models\ReviewDispute;
 use App\Services\StorageUrl;
@@ -55,6 +56,34 @@ class ReviewController extends Controller
                 ];
             });
 
+        $products = Product::where('user_id', $sellerId)
+            ->withCount([
+                'reviews',
+                'reviews as unreplied_reviews_count' => function ($q) {
+                    $q->where(function ($sub) {
+                        $sub->whereNull('seller_reply')
+                            ->orWhere('seller_reply', '');
+                    });
+                },
+            ])
+            ->withAvg('reviews', 'rating')
+            ->orderByDesc('reviews_count')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'category' => $product->category,
+                    'price' => (float) $product->price,
+                    'cover_photo_path' => StorageUrl::url($product->cover_photo_path),
+                    'reviews_count' => (int) $product->reviews_count,
+                    'unreplied_reviews_count' => (int) $product->unreplied_reviews_count,
+                    'avg_rating' => $product->reviews_avg_rating ? round((float) $product->reviews_avg_rating, 1) : 0,
+                    'status' => $product->status,
+                ];
+            });
+
         $stats = [
             'total' => $reviews->count(),
             'average' => $reviews->count() > 0 ? round($reviews->avg('rating'), 1) : 0,
@@ -65,10 +94,12 @@ class ReviewController extends Controller
                 '2' => $reviews->where('rating', 2)->count(),
                 '1' => $reviews->where('rating', 1)->count(),
             ],
+            'unreplied_total' => $products->sum('unreplied_reviews_count'),
         ];
 
         return Inertia::render('Seller/Chat/Reviews', [
             'reviews' => $reviews,
+            'products' => $products,
             'stats' => $stats,
         ]);
     }

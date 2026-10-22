@@ -1,9 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import CompactPagination from '@/Components/CompactPagination';
 import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
-import { ShieldAlert, AlertTriangle, MessageSquare, X, Search } from 'lucide-react';
-import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import { ShieldAlert, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
@@ -11,19 +9,27 @@ import SellerHeader from '@/Layouts/SellerHeader';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 
 // Subcomponents & Helpers
-import ReviewsMetrics from '@/Components/Seller/Chat/ReviewsMetrics';
-import ReviewListItem from '@/Components/Seller/Chat/ReviewListItem';
 import ReviewDisputeModal from '@/Components/Seller/Chat/ReviewDisputeModal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
-import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
+import ProductDirectorySidebar from '@/Components/Seller/Chat/ProductDirectorySidebar';
+import ProductReviewFeedPane from '@/Components/Seller/Chat/ProductReviewFeedPane';
 
-export default function Reviews({ auth, reviews, stats, flash }) {
+export default function Reviews({ auth, reviews = [], products = [], stats = {}, flash }) {
     const { addToast } = useToast();
     const { canEdit: canEditReviews, isReadOnly: isReviewsReadOnly } = useSellerModuleAccess('reviews');
-    const { filters = {} } = usePage().props;
     const { openSidebar } = useSellerWorkspaceShell();
-    const [filter, setFilter] = useState('All');
-    const [searchTerm, setSearchTerm] = useState(filters.search || '');
+
+    const currentUrl = usePage().url;
+    const initialProduct = useMemo(() => {
+        const params = new URLSearchParams(currentUrl.includes('?') ? currentUrl.substring(currentUrl.indexOf('?')) : '');
+        const p = params.get('product');
+        if (!p || p === 'all') return 'all';
+        return parseInt(p, 10);
+    }, [currentUrl]);
+
+    const [selectedProductId, setSelectedProductId] = useState(initialProduct);
+    const [mobilePane, setMobilePane] = useState(() => (initialProduct !== 'all' ? 'feed' : 'directory'));
+
     const [replyingTo, setReplyingTo] = useState(null);
     const [replyText, setReplyText] = useState('');
     const [confirmingDelete, setConfirmingDelete] = useState(null);
@@ -34,14 +40,17 @@ export default function Reviews({ auth, reviews, stats, flash }) {
     const [disputeFeedback, setDisputeFeedback] = useState('');
     const [submittingDispute, setSubmittingDispute] = useState(false);
     const [confirmingDisputeRemoval, setConfirmingDisputeRemoval] = useState(null);
-    const [currentPage, setCurrentPage] = useState(1);
 
-    // Sync search from URL (for Global Search support)
-    React.useEffect(() => {
-        if (filters.search && filters.search !== searchTerm) {
-            setSearchTerm(filters.search);
+    // Sync state on browser back/forward
+    useEffect(() => {
+        const params = new URLSearchParams(currentUrl.includes('?') ? currentUrl.substring(currentUrl.indexOf('?')) : '');
+        const p = params.get('product');
+        const parsed = !p || p === 'all' ? 'all' : parseInt(p, 10);
+        setSelectedProductId(parsed);
+        if (parsed !== 'all') {
+            setMobilePane('feed');
         }
-    }, [filters.search]);
+    }, [currentUrl]);
 
     useFlashToast(flash, addToast);
 
@@ -51,52 +60,29 @@ export default function Reviews({ auth, reviews, stats, flash }) {
         "Thank you for sharing your feedback. We are always striving to improve and your input is incredibly valuable to us."
     ];
 
-    const filteredReviews = useMemo(() => {
-        return reviews.filter((review) => {
-            const matchesFilter = filter === 'All'
-                ? true
-                : filter === 'Hidden'
-                    ? review.is_hidden_from_marketplace
-                    : review.rating === parseInt(filter);
-
-            if (!matchesFilter) return false;
-
-            if (!searchTerm.trim()) return true;
-
-            const search = searchTerm.toLowerCase();
-            return (
-                review.customer?.toLowerCase().includes(search) ||
-                review.comment?.toLowerCase().includes(search) ||
-                review.product_name?.toLowerCase().includes(search)
-            );
+    const handleSelectProduct = (productId) => {
+        setSelectedProductId(productId);
+        setMobilePane('feed');
+        router.get(route('reviews.index'), { product: productId }, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
         });
-    }, [reviews, filter, searchTerm]);
+    };
 
-    // Sort: pinned first, then by date (already sorted by latest from backend)
-    const sortedReviews = useMemo(() => {
-        return [...filteredReviews].sort((a, b) => {
-            if (a.is_pinned && !b.is_pinned) return -1;
-            if (!a.is_pinned && b.is_pinned) return 1;
-            return 0;
-        });
-    }, [filteredReviews]);
+    const handleBackToDirectory = () => {
+        setMobilePane('directory');
+    };
 
-    const itemsPerPage = 10;
-    const totalPages = Math.max(1, Math.ceil(sortedReviews.length / itemsPerPage));
-    const paginatedReviews = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return sortedReviews.slice(startIndex, startIndex + itemsPerPage);
-    }, [currentPage, sortedReviews]);
+    const selectedProduct = useMemo(() => {
+        if (!selectedProductId || selectedProductId === 'all') return null;
+        return products.find(p => String(p.id) === String(selectedProductId)) || null;
+    }, [products, selectedProductId]);
 
-    React.useEffect(() => {
-        setCurrentPage(1);
-    }, [filter]);
-
-    React.useEffect(() => {
-        if (currentPage > totalPages) {
-            setCurrentPage(totalPages);
-        }
-    }, [currentPage, totalPages]);
+    const scopedReviews = useMemo(() => {
+        if (!selectedProduct) return reviews;
+        return reviews.filter(r => String(r.product_id) === String(selectedProduct.id));
+    }, [reviews, selectedProduct]);
 
     const openReply = (reviewId) => {
         setReplyingTo(reviewId);
@@ -184,9 +170,9 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                 setDisputeFeedback(errors.reason || errors.details || errors.review || 'We could not submit that moderation request yet.');
             },
             onSuccess: (page) => {
-                const flash = page?.props?.flash ?? {};
+                const flashData = page?.props?.flash ?? {};
 
-                if (flash?.success) {
+                if (flashData?.success) {
                     setDisputeModal({ open: false, review: null, mode: 'create' });
                     setDisputeReason('Misleading review');
                     setDisputeDetails('');
@@ -195,8 +181,8 @@ export default function Reviews({ auth, reviews, stats, flash }) {
                     return;
                 }
 
-                if (flash?.error) {
-                    setDisputeFeedback(flash.error);
+                if (flashData?.error) {
+                    setDisputeFeedback(flashData.error);
                 }
             },
             onFinish: () => setSubmittingDispute(false),
@@ -212,93 +198,60 @@ export default function Reviews({ auth, reviews, stats, flash }) {
         });
     };
 
-    const reviewTabs = useMemo(() => [
-        { key: 'All', label: 'All Reviews', count: reviews.length },
-        { key: 'Hidden', label: 'Hidden', count: reviews.filter(r => r.is_hidden_from_marketplace).length },
-        { key: '5', label: '5 Star', count: stats?.stars?.[5] ?? reviews.filter(r => r.rating === 5).length },
-        { key: '4', label: '4 Star', count: stats?.stars?.[4] ?? reviews.filter(r => r.rating === 4).length },
-        { key: '3', label: '3 Star', count: stats?.stars?.[3] ?? reviews.filter(r => r.rating === 3).length },
-        { key: '2', label: '2 Star', count: stats?.stars?.[2] ?? reviews.filter(r => r.rating === 2).length },
-        { key: '1', label: '1 Star', count: stats?.stars?.[1] ?? reviews.filter(r => r.rating === 1).length },
-    ], [reviews, stats]);
-
     return (
         <>
-            <Head title="Customer Reviews" />
+            <Head title={selectedProduct ? `Reviews: ${selectedProduct.name}` : "Customer Ratings & Reviews"} />
 
             <SellerHeader 
                 title="Customer Ratings"
-                subtitle="Manage customer reviews and feedback."
+                subtitle="Review store and item feedback, reply to buyers, and curate reviews."
                 auth={auth}
                 onMenuClick={openSidebar}
             />
 
-                <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-                    {isReviewsReadOnly && (
-                        <ReadOnlyCapabilityNotice label="Reviews are read only for your account. Reply, pin, and moderation actions are disabled." />
-                    )}
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                {isReviewsReadOnly && (
+                    <ReadOnlyCapabilityNotice label="Reviews are read only for your account. Reply, pin, and moderation actions are disabled." />
+                )}
 
-                    {/* Stats Overview */}
-                    <ReviewsMetrics stats={stats} filter={filter} setFilter={setFilter} />
-
-                    {/* Standardized Filter Toolbar Header */}
-                    <FilterToolbarHeader
-                        tabs={reviewTabs}
-                        activeTab={filter}
-                        onTabChange={setFilter}
-                        searchQuery={searchTerm}
-                        onSearchChange={setSearchTerm}
-                        searchPlaceholder="Search customer, item, or comment..."
-                        containerClassName="mt-4"
-                    />
-
-                    {/* Reviews List */}
-                    <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xs border border-stone-200/80 relative z-10">
-                        <div className="flex flex-col divide-y divide-stone-100 md:grid md:grid-cols-2 md:gap-4 md:divide-y-0 md:p-4 lg:block lg:divide-y lg:divide-stone-100 lg:p-0">
-                            {paginatedReviews.length > 0 ? (
-                                paginatedReviews.map((review, index) => (
-                                    <ReviewListItem
-                                        key={review.id}
-                                        review={review}
-                                        auth={auth}
-                                        canEditReviews={canEditReviews}
-                                        replyingTo={replyingTo}
-                                        replyText={replyText}
-                                        setReplyText={setReplyText}
-                                        openReply={openReply}
-                                        openEditReply={openEditReply}
-                                        onCancelReply={() => { setReplyingTo(null); setReplyText(''); }}
-                                        onSubmitReply={submitReply}
-                                        onTogglePin={togglePin}
-                                        onQuickReply={handleQuickReply}
-                                        onOpenDispute={openDisputeModal}
-                                        onConfirmDeleteDispute={(dispute) => setConfirmingDisputeRemoval(dispute)}
-                                        onConfirmDeleteReply={(reviewId) => setConfirmingDelete(reviewId)}
-                                        quickReplies={QUICK_REPLIES}
-                                    />
-                                ))
-                            ) : (
-                                <WorkspaceEmptyState
-                                    icon={MessageSquare}
-                                    title="No reviews found"
-                                    description="There are no reviews matching your current filter."
-                                    compact={true}
-                                />
-                            )}
-                        </div>
-
-                        {totalPages > 1 && (
-                            <CompactPagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                totalItems={sortedReviews.length}
-                                itemsPerPage={itemsPerPage}
-                                itemLabel="reviews"
-                                onPageChange={setCurrentPage}
-                            />
-                        )}
+                {/* Master-Detail Split View Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                    {/* Left Pane: Product Directory (hidden on mobile when viewing review feed) */}
+                    <div className={`md:col-span-5 lg:col-span-4 ${mobilePane === 'feed' ? 'hidden md:block' : 'block'}`}>
+                        <ProductDirectorySidebar
+                            products={products}
+                            selectedProductId={selectedProductId}
+                            onSelectProduct={handleSelectProduct}
+                            overallStats={stats}
+                        />
                     </div>
-                </main>
+
+                    {/* Right Pane: Review Feed (hidden on mobile when viewing directory) */}
+                    <div className={`md:col-span-7 lg:col-span-8 ${mobilePane === 'directory' ? 'hidden md:block' : 'block'}`}>
+                        <ProductReviewFeedPane
+                            selectedProduct={selectedProduct}
+                            overallStats={stats}
+                            reviews={scopedReviews}
+                            onBackToDirectory={handleBackToDirectory}
+                            auth={auth}
+                            canEditReviews={canEditReviews}
+                            replyingTo={replyingTo}
+                            replyText={replyText}
+                            setReplyText={setReplyText}
+                            openReply={openReply}
+                            openEditReply={openEditReply}
+                            onCancelReply={() => { setReplyingTo(null); setReplyText(''); }}
+                            onSubmitReply={submitReply}
+                            onTogglePin={togglePin}
+                            onQuickReply={handleQuickReply}
+                            onOpenDispute={openDisputeModal}
+                            onConfirmDeleteDispute={(dispute) => setConfirmingDisputeRemoval(dispute)}
+                            onConfirmDeleteReply={(reviewId) => setConfirmingDelete(reviewId)}
+                            quickReplies={QUICK_REPLIES}
+                        />
+                    </div>
+                </div>
+            </main>
 
             {/* Request Review Moderation Modal */}
             <ReviewDisputeModal
