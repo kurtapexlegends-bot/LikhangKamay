@@ -37,8 +37,7 @@ export default function DisburseFundsModal({
     return (
         <Modal show={true} onClose={onClose} maxWidth="md">
             <form onSubmit={handleSubmit} className="p-6 bg-[#FCFBF9]">
-                <h3 className="text-base font-bold text-stone-900 mb-1">Transfer Earnings to Artisan</h3>
-                <p className="text-xs font-semibold text-stone-500 mb-5">Record a payout disbursement to the artisan&apos;s account.</p>
+                <h3 className="text-base font-bold text-stone-900 mb-5">Transfer Earnings to Artisan</h3>
 
                 <div className="rounded-2xl bg-stone-50 border border-stone-200/80 p-4 mb-5 space-y-3">
                     <div className="flex justify-between items-center text-xs">

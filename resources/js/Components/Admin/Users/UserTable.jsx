@@ -371,14 +371,11 @@ export default function UserTable({
                 <div className="border-t border-stone-200 bg-[#FDFBF9] px-4 py-4 sm:px-6">
                     <div className="rounded-xl border border-dashed border-[#D8B797] bg-white p-4">
                         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-start gap-3">
-                                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#E8D9CB] bg-[#F2EAE1] text-[#7A5037]">
+                            <div className="flex items-center gap-3">
+                                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#E8D9CB] bg-[#F2EAE1] text-[#7A5037] shrink-0">
                                     <Briefcase size={16} />
                                 </span>
-                                <div>
-                                    <h3 className="text-sm font-bold text-stone-900">Unlinked Staff</h3>
-                                    <p className="text-xs font-semibold text-stone-500">Staff accounts with no associated artisan shop owner</p>
-                                </div>
+                                <h3 className="text-sm font-bold text-stone-900">Unlinked Staff</h3>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                                 <span className="inline-flex items-center rounded-md bg-stone-100 border border-stone-200 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-stone-600">

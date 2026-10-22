@@ -10,10 +10,7 @@ export default function RevenueAnalyticsChart({ chartFilter, setChartFilter, cur
             <WidgetErrorBoundary widgetName="Revenue Analytics">
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h2 className="text-lg font-bold text-gray-900">Revenue Analytics</h2>
-                    <p className="text-sm text-gray-500">Income over time</p>
-                </div>
+                <h2 className="text-lg font-bold text-gray-900">Revenue Analytics</h2>
                 <div className="flex bg-gray-100 p-1 rounded-lg">
                     {['Monthly', 'Yearly'].map((filter) => (
                         <button

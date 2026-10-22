@@ -95,10 +95,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
 
             {/* Monetization Header & Actions */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/80 shadow-2xs print:hidden mb-6">
-                <div>
-                    <h2 className="text-sm font-bold text-stone-900">Platform Monetization</h2>
-                    <p className="text-xs text-stone-500 font-medium">Commissions, subscriptions, and platform revenue metrics.</p>
-                </div>
+                <h2 className="text-sm font-bold text-stone-900">Platform Monetization</h2>
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                     <ExportButton onClick={() => setTimeout(() => window.print(), 150)} icon={Printer} variant="secondary" className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
                         <span className="hidden sm:inline">Print Report</span>
@@ -177,7 +174,6 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                 bg="bg-clay-50"
                                 color="text-clay-600"
                                 formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
-                                subtitle="Service fees collected"
                             />
                         </div>
                         <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
@@ -198,7 +194,6 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                 icon={Star}
                                 bg="bg-stone-50"
                                 color="text-stone-600"
-                                subtitle="Super Premium artisans"
                             />
                         </div>
                         <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
@@ -210,7 +205,6 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                 icon={Award}
                                 bg="bg-amber-50"
                                 color="text-amber-600"
-                                subtitle="Featured products"
                             />
                         </div>
                     </>

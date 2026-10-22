@@ -25,7 +25,6 @@ export default function FundMetrics({ finances = {}, canEditAccounting, onEditBa
                 </div>
                 <h3 className="mb-0.5 text-xl sm:text-2xl font-black text-stone-900">{formatShortMoney(readyForPayout)}</h3>
                 <p className="text-[11px] text-stone-500 font-medium">Ready for Payout</p>
-                <p className="text-[10px] text-stone-400 font-medium mt-0.5">Completed customer orders</p>
             </div>
 
             {/* 2. Orders in Progress */}
@@ -37,7 +36,6 @@ export default function FundMetrics({ finances = {}, canEditAccounting, onEditBa
                 </div>
                 <h3 className="mb-0.5 text-xl sm:text-2xl font-black text-stone-900">{formatShortMoney(ordersInProgress)}</h3>
                 <p className="text-[11px] text-stone-500 font-medium">Orders in Progress</p>
-                <p className="text-[10px] text-stone-400 font-medium mt-0.5">Crafting or on the road</p>
             </div>
 
             {/* 3. Payouts Received */}
@@ -49,7 +47,6 @@ export default function FundMetrics({ finances = {}, canEditAccounting, onEditBa
                 </div>
                 <h3 className="mb-0.5 text-xl sm:text-2xl font-black text-stone-900">{formatShortMoney(payoutsReceived)}</h3>
                 <p className="text-[11px] text-stone-500 font-medium">Payouts Received</p>
-                <p className="text-[10px] text-stone-400 font-medium mt-0.5">Transferred to GCash / Bank</p>
             </div>
 
             {/* 4. Operating Funds */}
@@ -73,7 +70,6 @@ export default function FundMetrics({ finances = {}, canEditAccounting, onEditBa
                 </div>
                 <h3 className="mb-0.5 text-2xl sm:text-3xl font-black tracking-tight text-white relative z-10">{formatShortMoney(operatingFunds)}</h3>
                 <p className="text-[11px] text-stone-300 font-medium relative z-10">Operating Funds</p>
-                <p className="text-[10px] text-stone-400 font-medium mt-0.5 relative z-10">For supplies &amp; staff payroll</p>
             </div>
         </div>
     );

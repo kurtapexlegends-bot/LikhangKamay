@@ -12,10 +12,7 @@ export default function ContactSocialsForm({ data, updateNested }) {
                     <div className="w-7 h-7 rounded-lg bg-clay-50 flex items-center justify-center border border-clay-200/50 shrink-0">
                         <Mail size={14} className="text-clay-600" />
                     </div>
-                    <div>
-                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Primary Support Channels</h3>
-                        <p className="text-[10px] text-stone-500 font-medium mt-0.5">Platform email, phone hotline, and main physical office address.</p>
-                    </div>
+                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Primary Support Channels</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -68,10 +65,7 @@ export default function ContactSocialsForm({ data, updateNested }) {
                     <div className="w-7 h-7 rounded-lg bg-clay-50 flex items-center justify-center border border-clay-200/50 shrink-0">
                         <Share2 size={14} className="text-clay-600" />
                     </div>
-                    <div>
-                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Social Media Accounts</h3>
-                        <p className="text-[10px] text-stone-500 font-medium mt-0.5">Official community channels and brand social profiles.</p>
-                    </div>
+                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Social Media Accounts</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

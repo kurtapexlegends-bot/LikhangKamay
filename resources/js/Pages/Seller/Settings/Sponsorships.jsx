@@ -268,10 +268,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                     {/* SECTION 3: CAMPAIGN HISTORY & TIMELINE */}
                     <div className="lg:col-span-1 bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 shadow-sm flex flex-col">
                         <div className="flex items-center justify-between gap-3 mb-4">
-                            <div>
-                                <h2 className="text-base font-bold text-stone-950">Campaign History</h2>
-                                <p className="text-[10px] text-stone-400 font-medium mt-0.5">Track your promo slots</p>
-                            </div>
+                            <h2 className="text-base font-bold text-stone-950">Campaign History</h2>
                             {requests.length > 3 && (
                                 <div className="relative w-36">
                                     <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-stone-400" size={11} />

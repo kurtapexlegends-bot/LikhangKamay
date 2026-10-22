@@ -53,7 +53,6 @@ export default function ViewArtisan({ artisan }) {
                 <div className="rounded-2xl border border-stone-200 bg-white shadow-sm">
                     <div className="border-b border-stone-100 px-5 py-4">
                         <h2 className="text-lg font-bold text-stone-900">Submitted Documents</h2>
-                        <p className="mt-1 text-sm text-stone-500">Open the submitted files in a new tab for manual review.</p>
                     </div>
 
                     <div className="grid gap-4 p-5 md:grid-cols-2">

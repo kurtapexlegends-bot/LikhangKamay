@@ -9,7 +9,6 @@ export default function CatalogKPIs({ totalRequests, pendingRequests, approvedRe
                 <KPICard
                     title="Total Requests"
                     value={totalRequests}
-                    subtitle="Across the current listing"
                     icon={Award}
                     bg="bg-amber-50"
                     color="text-amber-700"
@@ -19,7 +18,6 @@ export default function CatalogKPIs({ totalRequests, pendingRequests, approvedRe
                 <KPICard
                     title="Pending Review"
                     value={pendingRequests}
-                    subtitle="Need admin action"
                     icon={Clock}
                     bg="bg-stone-100"
                     color="text-stone-700"
@@ -29,7 +27,6 @@ export default function CatalogKPIs({ totalRequests, pendingRequests, approvedRe
                 <KPICard
                     title="Approved"
                     value={approvedRequests}
-                    subtitle="Active campaign boosts"
                     icon={TrendingUp}
                     bg="bg-emerald-50"
                     color="text-emerald-700"
@@ -39,7 +36,6 @@ export default function CatalogKPIs({ totalRequests, pendingRequests, approvedRe
                 <KPICard
                     title="Active Sellers"
                     value={uniqueShops}
-                    subtitle="Unique shops requesting"
                     icon={Store}
                     bg="bg-clay-50"
                     color="text-clay-700"

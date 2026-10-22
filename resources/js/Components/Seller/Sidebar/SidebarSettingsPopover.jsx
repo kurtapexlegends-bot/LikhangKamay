@@ -56,10 +56,7 @@ export default function SidebarSettingsPopover({
                     
                     <div className="absolute left-2 right-2 top-16 z-[70] rounded-2xl border border-gray-100 bg-white p-5 lg:left-full lg:right-auto lg:top-4 lg:ml-4 lg:w-72 text-left">
                         <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 className="text-sm font-bold text-gray-900">Enable Capabilities</h3>
-                                <p className="text-[10px] text-gray-400 font-medium">Turn additional capabilities on for your shop.</p>
-                            </div>
+                            <h3 className="text-sm font-bold text-gray-900">Enable Capabilities</h3>
                             <button 
                                 onClick={() => setShowModulePanel(false)}
                                 className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30"

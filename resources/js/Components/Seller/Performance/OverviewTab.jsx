@@ -220,10 +220,7 @@ export default function OverviewTab({
                 </div>
 
                 <div className="min-w-0 bg-white p-5 rounded-2xl shadow-2xs border border-stone-200/80 flex flex-col justify-between">
-                    <div>
-                        <h3 className="text-base font-bold text-stone-900 leading-none">Sales by Category</h3>
-                        <p className="text-xs text-stone-500 mt-1 font-medium">Volume & earnings distribution</p>
-                    </div>
+                    <h3 className="text-base font-bold text-stone-900 leading-none">Sales by Category</h3>
 
                     {categoryData.length > 0 ? (
                         <div className="h-[170px] w-full flex items-center justify-center relative my-2">

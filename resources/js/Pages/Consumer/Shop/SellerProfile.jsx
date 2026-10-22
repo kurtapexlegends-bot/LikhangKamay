@@ -213,12 +213,11 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                 {/* --- BEST SELLERS --- */}
                 {bestSellers.length > 0 && (
                     <div className="mb-10">
-                        <div className="mb-6 flex flex-col gap-1 px-1 select-none">
+                        <div className="mb-4 px-1 select-none">
                             <h2 className="text-xl font-serif font-bold text-stone-900 flex items-center gap-2 tracking-tight">
                                 <Trophy size={18} className="text-amber-500 shrink-0" />
                                 Store Best Sellers
                             </h2>
-                            <p className="text-xs text-stone-500 font-medium">Curated high-demand artisan pieces from this workshop</p>
                         </div>
                         <div className="flex overflow-x-auto flex-nowrap lg:grid lg:grid-cols-5 gap-4 pb-4 scrollbar-none snap-x snap-mandatory -mx-4 px-4 lg:mx-0 lg:px-0">
                             {bestSellers.map((product, idx) => {

@@ -106,13 +106,10 @@ export default function ActivityHistoryDrawer({ isOpen, onClose }) {
             onClose={onClose}
             title={
                 <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-clay-50 border border-clay-200/60 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-xl bg-clay-50 border border-clay-200/60 flex items-center justify-center shrink-0">
                         <Clock size={16} className="text-clay-700" />
                     </div>
-                    <div>
-                        <h2 className="text-sm font-bold text-stone-900 uppercase tracking-wider">Activity History</h2>
-                        <p className="text-[11px] text-stone-400 font-medium">Personal & system operational activity history</p>
-                    </div>
+                    <h2 className="text-sm font-bold text-stone-900 uppercase tracking-wider">Activity History</h2>
                 </div>
             }
             widthClass="max-w-lg"

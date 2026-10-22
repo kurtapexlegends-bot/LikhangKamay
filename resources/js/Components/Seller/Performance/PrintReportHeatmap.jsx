@@ -7,10 +7,7 @@ export default function PrintReportHeatmap({ salesHeatmap = [] }) {
     return (
         <div className="w-full bg-white p-4 rounded-xl border border-stone-200 flex flex-col justify-between print-card">
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-3">
-                <div>
-                    <h3 className="text-base font-bold text-stone-900 leading-none">Peak Activity Heatmap</h3>
-                    <p className="text-[11px] text-stone-500 mt-1.5 leading-tight">When your customers are most likely to buy</p>
-                </div>
+                <h3 className="text-base font-bold text-stone-900 leading-none">Peak Activity Heatmap</h3>
                 <div className="flex items-center gap-3 text-[9px] font-bold text-stone-400 uppercase tracking-widest">
                     <span>Quiet</span>
                     <div className="flex gap-0.5">

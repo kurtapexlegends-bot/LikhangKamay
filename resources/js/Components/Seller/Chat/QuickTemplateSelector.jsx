@@ -39,10 +39,7 @@ export default function QuickTemplateSelector({
                 <div className="flex flex-col max-h-[85vh] sm:h-[80vh]">
                     {/* Header */}
                     <div className="p-5 sm:p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
-                        <div>
-                            <h3 className="text-base sm:text-lg font-bold text-gray-900">Message Templates</h3>
-                            <p className="text-xs text-gray-500">Create reusable responses for faster communication.</p>
-                        </div>
+                        <h3 className="text-base sm:text-lg font-bold text-gray-900">Message Templates</h3>
                         <button 
                             onClick={handleClose} 
                             className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50 min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none"

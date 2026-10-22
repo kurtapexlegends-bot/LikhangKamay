@@ -97,7 +97,6 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
                             bg="bg-emerald-50"
                             color="text-emerald-600"
                             formatter={(v) => formatCurrency(v)}
-                            subtitle="All-time processed payouts"
                         />
                     </div>
 
@@ -109,7 +108,6 @@ export default function PayoutManager({ artisans = [], payoutHistory = { data: [
                             bg="bg-clay-50"
                             color="text-clay-600"
                             formatter={(v) => formatCurrency(v)}
-                            subtitle="All-time retained earnings"
                         />
                     </div>
                 </div>

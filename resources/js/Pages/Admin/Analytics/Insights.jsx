@@ -72,10 +72,7 @@ export default function Insights({
 
             {/* Analytics Header & Actions */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/80 shadow-2xs print:hidden mb-6">
-                <div>
-                    <h2 className="text-sm font-bold text-stone-900">Platform Analytics & Insights</h2>
-                    <p className="text-xs text-stone-500 font-medium">Real-time GMV volume, conversions, and ecosystem health.</p>
-                </div>
+                <h2 className="text-sm font-bold text-stone-900">Platform Analytics & Insights</h2>
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                     <ExportButton onClick={() => setTimeout(() => window.print(), 150)} icon={Printer} variant="secondary" className="h-[38px] min-h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
                         <span className="hidden sm:inline">Print Report</span>
@@ -117,7 +114,6 @@ export default function Insights({
                         bg="bg-emerald-50"
                         color="text-emerald-600"
                         formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
-                        subtitle="Average spent per order"
                     />
                 </div>
                 <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
@@ -127,7 +123,6 @@ export default function Insights({
                         icon={ClipboardCheck}
                         bg="bg-blue-50"
                         color="text-blue-600"
-                        subtitle="Delivered order volume"
                     />
                 </div>
                 <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">

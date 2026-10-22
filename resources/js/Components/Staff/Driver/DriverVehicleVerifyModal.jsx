@@ -85,17 +85,12 @@ export default function DriverVehicleVerifyModal({
             <form onSubmit={handleSubmit} className="p-5 sm:p-6 bg-white rounded-t-[2.5rem] sm:rounded-2xl">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
                     <div className="flex items-center gap-2.5">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-clay-100 text-clay-700">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-clay-100 text-clay-700 shrink-0">
                             <ShieldCheck size={18} />
                         </div>
-                        <div>
-                            <h3 className="text-sm font-bold text-stone-900">
-                                Vehicle &amp; License Check
-                            </h3>
-                            <p className="text-[11px] text-stone-500">
-                                Verify your vehicle and driver&apos;s license or ID card
-                            </p>
-                        </div>
+                        <h3 className="text-sm font-bold text-stone-900">
+                            Vehicle &amp; License Check
+                        </h3>
                     </div>
                     <button
                         type="button"

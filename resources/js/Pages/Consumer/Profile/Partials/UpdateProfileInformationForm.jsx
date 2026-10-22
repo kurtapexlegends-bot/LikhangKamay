@@ -152,8 +152,7 @@ export default function UpdateProfileInformation({
                     </div>
 
                     <div className="flex-1 text-center sm:text-left">
-                        <h4 className="text-sm font-bold text-stone-900">Profile Photo</h4>
-                        <p className="text-xs text-stone-500 mb-3">This will be displayed on your profile and interactions.</p>
+                        <h4 className="text-sm font-bold text-stone-900 mb-2.5">Profile Photo</h4>
                         
                         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                             <label htmlFor="avatar" className="px-3 py-1.5 bg-white border border-stone-200 text-stone-700 text-xs font-bold rounded-lg hover:bg-stone-50 transition-colors cursor-pointer">

@@ -16,7 +16,6 @@ export default function SupplyHubKPIs({ stats = {}, shouldAnimate = true }) {
                 <KPICard 
                     title="Available Materials"
                     value={total_materials}
-                    subtitle="From peer artisan workshops"
                     icon={Package}
                     bg="bg-clay-50"
                     color="text-clay-600"
@@ -27,7 +26,6 @@ export default function SupplyHubKPIs({ stats = {}, shouldAnimate = true }) {
                 <KPICard 
                     title="Active Peer Studios"
                     value={active_suppliers}
-                    subtitle="Verified local craft harvesters"
                     icon={Store}
                     bg="bg-blue-50"
                     color="text-blue-600"
@@ -38,7 +36,6 @@ export default function SupplyHubKPIs({ stats = {}, shouldAnimate = true }) {
                 <KPICard 
                     title="Bulk Discount Deals"
                     value={wholesale_deals}
-                    subtitle="Tiered volume savings"
                     icon={Tag}
                     bg="bg-emerald-50"
                     color="text-emerald-600"

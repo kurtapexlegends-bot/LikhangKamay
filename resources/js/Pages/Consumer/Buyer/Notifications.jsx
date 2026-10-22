@@ -157,11 +157,8 @@ export default function Notifications({ notifications = [], unreadNotificationCo
 
     const content = (
         <div className={`max-w-4xl mx-auto px-4 ${isSeller ? 'py-6' : 'py-6 sm:py-10'}`}>
-            <div className="flex items-center justify-between mb-6 sm:mb-8">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-stone-900 font-sans">Notifications</h1>
-                    <p className="text-stone-500 text-[11px] sm:text-sm font-sans mt-0.5">Stay updated with orders and workspace alerts.</p>
-                </div>
+            <div className="flex items-center justify-between mb-6">
+                <h1 className="text-xl sm:text-2xl font-bold text-stone-900 font-sans tracking-tight">Notifications</h1>
                 <div className="flex items-center gap-2">
                     {unreadNotificationCount > 0 && (
                         <button 
@@ -265,7 +262,6 @@ export default function Notifications({ notifications = [], unreadNotificationCo
         <div className="flex-1 flex flex-col min-w-0">
             <SellerHeader 
                 title="Notifications"
-                subtitle="Manage notifications and workspace alerts."
                 auth={auth}
             />
             <main className="flex-1 overflow-y-auto">
