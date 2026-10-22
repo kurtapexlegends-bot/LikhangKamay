@@ -66,3 +66,12 @@ if ($stockRequest->requested_by_user_id && $stockRequest->requested_by_user_id =
 *   **Maker (Initiator)**: The staff member or artisan who creates the stock request.
 *   **Checker (Approver)**: A separate accountant or the seller owner who reviews and releases the funds.
 *   **Audit Notification**: When a request is rejected, the maker is notified via `AccountingRejectedNotification`.
+
+---
+
+## 4. Supply Catalog Interfaces
+
+*   **Add Supply Modal**: [`AddSupplyModal.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Procurement/AddSupplyModal.jsx)
+    *   Provides material registration with automated SKU generation, live uniqueness constraint checks, alert threshold configurations (`min_stock`, `max_stock`), and instant batch valuation calculation (`quantity * unit_cost`).
+*   **Edit Supply Modal**: [`EditSupplyModal.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Procurement/EditSupplyModal.jsx)
+    *   Enforces locked catalog code protection while enabling inventory managers to adjust reorder levels, unit costs, vendor sourcing, and storage specifications.

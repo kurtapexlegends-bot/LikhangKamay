@@ -25,9 +25,6 @@ export default function OvertimeRulesCard({
                     <h3 className="text-base font-bold text-stone-900 tracking-tight">
                         Overtime &amp; Holiday Pay Rates
                     </h3>
-                    <p className="text-xs text-stone-500 font-medium">
-                        Philippine labor standard rates (DOLE) for extra hours, rest days, and holidays.
-                    </p>
                 </div>
             </div>
 

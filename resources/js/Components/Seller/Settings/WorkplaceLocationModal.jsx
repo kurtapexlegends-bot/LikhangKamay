@@ -1,10 +1,40 @@
+/* global route */
 import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from '@inertiajs/react';
-import { MapPin, Crosshair, X, Search, Loader2 } from 'lucide-react';
+import {
+    MapPin,
+    Crosshair,
+    X,
+    Search,
+    Loader2,
+    CheckCircle2,
+    ChevronDown,
+    ChevronUp,
+    Sliders,
+    ShieldCheck,
+    AlertCircle,
+    Navigation,
+} from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import Modal from '@/Components/Modal';
 import InputError from '@/Components/InputError';
 import LocationPickerMap from './LocationPickerMap';
+
+const RADIUS_PRESETS = [
+    { meters: 50, label: '50m', desc: 'Studio' },
+    { meters: 100, label: '100m', desc: 'Workshop' },
+    { meters: 250, label: '250m', desc: 'Compound' },
+    { meters: 500, label: '500m', desc: 'Grounds' },
+];
+
+const CAVITE_HUBS = [
+    { name: 'Imus', lat: 14.4296, lng: 120.9367 },
+    { name: 'Bacoor', lat: 14.4624, lng: 120.9645 },
+    { name: 'Dasmariñas', lat: 14.3294, lng: 120.9367 },
+    { name: 'General Trias', lat: 14.3867, lng: 120.8812 },
+    { name: 'Kawit', lat: 14.4444, lng: 120.9028 },
+    { name: 'Tagaytay', lat: 14.1153, lng: 120.9621 },
+];
 
 export default function WorkplaceLocationModal({
     isOpen,
@@ -14,18 +44,19 @@ export default function WorkplaceLocationModal({
 }) {
     const [detectingGps, setDetectingGps] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchingAddress, setSearchingAddress] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isDebouncing, setIsDebouncing] = useState(false);
+    const [showCoordinatesPanel, setShowCoordinatesPanel] = useState(false);
     const searchContainerRef = useRef(null);
     const { addToast } = useToast();
 
+    // Default coordinates center around Cavite (Imus/Bacoor hub)
     const { data, setData, post, put, processing, errors, clearErrors, reset } = useForm({
         name: '',
         address: '',
-        latitude: 14.5995,
-        longitude: 120.9842,
+        latitude: 14.4296,
+        longitude: 120.9367,
         radius_meters: 100,
         enforce_strict_geofence: false,
     });
@@ -34,19 +65,28 @@ export default function WorkplaceLocationModal({
         if (isOpen) {
             if (editingLocation) {
                 setData({
-                    name: editingLocation.name,
+                    name: editingLocation.name || '',
                     address: editingLocation.address || '',
-                    latitude: editingLocation.latitude,
-                    longitude: editingLocation.longitude,
-                    radius_meters: editingLocation.radius_meters || 100,
+                    latitude: Number(editingLocation.latitude) || 14.4296,
+                    longitude: Number(editingLocation.longitude) || 120.9367,
+                    radius_meters: Number(editingLocation.radius_meters) || 100,
                     enforce_strict_geofence: Boolean(editingLocation.enforce_strict_geofence),
                 });
                 setSearchQuery(editingLocation.address || '');
             } else {
                 reset();
+                setData({
+                    name: '',
+                    address: '',
+                    latitude: 14.4296,
+                    longitude: 120.9367,
+                    radius_meters: 100,
+                    enforce_strict_geofence: false,
+                });
                 setSearchQuery('');
             }
             clearErrors();
+            setShowCoordinatesPanel(false);
         }
     }, [isOpen, editingLocation]);
 
@@ -61,7 +101,7 @@ export default function WorkplaceLocationModal({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Smart multi-fallback live search for Philippine addresses & lot/block numbers
+    // Nominatim geocoding search for Philippine addresses
     useEffect(() => {
         if (!searchQuery.trim() || searchQuery.length < 2) {
             setSearchResults([]);
@@ -72,13 +112,12 @@ export default function WorkplaceLocationModal({
         setIsDebouncing(true);
         const timer = setTimeout(async () => {
             try {
-                // 1. Try exact user query
                 let response = await fetch(
                     `https://nominatim.openstreetmap.org/search?format=json&countrycodes=ph&addressdetails=1&limit=5&q=${encodeURIComponent(searchQuery)}`
                 );
                 let results = await response.json();
 
-                // 2. If 0 results, strip block/lot/unit/phase/purok prefixes and numbers
+                // Fallback: strip block/lot/phase prefixes if 0 results
                 if (!results || results.length === 0) {
                     const cleaned = searchQuery
                         .replace(/\b(blk|block|lot|lt|phase|ph|purok|prk|unit|no|#)\s*\w+/gi, '')
@@ -93,7 +132,7 @@ export default function WorkplaceLocationModal({
                     }
                 }
 
-                // 3. If STILL 0 results, search key geographic terms
+                // Fallback: search key geographic terms
                 if (!results || results.length === 0) {
                     const words = searchQuery
                         .replace(/[^\w\s]/gi, '')
@@ -111,7 +150,7 @@ export default function WorkplaceLocationModal({
                 setSearchResults(results || []);
                 setShowSuggestions((results || []).length > 0);
             } catch (err) {
-                console.error(err);
+                // Silently handle network interruptions
             } finally {
                 setIsDebouncing(false);
             }
@@ -131,7 +170,22 @@ export default function WorkplaceLocationModal({
         }));
         setShowSuggestions(false);
         setSearchQuery(result.display_name.split(',')[0]);
-        addToast('Location pinpointed from search result.', 'success');
+        if (errors.latitude || errors.longitude || errors.address) {
+            clearErrors('latitude', 'longitude', 'address');
+        }
+        addToast('Location pinpointed from address.', 'success');
+    };
+
+    const handleSelectCaviteHub = (hub) => {
+        setData((prev) => ({
+            ...prev,
+            latitude: hub.lat,
+            longitude: hub.lng,
+        }));
+        if (errors.latitude || errors.longitude) {
+            clearErrors('latitude', 'longitude');
+        }
+        addToast(`Centered map on ${hub.name}, Cavite.`, 'info');
     };
 
     const detectGpsLocation = async () => {
@@ -145,7 +199,7 @@ export default function WorkplaceLocationModal({
 
         const finishLoading = (action) => {
             const elapsed = Date.now() - startTime;
-            const remaining = Math.max(0, 1500 - elapsed);
+            const remaining = Math.max(0, 1000 - elapsed);
             setTimeout(() => {
                 setDetectingGps(false);
                 if (action) action();
@@ -157,12 +211,12 @@ export default function WorkplaceLocationModal({
                 const status = await navigator.permissions.query({ name: 'geolocation' });
                 if (status.state === 'denied') {
                     finishLoading(() => {
-                        addToast('Location access is blocked in browser settings. Please allow location access in your address bar.', 'error');
+                        addToast('Location access is blocked. Allow permissions via the browser lock icon.', 'error');
                     });
                     return;
                 }
             } catch (e) {
-                // Ignore permission query error
+                // Permission query not supported in all browsers
             }
         }
 
@@ -176,15 +230,18 @@ export default function WorkplaceLocationModal({
                         latitude: lat,
                         longitude: lng,
                     }));
-                    addToast('Store location detected!', 'success');
+                    if (errors.latitude || errors.longitude) {
+                        clearErrors('latitude', 'longitude');
+                    }
+                    addToast('Current GPS coordinates captured.', 'success');
                 });
             },
             (err) => {
                 finishLoading(() => {
                     if (err?.code === 1) {
-                        addToast('Location access is blocked. Please click the lock icon in your browser address bar to allow location permissions.', 'error');
+                        addToast('Location access blocked. Please allow permissions in your address bar.', 'error');
                     } else {
-                        addToast('Unable to detect store location. Please pin your workplace manually on the map.', 'error');
+                        addToast('Unable to detect GPS. Tap map to pinpoint manually.', 'error');
                     }
                 });
             },
@@ -196,6 +253,11 @@ export default function WorkplaceLocationModal({
         e.preventDefault();
         if (!canEdit) return;
 
+        if (!data.name.trim()) {
+            addToast('Please enter a location name.', 'error');
+            return;
+        }
+
         if (editingLocation) {
             put(route('shop.locations.update', { location: editingLocation.id }), {
                 preserveScroll: true,
@@ -204,7 +266,7 @@ export default function WorkplaceLocationModal({
                     onClose();
                 },
                 onError: () => {
-                    addToast('Please check the highlighted fields.', 'error');
+                    addToast('Please review the highlighted fields.', 'error');
                 },
             });
         } else {
@@ -215,195 +277,412 @@ export default function WorkplaceLocationModal({
                     onClose();
                 },
                 onError: () => {
-                    addToast('Please check the highlighted fields.', 'error');
+                    addToast('Please review the highlighted fields.', 'error');
                 },
             });
         }
     };
 
     return (
-        <Modal show={isOpen} onClose={onClose} maxWidth="xl">
-            <div className="p-6 space-y-5">
-                {/* Modal Header */}
-                <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-                    <h3 className="text-base font-black text-stone-900">
-                        {editingLocation ? 'Edit Workplace Location' : 'Add Workplace Location'}
-                    </h3>
-                    <button onClick={onClose} className="p-1 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition">
+        <Modal show={isOpen} onClose={onClose} maxWidth="4xl">
+            <div className="flex flex-col max-h-[92vh] overflow-hidden bg-white rounded-3xl">
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200/80 shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-clay-50 text-clay-700 border border-clay-200/60 flex items-center justify-center shrink-0">
+                            <MapPin size={20} />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-base font-bold text-stone-900 tracking-tight">
+                                    {editingLocation ? 'Edit Workplace Location' : 'Add Workplace Location'}
+                                </h3>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold text-stone-600 bg-stone-100 border border-stone-200">
+                                    {editingLocation ? `ID: LOC-${editingLocation.id}` : 'Cavite Workshop'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition cursor-pointer"
+                        aria-label="Close modal"
+                    >
                         <X size={18} />
                     </button>
                 </div>
 
-                {/* Modal Form Body */}
-                <form onSubmit={handleSubmit} noValidate className="space-y-4">
-                    <div>
-                        <label className="block text-xs font-bold text-stone-700 mb-1">Location Name</label>
-                        <input
-                            type="text"
-                            required
-                            placeholder="e.g. Main Artisan Workshop"
-                            value={data.name}
-                            onChange={(e) => {
-                                setData('name', e.target.value);
-                                if (errors.name) clearErrors('name');
-                            }}
-                            className={`w-full rounded-xl border px-3.5 py-2 text-xs font-medium text-stone-900 focus:ring-clay-500 ${
-                                errors.name ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-200 focus:border-clay-500'
-                            }`}
-                        />
-                        {errors.name && <InputError message={errors.name} className="mt-1.5" />}
-                    </div>
+                {/* Form Body - Split Workspace */}
+                <form id="workplace-location-form" onSubmit={handleSubmit} noValidate className="flex-1 overflow-y-auto p-5 sm:p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        {/* Left Configuration Column (7 cols) */}
+                        <div className="lg:col-span-7 space-y-5">
+                            {/* Location Identity Card */}
+                            <div className="rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5 shadow-2xs space-y-4">
+                                <div>
+                                    <label htmlFor="location-name-input" className="block text-xs font-bold text-stone-700 mb-1">
+                                        Workshop or Store Name <span className="text-rose-500">*</span>
+                                    </label>
+                                    <input
+                                        id="location-name-input"
+                                        type="text"
+                                        required
+                                        placeholder="e.g. Kawit Artisan Workshop"
+                                        value={data.name}
+                                        onChange={(e) => {
+                                            setData('name', e.target.value);
+                                            if (errors.name) clearErrors('name');
+                                        }}
+                                        className={`w-full rounded-xl border px-3.5 py-2.5 text-xs font-bold text-stone-900 shadow-2xs focus:border-clay-500 focus:ring-clay-500 min-h-[42px] ${
+                                            errors.name ? 'border-rose-300 bg-rose-50/50' : 'border-stone-300'
+                                        }`}
+                                    />
+                                    {errors.name && <InputError message={errors.name} className="mt-1" />}
+                                </div>
 
-                    {/* Search via Address Autocomplete & GPS */}
-                    <div className="space-y-2">
-                        <label className="block text-xs font-bold text-stone-700">Pinpoint Location</label>
-                        <div className="flex gap-2">
-                            <div ref={searchContainerRef} className="relative flex-1">
-                                <input
-                                    type="text"
-                                    placeholder="Search city, barangay, landmark, or street..."
-                                    value={searchQuery}
-                                    onChange={(e) => {
-                                        setSearchQuery(e.target.value);
-                                        if (errors.address) clearErrors('address');
-                                    }}
-                                    onFocus={() => searchResults.length > 0 && setShowSuggestions(true)}
-                                    className={`w-full rounded-xl border pl-8 pr-8 py-2 text-xs font-medium text-stone-900 focus:ring-clay-500 ${
-                                        errors.address ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-200 focus:border-clay-500'
-                                    }`}
-                                />
-                                <Search size={14} className="absolute left-2.5 top-2.5 text-stone-400 pointer-events-none" />
-                                {isDebouncing && (
-                                    <div className="absolute right-2.5 top-2.5">
-                                        <Loader2 className="animate-spin text-clay-600" size={14} />
-                                    </div>
-                                )}
-
-                                {/* Live Search Suggestions Dropdown */}
-                                {showSuggestions && searchResults.length > 0 && (
-                                    <div className="absolute left-0 right-0 top-full mt-1.5 z-[600] bg-white rounded-xl border border-stone-200 shadow-xl overflow-hidden max-h-60 overflow-y-auto animate-in fade-in duration-150">
-                                        {searchResults.map((item, idx) => (
-                                            <button
-                                                key={idx}
-                                                type="button"
-                                                onClick={() => handleSelectSuggestion(item)}
-                                                className="w-full text-left px-3.5 py-2.5 hover:bg-clay-50 border-b border-stone-100 last:border-0 flex items-start gap-2.5 transition text-xs group"
-                                            >
-                                                <MapPin size={14} className="text-clay-500 mt-0.5 shrink-0 group-hover:scale-110 transition-transform" />
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="font-bold text-stone-800 truncate">
-                                                        {item.display_name.split(',')[0]}
-                                                    </p>
-                                                    <p className="text-[10px] text-stone-500 truncate">
-                                                        {item.display_name}
-                                                    </p>
+                                {/* Address Autocomplete & GPS Trigger */}
+                                <div className="space-y-2">
+                                    <label htmlFor="location-search-input" className="block text-xs font-bold text-stone-700">
+                                        Address or Landmark
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <div ref={searchContainerRef} className="relative flex-1">
+                                            <input
+                                                id="location-search-input"
+                                                type="text"
+                                                placeholder="Search street, barangay, or landmark..."
+                                                value={searchQuery}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') e.preventDefault();
+                                                }}
+                                                onChange={(e) => {
+                                                    setSearchQuery(e.target.value);
+                                                    if (errors.address) clearErrors('address');
+                                                }}
+                                                onFocus={() => searchResults.length > 0 && setShowSuggestions(true)}
+                                                className={`w-full rounded-xl border pl-8 pr-8 py-2.5 text-xs font-medium text-stone-900 shadow-2xs focus:border-clay-500 focus:ring-clay-500 min-h-[42px] ${
+                                                    errors.address ? 'border-rose-300 bg-rose-50/50' : 'border-stone-300'
+                                                }`}
+                                            />
+                                            <Search size={14} className="absolute left-2.5 top-3.5 text-stone-400 pointer-events-none" />
+                                            {isDebouncing && (
+                                                <div className="absolute right-2.5 top-3.5">
+                                                    <Loader2 className="animate-spin text-clay-600" size={14} />
                                                 </div>
+                                            )}
+                                            {!isDebouncing && searchQuery && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSearchQuery('');
+                                                        setSearchResults([]);
+                                                        setShowSuggestions(false);
+                                                    }}
+                                                    className="absolute right-2.5 top-3 text-stone-400 hover:text-stone-700"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            )}
+
+                                            {/* Live Autocomplete Dropdown */}
+                                            {showSuggestions && searchResults.length > 0 && (
+                                                <div className="absolute left-0 right-0 top-full mt-1.5 z-[600] bg-white rounded-xl border border-stone-200 shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+                                                    {searchResults.map((item, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            type="button"
+                                                            onClick={() => handleSelectSuggestion(item)}
+                                                            className="w-full text-left px-3.5 py-2.5 hover:bg-clay-50 border-b border-stone-100 last:border-0 flex items-start gap-2.5 transition text-xs cursor-pointer"
+                                                        >
+                                                            <MapPin size={14} className="text-clay-600 mt-0.5 shrink-0" />
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="font-bold text-stone-900 truncate">
+                                                                    {item.display_name.split(',')[0]}
+                                                                </p>
+                                                                <p className="text-[10px] text-stone-500 truncate">
+                                                                    {item.display_name}
+                                                                </p>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            disabled={detectingGps}
+                                            onClick={detectGpsLocation}
+                                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300/80 text-xs font-bold transition shrink-0 min-h-[42px] cursor-pointer disabled:opacity-50"
+                                            title="Use Current Device GPS"
+                                        >
+                                            <Crosshair size={14} className={detectingGps ? 'animate-spin text-clay-600' : 'text-stone-600'} />
+                                            <span className="hidden sm:inline">{detectingGps ? 'Locating...' : 'My GPS'}</span>
+                                        </button>
+                                    </div>
+                                    {errors.address && <InputError message={errors.address} className="mt-1" />}
+                                </div>
+
+                                {/* Cavite Hub Quick-Centers */}
+                                <div className="pt-1">
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                                            Cavite Quick Center
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {CAVITE_HUBS.map((hub) => (
+                                            <button
+                                                key={hub.name}
+                                                type="button"
+                                                onClick={() => handleSelectCaviteHub(hub)}
+                                                className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-stone-100 text-stone-700 hover:bg-clay-100 hover:text-clay-800 border border-stone-200/80 transition cursor-pointer"
+                                            >
+                                                {hub.name}
                                             </button>
                                         ))}
                                     </div>
-                                )}
+                                </div>
                             </div>
 
-                            <button
-                                type="button"
-                                disabled={detectingGps}
-                                onClick={detectGpsLocation}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-clay-50 text-clay-700 hover:bg-clay-100 border border-clay-200 text-xs font-bold transition shrink-0"
-                                title="Use My Current Location"
-                            >
-                                <Crosshair size={14} className={detectingGps ? "animate-spin text-clay-600" : ""} />
-                                {detectingGps ? 'Locating...' : 'Use Current Location'}
-                            </button>
+                            {/* Clock-In Geofence Perimeter Card */}
+                            <div className="rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5 shadow-2xs space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Sliders size={15} className="text-clay-600" />
+                                        <label htmlFor="radius-slider" className="text-xs font-bold text-stone-800">
+                                            Allowed Clock-In Radius
+                                        </label>
+                                    </div>
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-clay-50 text-clay-700 border border-clay-200">
+                                        {data.radius_meters} meters
+                                    </span>
+                                </div>
+
+                                {/* Preset Radius Buttons */}
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    {RADIUS_PRESETS.map((preset) => {
+                                        const isSelected = Number(data.radius_meters) === preset.meters;
+                                        return (
+                                            <button
+                                                key={preset.meters}
+                                                type="button"
+                                                onClick={() => {
+                                                    setData('radius_meters', preset.meters);
+                                                    if (errors.radius_meters) clearErrors('radius_meters');
+                                                }}
+                                                className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition cursor-pointer ${
+                                                    isSelected
+                                                        ? 'bg-clay-600 border-clay-600 text-white shadow-xs'
+                                                        : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100'
+                                                }`}
+                                            >
+                                                <span className="text-xs font-bold">{preset.label}</span>
+                                                <span className={`text-[10px] ${isSelected ? 'text-clay-100' : 'text-stone-400'}`}>
+                                                    {preset.desc}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Continuous Slider */}
+                                <div className="space-y-1">
+                                    <input
+                                        id="radius-slider"
+                                        type="range"
+                                        min="20"
+                                        max="1000"
+                                        step="10"
+                                        value={data.radius_meters}
+                                        onChange={(e) => {
+                                            setData('radius_meters', parseInt(e.target.value, 10));
+                                            if (errors.radius_meters) clearErrors('radius_meters');
+                                        }}
+                                        className="w-full accent-clay-600 cursor-pointer"
+                                    />
+                                    <div className="flex justify-between text-[10px] text-stone-400 font-mono">
+                                        <span>20m (Tight)</span>
+                                        <span>500m</span>
+                                        <span>1000m (Broad)</span>
+                                    </div>
+                                    {errors.radius_meters && <InputError message={errors.radius_meters} className="mt-1" />}
+                                </div>
+
+                                {/* Boundary Enforcement Switch Card */}
+                                <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200/80 flex items-start justify-between gap-4">
+                                    <div className="space-y-0.5">
+                                        <label htmlFor="strict-geofence-switch" className="text-xs font-bold text-stone-900 block cursor-pointer">
+                                            Enforce Strict Clock-In Boundary
+                                        </label>
+                                        <p className="text-[11px] text-stone-500 font-medium leading-relaxed">
+                                            {data.enforce_strict_geofence
+                                                ? `Staff must be within ${data.radius_meters}m to clock in. Off-site attempts are blocked.`
+                                                : `Off-site clock-ins are permitted but flagged for manager review.`}
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        id="strict-geofence-switch"
+                                        role="switch"
+                                        aria-checked={data.enforce_strict_geofence}
+                                        onClick={() => setData('enforce_strict_geofence', !data.enforce_strict_geofence)}
+                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                            data.enforce_strict_geofence ? 'bg-clay-600' : 'bg-stone-300'
+                                        }`}
+                                    >
+                                        <span
+                                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                                                data.enforce_strict_geofence ? 'translate-x-5' : 'translate-x-0'
+                                            }`}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Fine-Tune Exact GPS Coordinates (Collapsible) */}
+                            <div className="rounded-2xl border border-stone-200/80 bg-white overflow-hidden shadow-2xs">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCoordinatesPanel(!showCoordinatesPanel)}
+                                    className="w-full flex items-center justify-between p-3.5 text-xs font-bold text-stone-700 hover:bg-stone-50 transition cursor-pointer"
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <Navigation size={13} className="text-clay-600" />
+                                        Exact Coordinates ({Number(data.latitude).toFixed(5)}, {Number(data.longitude).toFixed(5)})
+                                    </span>
+                                    {showCoordinatesPanel ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                                </button>
+
+                                {showCoordinatesPanel && (
+                                    <div className="p-4 pt-1 border-t border-stone-100 bg-stone-50/50 space-y-3">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">
+                                                    Latitude
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    step="0.000001"
+                                                    value={data.latitude}
+                                                    onChange={(e) => setData('latitude', parseFloat(e.target.value) || 0)}
+                                                    className="w-full text-xs font-mono font-bold rounded-xl border-stone-300 bg-white py-1.5 px-2.5 focus:border-clay-500 focus:ring-clay-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">
+                                                    Longitude
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    step="0.000001"
+                                                    value={data.longitude}
+                                                    onChange={(e) => setData('longitude', parseFloat(e.target.value) || 0)}
+                                                    className="w-full text-xs font-mono font-bold rounded-xl border-stone-300 bg-white py-1.5 px-2.5 focus:border-clay-500 focus:ring-clay-500"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        {errors.address && <InputError message={errors.address} className="mt-1" />}
-                    </div>
 
-                    {/* Interactive Leaflet Map Visualizer with Locating Overlay */}
-                    <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
-                            Pin Location on Map
-                        </label>
-                        <LocationPickerMap
-                            latitude={data.latitude}
-                            longitude={data.longitude}
-                            radiusMeters={data.radius_meters}
-                            isLocating={detectingGps || searchingAddress}
-                            onLocationSelect={({ latitude, longitude }) => {
-                                setData((prev) => ({
-                                    ...prev,
-                                    latitude,
-                                    longitude,
-                                }));
-                                if (errors.latitude || errors.longitude) {
-                                    clearErrors('latitude', 'longitude');
-                                }
-                            }}
-                            height="200px"
-                        />
-                        {(errors.latitude || errors.longitude) && (
-                            <InputError message={errors.latitude || errors.longitude} className="mt-1" />
-                        )}
-                    </div>
+                        {/* Right Map Visualizer Column (5 cols) */}
+                        <div className="lg:col-span-5 flex flex-col space-y-3">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
+                                    <MapPin size={12} className="text-clay-600" />
+                                    Map Pin &amp; Perimeter
+                                </span>
+                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                    Interactive
+                                </span>
+                            </div>
 
-                    {/* Radius Slider */}
-                    <div>
-                        <div className="flex items-center justify-between mb-1">
-                            <label className="text-xs font-bold text-stone-700">Allowed Clock-In Distance</label>
-                            <span className="text-xs font-extrabold text-clay-700">{data.radius_meters} meters</span>
+                            {/* Leaflet Map Frame */}
+                            <div className="relative rounded-2xl overflow-hidden border border-stone-200/90 shadow-2xs h-[320px] sm:h-[360px] lg:h-[460px] bg-stone-100">
+                                <LocationPickerMap
+                                    latitude={data.latitude}
+                                    longitude={data.longitude}
+                                    radiusMeters={data.radius_meters}
+                                    isLocating={detectingGps}
+                                    height="100%"
+                                    className="w-full h-full"
+                                    onLocationSelect={({ latitude, longitude }) => {
+                                        setData((prev) => ({
+                                            ...prev,
+                                            latitude,
+                                            longitude,
+                                        }));
+                                        if (errors.latitude || errors.longitude) {
+                                            clearErrors('latitude', 'longitude');
+                                        }
+                                    }}
+                                />
+
+                                {/* Map Top Floating Guidance */}
+                                <div className="absolute top-2.5 left-2.5 right-2.5 z-[400] pointer-events-none">
+                                    <div className="bg-white/95 backdrop-blur-xs rounded-xl border border-stone-200/90 px-3 py-1.5 shadow-xs flex items-center justify-between text-[11px] font-semibold text-stone-700">
+                                        <span>Tap map or drag pin to position entrance</span>
+                                        <span className="font-bold text-clay-700">{data.radius_meters}m radius</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {(errors.latitude || errors.longitude) && (
+                                <InputError message={errors.latitude || errors.longitude} className="mt-1" />
+                            )}
                         </div>
-                        <input
-                            type="range"
-                            min="20"
-                            max="1000"
-                            step="10"
-                            value={data.radius_meters}
-                            onChange={(e) => {
-                                setData('radius_meters', parseInt(e.target.value, 10));
-                                if (errors.radius_meters) clearErrors('radius_meters');
-                            }}
-                            className="w-full accent-clay-600"
-                        />
-                        {errors.radius_meters && <InputError message={errors.radius_meters} className="mt-1" />}
-                        <p className="text-[10px] text-stone-400 font-medium mt-1">
-                            Staff can clock in within {data.radius_meters} meters of this store location.
-                        </p>
+                    </div>
+                </form>
+
+                {/* Sticky Action Footer */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-3.5 border-t border-stone-200/80 bg-stone-50/70 shrink-0">
+                    <div className="flex items-center gap-2 text-xs text-stone-500 font-medium truncate self-start sm:self-auto">
+                        <span className="font-bold text-stone-800 truncate">
+                            {data.name || 'Unnamed Workplace'}
+                        </span>
+                        <span>•</span>
+                        <span>{data.radius_meters}m boundary</span>
+                        <span>•</span>
+                        <span className={data.enforce_strict_geofence ? 'text-rose-600 font-bold' : 'text-stone-600'}>
+                            {data.enforce_strict_geofence ? 'Strict On-Site' : 'Soft Audit'}
+                        </span>
                     </div>
 
-                    {/* Strict Geofence Enforcement Toggle */}
-                    <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 flex items-start gap-3">
-                        <input
-                            type="checkbox"
-                            id="enforce_strict_geofence"
-                            checked={data.enforce_strict_geofence}
-                            onChange={(e) => setData('enforce_strict_geofence', e.target.checked)}
-                            className="mt-0.5 rounded border-stone-300 text-clay-600 focus:ring-clay-500 w-4 h-4 cursor-pointer"
-                        />
-                        <label htmlFor="enforce_strict_geofence" className="text-xs cursor-pointer select-none">
-                            <span className="font-extrabold text-stone-900 block">Require staff to be at store to clock in</span>
-                            <span className="text-[11px] text-stone-500 font-medium leading-relaxed block mt-0.5">
-                                When turned on, staff cannot clock in if they are outside the {data.radius_meters}m store area. When off, off-site clock-ins are flagged for manager approval.
-                            </span>
-                        </label>
-                    </div>
-
-                    {/* Modal Actions Footer */}
-                    <div className="flex justify-end gap-2 border-t border-stone-100 pt-4 shrink-0">
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold"
+                            className="px-4 py-2 rounded-xl bg-white border border-stone-200 text-stone-700 text-xs font-bold hover:bg-stone-50 transition cursor-pointer min-h-[42px]"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            disabled={processing}
-                            className="px-4 py-2 rounded-xl bg-clay-600 hover:bg-clay-700 text-white text-xs font-bold shadow-xs"
+                            form="workplace-location-form"
+                            disabled={processing || !canEdit}
+                            className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl bg-clay-700 hover:bg-clay-800 text-white text-xs font-bold transition shadow-xs active:scale-95 disabled:opacity-50 cursor-pointer min-h-[42px]"
                         >
-                            {editingLocation ? 'Save Changes' : 'Create Location'}
+                            {processing ? (
+                                <>
+                                    <svg className="animate-spin w-4 h-4 text-white" viewBox="0 0 24 24" fill="none">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                                    </svg>
+                                    <span>Saving...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <CheckCircle2 size={15} />
+                                    <span>{editingLocation ? 'Save Changes' : 'Create Location'}</span>
+                                </>
+                            )}
                         </button>
                     </div>
-                </form>
+                </div>
             </div>
         </Modal>
     );

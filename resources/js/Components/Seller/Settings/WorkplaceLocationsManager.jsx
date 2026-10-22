@@ -54,9 +54,6 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                         </div>
                         <h3 className="text-base font-black text-stone-900 tracking-tight">Workplace & Store Locations</h3>
                     </div>
-                    <p className="text-xs text-stone-500 font-medium mt-1">
-                        Set store or workshop locations to verify where staff clock in.
-                    </p>
                 </div>
 
                 {canEdit && (
@@ -147,10 +144,9 @@ export default function WorkplaceLocationsManager({ locations = [], canEdit = tr
                     ))}
                 </div>
             ) : (
-                <div className="py-12 bg-stone-50/50 rounded-2xl border border-dashed border-stone-200 text-center space-y-2">
+                <div className="py-12 bg-stone-50/50 rounded-2xl border border-dashed border-stone-200 text-center space-y-1.5">
                     <MapPin size={24} className="mx-auto text-stone-300" />
                     <p className="text-xs font-bold text-stone-700">No workplace locations configured yet.</p>
-                    <p className="text-[11px] text-stone-400">Add your workshop or store location so staff can clock in on-site.</p>
                 </div>
             )}
 

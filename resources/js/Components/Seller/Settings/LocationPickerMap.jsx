@@ -16,8 +16,8 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function LocationPickerMap({
-    latitude = 14.5995,
-    longitude = 120.9842,
+    latitude = 14.4296,
+    longitude = 120.9367,
     radiusMeters = 100,
     onLocationSelect = null,
     readOnly = false,
@@ -30,8 +30,8 @@ export default function LocationPickerMap({
     const markerRef = useRef(null);
     const circleRef = useRef(null);
 
-    const latNum = Number(latitude) || 14.5995;
-    const lngNum = Number(longitude) || 120.9842;
+    const latNum = Number(latitude) || 14.4296;
+    const lngNum = Number(longitude) || 120.9367;
     const radiusNum = Number(radiusMeters) || 100;
 
     // Initialize Leaflet Map Instance
@@ -74,11 +74,16 @@ export default function LocationPickerMap({
             mapInstanceRef.current = map;
 
             // Invalidate size after modal transition to force full tile load
-            const timer = setTimeout(() => {
+            const timer1 = setTimeout(() => {
                 if (mapInstanceRef.current) {
                     mapInstanceRef.current.invalidateSize();
                 }
             }, 150);
+            const timer2 = setTimeout(() => {
+                if (mapInstanceRef.current) {
+                    mapInstanceRef.current.invalidateSize();
+                }
+            }, 350);
 
             if (!readOnly && onLocationSelect) {
                 // Drag marker event
@@ -99,7 +104,10 @@ export default function LocationPickerMap({
                 });
             }
 
-            return () => clearTimeout(timer);
+            return () => {
+                clearTimeout(timer1);
+                clearTimeout(timer2);
+            };
         }
 
         return () => {

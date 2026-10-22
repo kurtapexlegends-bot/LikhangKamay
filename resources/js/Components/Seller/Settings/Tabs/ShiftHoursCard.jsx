@@ -86,9 +86,6 @@ export default function ShiftHoursCard({
                         <h3 className="text-base font-bold text-stone-900 tracking-tight">
                             Workshop Shift Hours &amp; Lunch Break
                         </h3>
-                        <p className="text-xs text-stone-500 font-medium">
-                            Set your daily workshop opening/closing hours and meal break schedule.
-                        </p>
                     </div>
                 </div>
 

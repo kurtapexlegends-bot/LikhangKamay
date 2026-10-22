@@ -142,4 +142,14 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
     *   [ProvisionStaffAccount.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/HR/ProvisionStaffAccount.php) and [HRStaffProvisioner.php](file:///c:/laragon/www/LikhangKamay/app/Support/HR/HRStaffProvisioner.php) enforce strict email uniqueness rules.
     *   Employees provisioned with login credentials cannot use an email already registered to any existing seller, buyer, or administrator, preventing privilege escalation and collision attacks.
 
+---
+
+## 6. Payroll Rules & Wage Simulation Interface
+
+*   **Payroll Rules Tab**: [`PayrollRulesTab.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Settings/Tabs/PayrollRulesTab.jsx)
+    *   Industrial operational tab grouping Shift Hours & Working Days ([`ShiftHoursCard.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Settings/Tabs/ShiftHoursCard.jsx)), Overtime & Holiday Multipliers ([`OvertimeRulesCard.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Settings/Tabs/OvertimeRulesCard.jsx)), and Philippine Statutory Tax / SSS / PhilHealth / Pag-IBIG Contributions ([`TaxContributionForm.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Settings/Tabs/TaxContributionForm.jsx)).
+*   **Live Wage Simulator**: [`LiveWageSimulator.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Settings/Tabs/LiveWageSimulator.jsx)
+    *   Real-time interactive wage simulator embedded in the payroll settings dashboard, computing effective hourly wage rates, regular workday pay, overtime earnings, and gross daily wages dynamically as the artisan customizes workshop rules.
+
+
 

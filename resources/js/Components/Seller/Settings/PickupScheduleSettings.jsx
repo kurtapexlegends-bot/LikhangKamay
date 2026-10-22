@@ -1,11 +1,11 @@
 /* global route */
 import React, { useState, useMemo } from 'react';
 import { router } from '@inertiajs/react';
-import { Store, Clock, Layers } from 'lucide-react';
+import { Store, Clock, Layers, MapPin, Calendar, CheckCircle2, Save, Info } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import UniformScheduleSection from './Pickup/UniformScheduleSection';
 import DailyScheduleSection from './Pickup/DailyScheduleSection';
-import PickupSidebar from './Pickup/PickupSidebar';
+import PickupPreviewCard from './Pickup/PickupPreviewCard';
 
 const DAYS_OF_WEEK = [
     { id: 1, label: 'Mon', full: 'Monday' },
@@ -71,6 +71,8 @@ export default function PickupScheduleSettings({ schedule, locations = [], canEd
     const [pickupLocationId, setPickupLocationId] = useState(schedule?.pickup_location_id || '');
     const [maxAdvanceDays, setMaxAdvanceDays] = useState(schedule?.max_advance_days ?? 30);
     const [isSaving, setIsSaving] = useState(false);
+
+    const selectedLocation = locations.find((l) => String(l.id) === String(pickupLocationId));
 
     // Uniform Mode Handlers
     const toggleDay = (dayId) => {
@@ -257,7 +259,7 @@ export default function PickupScheduleSettings({ schedule, locations = [], canEd
         addToast(`Applied preset to ${dayName}.`, 'success');
     };
 
-    // Live Weekly Overview for Sidebar
+    // Live Weekly Overview for Preview Card
     const weeklyOverview = useMemo(() => {
         return DAYS_OF_WEEK.map((day) => {
             if (scheduleMode === 'per_day') {
@@ -383,54 +385,142 @@ export default function PickupScheduleSettings({ schedule, locations = [], canEd
 
     return (
         <div className="space-y-6">
-            {/* Top Workspace Header & Mode Switcher */}
-            <div className="rounded-3xl border border-stone-200/80 bg-white p-6 shadow-xs">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex items-center gap-3.5">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-clay-50 text-clay-700 border border-clay-200 shrink-0">
-                            <Store size={20} />
-                        </div>
-                        <div>
-                            <h3 className="text-sm font-black text-stone-900 tracking-tight">Store Pickup & Operating Hours</h3>
-                        </div>
+            {/* Top Navigation & Schedule Mode Switcher */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-2xl border border-stone-200/80 shadow-2xs">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-clay-50 text-clay-700 border border-clay-200/60 flex items-center justify-center shrink-0">
+                        <Store size={20} />
                     </div>
+                    <div>
+                        <h3 className="text-base font-bold text-stone-900 tracking-tight">
+                            Store Pickup &amp; Operating Hours
+                        </h3>
+                    </div>
+                </div>
 
-                    {/* Mode Switcher Segmented Control */}
-                    <div className="inline-flex rounded-2xl border border-stone-200/80 bg-stone-100/70 p-1 text-xs font-bold self-start sm:self-auto">
-                        <button
-                            type="button"
-                            onClick={() => canEdit && setScheduleMode('uniform')}
-                            disabled={!canEdit || !isEnabled}
-                            className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 transition-all ${
-                                scheduleMode === 'uniform'
-                                    ? 'bg-white text-stone-900 shadow-2xs font-extrabold'
-                                    : 'text-stone-600 hover:text-stone-900'
-                            } ${!canEdit || !isEnabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-                        >
-                            <Layers size={13} />
-                            <span>Same hours every day</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => canEdit && setScheduleMode('per_day')}
-                            disabled={!canEdit || !isEnabled}
-                            className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 transition-all ${
-                                scheduleMode === 'per_day'
-                                    ? 'bg-clay-600 text-white shadow-2xs font-extrabold'
-                                    : 'text-stone-600 hover:text-stone-900'
-                            } ${!canEdit || !isEnabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-                        >
-                            <Clock size={13} />
-                            <span>Custom hours per day</span>
-                        </button>
-                    </div>
+                {/* Mode Switcher Segmented Control */}
+                <div className="inline-flex rounded-xl border border-stone-200/80 bg-stone-100/80 p-1 text-xs font-bold self-start sm:self-auto gap-1">
+                    <button
+                        type="button"
+                        onClick={() => canEdit && setScheduleMode('uniform')}
+                        disabled={!canEdit || !isEnabled}
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 transition-all cursor-pointer ${
+                            scheduleMode === 'uniform'
+                                ? 'bg-white text-stone-900 shadow-2xs'
+                                : 'text-stone-600 hover:text-stone-900'
+                        } ${!canEdit || !isEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        <Layers size={13} />
+                        <span>Uniform Schedule</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => canEdit && setScheduleMode('per_day')}
+                        disabled={!canEdit || !isEnabled}
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 transition-all cursor-pointer ${
+                            scheduleMode === 'per_day'
+                                ? 'bg-clay-600 text-white shadow-2xs'
+                                : 'text-stone-600 hover:text-stone-900'
+                        } ${!canEdit || !isEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        <Clock size={13} />
+                        <span>Custom by Day</span>
+                    </button>
                 </div>
             </div>
 
-            {/* Responsive Two-Column Dashboard Layout */}
+            {/* 2-Column Responsive Workspace Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                {/* Main Schedule Workspace (Left) */}
-                <div className="lg:col-span-8 space-y-5">
+                {/* Main Setup Column (Left 8 Cols) */}
+                <div className="lg:col-span-8 space-y-6">
+                    {/* SECTION 1: SERVICE ACTIVATION & FULFILLMENT LOCATION */}
+                    <div className="bg-white rounded-3xl border border-stone-200/80 p-5 sm:p-6 shadow-2xs space-y-5">
+                        {/* Master Activation Switch */}
+                        <div className="flex items-center justify-between gap-4 pb-4 border-b border-stone-100">
+                            <div className="space-y-0.5">
+                                <label className="text-sm font-bold text-stone-900 cursor-pointer" htmlFor="pickup-master-toggle">
+                                    Local Store Pickup Service
+                                </label>
+                                <span className="text-xs text-stone-500 font-medium block">
+                                    Allow nearby Cavite customers to pick up orders directly at your workshop
+                                </span>
+                            </div>
+
+                            <button
+                                type="button"
+                                id="pickup-master-toggle"
+                                role="switch"
+                                aria-checked={isEnabled}
+                                onClick={() => canEdit && setIsEnabled(!isEnabled)}
+                                disabled={!canEdit}
+                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                    isEnabled ? 'bg-clay-600' : 'bg-stone-200'
+                                } ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                <span
+                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                                        isEnabled ? 'translate-x-5' : 'translate-x-0'
+                                    }`}
+                                />
+                            </button>
+                        </div>
+
+                        {/* Location & Advance Notice Row */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Fulfillment Location */}
+                            <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-2">
+                                <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1.5" htmlFor="pickup-location-select">
+                                    <MapPin size={12} className="text-clay-600" />
+                                    Pickup Location Address
+                                </label>
+                                <select
+                                    id="pickup-location-select"
+                                    value={pickupLocationId || ''}
+                                    onChange={(e) => setPickupLocationId(e.target.value)}
+                                    disabled={!canEdit || !isEnabled}
+                                    className="w-full text-xs font-bold text-stone-900 rounded-xl border-stone-300 bg-stone-50/50 py-2.5 px-3 shadow-2xs focus:border-clay-500 focus:ring-clay-500 disabled:opacity-50 min-h-[42px]"
+                                >
+                                    <option value="">Primary Studio / Workshop Address</option>
+                                    {locations.map((loc) => (
+                                        <option key={loc.id} value={loc.id}>
+                                            {loc.name} {loc.address ? `— ${loc.address}` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                                {selectedLocation && (
+                                    <p className="text-[11px] text-stone-500 truncate">
+                                        {selectedLocation.address || selectedLocation.name}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Advance Reservation Window */}
+                            <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-2">
+                                <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1.5" htmlFor="max-advance-days-select">
+                                    <Calendar size={12} className="text-clay-600" />
+                                    Advance Reservation Window
+                                </label>
+                                <select
+                                    id="max-advance-days-select"
+                                    value={maxAdvanceDays}
+                                    onChange={(e) => setMaxAdvanceDays(Number(e.target.value))}
+                                    disabled={!canEdit || !isEnabled}
+                                    className="w-full text-xs font-bold text-stone-900 rounded-xl border-stone-300 bg-stone-50/50 py-2.5 px-3 shadow-2xs focus:border-clay-500 focus:ring-clay-500 disabled:opacity-50 min-h-[42px]"
+                                >
+                                    <option value={7}>7 Days Ahead (1 Week)</option>
+                                    <option value={14}>14 Days Ahead (2 Weeks)</option>
+                                    <option value={30}>30 Days Ahead (1 Month)</option>
+                                    <option value={60}>60 Days Ahead (2 Months)</option>
+                                    <option value={90}>90 Days Ahead (3 Months)</option>
+                                </select>
+                                <span className="text-[10px] text-stone-500 block">
+                                    Customers can book up to {maxAdvanceDays} days in advance
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* SECTION 2: OPERATING DAYS & TIME WINDOWS */}
                     {scheduleMode === 'uniform' && (
                         <UniformScheduleSection
                             daysOfWeek={DAYS_OF_WEEK}
@@ -466,23 +556,48 @@ export default function PickupScheduleSettings({ schedule, locations = [], canEd
                     )}
                 </div>
 
-                {/* Sticky Right Sidebar (Right) */}
-                <div className="lg:col-span-4 lg:sticky lg:top-20">
-                    <PickupSidebar
+                {/* Right Column: Live Customer Preview & Weekly Schedule Overview */}
+                <div className="lg:col-span-4 lg:sticky lg:top-24 space-y-4">
+                    <PickupPreviewCard
                         isEnabled={isEnabled}
-                        onToggleEnabled={() => canEdit && setIsEnabled(!isEnabled)}
-                        locations={locations}
-                        pickupLocationId={pickupLocationId}
-                        onChangePickupLocationId={setPickupLocationId}
+                        selectedLocation={selectedLocation}
                         maxAdvanceDays={maxAdvanceDays}
-                        onChangeMaxAdvanceDays={setMaxAdvanceDays}
                         weeklyOverview={weeklyOverview}
-                        canEdit={canEdit}
-                        isSaving={isSaving}
-                        onSave={handleSave}
                     />
                 </div>
             </div>
+
+            {/* Bottom Sticky Action Bar */}
+            {canEdit && (
+                <div className="sticky bottom-4 z-20 flex items-center justify-between bg-white/95 backdrop-blur-md rounded-2xl border border-stone-200/90 px-5 py-3.5 shadow-lg">
+                    <div className="flex items-center gap-2 text-xs text-stone-500 font-medium">
+                        <Info size={14} className="text-stone-400 shrink-0" />
+                        <span>Changes apply immediately to customer checkout reservations.</span>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-clay-700 hover:bg-clay-800 text-white text-xs font-bold transition shadow-xs disabled:opacity-50 min-h-[42px] cursor-pointer active:scale-95 shrink-0"
+                    >
+                        {isSaving ? (
+                            <>
+                                <svg className="animate-spin w-4 h-4 text-white" viewBox="0 0 24 24" fill="none">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                                </svg>
+                                <span>Saving Schedule...</span>
+                            </>
+                        ) : (
+                            <>
+                                <CheckCircle2 size={15} />
+                                <span>Save Changes</span>
+                            </>
+                        )}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

@@ -27,9 +27,6 @@ export default function UniformScheduleSection({
                             <Calendar size={14} className="text-clay-600" />
                             Operating Pickup Days
                         </h4>
-                        <p className="text-xs text-stone-500 font-medium mt-1">
-                            Select the days of the week your craft studio accepts local customer pickups.
-                        </p>
                     </div>
 
                     {canEdit && isEnabled && (

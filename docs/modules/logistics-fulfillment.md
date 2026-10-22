@@ -74,6 +74,9 @@ Webhooks from the Lalamove API dispatch events that update the `status` of `Orde
 
 ### Workshop Pickup & Multi-Location Models
 *   [SellerPickupSchedule.php](file:///c:/laragon/www/LikhangKamay/app/Models/SellerPickupSchedule.php): Configures weekly operating schedules, slot durations, and capacity per artisan workshop. Uses `PostgresCompatibleBoolean` cast on `is_enabled` and `scopeEnabled` scope for strict cross-DB compatibility, with defensive `->withTrashed()` scoping on artisan and workshop location relations.
+*   [`PickupScheduleSettings.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Settings/PickupScheduleSettings.jsx): Two-column operational dashboard for Store Pickup & Hours, supporting both Uniform Schedule and Custom by Day modes with sticky action controls.
+*   [`PickupPreviewCard.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Settings/Pickup/PickupPreviewCard.jsx): Live customer-facing preview component rendering real-time pickup availability, studio address, advance booking windows, and a 7-day schedule breakdown.
+*   [`WorkplaceLocationModal.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Settings/WorkplaceLocationModal.jsx): Split-workspace modal for managing artisan workshop GPS coordinates, Cavite hub quick centers, continuous geofence sliders with presets (50m–500m), strict boundary enforcement switches, and interactive map pin manipulation via [`LocationPickerMap.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Settings/LocationPickerMap.jsx).
 *   [PrepareCheckout.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Consumer/PrepareCheckout.php): Orchestrates single and multi-artisan checkout workflows, ensuring null-safe seller resolution and pickup schedule attachment.
 
 ### In-House Fleet & Driver Telemetry Security
