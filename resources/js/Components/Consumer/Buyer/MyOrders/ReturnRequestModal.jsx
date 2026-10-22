@@ -152,7 +152,7 @@ export default function ReturnRequestModal({ isOpen, onClose, order, routeEndpoi
             <div>
                 <label className="block text-sm font-bold text-stone-700 mb-1">Reason for Return</label>
                 <textarea
-                    className="w-full border-stone-300 rounded-xl focus:ring-clay-500 focus:border-clay-500 shadow-sm text-sm"
+                    className="w-full border-stone-300 rounded-xl focus:ring-clay-500 focus:border-clay-500 shadow-sm text-base sm:text-sm"
                     rows="3"
                     placeholder="Describe what is wrong with the item (damaged, wrong item sent)..."
                     value={data.reason}

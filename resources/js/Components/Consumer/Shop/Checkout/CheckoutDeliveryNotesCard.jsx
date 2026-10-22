@@ -31,7 +31,7 @@ export default function CheckoutDeliveryNotesCard({
             }`}>
                 <textarea 
                     rows="2" 
-                    className="w-full rounded-xl border-stone-200 text-sm shadow-sm focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 placeholder-stone-400 transition" 
+                    className="w-full rounded-xl border-stone-200 text-base sm:text-sm shadow-sm focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 placeholder-stone-400 transition" 
                     placeholder="e.g. Gate code, landmark, available time, or handoff instructions" 
                     value={shippingNotes} 
                     onChange={(event) => setShippingNotes(event.target.value)} 

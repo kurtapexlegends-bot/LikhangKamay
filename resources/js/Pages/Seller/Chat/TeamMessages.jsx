@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 import SellerHeader from '@/Layouts/SellerHeader';
 import UserAvatar from '@/Components/UserAvatar';
-import { ArrowLeft, MessageSquareText, Info, Hash } from 'lucide-react';
+import { ArrowLeft, MessageSquareText, Info, Hash, Plus } from 'lucide-react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import useEchoConnection from '@/hooks/useEchoConnection';
 import useTeamChatEcho from '@/hooks/useTeamChatEcho';
@@ -439,6 +439,19 @@ export default function TeamMessages({
                     )}
                 </AnimatePresence>
             </div>
+
+            {showMobileList && (
+                <button
+                    type="button"
+                    onClick={() => setShowCreateChannelModal(true)}
+                    className="fixed bottom-6 right-4 z-40 sm:hidden flex items-center justify-center h-14 w-14 rounded-full bg-clay-600 text-white shadow-xl shadow-clay-900/25 active:scale-95 transition-all hover:bg-clay-700 focus:outline-none focus:ring-2 focus:ring-clay-500 focus:ring-offset-2 border border-white/20"
+                    title="Create Team Channel"
+                    aria-label="Create Team Channel"
+                >
+                    <Plus size={22} className="shrink-0" />
+                    <span className="sr-only">New Channel</span>
+                </button>
+            )}
 
             <CreateChannelModal 
                 isOpen={showCreateChannelModal} 

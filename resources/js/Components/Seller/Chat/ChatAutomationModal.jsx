@@ -125,8 +125,11 @@ export default function ChatAutomationModal({
     };
 
     return (
-        <div className="fixed inset-0 z-[250] flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="relative w-full max-w-2xl rounded-3xl bg-white shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-[250] flex items-end sm:items-center justify-center bg-stone-900/60 p-0 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="relative w-full max-w-2xl rounded-t-[2.5rem] sm:rounded-3xl bg-white shadow-2xl border-t sm:border border-stone-200 overflow-hidden flex flex-col max-h-[92vh] pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] sm:pb-0">
+                <div className="sm:hidden w-full flex justify-center pt-3 pb-1 bg-stone-50/70">
+                    <div className="w-12 h-1.5 bg-stone-300 rounded-full" />
+                </div>
                 
                 {/* Modal Header */}
                 <div className="flex items-center justify-between border-b border-stone-100 px-6 py-4 bg-stone-50/70">
@@ -138,7 +141,7 @@ export default function ChatAutomationModal({
                     </div>
                     <button
                         onClick={onClose}
-                        className="rounded-full p-1.5 text-stone-400 hover:bg-stone-200/60 hover:text-stone-700 transition"
+                        className="rounded-full p-2 text-stone-400 hover:bg-stone-200/60 hover:text-stone-700 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                         <X size={18} />
                     </button>
@@ -230,7 +233,7 @@ export default function ChatAutomationModal({
                                         placeholder="Thank you for your purchase! Your order #{order_number} is now complete. We hope you enjoy your handcrafted items!"
                                         rows={3}
                                         maxLength={1000}
-                                        className="w-full rounded-2xl border border-stone-200 bg-white p-3 text-xs font-medium text-stone-800 placeholder-stone-400 focus:border-clay-500 focus:ring-0 transition-all resize-y shadow-xs"
+                                        className="w-full rounded-2xl border border-stone-200 bg-white p-3 text-base sm:text-xs font-medium text-stone-800 placeholder-stone-400 focus:border-clay-500 focus:ring-0 transition-all resize-y shadow-xs"
                                     />
                                     <div className="text-right text-[10px] text-stone-400">
                                         {autoReplyForm.data.auto_reply_completion_message.length}/1000
@@ -272,7 +275,7 @@ export default function ChatAutomationModal({
                                         placeholder="Shortcut Keyword (e.g. /shipping)"
                                         value={templateForm.data.shortcut}
                                         onChange={(e) => templateForm.setData('shortcut', e.target.value)}
-                                        className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-medium focus:border-clay-500 focus:ring-0"
+                                        className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-base sm:text-xs font-medium focus:border-clay-500 focus:ring-0"
                                     />
                                 </div>
                                 <textarea
@@ -281,7 +284,7 @@ export default function ChatAutomationModal({
                                     onChange={(e) => templateForm.setData('content', e.target.value)}
                                     required
                                     rows={2}
-                                    className="w-full rounded-xl border border-stone-200 bg-white p-3 text-xs font-medium focus:border-clay-500 focus:ring-0 resize-none"
+                                    className="w-full rounded-xl border border-stone-200 bg-white p-3 text-base sm:text-xs font-medium focus:border-clay-500 focus:ring-0 resize-none"
                                 />
                                 <div className="flex items-center justify-between pt-1">
                                     {editingTemplateId && (

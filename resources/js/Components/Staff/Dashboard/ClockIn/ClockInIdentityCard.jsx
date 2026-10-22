@@ -74,7 +74,7 @@ export default function ClockInIdentityCard({
                             type="button"
                             onClick={handleRequestOtp}
                             disabled={isSendingOtp || otpCooldown > 0}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:bg-stone-200 disabled:text-stone-500 text-white text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer disabled:cursor-not-allowed"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:bg-stone-200 disabled:text-stone-500 text-white text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer disabled:cursor-not-allowed min-h-[44px] sm:min-h-0"
                         >
                             {isSendingOtp ? (
                                 <>
@@ -99,6 +99,8 @@ export default function ClockInIdentityCard({
                     <div className="space-y-1.5 w-full max-w-[200px]">
                         <input
                             type="text"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
                             maxLength={6}
                             value={otpCode}
                             onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}

@@ -82,7 +82,7 @@ export default function DriverVehicleVerifyModal({
 
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="md">
-            <form onSubmit={handleSubmit} className="p-5 sm:p-6 bg-white rounded-2xl">
+            <form onSubmit={handleSubmit} className="p-5 sm:p-6 bg-white rounded-t-[2.5rem] sm:rounded-2xl">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
                     <div className="flex items-center gap-2.5">
                         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-clay-100 text-clay-700">
@@ -115,7 +115,7 @@ export default function DriverVehicleVerifyModal({
                         <select
                             value={vehicleType}
                             onChange={(e) => setVehicleType(e.target.value)}
-                            className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 focus:border-clay-500 focus:ring-1 focus:ring-clay-500"
+                            className="w-full rounded-xl border border-stone-200 px-3 py-2 text-base sm:text-xs font-semibold text-stone-800 focus:border-clay-500 focus:ring-1 focus:ring-clay-500"
                         >
                             <option value="Motorcycle">Motorcycle (Standard)</option>
                             <option value="Bicycle">Bicycle / E-Bike</option>
@@ -141,7 +141,7 @@ export default function DriverVehicleVerifyModal({
                             onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
                             placeholder="e.g. ABC 1234"
                             maxLength={20}
-                            className={`w-full rounded-xl border px-3 py-2 text-xs font-semibold uppercase text-stone-800 focus:border-clay-500 focus:ring-1 focus:ring-clay-500 ${
+                            className={`w-full rounded-xl border px-3 py-2 text-base sm:text-xs font-semibold uppercase text-stone-800 focus:border-clay-500 focus:ring-1 focus:ring-clay-500 ${
                                 combinedErrors.vehicle_plate_number ? "border-rose-300 bg-rose-50/20" : "border-stone-200"
                             }`}
                         />
@@ -163,7 +163,7 @@ export default function DriverVehicleVerifyModal({
                             onChange={(e) => setLicenseNumber(e.target.value.toUpperCase())}
                             placeholder="e.g. D01-12-345678"
                             maxLength={50}
-                            className={`w-full rounded-xl border px-3 py-2 text-xs font-semibold uppercase text-stone-800 focus:border-clay-500 focus:ring-1 focus:ring-clay-500 ${
+                            className={`w-full rounded-xl border px-3 py-2 text-base sm:text-xs font-semibold uppercase text-stone-800 focus:border-clay-500 focus:ring-1 focus:ring-clay-500 ${
                                 combinedErrors.driver_license_number ? "border-rose-300 bg-rose-50/20" : "border-stone-200"
                             }`}
                         />

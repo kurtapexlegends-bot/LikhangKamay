@@ -12,7 +12,7 @@ export default function Modal({
     show = false,
     maxWidth = '2xl',
     closeable = true,
-    bottomSheet = false,
+    bottomSheet = true,
     panelClassName = 'bg-white',
     onClose = () => {},
     afterLeave = () => {},
@@ -23,7 +23,7 @@ export default function Modal({
         }
     };
 
-    // Auto-enable bottomSheet on mobile for better ergonomics
+    // Auto-enable bottomSheet on mobile for better ergonomics (or explicit bottomSheet=true)
     const isMobile = useMediaQuery('(max-width: 639px)');
 
     const effectiveBottomSheet = bottomSheet || isMobile;

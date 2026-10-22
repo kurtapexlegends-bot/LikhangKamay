@@ -237,7 +237,7 @@ export default function ProofAnnotationModal({
 
     return createPortal(
         <div
-            className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 bg-stone-900/80 backdrop-blur-sm overflow-y-auto"
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-900/80 backdrop-blur-sm overflow-y-auto"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose();
             }}
@@ -250,8 +250,11 @@ export default function ProofAnnotationModal({
                 onMouseDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
-                className="relative w-full max-w-3xl flex flex-col bg-white rounded-2xl overflow-hidden shadow-2xl my-auto animate-in fade-in zoom-in-95 duration-150"
+                className="relative w-full max-w-3xl flex flex-col bg-white rounded-t-[2.5rem] sm:rounded-2xl overflow-hidden shadow-2xl my-0 sm:my-auto animate-in fade-in zoom-in-95 duration-150 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] sm:pb-0 max-h-[94vh]"
             >
+                <div className="sm:hidden w-full flex justify-center pt-3 pb-1 bg-[#FCFBF9]">
+                    <div className="w-12 h-1.5 bg-stone-300 rounded-full" />
+                </div>
                 {/* Header */}
                 <div className="px-5 py-3.5 border-b border-stone-200 flex items-center justify-between bg-[#FCFBF9]">
                     <div className="flex items-center gap-2">

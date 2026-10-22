@@ -44,7 +44,7 @@ export default function SubscriptionPlans({
                         <button
                             type="button"
                             onClick={onOpenComparison}
-                            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50/80 px-3.5 py-2 text-xs font-bold text-stone-700 transition hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900 shrink-0 min-h-[38px] w-fit"
+                            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50/80 px-3.5 py-2 text-xs font-bold text-stone-700 transition hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900 shrink-0 min-h-[44px] sm:min-h-[38px] w-fit"
                         >
                             <HelpCircle className="h-4 w-4 text-stone-500" />
                             <span>Compare All Features</span>

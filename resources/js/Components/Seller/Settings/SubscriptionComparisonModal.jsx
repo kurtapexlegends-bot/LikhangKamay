@@ -1,8 +1,16 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Modal from '@/Components/Modal';
-import { CheckCircle2, Lock, Sparkles, Crown, Package, Layers, ShieldCheck, X } from 'lucide-react';
+import { CheckCircle2, Lock, Sparkles, Crown, Package, Layers, ShieldCheck, X, ChevronDown } from 'lucide-react';
 
 export default function SubscriptionComparisonModal({ isOpen, onClose, currentPlan, planSettings = {} }) {
+    const [mobileTier, setMobileTier] = useState(currentPlan || 'premium');
+    const [expandedCategories, setExpandedCategories] = useState({ 0: true, 1: true });
+
+    useEffect(() => {
+        if (currentPlan) {
+            setMobileTier(currentPlan);
+        }
+    }, [currentPlan]);
     const comparisonGroups = useMemo(() => {
         const freeLimit = planSettings?.free_limit ?? 3;
         const freeStaffLimit = planSettings?.free_staff_limit ?? 0;
@@ -264,6 +272,27 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
         );
     };
 
+    const toggleCategory = (idx) => {
+        setExpandedCategories((prev) => ({
+            ...prev,
+            [idx]: !prev[idx],
+        }));
+    };
+
+    const allExpanded = useMemo(() => {
+        return comparisonGroups.length > 0 && comparisonGroups.every((_, i) => Boolean(expandedCategories[i]));
+    }, [comparisonGroups, expandedCategories]);
+
+    const toggleAllCategories = () => {
+        if (allExpanded) {
+            setExpandedCategories({});
+        } else {
+            const next = {};
+            comparisonGroups.forEach((_, i) => { next[i] = true; });
+            setExpandedCategories(next);
+        }
+    };
+
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="4xl">
             <div className="flex max-h-[85vh] flex-col bg-white rounded-2xl overflow-hidden">
@@ -292,7 +321,8 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
 
                 {/* Modal Scrollable Body */}
                 <div className="flex-1 overflow-y-auto p-0 no-scrollbar">
-                    <div className="overflow-x-auto no-scrollbar">
+                    {/* Desktop Comparison Table (>= sm) */}
+                    <div className="hidden sm:block overflow-x-auto no-scrollbar">
                         <table className="w-full text-left text-xs border-collapse">
                             <thead className="sticky top-0 z-10">
                                 <tr className="border-b border-stone-200 bg-white shadow-2xs">
@@ -382,6 +412,135 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+
+                    {/* Mobile Segmented Card View (< sm) */}
+                    <div className="sm:hidden p-4 space-y-4">
+                        {/* Segmented Tier Pills */}
+                        <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-stone-100 border border-stone-200/80">
+                            <button
+                                type="button"
+                                onClick={() => setMobileTier('free')}
+                                className={`flex flex-col items-center py-2 px-1 rounded-xl text-xs font-bold transition min-h-[44px] justify-center ${
+                                    mobileTier === 'free'
+                                        ? 'bg-white text-stone-900 shadow-sm border border-stone-200/60'
+                                        : 'text-stone-500 hover:text-stone-900'
+                                }`}
+                            >
+                                <Package size={14} className="mb-0.5 text-stone-600" />
+                                <span>Standard</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setMobileTier('premium')}
+                                className={`flex flex-col items-center py-2 px-1 rounded-xl text-xs font-bold transition min-h-[44px] justify-center ${
+                                    mobileTier === 'premium'
+                                        ? 'bg-white text-amber-700 shadow-sm border border-amber-200/60'
+                                        : 'text-stone-500 hover:text-stone-900'
+                                }`}
+                            >
+                                <Crown size={14} className="mb-0.5 text-amber-600" />
+                                <span>Premium</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setMobileTier('super_premium')}
+                                className={`flex flex-col items-center py-2 px-1 rounded-xl text-xs font-bold transition min-h-[44px] justify-center ${
+                                    mobileTier === 'super_premium'
+                                        ? 'bg-white text-violet-700 shadow-sm border border-violet-200/60'
+                                        : 'text-stone-500 hover:text-stone-900'
+                                }`}
+                            >
+                                <Sparkles size={14} className="mb-0.5 text-violet-600" />
+                                <span>Elite</span>
+                            </button>
+                        </div>
+
+                        {/* Selected Tier Banner */}
+                        <div className={`p-4 rounded-2xl border ${
+                            mobileTier === 'super_premium' 
+                                ? 'bg-violet-50/50 border-violet-200' 
+                                : mobileTier === 'premium' 
+                                ? 'bg-amber-50/50 border-amber-200' 
+                                : 'bg-stone-50 border-stone-200'
+                        }`}>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h4 className="font-extrabold text-stone-900 text-base">
+                                        {mobileTier === 'super_premium' ? 'Elite Artisan' : mobileTier === 'premium' ? 'Premium Artisan' : 'Standard (Free)'}
+                                    </h4>
+                                    <p className="text-xs text-stone-500 font-medium">
+                                        {mobileTier === 'super_premium' ? 'Full operational ERP suite' : mobileTier === 'premium' ? 'Growing workshop setup' : 'Starter handcrafted shop'}
+                                    </p>
+                                </div>
+                                {currentPlan === mobileTier && (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-stone-900 text-white">
+                                        <ShieldCheck size={11} /> Current
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Categories Header & Quick Action */}
+                        <div className="flex items-center justify-between px-1 pt-1">
+                            <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                                Capabilities by Category
+                            </span>
+                            <button
+                                type="button"
+                                onClick={toggleAllCategories}
+                                className="text-[11px] font-bold text-clay-700 hover:text-clay-800 transition py-1 px-2 rounded-lg hover:bg-stone-100"
+                            >
+                                {allExpanded ? 'Collapse All' : 'Expand All'}
+                            </button>
+                        </div>
+
+                        {/* Feature Groups Breakdown */}
+                        <div className="space-y-2.5">
+                            {comparisonGroups.map((group, gIdx) => {
+                                const isGroupOpen = Boolean(expandedCategories[gIdx]);
+                                return (
+                                    <div key={gIdx} className="rounded-2xl border border-stone-200/80 bg-white overflow-hidden shadow-2xs transition-all">
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleCategory(gIdx)}
+                                            className="w-full bg-stone-50/90 px-4 py-3 flex items-center justify-between gap-2 border-b border-stone-150/80 active:bg-stone-100 transition text-left min-h-[44px]"
+                                            aria-expanded={isGroupOpen}
+                                        >
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span className="text-xs font-bold text-stone-800">
+                                                    {group.category}
+                                                </span>
+                                                <span className="text-[10px] font-semibold text-stone-400 bg-stone-200/60 px-2 py-0.5 rounded-full shrink-0">
+                                                    {group.features.length}
+                                                </span>
+                                            </div>
+                                            <ChevronDown
+                                                size={16}
+                                                className={`text-stone-400 transition-transform duration-200 shrink-0 ${isGroupOpen ? 'rotate-180 text-clay-700' : ''}`}
+                                            />
+                                        </button>
+                                        {isGroupOpen && (
+                                            <div className="divide-y divide-stone-100 p-1">
+                                                {group.features.map((item, fIdx) => (
+                                                    <div key={fIdx} className="flex items-center justify-between gap-3 p-3">
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="text-xs font-bold text-stone-900">{item.name}</p>
+                                                            {item.subtext && (
+                                                                <p className="text-[10px] text-stone-500 mt-0.5 leading-snug">{item.subtext}</p>
+                                                            )}
+                                                        </div>
+                                                        <div className="shrink-0 text-right">
+                                                            {renderValue(item[mobileTier])}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
 
