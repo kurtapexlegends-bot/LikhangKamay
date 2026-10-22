@@ -43,7 +43,7 @@ export default function EscalateDisputeModal({ isOpen, onClose, disputeId }) {
             <div>
                 <label className="block text-sm font-bold text-stone-700 mb-1">Reason for Support Help</label>
                 <textarea
-                    className="w-full border-stone-300 rounded-xl focus:ring-amber-500 focus:border-amber-500 shadow-sm text-sm"
+                    className="w-full border-stone-300 rounded-xl focus:ring-amber-500 focus:border-amber-500 shadow-sm text-base sm:text-sm"
                     rows="4"
                     placeholder="Explain the situation clearly (e.g., seller proposed replacement but I prefer refund, or item arrived damaged)..."
                     value={data.escalation_reason}

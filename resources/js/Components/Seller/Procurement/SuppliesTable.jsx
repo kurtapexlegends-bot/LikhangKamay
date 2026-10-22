@@ -135,7 +135,7 @@ export default function SuppliesTable({
                         placeholder="Search supplies, SKU, supplier..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-stone-200 hover:border-stone-300 rounded-xl text-xs font-semibold placeholder:text-stone-400 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all shadow-2xs"
+                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-stone-200 hover:border-stone-300 rounded-xl text-base sm:text-xs font-semibold placeholder:text-stone-400 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all shadow-2xs"
                     />
                     {searchTerm && (
                         <button

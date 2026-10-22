@@ -241,6 +241,19 @@ export default function StockRequestIndex({ auth, requests }) {
                         </div>
                     )}
                 </div>
+
+                {/* Mobile Floating Action Button (FAB) */}
+                {canEditStockRequests && (
+                    <Link
+                        href={route('procurement.index')}
+                        className="fixed bottom-6 right-4 z-40 md:hidden flex items-center justify-center h-14 w-14 rounded-full bg-clay-600 text-white shadow-xl shadow-clay-900/25 active:scale-95 transition-all hover:bg-clay-700 focus:outline-none focus:ring-2 focus:ring-clay-500 focus:ring-offset-2 border border-white/20"
+                        title="Request Stock"
+                        aria-label="Request stock from inventory"
+                    >
+                        <ShoppingBag size={22} className="shrink-0" />
+                        <span className="sr-only">Request Stock</span>
+                    </Link>
+                )}
             </div>
 
             {/* MODALS */}

@@ -228,7 +228,7 @@ export default function FilterToolbarHeader({
                                 value={searchQuery}
                                 onChange={(e) => onSearchChange(e.target.value)}
                                 placeholder={searchPlaceholder}
-                                className="w-full pl-9 pr-9 py-2 text-xs font-medium rounded-xl border border-stone-200/80 outline-none focus:border-clay-500 focus:ring-1 focus:ring-clay-500 bg-white h-[38px] min-h-[38px]"
+                                className="w-full pl-9 pr-9 py-2 text-base sm:text-xs font-medium rounded-xl border border-stone-200/80 outline-none focus:border-clay-500 focus:ring-1 focus:ring-clay-500 bg-white h-[38px] min-h-[38px]"
                             />
                             {searchQuery && (
                                 <button

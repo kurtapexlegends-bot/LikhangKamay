@@ -140,7 +140,7 @@ export default function DeliveryProofModal({
 
     return (
         <Modal show={isOpen} onClose={onClose} maxWidth="lg">
-            <form onSubmit={handleSubmit} className="p-6 bg-white rounded-2xl">
+            <form onSubmit={handleSubmit} className="p-5 sm:p-6 bg-white rounded-t-[2.5rem] sm:rounded-2xl">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
                     <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
@@ -255,7 +255,7 @@ export default function DeliveryProofModal({
                             value={podNotes}
                             onChange={(e) => setPodNotes(e.target.value)}
                             placeholder="e.g. Received by buyer at gate, or left with security reception..."
-                            className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-medium text-stone-800 focus:border-clay-500 focus:ring-1 focus:ring-clay-500"
+                            className="w-full rounded-xl border border-stone-200 px-3 py-2 text-base sm:text-xs font-medium text-stone-800 focus:border-clay-500 focus:ring-1 focus:ring-clay-500"
                         />
                     </div>
                 </div>

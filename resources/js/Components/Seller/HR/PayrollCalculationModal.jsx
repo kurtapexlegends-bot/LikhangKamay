@@ -12,9 +12,11 @@ export default function PayrollCalculationModal({ isOpen, onClose, employeeItem,
     if (!isOpen || !employeeItem || !breakdown) return null;
 
     return (
-        <div className="fixed inset-0 z-[250] flex items-center justify-center bg-stone-900/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">
-            <div className="relative w-full max-w-xl rounded-2xl bg-white shadow-xl border border-stone-200 overflow-hidden flex flex-col max-h-[90vh]">
-                
+        <div className="fixed inset-0 z-[250] flex items-end sm:items-center justify-center bg-stone-900/50 p-0 sm:p-4 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="relative w-full max-w-xl rounded-t-[2.5rem] sm:rounded-2xl bg-white shadow-xl border-t sm:border border-stone-200 overflow-hidden flex flex-col max-h-[92vh] pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] sm:pb-0">
+                <div className="sm:hidden w-full flex justify-center pt-3 pb-1 bg-stone-50">
+                    <div className="w-12 h-1.5 bg-stone-300 rounded-full" />
+                </div>
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-stone-200 px-5 py-3.5 bg-stone-50">
                     <div className="flex items-center gap-2.5">
@@ -28,9 +30,9 @@ export default function PayrollCalculationModal({ isOpen, onClose, employeeItem,
                     </div>
                     <button
                         onClick={onClose}
-                        className="rounded-full p-1.5 text-stone-400 hover:bg-stone-200/60 hover:text-stone-700 transition"
+                        className="rounded-full p-2 text-stone-400 hover:bg-stone-200/60 hover:text-stone-700 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
-                        <X size={16} />
+                        <X size={18} />
                     </button>
                 </div>
 

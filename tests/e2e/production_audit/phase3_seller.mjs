@@ -1,4 +1,4 @@
-import { PROD_URL, ACCOUNTS, loginAs, findElementByText } from './audit_config.mjs';
+import { PROD_URL, ACCOUNTS, loginAs, findElementByText, getInertiaPage } from './audit_config.mjs';
 
 export async function runPhase3(page, collector) {
     console.log(`\n======================================================`);
@@ -126,7 +126,7 @@ export async function runPhase3(page, collector) {
             await orderCheckbox.click().catch(() => null);
             await new Promise(r => setTimeout(r, 600));
         }
-        const bulkActionElement = await page.$('a[href*="bulk-labels"], button:has-text("Bulk"), [class*="BulkActionsBar"], [class*="order"], table');
+        const bulkActionElement = await page.$('a[href*="bulk-labels"], [class*="BulkActionsBar"], [class*="order"], table') || await findElementByText(page, 'button', 'Bulk');
         collector.recordResult('Phase 3', '3.7 Bulk Labels Action Present', bulkActionElement ? 'PASS' : 'WARN', {
             message: 'Fulfillment queue controls and bulk actions verified'
         });

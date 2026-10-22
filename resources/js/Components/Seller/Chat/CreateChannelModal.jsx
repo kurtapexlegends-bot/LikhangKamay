@@ -23,19 +23,22 @@ export default function CreateChannelModal({ isOpen, onClose, eligibleContacts =
     };
 
     return (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div 
                 className="fixed inset-0 bg-stone-900/40 backdrop-blur-[2px] transition-opacity" 
                 onClick={onClose}
             />
-            <div className="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 shadow-2xl transition-all border border-stone-200 font-sans text-stone-850">
+            <div className="relative w-full max-w-md transform overflow-hidden rounded-t-[2.5rem] sm:rounded-2xl bg-white p-6 shadow-2xl transition-all border-t sm:border border-stone-200 font-sans text-stone-850 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] sm:pb-6">
+                <div className="sm:hidden w-full flex justify-center pb-3 -mt-2">
+                    <div className="w-12 h-1.5 bg-stone-300 rounded-full" />
+                </div>
                 <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
                     <h3 className="text-base font-bold text-stone-950 flex items-center gap-2">
                         <Plus size={18} /> Create Channel
                     </h3>
                     <button
                         onClick={onClose}
-                        className="rounded-full p-1.5 text-stone-400 hover:bg-stone-50 hover:text-stone-600 transition"
+                        className="rounded-full p-2 text-stone-400 hover:bg-stone-50 hover:text-stone-600 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
                         type="button"
                     >
                         <X size={18} />
@@ -55,7 +58,7 @@ export default function CreateChannelModal({ isOpen, onClose, eligibleContacts =
                                 placeholder="e.g. general, marketing"
                                 value={form.data.name}
                                 onChange={e => form.setData('name', e.target.value)}
-                                className="w-full rounded-xl border border-stone-250 py-2.5 pl-7 pr-4 text-sm focus:border-clay-400 focus:bg-white focus:ring-clay-100"
+                                className="w-full rounded-xl border border-stone-250 py-2.5 pl-7 pr-4 text-base sm:text-sm focus:border-clay-400 focus:bg-white focus:ring-clay-100"
                             />
                         </div>
                         {form.errors.name && (
@@ -71,7 +74,7 @@ export default function CreateChannelModal({ isOpen, onClose, eligibleContacts =
                             placeholder="Optional description of the channel"
                             value={form.data.description}
                             onChange={e => form.setData('description', e.target.value)}
-                            className="w-full rounded-xl border border-stone-250 py-2.5 px-4 text-sm focus:border-clay-400 focus:bg-white focus:ring-clay-100"
+                            className="w-full rounded-xl border border-stone-250 py-2.5 px-4 text-base sm:text-sm focus:border-clay-400 focus:bg-white focus:ring-clay-100"
                             rows={2}
                         />
                         {form.errors.description && (
@@ -126,16 +129,16 @@ export default function CreateChannelModal({ isOpen, onClose, eligibleContacts =
                         <button
                             type="button"
                             onClick={onClose}
-                            className="rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold text-stone-600 hover:bg-stone-50"
+                            className="rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold text-stone-600 hover:bg-stone-50 min-h-[44px] active:scale-95 transition"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={form.processing}
-                            className="rounded-xl bg-clay-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-clay-700 disabled:opacity-50"
+                            className="rounded-xl bg-clay-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-clay-700 disabled:opacity-50 min-h-[44px] active:scale-95 transition shadow-sm"
                         >
-                            {form.processing ? 'Creating...' : 'Create'}
+                            {form.processing ? 'Creating...' : 'Create Channel'}
                         </button>
                     </div>
                 </form>

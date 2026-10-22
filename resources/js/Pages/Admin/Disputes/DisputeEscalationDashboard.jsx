@@ -197,7 +197,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Search order #, customer, shop, or reason..."
-                                        className="w-full rounded-xl border border-stone-200 bg-white py-1.5 pl-8 pr-8 text-xs font-medium text-stone-900 placeholder-stone-400 focus:border-clay-500 focus:ring-1 focus:ring-clay-500 shadow-2xs h-[36px]"
+                                        className="w-full rounded-xl border border-stone-200 bg-white py-1.5 pl-8 pr-8 text-base sm:text-xs font-medium text-stone-900 placeholder-stone-400 focus:border-clay-500 focus:ring-1 focus:ring-clay-500 shadow-2xs h-[36px]"
                                     />
                                     {searchQuery && (
                                         <button

@@ -221,7 +221,7 @@ export default function DriverDeliveries({
                                 <button
                                     type="button"
                                     onClick={() => setIsVerifyModalOpen(true)}
-                                    className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl border min-h-[38px] active:scale-95 transition-all ${
+                                    className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl border min-h-[44px] sm:min-h-[38px] active:scale-95 transition-all ${
                                         driverProfile.is_vehicle_verified
                                             ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                             : "bg-amber-50 text-amber-800 border-amber-200"
@@ -238,7 +238,7 @@ export default function DriverDeliveries({
                                     <button
                                         type="button"
                                         onClick={() => setIsClockInModalOpen(true)}
-                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-clay-600 rounded-xl px-3 py-1.5 shadow-2xs hover:bg-clay-700 active:scale-95 transition-all min-h-[38px]"
+                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-clay-600 rounded-xl px-3 py-2 shadow-2xs hover:bg-clay-700 active:scale-95 transition-all min-h-[44px] sm:min-h-[38px]"
                                     >
                                         <Clock size={12} />
                                         <span>Clock In</span>
@@ -371,7 +371,7 @@ export default function DriverDeliveries({
                                                 <button
                                                     type="button"
                                                     onClick={() => setIsClockInModalOpen(true)}
-                                                    className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-clay-700 active:scale-95 transition min-h-[42px]"
+                                                    className="inline-flex items-center gap-2 rounded-xl bg-clay-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-clay-700 active:scale-95 transition min-h-[44px]"
                                                 >
                                                     <Clock size={15} />
                                                     <span>Clock In Shift Now</span>
@@ -397,7 +397,7 @@ export default function DriverDeliveries({
                                                     type="button"
                                                     onClick={handleSync}
                                                     disabled={isRefreshing}
-                                                    className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 active:scale-95 transition min-h-[40px]"
+                                                    className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 active:scale-95 transition min-h-[44px]"
                                                 >
                                                     <RefreshCw size={13} className={isRefreshing ? "animate-spin text-clay-600" : "text-stone-500"} />
                                                     <span>{isRefreshing ? "Checking Studio..." : "Check for New Dispatches"}</span>

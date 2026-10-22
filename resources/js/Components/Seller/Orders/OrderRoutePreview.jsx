@@ -104,8 +104,11 @@ export default function OrderRoutePreview({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-            <div className="relative w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl border border-stone-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="relative w-full max-w-xl rounded-t-[2.5rem] sm:rounded-2xl bg-white p-5 shadow-2xl border-t sm:border border-stone-200 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-5 max-h-[92vh] overflow-y-auto">
+                <div className="sm:hidden w-full flex justify-center pb-3 -mt-1">
+                    <div className="w-12 h-1.5 bg-stone-300 rounded-full" />
+                </div>
                 {/* Modal Header */}
                 <div className="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
                     <div className="flex items-center gap-2">
@@ -124,7 +127,7 @@ export default function OrderRoutePreview({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-xl p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition"
+                        className="rounded-xl p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                         <X size={18} />
                     </button>

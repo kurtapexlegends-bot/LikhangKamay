@@ -45,7 +45,7 @@ export default forwardRef(function TextInput(
         hasError 
             ? 'border-rose-300 bg-rose-50/50 text-rose-900 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/20' 
             : 'border-stone-200 bg-stone-50/40 focus:bg-white focus:border-clay-500 focus:ring-4 focus:ring-clay-500/10 hover:border-stone-300 disabled:hover:border-stone-200'
-    } ${paddingLeftClass} ${paddingRightClass} ${paddingYClass} text-sm font-medium text-stone-900 ${className}`;
+    } ${paddingLeftClass} ${paddingRightClass} ${paddingYClass} text-base sm:text-sm font-medium text-stone-900 ${className}`;
 
     const renderIcon = () => {
         if (!Icon) return null;
@@ -77,6 +77,7 @@ export default forwardRef(function TextInput(
             <input
                 {...props}
                 type={inputType}
+                inputMode={props.inputMode || (type === 'number' ? 'decimal' : undefined)}
                 className={inputClasses}
                 placeholder={props.placeholder || (labelVal ? `Enter ${labelVal.toLowerCase()}` : '')}
                 ref={localRef}
