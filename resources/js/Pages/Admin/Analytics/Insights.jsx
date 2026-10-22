@@ -96,46 +96,48 @@ export default function Insights({
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 print:hidden">
                 {/* SECTION 1: TOP STAT CARDS (Strict 4-Column in Print) */}
                 <div className="flex overflow-x-auto gap-4 pb-2.5 flex-nowrap snap-x snap-mandatory lg:grid lg:grid-cols-4 no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0 kpi-print-grid print:grid print:grid-cols-4 print:gap-3 print:w-full print:m-0 print:p-0">
-                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
-                    <KPICard
-                        title="Active Sellers"
-                        value={churn.active}
-                        icon={Users}
-                        bg="bg-clay-50"
-                        color="text-clay-600"
-                        subtitle={`${churn.atRisk} needing check-in`}
-                    />
+                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto h-full print:w-full print:max-w-none print:shrink print:snap-none">
+                        <KPICard
+                            title="Active Sellers"
+                            value={churn.active}
+                            icon={Users}
+                            bg="bg-clay-50"
+                            color="text-clay-600"
+                            subtitle={churn.atRisk > 0 ? `${churn.atRisk} needing check-in` : 'All sellers active'}
+                        />
+                    </div>
+                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto h-full print:w-full print:max-w-none print:shrink print:snap-none">
+                        <KPICard
+                            title="Avg Order Value"
+                            value={Number(health.aov)}
+                            icon={ShoppingBag}
+                            bg="bg-emerald-50"
+                            color="text-emerald-600"
+                            formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
+                            subtitle="Fulfilled orders benchmark"
+                        />
+                    </div>
+                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto h-full print:w-full print:max-w-none print:shrink print:snap-none">
+                        <KPICard
+                            title="Completion Rate"
+                            value={`${health.completionRate}%`}
+                            icon={ClipboardCheck}
+                            bg="bg-blue-50"
+                            color="text-blue-600"
+                            subtitle="Successful deliveries"
+                        />
+                    </div>
+                    <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto h-full print:w-full print:max-w-none print:shrink print:snap-none">
+                        <KPICard
+                            title="Refund Rate"
+                            value={`${health.refundRate}%`}
+                            icon={AlertTriangle}
+                            bg={health.refundRate > 5 ? 'bg-red-50' : 'bg-stone-50'}
+                            color={health.refundRate > 5 ? 'text-red-650 animate-pulse' : 'text-stone-400'}
+                            subtitle={health.refundRate > 5 ? 'Above safety threshold!' : 'Returns within safety limit'}
+                        />
+                    </div>
                 </div>
-                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
-                    <KPICard
-                        title="Avg Order Value"
-                        value={Number(health.aov)}
-                        icon={ShoppingBag}
-                        bg="bg-emerald-50"
-                        color="text-emerald-600"
-                        formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
-                    />
-                </div>
-                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
-                    <KPICard
-                        title="Completion Rate"
-                        value={`${health.completionRate}%`}
-                        icon={ClipboardCheck}
-                        bg="bg-blue-50"
-                        color="text-blue-600"
-                    />
-                </div>
-                <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">
-                    <KPICard
-                        title="Refund Rate"
-                        value={`${health.refundRate}%`}
-                        icon={AlertTriangle}
-                        bg={health.refundRate > 5 ? 'bg-red-50' : 'bg-stone-50'}
-                        color={health.refundRate > 5 ? 'text-red-650 animate-pulse' : 'text-stone-400'}
-                        subtitle={health.refundRate > 5 ? 'Above safety threshold!' : 'Returns within safety limit'}
-                    />
-                </div>
-            </div>
 
             {/* MASTER THREE-COLUMN GRID */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:grid print:grid-cols-2 print:gap-4 print-avoid-break">

@@ -84,6 +84,10 @@ const KPICard = ({
             (typeof value === 'string' && (value.includes('₱') || value.includes('PHP'))) ||
             (title && (title.toLowerCase().includes('revenue') || title.toLowerCase().includes('profit') || title.toLowerCase().includes('value') || title.toLowerCase().includes('price')));
         
+        const isPercentage = 
+            (typeof value === 'string' && value.includes('%')) ||
+            (title && title.toLowerCase().includes('rate'));
+
         return (v) => {
             const num = Math.round(Number(v) || 0);
             if (isCurrency) {
@@ -92,6 +96,9 @@ const KPICard = ({
                 }
                 return `₱${num.toLocaleString()}`;
             }
+            if (isPercentage) {
+                return `${num}%`;
+            }
             return num.toLocaleString();
         };
     }, [formatter, value, title]);
@@ -99,28 +106,30 @@ const KPICard = ({
     const hasSubtext = growth !== undefined || subtitle || (trendData && trendData.length > 0);
 
     const Front = (
-        <div className={`flex justify-between h-full ${hasSubtext ? 'items-start' : 'items-center'}`}>
-            <div className="min-w-0">
-                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1 truncate">
-                    {title}
-                </p>
-                <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
-                    <span className="print:hidden">
-                        {animate && (typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.-]/g, ''))))) ? (
-                            <AnimatedCounter 
-                                value={typeof value === 'number' ? value : parseFloat(value.replace(/[^\d.-]/g, ''))} 
-                                formatter={displayFormatter}
-                            />
-                        ) : (
-                            typeof value === 'number' ? displayFormatter(value) : value
-                        )}
-                    </span>
-                    <span className="hidden print:block">
-                        {typeof value === 'number' ? displayFormatter(value) : value}
-                    </span>
-                </h3>
+        <div className="flex justify-between items-start gap-3 h-full">
+            <div className="min-w-0 flex flex-col justify-between h-full flex-1">
+                <div>
+                    <p className="text-stone-400 text-[10px] font-bold uppercase tracking-wider mb-1 truncate">
+                        {title}
+                    </p>
+                    <h3 className="text-2xl font-bold text-stone-900 tracking-tight">
+                        <span className="print:hidden">
+                            {animate && (typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.-]/g, ''))))) ? (
+                                <AnimatedCounter 
+                                    value={typeof value === 'number' ? value : parseFloat(value.replace(/[^\d.-]/g, ''))} 
+                                    formatter={displayFormatter}
+                                />
+                            ) : (
+                                typeof value === 'number' ? displayFormatter(value) : value
+                            )}
+                        </span>
+                        <span className="hidden print:block">
+                            {typeof value === 'number' ? displayFormatter(value) : value}
+                        </span>
+                    </h3>
+                </div>
                 {hasSubtext && (
-                    <div className="flex items-center gap-2 mt-1 min-w-0">
+                    <div className="flex items-center gap-2 mt-1.5 min-w-0">
                         {growth !== undefined && (
                             <div className={`flex items-center gap-1 text-[10px] font-bold ${growthColor} whitespace-nowrap shrink-0`}>
                                 <GrowthIcon size={12} />
@@ -149,7 +158,7 @@ const KPICard = ({
     );
 
     const cardContent = (
-        <div className="relative w-full rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5 shadow-2xs hover:shadow-xs hover:border-stone-300 transition-all duration-200">
+        <div className="relative w-full h-full rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5 shadow-2xs hover:shadow-xs hover:border-stone-300 transition-all duration-200 flex flex-col justify-between">
             {Front}
         </div>
     );
@@ -165,7 +174,7 @@ const KPICard = ({
             }
         };
         return (
-            <motion.div variants={itemVariants}>
+            <motion.div variants={itemVariants} className="h-full">
                 {cardContent}
             </motion.div>
         );
