@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Calculator, ShieldCheck } from 'lucide-react';
 
 const money = (val) => new Intl.NumberFormat('en-PH', {
@@ -9,14 +10,37 @@ const money = (val) => new Intl.NumberFormat('en-PH', {
 }).format(Number(val || 0));
 
 export default function PayrollCalculationModal({ isOpen, onClose, employeeItem, breakdown }) {
-    if (!isOpen || !employeeItem || !breakdown) return null;
+    useEffect(() => {
+        if (!isOpen) return;
 
-    return (
-        <div className="fixed inset-0 z-[250] flex items-end sm:items-center justify-center bg-stone-900/50 p-0 sm:p-4 backdrop-blur-xs animate-in fade-in duration-150">
-            <div className="relative w-full max-w-xl rounded-t-[2.5rem] sm:rounded-2xl bg-white shadow-xl border-t sm:border border-stone-200 overflow-hidden flex flex-col max-h-[92vh] pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] sm:pb-0">
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') onClose();
+        };
+
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.body.style.overflow = originalOverflow;
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
+
+    if (!isOpen || !employeeItem || !breakdown) return null;
+    if (typeof document === 'undefined') return null;
+
+    const modalContent = (
+        <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center bg-stone-900/60 p-0 sm:p-4 backdrop-blur-xs animate-in fade-in duration-150">
+            {/* Click-away backdrop */}
+            <div className="fixed inset-0 -z-10" onClick={onClose} aria-hidden="true" />
+
+            {/* Modal Dialog Box */}
+            <div className="relative w-full max-w-xl rounded-t-[2.5rem] sm:rounded-2xl bg-white shadow-2xl border-t sm:border border-stone-200 overflow-hidden flex flex-col max-h-[92vh] pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] sm:pb-0">
                 <div className="sm:hidden w-full flex justify-center pt-3 pb-1 bg-stone-50">
                     <div className="w-12 h-1.5 bg-stone-300 rounded-full" />
                 </div>
+
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-stone-200 px-5 py-3.5 bg-stone-50">
                     <div className="flex items-center gap-2.5">
@@ -31,6 +55,7 @@ export default function PayrollCalculationModal({ isOpen, onClose, employeeItem,
                     <button
                         onClick={onClose}
                         className="rounded-full p-2 text-stone-400 hover:bg-stone-200/60 hover:text-stone-700 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        title="Close modal"
                     >
                         <X size={18} />
                     </button>
@@ -81,15 +106,15 @@ export default function PayrollCalculationModal({ isOpen, onClose, employeeItem,
                         <h4 className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Earnings & Deductions Summary</h4>
                         <div className="grid grid-cols-3 gap-2">
                             <div className="p-2.5 rounded-xl border border-stone-200 bg-stone-50 text-center">
-                                <span className="text-[9px] text-stone-400 block font-bold uppercase">Base Salary</span>
+                                <span className="text-[10px] text-stone-400 block font-bold uppercase">Base Salary</span>
                                 <span className="font-bold text-stone-900 text-xs mt-0.5 block">{money(employeeItem.base_salary)}</span>
                             </div>
                             <div className="p-2.5 rounded-xl border border-emerald-200/80 bg-emerald-50/30 text-center">
-                                <span className="text-[9px] text-emerald-600 block font-bold uppercase">Overtime Pay</span>
+                                <span className="text-[10px] text-emerald-600 block font-bold uppercase">Overtime Pay</span>
                                 <span className="font-bold text-emerald-800 text-xs mt-0.5 block">+{money(breakdown.totalOtPay)}</span>
                             </div>
                             <div className="p-2.5 rounded-xl border border-rose-200/80 bg-rose-50/30 text-center">
-                                <span className="text-[9px] text-rose-600 block font-bold uppercase">Deductions</span>
+                                <span className="text-[10px] text-rose-600 block font-bold uppercase">Deductions</span>
                                 <span className="font-bold text-rose-800 text-xs mt-0.5 block">-{money((breakdown.absenceDeduction || 0) + (breakdown.undertimeDeduction || 0))}</span>
                             </div>
                         </div>
@@ -104,14 +129,14 @@ export default function PayrollCalculationModal({ isOpen, onClose, employeeItem,
 
                 {/* Footer */}
                 <div className="px-5 py-3 bg-stone-50 border-t border-stone-200 flex justify-between items-center text-[11px] text-stone-500">
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 font-medium">
                         <ShieldCheck size={14} className="text-stone-400" />
                         Verified Math Audit
                     </span>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-1.5 bg-stone-900 text-white rounded-lg font-bold text-xs hover:bg-stone-800 transition"
+                        className="px-4 py-2 bg-clay-700 hover:bg-clay-800 text-white rounded-xl font-bold text-xs transition shadow-xs min-h-[44px]"
                     >
                         Done
                     </button>
@@ -119,4 +144,6 @@ export default function PayrollCalculationModal({ isOpen, onClose, employeeItem,
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 }

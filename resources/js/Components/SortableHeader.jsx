@@ -22,12 +22,12 @@ const SortableHeader = ({ label, sortKey, currentSort, onSort, className = "", a
 
     return (
         <th
-            className={`px-5 py-4 cursor-pointer hover:bg-gray-50 transition group select-none ${className}`}
+            className={`px-5 py-4 align-middle whitespace-nowrap cursor-pointer hover:bg-gray-50 transition group select-none ${className}`}
             onClick={() => onSort(sortKey)}
         >
             <div className={`flex items-center gap-2 text-gray-600 font-bold text-xs uppercase tracking-wider ${alignClass}`}>
                 <span>{label}</span>
-                <div className="flex flex-col -space-y-1.5">
+                <div className="flex flex-col -space-y-1.5 shrink-0">
                     <ChevronUp
                         size={12}
                         strokeWidth={4}

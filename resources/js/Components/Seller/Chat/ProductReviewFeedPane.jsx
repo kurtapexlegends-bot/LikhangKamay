@@ -162,15 +162,6 @@ export default function ProductReviewFeedPane({
                                         ID: #{selectedProduct.id}
                                     </span>
                                 )}
-                                {stats.unreplied > 0 ? (
-                                    <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-50 text-amber-800 border border-amber-200/80">
-                                        {stats.unreplied} waiting reply
-                                    </span>
-                                ) : stats.total > 0 ? (
-                                    <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-black bg-emerald-50 text-emerald-800 border border-emerald-200/80">
-                                        All replied
-                                    </span>
-                                ) : null}
                             </div>
                             <h2 className="text-sm sm:text-base font-bold text-stone-900 truncate mt-0.5 max-w-xs sm:max-w-md">
                                 {selectedProduct ? selectedProduct.name : 'All Store Reviews'}

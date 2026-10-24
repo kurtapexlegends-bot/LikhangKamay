@@ -12,22 +12,22 @@ import PayrollReviewDetails from '@/Components/Seller/Accounting/PayrollReviewDe
 
 function DetailTile({ label, value }) {
     return (
-        <div className="rounded-xl border border-stone-200 bg-white shadow-sm px-3.5 py-2">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">{label}</p>
-            <p className="mt-0.5 text-[13px] font-bold text-stone-900">{value ?? 'N/A'}</p>
+        <div className="rounded-xl border border-stone-200 bg-white shadow-2xs px-3.5 py-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">{label}</p>
+            <p className="mt-0.5 text-xs font-bold text-stone-900">{value ?? 'N/A'}</p>
         </div>
     );
 }
 
 function AuditSheet({ title, rows }) {
     return (
-        <div className="px-3.5 py-2.5">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">{title}</p>
+        <div className="px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">{title}</p>
             <div className="mt-2 divide-y divide-stone-100">
                 {rows.map(({ label, value }) => (
-                    <div key={label} className="flex items-start justify-between gap-3 py-1.5 first:pt-0 last:pb-0">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 mt-0.5">{label}</span>
-                        <span className="max-w-[70%] text-right text-[12px] font-medium text-stone-900 whitespace-nowrap">{value ?? 'N/A'}</span>
+                    <div key={label} className="flex items-start justify-between gap-3 py-2 first:pt-0 last:pb-0">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 mt-0.5">{label}</span>
+                        <span className="max-w-[70%] text-right text-xs font-medium text-stone-900 whitespace-nowrap">{value ?? 'N/A'}</span>
                     </div>
                 ))}
             </div>
@@ -235,7 +235,7 @@ export default function ReleaseRequestDetails({
                             type="button"
                             onClick={onApprove}
                             disabled={!canEditAccounting || !!reviewProcessing}
-                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-stone-900 px-5 py-2 text-xs font-bold text-white hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm min-h-[44px]"
+                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-700 hover:bg-clay-800 text-white px-5 py-2 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs min-h-[44px]"
                         >
                             {reviewProcessing === 'approve' && <LoaderCircle size={14} className="animate-spin" />}
                             {reviewProcessing === 'approve' ? 'Processing...' : 'Approve & Release Funds'}

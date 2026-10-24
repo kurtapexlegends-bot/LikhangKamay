@@ -45,6 +45,15 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
     const [ledgerStatusFilter, setLedgerStatusFilter] = useState(() => getInitialQueryParam('ledger_status', 'all'));
     const [startDateFilter, setStartDateFilter] = useState(() => getInitialQueryParam('start_date', ''));
     const [endDateFilter, setEndDateFilter] = useState(() => getInitialQueryParam('end_date', ''));
+    const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
+
+    const requestSort = (key) => {
+        let direction = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
     
     // Debounce the search input to avoid spamming server requests on every keystroke
     const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
@@ -377,6 +386,8 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                                     selectedType={reviewModal.item?.type}
                                     isLoading={isTableShimmering}
                                     isSearching={isSearchLoading}
+                                    sortConfig={sortConfig}
+                                    onSort={requestSort}
                                 />
                             )}
 
@@ -394,6 +405,8 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                                     selectedType={reviewModal.item?.type}
                                     isLoading={isTableShimmering}
                                     isSearching={isSearchLoading}
+                                    sortConfig={sortConfig}
+                                    onSort={requestSort}
                                 />
                             )}
                         </div>
