@@ -1,10 +1,11 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Head, router } from '@inertiajs/react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import SellerHeader from '@/Layouts/SellerHeader';
 import { Trash2, UserX, UserCheck, UserPlus } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import {
     FALLBACK_ROLE_PRESETS,
@@ -16,9 +17,12 @@ import AttendanceCalendarModal from '@/Components/Seller/HR/AttendanceCalendarMo
 import EmployeeFormModal from '@/Components/Seller/HR/EmployeeFormModal';
 import PayrollGenerator from '@/Components/Seller/HR/PayrollGenerator';
 import HRSettingsModal from '@/Components/Seller/HR/HRSettingsModal';
-import HRTabs from '@/Components/Seller/HR/HRTabs';
 import HRTabContentWrapper from '@/Components/Seller/HR/HRTabContentWrapper';
 import EmployeeAttendanceDrawer from '@/Components/Seller/HR/EmployeeAttendanceDrawer';
+import StaffInspectorPane from '@/Components/Seller/HR/StaffInspectorPane';
+import StaffRosterList from '@/Components/Seller/HR/StaffRosterList';
+import StaffCardMatrix from '@/Components/Seller/HR/StaffCardMatrix';
+import StaffDirectoryToolbar from '@/Components/Seller/HR/StaffDirectoryToolbar';
 
 export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {}, staffProvisioning = {}, staffAccessAudits = [], locations = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,16 +30,66 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
     const [editingEmployee, setEditingEmployee] = useState(null);
     const { openSidebar } = useSellerWorkspaceShell();
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedEmployee, setSelectedEmployee] = useState(null);
+    const [viewMode, setViewMode] = useState('list');
+    const [directoryFilter, setDirectoryFilter] = useState('all');
+    const [entitlementFilter, setEntitlementFilter] = useState('all');
+    const [accountFilter, setAccountFilter] = useState('all');
     const [attendanceCalendarEmployee, setAttendanceCalendarEmployee] = useState(null);
     const [auditDrawerEmployee, setAuditDrawerEmployee] = useState(null);
     const [selectedAttendanceDate, setSelectedAttendanceDate] = useState(null);
     
+    const activeSelectedEmployee = useMemo(() => {
+        if (!selectedEmployee) return null;
+        return (staff || []).find(e => e.id === selectedEmployee.id) || selectedEmployee;
+    }, [selectedEmployee, staff]);
+
     const activeAttendanceEmployee = useMemo(() => 
         attendanceCalendarEmployee 
             ? (staff.find(emp => emp.id === attendanceCalendarEmployee.id) || attendanceCalendarEmployee) 
             : null, 
         [attendanceCalendarEmployee, staff]
     );
+
+    const filteredStaff = useMemo(() => {
+        return (staff || []).filter((emp) => {
+            if (searchTerm) {
+                const q = searchTerm.toLowerCase();
+                const match = (
+                    (emp.name && emp.name.toLowerCase().includes(q)) ||
+                    (emp.role && emp.role.toLowerCase().includes(q)) ||
+                    (emp.employee_id && emp.employee_id.toLowerCase().includes(q))
+                );
+                if (!match) return false;
+            }
+
+            if (directoryFilter === 'clocked_in') {
+                if (!(emp.attendance?.current_state === 'clocked_in' || emp.attendance?.open_session)) return false;
+            } else if (directoryFilter === 'paused') {
+                if (emp.attendance?.current_state !== 'paused') return false;
+            } else if (directoryFilter === 'off_duty') {
+                if (emp.attendance?.current_state === 'clocked_in' || emp.attendance?.current_state === 'paused') return false;
+            }
+
+            if (entitlementFilter !== 'all') {
+                const perms = emp.login_account?.module_permissions || {};
+                if (entitlementFilter === 'orders' && !perms.orders) return false;
+                if (entitlementFilter === 'accounting' && !perms.accounting) return false;
+                if (entitlementFilter === 'procurement' && !perms.procurement) return false;
+                if (entitlementFilter === 'hr' && !perms.hr) return false;
+                if (entitlementFilter === 'catalog' && !perms.catalog) return false;
+            }
+
+            if (accountFilter !== 'all') {
+                const hasLogin = emp.has_login_account || !!emp.login_account;
+                if (accountFilter === 'portal' && (!hasLogin || emp.login_account?.workspace_access_enabled === false)) return false;
+                if (accountFilter === 'manual' && hasLogin) return false;
+                if (accountFilter === 'suspended' && !(emp.login_account?.workspace_access_enabled === false || emp.status?.toLowerCase() === 'suspended')) return false;
+            }
+
+            return true;
+        });
+    }, [staff, searchTerm, directoryFilter, entitlementFilter, accountFilter]);
 
     const openAddModal = () => {
         if (!canEditHrRecords) { showReadOnlyToast(); return; }
@@ -58,7 +112,46 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, id: null });
     const [suspensionModal, setSuspensionModal] = useState({ isOpen: false, employee: null });
-    const [activeTab, setActiveTab] = useState('directory');
+    const getInitialTab = () => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const tabParam = params.get('tab');
+            if (tabParam && ['directory', 'payroll', 'access'].includes(tabParam)) {
+                return tabParam;
+            }
+        }
+        return 'directory';
+    };
+
+    const [activeTab, setActiveTabState] = useState(getInitialTab);
+
+    const setActiveTab = useCallback((newTab) => {
+        setActiveTabState(newTab);
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            if (newTab === 'directory') {
+                url.searchParams.delete('tab');
+            } else {
+                url.searchParams.set('tab', newTab);
+            }
+            window.history.replaceState({}, '', url.toString());
+        }
+    }, []);
+
+    useEffect(() => {
+        const handlePopState = () => {
+            const params = new URLSearchParams(window.location.search);
+            const tabParam = params.get('tab');
+            if (tabParam && ['directory', 'payroll', 'access'].includes(tabParam)) {
+                setActiveTabState(tabParam);
+            } else {
+                setActiveTabState('directory');
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
     const { addToast } = useToast();
     const [shouldAnimateKPI, setShouldAnimateKPI] = useState(true);
 
@@ -80,6 +173,12 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         const list = Array.isArray(payrolls) ? payrolls : (payrolls?.data || []);
         return list.filter((p) => p.status === 'Pending').length;
     }, [payrolls]);
+
+    const hrTabs = useMemo(() => [
+        { key: 'directory', label: 'Directory', count: staff?.length || 0 },
+        { key: 'payroll', label: 'Payroll History', count: pendingPayrollCount > 0 ? pendingPayrollCount : null },
+        { key: 'access', label: 'Access History' },
+    ], [staff?.length, pendingPayrollCount]);
     
     const openEditModal = (employee) => {
         if (!canEditHrRecords) { showReadOnlyToast(); return; }
@@ -171,29 +270,148 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     animate={shouldAnimateKPI}
                 />
 
-                <HRTabContentWrapper
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                    pendingPayrollCount={pendingPayrollCount}
-                    staff={staff}
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                    canEditHrRecords={canEditHrRecords}
-                    canManageStaffAccounts={canManageStaffAccounts}
-                    canDeleteStaffAccounts={canDeleteStaffAccounts}
-                    openEditModal={openEditModal}
-                    deleteEmployee={deleteEmployee}
-                    onToggleSuspension={toggleSuspension}
-                    openAttendanceModal={setAttendanceCalendarEmployee}
-                    openAuditDrawer={setAuditDrawerEmployee}
-                    presetLabelByKey={presetLabelByKey}
-                    monthLabel={sellerSettings.attendance_month_label || 'Current Month'}
-                    openAddModal={openAddModal}
-                    openPayrollModal={openPayrollModal}
-                    payrolls={payrolls}
-                    deletePayroll={deletePayroll}
-                    staffAccessAudits={staffAccessAudits}
-                />
+                {activeTab === 'directory' ? (
+                    <div className="space-y-4">
+                        <StaffDirectoryToolbar
+                            tabs={hrTabs}
+                            activeTab={activeTab}
+                            onTabChange={setActiveTab}
+                            searchTerm={searchTerm}
+                            setSearchTerm={setSearchTerm}
+                            filterState={directoryFilter}
+                            setFilterState={setDirectoryFilter}
+                            viewMode={viewMode}
+                            setViewMode={setViewMode}
+                            totalCount={filteredStaff.length}
+                            canEditHrRecords={canEditHrRecords}
+                            onAddClick={openAddModal}
+                            entitlementFilter={entitlementFilter}
+                            setEntitlementFilter={setEntitlementFilter}
+                            accountFilter={accountFilter}
+                            setAccountFilter={setAccountFilter}
+                        />
+
+                        <div className="relative">
+                            <div className="flex flex-col lg:flex-row items-start min-w-0">
+                                {/* Master List or Cards with Smooth Width Adaptation */}
+                                <div className="flex-1 min-w-0 w-full">
+                                    {viewMode === 'list' ? (
+                                        <StaffRosterList
+                                            staff={filteredStaff}
+                                            selectedEmployeeId={activeSelectedEmployee?.id}
+                                            onSelectEmployee={(emp) => setSelectedEmployee(emp.id === activeSelectedEmployee?.id ? null : emp)}
+                                            isDualPane={!!activeSelectedEmployee}
+                                        />
+                                    ) : (
+                                        <StaffCardMatrix
+                                            staff={filteredStaff}
+                                            selectedEmployeeId={activeSelectedEmployee?.id}
+                                            onSelectEmployee={(emp) => setSelectedEmployee(emp.id === activeSelectedEmployee?.id ? null : emp)}
+                                            canEditHrRecords={canEditHrRecords}
+                                            openEditModal={openEditModal}
+                                            openAttendanceModal={setAttendanceCalendarEmployee}
+                                            openTimeCard={(emp) => router.visit(route('hr.employees.time-card', emp.id))}
+                                            onAddClick={openAddModal}
+                                            isDualPane={!!activeSelectedEmployee}
+                                        />
+                                    )}
+                                </div>
+
+                                {/* Desktop Inspector Drawer with Synchronized Width & Slide */}
+                                <AnimatePresence initial={false}>
+                                    {activeSelectedEmployee && (
+                                        <motion.div
+                                            key="desktop-inspector-pane"
+                                            initial={{ width: 0, opacity: 0, marginLeft: 0 }}
+                                            animate={{ width: 380, opacity: 1, marginLeft: 20 }}
+                                            exit={{ width: 0, opacity: 0, marginLeft: 0 }}
+                                            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                                            className="hidden lg:block shrink-0 sticky top-4 overflow-hidden"
+                                        >
+                                            <div className="w-[380px]">
+                                                <StaffInspectorPane
+                                                    key={activeSelectedEmployee.id}
+                                                    employee={activeSelectedEmployee}
+                                                    onClose={() => setSelectedEmployee(null)}
+                                                    onEdit={openEditModal}
+                                                    onToggleSuspension={toggleSuspension}
+                                                    onOpenCalendar={setAttendanceCalendarEmployee}
+                                                    onOpenTimeCard={(emp) => router.visit(route('hr.employees.time-card', emp.id))}
+                                                    canEditHrRecords={canEditHrRecords}
+                                                    canManageStaffAccounts={canManageStaffAccounts}
+                                                    presetLabelByKey={presetLabelByKey}
+                                                />
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            {/* Mobile Slide-Up Modal / Bottom Sheet for Inspector */}
+                            <AnimatePresence>
+                                {activeSelectedEmployee && (
+                                    <motion.div
+                                        key="mobile-inspector-backdrop"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        onClick={() => setSelectedEmployee(null)}
+                                        className="fixed inset-0 z-50 lg:hidden flex items-end justify-center bg-stone-900/40 backdrop-blur-xs p-0 sm:p-4"
+                                    >
+                                        <motion.div
+                                            key="mobile-inspector-sheet"
+                                            initial={{ opacity: 0, y: '100%' }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: '100%' }}
+                                            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]"
+                                        >
+                                            <StaffInspectorPane
+                                                key={activeSelectedEmployee.id}
+                                                employee={activeSelectedEmployee}
+                                                onClose={() => setSelectedEmployee(null)}
+                                                onEdit={openEditModal}
+                                                onToggleSuspension={toggleSuspension}
+                                                onOpenCalendar={setAttendanceCalendarEmployee}
+                                                onOpenTimeCard={(emp) => router.visit(route('hr.employees.time-card', emp.id))}
+                                                canEditHrRecords={canEditHrRecords}
+                                                canManageStaffAccounts={canManageStaffAccounts}
+                                                presetLabelByKey={presetLabelByKey}
+                                            />
+                                        </motion.div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </div>
+                ) : (
+                    <HRTabContentWrapper
+                        tabs={hrTabs}
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                        pendingPayrollCount={pendingPayrollCount}
+                        staff={staff}
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        canEditHrRecords={canEditHrRecords}
+                        canManageStaffAccounts={canManageStaffAccounts}
+                        canDeleteStaffAccounts={canDeleteStaffAccounts}
+                        openEditModal={openEditModal}
+                        deleteEmployee={deleteEmployee}
+                        onToggleSuspension={toggleSuspension}
+                        openAttendanceModal={setAttendanceCalendarEmployee}
+                        openAuditDrawer={setAuditDrawerEmployee}
+                        presetLabelByKey={presetLabelByKey}
+                        monthLabel={sellerSettings.attendance_month_label || 'Current Month'}
+                        openAddModal={openAddModal}
+                        openPayrollModal={openPayrollModal}
+                        payrolls={payrolls}
+                        deletePayroll={deletePayroll}
+                        staffAccessAudits={staffAccessAudits}
+                    />
+                )}
 
                 {canEditHrRecords && activeTab === 'directory' && (
                     <button

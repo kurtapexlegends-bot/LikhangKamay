@@ -23,7 +23,7 @@ export default function StaffRowItem({
 }) {
     const attendanceStatus = getAttendanceStatus(emp.attendance);
     const directoryStatus = getEmployeeDirectoryStatus(emp, attendanceStatus);
-    const hasAttendanceData = emp.attendance?.has_attendance_source && (emp.attendance?.calendar_days?.length || 0) > 0;
+    const hasAttendanceData = (emp.attendance?.calendar_days?.length || 0) > 0;
 
     const isSuspended = emp.status?.toLowerCase() === 'suspended' || emp.login_account?.workspace_access_enabled === false;
     const isSelf = Boolean(auth?.user?.id && emp.login_account?.id === auth?.user?.id);

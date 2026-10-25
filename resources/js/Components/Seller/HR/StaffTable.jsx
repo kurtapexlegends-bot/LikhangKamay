@@ -13,7 +13,7 @@ import {
 } from '@/utils/hrHelpers';
 
 export function AttendanceSummaryCard({ attendance, attendanceStatus, monthLabel, onOpenCalendar }) {
-    const canOpen = attendance?.has_attendance_source && (attendance?.calendar_days?.length || 0) > 0;
+    const canOpen = (attendance?.calendar_days?.length || 0) > 0;
 
     return (
         <button

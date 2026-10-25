@@ -273,10 +273,10 @@ export const getLoginAccessStatus = (loginAccount) => {
 export const getAttendanceStatus = (attendance) => {
     if (!attendance?.has_attendance_source) {
         return {
-            label: 'Manual',
-            className: 'border-stone-200 bg-stone-100 text-stone-600',
-            dotClassName: 'bg-stone-400',
-            note: 'No linked staff login',
+            label: 'Schedule-Based',
+            className: 'border-stone-200 bg-stone-100 text-stone-700',
+            dotClassName: 'bg-stone-500',
+            note: 'Weekly shift schedule',
         };
     }
 

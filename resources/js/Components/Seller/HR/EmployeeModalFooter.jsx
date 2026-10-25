@@ -28,7 +28,7 @@ export default function EmployeeModalFooter({
                     }
                 >
                     <Trash2 size={13} />
-                    <span>Remove Employee</span>
+                    <span>Delete Employee</span>
                 </button>
             )}
             <button

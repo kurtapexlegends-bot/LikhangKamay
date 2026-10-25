@@ -9,12 +9,22 @@ import {
 } from '@/utils/hrHelpers';
 
 export default function AccessAuditLog({
+    tabs,
     activeTab,
     setActiveTab,
     pendingPayrollCount = 0,
     staffCount = 0,
     auditEntries = []
 }) {
+    const resolvedTabs = useMemo(() => {
+        if (tabs && tabs.length > 0) return tabs;
+        return [
+            { key: 'directory', label: 'Directory', count: staffCount },
+            { key: 'payroll', label: 'Payroll History', count: pendingPayrollCount > 0 ? pendingPayrollCount : null },
+            { key: 'access', label: 'Access History' },
+        ];
+    }, [tabs, staffCount, pendingPayrollCount]);
+
     const [search, setSearch] = useState('');
     const [eventFilter, setEventFilter] = useState('all');
 
@@ -43,11 +53,7 @@ export default function AccessAuditLog({
     return (
         <div className="rounded-3xl border border-stone-200/80 bg-white shadow-sm flex flex-col min-h-[300px] relative">
             <FilterToolbarHeader
-                tabs={[
-                    { key: 'directory', label: 'Directory', count: staffCount },
-                    { key: 'payroll', label: 'Payroll History', count: pendingPayrollCount },
-                    { key: 'access', label: 'Access History' },
-                ]}
+                tabs={resolvedTabs}
                 activeTab={activeTab || 'access'}
                 onTabChange={setActiveTab}
                 searchQuery={search}

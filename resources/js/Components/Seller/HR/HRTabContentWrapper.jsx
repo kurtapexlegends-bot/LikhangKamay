@@ -2,8 +2,10 @@ import React from 'react';
 import StaffTable from '@/Components/Seller/HR/StaffTable';
 import PayrollHistoryTable from '@/Components/Seller/HR/PayrollHistoryTable';
 import AccessAuditLog from '@/Components/Seller/HR/AccessAuditLog';
+import PayrollRunwayHeader from '@/Components/Seller/HR/PayrollRunwayHeader';
 
 export default function HRTabContentWrapper({
+    tabs,
     activeTab,
     setActiveTab,
     pendingPayrollCount,
@@ -29,6 +31,7 @@ export default function HRTabContentWrapper({
     if (activeTab === 'directory') {
         return (
             <StaffTable
+                tabs={tabs}
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 pendingPayrollCount={pendingPayrollCount}
@@ -52,22 +55,33 @@ export default function HRTabContentWrapper({
 
     if (activeTab === 'payroll') {
         return (
-            <PayrollHistoryTable
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                pendingPayrollCount={pendingPayrollCount}
-                staffCount={staff?.length || 0}
-                payrolls={payrolls}
-                canEditHrRecords={canEditHrRecords}
-                deletePayroll={deletePayroll}
-                openPayrollModal={openPayrollModal}
-            />
+            <div className="space-y-5">
+                <PayrollRunwayHeader
+                    staff={staff}
+                    monthLabel={monthLabel}
+                    pendingPayrollCount={pendingPayrollCount}
+                    openPayrollModal={openPayrollModal}
+                    canEditHrRecords={canEditHrRecords}
+                />
+                <PayrollHistoryTable
+                    tabs={tabs}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    pendingPayrollCount={pendingPayrollCount}
+                    staffCount={staff?.length || 0}
+                    payrolls={payrolls}
+                    canEditHrRecords={canEditHrRecords}
+                    deletePayroll={deletePayroll}
+                    openPayrollModal={openPayrollModal}
+                />
+            </div>
         );
     }
 
     if (activeTab === 'access') {
         return (
             <AccessAuditLog
+                tabs={tabs}
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 pendingPayrollCount={pendingPayrollCount}
