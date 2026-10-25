@@ -75,14 +75,31 @@ export const formatShortDate = (value) => value
 
 export const formatShortDateSafe = formatShortDate;
 
-export const formatAttendanceTime = (value) => value
+export const formatTime12h = (timeStr) => {
+    if (!timeStr) return null;
+    const parts = String(timeStr).split(':');
+    if (parts.length < 2) return timeStr;
+    const hour = parseInt(parts[0], 10);
+    const minute = parts[1];
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minute} ${ampm}`;
+};
+
+export const getEmployeeShiftLabel = (emp) => {
+    const start = formatTime12h(emp?.shift_start_time) || '8:00 AM';
+    const end = formatTime12h(emp?.shift_end_time) || '5:00 PM';
+    return `${start} – ${end}`;
+};
+
+export const formatAttendanceTime = (value, fallback = 'No clock-in yet') => value
     ? new Intl.DateTimeFormat('en-PH', {
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
       }).format(new Date(value))
-    : 'No clock-in yet';
+    : fallback;
 
 export const formatAttendanceDateLabel = (value) => value
     ? new Intl.DateTimeFormat('en-PH', {

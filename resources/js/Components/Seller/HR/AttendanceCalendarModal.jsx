@@ -5,8 +5,7 @@ import {
     buildAttendanceCalendarWeeks,
     formatAttendanceDateLabelSafe,
     formatWorkedHoursLabel,
-    formatWorkedHoursSummary,
-    formatAttendanceTime
+    formatWorkedHoursSummary
 } from '@/utils/hrHelpers';
 
 export default function AttendanceCalendarModal({ 

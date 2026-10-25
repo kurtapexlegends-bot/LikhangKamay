@@ -54,7 +54,11 @@ export function AttendanceSummaryCard({ attendance, attendanceStatus, monthLabel
             <div className="mt-2 space-y-1 text-[11px] leading-tight text-stone-600">
                 <div>{attendanceStatus.note}</div>
                 <div className="font-medium text-gray-700">
-                    First today: {formatAttendanceTime(attendance?.today_first_clock_in)}
+                    {attendance?.has_attendance_source ? (
+                        `First today: ${formatAttendanceTime(attendance?.today_first_clock_in)}`
+                    ) : (
+                        'Schedule-based shift'
+                    )}
                 </div>
                 <div className="text-[10px] text-stone-500">
                     {(attendance?.month_label || monthLabel)}: {formatWorkedHoursSummary(attendance)}

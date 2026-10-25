@@ -4,7 +4,8 @@ import {
     formatPeso,
     getAttendanceStatus,
     formatWorkedHoursSummary,
-    formatAttendanceTime
+    formatAttendanceTime,
+    getEmployeeShiftLabel
 } from '@/utils/hrHelpers';
 
 export default function StaffCardMatrix({
@@ -82,12 +83,12 @@ export default function StaffCardMatrix({
                                 </div>
                             </div>
 
-                            {/* Artisan Name & Station */}
+                            {/* Artisan Name & ID */}
                             <div>
                                 <h4 className="font-bold text-sm text-stone-900 truncate">{emp.name}</h4>
                                 <p className="text-xs text-stone-500 truncate">{emp.role || 'Studio Artisan'}</p>
                                 <div className="mt-1.5 inline-flex items-center gap-1 text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-md font-medium">
-                                    Station: {emp.employee_id || 'Workbench'}
+                                    ID: {emp.employee_id || 'LK-STAFF'}
                                 </div>
                             </div>
 
@@ -105,7 +106,15 @@ export default function StaffCardMatrix({
 
                             {/* Shift info */}
                             <div className="text-[11px] text-stone-500 space-y-0.5">
-                                <div>First punch: {formatAttendanceTime(emp.attendance?.today_first_clock_in) || 'None today'}</div>
+                                {emp.attendance?.has_attendance_source ? (
+                                    <div>
+                                        First punch: {emp.attendance?.today_first_clock_in
+                                            ? formatAttendanceTime(emp.attendance.today_first_clock_in)
+                                            : 'No punch today'}
+                                    </div>
+                                ) : (
+                                    <div>Shift: {getEmployeeShiftLabel(emp)}</div>
+                                )}
                                 <div>Logged: {formatWorkedHoursSummary(emp.attendance)}</div>
                             </div>
                         </div>

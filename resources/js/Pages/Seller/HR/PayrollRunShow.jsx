@@ -22,11 +22,6 @@ export default function PayrollRunShow({ payroll }) {
                 auth={auth}
                 onMenuClick={openSidebar}
                 badge={{ label: 'Enterprise', iconColor: 'text-emerald-400' }}
-                breadcrumbs={[
-                    { label: 'People & Payroll', href: route('hr.index') },
-                    { label: 'Payroll History', href: route('hr.index', { tab: 'payroll' }) },
-                    { label: payroll?.month || 'Payroll Run' }
-                ]}
             />
 
             <main className="mx-auto max-w-7xl w-full min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 space-y-5">

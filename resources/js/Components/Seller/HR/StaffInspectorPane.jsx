@@ -15,7 +15,8 @@ import {
     formatPeso,
     formatAttendanceTime,
     formatWorkedHoursSummary,
-    getAttendanceStatus
+    getAttendanceStatus,
+    getEmployeeShiftLabel
 } from '@/utils/hrHelpers';
 
 export default function StaffInspectorPane({
@@ -148,17 +149,38 @@ export default function StaffInspectorPane({
                     </div>
 
                     <div className="bg-white border border-stone-200/80 rounded-2xl p-3.5 space-y-2.5">
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="text-stone-500">First Clock-in Today</span>
-                            <span className="font-bold text-stone-800">
-                                {formatAttendanceTime(employee.attendance?.today_first_clock_in) || 'No punch recorded'}
-                            </span>
-                        </div>
+                        {employee.attendance?.has_attendance_source ? (
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-stone-500">First Clock-in Today</span>
+                                <span className="font-bold text-stone-800">
+                                    {employee.attendance?.today_first_clock_in
+                                        ? formatAttendanceTime(employee.attendance.today_first_clock_in)
+                                        : 'No punch recorded today'}
+                                </span>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-stone-500">Attendance Tracking</span>
+                                    <span className="font-bold text-stone-800">
+                                        Schedule-Based
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-stone-500">Assigned Shift</span>
+                                    <span className="font-bold text-stone-800">
+                                        {getEmployeeShiftLabel(employee)}
+                                    </span>
+                                </div>
+                            </>
+                        )}
 
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-stone-500">Current Status Note</span>
                             <span className="font-semibold text-stone-700">
-                                {attendanceMeta.note || 'Scheduled shift'}
+                                {employee.attendance?.has_attendance_source
+                                    ? (attendanceMeta.note || 'Active biometric punch')
+                                    : 'Standard schedule (no punch required)'}
                             </span>
                         </div>
 

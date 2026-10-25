@@ -165,8 +165,9 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
     *   [`PayrollItemsTable.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/PayrollItemsTable.jsx): Desktop table and mobile card list with employee avatars, attendance metrics, overtime breakdowns, dedicated action buttons, and nested formula calculation audit drawers.
 *   **Directory & Staff Layout Modularization**:
     *   [`StaffDirectoryToolbar.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/StaffDirectoryToolbar.jsx): Search, role/entitlement filters, and list/card layout toggles.
-    *   [`StaffRosterList.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/StaffRosterList.jsx) & [`StaffCardMatrix.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/StaffCardMatrix.jsx): Dual-view components rendering employee rows and responsive card grids.
-    *   [`StaffInspectorPane.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/StaffInspectorPane.jsx): Right-side inspector drawer showing selected employee stats and attendance quick actions.
+    *   [`StaffRosterList.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/StaffRosterList.jsx) & [`StaffCardMatrix.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/StaffCardMatrix.jsx): Dual-view components rendering employee rows and responsive card grids. Features strict distinction between biometric device punched employees (`First punch: [time]`) and schedule-based staff (`Shift: [hours]`), with correct `ID: [EMP-xxx]` labeling.
+    *   [`StaffInspectorPane.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/StaffInspectorPane.jsx): Right-side inspector drawer showing selected employee stats, shift hours, and attendance quick actions.
+    *   [`NetworkStatusBanner.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Common/NetworkStatusBanner.jsx): High-z-index floating toast pill (`z-[200]`) providing non-colliding offline and reconnection status feedback across full and collapsed workspace views.
 
 
 

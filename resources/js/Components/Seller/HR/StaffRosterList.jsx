@@ -80,18 +80,22 @@ export default function StaffRosterList({
                                         </span>
                                     </div>
                                     <div className="text-xs text-stone-500 truncate mt-0.5">
-                                        {emp.role || 'Studio Artisan'} • Station: {emp.employee_id || 'Workbench'}
+                                        {emp.role || 'Studio Artisan'} • ID: {emp.employee_id || 'LK-STAFF'}
                                     </div>
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-4 shrink-0">
-                                <div className="hidden xl:block text-right text-xs">
-                                    <div className="text-stone-500 text-[11px]">First Today</div>
-                                    <div className="font-semibold text-stone-700">
-                                        {formatAttendanceTime(emp.attendance?.today_first_clock_in) || 'None'}
+                                {emp.attendance?.has_attendance_source && (
+                                    <div className="hidden xl:block text-right text-xs">
+                                        <div className="text-stone-500 text-[11px]">First Today</div>
+                                        <div className="font-semibold text-stone-700">
+                                            {emp.attendance?.today_first_clock_in
+                                                ? formatAttendanceTime(emp.attendance.today_first_clock_in)
+                                                : 'No punch yet'}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 <div className="text-right">
                                     <div className="text-xs font-bold text-stone-900">

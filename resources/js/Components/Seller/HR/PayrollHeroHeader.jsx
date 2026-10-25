@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link, router } from '@inertiajs/react';
-import { ArrowLeft, Clock3, Send, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
+import { router } from '@inertiajs/react';
+import { ArrowLeft, Clock3, Send, AlertCircle } from 'lucide-react';
 
 const shortDateTime = (value) => value
     ? new Intl.DateTimeFormat('en-PH', {
@@ -71,27 +71,8 @@ export default function PayrollHeroHeader({ payroll }) {
 
     return (
         <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-2xs">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <div className="flex flex-wrap items-center gap-2 mb-2.5">
-                        <button
-                            type="button"
-                            onClick={handleBack}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-600 hover:text-stone-900 transition cursor-pointer bg-stone-100 hover:bg-stone-200/80 px-2.5 py-1 rounded-lg"
-                            title="Back to previous page"
-                        >
-                            <ArrowLeft size={13} />
-                            Back
-                        </button>
-                        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-stone-500">
-                            <Link href={route('hr.index')} className="hover:text-stone-900 font-medium">People &amp; Payroll</Link>
-                            <ChevronRight size={12} className="text-stone-300" />
-                            <Link href={route('hr.index', { tab: 'payroll' })} className="hover:text-stone-900 font-medium">Payroll History</Link>
-                            <ChevronRight size={12} className="text-stone-300" />
-                            <span className="font-semibold text-stone-900 truncate max-w-[200px]">{payroll?.month || 'Payroll Run'}</span>
-                        </nav>
-                    </div>
-
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2.5">
                         <h1 className="text-xl font-bold tracking-tight text-stone-900 sm:text-2xl">
                             {payroll?.month || 'Payroll Run'}
@@ -124,17 +105,28 @@ export default function PayrollHeroHeader({ payroll }) {
                     </div>
                 </div>
 
-                {isDraft && (
+                <div className="flex flex-wrap items-center gap-2 shrink-0 sm:pt-0.5">
+                    {isDraft && (
+                        <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={handleSubmitForApproval}
+                            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-clay-700 text-white text-xs font-bold hover:bg-clay-800 disabled:opacity-50 transition shadow-2xs cursor-pointer min-h-[38px]"
+                        >
+                            <Send size={13} />
+                            {submitting ? 'Submitting...' : 'Submit for Approval'}
+                        </button>
+                    )}
                     <button
                         type="button"
-                        disabled={submitting}
-                        onClick={handleSubmitForApproval}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-clay-700 text-white text-xs font-bold hover:bg-clay-800 disabled:opacity-50 transition shadow-2xs cursor-pointer min-h-[44px]"
+                        onClick={handleBack}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-700 hover:text-stone-900 transition cursor-pointer bg-stone-100 hover:bg-stone-200/80 px-3.5 py-2 rounded-xl border border-stone-200 min-h-[38px]"
+                        title="Back to previous page"
                     >
-                        <Send size={14} />
-                        {submitting ? 'Submitting...' : 'Submit for Approval'}
+                        <ArrowLeft size={14} />
+                        Back
                     </button>
-                )}
+                </div>
             </div>
 
             {payroll?.notes && (
