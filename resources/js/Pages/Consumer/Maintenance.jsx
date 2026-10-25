@@ -3,7 +3,12 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { Clock, Mail, Phone } from 'lucide-react';
 
 export default function Maintenance() {
-    const { platform } = usePage().props;
+    const { platform = {} } = usePage().props;
+
+    const platformName = platform?.name || 'LikhangKamay';
+    const platformLogo = platform?.logo || '/images/default-logo.png';
+    const supportEmail = platform?.contact?.email || 'support@likhangkamay.com';
+    const contactPhone = platform?.contact?.phone || 'N/A';
 
     return (
         <div className="min-h-screen bg-[#FAF9F5] flex flex-col items-center justify-center p-6 text-stone-800">
@@ -15,8 +20,8 @@ export default function Maintenance() {
                     {/* Logo & Title */}
                     <div className="flex flex-col items-center gap-3">
                         <img 
-                            src={platform.logo} 
-                            alt={platform.name} 
+                            src={platformLogo} 
+                            alt={platformName} 
                             className="h-14 w-auto object-contain"
                             onError={(e) => {
                                 e.currentTarget.onerror = null;
@@ -24,7 +29,7 @@ export default function Maintenance() {
                             }}
                         />
                         <h1 className="font-serif text-2xl font-bold text-stone-900 tracking-tight">
-                            {platform.name}
+                            {platformName}
                         </h1>
                     </div>
 
@@ -51,12 +56,12 @@ export default function Maintenance() {
                         <div className="flex flex-col items-center gap-1 md:px-2 pt-4 md:pt-0">
                             <Mail size={16} className="text-stone-400 mb-1" />
                             <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">Support</p>
-                            <p className="text-xs font-bold text-stone-900 break-all select-all">{platform.contact.email}</p>
+                            <p className="text-xs font-bold text-stone-900 break-all select-all">{supportEmail}</p>
                         </div>
                         <div className="flex flex-col items-center gap-1 md:px-2 pt-4 md:pt-0">
                             <Phone size={16} className="text-stone-400 mb-1" />
                             <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">Inquiries</p>
-                            <p className="text-xs font-bold text-stone-900">{platform.contact.phone || 'N/A'}</p>
+                            <p className="text-xs font-bold text-stone-900">{contactPhone}</p>
                         </div>
                     </div>
                 </div>

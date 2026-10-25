@@ -42,8 +42,7 @@ class BOMDeductionService
             }
 
             foreach ($product->recipes as $recipe) {
-                $supply = $recipe->supply;
-                if (!$supply) {
+                if (!$recipe->supply_id) {
                     continue;
                 }
 
@@ -52,23 +51,53 @@ class BOMDeductionService
                     continue;
                 }
 
-                if ($supply->quantity < $totalRequired) {
-                    throw new \Exception("Insufficient supply: {$supply->name}. Needed {$totalRequired} {$supply->unit}, but only {$supply->quantity} available.");
+                $supplyId = (int) $recipe->supply_id;
+                if (!isset($deductions[$supplyId])) {
+                    $deductions[$supplyId] = [
+                        'supply_id' => $supplyId,
+                        'required' => 0.0,
+                        'product_names' => [],
+                    ];
                 }
 
-                $deductions[] = [
-                    'supply' => $supply,
-                    'required' => $totalRequired,
-                    'product_name' => $product->name,
-                ];
+                $deductions[$supplyId]['required'] += $totalRequired;
+                $deductions[$supplyId]['product_names'][] = $product->name;
+            }
+        }
+
+        if (empty($deductions)) {
+            return;
+        }
+
+        // Lock supplies in deterministic order by ID to eliminate deadlocks under concurrent orders
+        $supplyIds = array_keys($deductions);
+        sort($supplyIds);
+
+        $lockedSupplies = Supply::query()
+            ->with('product')
+            ->whereIn('id', $supplyIds)
+            ->lockForUpdate()
+            ->get()
+            ->keyBy('id');
+
+        // Verify sufficient stock across all locked supplies
+        foreach ($deductions as $supplyId => $data) {
+            /** @var Supply|null $supply */
+            $supply = $lockedSupplies->get($supplyId);
+            if (!$supply) {
+                throw new \Exception("Required supply (ID: {$supplyId}) not found for BOM deduction.");
+            }
+
+            if ($supply->quantity < $data['required']) {
+                throw new \Exception("Insufficient supply: {$supply->name}. Needed {$data['required']} {$supply->unit}, but only {$supply->quantity} available.");
             }
         }
 
         // Perform deductions
-        foreach ($deductions as $deduction) {
+        foreach ($deductions as $supplyId => $data) {
             /** @var Supply $supply */
-            $supply = $deduction['supply'];
-            $required = $deduction['required'];
+            $supply = $lockedSupplies->get($supplyId);
+            $required = $data['required'];
 
             // Eloquent assignment and save() ensures model events (booted low stock / depletion alerts) fire
             $supply->quantity = max(0, $supply->quantity - (int) ceil($required));
@@ -102,6 +131,8 @@ class BOMDeductionService
                 }
             }
 
+            $productNamesLabel = implode(', ', array_unique($data['product_names']));
+
             // Log individual supply deduction audit
             SellerActivityLog::recordEvent([
                 'seller_owner_id' => $order->artisan_id,
@@ -121,7 +152,7 @@ class BOMDeductionService
                     'order_id' => $order->id,
                     'supply_id' => $supply->id,
                     'quantity' => $required,
-                    'product_name' => $deduction['product_name'],
+                    'product_name' => $productNamesLabel,
                 ],
             ]);
         }
@@ -182,7 +213,7 @@ class BOMDeductionService
 
         $order->loadMissing(['items.product.recipes.supply.product']);
 
-        $restoredCount = 0;
+        $toRestore = [];
 
         foreach ($order->items as $item) {
             $product = $item->product ?: Product::with('recipes.supply.product')->find($item->product_id);
@@ -191,8 +222,7 @@ class BOMDeductionService
             }
 
             foreach ($product->recipes as $recipe) {
-                $supply = $recipe->supply;
-                if (!$supply) {
+                if (!$recipe->supply_id) {
                     continue;
                 }
 
@@ -201,15 +231,47 @@ class BOMDeductionService
                     continue;
                 }
 
-                $supply->quantity += (int) ceil($restoreQty);
-                $supply->save();
-
-                if ($supply->product) {
-                    $supply->product->update(['stock' => $supply->quantity]);
+                $supplyId = (int) $recipe->supply_id;
+                if (!isset($toRestore[$supplyId])) {
+                    $toRestore[$supplyId] = 0.0;
                 }
 
-                $restoredCount++;
+                $toRestore[$supplyId] += $restoreQty;
             }
+        }
+
+        if (empty($toRestore)) {
+            return;
+        }
+
+        // Lock supplies in deterministic order by ID to prevent deadlocks
+        $supplyIds = array_keys($toRestore);
+        sort($supplyIds);
+
+        $lockedSupplies = Supply::query()
+            ->with('product')
+            ->whereIn('id', $supplyIds)
+            ->lockForUpdate()
+            ->get()
+            ->keyBy('id');
+
+        $restoredCount = 0;
+
+        foreach ($toRestore as $supplyId => $restoreQty) {
+            /** @var Supply|null $supply */
+            $supply = $lockedSupplies->get($supplyId);
+            if (!$supply) {
+                continue;
+            }
+
+            $supply->quantity += (int) ceil($restoreQty);
+            $supply->save();
+
+            if ($supply->product) {
+                $supply->product->update(['stock' => $supply->quantity]);
+            }
+
+            $restoredCount++;
         }
 
         SellerActivityLog::recordEvent([
