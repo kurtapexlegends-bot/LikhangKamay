@@ -151,5 +151,23 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
 *   **Live Wage Simulator**: [`LiveWageSimulator.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Settings/Tabs/LiveWageSimulator.jsx)
     *   Real-time interactive wage simulator embedded in the payroll settings dashboard, computing effective hourly wage rates, regular workday pay, overtime earnings, and gross daily wages dynamically as the artisan customizes workshop rules.
 
+---
+
+## 7. Payroll History, Runway & Detailed Audit Architecture
+
+*   **Payroll Runway & History Ledger**:
+    *   [`PayrollRunwayHeader.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/PayrollRunwayHeader.jsx): High-level runway banner tracking active cycle gross, estimated deductions, and net payable before disbursement.
+    *   [`PayrollHistoryTable.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/PayrollHistoryTable.jsx): Master-detail historical payroll runs with expandable in-place item allocation breakdown, soft draft cancellation, and friendly accounting terminology.
+*   **Payroll Run Detail Page & Modular Breakdown**:
+    *   [`PayrollRunShow.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Seller/HR/PayrollRunShow.jsx): Slim orchestrator page component (<50 lines) rendering the dedicated payroll disbursement record.
+    *   [`PayrollHeroHeader.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/PayrollHeroHeader.jsx): Navigation header featuring single-page back handling (`window.history.back()` with fallback), status badges (`Disbursed`, `Pending Approval`, `Draft`, `Declined`), and full breadcrumb pathing.
+    *   [`PayrollMetricStrip.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/PayrollMetricStrip.jsx): 4-card financial strip reconciling gross base pay, overtime pay, statutory deductions, and net disbursed amounts.
+    *   [`PayrollItemsTable.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/PayrollItemsTable.jsx): Desktop table and mobile card list with employee avatars, attendance metrics, overtime breakdowns, dedicated action buttons, and nested formula calculation audit drawers.
+*   **Directory & Staff Layout Modularization**:
+    *   [`StaffDirectoryToolbar.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/StaffDirectoryToolbar.jsx): Search, role/entitlement filters, and list/card layout toggles.
+    *   [`StaffRosterList.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/StaffRosterList.jsx) & [`StaffCardMatrix.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/StaffCardMatrix.jsx): Dual-view components rendering employee rows and responsive card grids.
+    *   [`StaffInspectorPane.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/StaffInspectorPane.jsx): Right-side inspector drawer showing selected employee stats and attendance quick actions.
+
+
 
 
