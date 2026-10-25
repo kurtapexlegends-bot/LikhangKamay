@@ -1,5 +1,5 @@
-import React from 'react';
-import { Sparkles, Eye } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Eye, CheckCircle2, Calendar } from 'lucide-react';
 import { formatPeso } from '@/utils/hrHelpers';
 
 export default function RosterSelector({
@@ -9,85 +9,174 @@ export default function RosterSelector({
     onDeselectAll,
     onViewAttendanceLogs
 }) {
+    const [rosterFilter, setRosterFilter] = useState('all'); // 'all', 'device', 'schedule'
+
+    const filteredItems = useMemo(() => {
+        return items.filter((item) => {
+            if (rosterFilter === 'device') return !!item.has_attendance_source;
+            if (rosterFilter === 'schedule') return !item.has_attendance_source;
+            return true;
+        });
+    }, [items, rosterFilter]);
+
+    const selectedCount = items.filter(i => i.isSelected).length;
+    const totalSelectedSalary = items
+        .filter(i => i.isSelected)
+        .reduce((sum, i) => sum + (Number(i.salary || 0) / 2), 0);
+
     return (
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-            <div className="rounded-2xl border border-[#E7D8C9] bg-[#FCF7F2] p-4 text-[11px] leading-relaxed text-clay-700 flex gap-3">
-                <Sparkles className="shrink-0 mt-0.5 text-clay-600" size={16} />
-                <div>
-                    <span className="font-bold">Attendance Auto-Filled</span>: Absent days, undertime, and overtime are loaded automatically from staff daily work logs for the selected month. Verify the employee selection below to proceed.
-                </div>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-stone-150 pb-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-400">Available Employees ({items.length})</h3>
-                <div className="flex gap-2">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {/* Filter Pills & Select All Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-150 pb-3">
+                <div className="flex items-center gap-1.5 flex-wrap">
                     <button
                         type="button"
-                        onClick={onSelectAll}
-                        className="text-[10px] font-bold text-clay-650 hover:underline"
+                        onClick={() => setRosterFilter('all')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                            rosterFilter === 'all'
+                                ? 'bg-clay-700 text-white shadow-2xs'
+                                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        }`}
                     >
-                        Select All
+                        All ({items.length})
                     </button>
+                    <button
+                        type="button"
+                        onClick={() => setRosterFilter('device')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                            rosterFilter === 'device'
+                                ? 'bg-clay-700 text-white shadow-2xs'
+                                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        }`}
+                    >
+                        Device Punched ({items.filter(i => i.has_attendance_source).length})
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setRosterFilter('schedule')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                            rosterFilter === 'schedule'
+                                ? 'bg-clay-700 text-white shadow-2xs'
+                                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        }`}
+                    >
+                        Schedule-Based ({items.filter(i => !i.has_attendance_source).length})
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-3 text-xs">
+                    <span className="text-stone-500 font-semibold">
+                        Selected: <strong className="text-stone-900">{selectedCount}</strong> / {items.length} &bull; <strong className="text-clay-800">{formatPeso(totalSelectedSalary)}</strong> base
+                    </span>
                     <span className="text-stone-300">|</span>
-                    <button
-                        type="button"
-                        onClick={onDeselectAll}
-                        className="text-[10px] font-bold text-stone-500 hover:underline"
-                    >
-                        Deselect All
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={onSelectAll}
+                            className="font-bold text-clay-700 hover:underline cursor-pointer"
+                        >
+                            Select All
+                        </button>
+                        <span className="text-stone-300">|</span>
+                        <button
+                            type="button"
+                            onClick={onDeselectAll}
+                            className="font-bold text-stone-500 hover:underline cursor-pointer"
+                        >
+                            Deselect All
+                        </button>
+                    </div>
                 </div>
             </div>
 
+            {/* Employee Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                {items.map((item, index) => {
+                {filteredItems.map((item) => {
+                    const originalIndex = items.findIndex(i => i.employee_id === item.employee_id);
                     const isSelected = item.isSelected;
+                    const semiMonthlyBase = Number(item.salary || 0) / 2;
+                    const isDevicePunched = !!item.has_attendance_source;
+                    const daysWorked = Number(item.attendance_days_worked || (isDevicePunched ? 0 : 11));
+
                     return (
                         <div
                             key={item.employee_id}
-                            onClick={() => updatePayrollItem(index, 'isSelected', !isSelected)}
-                            className={`flex items-start gap-4 p-4 rounded-2xl border transition-all duration-200 active:scale-[0.98] cursor-pointer select-none ${
+                            onClick={() => updatePayrollItem(originalIndex, 'isSelected', !isSelected)}
+                            className={`p-4 rounded-3xl border-2 transition-all duration-200 active:scale-[0.99] cursor-pointer select-none space-y-3 ${
                                 isSelected
-                                    ? 'border-clay-600 bg-[#FCF7F2]/50 shadow-[0_4px_12px_rgba(137,67,45,0.04)]'
-                                    : 'border-stone-200 bg-white hover:border-stone-250 hover:bg-stone-50/50'
+                                    ? 'border-clay-650 bg-[#FCF7F2]/60 shadow-sm ring-2 ring-clay-650/10'
+                                    : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/40'
                             }`}
                         >
-                            <input
-                                type="checkbox"
-                                className="mt-0.5 w-4 h-4 text-clay-600 rounded border-stone-300 focus:ring-clay-500 cursor-pointer pointer-events-none"
-                                checked={isSelected}
-                                readOnly
-                            />
-                            <div className="min-w-0 flex-1">
-                                <h4 className="text-xs font-bold text-stone-900 truncate">{item.name}</h4>
-                                <p className="text-[10px] font-bold text-stone-500 mt-0.5">{formatPeso(item.salary)}</p>
-                                
-                                <div className="mt-2.5 flex items-center justify-between w-full">
-                                    {item.has_attendance_source ? (
-                                        <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-md px-1.5 py-0.5">
-                                            Prefilled: {item.attendance_days_worked || 0}d worked
-                                        </span>
-                                    ) : (
-                                        <span className="text-[9px] font-bold text-stone-500 bg-stone-50 border border-stone-150 rounded-md px-1.5 py-0.5">
-                                            Manual Entry
-                                        </span>
-                                    )}
-                                    
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (onViewAttendanceLogs) {
-                                                onViewAttendanceLogs(item.employee_id);
-                                            }
-                                        }}
-                                        className="inline-flex items-center gap-1 text-[9px] font-bold text-clay-700 hover:text-clay-800 transition bg-clay-50 hover:bg-[#FCF7F2] border border-[#E7D8C9] rounded-md px-1.5 py-0.5"
-                                        title="View attendance logs"
-                                    >
-                                        <Eye size={10} />
-                                        Logs
-                                    </button>
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                    <h4 className="text-xs font-bold text-stone-900 truncate">{item.name}</h4>
+                                    <p className="text-[10px] font-bold text-clay-700 mt-0.5">
+                                        Semi-Monthly: {formatPeso(semiMonthlyBase)}
+                                    </p>
                                 </div>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                    isSelected
+                                        ? 'bg-clay-100 text-clay-800 border-clay-200'
+                                        : 'bg-stone-100 text-stone-500 border-stone-200'
+                                }`}>
+                                    {isSelected ? 'Included' : 'Excluded'}
+                                </span>
+                            </div>
+
+                            {/* 11-Day Shift Attendance Mini-Heatmap */}
+                            <div className="bg-white/90 p-2.5 rounded-2xl border border-stone-200/80 space-y-1.5 shadow-2xs">
+                                <div className="flex items-center justify-between text-[10px] font-semibold text-stone-500">
+                                    <span>Attendance</span>
+                                    <span className="font-bold text-stone-800">
+                                        {isDevicePunched
+                                            ? `${daysWorked} / 11 days (Logged)`
+                                            : `${daysWorked} / 11 days (Scheduled)`}
+                                    </span>
+                                </div>
+                                <div className="flex gap-1" title={isDevicePunched ? `${daysWorked} shifts logged` : `${daysWorked} scheduled shifts`}>
+                                    {[...Array(11)].map((_, i) => (
+                                        <div
+                                            key={i}
+                                            className={`flex-1 h-2 rounded-xs transition-colors ${
+                                                i < daysWorked
+                                                    ? isDevicePunched
+                                                        ? 'bg-emerald-500'
+                                                        : 'bg-clay-600'
+                                                    : 'bg-stone-200'
+                                            }`}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Source Tag & Timecard Action */}
+                            <div className="flex items-center justify-between pt-1 border-t border-stone-150/70 text-[10px]">
+                                {isDevicePunched ? (
+                                    <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                        <CheckCircle2 size={10} />
+                                        <span>Device Punched</span>
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-1 font-bold text-stone-700 bg-stone-100 px-2 py-0.5 rounded-full border border-stone-200">
+                                        <Calendar size={10} />
+                                        <span>Schedule-Based</span>
+                                    </span>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onViewAttendanceLogs) {
+                                            onViewAttendanceLogs(item.employee_id);
+                                        }
+                                    }}
+                                    className="inline-flex items-center gap-1 font-bold text-clay-700 hover:text-clay-900 transition bg-clay-50 hover:bg-clay-100/70 px-2.5 py-1 rounded-lg border border-[#E7D8C9]"
+                                >
+                                    <Eye size={10} />
+                                    <span>Timecard</span>
+                                </button>
                             </div>
                         </div>
                     );

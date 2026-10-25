@@ -72,7 +72,9 @@ export default function PayrollGenerator({
                 overtime_hours: Number(emp.payroll_prefill?.overtime_hours ?? 0),
                 rest_day_ot_hours: 0,
                 holiday_ot_hours: 0,
-                attendance_days_worked: Number(emp.payroll_prefill?.days_worked ?? 0),
+                attendance_days_worked: emp.attendance?.has_attendance_source
+                    ? Number(emp.payroll_prefill?.days_worked ?? 0)
+                    : (Number(emp.payroll_prefill?.days_worked) > 0 ? Number(emp.payroll_prefill?.days_worked) : 11),
                 has_attendance_source: !!emp.attendance?.has_attendance_source,
                 isSelected: true
             }));

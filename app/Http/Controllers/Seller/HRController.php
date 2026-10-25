@@ -50,7 +50,7 @@ class HRController extends Controller
             $activePeriod = HRWorkflowHelper::resolveActivePeriod($request);
             $employees = rescue(fn() => HRWorkflowHelper::getEmployeesWithAttendance($seller, $attendanceService, $activePeriod), collect());
 
-            $payrolls = rescue(fn() => Payroll::with('requester:id,name')
+            $payrolls = rescue(fn() => Payroll::with(['requester:id,name', 'items.employee:id,name,role'])
                 ->where('user_id', $seller->id)
                 ->orderBy('created_at', 'desc')
                 ->paginate(10), new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10));
