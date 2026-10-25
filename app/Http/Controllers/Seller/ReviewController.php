@@ -33,22 +33,22 @@ class ReviewController extends Controller
 
                 return [
                     'id' => $review->id,
-                    'rating' => $review->rating,
+                    'rating' => (int) $review->rating,
                     'comment' => $review->comment,
                     'photos' => $review->photos ?? [],
-                    'date' => $review->created_at->format('M d, Y'),
+                    'date' => $review->created_at?->format('M d, Y') ?? 'Recent',
                     'customer' => $review->user?->name ?? 'Unknown',
                     'product_name' => $review->product?->name ?? 'Unknown Product',
                     'product_id' => $review->product_id,
                     'product_image' => StorageUrl::url($review->product?->cover_photo_path),
                     'seller_reply' => RichTextSanitizer::sanitize($review->seller_reply),
-                    'is_pinned' => $review->is_pinned,
+                    'is_pinned' => (bool) $review->is_pinned,
                     'is_hidden_from_marketplace' => (bool) $review->is_hidden_from_marketplace,
                     'dispute' => $latestDispute ? [
                         'id' => $latestDispute->id,
                         'status' => $latestDispute->status,
                         'reason' => $latestDispute->reason,
-                        'details' => $latestDispute->details,
+                        'details' => $latestDispute->details ?? $latestDispute->explanation ?? null,
                         'reported_at' => $latestDispute->created_at?->toIso8601String(),
                         'reported_by' => $latestDispute->reporter?->name,
                         'review_hidden_from_marketplace' => (bool) $review->is_hidden_from_marketplace,
@@ -67,8 +67,8 @@ class ReviewController extends Controller
                 },
             ])
             ->withAvg('reviews', 'rating')
-            ->orderByDesc('reviews_count')
-            ->orderBy('name')
+            ->orderByDesc('products.reviews_count')
+            ->orderBy('products.name')
             ->get()
             ->map(function ($product) {
                 return [
@@ -86,7 +86,7 @@ class ReviewController extends Controller
 
         $stats = [
             'total' => $reviews->count(),
-            'average' => $reviews->count() > 0 ? round($reviews->avg('rating'), 1) : 0,
+            'average' => $reviews->count() > 0 ? round((float) $reviews->avg('rating'), 1) : 0,
             'stars' => [
                 '5' => $reviews->where('rating', 5)->count(),
                 '4' => $reviews->where('rating', 4)->count(),
@@ -239,8 +239,8 @@ class ReviewController extends Controller
         }
 
         Review::where('product_id', $review->product_id)
-            ->where('is_pinned', DB::raw('true'))
-            ->update(['is_pinned' => DB::raw('false')]);
+            ->where('is_pinned', \App\Casts\PostgresCompatibleBoolean::dbVal(true))
+            ->update(['is_pinned' => \App\Casts\PostgresCompatibleBoolean::dbVal(false)]);
 
         $review->update(['is_pinned' => true]);
 

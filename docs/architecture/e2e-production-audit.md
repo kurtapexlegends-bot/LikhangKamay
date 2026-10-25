@@ -1,23 +1,27 @@
 # Production End-to-End Audit & Verification Matrix
 
 > **Target:** `https://www.likhangkamay.app`  
-> **Execution Date:** `2026-10-21T13:06:09.026Z`  
-> **Duration:** `179.8s`  
-> **Status:** **PASS (100% HEALTHY)**
+> **Execution Date:** `2026-10-25T22:08:54.010Z`  
+> **Duration:** `174.4s`  
+> **Status:** **ATTENTION REQUIRED**
 
 ## 1. Executive Summary
 
 | Metric | Value |
 | :--- | :--- |
-| **Total Scenarios Evaluated** | 91 |
-| **Passed Checks** | 89 |
+| **Total Scenarios Evaluated** | 90 |
+| **Passed Checks** | 87 |
 | **Warnings** | 2 |
-| **Failed Checks** | 0 |
-| **Active Bugs Logged** | 0 |
+| **Failed Checks** | 1 |
+| **Active Bugs Logged** | 1 |
 
 ## 2. Bug & Failure Log
 
-Zero critical bugs or runtime failures detected across all user journeys.
+### Bug 1: [CRITICAL] Server Error HTTP 500: https://www.likhangkamay.app/reviews
+- **Location:** https://www.likhangkamay.app/reviews
+- **Description:** Endpoint failed with HTTP 500
+- **Remediation:** Check Laravel server runtime logs and Postgres query constraints.
+
 
 ## 3. Detailed Results Matrix
 
@@ -33,7 +37,7 @@ Zero critical bugs or runtime failures detected across all user journeys.
 | Phase 1 | 1.4 Artisan Profile Load | **PASS** | Target URL: https://www.likhangkamay.app/shop/silang-terracotta-works-42dewr |
 | Phase 1 | 1.5 Register Page Load | **PASS** | - |
 | Phase 1 | 1.5 Registration Validation Errors | **PASS** | Form validation errors properly displayed |
-| Phase 1 | 1.6 Google OAuth Redirect | **PASS** | Target URL reached: https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S-768077325% |
+| Phase 1 | 1.6 Google OAuth Redirect | **PASS** | Target URL reached: https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S1964571151% |
 | Phase 1 | 1.7 Forgot Password Page Load | **PASS** | - |
 | Phase 1 | 1.7 Forgot Password Submit | **PASS** | Submission handled |
 | Phase 1 | 1.8 Artisan Register Page Load | **PASS** | - |
@@ -112,5 +116,4 @@ Zero critical bugs or runtime failures detected across all user journeys.
 | Phase 6 | 6.2 Presigned Direct Upload Endpoint | **PASS** | HTTP Status: 401 |
 | Phase 6 | 6.3 Universal Global Search API | **PASS** | Status: 401 |
 | Phase 6 | 6.4 Webhook Cron Security Guard | **PASS** | Unauthenticated cron returned HTTP 401 (Expected 401) |
-| Phase 6 | 6.5 PayMongo GCash Sandbox Session Lifecycle | **PASS** | PayMongo GCash checkout session created, URL validated, and read-back verified in sandbox. |
-| Phase 6 | 6.6 Lalamove Sandbox Quotation, Booking & Webhook Sync | **PASS** | Lalamove sandbox quotation calculated, order booked with ASSIGNING_DRIVER, and webhook transitioned to COMPLETED. |
+| Phase 6 | 6.5 Live Sandbox Verification (PayMongo & Lalamove) | **FAIL** | Command failed: php artisan test:verify-sandboxes |

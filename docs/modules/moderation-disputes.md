@@ -52,6 +52,7 @@ Managed in [ModerationController.php](file:///c:/laragon/www/LikhangKamay/app/Ht
     *   **Hide from Marketplace**: The super admin can approve the review dispute, marking the review as hidden from the marketplace.
 *   **Hidden Reviews Restrictions**: Reviews marked as hidden are disabled and cannot be pinned to the top of the product page by the seller.
 *   **Consumer Review Submission**: [ReviewController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/ReviewController.php) allows buyers to publish product feedback and ratings, validated via [StoreReviewRequest.php](file:///c:/laragon/www/LikhangKamay/app/Http/Requests/Consumer/StoreReviewRequest.php) and [UpdateReviewRequest.php](file:///c:/laragon/www/LikhangKamay/app/Http/Requests/Consumer/UpdateReviewRequest.php).
+*   **Seller Review Desk**: [ReviewController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/ReviewController.php) manages incoming product reviews, replies, dispute escalations, and review pinning. Queries enforce PostgreSQL dual-DB typing parity with qualified column ordering (`products.reviews_count`) and null-safe timestamp formatting.
 
 ### Core Business Actions
 *   [BuyerInitiateDispute.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Disputes/BuyerInitiateDispute.php): Validates and creates a new dispute entry for a completed order.
