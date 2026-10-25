@@ -332,6 +332,8 @@ class HREmployeeLoader
             ];
         })->values();
 
+        $netPaySum = (float) $lineItems->sum('net_pay');
+
         return [
             'id' => $payroll->id,
             'run_number' => $payroll->run_number ?: "Payroll #{$payroll->id}",
@@ -339,8 +341,8 @@ class HREmployeeLoader
             'pay_date' => $payroll->pay_date?->toDateString(),
             'notes' => $payroll->notes,
             'status' => $payroll->status,
-            'total_amount' => (float) $payroll->total_amount,
-            'employee_count' => (int) $payroll->employee_count,
+            'total_amount' => $netPaySum > 0 ? $netPaySum : (float) $payroll->total_amount,
+            'employee_count' => (int) ($payroll->employee_count ?: $lineItems->count()),
             'rejection_reason' => $payroll->rejection_reason,
             'created_at' => $payroll->created_at?->toIso8601String(),
             'updated_at' => $payroll->updated_at?->toIso8601String(),
