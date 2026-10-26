@@ -18,9 +18,9 @@ export default function StockRequestsTable({
     if (filteredRequests.length === 0) {
         const descriptions = {
             'all': 'Stock requests from inventory will appear here once created.',
-            'pending': 'No requests with "Pending Approval" status.',
-            'finance_approved': 'No requests with "Budget Approved" status.',
-            'accounting_approved': 'No requests with "Ready to Order" status.',
+            'pending': 'No requests with "Pending" status.',
+            'finance_approved': 'No requests with "Approved" status.',
+            'accounting_approved': 'No requests with "Ready" status.',
             'ordered': 'No requests with "Ordered" status.',
             'partially_received': 'No requests with "Partially Received" status.',
             'received': 'No requests with "In Buffer" status.',

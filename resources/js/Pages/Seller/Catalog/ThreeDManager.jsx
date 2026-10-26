@@ -138,7 +138,7 @@ export default function ThreeDManager({ auth, models = [], products = [], storag
                                         className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 shrink-0"
                                     >
                                         <UploadCloud size={13} />
-                                        <span>Upload Model</span>
+                                        <span>Upload</span>
                                     </button>
                                 </div>
 

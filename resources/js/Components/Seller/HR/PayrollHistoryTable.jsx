@@ -166,7 +166,7 @@ export default function PayrollHistoryTable({
                                                     onClick={() => router.get(route('hr.payroll.show', payroll.id))}
                                                     className="text-xs font-bold text-clay-700 hover:text-clay-900 flex items-center gap-1"
                                                 >
-                                                    View Details <ArrowUpRight size={12} />
+                                                    View <ArrowUpRight size={12} />
                                                 </button>
                                             </div>
 
@@ -198,7 +198,7 @@ export default function PayrollHistoryTable({
                                                         onClick={() => deletePayroll(payroll.id)}
                                                         className="px-3 py-1.5 text-xs font-semibold text-stone-500 hover:text-rose-600 rounded-xl transition hover:bg-rose-50"
                                                     >
-                                                        Cancel Draft
+                                                        Cancel
                                                     </button>
                                                 )}
                                                 <button
@@ -206,7 +206,7 @@ export default function PayrollHistoryTable({
                                                     onClick={() => router.get(route('hr.payroll.show', payroll.id))}
                                                     className="px-3.5 py-1.5 text-xs font-bold text-white bg-clay-700 hover:bg-clay-800 rounded-xl transition"
                                                 >
-                                                    View Details
+                                                    View
                                                 </button>
                                             </div>
                                         </div>
@@ -296,7 +296,7 @@ export default function PayrollHistoryTable({
                                                         onClick={() => router.get(route('hr.payroll.show', payroll.id))}
                                                         className="inline-flex items-center gap-1 text-xs font-bold text-clay-700 hover:text-clay-900 transition px-2.5 py-1.5 rounded-lg hover:bg-stone-100"
                                                     >
-                                                        <span>View Details</span>
+                                                        <span>View</span>
                                                         <ArrowUpRight size={13} />
                                                     </button>
                                                     {canEditHrRecords && ['Pending', 'Rejected'].includes(payroll.status) && (
@@ -306,7 +306,7 @@ export default function PayrollHistoryTable({
                                                             className="text-stone-400 hover:text-rose-600 px-2 py-1 text-xs font-medium rounded-lg hover:bg-rose-50 transition"
                                                             title="Cancel Draft"
                                                         >
-                                                            Cancel Draft
+                                                            Cancel
                                                         </button>
                                                     )}
                                                 </div>

@@ -22,7 +22,7 @@ export default function StockRequestMetrics({ requests = [] }) {
             border: 'border-stone-200/80'
         },
         { 
-            label: 'Pending Approval', 
+            label: 'Pending', 
             value: getCount('pending'), 
             icon: Clock, 
             color: 'text-amber-700', 

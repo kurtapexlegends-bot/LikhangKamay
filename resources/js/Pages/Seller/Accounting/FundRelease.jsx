@@ -264,7 +264,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
         <>
             <Head title={reviewModal.item ? `Review: ${reviewModal.item.order_number || ('Request #' + reviewModal.item.id)}` : "Finance & Approvals"} />
             <SellerHeader
-                title={reviewModal.item ? `Review Request #${reviewModal.item.id}` : "Finance & Fund Approvals"}
+                title={reviewModal.item ? `Review Request #${reviewModal.item.id}` : "Finance"}
                 subtitle={reviewModal.item ? `Audit details for request #${reviewModal.item.id}` : "Track shop balances, available funds, and review payout requests."}
                 auth={auth}
                 onMenuClick={openSidebar}
@@ -349,8 +349,8 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                         {/* Standardized Filter Toolbar Header & Filter Panel */}
                         <AccountingFilterPanel
                             tabs={[
-                                { key: 'pending', label: 'Pending Approvals', count: pendingRequests?.total || 0 },
-                                { key: 'history', label: 'Transaction Ledger' },
+                                { key: 'pending', label: 'Pending', count: pendingRequests?.total || 0 },
+                                { key: 'history', label: 'Transactions' },
                             ]}
                             activeTab={activeTab}
                             onTabChange={handleTabChange}

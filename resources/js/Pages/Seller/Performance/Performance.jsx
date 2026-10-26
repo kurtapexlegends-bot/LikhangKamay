@@ -97,7 +97,7 @@ export default function Analytics({
                             variant="secondary" 
                             className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl shadow-2xs font-bold text-xs"
                         >
-                            <span className="hidden sm:inline">{isPrinting ? 'Preparing Print...' : 'Print Report'}</span>
+                            <span className="hidden sm:inline">{isPrinting ? 'Preparing Print...' : 'Print'}</span>
                             <span className="sm:hidden">{isPrinting ? 'Preparing...' : 'Print'}</span>
                         </ExportButton>
                     ) : (
@@ -121,7 +121,7 @@ export default function Analytics({
                         </ExportButton>
                     ) : (
                         <ExportButton href={route('analytics.export')} icon={Download} variant="primary" className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl shadow-2xs font-bold text-xs">
-                            <span className="hidden sm:inline">Export CSV</span>
+                            <span className="hidden sm:inline">Export</span>
                             <span className="sm:hidden">Export</span>
                         </ExportButton>
                     )}

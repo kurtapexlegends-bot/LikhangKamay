@@ -75,7 +75,6 @@ export default function StaffDirectoryToolbar({
                                 aria-label="List View"
                             >
                                 <List size={14} />
-                                <span className="hidden sm:inline">List</span>
                             </button>
                             <button
                                 type="button"
@@ -89,7 +88,6 @@ export default function StaffDirectoryToolbar({
                                 aria-label="Workstation Cards View"
                             >
                                 <LayoutGrid size={14} />
-                                <span className="hidden sm:inline">Cards</span>
                             </button>
                         </div>
 

@@ -3,10 +3,10 @@ import {
 } from 'lucide-react';
 
 export const STATUS_TABS = [
-    { id: 'all', label: 'All Requests', icon: ClipboardList },
-    { id: 'pending', label: 'Pending Approval', icon: Timer },
-    { id: 'finance_approved', label: 'Budget Approved', icon: Banknote },
-    { id: 'accounting_approved', label: 'Ready to Order', icon: BadgeCheck },
+    { id: 'all', label: 'All', icon: ClipboardList },
+    { id: 'pending', label: 'Pending', icon: Timer },
+    { id: 'finance_approved', label: 'Approved', icon: Banknote },
+    { id: 'accounting_approved', label: 'Ready', icon: BadgeCheck },
     { id: 'ordered', label: 'On Process', icon: Truck },
     { id: 'partially_received', label: 'Partially Received', icon: PackageCheck },
     { id: 'received', label: 'In Buffer', icon: Inbox },
@@ -35,9 +35,9 @@ export const STATUS_STYLES = {
 };
 
 export const STATUS_LABELS = {
-    'pending': 'Pending Approval',
-    'finance_approved': 'Budget Approved',
-    'accounting_approved': 'Ready to Order',
+    'pending': 'Pending',
+    'finance_approved': 'Approved',
+    'accounting_approved': 'Ready',
     'ordered': 'Ordered',
     'partially_received': 'Partially Received',
     'received': 'In Buffer',

@@ -123,7 +123,7 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                     </div>
                     <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
                         <KPICard
-                            title="Upcoming Scheduled"
+                            title="Upcoming"
                             value={stats?.upcoming_count || 0}
                             icon={Clock}
                             color="text-amber-600"
@@ -155,8 +155,8 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                     {/* Standardized Single-Row Filter Toolbar Header */}
                     <FilterToolbarHeader
                         tabs={[
-                            { key: "ongoing", label: "Ongoing Active", count: stats?.ongoing_count || 0 },
-                            { key: "upcoming", label: "Upcoming Scheduled", count: stats?.upcoming_count || 0 },
+                            { key: "ongoing", label: "Ongoing", count: stats?.ongoing_count || 0 },
+                            { key: "upcoming", label: "Upcoming", count: stats?.upcoming_count || 0 },
                             { key: "expired", label: "Expired / Past", count: stats?.expired_count || 0 },
                         ]}
                         activeTab={activeStatus}
@@ -200,7 +200,7 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 h-11 sm:h-[38px] min-h-[44px] sm:min-h-[38px] text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 active:scale-95 shrink-0"
                             >
                                 <Plus size={14} />
-                                <span className="hidden sm:inline">Create Campaign</span>
+                                <span className="hidden sm:inline">Campaign</span>
                                 <span className="sm:hidden">Create</span>
                             </button>
                         }
@@ -446,7 +446,7 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                                                             ? "bg-amber-50 text-amber-800 border border-amber-200/60"
                                                             : "bg-stone-100 text-stone-600 border border-stone-200"
                                                     }`}>
-                                                        {isActive ? "Ongoing Active" : isUpcoming ? "Upcoming Scheduled" : "Expired / Ended"}
+                                                        {isActive ? "Ongoing" : isUpcoming ? "Upcoming" : "Expired / Ended"}
                                                     </span>
                                                 </td>
 
