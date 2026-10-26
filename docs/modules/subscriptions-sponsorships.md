@@ -102,3 +102,9 @@ Handled by the [DowngradeSubscription.php](file:///c:/laragon/www/LikhangKamay/a
 In the Unified Global Settings Hub ([GlobalSettings.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Seller/Settings/GlobalSettings.jsx) and [SettingsController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/SettingsController.php)):
 *   **Standard / Free Plan**: Only the **Shop Storefront** tab is visible.
 *   **Premium / Elite Plan**: Unlocks advanced enterprise tabs including **Workplace Locations** (GPS coordinates and geofences), **People & Payroll** (overtime multipliers, cutoffs, tax rules), and **Finance & Payouts** (banking and automated payout reconciliation).
+
+---
+
+## 7. Default Production Demo Artisan Tier Configuration
+
+To support end-to-end testing and production audit validation of the full ERP suite (HR Roster, Shift Tracking, Payroll, and Accounting Ledger), the default demo artisan (`artisan@likhangkamay.com`) is provisioned as `super_premium` via migration [2026_10_26_080000_enable_erp_modules_for_default_artisan.php](file:///c:/laragon/www/LikhangKamay/database/migrations/2026_10_26_080000_enable_erp_modules_for_default_artisan.php) and catalog seed [2026_10_06_083000_seed_production_landing_catalog.php](file:///c:/laragon/www/LikhangKamay/database/migrations/2026_10_06_083000_seed_production_landing_catalog.php). This unlocks the 15-employee seat quota and all ERP workspace routes (`/accounting`, `/hr`, `/procurement`).

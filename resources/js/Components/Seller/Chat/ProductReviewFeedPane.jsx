@@ -107,11 +107,11 @@ export default function ProductReviewFeedPane({
         { key: 'Needs Reply', label: 'Needs Reply', count: stats.unreplied },
         { key: 'Photos', label: 'With Photos', count: stats.withPhotos },
         { key: 'Hidden', label: 'Hidden', count: stats.hidden },
-        { key: '5', label: '5★', count: stats.stars[5] || 0 },
-        { key: '4', label: '4★', count: stats.stars[4] || 0 },
-        { key: '3', label: '3★', count: stats.stars[3] || 0 },
-        { key: '2', label: '2★', count: stats.stars[2] || 0 },
-        { key: '1', label: '1★', count: stats.stars[1] || 0 },
+        { key: '5', label: '5', count: stats.stars[5] || 0, isRating: true },
+        { key: '4', label: '4', count: stats.stars[4] || 0, isRating: true },
+        { key: '3', label: '3', count: stats.stars[3] || 0, isRating: true },
+        { key: '2', label: '2', count: stats.stars[2] || 0, isRating: true },
+        { key: '1', label: '1', count: stats.stars[1] || 0, isRating: true },
     ];
 
     const roundedRating = Math.round(stats.avg || 0);
@@ -213,7 +213,10 @@ export default function ProductReviewFeedPane({
                                             }`}
                                             title={`Filter by ${s} star reviews`}
                                         >
-                                            <span className="w-2.5 text-right font-medium">{s}★</span>
+                                            <span className="w-3 text-right font-medium flex items-center justify-end gap-0.5">
+                                                {s}
+                                                <Star size={9} className="fill-amber-400 text-amber-400 shrink-0" />
+                                            </span>
                                             <div className="flex-1 h-1.5 bg-stone-200 rounded-full overflow-hidden">
                                                 <div
                                                     className={`h-full rounded-full transition-all duration-300 ${
@@ -254,7 +257,14 @@ export default function ProductReviewFeedPane({
                                         : 'bg-white border border-stone-200/80 text-stone-600 hover:bg-stone-50'
                                 }`}
                             >
-                                <span>{tab.label}</span>
+                                {tab.isRating ? (
+                                    <span className="inline-flex items-center gap-0.5">
+                                        <span>{tab.label}</span>
+                                        <Star size={9} className={isSelected ? 'fill-white text-white' : 'fill-amber-400 text-amber-400'} />
+                                    </span>
+                                ) : (
+                                    <span>{tab.label}</span>
+                                )}
                                 <span
                                     className={`inline-flex items-center justify-center px-1.5 py-0.2 rounded-md text-[9px] font-black ${
                                         isSelected

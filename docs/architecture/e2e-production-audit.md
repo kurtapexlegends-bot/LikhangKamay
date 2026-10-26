@@ -1,26 +1,26 @@
 # Production End-to-End Audit & Verification Matrix
 
 > **Target:** `https://www.likhangkamay.app`  
-> **Execution Date:** `2026-10-25T22:08:54.010Z`  
-> **Duration:** `174.4s`  
+> **Execution Date:** `2026-10-25T23:52:04.578Z`  
+> **Duration:** `161.1s`  
 > **Status:** **ATTENTION REQUIRED**
 
 ## 1. Executive Summary
 
 | Metric | Value |
 | :--- | :--- |
-| **Total Scenarios Evaluated** | 90 |
-| **Passed Checks** | 87 |
+| **Total Scenarios Evaluated** | 91 |
+| **Passed Checks** | 89 |
 | **Warnings** | 2 |
-| **Failed Checks** | 1 |
+| **Failed Checks** | 0 |
 | **Active Bugs Logged** | 1 |
 
 ## 2. Bug & Failure Log
 
-### Bug 1: [CRITICAL] Server Error HTTP 500: https://www.likhangkamay.app/reviews
+### Bug 1: [LOW] Decorative Emojis Detected on Seller Reviews
 - **Location:** https://www.likhangkamay.app/reviews
-- **Description:** Endpoint failed with HTTP 500
-- **Remediation:** Check Laravel server runtime logs and Postgres query constraints.
+- **Description:** Found 5 decorative emojis in UI elements: [{"tag":"BUTTON","text":"5★\n0","emoji":"★"},{"tag":"BUTTON","text":"4★\n0","emoji":"★"},{"tag":"BUTTON","text":"3★\n0","emoji":"★"},{"tag":"BUTTON","text":"2★\n0","emoji":"★"},{"tag":"BUTTON","text":"1★\n0","emoji":"★"}]
+- **Remediation:** Replace decorative emojis with vector Lucide/Phosphor SVGs.
 
 
 ## 3. Detailed Results Matrix
@@ -37,7 +37,7 @@
 | Phase 1 | 1.4 Artisan Profile Load | **PASS** | Target URL: https://www.likhangkamay.app/shop/silang-terracotta-works-42dewr |
 | Phase 1 | 1.5 Register Page Load | **PASS** | - |
 | Phase 1 | 1.5 Registration Validation Errors | **PASS** | Form validation errors properly displayed |
-| Phase 1 | 1.6 Google OAuth Redirect | **PASS** | Target URL reached: https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S1964571151% |
+| Phase 1 | 1.6 Google OAuth Redirect | **PASS** | Target URL reached: https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S1325674032% |
 | Phase 1 | 1.7 Forgot Password Page Load | **PASS** | - |
 | Phase 1 | 1.7 Forgot Password Submit | **PASS** | Submission handled |
 | Phase 1 | 1.8 Artisan Register Page Load | **PASS** | - |
@@ -116,4 +116,5 @@
 | Phase 6 | 6.2 Presigned Direct Upload Endpoint | **PASS** | HTTP Status: 401 |
 | Phase 6 | 6.3 Universal Global Search API | **PASS** | Status: 401 |
 | Phase 6 | 6.4 Webhook Cron Security Guard | **PASS** | Unauthenticated cron returned HTTP 401 (Expected 401) |
-| Phase 6 | 6.5 Live Sandbox Verification (PayMongo & Lalamove) | **FAIL** | Command failed: php artisan test:verify-sandboxes |
+| Phase 6 | 6.5 PayMongo GCash Sandbox Session Lifecycle | **PASS** | PayMongo GCash checkout session created, URL validated, and read-back verified in sandbox. |
+| Phase 6 | 6.6 Lalamove Sandbox Quotation, Booking & Webhook Sync | **PASS** | Lalamove sandbox quotation calculated, order booked with ASSIGNING_DRIVER, and webhook transitioned to COMPLETED. |

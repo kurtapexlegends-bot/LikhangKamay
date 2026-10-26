@@ -65,6 +65,13 @@ return new class extends Migration
                 'avatar' => '/images/demo/shop/avatar.png',
                 'shop_banner' => '/images/demo/shop/banner.jpg',
                 'base_funds' => 50000.00,
+                'premium_tier' => 'super_premium',
+                'subscription_expires_at' => now()->addYears(10),
+                'modules_enabled' => [
+                    'hr' => true,
+                    'accounting' => true,
+                    'procurement' => true,
+                ],
                 'email_verified_at' => now(),
                 'password' => Hash::make('LikhangKamay2026!'),
             ]
