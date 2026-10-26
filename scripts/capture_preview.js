@@ -24,9 +24,11 @@ function parseArgs() {
         routes: ['/admin/overview'],
         outDir: defaultArtifactsDir,
         role: 'super_admin',
+        userId: null,
         width: 1440,
         height: 900,
-        clickText: null
+        clickText: null,
+        wait: 0
     };
 
     for (let i = 0; i < args.length; i++) {
@@ -50,6 +52,8 @@ function parseArgs() {
             parsed.outDir = value;
         } else if (key === '--role' && value) {
             parsed.role = value;
+        } else if (key === '--userId' && value) {
+            parsed.userId = value;
         } else if (key === '--width' && value) {
             parsed.width = parseInt(value, 10);
         } else if (key === '--height' && value) {
@@ -64,13 +68,15 @@ function parseArgs() {
             parsed.fillValue = value;
         } else if (key === '--filename' && value) {
             parsed.filename = value;
+        } else if (key === '--wait' && value) {
+            parsed.wait = parseInt(value, 10);
         }
     }
     return parsed;
 }
 
 async function capture() {
-    const { routes, outDir, role, width, height, clickSelector, clickText, fillSelector, fillValue, filename: customFilename } = parseArgs();
+    const { routes, outDir, role, userId, width, height, clickSelector, clickText, fillSelector, fillValue, filename: customFilename, wait } = parseArgs();
     const chromePath = getBrowserExecutable();
 
     if (!fs.existsSync(outDir)) {
@@ -95,8 +101,10 @@ async function capture() {
         const filename = customFilename || `preview_${cleanName}.png`;
         const destPath = path.join(outDir, filename);
 
-        const authUrl = `http://127.0.0.1:8000/dev/preview-auth?role=${encodeURIComponent(role)}&redirect=${encodeURIComponent(targetRoute)}`;
-        console.log(`[Remote Preview] Establishing session as ${role}...`);
+        const authUrl = userId
+            ? `http://127.0.0.1:8000/dev/preview-auth?user_id=${encodeURIComponent(userId)}&redirect=${encodeURIComponent(targetRoute)}`
+            : `http://127.0.0.1:8000/dev/preview-auth?role=${encodeURIComponent(role)}&redirect=${encodeURIComponent(targetRoute)}`;
+        console.log(`[Remote Preview] Establishing session as ${userId ? `user ${userId}` : role}...`);
         try {
             await page.goto(authUrl, { waitUntil: 'load', timeout: 15000 });
         } catch (e) {
@@ -204,6 +212,11 @@ async function capture() {
             } catch (e) {
                 console.log('[Remote Preview] Cart backup simulation notice:', e.message);
             }
+        }
+
+        if (wait > 0) {
+            console.log(`[Remote Preview] Waiting ${wait}ms before screenshot...`);
+            await new Promise(r => setTimeout(r, wait));
         }
 
         await page.screenshot({ path: destPath, fullPage: false });

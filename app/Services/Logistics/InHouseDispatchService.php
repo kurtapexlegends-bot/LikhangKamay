@@ -190,6 +190,19 @@ class InHouseDispatchService
             /** @var OrderDelivery $delivery */
             $delivery = $lockedOrder->delivery ?: new OrderDelivery(['order_id' => $lockedOrder->id]);
 
+            $pickupLat = $seller->latitude ? (float) $seller->latitude : null;
+            $pickupLng = $seller->longitude ? (float) $seller->longitude : null;
+            $dropoffLat = $lockedOrder->shipping_latitude ? (float) $lockedOrder->shipping_latitude : null;
+            $dropoffLng = $lockedOrder->shipping_longitude ? (float) $lockedOrder->shipping_longitude : null;
+
+            if ((!$dropoffLat || !$dropoffLng) && $lockedOrder->shipping_city) {
+                $cityCentroid = \App\Support\CaviteAddress::getMunicipalityCentroid($lockedOrder->shipping_city);
+                if ($cityCentroid) {
+                    $dropoffLat = $dropoffLat ?: $cityCentroid['lat'];
+                    $dropoffLng = $dropoffLng ?: $cityCentroid['lng'];
+                }
+            }
+
             $delivery->fill([
                 'provider' => OrderDelivery::PROVIDER_IN_HOUSE,
                 'status' => OrderDelivery::STATUS_ON_GOING,
@@ -204,6 +217,26 @@ class InHouseDispatchService
                 'dispatched_at' => now(),
                 'is_pod_enabled' => true,
                 'is_test' => (bool) ($lockedOrder->is_test ?? false),
+                'current_latitude' => $delivery->current_latitude ?: $pickupLat,
+                'current_longitude' => $delivery->current_longitude ?: $pickupLng,
+                'order_payload' => [
+                    'stops' => [
+                        [
+                            'coordinates' => [
+                                'lat' => $pickupLat ? (string) $pickupLat : null,
+                                'lng' => $pickupLng ? (string) $pickupLng : null,
+                            ],
+                            'address' => trim(($seller->street_address ?? '') . ' ' . ($seller->city ?? 'Dasmariñas')),
+                        ],
+                        [
+                            'coordinates' => [
+                                'lat' => $dropoffLat ? (string) $dropoffLat : null,
+                                'lng' => $dropoffLng ? (string) $dropoffLng : null,
+                            ],
+                            'address' => $lockedOrder->shipping_address,
+                        ],
+                    ],
+                ],
             ]);
             $delivery->save();
 

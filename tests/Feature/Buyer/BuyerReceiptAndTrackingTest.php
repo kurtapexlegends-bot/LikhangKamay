@@ -171,6 +171,44 @@ class BuyerReceiptAndTrackingTest extends TestCase
         $response->assertStatus(403);
     }
 
+    public function test_seller_can_fetch_telemetry_for_their_delivery(): void
+    {
+        $response = $this->actingAs($this->artisan)->getJson("/deliveries/{$this->delivery->id}/telemetry");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'delivery_id' => $this->delivery->id,
+            'order_number' => $this->order->order_number,
+            'status' => 'ON_GOING',
+            'driver_name' => 'Ramon Magsaysay',
+        ]);
+        $response->assertJsonStructure([
+            'telemetry' => [
+                'latitude',
+                'longitude',
+                'heading',
+                'speed_kph',
+                'updated_at',
+            ],
+        ]);
+    }
+
+    public function test_unrelated_seller_cannot_fetch_telemetry(): void
+    {
+        $unrelatedSeller = User::create([
+            'name' => 'Other Artisan',
+            'email' => 'other.artisan.' . uniqid() . '@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'artisan',
+            'approval_status' => 'approved',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($unrelatedSeller)->getJson("/deliveries/{$this->delivery->id}/telemetry");
+
+        $response->assertStatus(403);
+    }
+
     public function test_buyer_orders_serialization_includes_coordinates_and_telemetry(): void
     {
         $action = app(GetBuyerOrders::class);

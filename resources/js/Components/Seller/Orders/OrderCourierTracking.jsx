@@ -1,6 +1,7 @@
-import React from "react";
-import { Truck, ChevronDown, ChevronRight, ExternalLink, Hash, Clock } from "lucide-react";
+import React, { useState } from "react";
+import { Truck, ChevronDown, ChevronRight, ExternalLink, Hash, Clock, Map } from "lucide-react";
 import { sellerCourierTrackingState, formatTimelineStamp } from "@/utils/orderHelpers";
+import BuyerDeliveryTrackingMap from "@/Components/Consumer/Buyer/MyOrders/BuyerDeliveryTrackingMap";
 
 export default function OrderCourierTracking({
     order,
@@ -19,6 +20,8 @@ export default function OrderCourierTracking({
 
     const isExpanded = expandedCourierTrackings.has(order.id);
     const trackingState = sellerCourierTrackingState(order);
+    const isInTransit = ['ON_GOING', 'PICKED_UP', 'IN_TRANSIT'].includes(String(order?.delivery?.status || '').toUpperCase());
+    const [isMapVisible, setIsMapVisible] = useState(isInTransit);
 
     return (
         <div className="rounded-xl border border-stone-200/80 bg-[#FCF7F2] p-2 shadow-sm transition-colors hover:border-clay-300">
@@ -61,21 +64,44 @@ export default function OrderCourierTracking({
                                 {trackingState.label}
                             </div>
                         </div>
-                        {order.delivery.share_link && (
-                            <a
-                                href={order.delivery.share_link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center gap-1 rounded-md border border-clay-200 bg-white px-2 py-1 text-[10px] font-bold text-clay-700 hover:bg-clay-50 hover:text-clay-800 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all shrink-0 min-h-[44px]"
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setIsMapVisible(!isMapVisible)}
+                                className={`inline-flex items-center justify-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold transition-all shadow-2xs min-h-[32px] ${
+                                    isMapVisible
+                                        ? "border-clay-300 bg-clay-600 text-white"
+                                        : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50"
+                                }`}
+                                title={isMapVisible ? "Hide live tracking map" : "Show live tracking map"}
                             >
-                                Live Track <ExternalLink size={10} />
-                            </a>
-                        )}
+                                <Map size={11} className={isMapVisible ? "text-white" : "text-clay-600"} />
+                                <span>{isMapVisible ? "Hide Map" : "Live Map"}</span>
+                            </button>
+
+                            {order.delivery.share_link && (
+                                <a
+                                    href={order.delivery.share_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center justify-center gap-1 rounded-md border border-clay-200 bg-white px-2 py-1 text-[10px] font-bold text-clay-700 hover:bg-clay-50 hover:text-clay-800 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all shrink-0 min-h-[32px]"
+                                >
+                                    Lalamove <ExternalLink size={10} />
+                                </a>
+                            )}
+                        </div>
                     </div>
 
-                    <p className="text-[11px] leading-relaxed text-stone-600 mb-2.5 font-medium">
+                    <p className="text-[11px] leading-relaxed text-stone-600 mb-2 font-medium">
                         {trackingState.detail}
                     </p>
+
+                    {/* Live Delivery Telemetry Map */}
+                    {isMapVisible && (
+                        <div className="my-2">
+                            <BuyerDeliveryTrackingMap order={order} delivery={order.delivery} role="seller" />
+                        </div>
+                    )}
 
                     {order.delivery.flow_type === "replacement_exchange" &&
                         order.delivery.route_legs?.length > 0 && (

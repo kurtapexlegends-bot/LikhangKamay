@@ -32,7 +32,7 @@ function calculateHaversineKm(lat1, lon1, lat2, lon2) {
     return Math.round(R * c * 10) / 10;
 }
 
-export default function BuyerDeliveryTrackingMap({ order, delivery }) {
+export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buyer' }) {
     const mapContainerRef = useRef(null);
     const mapInstanceRef = useRef(null);
     const driverMarkerRef = useRef(null);
@@ -57,8 +57,8 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
     });
 
     // Pickup & Dropoff Coordinates with resilient fallbacks
-    const pickupLat = Number(delivery?.pickup_latitude) || 14.3369537;
-    const pickupLng = Number(delivery?.pickup_longitude) || 120.9478355;
+    const pickupLat = Number(delivery?.pickup_latitude) || Number(order?.artisan?.latitude) || 14.3369537;
+    const pickupLng = Number(delivery?.pickup_longitude) || Number(order?.artisan?.longitude) || 120.9478355;
 
     const dropoffLat = Number(delivery?.dropoff_latitude || order?.shipping_latitude) || (pickupLat + 0.018);
     const dropoffLng = Number(delivery?.dropoff_longitude || order?.shipping_longitude) || (pickupLng + 0.018);
@@ -168,50 +168,74 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
             zoom: 13,
             attributionControl: false,
             zoomControl: false,
+            scrollWheelZoom: false,
+            zoomSnap: 0.25,
+            zoomDelta: 0.5,
+            wheelPxPerZoomLevel: 120,
+            minZoom: 9,
+            maxZoom: 18,
         });
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
         }).addTo(map);
 
-        // 1. Studio Pickup Marker (Earthy Terracotta)
+        // 1. Studio Pickup Marker (Earthy Terracotta Badge)
         const pickupIcon = L.divIcon({
-            className: 'custom-map-pin',
+            className: 'custom-studio-marker',
             html: `
-                <div style="background-color: #89432d; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 2px solid white;">
-                    <svg style="width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.5;" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+                    <div style="position: relative; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;">
+                        <div style="position: absolute; inset: 0; border-radius: 50%; background: rgba(137, 67, 45, 0.25); animation: ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                        <div style="position: relative; width: 30px; height: 30px; border-radius: 10px; background: #89432d; color: white; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.35); transform: rotate(-45deg);">
+                            <div style="transform: rotate(45deg); display: flex; align-items: center; justify-content: center;">
+                                <svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                            </div>
+                        </div>
+                        <div style="position: absolute; -bottom: 5px; width: 7px; height: 7px; background: #89432d; border-radius: 50%; border: 1.5px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>
+                    </div>
                 </div>
             `,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14],
+            iconSize: [34, 40],
+            iconAnchor: [17, 36],
+            popupAnchor: [0, -32],
         });
 
         const pickupMarker = L.marker([pickupLat, pickupLng], { icon: pickupIcon }).addTo(map);
         pickupMarker.bindPopup(`
             <div style="font-size: 11px; font-family: sans-serif; line-height: 1.4;">
-                <b style="color: #89432d; text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em;">Artisan Studio Origin</b><br/>
-                <strong>${order.seller_name || 'Artisan Workshop'}</strong><br/>
-                <span style="color: #78716c;">${order.seller_address || 'Studio Origin'}</span>
+                <b style="color: #89432d; text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em;">${role === 'seller' ? 'Your Workshop Origin' : 'Artisan Studio Origin'}</b><br/>
+                <strong>${order.seller_name || order.artisan?.shop_name || 'Artisan Workshop'}</strong><br/>
+                <span style="color: #78716c;">${order.seller_address || order.artisan?.address || 'Studio Origin'}</span>
             </div>
         `);
 
-        // 2. Buyer Destination Marker (Emerald / Blue)
+        // 2. Buyer Destination Marker (Emerald Badge)
         const dropoffIcon = L.divIcon({
-            className: 'custom-map-pin',
+            className: 'custom-dropoff-marker',
             html: `
-                <div style="background-color: #059669; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 2px solid white;">
-                    <svg style="width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.5;" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+                    <div style="position: relative; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;">
+                        <div style="position: absolute; inset: 0; border-radius: 50%; background: rgba(5, 150, 105, 0.25); animation: ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                        <div style="position: relative; width: 30px; height: 30px; border-radius: 10px; background: #059669; color: white; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.35); transform: rotate(-45deg);">
+                            <div style="transform: rotate(45deg); display: flex; align-items: center; justify-content: center;">
+                                <svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            </div>
+                        </div>
+                        <div style="position: absolute; -bottom: 5px; width: 7px; height: 7px; background: #059669; border-radius: 50%; border: 1.5px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>
+                    </div>
                 </div>
             `,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14],
+            iconSize: [34, 40],
+            iconAnchor: [17, 36],
+            popupAnchor: [0, -32],
         });
 
         const dropoffMarker = L.marker([dropoffLat, dropoffLng], { icon: dropoffIcon }).addTo(map);
         dropoffMarker.bindPopup(`
             <div style="font-size: 11px; font-family: sans-serif; line-height: 1.4;">
-                <b style="color: #059669; text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em;">Your Delivery Destination</b><br/>
-                <strong>${order.shipping_recipient_name || 'Delivery Address'}</strong><br/>
+                <b style="color: #059669; text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em;">${role === 'seller' ? 'Customer Destination' : 'Your Delivery Destination'}</b><br/>
+                <strong>${order.shipping_recipient_name || order.customer || 'Delivery Destination'}</strong><br/>
                 <span style="color: #78716c;">${order.shipping_address || 'Shipping Address'}</span>
             </div>
         `);
@@ -229,17 +253,27 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
 
         routePoints.push([dropoffLat, dropoffLng]);
 
+        L.polyline(routePoints, {
+            color: '#ffffff',
+            weight: 6,
+            opacity: 0.85,
+            lineCap: 'round',
+            lineJoin: 'round',
+        }).addTo(map);
+
         const polyline = L.polyline(routePoints, {
             color: '#89432d',
             weight: 3.5,
             dashArray: '6, 8',
-            opacity: 0.85,
+            opacity: 0.95,
+            lineCap: 'round',
+            lineJoin: 'round',
         }).addTo(map);
 
         polylineRef.current = polyline;
 
         // Auto-fit bounds with comfortable padding
-        map.fitBounds(polyline.getBounds(), { padding: [35, 35] });
+        map.fitBounds(polyline.getBounds(), { padding: [35, 35], animate: false });
 
         mapInstanceRef.current = map;
 
@@ -258,7 +292,7 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
                 polylineRef.current = null;
             }
         };
-    }, [pickupLat, pickupLng, dropoffLat, dropoffLng, order?.seller_name, order?.seller_address, order?.shipping_recipient_name, order?.shipping_address]);
+    }, [pickupLat, pickupLng, dropoffLat, dropoffLng, order?.seller_name, order?.artisan?.shop_name, order?.seller_address, order?.artisan?.address, order?.shipping_recipient_name, order?.customer, order?.shipping_address, role]);
 
     // 2. Telemetry Updates: Move marker & polyline without tearing down Leaflet map
     useEffect(() => {
@@ -403,7 +437,7 @@ export default function BuyerDeliveryTrackingMap({ order, delivery }) {
                         </div>
 
                         {/* Top-Right: Compact Action Group */}
-                        <div className="absolute top-2 right-2 z-[500] flex items-center gap-0.5 rounded-lg bg-white/95 p-0.5 shadow-xs border border-stone-200/80 backdrop-blur-xs">
+                        <div className="absolute top-2 right-2 z-[1000] flex items-center gap-0.5 rounded-lg bg-white/95 p-0.5 shadow-xs border border-stone-200/80 backdrop-blur-xs">
                             <button
                                 type="button"
                                 onClick={() => setShowRadarHud(!showRadarHud)}

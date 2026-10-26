@@ -68,6 +68,9 @@ class OrderRoutePreviewTest extends TestCase
             ]);
 
         $this->assertGreaterThan(20, $response->json('distance_km'));
+        $this->assertNotNull($response->json('vehicle.type'));
+        $this->assertIsArray($response->json('route.coordinates'));
+        $this->assertNotEmpty($response->json('route.coordinates'));
     }
 
     public function test_route_preview_geocodes_unpinned_order_via_nominatim_service(): void

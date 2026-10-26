@@ -210,6 +210,25 @@ class OrderWorkflowHelper
         $flowType = (string) (data_get($delivery->order_payload, 'metadata.flowType') ?: 'standard_delivery');
         $isReplacementExchange = $flowType === 'replacement_exchange';
 
+        $order = $delivery->relationLoaded('order') ? $delivery->order : null;
+        $pickupLat = (float) (data_get($delivery->order_payload, 'stops.0.coordinates.lat') ?: 0)
+            ?: ($order?->artisan?->latitude ? (float) $order->artisan->latitude : null);
+        $pickupLng = (float) (data_get($delivery->order_payload, 'stops.0.coordinates.lng') ?: 0)
+            ?: ($order?->artisan?->longitude ? (float) $order->artisan->longitude : null);
+
+        $dropoffLat = (float) (data_get($delivery->order_payload, 'stops.1.coordinates.lat') ?: 0)
+            ?: ($order?->shipping_latitude ? (float) $order->shipping_latitude : null);
+        $dropoffLng = (float) (data_get($delivery->order_payload, 'stops.1.coordinates.lng') ?: 0)
+            ?: ($order?->shipping_longitude ? (float) $order->shipping_longitude : null);
+
+        if ((!$dropoffLat || !$dropoffLng) && $order?->shipping_city) {
+            $cityCentroid = \App\Support\CaviteAddress::getMunicipalityCentroid($order->shipping_city);
+            if ($cityCentroid) {
+                $dropoffLat = $dropoffLat ?: $cityCentroid['lat'];
+                $dropoffLng = $dropoffLng ?: $cityCentroid['lng'];
+            }
+        }
+
         return [
             'id' => $delivery->id,
             'provider' => $delivery->provider,
@@ -227,10 +246,10 @@ class OrderWorkflowHelper
             'driver_phone' => $delivery->driver_phone,
             'vehicle_type' => $delivery->vehicle_type,
             'vehicle_plate_number' => $delivery->vehicle_plate_number,
-            'pickup_latitude' => (float) (data_get($delivery->order_payload, 'stops.0.coordinates.lat') ?: 0) ?: null,
-            'pickup_longitude' => (float) (data_get($delivery->order_payload, 'stops.0.coordinates.lng') ?: 0) ?: null,
-            'dropoff_latitude' => (float) (data_get($delivery->order_payload, 'stops.1.coordinates.lat') ?: 0) ?: null,
-            'dropoff_longitude' => (float) (data_get($delivery->order_payload, 'stops.1.coordinates.lng') ?: 0) ?: null,
+            'pickup_latitude' => $pickupLat ?: null,
+            'pickup_longitude' => $pickupLng ?: null,
+            'dropoff_latitude' => $dropoffLat ?: null,
+            'dropoff_longitude' => $dropoffLng ?: null,
             'price_total' => $delivery->price_total !== null ? number_format((float) $delivery->price_total, 2) : null,
             'price_currency' => $delivery->price_currency,
             'failure_reason' => $delivery->failure_reason,

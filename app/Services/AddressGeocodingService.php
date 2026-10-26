@@ -31,8 +31,8 @@ class AddressGeocodingService
             $connectTimeout = (int) config('services.nominatim.connect_timeout', 1);
 
             foreach ($seedQueries as $seedQuery) {
-                // Limit candidate attempts to the top 2 candidates to prevent Nominatim rate-limiting and timeouts
-                $candidates = array_slice($this->candidateQueriesFor($seedQuery), 0, 2);
+                // Limit candidate attempts to the top 3 high-signal candidates to prevent Nominatim rate-limiting and timeouts
+                $candidates = array_slice($this->candidateQueriesFor($seedQuery), 0, 3);
 
                 foreach ($candidates as $candidateQuery) {
                     if ((microtime(true) - $startTime) > $maxTotalSeconds) {
@@ -102,45 +102,82 @@ class AddressGeocodingService
 
         $normalizedQuery = preg_replace('/\s+/', ' ', trim($query));
         $normalizedQuery = $normalizedQuery === null ? trim($query) : trim($normalizedQuery);
-        $asciiQuery = trim(Str::ascii($normalizedQuery));
-        $commaParts = array_values(array_filter(array_map('trim', explode(',', $normalizedQuery))));
+        $cleanPostal = $this->stripTrailingPostalCode($normalizedQuery);
+        $microStripped = $this->stripMicroAddressPrefix($cleanPostal);
+        $romanNormalized = $this->normalizeRomanNumeralsInBarangay($microStripped);
 
-        $variants = array_filter([
-            $normalizedQuery,
-            $this->stripTrailingPostalCode($normalizedQuery),
-            $asciiQuery,
-            $this->stripTrailingPostalCode($asciiQuery),
-            $this->withCityAliases($normalizedQuery),
-            $this->withCityAliases($asciiQuery),
-        ]);
-
-        foreach ($variants as $variant) {
-            $pushCandidate($variant);
-
-            if (!str_contains(Str::lower($variant), 'philippines')) {
-                $pushCandidate("{$variant}, Philippines");
+        // 1. High-precision clean variants without Philippine subdivision micro-prefixes (Blk/Lot/Unit)
+        if ($microStripped !== '' && $microStripped !== $cleanPostal) {
+            $pushCandidate($microStripped);
+            if ($romanNormalized !== $microStripped) {
+                $pushCandidate($romanNormalized);
+            }
+            $pushCandidate($this->withCityAliases($microStripped));
+            if (!str_contains(Str::lower($microStripped), 'philippines')) {
+                $pushCandidate("{$microStripped}, Philippines");
             }
         }
 
+        // 2. Full clean address without postal code
+        $pushCandidate($cleanPostal);
+        $pushCandidate($this->withCityAliases($cleanPostal));
+
+        // 3. Comma-separated suffixes (e.g. Barangay + City)
+        $commaParts = array_values(array_filter(array_map('trim', explode(',', $cleanPostal))));
         $partCount = count($commaParts);
         for ($startIndex = 1; $startIndex < $partCount; $startIndex++) {
             $suffix = implode(', ', array_slice($commaParts, $startIndex));
             $suffix = $this->stripTrailingPostalCode($suffix);
+            $suffixMicro = $this->stripMicroAddressPrefix($suffix);
 
-            if ($suffix === '') {
+            if ($suffixMicro === '') {
                 continue;
             }
 
-            $pushCandidate($suffix);
-            $pushCandidate(Str::ascii($suffix));
+            $pushCandidate($suffixMicro);
+            $pushCandidate($this->normalizeRomanNumeralsInBarangay($suffixMicro));
 
-            if (!str_contains(Str::lower($suffix), 'philippines')) {
-                $pushCandidate("{$suffix}, Philippines");
-                $pushCandidate(Str::ascii("{$suffix}, Philippines"));
+            if (!str_contains(Str::lower($suffixMicro), 'philippines')) {
+                $pushCandidate("{$suffixMicro}, Philippines");
             }
         }
 
         return $candidates;
+    }
+
+    private function stripMicroAddressPrefix(?string $query): string
+    {
+        $query = trim((string) $query);
+        if ($query === '') {
+            return '';
+        }
+
+        // Strip micro-prefixes: Blk 35 Lot 17, Block 3 Lot 4, Lot 5, Phase 2, Unit 10, Rm 1, #123, etc.
+        $pattern = '/^(?:(?:blk|block)\s*[\w\d-]+(?:\s*(?:lot|lt)\s*[\w\d-]+)?|(?:lot|lt)\s*[\w\d-]+|phase\s*[\w\d-]+|unit\s*[\w\d-]+|rm\s*[\w\d-]+|room\s*[\w\d-]+|#\s*[\w\d-]+)\s*,\s*/i';
+        $cleaned = preg_replace($pattern, '', $query);
+        if ($cleaned !== null && $cleaned !== $query) {
+            $cleaned = preg_replace($pattern, '', $cleaned);
+        }
+
+        return trim($cleaned ?? $query, " \t\n\r\0\x0B,");
+    }
+
+    private function normalizeRomanNumeralsInBarangay(?string $query): string
+    {
+        $query = trim((string) $query);
+        if ($query === '') {
+            return '';
+        }
+
+        $romanMap = [
+            '/\b(San\s+\w+|Barangay|Brgy\.?|Poblacion|Zone|Salitran|Paliparan|Sampaloc)\s+I\b/i' => '$1 1',
+            '/\b(San\s+\w+|Barangay|Brgy\.?|Poblacion|Zone|Salitran|Paliparan|Sampaloc)\s+II\b/i' => '$1 2',
+            '/\b(San\s+\w+|Barangay|Brgy\.?|Poblacion|Zone|Salitran|Paliparan|Sampaloc)\s+III\b/i' => '$1 3',
+            '/\b(San\s+\w+|Barangay|Brgy\.?|Poblacion|Zone|Salitran|Paliparan|Sampaloc)\s+IV\b/i' => '$1 4',
+            '/\b(San\s+\w+|Barangay|Brgy\.?|Poblacion|Zone|Salitran|Paliparan|Sampaloc)\s+V\b/i' => '$1 5',
+        ];
+
+        return preg_replace(array_keys($romanMap), array_values($romanMap), $query) ?? $query;
     }
 
     private function stripTrailingPostalCode(?string $query): string
