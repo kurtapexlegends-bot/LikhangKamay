@@ -218,6 +218,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::middleware(['seller.workspace', 'staff.attendance', 'seller.compliance'])->group(function () {
         Route::get('/orders', [\App\Http\Controllers\Seller\SellerOrderController::class, 'index'])->middleware('seller.module:orders')->name('orders.index');
         Route::get('/orders/export', [\App\Http\Controllers\Seller\SellerOrderController::class, 'export'])->middleware('seller.module:orders')->name('orders.export'); // <--- Added
+        Route::get('/orders/{id}/route-preview', [\App\Http\Controllers\Seller\SellerOrderController::class, 'routePreview'])->middleware('seller.module:orders')->name('orders.route-preview');
         Route::get('/orders/{id}/receipt', [\App\Http\Controllers\Seller\SellerOrderController::class, 'sellerDownloadReceipt'])->middleware('seller.module:orders')->name('orders.receipt');
         Route::post('/orders/{id}/update', [\App\Http\Controllers\Seller\SellerOrderController::class, 'update'])->middleware('seller.module:orders')->name('orders.update');
         Route::post('/orders/{id}/approve-return', [\App\Http\Controllers\Seller\SellerOrderController::class, 'approveReturn'])->middleware('seller.module:orders')->name('orders.approve-return');

@@ -17,6 +17,7 @@ use App\Actions\Seller\Orders\UpdateOrderStatus;
 use App\Actions\Seller\Orders\ApproveOrderRefund;
 use App\Actions\Seller\Orders\ApproveOrderReplacement;
 use App\Actions\Seller\Orders\MarkOrderAsPaid;
+use App\Services\OrderRoutePreviewService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -52,6 +53,23 @@ class SellerOrderController extends Controller
     {
         $sellerId = $this->sellerOwnerId();
         return $exportOrdersCsv->execute($sellerId);
+    }
+
+    /**
+     * SELLER: Resolve verified delivery route preview coordinates via Nominatim
+     */
+    public function routePreview(Request $request, string $id, OrderRoutePreviewService $routePreviewService)
+    {
+        $order = Order::where(function ($q) use ($id) {
+                $q->where('order_number', $id)->orWhere('id', $id);
+            })
+            ->where('artisan_id', $this->sellerOwnerId())
+            ->firstOrFail();
+
+        $seller = $this->sellerOwner();
+        $preview = $routePreviewService->resolve($order, $seller);
+
+        return response()->json($preview);
     }
 
     /**

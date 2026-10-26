@@ -85,8 +85,13 @@ Webhooks from the Lalamove API dispatch events that update the `status` of `Orde
 
 ### Logistics Controllers
 *   [LalamoveDeliveryController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/LalamoveDeliveryController.php): Manages explicit seller actions to dispatch Lalamove riders and fetch delivery pricing.
+*   [SellerOrderController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/SellerOrderController.php): Controls seller order operations, including `routePreview` (`GET /orders/{id}/route-preview`) for on-demand Nominatim geocoding and delivery route verification.
 *   [DriverDeliveryController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Staff/DriverDeliveryController.php): Driver portal console for assigned drops, telemetry broadcasts, and vehicle verification.
 *   [OrderPrintController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/OrderPrintController.php): Manages PDF generation and formatting for physical shipping waybills.
+
+### Logistics & Routing Services
+*   [OrderRoutePreviewService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OrderRoutePreviewService.php): Resolves verified pickup and buyer drop-off coordinates, utilizes [AddressGeocodingService.php](file:///c:/laragon/www/LikhangKamay/app/Services/AddressGeocodingService.php) with OpenStreetMap Nominatim and 30-day caching, opportunistically persists coordinates to orders, falls back defensively to Cavite municipality centroids ([CaviteAddress.php](file:///c:/laragon/www/LikhangKamay/app/Support/CaviteAddress.php)), and computes Haversine distance in kilometers.
+*   [`OrderRoutePreview.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Orders/OrderRoutePreview.jsx): Interactive Leaflet delivery route preview modal displaying studio pickup and buyer drop-off markers, route polyline, accurate distance, verified/estimated status badges, and external Google Maps turn-by-turn navigation.
 
 ### Logistics Notifications
 *   [OrderDeliveryUpdateNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/OrderDeliveryUpdateNotification.php): Broadcasts alerts to buyers when the Lalamove tracking status updates.
