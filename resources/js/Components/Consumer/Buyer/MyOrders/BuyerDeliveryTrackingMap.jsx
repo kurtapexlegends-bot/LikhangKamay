@@ -56,6 +56,24 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
         vehicle_plate_number: delivery?.vehicle_plate_number ?? null,
     });
 
+    // Synchronize telemetry when parent Inertia props refresh
+    useEffect(() => {
+        if (delivery?.current_latitude && delivery?.current_longitude) {
+            setTelemetry(prev => ({
+                ...prev,
+                latitude: Number(delivery.current_latitude),
+                longitude: Number(delivery.current_longitude),
+                heading: delivery.heading !== null ? Number(delivery.heading) : prev.heading,
+                speed_kph: delivery.speed_kph !== null ? Number(delivery.speed_kph) : prev.speed_kph,
+                updated_at: delivery.location_updated_at || prev.updated_at,
+                driver_name: delivery.driver_name || prev.driver_name,
+                driver_phone: delivery.driver_phone || prev.driver_phone,
+                vehicle_type: delivery.vehicle_type || prev.vehicle_type,
+                vehicle_plate_number: delivery.vehicle_plate_number || prev.vehicle_plate_number,
+            }));
+        }
+    }, [delivery?.current_latitude, delivery?.current_longitude, delivery?.heading, delivery?.speed_kph, delivery?.location_updated_at, delivery?.driver_name, delivery?.driver_phone, delivery?.vehicle_type, delivery?.vehicle_plate_number]);
+
     // Pickup & Dropoff Coordinates with resilient fallbacks
     const pickupLat = Number(delivery?.pickup_latitude) || Number(order?.artisan?.latitude) || 14.3369537;
     const pickupLng = Number(delivery?.pickup_longitude) || Number(order?.artisan?.longitude) || 120.9478355;

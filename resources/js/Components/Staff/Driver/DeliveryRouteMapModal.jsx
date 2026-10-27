@@ -1,4 +1,6 @@
+/* global route */
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import Modal from '@/Components/Modal';
@@ -38,6 +40,7 @@ export default function DeliveryRouteMapModal({
     const mapInstanceRef = useRef(null);
     const driverMarkerRef = useRef(null);
     const polylineRef = useRef(null);
+    const lastBroadcastRef = useRef(0);
 
     const destAddress = delivery?.destination?.address || 'Store Pickup';
     const destLat = Number(delivery?.destination?.latitude) || null;
@@ -111,8 +114,23 @@ export default function DeliveryRouteMapModal({
                 const lat = Number(pos.coords.latitude.toFixed(6));
                 const lng = Number(pos.coords.longitude.toFixed(6));
                 setDriverLocation({ lat, lng });
-                if (pos.coords.speed !== null && pos.coords.speed >= 0) {
-                    setCurrentSpeed(Math.round(pos.coords.speed * 3.6));
+                const speed = pos.coords.speed !== null && pos.coords.speed >= 0 ? Math.round(pos.coords.speed * 3.6) : null;
+                if (speed !== null) {
+                    setCurrentSpeed(speed);
+                }
+
+                // Broadcast live telemetry every 15s to backend so buyer and seller maps track live
+                const now = Date.now();
+                if (delivery?.id && (now - lastBroadcastRef.current >= 15000)) {
+                    lastBroadcastRef.current = now;
+                    axios.put(route('staff.deliveries.telemetry', delivery.id), {
+                        latitude: lat,
+                        longitude: lng,
+                        speed_kph: speed,
+                        heading: pos.coords.heading !== null && !isNaN(pos.coords.heading) ? Math.round(pos.coords.heading) : null,
+                    }).catch(() => {
+                        // Silently ignore transient network hiccups while on road
+                    });
                 }
             },
             () => {

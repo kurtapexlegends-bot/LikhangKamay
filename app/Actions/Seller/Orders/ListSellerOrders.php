@@ -132,8 +132,11 @@ class ListSellerOrders
                 ->when($hasB2BSupport, fn($q) => $q->whereDoesntHave('items', fn($iq) => $iq->where('is_b2b_supply', DB::raw('true'))))
                 ->where('shipping_method', 'Delivery')
                 ->whereHas('delivery', function ($q) {
-                    $q->whereNotNull('external_order_id')
-                      ->whereNotIn(DB::raw('UPPER(status)'), ['COMPLETED', 'CANCELED', 'REJECTED', 'EXPIRED']);
+                    $q->where(function ($sub) {
+                        $sub->whereNotNull('external_order_id')
+                            ->orWhere('provider', OrderDelivery::PROVIDER_IN_HOUSE);
+                    })
+                    ->whereNotIn(DB::raw('UPPER(status)'), ['COMPLETED', 'CANCELED', 'REJECTED', 'EXPIRED']);
                 })
                 ->exists(),
         ];
@@ -214,8 +217,11 @@ class ListSellerOrders
             } elseif ($qf === 'live_courier') {
                 $query->where('shipping_method', 'Delivery')
                     ->whereHas('delivery', function ($q) {
-                        $q->whereNotNull('external_order_id')
-                          ->whereNotIn(DB::raw('UPPER(status)'), ['COMPLETED', 'CANCELED', 'REJECTED', 'EXPIRED']);
+                        $q->where(function ($sub) {
+                            $sub->whereNotNull('external_order_id')
+                                ->orWhere('provider', OrderDelivery::PROVIDER_IN_HOUSE);
+                        })
+                        ->whereNotIn(DB::raw('UPPER(status)'), ['COMPLETED', 'CANCELED', 'REJECTED', 'EXPIRED']);
                     });
             } elseif ($qf === 'returns') {
                 $query->where('status', 'Refund/Return');

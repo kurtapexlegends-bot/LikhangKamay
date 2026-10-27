@@ -1,9 +1,12 @@
-﻿/* global route */
+/* global route */
 import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 
 export function useDriverTelemetry({ activeDeliveries = [], isClockedIn = false }) {
-    const [userWantsSharing, setUserWantsSharing] = useState(false);
+    const [userWantsSharing, setUserWantsSharing] = useState(() => {
+        if (typeof window === "undefined") return true;
+        return window.localStorage.getItem("driver_live_gps_sharing") !== "false";
+    });
     const [lastSyncTime, setLastSyncTime] = useState(null);
     const [errorMessage, setErrorMessage] = useState(null);
     const lastBroadcastRef = useRef(0);
@@ -86,15 +89,27 @@ export function useDriverTelemetry({ activeDeliveries = [], isClockedIn = false 
     }, [isSharing, broadcastCoordinates]);
 
     const toggleTracking = useCallback(() => {
-        setUserWantsSharing((prev) => !prev);
+        setUserWantsSharing((prev) => {
+            const next = !prev;
+            if (typeof window !== "undefined") {
+                window.localStorage.setItem("driver_live_gps_sharing", String(next));
+            }
+            return next;
+        });
     }, []);
 
     const startTracking = useCallback(() => {
         setUserWantsSharing(true);
+        if (typeof window !== "undefined") {
+            window.localStorage.setItem("driver_live_gps_sharing", "true");
+        }
     }, []);
 
     const stopTracking = useCallback(() => {
         setUserWantsSharing(false);
+        if (typeof window !== "undefined") {
+            window.localStorage.setItem("driver_live_gps_sharing", "false");
+        }
     }, []);
 
     return {
