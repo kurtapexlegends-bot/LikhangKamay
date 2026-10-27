@@ -173,29 +173,37 @@ export default function OrderRoutePreview({
         popupAnchor: [0, -22],
     }), []);
 
-    const createVehicleMarkerIcon = useCallback((vType) => {
-        const isBike = /motorcycle|bike/i.test(vType);
-        const isTruck = /truck|van/i.test(vType);
+    const createVehicleMarkerIcon = useCallback((vType, isDriver = false) => {
+        const raw = String(vType || '').toLowerCase();
+        const isBicycle = raw.includes('bike') || raw.includes('bicycle');
+        const isMotorcycle = raw.includes('motor') || raw.includes('scooter');
+        const isTruck = raw.includes('truck') || raw.includes('van');
 
         const svgIcon = isTruck
-            ? `<svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`
-            : isBike
-            ? `<svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5a2 2 0 0 0-2 2v7h3m10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0zm-10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/></svg>`
-            : `<svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>`;
+            ? `<svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>`
+            : isMotorcycle
+            ? `<svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="m18 14-1-3"></path><path d="m3 9 6 2a2 2 0 0 1 2-2h2a2 2 0 0 1 1.99 1.81"></path><path d="M8 17h3a1 1 0 0 0 1-1 6 6 0 0 1 6-6 1 1 0 0 0 1-1v-.75A5 5 0 0 0 17 5"></path><circle cx="19" cy="17" r="3"></circle><circle cx="5" cy="17" r="3"></circle></svg>`
+            : isBicycle
+            ? `<svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><circle cx="18.5" cy="17.5" r="3.5"></circle><circle cx="5.5" cy="17.5" r="3.5"></circle><circle cx="15" cy="5" r="1"></circle><path d="M12 17.5V14l-3-3 4-3 2 3h2"></path></svg>`
+            : `<svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"></path><circle cx="7" cy="17" r="2"></circle><path d="M9 17h6"></path><circle cx="17" cy="17" r="2"></circle></svg>`;
+
+        const borderColor = isTruck ? '#4f46e5' : isBicycle ? '#059669' : '#89432d';
+        const ringColor = isDriver ? borderColor : 'rgba(217, 119, 6, 0.6)';
 
         return L.divIcon({
-            className: 'custom-vehicle-waypoint',
+            className: isDriver ? 'custom-driver-pin' : 'custom-vehicle-waypoint',
             html: `
-                <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;">
-                    <div style="position: absolute; inset: -3px; border-radius: 50%; border: 1.5px dashed rgba(217, 119, 6, 0.6); animation: spin 8s linear infinite;"></div>
-                    <div style="position: relative; width: 28px; height: 28px; border-radius: 50%; background-color: #0f172a; color: #fbbf24; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.3); z-index: 2;">
+                <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+                    <div style="position: absolute; inset: -4px; border-radius: 50%; border: 1.5px dashed ${ringColor}; opacity: 0.7; animation: spin 8s linear infinite;"></div>
+                    ${isDriver ? `<div style="position: absolute; inset: 0; border-radius: 50%; background-color: ${borderColor}; opacity: 0.25; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>` : ''}
+                    <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; background-color: #0f172a; color: white; display: flex; align-items: center; justify-content: center; border: 2.5px solid ${borderColor}; box-shadow: 0 4px 10px rgba(0,0,0,0.35); z-index: 2;">
                         ${svgIcon}
                     </div>
                 </div>
             `,
-            iconSize: [34, 34],
-            iconAnchor: [17, 17],
-            popupAnchor: [0, -17],
+            iconSize: [36, 36],
+            iconAnchor: [18, 18],
+            popupAnchor: [0, -18],
         });
     }, []);
 
@@ -278,12 +286,29 @@ export default function OrderRoutePreview({
             }).addTo(map);
             polylineRef.current = polyline;
 
-            // 4. Vehicle icon waypoint along the route
-            if (routeCoordinates.length >= 2) {
+            // 4. Vehicle icon / Active Driver Marker along the route
+            if (routeData?.driver?.lat && routeData?.driver?.lng) {
+                const driverLat = Number(routeData.driver.lat);
+                const driverLng = Number(routeData.driver.lng);
+                const driverName = routeData.driver.driver_name || 'Studio Courier';
+                const driverPlate = routeData.driver.vehicle_plate_number;
+                const driverSpeed = routeData.driver.speed_kph ? Math.round(routeData.driver.speed_kph) : null;
+                const driverMarker = L.marker([driverLat, driverLng], {
+                    icon: createVehicleMarkerIcon(vehicleType, true),
+                }).addTo(map);
+                driverMarker.bindPopup(`
+                    <div style="font-size: 11px; font-family: sans-serif; line-height: 1.4;">
+                        <b style="color: ${routeColor}; text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em;">Live Studio Courier</b><br/>
+                        <strong>${driverName}</strong><br/>
+                        <span style="color: #78716c;">${driverPlate ? 'Plate: ' + driverPlate : vehicleLabel}</span>
+                        ${driverSpeed !== null && driverSpeed > 0 ? `<br/><span style="display: inline-block; margin-top: 2px; background: #ecfdf5; color: #047857; font-weight: bold; padding: 1px 5px; border-radius: 4px;">Speed: ${driverSpeed} km/h</span>` : ''}
+                    </div>
+                `);
+            } else if (routeCoordinates.length >= 2) {
                 const midIndex = Math.floor(routeCoordinates.length / 2);
                 const midCoord = routeCoordinates[midIndex];
                 if (midCoord && midCoord[0] && midCoord[1]) {
-                    const vehicleMarker = L.marker([midCoord[0], midCoord[1]], { icon: createVehicleMarkerIcon(vehicleType) }).addTo(map);
+                    const vehicleMarker = L.marker([midCoord[0], midCoord[1]], { icon: createVehicleMarkerIcon(vehicleType, false) }).addTo(map);
                     vehicleMarker.bindPopup(`
                         <div style="font-size: 11px; font-family: sans-serif; line-height: 1.4;">
                             <b style="color: #d97706; text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em;">Transport Mode</b><br/>
@@ -306,7 +331,7 @@ export default function OrderRoutePreview({
                 mapInstanceRef.current = null;
             }
         };
-    }, [isOpen, pickupLat, pickupLng, dropoffLat, dropoffLng, pickupLabel, pickupAddress, dropoffLabel, dropoffAddress, routeCoordinates, vehicleType, vehicleLabel, isRoadRouted, distanceKm, durationMins, createStudioIcon, createDropoffIcon, createVehicleMarkerIcon]);
+    }, [isOpen, pickupLat, pickupLng, dropoffLat, dropoffLng, pickupLabel, pickupAddress, dropoffLabel, dropoffAddress, routeCoordinates, vehicleType, vehicleLabel, isRoadRouted, distanceKm, durationMins, routeData?.driver, createStudioIcon, createDropoffIcon, createVehicleMarkerIcon]);
 
     const handleZoomIn = useCallback(() => {
         mapInstanceRef.current?.zoomIn();
@@ -412,29 +437,29 @@ export default function OrderRoutePreview({
                         <button
                             type="button"
                             onClick={handleZoomIn}
-                            className="w-8 h-8 flex items-center justify-center text-stone-700 hover:bg-stone-100 hover:text-stone-900 border-b border-stone-100 transition active:scale-95"
+                            className="w-11 h-11 sm:w-9 sm:h-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center text-stone-700 hover:bg-stone-100 hover:text-stone-900 border-b border-stone-100 transition active:scale-95 cursor-pointer"
                             title="Zoom In"
                             aria-label="Zoom In"
                         >
-                            <Plus size={15} />
+                            <Plus size={16} />
                         </button>
                         <button
                             type="button"
                             onClick={handleZoomOut}
-                            className="w-8 h-8 flex items-center justify-center text-stone-700 hover:bg-stone-100 hover:text-stone-900 border-b border-stone-100 transition active:scale-95"
+                            className="w-11 h-11 sm:w-9 sm:h-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center text-stone-700 hover:bg-stone-100 hover:text-stone-900 border-b border-stone-100 transition active:scale-95 cursor-pointer"
                             title="Zoom Out"
                             aria-label="Zoom Out"
                         >
-                            <Minus size={15} />
+                            <Minus size={16} />
                         </button>
                         <button
                             type="button"
                             onClick={handleFitRoute}
-                            className="w-8 h-8 flex items-center justify-center text-stone-700 hover:bg-stone-100 hover:text-clay-800 transition active:scale-95"
+                            className="w-11 h-11 sm:w-9 sm:h-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center text-stone-700 hover:bg-stone-100 hover:text-clay-800 transition active:scale-95 cursor-pointer"
                             title="Fit Entire Route"
                             aria-label="Fit Entire Route"
                         >
-                            <Maximize2 size={13} />
+                            <Maximize2 size={14} />
                         </button>
                     </div>
 

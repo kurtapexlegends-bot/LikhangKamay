@@ -1,11 +1,49 @@
-import React, { useState } from 'react';
-import { Truck, ExternalLink, ChevronDown, ChevronRight, Hash, Clock, AlertTriangle, Map, Phone, MessageSquare, PackageCheck } from 'lucide-react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Truck, Bike, Car, Motorbike, ExternalLink, ChevronDown, ChevronRight, Hash, Clock, AlertTriangle, Map, Phone, MessageSquare, PackageCheck, Check } from 'lucide-react';
 import { buyerCourierTrackingState, humanizeAddressType, buyerProofLabel } from '@/utils/orderHelpers';
 import BuyerDeliveryTrackingMap from './BuyerDeliveryTrackingMap';
+import { copyToClipboard } from '@/utils/clipboard';
+import { useToast } from '@/Components/ToastContext';
 
-export default function CourierTrackingCard({ order, isExpanded, onToggle }) {
+export function getVehicleIcon(vehicleType) {
+    const raw = String(vehicleType || '').toLowerCase();
+    if (raw.includes('bike') || raw.includes('bicycle')) return Bike;
+    if (raw.includes('motor') || raw.includes('scooter')) return Motorbike;
+    if (raw.includes('sedan') || raw.includes('car')) return Car;
+    return Truck;
+}
+
+export default function CourierTrackingCard({ order, isExpanded: controlledExpanded, onToggle }) {
+    const { addToast } = useToast() || {};
+    const [copiedPhoneType, setCopiedPhoneType] = useState(null);
     const isReplacementExchange = order?.delivery?.flow_type === 'replacement_exchange';
     const hasDelivery = Boolean(order?.delivery) && order?.status !== 'Pending' && (isReplacementExchange || !['Cancelled', 'Rejected'].includes(order?.status));
+    
+    const handlePhoneAction = useCallback(async (e, phone, type = 'call') => {
+        if (!phone) return;
+        const isMobile = typeof window !== 'undefined' && (
+            /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+            (navigator.maxTouchPoints > 0 && window.innerWidth <= 768)
+        );
+        if (!isMobile) {
+            e.preventDefault();
+            const ok = await copyToClipboard(phone);
+            if (ok) {
+                setCopiedPhoneType(type);
+                if (addToast) addToast(`Copied ${phone} to clipboard.`, 'success');
+                setTimeout(() => setCopiedPhoneType(null), 2500);
+            }
+        }
+    }, [addToast]);
+
+    // Support both controlled and uncontrolled expansion
+    const [internalExpanded, setInternalExpanded] = useState(false);
+    const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
+    const handleToggle = () => {
+        if (onToggle) onToggle();
+        else setInternalExpanded(prev => !prev);
+    };
+
     const [isMapVisible, setIsMapVisible] = useState(
         ['ON_GOING', 'PICKED_UP', 'IN_TRANSIT'].includes(String(order?.delivery?.status || '').toUpperCase())
     );
@@ -17,17 +55,18 @@ export default function CourierTrackingCard({ order, isExpanded, onToggle }) {
     const driverName = delivery.driver_name || 'Studio Courier';
     const vehiclePlate = delivery.vehicle_plate_number;
     const driverPhone = delivery.driver_phone;
+    const VehicleIcon = getVehicleIcon(delivery.vehicle_type || order.recommended_vehicle);
 
     return (
         <div className="rounded-xl border border-stone-200/80 bg-stone-50/70 overflow-hidden shadow-2xs transition-colors hover:border-clay-300">
             {/* Header / Summary Bar */}
             <div className="p-2.5 sm:p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                 <div 
-                    onClick={onToggle}
+                    onClick={handleToggle}
                     className="flex items-start gap-2.5 min-w-0 flex-1 cursor-pointer select-none"
                 >
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-clay-100 text-clay-700 border border-clay-200/80 mt-0.5 shadow-2xs">
-                        <Truck size={15} />
+                        <VehicleIcon size={15} />
                     </div>
                     <div className="min-w-0 space-y-0.5">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -100,15 +139,19 @@ export default function CourierTrackingCard({ order, isExpanded, onToggle }) {
                     <button
                         type="button"
                         onClick={() => {
-                            if (!isExpanded && onToggle) onToggle();
-                            setIsMapVisible(!isMapVisible);
+                            if (!isExpanded) {
+                                handleToggle();
+                                setIsMapVisible(true);
+                            } else {
+                                setIsMapVisible(!isMapVisible);
+                            }
                         }}
-                        className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold shadow-2xs transition-all ${
+                        className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold shadow-2xs transition-all cursor-pointer ${
                             isExpanded && isMapVisible
                                 ? "border-clay-300 bg-clay-600 text-white shadow-xs"
                                 : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100"
                         }`}
-                        title={isMapVisible ? "Hide delivery map" : "Show live tracking map"}
+                        title={isExpanded && isMapVisible ? "Hide delivery map" : "Show live tracking map"}
                     >
                         <Map size={11} className={isExpanded && isMapVisible ? "text-white" : "text-clay-600"} />
                         <span>{isExpanded && isMapVisible ? 'Hide Map' : 'Live Map'}</span>
@@ -128,8 +171,8 @@ export default function CourierTrackingCard({ order, isExpanded, onToggle }) {
 
                     <button
                         type="button"
-                        onClick={onToggle}
-                        className="p-1 text-stone-400 hover:text-stone-600 rounded transition"
+                        onClick={handleToggle}
+                        className="p-1 text-stone-400 hover:text-stone-600 rounded transition cursor-pointer"
                         aria-label="Toggle details"
                     >
                         {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -145,25 +188,49 @@ export default function CourierTrackingCard({ order, isExpanded, onToggle }) {
                         <BuyerDeliveryTrackingMap order={order} delivery={delivery} />
                     ) : (
                         /* Compact driver contact strip when map is hidden */
-                        driverPhone && (
+                        driverPhone ? (
                             <div className="flex items-center justify-between gap-2 rounded-xl bg-white border border-stone-200/80 px-3 py-2">
                                 <span className="text-[10px] font-semibold text-stone-600">Contact Courier:</span>
                                 <div className="flex items-center gap-1.5">
                                     <a
                                         href={`tel:${driverPhone}`}
-                                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-emerald-700 transition"
+                                        onClick={(e) => handlePhoneAction(e, driverPhone, 'call')}
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 sm:px-2.5 py-2 sm:py-1.5 text-[10px] font-bold text-white hover:bg-emerald-700 active:scale-95 transition min-h-[44px] sm:min-h-[32px] cursor-pointer"
+                                        title="Call driver or copy phone on desktop"
                                     >
-                                        <Phone size={10} /> Call Driver
+                                        {copiedPhoneType === 'call' ? (
+                                            <>
+                                                <Check size={11} className="text-white" />
+                                                <span>Copied!</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Phone size={11} />
+                                                <span>Call Driver</span>
+                                            </>
+                                        )}
                                     </a>
                                     <a
                                         href={`sms:${driverPhone}`}
-                                        className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[10px] font-bold text-stone-700 hover:bg-stone-100 transition"
+                                        onClick={(e) => handlePhoneAction(e, driverPhone, 'sms')}
+                                        className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-stone-50 px-3 sm:px-2.5 py-2 sm:py-1.5 text-[10px] font-bold text-stone-700 hover:bg-stone-100 active:scale-95 transition min-h-[44px] sm:min-h-[32px] cursor-pointer"
+                                        title="SMS driver or copy phone on desktop"
                                     >
-                                        <MessageSquare size={10} /> SMS
+                                        {copiedPhoneType === 'sms' ? (
+                                            <>
+                                                <Check size={11} className="text-emerald-600" />
+                                                <span>Copied!</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <MessageSquare size={10} />
+                                                <span>SMS</span>
+                                            </>
+                                        )}
                                     </a>
                                 </div>
                             </div>
-                        )
+                        ) : null
                     )}
 
                     {/* Replacement exchange route legs (if any) */}

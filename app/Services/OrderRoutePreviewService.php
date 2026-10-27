@@ -34,14 +34,21 @@ class OrderRoutePreviewService
      *     is_estimated: bool
      * }
      */
-    public function resolve(Order $order, User $seller): array
-    {
+    public function resolve(
+        Order $order,
+        User $seller,
+        ?float $overrideDriverLat = null,
+        ?float $overrideDriverLng = null,
+        ?bool $overrideIsDelivering = null
+    ): array {
+        $order->loadMissing(['delivery.driverEmployee.loginAccount']);
         $pickup = $this->resolvePickup($seller);
         $dropoff = $this->resolveDropoff($order);
 
         // Resolve vehicle assignment
         $delivery = $order->delivery;
-        $vehicleType = $delivery?->vehicle_type;
+        $driverEmployee = $delivery?->driverEmployee;
+        $vehicleType = $delivery?->vehicle_type ?: $driverEmployee?->vehicle_type;
 
         if ($vehicleType) {
             $vehicleLabel = $vehicleType;
@@ -58,19 +65,60 @@ class OrderRoutePreviewService
             $vehicleType = $vehicleLabel;
         }
 
-        // Calculate turn-by-turn road route via OSRM with 7-day cache
+        // Determine if delivery is actively in transit
+        $deliveryStatus = strtoupper((string) ($delivery?->status ?? ''));
+        $isInTransitStatus = in_array($deliveryStatus, ['ON_GOING', 'PICKED_UP', 'IN_TRANSIT']);
+        
+        $driverLat = $overrideDriverLat ?? ($delivery?->current_latitude ? (float) $delivery->current_latitude : null);
+        $driverLng = $overrideDriverLng ?? ($delivery?->current_longitude ? (float) $delivery->current_longitude : null);
+        
+        $isDelivering = $overrideIsDelivering ?? ($isInTransitStatus && $driverLat !== null && $driverLng !== null);
+
+        // When in transit / delivering, active route is strictly from courier vehicle to buyer destination
+        $originLat = ($isDelivering && $driverLat !== null) ? $driverLat : $pickup['lat'];
+        $originLng = ($isDelivering && $driverLng !== null) ? $driverLng : $pickup['lng'];
+
+        // Calculate turn-by-turn road route via OSRM with resilient caching
         $roadRoute = $this->resolveRoadRoute(
-            $pickup['lat'],
-            $pickup['lng'],
+            $originLat,
+            $originLng,
             $dropoff['lat'],
             $dropoff['lng'],
             $vehicleType
         );
 
+        $driverUser = $delivery?->relationLoaded('driverUser') ? $delivery->driverUser : $delivery?->driverUser;
+        $employeeAccount = $driverEmployee && $driverEmployee->relationLoaded('loginAccount') ? $driverEmployee->loginAccount : $driverEmployee?->loginAccount;
+
+        $driverName = $delivery?->driver_name
+            ?: ($driverEmployee?->name
+                ?: ($employeeAccount?->name
+                    ?: ($driverUser?->name ?: 'Studio Courier')));
+
+        $driverPhone = $delivery?->driver_phone
+            ?: ($employeeAccount?->phone_number
+                ?: ($employeeAccount?->contact_number
+                    ?: ($driverEmployee?->phone_number
+                        ?: ($driverUser?->phone_number ?: null))));
+
+        $driverPlate = $delivery?->vehicle_plate_number
+            ?: ($driverEmployee?->vehicle_plate_number ?: null);
+
         return [
             'success' => true,
             'order_number' => $order->order_number,
+            'is_delivering' => $isDelivering,
             'pickup' => $pickup,
+            'driver' => ($driverLat !== null && $driverLng !== null) ? [
+                'lat' => $driverLat,
+                'lng' => $driverLng,
+                'driver_name' => $driverName,
+                'driver_phone' => $driverPhone,
+                'vehicle_type' => $vehicleType,
+                'vehicle_plate_number' => $driverPlate,
+                'heading' => $delivery?->heading !== null ? (float) $delivery->heading : null,
+                'speed_kph' => $delivery?->speed_kph !== null ? (float) $delivery->speed_kph : null,
+            ] : null,
             'dropoff' => $dropoff,
             'distance_km' => $roadRoute['distance_km'],
             'duration_mins' => $roadRoute['duration_mins'],
@@ -81,6 +129,78 @@ class OrderRoutePreviewService
             ],
             'route' => $roadRoute,
             'is_estimated' => $pickup['is_estimated'] || $dropoff['is_estimated'],
+        ];
+    }
+
+    /**
+     * Resolve road route for direct coordinates (fallback for mock or decoupled previews)
+     */
+    public function resolveDirectCoordinates(
+        float $pickupLat,
+        float $pickupLng,
+        float $dropoffLat,
+        float $dropoffLng,
+        string $vehicleType = 'Motorcycle',
+        string $orderNumber = '',
+        ?float $driverLat = null,
+        ?float $driverLng = null,
+        bool $isDelivering = false,
+        ?string $driverName = null,
+        ?string $driverPhone = null,
+        ?string $driverPlate = null,
+        ?float $heading = null,
+        ?float $speedKph = null
+    ): array {
+        // When delivering, active route is strictly from vehicle to buyer drop-off
+        $originLat = ($isDelivering && $driverLat !== null) ? $driverLat : $pickupLat;
+        $originLng = ($isDelivering && $driverLng !== null) ? $driverLng : $pickupLng;
+
+        $roadRoute = $this->resolveRoadRoute($originLat, $originLng, $dropoffLat, $dropoffLng, $vehicleType);
+
+        $vehicleIcon = match (strtolower($vehicleType)) {
+            'bicycle', 'bike' => 'bike',
+            'car', 'sedan' => 'car',
+            'truck', 'van' => 'truck',
+            default => 'motorcycle',
+        };
+
+        return [
+            'success' => true,
+            'order_number' => $orderNumber,
+            'is_delivering' => $isDelivering && $driverLat !== null,
+            'pickup' => [
+                'lat' => $pickupLat,
+                'lng' => $pickupLng,
+                'address' => 'Studio Origin',
+                'label' => 'Studio Pickup',
+                'is_estimated' => false,
+            ],
+            'driver' => ($driverLat !== null && $driverLng !== null) ? [
+                'lat' => $driverLat,
+                'lng' => $driverLng,
+                'driver_name' => $driverName ?: 'Studio Courier',
+                'driver_phone' => $driverPhone,
+                'vehicle_type' => $vehicleType,
+                'vehicle_plate_number' => $driverPlate,
+                'heading' => $heading,
+                'speed_kph' => $speedKph,
+            ] : null,
+            'dropoff' => [
+                'lat' => $dropoffLat,
+                'lng' => $dropoffLng,
+                'address' => 'Customer Destination',
+                'label' => 'Buyer Drop-off',
+                'is_estimated' => false,
+            ],
+            'distance_km' => $roadRoute['distance_km'],
+            'duration_mins' => $roadRoute['duration_mins'],
+            'vehicle' => [
+                'type' => $vehicleType,
+                'label' => $vehicleType,
+                'icon' => $vehicleIcon,
+            ],
+            'route' => $roadRoute,
+            'is_estimated' => false,
         ];
     }
 
@@ -114,10 +234,12 @@ class OrderRoutePreviewService
                 $lng = (float) $result['lng'];
 
                 // Persist verified coordinates to seller and default address to avoid future lookups
-                $seller->updateQuietly([
-                    'latitude' => $lat,
-                    'longitude' => $lng,
-                ]);
+                if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'latitude')) {
+                    $seller->updateQuietly([
+                        'latitude' => $lat,
+                        'longitude' => $lng,
+                    ]);
+                }
                 $sellerDefaultAddress?->updateQuietly([
                     'latitude' => $lat,
                     'longitude' => $lng,
@@ -225,61 +347,76 @@ class OrderRoutePreviewService
 
         $cacheKey = sprintf('route_osrm_%s_%.4f_%.4f_%.4f_%.4f', $profile, $pickupLat, $pickupLng, $dropoffLat, $dropoffLng);
 
-        return Cache::remember($cacheKey, 86400 * 7, function () use ($pickupLat, $pickupLng, $dropoffLat, $dropoffLng, $profile) {
-            try {
-                // OSRM coordinates format: lng,lat;lng,lat
-                $url = sprintf(
-                    'https://router.project-osrm.org/route/v1/%s/%f,%f;%f,%f?overview=full&geometries=geojson',
-                    $profile,
-                    $pickupLng,
-                    $pickupLat,
-                    $dropoffLng,
-                    $dropoffLat
-                );
-
-                $response = Http::timeout(3)
-                    ->connectTimeout(2)
-                    ->withHeaders(['User-Agent' => 'LikhangKamay/1.0 (info@likhangkamay.app)'])
-                    ->get($url);
-
-                if ($response->successful()) {
-                    $data = $response->json();
-                    if (($data['code'] ?? '') === 'Ok' && !empty($data['routes'][0]['geometry']['coordinates'])) {
-                        // GeoJSON coordinates are [lng, lat], Leaflet expects [lat, lng]
-                        $rawCoords = $data['routes'][0]['geometry']['coordinates'];
-                        $roadCoords = [];
-                        foreach ($rawCoords as $coord) {
-                            $roadCoords[] = [(float) $coord[1], (float) $coord[0]];
-                        }
-
-                        $roadDistanceKm = round(((float) $data['routes'][0]['distance']) / 1000.0, 1);
-                        $durationSeconds = (float) ($data['routes'][0]['duration'] ?? 0);
-                        $durationMins = max(1, (int) round($durationSeconds / 60));
-
-                        return [
-                            'coordinates' => $roadCoords,
-                            'distance_km' => $roadDistanceKm,
-                            'duration_mins' => $durationMins,
-                            'is_road_routed' => true,
-                        ];
-                    }
-                }
-            } catch (\Throwable $e) {
-                Log::info("OSRM road routing fallback for [{$pickupLat}, {$pickupLng}] -> [{$dropoffLat}, {$dropoffLng}]: {$e->getMessage()}");
+        // Check if verified road route is already cached
+        if (Cache::has($cacheKey)) {
+            $cached = Cache::get($cacheKey);
+            if (is_array($cached) && !empty($cached['is_road_routed']) && !empty($cached['coordinates'])) {
+                return $cached;
             }
+        }
 
-            // Fallback to direct Haversine if external service times out or fails
-            $haversine = $this->calculateHaversineDistance($pickupLat, $pickupLng, $dropoffLat, $dropoffLng);
-            return [
-                'coordinates' => [
-                    [$pickupLat, $pickupLng],
-                    [$dropoffLat, $dropoffLng],
-                ],
-                'distance_km' => $haversine,
-                'duration_mins' => max(1, (int) round(($haversine / 25.0) * 60)), // Urban courier ~25km/h
-                'is_road_routed' => false,
-            ];
-        });
+        try {
+            // OSRM coordinates format: lng,lat;lng,lat
+            $url = sprintf(
+                'https://router.project-osrm.org/route/v1/%s/%f,%f;%f,%f?overview=full&geometries=geojson',
+                $profile,
+                $pickupLng,
+                $pickupLat,
+                $dropoffLng,
+                $dropoffLat
+            );
+
+            $response = Http::timeout(5)
+                ->connectTimeout(3)
+                ->withHeaders(['User-Agent' => 'LikhangKamay/1.0 (info@likhangkamay.app)'])
+                ->get($url);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                if (($data['code'] ?? '') === 'Ok' && !empty($data['routes'][0]['geometry']['coordinates'])) {
+                    // GeoJSON coordinates are [lng, lat], Leaflet expects [lat, lng]
+                    $rawCoords = $data['routes'][0]['geometry']['coordinates'];
+                    $roadCoords = [];
+                    foreach ($rawCoords as $coord) {
+                        $roadCoords[] = [(float) $coord[1], (float) $coord[0]];
+                    }
+
+                    $roadDistanceKm = round(((float) $data['routes'][0]['distance']) / 1000.0, 1);
+                    $durationSeconds = (float) ($data['routes'][0]['duration'] ?? 0);
+                    $durationMins = max(1, (int) round($durationSeconds / 60));
+
+                    $result = [
+                        'coordinates' => $roadCoords,
+                        'distance_km' => $roadDistanceKm,
+                        'duration_mins' => $durationMins,
+                        'is_road_routed' => true,
+                    ];
+
+                    // Cache verified road routes for 7 days
+                    Cache::put($cacheKey, $result, 86400 * 7);
+
+                    return $result;
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::info("OSRM road routing fallback for [{$pickupLat}, {$pickupLng}] -> [{$dropoffLat}, {$dropoffLng}]: {$e->getMessage()}");
+        }
+
+        // Fallback to direct Haversine if external service times out or fails (short 30s cache so retry succeeds quickly)
+        $haversine = $this->calculateHaversineDistance($pickupLat, $pickupLng, $dropoffLat, $dropoffLng);
+        $fallback = [
+            'coordinates' => [
+                [$pickupLat, $pickupLng],
+                [$dropoffLat, $dropoffLng],
+            ],
+            'distance_km' => $haversine,
+            'duration_mins' => max(1, (int) round(($haversine / 25.0) * 60)), // Urban courier ~25km/h
+            'is_road_routed' => false,
+        ];
+
+        Cache::put($cacheKey, $fallback, 30);
+
+        return $fallback;
     }
 
     private function calculateHaversineDistance(float $latA, float $lngA, float $latB, float $lngB): float

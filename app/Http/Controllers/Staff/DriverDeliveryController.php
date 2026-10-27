@@ -222,6 +222,8 @@ class DriverDeliveryController extends Controller
                 'heading' => $delivery->heading,
                 'speed_kph' => $delivery->speed_kph,
             ],
+            'vehicle_type' => $delivery->vehicle_type ?: ($delivery->driverEmployee?->vehicle_type ?: 'Motorcycle'),
+            'vehicle_plate_number' => $delivery->vehicle_plate_number ?: ($delivery->driverEmployee?->vehicle_plate_number ?: null),
             'items' => $order?->items?->map(function ($item) {
                 return [
                     'id' => $item->id,
@@ -306,7 +308,7 @@ class DriverDeliveryController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $delivery = OrderDelivery::with('order')->findOrFail($id);
+        $delivery = OrderDelivery::with(['order', 'driverEmployee.loginAccount', 'driverUser'])->findOrFail($id);
         $order = $delivery->order;
 
         if (!$order) {
@@ -324,6 +326,27 @@ class DriverDeliveryController extends Controller
             return response()->json(['error' => 'Unauthorized access to delivery telemetry.'], 403);
         }
 
+        $driverEmployee = $delivery->driverEmployee;
+        $driverUser = $delivery->driverUser;
+        $employeeAccount = $driverEmployee?->loginAccount;
+
+        $driverName = $delivery->driver_name
+            ?: ($driverEmployee?->name
+                ?: ($employeeAccount?->name
+                    ?: ($driverUser?->name ?: 'Studio Courier')));
+
+        $driverPhone = $delivery->driver_phone
+            ?: ($employeeAccount?->phone_number
+                ?: ($employeeAccount?->contact_number
+                    ?: ($driverEmployee?->phone_number
+                        ?: ($driverUser?->phone_number ?: null))));
+
+        $vehicleType = $delivery->vehicle_type
+            ?: ($driverEmployee?->vehicle_type ?: 'Motorcycle');
+
+        $vehiclePlateNumber = $delivery->vehicle_plate_number
+            ?: ($driverEmployee?->vehicle_plate_number ?: null);
+
         $cached = \Illuminate\Support\Facades\Cache::get("driver_telemetry_{$delivery->id}");
 
         return response()->json([
@@ -331,10 +354,10 @@ class DriverDeliveryController extends Controller
             'order_number' => $order->order_number,
             'status' => $delivery->status,
             'provider' => $delivery->provider,
-            'driver_name' => $delivery->driver_name,
-            'driver_phone' => $delivery->driver_phone,
-            'vehicle_type' => $delivery->vehicle_type,
-            'vehicle_plate_number' => $delivery->vehicle_plate_number,
+            'driver_name' => $driverName,
+            'driver_phone' => $driverPhone,
+            'vehicle_type' => $vehicleType,
+            'vehicle_plate_number' => $vehiclePlateNumber,
             'telemetry' => $cached ?: [
                 'latitude' => $delivery->current_latitude !== null ? (float) $delivery->current_latitude : null,
                 'longitude' => $delivery->current_longitude !== null ? (float) $delivery->current_longitude : null,

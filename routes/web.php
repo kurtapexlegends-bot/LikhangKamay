@@ -434,6 +434,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/my-orders/{id}/change-address-reorder', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'changeAddressAndReorder'])->name('my-orders.change-address-reorder');
         Route::post('/my-orders/{id}/cancel-return', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerCancelReturn'])->name('my-orders.cancel-return');
         Route::get('/my-orders/{id}/receipt', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'downloadReceipt'])->name('my-orders.receipt');
+        Route::get('/my-orders/{id}/route-preview', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'routePreview'])->name('my-orders.route-preview');
 
         // Disputes
         Route::post('/my-orders/{id}/dispute', [\App\Http\Controllers\Core\DisputeController::class, 'buyerInitiateDispute'])->name('my-orders.dispute');

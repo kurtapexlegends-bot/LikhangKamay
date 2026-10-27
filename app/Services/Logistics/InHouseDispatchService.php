@@ -196,7 +196,7 @@ class InHouseDispatchService
             $dropoffLng = $lockedOrder->shipping_longitude ? (float) $lockedOrder->shipping_longitude : null;
 
             if ((!$dropoffLat || !$dropoffLng) && $lockedOrder->shipping_city) {
-                $cityCentroid = \App\Support\CaviteAddress::getMunicipalityCentroid($lockedOrder->shipping_city);
+                $cityCentroid = \App\Support\CaviteAddress::getCityCoordinates($lockedOrder->shipping_city);
                 if ($cityCentroid) {
                     $dropoffLat = $dropoffLat ?: $cityCentroid['lat'];
                     $dropoffLng = $dropoffLng ?: $cityCentroid['lng'];

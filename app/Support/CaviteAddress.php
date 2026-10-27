@@ -86,6 +86,16 @@ class CaviteAddress
     }
 
     /**
+     * Resolve approximate coordinates for a Cavite city or municipality (alias for getCityCoordinates)
+     *
+     * @return array{lat: float, lng: float}|null
+     */
+    public static function getMunicipalityCentroid(?string $city): ?array
+    {
+        return self::getCityCoordinates($city);
+    }
+
+    /**
      * Check if a given region string is strictly Cavite
      */
     public static function isCaviteRegion(?string $region): bool

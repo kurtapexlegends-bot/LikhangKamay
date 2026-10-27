@@ -194,13 +194,14 @@ class OrderWorkflowHelper
      * @param string|null $orderStatus
      * @return array|null
      */
-    public static function serializeDelivery(?OrderDelivery $delivery, ?string $orderStatus = null): ?array
+    public static function serializeDelivery(?OrderDelivery $delivery, ?string $orderStatus = null, ?Order $parentOrder = null): ?array
     {
         if (!$delivery) {
             return null;
         }
 
-        $resolvedStatus = $orderStatus ?? ($delivery->relationLoaded('order') ? $delivery->order?->status : null);
+        $order = $parentOrder ?? ($delivery->relationLoaded('order') ? $delivery->order : $delivery->order);
+        $resolvedStatus = $orderStatus ?? $order?->status;
         if ($resolvedStatus === 'Pending') {
             return null;
         }
@@ -210,11 +211,19 @@ class OrderWorkflowHelper
         $flowType = (string) (data_get($delivery->order_payload, 'metadata.flowType') ?: 'standard_delivery');
         $isReplacementExchange = $flowType === 'replacement_exchange';
 
-        $order = $delivery->relationLoaded('order') ? $delivery->order : null;
+        $artisanDefaultAddress = $order?->artisan?->getDefaultAddress();
         $pickupLat = (float) (data_get($delivery->order_payload, 'stops.0.coordinates.lat') ?: 0)
-            ?: ($order?->artisan?->latitude ? (float) $order->artisan->latitude : null);
+            ?: ($artisanDefaultAddress?->latitude ? (float) $artisanDefaultAddress->latitude : ($order?->artisan?->latitude ? (float) $order->artisan->latitude : null));
         $pickupLng = (float) (data_get($delivery->order_payload, 'stops.0.coordinates.lng') ?: 0)
-            ?: ($order?->artisan?->longitude ? (float) $order->artisan->longitude : null);
+            ?: ($artisanDefaultAddress?->longitude ? (float) $artisanDefaultAddress->longitude : ($order?->artisan?->longitude ? (float) $order->artisan->longitude : null));
+
+        if ((!$pickupLat || !$pickupLng) && $order?->artisan?->city) {
+            $cityCentroid = \App\Support\CaviteAddress::getCityCoordinates($order->artisan->city);
+            if ($cityCentroid) {
+                $pickupLat = $pickupLat ?: $cityCentroid['lat'];
+                $pickupLng = $pickupLng ?: $cityCentroid['lng'];
+            }
+        }
 
         $dropoffLat = (float) (data_get($delivery->order_payload, 'stops.1.coordinates.lat') ?: 0)
             ?: ($order?->shipping_latitude ? (float) $order->shipping_latitude : null);
@@ -222,12 +231,33 @@ class OrderWorkflowHelper
             ?: ($order?->shipping_longitude ? (float) $order->shipping_longitude : null);
 
         if ((!$dropoffLat || !$dropoffLng) && $order?->shipping_city) {
-            $cityCentroid = \App\Support\CaviteAddress::getMunicipalityCentroid($order->shipping_city);
+            $cityCentroid = \App\Support\CaviteAddress::getCityCoordinates($order->shipping_city);
             if ($cityCentroid) {
                 $dropoffLat = $dropoffLat ?: $cityCentroid['lat'];
                 $dropoffLng = $dropoffLng ?: $cityCentroid['lng'];
             }
         }
+
+        $driverEmployee = $delivery->relationLoaded('driverEmployee') ? $delivery->driverEmployee : $delivery->driverEmployee;
+        $driverUser = $delivery->relationLoaded('driverUser') ? $delivery->driverUser : $delivery->driverUser;
+        $employeeAccount = $driverEmployee && $driverEmployee->relationLoaded('loginAccount') ? $driverEmployee->loginAccount : $driverEmployee?->loginAccount;
+
+        $driverName = $delivery->driver_name
+            ?: ($driverEmployee?->name
+                ?: ($employeeAccount?->name
+                    ?: ($driverUser?->name ?: null)));
+
+        $driverPhone = $delivery->driver_phone
+            ?: ($employeeAccount?->phone_number
+                ?: ($employeeAccount?->contact_number
+                    ?: ($driverEmployee?->phone_number
+                        ?: ($driverUser?->phone_number ?: null))));
+
+        $vehicleType = $delivery->vehicle_type
+            ?: ($driverEmployee?->vehicle_type ?: 'Motorcycle');
+
+        $vehiclePlateNumber = $delivery->vehicle_plate_number
+            ?: ($driverEmployee?->vehicle_plate_number ?: null);
 
         return [
             'id' => $delivery->id,
@@ -242,10 +272,10 @@ class OrderWorkflowHelper
             'location_updated_at' => $delivery->location_updated_at?->toIso8601String(),
             'heading' => $delivery->heading !== null ? (float) $delivery->heading : null,
             'speed_kph' => $delivery->speed_kph !== null ? (float) $delivery->speed_kph : null,
-            'driver_name' => $delivery->driver_name,
-            'driver_phone' => $delivery->driver_phone,
-            'vehicle_type' => $delivery->vehicle_type,
-            'vehicle_plate_number' => $delivery->vehicle_plate_number,
+            'driver_name' => $driverName,
+            'driver_phone' => $driverPhone,
+            'vehicle_type' => $vehicleType,
+            'vehicle_plate_number' => $vehiclePlateNumber,
             'pickup_latitude' => $pickupLat ?: null,
             'pickup_longitude' => $pickupLng ?: null,
             'dropoff_latitude' => $dropoffLat ?: null,

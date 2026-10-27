@@ -234,7 +234,18 @@ class ListSellerOrders
         $paginator = $query->paginate(15)->withQueryString();
         $this->orderLogisticsService->syncVisibleDeliveries($paginator->getCollection()->pluck('delivery')->filter());
 
-        $paginator->through(function ($order) use ($seller) {
+        $sellerDefaultAddress = $seller?->getDefaultAddress();
+        $sellerLat = $sellerDefaultAddress?->latitude !== null ? (float) $sellerDefaultAddress->latitude : null;
+        $sellerLng = $sellerDefaultAddress?->longitude !== null ? (float) $sellerDefaultAddress->longitude : null;
+        if ((!$sellerLat || !$sellerLng) && $seller?->city) {
+            $cityCentroid = \App\Support\CaviteAddress::getCityCoordinates($seller->city);
+            if ($cityCentroid) {
+                $sellerLat = $sellerLat ?: (float) $cityCentroid['lat'];
+                $sellerLng = $sellerLng ?: (float) $cityCentroid['lng'];
+            }
+        }
+
+        $paginator->through(function ($order) use ($seller, $sellerLat, $sellerLng) {
             $bookingRequirements = OrderWorkflowHelper::lalamoveBookingRequirements($order, $seller);
             $vehicleInfo = app(VehicleTypeResolver::class)->resolveForItems($order->items);
 
@@ -270,8 +281,8 @@ class ListSellerOrders
                     'shop_name' => $seller->shop_name ?: $seller->name,
                     'city' => $seller->city,
                     'address' => trim(($seller->street_address ?? '') . ' ' . ($seller->city ?? 'Dasmariñas')),
-                    'latitude' => $seller->latitude ? (float) $seller->latitude : null,
-                    'longitude' => $seller->longitude ? (float) $seller->longitude : null,
+                    'latitude' => $sellerLat,
+                    'longitude' => $sellerLng,
                 ],
                 'pickup_date' => $order->pickup_date?->format('M d, Y') ?? ($order->pickup_date ? (string) $order->pickup_date : null),
                 'pickup_time_slot' => $order->pickup_time_slot,
@@ -282,7 +293,7 @@ class ListSellerOrders
                 'proof_of_delivery' => StorageUrl::url($order->proof_of_delivery),
                 'cancelled_at' => $order->cancelled_at?->format('M d, Y h:i A'),
                 'cancellation_reason' => $order->cancellation_reason,
-                'delivery' => $order->status === 'Pending' ? null : OrderWorkflowHelper::serializeDelivery($order->delivery, $order->status),
+                'delivery' => $order->status === 'Pending' ? null : OrderWorkflowHelper::serializeDelivery($order->delivery, $order->status, $order),
                 'timeline' => OrderWorkflowHelper::buildOrderTimeline($order),
                 'can_book_lalamove' => in_array($order->status, ['Accepted', 'Processing'], true)
                     && $order->shipping_method === 'Delivery'

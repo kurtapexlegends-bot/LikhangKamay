@@ -225,7 +225,7 @@ class B2BSupplyHubService
                 'shipping_method' => $order->shipping_method,
                 'shipping_notes' => $order->shipping_notes,
                 'tracking_number' => $order->tracking_number ?: $order->delivery?->tracking_number,
-                'delivery' => $order->status === 'Pending' ? null : OrderWorkflowHelper::serializeDelivery($order->delivery, $order->status),
+                'delivery' => $order->status === 'Pending' ? null : OrderWorkflowHelper::serializeDelivery($order->delivery, $order->status, $order),
                 'timeline' => OrderWorkflowHelper::buildOrderTimeline($order),
                 'items' => $order->items->map(fn($item) => [
                     'id' => $item->id,
@@ -356,7 +356,7 @@ class B2BSupplyHubService
                 'shipping_method' => $order->shipping_method,
                 'shipping_notes' => $order->shipping_notes,
                 'tracking_number' => $order->tracking_number,
-                'delivery' => $order->status === 'Pending' ? null : OrderWorkflowHelper::serializeDelivery($order->delivery, $order->status),
+                'delivery' => $order->status === 'Pending' ? null : OrderWorkflowHelper::serializeDelivery($order->delivery, $order->status, $order),
                 'timeline' => OrderWorkflowHelper::buildOrderTimeline($order),
                 'can_book_lalamove' => in_array($order->status, ['Accepted', 'Processing'], true)
                     && $order->shipping_method === 'Delivery'

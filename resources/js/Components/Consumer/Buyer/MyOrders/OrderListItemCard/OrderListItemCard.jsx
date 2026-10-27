@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
-import { MapPin, PackageCheck, AlertTriangle, Store, Clock, Navigation } from 'lucide-react';
-import CourierTrackingCard from '../CourierTrackingCard';
-import HandoffVerificationPin from '../HandoffVerificationPin';
+import { Store, ChevronRight, Truck, MapPin, PackageCheck, AlertTriangle, ChevronDown, ChevronUp, Clock, Navigation } from 'lucide-react';
+import CourierTrackingCard, { getVehicleIcon } from '../CourierTrackingCard';
 import ProductImageLightboxModal from '@/Components/Consumer/Shop/ProductShow/ProductImageLightboxModal';
-import { resolveImageUrl } from '@/lib/media';
-import { buyerDeliverySummary, buyerIssueSummary, buyerProofLabel, humanizeAddressType } from '@/utils/orderHelpers';
-
-// Subcomponents
-import OrderCardHeader from './OrderCardHeader';
-import OrderCardTimeline from './OrderCardTimeline';
-import OrderCardItems from './OrderCardItems';
+import OrderTimeline from '@/Components/Consumer/Buyer/MyOrders/OrderTimeline';
+import { buyerDeliverySummary, buyerIssueSummary } from '@/utils/orderHelpers';
 import OrderCardActions from './OrderCardActions';
 
 export default function OrderListItemCard({
@@ -25,284 +19,239 @@ export default function OrderListItemCard({
     const isTransitDelivery = ['ON_GOING', 'PICKED_UP', 'IN_TRANSIT'].includes(
         String(order.delivery?.status || '').toUpperCase()
     );
-    const [isTimelineExpanded, setIsTimelineExpanded] = useState(false);
-    const [isCourierTrackingExpanded, setIsCourierTrackingExpanded] = useState(isTransitDelivery);
+    const [isItemsExpanded, setIsItemsExpanded] = useState(false);
+    const [isTrackingExpanded, setIsTrackingExpanded] = useState(false);
+    const [isBreakdownExpanded, setIsBreakdownExpanded] = useState(false);
+    const [isCourierExpanded, setIsCourierExpanded] = useState(isTransitDelivery);
     const [lightboxState, setLightboxState] = useState({ open: false, photos: [], index: 0, title: '' });
 
     const deliverySummary = buyerDeliverySummary(order);
     const issueSummary = buyerIssueSummary(order);
 
-    const toggleCourierTrackingExpansion = () => {
-        setIsCourierTrackingExpanded(!isCourierTrackingExpanded);
+    const formatPHP = (val) => {
+        if (val === undefined || val === null) return '₱0.00';
+        if (typeof val === 'string' && val.startsWith('₱')) return val;
+        const num = typeof val === 'string' ? parseFloat(val.replace(/,/g, '')) : Number(val);
+        return isNaN(num) ? '₱0.00' : `₱${num.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
-    const toggleOrderExpansion = () => {
-        setIsTimelineExpanded(!isTimelineExpanded);
+    const items = order.items || [];
+    const displayedItems = isItemsExpanded ? items : items.slice(0, 2);
+    const hasMoreItems = items.length > 2;
+    const totalItemCount = items.reduce((sum, item) => sum + (Number(item.qty) || 1), 0);
+
+    // Minimal dot color helper for Apple/Linear style
+    const getStatusDotColor = (status) => {
+        switch (String(status).toLowerCase()) {
+            case 'completed': return 'bg-emerald-500';
+            case 'in transit':
+            case 'to deliver':
+            case 'shipped':
+            case 'processing': return 'bg-blue-500';
+            case 'cancelled':
+            case 'declined': return 'bg-stone-400';
+            case 'refund/return':
+            case 'dispute': return 'bg-amber-500';
+            default: return 'bg-clay-500';
+        }
     };
 
     return (
-        <div className="relative overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.07)] hover:border-stone-300 transition-all duration-300">
-            {/* Header */}
-            <OrderCardHeader order={order} />
-
-            {/* Timeline collapser and list */}
-            <OrderCardTimeline 
-                order={order} 
-                isTimelineExpanded={isTimelineExpanded} 
-                toggleOrderExpansion={toggleOrderExpansion} 
-            />
-
-            {/* Main Content Body */}
-            <div className="p-3.5 sm:p-5 space-y-3">
-                {/* Pickup / Delivery Info */}
-                <div className="space-y-1.5">
-                    {deliverySummary && (
-                        <div className={`rounded-xl border px-3 py-2 ${deliverySummary.tone}`}>
-                            <div className="flex flex-wrap items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                    <p className="text-[12px] font-bold text-stone-900">{deliverySummary.title}</p>
-                                    <p className="text-[10px] leading-snug text-stone-600">{deliverySummary.detail}</p>
-                                    {order.shipping_method === 'Pick Up' && order.proof_of_delivery && (
-                                        <a 
-                                            href={order.proof_of_delivery} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            className="inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-[#FFFDFB] px-2.5 py-1.5 text-[10px] font-bold text-orange-600 hover:bg-orange-50 transition shadow-sm min-h-[44px] sm:min-h-[28px] mt-1.5"
-                                        >
-                                            <PackageCheck size={12} /> {buyerProofLabel(order)}
-                                        </a>
-                                    )}
-                                </div>
-                                {deliverySummary.latestEventTime && (
-                                    <span className="rounded-full border border-white/80 bg-white/80 px-2 py-0.5 text-[9px] font-bold text-stone-500">
-                                        {deliverySummary.latestEventTime}
-                                    </span>
-                                )}
-                            </div>
-                            {deliverySummary.latestEvent && (
-                                <p className="mt-1 text-[9px] font-medium text-stone-500">
-                                    Latest update: {deliverySummary.latestEvent.label}
-                                </p>
-                            )}
-                        </div>
-                    )}
-
-                    {order.shipping_method === 'Pick Up' && (
-                        <div className="rounded-2xl border border-stone-200/90 bg-stone-50/70 p-4 space-y-3">
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                <div className="flex items-start gap-3 min-w-0">
-                                    <div className="p-2 bg-white rounded-xl shadow-2xs text-clay-700 border border-stone-200 shrink-0 mt-0.5">
-                                        <Store size={18} />
-                                    </div>
-                                    <div className="min-w-0 space-y-1">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <p className="text-xs font-black uppercase tracking-wider text-stone-900">
-                                                Self Store Pickup
-                                            </p>
-                                            {order.pickup_date && (
-                                                <span className="text-[10px] font-extrabold text-clay-800 bg-clay-100/90 border border-clay-200/80 px-2 py-0.5 rounded-lg">
-                                                    {order.pickup_date}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {order.pickup_time_slot && (
-                                            <p className="text-xs font-semibold text-stone-700 flex items-center gap-1.5">
-                                                <Clock size={13} className="text-stone-400" />
-                                                Pickup Window: {order.pickup_time_slot}
-                                            </p>
-                                        )}
-                                        <p className="text-xs text-stone-600 flex items-start gap-1.5 leading-relaxed">
-                                            <MapPin size={13} className="text-stone-400 shrink-0 mt-0.5" />
-                                            <span>{order.pickup_location_snapshot?.address || order.shipping_address || 'Studio Location'}</span>
-                                        </p>
-
-                                        {/* 1-Tap Google Maps Button */}
-                                        <a
-                                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.pickup_location_snapshot?.address || order.shipping_address || (order.seller_name + ' studio'))}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-800 text-[11px] font-bold hover:bg-stone-50 hover:text-stone-900 transition shadow-2xs mt-1"
-                                        >
-                                            <Navigation size={12} className="text-clay-600 shrink-0" />
-                                            <span>Open in Google Maps</span>
-                                        </a>
-                                    </div>
-                                </div>
-
-                                {order.pickup_pin && !['Cancelled', 'Rejected'].includes(order.status) && (
-                                    <HandoffVerificationPin
-                                        pin={order.pickup_pin}
-                                        status={order.status}
-                                        isPickup={true}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {order.shipping_method !== 'Pick Up' && (
-                        (order.delivery && order.status !== 'Pending') ? (
-                            <CourierTrackingCard 
-                                order={order}
-                                isExpanded={isCourierTrackingExpanded}
-                                onToggle={toggleCourierTrackingExpansion}
-                            />
-                        ) : (
-                            /* Standalone Address row when delivery courier is not yet dispatched */
-                            <div className="rounded-xl border border-stone-200/80 bg-stone-50/60 px-3 py-2 text-stone-800">
-                                <div className="flex items-start gap-2">
-                                    <div className="p-1 bg-white rounded shadow-2xs text-clay-600 border border-stone-200/70 shrink-0 mt-0.5">
-                                        <MapPin size={13} />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex flex-wrap items-center gap-1.5">
-                                            <p className="text-[11px] font-bold text-stone-900">
-                                                Standard Delivery
-                                            </p>
-                                            {order.shipping_address_type && (
-                                                <span className="inline-flex rounded border border-stone-200 bg-white px-1.5 py-0 text-[9px] font-bold uppercase tracking-wide text-stone-600">
-                                                    {humanizeAddressType(order.shipping_address_type)}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <p className="text-[10px] text-stone-600 leading-snug">{order.shipping_address}</p>
-                                        {(order.shipping_recipient_name || order.shipping_contact_phone) && (
-                                            <p className="text-[10px] text-stone-400">
-                                                {order.shipping_recipient_name}
-                                                {order.shipping_recipient_name && order.shipping_contact_phone ? ' | ' : ''}
-                                                {order.shipping_contact_phone}
-                                            </p>
-                                        )}
-                                        <div className="flex flex-wrap gap-1 mt-1">
-                                            {order.tracking_number && (
-                                                <span className="text-[9px] bg-white px-1.5 py-0 rounded border border-stone-200 text-stone-600 font-medium">
-                                                    Tracker: {order.tracking_number}
-                                                </span>
-                                            )}
-                                            {order.shipping_notes && (
-                                                <span className="text-[9px] bg-white px-1.5 py-0 rounded border border-stone-200 text-stone-600 font-medium">
-                                                    Note: {order.shipping_notes}
-                                                </span>
-                                            )}
-                                            {order.proof_of_delivery && (
-                                                <a 
-                                                    href={order.proof_of_delivery} 
-                                                    target="_blank" 
-                                                    rel="noopener noreferrer" 
-                                                    className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-[10px] font-bold text-stone-700 hover:bg-stone-100 transition shadow-2xs min-h-[28px] mt-1"
-                                                >
-                                                    <PackageCheck size={11} className="text-clay-600" /> {buyerProofLabel(order)}
-                                                </a>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )
-                    )}
+        <div className="relative rounded-xl border border-stone-200/70 bg-white shadow-xs hover:border-stone-300 transition-colors duration-150 overflow-hidden">
+            {/* 1. Linear/Apple Minimalist Header */}
+            <div className="px-4 sm:px-5 py-3 border-b border-stone-100 flex items-center justify-between gap-3 bg-white">
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="text-xs font-semibold text-stone-900 tracking-tight truncate">
+                        {order.seller_name || 'Artisan Workshop'}
+                    </span>
+                    <span className="text-stone-300 text-xs shrink-0">•</span>
+                    <span className="text-[11px] font-mono text-stone-600 truncate shrink-0">
+                        #{order.order_number || order.id}
+                    </span>
                 </div>
 
-                {/* Dispute / Issue Summary */}
-                {issueSummary && (
-                    <div className={`rounded-xl border p-3 sm:p-3.5 space-y-2 shadow-2xs ${issueSummary.tone}`}>
-                        <div className="flex items-start justify-between gap-3">
-                            <div className="flex items-start gap-2.5 min-w-0">
-                                <div className="p-1 rounded-lg bg-white/80 text-stone-700 border border-stone-200/60 shrink-0 mt-0.5 shadow-2xs">
-                                    <issueSummary.icon size={14} />
-                                </div>
-                                <div className="min-w-0 space-y-0.5">
-                                    <h4 className="text-xs font-bold text-stone-900">{issueSummary.title}</h4>
-                                    <p className="text-[11px] text-stone-600 leading-snug">{issueSummary.detail}</p>
-                                </div>
-                            </div>
-                            {/* Unboxing Proof / Badge on Top-Right */}
-                            <div className="flex items-center gap-2 shrink-0">
-                                {issueSummary.timestampValue && (
-                                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[9px] font-bold ${issueSummary.badgeTone}`}>
-                                        {issueSummary.timestampLabel}: {issueSummary.timestampValue}
-                                    </span>
-                                )}
-                                {issueSummary.proofPhotos?.length > 0 && (
-                                    <div className="flex items-center gap-1">
-                                        {issueSummary.proofPhotos.map((photo, i) => (
-                                            <button
-                                                key={i}
-                                                type="button"
-                                                onClick={() => setLightboxState({
-                                                    open: true,
-                                                    photos: issueSummary.proofPhotos.map(p => resolveImageUrl(p)),
-                                                    index: i,
-                                                    title: `Order #${order.order_number || order.id} Proof Photos`
-                                                })}
-                                                className="h-10 w-10 rounded-lg border border-stone-300/80 bg-white overflow-hidden shadow-2xs hover:border-clay-500 hover:ring-2 hover:ring-clay-500/20 transition cursor-pointer"
-                                                title="View unboxing proof in carousel"
-                                            >
-                                                <img
-                                                    loading="lazy"
-                                                    decoding="async"
-                                                    src={resolveImageUrl(photo)}
-                                                    alt={`Proof ${i + 1}`}
-                                                    className="h-full w-full object-cover"
-                                                    onError={(e) => {
-                                                        e.target.onerror = null;
-                                                        e.target.src = '/images/placeholder.svg';
-                                                    }}
-                                                />
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                                {!issueSummary.proofPhotos?.length && issueSummary.proofHref && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setLightboxState({
-                                            open: true,
-                                            photos: [resolveImageUrl(issueSummary.proofHref)],
-                                            index: 0,
-                                            title: `Order #${order.order_number || order.id} Return Proof`
-                                        })}
-                                        className="h-10 w-10 rounded-lg border border-stone-300/80 bg-white overflow-hidden shadow-2xs hover:border-clay-500 hover:ring-2 hover:ring-clay-500/20 transition flex items-center justify-center cursor-pointer"
-                                        title={issueSummary.proofLabel || "View Return Proof in carousel"}
-                                    >
-                                        <PackageCheck size={16} className="text-clay-600" />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
-                        {issueSummary.infoValue && (
-                            <div className="bg-white/90 rounded-lg border border-stone-200/70 px-3 py-2 text-[11px] text-stone-700 leading-relaxed shadow-2xs">
-                                <span className="font-extrabold text-stone-900">{issueSummary.infoLabel}: </span>
-                                <span className="italic text-stone-600 ml-1">"{issueSummary.infoValue}"</span>
-                            </div>
-                        )}
-
-                        {issueSummary.resolutionNotes && (
-                            <div className="bg-white/90 rounded-lg border border-stone-200/80 px-3 py-2 text-[11px] text-stone-700 leading-relaxed shadow-2xs">
-                                <span className="font-extrabold text-stone-800">Platform Resolution Notes: </span>
-                                <span className="italic text-stone-600 ml-1">"{issueSummary.resolutionNotes}"</span>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* List of Ordered Items */}
-                <OrderCardItems order={order} />
+                {/* Minimalist Status Indicator */}
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-700">
+                        <span className={`w-2 h-2 rounded-full ${getStatusDotColor(order.status)}`} />
+                        <span>{order.status}</span>
+                    </span>
+                    <span className="text-stone-300 text-xs hidden sm:inline">|</span>
+                    <span className="text-[11px] font-medium text-stone-600 capitalize hidden sm:inline">
+                        {order.payment_method || 'Online'} • {order.payment_status}
+                    </span>
+                </div>
             </div>
 
-            {/* Warranty Info (if applicable) */}
-            {(order.status === 'Completed' && order.can_return) && (
-                <div className="px-3.5 sm:px-5 pb-3">
-                    <div className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 rounded-lg px-2.5 py-1.5 text-xs text-amber-800 w-full sm:w-auto shadow-2xs">
-                        <AlertTriangle size={13} className="text-amber-600 shrink-0" />
-                        <span className="text-[11px] font-medium text-amber-800">
-                            Return expires: <span className="font-bold">{order.warranty_expires_at}</span>
+            {/* 2. Streamlined Product List */}
+            <div className="divide-y divide-stone-100/80 px-4 sm:px-5">
+                {displayedItems.map((item, idx) => (
+                    <div key={idx} className="py-3 flex items-center gap-3.5">
+                        <div className="w-14 h-14 bg-stone-50 rounded-lg border border-stone-200/60 overflow-hidden shrink-0">
+                            <img 
+                                loading="lazy"
+                                decoding="async"
+                                src={item.img} 
+                                alt={item.name} 
+                                className="w-full h-full object-cover"
+                                onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
+                            />
+                        </div>
+                        <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                                <h4 className="font-semibold text-stone-900 text-xs sm:text-sm truncate">{item.name}</h4>
+                                <div className="mt-0.5 flex items-center gap-2 text-[11px] text-stone-600 flex-wrap">
+                                    {item.variant && (
+                                        <span className="text-stone-700">{item.variant}</span>
+                                    )}
+                                    <span>Qty: {item.qty}</span>
+                                </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                                <span className="font-mono text-xs sm:text-sm font-semibold text-stone-900">
+                                    {formatPHP(item.price)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                {hasMoreItems && (
+                    <button
+                        type="button"
+                        onClick={() => setIsItemsExpanded(!isItemsExpanded)}
+                        className="w-full py-2.5 text-center text-xs text-stone-600 font-medium hover:text-stone-900 transition flex items-center justify-center gap-1 cursor-pointer min-h-[44px]"
+                    >
+                        <span>{isItemsExpanded ? 'Collapse' : `+${items.length - 2} more items`}</span>
+                        {isItemsExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    </button>
+                )}
+            </div>
+
+            {/* 3. Hairline Logistics Row with On-Demand Tracking Drawer */}
+            <div className="px-4 sm:px-5 py-2.5 bg-stone-50/50 border-t border-b border-stone-100 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 min-w-0 text-stone-600">
+                    {order.shipping_method === 'Pick Up' ? (
+                        <Store size={13} className="text-stone-400 shrink-0" />
+                    ) : (() => {
+                        const VehicleIcon = getVehicleIcon(order?.delivery?.vehicle_type || order?.recommended_vehicle);
+                        return <VehicleIcon size={13} className="text-stone-400 shrink-0" />;
+                    })()}
+                    <span className="truncate text-[11px] sm:text-xs">
+                        {deliverySummary ? `${deliverySummary.title}: ${deliverySummary.detail}` : (order.shipping_address || 'Delivery Address')}
+                    </span>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setIsTrackingExpanded(!isTrackingExpanded)}
+                    className="text-[11px] font-medium text-stone-700 hover:text-stone-950 transition-colors shrink-0 flex items-center gap-1 cursor-pointer py-1 px-1.5 -mr-1.5"
+                >
+                    <span>{isTrackingExpanded ? 'Close Timeline' : 'Tracking'}</span>
+                    <ChevronDown size={12} className={`transition-transform duration-200 ${isTrackingExpanded ? 'rotate-180' : ''}`} />
+                </button>
+            </div>
+
+            {/* On-Demand Order Timeline Drawer */}
+            {isTrackingExpanded && (
+                <div className="px-4 sm:px-5 py-3.5 bg-white border-b border-stone-100">
+                    <OrderTimeline status={order.status} isPickup={order.shipping_method === 'Pick Up'} />
+                </div>
+            )}
+
+            {/* Live Courier Tracking card for active order delivery */}
+            {order.delivery && order.status !== 'Pending' && (order.delivery?.flow_type === 'replacement_exchange' || !['Cancelled', 'Rejected'].includes(order.status)) && (
+                <div className="px-4 sm:px-5 py-2.5 bg-blue-50/40 border-b border-blue-100/60">
+                    <CourierTrackingCard 
+                        order={order}
+                        isExpanded={isCourierExpanded}
+                        onToggle={() => setIsCourierExpanded(!isCourierExpanded)}
+                    />
+                </div>
+            )}
+
+            {/* Workshop Pickup Pass for Pick Up orders */}
+            {order.shipping_method === 'Pick Up' && order.pickup_pin && !['Cancelled', 'Rejected'].includes(order.status) && (
+                <div className="px-4 sm:px-5 py-3 bg-amber-50/50 border-b border-amber-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 font-semibold text-stone-900">
+                            <MapPin size={13} className="text-clay-600" />
+                            <span>Workshop Pickup Pass</span>
+                        </div>
+                        <p className="text-[11px] text-stone-600 mt-0.5 truncate">
+                            {order.pickup_location_snapshot || order.seller_address || 'Artisan Workshop'} • {order.pickup_date} ({order.pickup_time_slot})
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] text-stone-500 font-medium">Claim PIN:</span>
+                        <span className="font-mono font-bold tracking-widest text-xs px-2.5 py-1 bg-white border border-stone-200 rounded text-stone-900 shadow-2xs">
+                            {order.pickup_pin}
                         </span>
                     </div>
                 </div>
             )}
 
-            {/* Footer Pricing & Actions */}
+            {/* 4. Total Row with On-Demand Fee Breakdown Toggle */}
+            <div className="px-4 sm:px-5 py-2.5 flex items-center justify-between text-xs bg-white border-b border-stone-100/70">
+                <span className="text-[11px] text-stone-600 truncate mr-2">
+                    {totalItemCount} {totalItemCount === 1 ? 'item' : 'items'} • {order.shipping_method === 'Pick Up' ? 'Workshop Pick Up' : 'Doorstep Delivery'}
+                </span>
+                <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+                    <button
+                        type="button"
+                        onClick={() => setIsBreakdownExpanded(!isBreakdownExpanded)}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-600 hover:text-stone-900 transition-colors cursor-pointer py-1 px-1.5 -my-1 rounded hover:bg-stone-100/80"
+                        aria-expanded={isBreakdownExpanded}
+                    >
+                        <span>{isBreakdownExpanded ? 'Hide' : 'Breakdown'}</span>
+                        <ChevronDown size={11} className={`transition-transform duration-200 ${isBreakdownExpanded ? 'rotate-180' : ''}`} />
+                    </button>
+                    <span className="text-stone-200 text-xs">|</span>
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-stone-500 text-xs font-normal">Total:</span>
+                        <span className="font-mono font-bold text-sm text-stone-900 tracking-tight">
+                            {formatPHP(order.total || order.total_amount)}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Expandable Price & Fee Breakdown Drawer */}
+            {isBreakdownExpanded && (
+                <div className="px-4 sm:px-5 py-3 bg-stone-50/70 border-b border-stone-100 text-xs text-stone-600 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-stone-500">Items Subtotal ({totalItemCount} {totalItemCount === 1 ? 'item' : 'items'})</span>
+                        <span className="font-mono font-medium text-stone-800">
+                            {formatPHP(order.merchandise_subtotal || items.reduce((acc, it) => acc + (Number(it.price || 0) * Number(it.qty || 1)), 0))}
+                        </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-stone-500">Shipping Fee ({order.shipping_method === 'Pick Up' ? 'Workshop Pick Up' : 'Doorstep Delivery'})</span>
+                        <span className="font-mono font-medium text-stone-800">
+                            {order.shipping_method === 'Pick Up' ? (
+                                <span className="text-emerald-600 font-semibold uppercase text-[10px] tracking-wider">Free</span>
+                            ) : (
+                                formatPHP(order.shipping_fee_amount)
+                            )}
+                        </span>
+                    </div>
+                    {Number(String(order.convenience_fee_amount || 0).replace(/,/g, '')) > 0 && (
+                        <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-stone-500">Service Fee (3%)</span>
+                            <span className="font-mono font-medium text-stone-800">
+                                {formatPHP(order.convenience_fee_amount)}
+                            </span>
+                        </div>
+                    )}
+                    <div className="pt-2 border-t border-stone-200/60 flex items-center justify-between text-xs font-semibold text-stone-900">
+                        <span>Total Payment</span>
+                        <span className="font-mono font-bold text-sm text-stone-900">
+                            {formatPHP(order.total || order.total_amount)}
+                        </span>
+                    </div>
+                </div>
+            )}
+
+            {/* 5. Minimalist Actions Footer */}
             <OrderCardActions 
                 order={order}
                 onContactSeller={onContactSeller}
@@ -314,7 +263,7 @@ export default function OrderListItemCard({
                 onOpenRatingModal={onOpenRatingModal}
             />
 
-            {/* Order Proof Lightbox Carousel Modal */}
+            {/* Proof Lightbox Modal */}
             {lightboxState.open && lightboxState.photos.length > 0 && (
                 <ProductImageLightboxModal
                     isOpen={lightboxState.open}

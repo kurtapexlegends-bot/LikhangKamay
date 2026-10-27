@@ -17,7 +17,8 @@ import ReturnRequestModal from '@/Components/Consumer/Buyer/MyOrders/ReturnReque
 import EscalateDisputeModal from '@/Components/Consumer/Buyer/MyOrders/EscalateDisputeModal';
 import CancelOrderModal from '@/Components/Consumer/Buyer/MyOrders/CancelOrderModal';
 
-export default function MyOrders({ auth, orders }) {
+export default function MyOrders({ auth, orders = [] }) {
+    const activeOrders = Array.isArray(orders) ? orders : [];
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [processing, setProcessing] = useState(false);
@@ -36,7 +37,7 @@ export default function MyOrders({ auth, orders }) {
 
     const { props: { flash } } = usePage();
 
-    const hasActiveCourierTracking = orders.some((order) => {
+    const hasActiveCourierTracking = activeOrders.some((order) => {
         if (!order?.delivery) {
             return false;
         }
@@ -65,7 +66,7 @@ export default function MyOrders({ auth, orders }) {
     }, [hasActiveCourierTracking]);
 
     const tabs = [
-        { id: 'All', label: 'All Orders', count: orders.length },
+        { id: 'All', label: 'All Orders', count: activeOrders.length },
         { id: 'Pending', label: 'To Pay' },
         { id: 'Accepted', label: 'To Ship' },
         { id: 'Shipped', label: 'To Receive' },
@@ -75,16 +76,16 @@ export default function MyOrders({ auth, orders }) {
     ];
 
     const getTabCount = (tabId) => {
-        if (tabId === 'All') return orders.length;
-        if (tabId === 'Pending') return orders.filter(o => o.status === 'Pending' && o.shipping_method !== 'Pick Up').length;
-        if (tabId === 'Accepted') return orders.filter(o => ['Accepted', 'Processing'].includes(o.status) && o.shipping_method !== 'Pick Up').length;
-        if (tabId === 'Shipped') return orders.filter(o => ['Shipped', 'Delivered'].includes(o.status) && o.shipping_method !== 'Pick Up').length;
-        if (tabId === 'Ready for Pickup') return orders.filter(o => o.shipping_method === 'Pick Up' && !['Completed', 'Cancelled', 'Rejected'].includes(o.status)).length;
-        if (tabId === 'Refund/Return') return orders.filter(o => ['Refund/Return', 'Refunded', 'Replaced'].includes(o.status)).length;
-        return orders.filter(o => o.status === tabId).length;
+        if (tabId === 'All') return activeOrders.length;
+        if (tabId === 'Pending') return activeOrders.filter(o => o.status === 'Pending' && o.shipping_method !== 'Pick Up').length;
+        if (tabId === 'Accepted') return activeOrders.filter(o => ['Accepted', 'Processing'].includes(o.status) && o.shipping_method !== 'Pick Up').length;
+        if (tabId === 'Shipped') return activeOrders.filter(o => ['Shipped', 'Delivered'].includes(o.status) && o.shipping_method !== 'Pick Up').length;
+        if (tabId === 'Ready for Pickup') return activeOrders.filter(o => o.shipping_method === 'Pick Up' && !['Completed', 'Cancelled', 'Rejected'].includes(o.status)).length;
+        if (tabId === 'Refund/Return') return activeOrders.filter(o => ['Refund/Return', 'Refunded', 'Replaced'].includes(o.status)).length;
+        return activeOrders.filter(o => o.status === tabId).length;
     };
 
-    const filteredOrders = orders.filter(order => {
+    const filteredOrders = activeOrders.filter(order => {
         let tabMatch = true;
         if (activeTab !== 'All') {
             if (activeTab === 'Pending') {
@@ -247,12 +248,12 @@ export default function MyOrders({ auth, orders }) {
                             <div className="grid grid-cols-2 gap-3 text-center mt-4">
                                 <div className="bg-stone-50/50 border border-stone-100/80 rounded-xl p-2.5">
                                     <p className="text-[10px] font-bold text-stone-400">Purchases</p>
-                                    <p className="text-base font-black text-clay-700 mt-0.5">{orders.length}</p>
+                                    <p className="text-base font-black text-clay-700 mt-0.5">{activeOrders.length}</p>
                                 </div>
                                 <div className="bg-stone-50/50 border border-stone-100/80 rounded-xl p-2.5">
                                     <p className="text-[10px] font-bold text-stone-400">Active</p>
                                     <p className="text-base font-black text-clay-700 mt-0.5">
-                                        {orders.filter(o => !['Completed', 'Cancelled', 'Rejected', 'Refunded', 'Replaced'].includes(o.status)).length}
+                                        {activeOrders.filter(o => !['Completed', 'Cancelled', 'Rejected', 'Refunded', 'Replaced'].includes(o.status)).length}
                                     </p>
                                 </div>
                             </div>

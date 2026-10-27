@@ -304,4 +304,68 @@ class BuyerOrderController extends Controller
 
         return view('pdf.receipt', ['order' => $order]);
     }
+
+    /**
+     * BUYER: Turn-by-turn road route preview for active delivery
+     */
+    public function routePreview(Request $request, string $id, \App\Services\OrderRoutePreviewService $routePreviewService)
+    {
+        /** @var \App\Models\User|null $buyer */
+        $buyer = $request->user();
+
+        $order = null;
+        if ($buyer) {
+            $order = Order::with(['artisan', 'delivery', 'items'])
+                ->where(function ($q) use ($id) {
+                    if (is_numeric($id)) {
+                        $q->where('id', (int) $id)->orWhere('order_number', (string) $id);
+                    } else {
+                        $q->where('order_number', (string) $id);
+                    }
+                })
+                ->where('user_id', $buyer->id)
+                ->first();
+        }
+
+        $driverLat = $request->filled('driver_lat') ? (float) $request->input('driver_lat') : null;
+        $driverLng = $request->filled('driver_lng') ? (float) $request->input('driver_lng') : null;
+        $driverName = $request->input('driver_name');
+        $driverPhone = $request->input('driver_phone');
+        $driverPlate = $request->input('vehicle_plate');
+        $heading = $request->filled('heading') ? (float) $request->input('heading') : null;
+        $speedKph = $request->filled('speed_kph') ? (float) $request->input('speed_kph') : null;
+        $isDelivering = $request->has('is_delivering') ? $request->boolean('is_delivering') : null;
+
+        if ($order && $order->artisan) {
+            $preview = $routePreviewService->resolve($order, $order->artisan, $driverLat, $driverLng, $isDelivering);
+            return response()->json($preview);
+        }
+
+        // Resilient fallback for mock orders, local testing, or direct coordinates
+        $pickupLat = (float) $request->input('pickup_lat', 14.3294);
+        $pickupLng = (float) $request->input('pickup_lng', 120.9367);
+        $dropoffLat = (float) $request->input('dropoff_lat', 14.4250);
+        $dropoffLng = (float) $request->input('dropoff_lng', 120.9420);
+        $vehicleType = (string) $request->input('vehicle_type', $request->input('vehicle', 'Motorcycle'));
+        $resolvedIsDelivering = $isDelivering ?? ($driverLat !== null && $driverLng !== null);
+
+        $preview = $routePreviewService->resolveDirectCoordinates(
+            $pickupLat,
+            $pickupLng,
+            $dropoffLat,
+            $dropoffLng,
+            $vehicleType,
+            '',
+            $driverLat,
+            $driverLng,
+            $resolvedIsDelivering,
+            $driverName,
+            $driverPhone,
+            $driverPlate,
+            $heading,
+            $speedKph
+        );
+
+        return response()->json($preview);
+    }
 }

@@ -67,7 +67,11 @@ class SellerOrderController extends Controller
             ->firstOrFail();
 
         $seller = $this->sellerOwner();
-        $preview = $routePreviewService->resolve($order, $seller);
+        $driverLat = $request->filled('driver_lat') ? (float) $request->input('driver_lat') : null;
+        $driverLng = $request->filled('driver_lng') ? (float) $request->input('driver_lng') : null;
+        $isDelivering = $request->has('is_delivering') ? $request->boolean('is_delivering') : null;
+
+        $preview = $routePreviewService->resolve($order, $seller, $driverLat, $driverLng, $isDelivering);
 
         return response()->json($preview);
     }

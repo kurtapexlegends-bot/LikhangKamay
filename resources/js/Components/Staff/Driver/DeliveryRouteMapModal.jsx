@@ -90,20 +90,35 @@ export default function DeliveryRouteMapModal({
         popupAnchor: [0, -32],
     }), []);
 
+    const getVehicleSvg = (type) => {
+        const raw = String(type || '').toLowerCase();
+        if (raw.includes('bike') || raw.includes('bicycle')) {
+            return `<svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><circle cx="18.5" cy="17.5" r="3.5"></circle><circle cx="5.5" cy="17.5" r="3.5"></circle><circle cx="15" cy="5" r="1"></circle><path d="M12 17.5V14l-3-3 4-3 2 3h2"></path></svg>`;
+        }
+        if (raw.includes('motor') || raw.includes('scooter')) {
+            return `<svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="m18 14-1-3"></path><path d="m3 9 6 2a2 2 0 0 1 2-2h2a2 2 0 0 1 1.99 1.81"></path><path d="M8 17h3a1 1 0 0 0 1-1 6 6 0 0 1 6-6 1 1 0 0 0 1-1v-.75A5 5 0 0 0 17 5"></path><circle cx="19" cy="17" r="3"></circle><circle cx="5" cy="17" r="3"></circle></svg>`;
+        }
+        if (raw.includes('sedan') || raw.includes('car')) {
+            return `<svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"></path><circle cx="7" cy="17" r="2"></circle><path d="M9 17h6"></path><circle cx="17" cy="17" r="2"></circle></svg>`;
+        }
+        return `<svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>`;
+    };
+
+    const vehicleType = delivery?.vehicle_type || 'Motorcycle';
     const createRiderIcon = useCallback(() => L.divIcon({
         className: 'custom-driver-pin',
         html: `
-            <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+            <div style="position: relative; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">
                 <div style="position: absolute; inset: -4px; border-radius: 50%; border: 1.5px dashed rgba(16, 185, 129, 0.7); animation: spin 8s linear infinite;"></div>
                 <div style="position: absolute; inset: 0; border-radius: 50%; background-color: rgba(16, 185, 129, 0.35); animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-                <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; background-color: #0f172a; color: white; display: flex; align-items: center; justify-content: center; border: 2.5px solid #10b981; box-shadow: 0 3px 8px rgba(0,0,0,0.35); z-2;">
-                    <svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;" viewBox="0 0 24 24"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5a2 2 0 0 0-2 2v7h3m10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0zm-10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/></svg>
+                <div style="position: relative; width: 32px; height: 32px; border-radius: 50%; background-color: #0f172a; color: white; display: flex; align-items: center; justify-content: center; border: 2.5px solid #10b981; box-shadow: 0 3px 8px rgba(0,0,0,0.35); z-index: 2;">
+                    ${getVehicleSvg(vehicleType)}
                 </div>
             </div>
         `,
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
-    }), []);
+        iconSize: [38, 38],
+        iconAnchor: [19, 19],
+    }), [vehicleType]);
 
     // Watch driver device GPS position while modal is open
     useEffect(() => {
@@ -269,7 +284,8 @@ export default function DeliveryRouteMapModal({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-stone-400 hover:text-stone-700 rounded-lg p-1 hover:bg-stone-100 transition"
+                        className="text-stone-400 hover:text-stone-700 rounded-xl p-2 hover:bg-stone-100 transition min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+                        aria-label="Close delivery route modal"
                     >
                         <X size={18} />
                     </button>

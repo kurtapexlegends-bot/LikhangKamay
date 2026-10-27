@@ -7,6 +7,7 @@ export default function LiveCourierRadarOverlay({
     telemetry,
     remainingKm,
     estimatedMinutes,
+    isFullScreen = false,
 }) {
     if (!isOpen) return null;
 
@@ -25,7 +26,7 @@ export default function LiveCourierRadarOverlay({
     };
 
     return (
-        <div className="absolute top-10 left-2 right-2 sm:right-auto sm:w-80 z-[500] pointer-events-auto bg-stone-900/90 backdrop-blur-md rounded-2xl border border-stone-700/80 p-3.5 text-white shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 select-none">
+        <div className={`absolute ${isFullScreen ? 'top-3 sm:top-4' : 'top-10 sm:top-10'} left-2 right-2 sm:right-auto sm:w-80 z-[500] pointer-events-auto bg-stone-900/90 backdrop-blur-md rounded-2xl border border-stone-700/80 p-3.5 text-white shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 select-none`}>
             {/* Radar Header */}
             <div className="flex items-center justify-between border-b border-stone-800 pb-2">
                 <div className="flex items-center gap-2">
@@ -43,7 +44,8 @@ export default function LiveCourierRadarOverlay({
                 <button
                     type="button"
                     onClick={onClose}
-                    className="text-stone-400 hover:text-white text-xs px-1.5 py-0.5 rounded-lg hover:bg-stone-800 transition"
+                    className="text-stone-300 hover:text-white text-xs px-3 py-1.5 rounded-xl hover:bg-stone-800 border border-stone-700/60 bg-stone-800/40 transition cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center font-bold active:scale-95"
+                    aria-label="Hide radar HUD"
                 >
                     Hide
                 </button>

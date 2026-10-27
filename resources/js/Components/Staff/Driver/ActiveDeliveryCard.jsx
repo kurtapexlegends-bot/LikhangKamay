@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     Phone,
     MessageSquare,
@@ -11,6 +11,8 @@ import {
     ArrowUpRight,
     Compass,
 } from 'lucide-react';
+import { copyToClipboard } from '@/utils/clipboard';
+import { useToast } from '@/Components/ToastContext';
 
 export default function ActiveDeliveryCard({
     delivery,
@@ -21,6 +23,26 @@ export default function ActiveDeliveryCard({
     stopIndex,
     totalStops,
 }) {
+    const { addToast } = useToast() || {};
+    const [copiedPhoneType, setCopiedPhoneType] = useState(null);
+
+    const handlePhoneAction = useCallback(async (e, phone, type = 'call') => {
+        if (!phone) return;
+        const isMobile = typeof window !== 'undefined' && (
+            /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+            (navigator.maxTouchPoints > 0 && window.innerWidth <= 768)
+        );
+        if (!isMobile) {
+            e.preventDefault();
+            const ok = await copyToClipboard(phone);
+            if (ok) {
+                setCopiedPhoneType(type);
+                if (addToast) addToast(`Copied customer phone ${phone} to clipboard.`, 'success');
+                setTimeout(() => setCopiedPhoneType(null), 2500);
+            }
+        }
+    }, [addToast]);
+
     const encodedAddr = encodeURIComponent(delivery.destination?.address || "");
     const mapUrl =
         delivery.destination?.latitude && delivery.destination?.longitude
@@ -72,24 +94,46 @@ export default function ActiveDeliveryCard({
                     </div>
 
                     {/* Quick Call & SMS Actions */}
-                    {delivery.customer?.phone && (
+                    {delivery.customer?.phone ? (
                         <div className="flex items-center gap-2">
                             <a
                                 href={`tel:${delivery.customer.phone}`}
-                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-50 px-5 py-3 text-sm font-extrabold text-emerald-900 hover:bg-emerald-100 active:scale-95 transition min-h-[52px] shadow-2xs"
+                                onClick={(e) => handlePhoneAction(e, delivery.customer.phone, 'call')}
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-50 px-5 py-3 text-sm font-extrabold text-emerald-900 hover:bg-emerald-100 active:scale-95 transition min-h-[52px] shadow-2xs cursor-pointer"
+                                title="Call customer or copy phone on desktop"
                             >
-                                <Phone size={16} className="text-emerald-700" />
-                                <span>Call Customer</span>
+                                {copiedPhoneType === 'call' ? (
+                                    <>
+                                        <Check size={16} className="text-emerald-700" />
+                                        <span>Copied!</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Phone size={16} className="text-emerald-700" />
+                                        <span>Call Customer</span>
+                                    </>
+                                )}
                             </a>
                             <a
                                 href={`sms:${delivery.customer.phone}`}
-                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-300 bg-sky-50 px-5 py-3 text-sm font-extrabold text-sky-900 hover:bg-sky-100 active:scale-95 transition min-h-[52px] shadow-2xs"
+                                onClick={(e) => handlePhoneAction(e, delivery.customer.phone, 'sms')}
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-300 bg-sky-50 px-5 py-3 text-sm font-extrabold text-sky-900 hover:bg-sky-100 active:scale-95 transition min-h-[52px] shadow-2xs cursor-pointer"
+                                title="SMS customer or copy phone on desktop"
                             >
-                                <MessageSquare size={16} className="text-sky-700" />
-                                <span>SMS</span>
+                                {copiedPhoneType === 'sms' ? (
+                                    <>
+                                        <Check size={16} className="text-sky-700" />
+                                        <span>Copied!</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <MessageSquare size={16} className="text-sky-700" />
+                                        <span>SMS</span>
+                                    </>
+                                )}
                             </a>
                         </div>
-                    )}
+                    ) : null}
                 </div>
 
                 {/* Drop-off Address Card & Turn-by-Turn Navigation */}

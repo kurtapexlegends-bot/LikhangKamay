@@ -33,7 +33,15 @@ class GetBuyerOrders
         $this->reconcilePendingOnlinePaymentsForUser($buyer);
 
         $rawOrders = Order::where('user_id', $buyer->id)
-            ->with(['items', 'user', 'artisan:id,name,shop_name,city,barangay,street_address', 'delivery', 'dispute'])
+            ->with([
+                'items',
+                'user',
+                'artisan:id,name,shop_name,city,barangay,street_address',
+                'artisan.addresses',
+                'delivery.driverEmployee.loginAccount',
+                'delivery.driverUser',
+                'dispute',
+            ])
             ->latest()
             ->get();
 
@@ -149,6 +157,18 @@ class GetBuyerOrders
 
         $replacementInProgress = $order->replacement_started_at !== null && $order->replacement_resolved_at === null;
 
+        $artisanAddress = $order->artisan?->getDefaultAddress();
+        $artisanLat = $artisanAddress?->latitude !== null ? (float) $artisanAddress->latitude : null;
+        $artisanLng = $artisanAddress?->longitude !== null ? (float) $artisanAddress->longitude : null;
+
+        if ((!$artisanLat || !$artisanLng) && $order->artisan?->city) {
+            $cityCentroid = \App\Support\CaviteAddress::getCityCoordinates($order->artisan->city);
+            if ($cityCentroid) {
+                $artisanLat = $artisanLat ?: (float) $cityCentroid['lat'];
+                $artisanLng = $artisanLng ?: (float) $cityCentroid['lng'];
+            }
+        }
+
         return [
             'id' => $order->id,
             'order_number' => $order->order_number,
@@ -177,10 +197,20 @@ class GetBuyerOrders
             'seller_id' => $order->artisan_id,
             'seller_name' => $order->artisan?->shop_name ?? $order->artisan?->name ?? 'Shop',
             'seller_address' => $order->artisan ? trim(($order->artisan->street_address ? $order->artisan->street_address . ', ' : '') . ($order->artisan->city ?: '')) : null,
+            'seller_latitude' => $artisanLat,
+            'seller_longitude' => $artisanLng,
+            'artisan' => $order->artisan ? [
+                'id' => $order->artisan->id,
+                'name' => $order->artisan->name,
+                'shop_name' => $order->artisan->shop_name,
+                'latitude' => $artisanLat,
+                'longitude' => $artisanLng,
+                'address' => trim(($order->artisan->street_address ? $order->artisan->street_address . ', ' : '') . ($order->artisan->city ?: '')),
+            ] : null,
             'receipt_url' => route('my-orders.receipt', $order->id),
             'tracking_number' => $order->tracking_number,
             'shipping_notes' => $order->shipping_notes,
-            'delivery' => $order->status === 'Pending' ? null : OrderWorkflowHelper::serializeDelivery($order->delivery, $order->status),
+            'delivery' => $order->status === 'Pending' ? null : OrderWorkflowHelper::serializeDelivery($order->delivery, $order->status, $order),
             'cancelled_at' => $order->cancelled_at?->format('M d, Y h:i A'),
             'cancellation_reason' => $order->cancellation_reason,
             'received_at' => $order->received_at?->format('M d, Y h:i A'),
