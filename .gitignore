@@ -70,3 +70,6 @@ remove_badges*
 # Obsidian local settings
 /.obsidian/
 /docs/.obsidian/
+
+# Git Worktree Redesign Variants
+/.worktrees/

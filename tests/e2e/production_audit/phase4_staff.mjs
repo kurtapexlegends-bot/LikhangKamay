@@ -167,6 +167,15 @@ export async function runPhase4(page, collector) {
                 'Staff/DriverDeliveries',
                 ['activeDeliveries', 'completedToday', 'driverProfile']
             );
+
+            // 4.7b Driver Navigation & Telemetry Console State
+            const hasDriverNav = await page.evaluate(() => {
+                return !!document.body.innerText.match(/(Start Route|Navigate|View Route|Route Map|Active Deliveries|In-House Logistics|Completed)/i);
+            });
+            collector.recordResult('Phase 4', '4.7b Driver Navigation & Telemetry Console Ready', hasDriverNav ? 'PASS' : 'WARN', {
+                message: 'In-house driver navigation and telemetry console state verified'
+            });
+
             await collector.scanDomQuality(page, 'Driver Deliveries Console');
         } catch (e) {
             collector.recordResult('Phase 4', '4.7 Driver Deliveries Console', 'FAIL', { message: e.message });

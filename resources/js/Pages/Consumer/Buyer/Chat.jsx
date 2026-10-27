@@ -264,6 +264,9 @@ export default function BuyerChat({ auth, conversations = [], activeMessages = [
             channel.stopListening('.message.sent');
             channel.stopListening('.message.seen');
             channel.stopListening('.user.typing');
+            if (window.Echo) {
+                window.Echo.leave(`chat.${activeChannelId}`);
+            }
         };
     }, [auth?.user?.id, selectedUser?.id, hasMoreMessages, activeOrderCtx, activeUserOrdersList, markAsRead]);
 

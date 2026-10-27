@@ -82,13 +82,13 @@ class LalamoveBookingConcurrencyTest extends TestCase
         $product = $this->createProduct($seller);
         $order = $this->createAcceptedDeliveryOrder($seller, $buyer, $product);
 
-        $logisticsService = app(OrderLogisticsService::class);
-
         // Force a failure during geocoding to verify finally block releases lock
         $geocoder = Mockery::mock(AddressGeocodingService::class);
         $geocoder->shouldReceive('geocode')
-            ->andReturn(null);
+            ->andThrow(new \RuntimeException('Unable to locate the seller pickup address for courier booking.'));
         $this->app->instance(AddressGeocodingService::class, $geocoder);
+
+        $logisticsService = app(OrderLogisticsService::class);
 
         try {
             $logisticsService->bookLalamoveDelivery($order, $seller);

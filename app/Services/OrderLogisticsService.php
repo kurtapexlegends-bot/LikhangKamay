@@ -126,6 +126,14 @@ class OrderLogisticsService
             $dropoffCoordinates = $this->geocodingService->geocode($dropoffGeocodeQuery, 'buyer drop-off');
         }
 
+        if (empty($pickupCoordinates['lat']) || empty($pickupCoordinates['lng'])) {
+            throw new \RuntimeException('Unable to locate the seller pickup address for courier booking.');
+        }
+
+        if (empty($dropoffCoordinates['lat']) || empty($dropoffCoordinates['lng'])) {
+            throw new \RuntimeException('Unable to locate the buyer drop-off address for courier booking.');
+        }
+
         $pickupAddress = CourierAddressResolver::resolveCourierStopAddress($preferredPickupAddress, $pickupCoordinates, $pickupAddressCandidates);
         $dropoffAddress = CourierAddressResolver::resolveCourierStopAddress($preferredDropoffAddress, $dropoffCoordinates, $dropoffAddressCandidates);
 
@@ -275,6 +283,14 @@ class OrderLogisticsService
             ];
         } else {
             $dropoffCoordinates = $this->geocodingService->geocode($dropoffGeocodeQuery, 'buyer drop-off');
+        }
+
+        if (empty($pickupCoordinates['lat']) || empty($pickupCoordinates['lng'])) {
+            throw new \RuntimeException('Unable to locate the seller pickup address for courier booking.');
+        }
+
+        if (empty($dropoffCoordinates['lat']) || empty($dropoffCoordinates['lng'])) {
+            throw new \RuntimeException('Unable to locate the buyer drop-off address for courier booking.');
         }
 
         $pickupAddress = CourierAddressResolver::resolveCourierStopAddress($preferredPickupAddress, $pickupCoordinates, $pickupAddressCandidates);
