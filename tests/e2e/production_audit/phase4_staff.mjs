@@ -28,12 +28,12 @@ export async function runPhase4(page, collector) {
                 message: `Logged in URL: ${page.url()}`
             });
         } else {
-            collector.recordResult('Phase 4', '4.2 Staff Member Authentication (Optional Test Persona)', 'PASS', {
-                message: `Synthetic staff persona not provisioned in live target; unauthenticated security gates verified.`
+            collector.recordResult('Phase 4', '4.2 Staff Member Authentication (Unconfigured in Live Target)', 'WARN', {
+                message: `Synthetic staff persona (test.staff@likhangkamay.local) not provisioned in live target; downstream staff checks skipped.`
             });
         }
     } catch (e) {
-        collector.recordResult('Phase 4', '4.2 Staff Member Authentication', 'PASS', { message: `Skipped: ${e.message}` });
+        collector.recordResult('Phase 4', '4.2 Staff Member Authentication', 'WARN', { message: `Skipped: ${e.message}` });
     }
 
     // 4.3 Staff Dashboard & Workspace Entitlements
@@ -130,12 +130,12 @@ export async function runPhase4(page, collector) {
                 message: `Logged in URL: ${page.url()}`
             });
         } else {
-            collector.recordResult('Phase 4', '4.6 Logistics Rider Authentication (Optional Test Persona)', 'PASS', {
-                message: `Synthetic driver persona not provisioned in live target; unauthenticated security gates verified.`
+            collector.recordResult('Phase 4', '4.6 Logistics Rider Authentication (Unconfigured in Live Target)', 'WARN', {
+                message: `Synthetic driver persona (test.driver@likhangkamay.local) not provisioned in live target; downstream driver console checks skipped.`
             });
         }
     } catch (e) {
-        collector.recordResult('Phase 4', '4.6 Logistics Rider Authentication', 'PASS', { message: `Skipped: ${e.message}` });
+        collector.recordResult('Phase 4', '4.6 Logistics Rider Authentication', 'WARN', { message: `Skipped: ${e.message}` });
     }
 
     if (driverLoggedIn) {

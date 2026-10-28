@@ -12,9 +12,16 @@ export default function CreateChannelModal({ isOpen, onClose, eligibleContacts =
 
     if (!isOpen) return null;
 
+    const handleClose = () => {
+        form.clearErrors();
+        form.reset();
+        onClose();
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         form.post(route('team-messages.channels.store'), {
+            preserveScroll: true,
             onSuccess: () => {
                 form.reset();
                 onClose();
@@ -26,7 +33,7 @@ export default function CreateChannelModal({ isOpen, onClose, eligibleContacts =
         <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div 
                 className="fixed inset-0 bg-stone-900/40 backdrop-blur-[2px] transition-opacity" 
-                onClick={onClose}
+                onClick={handleClose}
             />
             <div className="relative w-full max-w-md transform overflow-hidden rounded-t-[2.5rem] sm:rounded-2xl bg-white p-6 shadow-2xl transition-all border-t sm:border border-stone-200 font-sans text-stone-850 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] sm:pb-6">
                 <div className="sm:hidden w-full flex justify-center pb-3 -mt-2">
@@ -37,7 +44,7 @@ export default function CreateChannelModal({ isOpen, onClose, eligibleContacts =
                         <Plus size={18} /> Create Channel
                     </h3>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="rounded-full p-2 text-stone-400 hover:bg-stone-50 hover:text-stone-600 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
                         type="button"
                     >
@@ -128,7 +135,7 @@ export default function CreateChannelModal({ isOpen, onClose, eligibleContacts =
                     <div className="flex justify-end gap-2 pt-2">
                         <button
                             type="button"
-                            onClick={onClose}
+                            onClick={handleClose}
                             className="rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold text-stone-600 hover:bg-stone-50 min-h-[44px] active:scale-95 transition"
                         >
                             Cancel

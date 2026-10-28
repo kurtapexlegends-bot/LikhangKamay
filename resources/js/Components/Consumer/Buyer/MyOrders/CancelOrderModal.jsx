@@ -58,6 +58,7 @@ export default function CancelOrderModal({ isOpen, onClose, order }) {
 
         if (selectedReason === 'change_delivery_address') {
             router.post(route('my-orders.change-address-reorder', order.id), {}, {
+                preserveScroll: true,
                 onSuccess: () => {
                     setProcessing(false);
                     onClose();
@@ -77,6 +78,7 @@ export default function CancelOrderModal({ isOpen, onClose, order }) {
             reason: selectedReason,
             details: details.trim() || null,
         }, {
+            preserveScroll: true,
             onSuccess: () => {
                 setProcessing(false);
                 onClose();

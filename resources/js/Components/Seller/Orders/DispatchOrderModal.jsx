@@ -274,6 +274,7 @@ export default function DispatchOrderModal({
                     dispatch_notes: dispatchNotes,
                 },
                 {
+                    preserveScroll: true,
                     onSuccess: () => {
                         setIsSubmitting(false);
                         onClose();
@@ -291,6 +292,7 @@ export default function DispatchOrderModal({
                 route("orders.lalamove.store", orderNumber),
                 {},
                 {
+                    preserveScroll: true,
                     onSuccess: () => {
                         setIsSubmitting(false);
                         onClose();

@@ -87,6 +87,7 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
                     model: key,
                     product_id: data.product_id
                 }, {
+                    preserveScroll: true,
                     onSuccess: () => {
                         setIsUploading(false);
                         handleClose();
@@ -120,6 +121,7 @@ export default function ThreeDUploadModal({ show, onClose, products = [], canEdi
         });
 
         router.post(route('3d.upload'), formData, {
+            preserveScroll: true,
             onSuccess: () => {
                 handleClose();
             },
