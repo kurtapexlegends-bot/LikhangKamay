@@ -12,9 +12,12 @@ export async function runPhase1(page, collector) {
         await page.goto(`${PROD_URL}/`, { waitUntil: 'networkidle2', timeout: 30000 });
         const title = await page.title();
         const heroExists = await page.$('h1, [class*="hero"]') !== null;
-        collector.recordResult('Phase 1', '1.1 Homepage Load', heroExists ? 'PASS' : 'WARN', {
+        collector.recordResult('Phase 1', '1.1 Homepage Load', heroExists ? 'PASS' : 'FAIL', {
             message: `Title: "${title}", Hero visible: ${heroExists}`
         });
+        if (!heroExists) {
+            collector.recordBug('HIGH', 'Homepage Hero Missing', `${PROD_URL}/`, 'Hero element not found on homepage mount');
+        }
         await collector.scanDomQuality(page, 'Homepage');
 
         // Test responsive mobile navigation
@@ -38,7 +41,10 @@ export async function runPhase1(page, collector) {
         await page.goto(`${PROD_URL}/shop`, { waitUntil: 'networkidle2', timeout: 30000 });
         await page.waitForSelector('main', { timeout: 10000 }).catch(() => null);
         const catalogLoaded = await page.$('[class*="grid"], [class*="product"], main') !== null;
-        collector.recordResult('Phase 1', '1.2 Marketplace Catalog Load', catalogLoaded ? 'PASS' : 'WARN');
+        collector.recordResult('Phase 1', '1.2 Marketplace Catalog Load', catalogLoaded ? 'PASS' : 'FAIL');
+        if (!catalogLoaded) {
+            collector.recordBug('HIGH', 'Marketplace Catalog Failed to Load', `${PROD_URL}/shop`, 'Catalog grid not found');
+        }
         await collector.scanDomQuality(page, 'Marketplace Catalog');
 
         // Test Search Suggestions API
@@ -107,7 +113,8 @@ export async function runPhase1(page, collector) {
 
             await collector.scanDomQuality(page, 'Product Detail Page');
         } else {
-            collector.recordResult('Phase 1', '1.3 Product Detail', 'WARN', { message: 'No sample product link found' });
+            collector.recordResult('Phase 1', '1.3 Product Detail', 'FAIL', { message: 'No sample product link found on catalog. Product detail verification blocked.' });
+            collector.recordBug('HIGH', 'No Sample Product on Catalog', `${PROD_URL}/shop`, 'Catalog has zero products to test product detail page');
         }
     } catch (e) {
         collector.recordResult('Phase 1', '1.3 Product Detail', 'FAIL', { message: e.message });
@@ -118,12 +125,13 @@ export async function runPhase1(page, collector) {
         if (sampleArtisanShopUrl) {
             await page.goto(sampleArtisanShopUrl, { waitUntil: 'networkidle2', timeout: 30000 });
             const shopBanner = await page.$('[class*="banner"], [class*="cover"], h1');
-            collector.recordResult('Phase 1', '1.4 Artisan Profile Load', shopBanner ? 'PASS' : 'WARN', {
+            collector.recordResult('Phase 1', '1.4 Artisan Profile Load', shopBanner ? 'PASS' : 'FAIL', {
                 message: `Target URL: ${sampleArtisanShopUrl}`
             });
             await collector.scanDomQuality(page, 'Artisan Profile');
         } else {
-            collector.recordResult('Phase 1', '1.4 Artisan Profile', 'WARN', { message: 'No sample artisan shop link extracted' });
+            collector.recordResult('Phase 1', '1.4 Artisan Profile', 'FAIL', { message: 'No sample artisan shop link extracted. Artisan profile verification blocked.' });
+            collector.recordBug('HIGH', 'No Sample Artisan Link on Catalog', `${PROD_URL}/shop`, 'Catalog has zero artisan links to test public profile');
         }
     } catch (e) {
         collector.recordResult('Phase 1', '1.4 Artisan Profile', 'FAIL', { message: e.message });
@@ -145,9 +153,12 @@ export async function runPhase1(page, collector) {
             const hasErrors = await page.evaluate(() => {
                 return !!document.body.innerText.match(/(required|email|password|must be)/i);
             });
-            collector.recordResult('Phase 1', '1.5 Registration Validation Errors', hasErrors ? 'PASS' : 'WARN', {
+            collector.recordResult('Phase 1', '1.5 Registration Validation Errors', hasErrors ? 'PASS' : 'FAIL', {
                 message: 'Form validation errors properly displayed'
             });
+            if (!hasErrors) {
+                collector.recordBug('HIGH', 'Registration Validation Errors Missing', `${PROD_URL}/register`, 'Submitting empty form did not display validation errors');
+            }
         }
         await collector.scanDomQuality(page, 'Register Page');
     } catch (e) {
@@ -159,11 +170,15 @@ export async function runPhase1(page, collector) {
         await page.goto(`${PROD_URL}/auth/google`, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => null);
         const finalUrl = page.url();
         const isGoogleRedirect = finalUrl.includes('accounts.google.com') || finalUrl.includes('google');
-        collector.recordResult('Phase 1', '1.6 Google OAuth Redirect', isGoogleRedirect ? 'PASS' : 'WARN', {
+        collector.recordResult('Phase 1', '1.6 Google OAuth Redirect', isGoogleRedirect ? 'PASS' : 'FAIL', {
             message: `Target URL reached: ${finalUrl.slice(0, 80)}`
         });
+        if (!isGoogleRedirect) {
+            collector.recordBug('HIGH', 'Google OAuth Redirect Broken', `${PROD_URL}/auth/google`, `Expected accounts.google.com redirect, got: ${finalUrl}`);
+        }
     } catch (e) {
-        collector.recordResult('Phase 1', '1.6 Google OAuth Redirect', 'WARN', { message: e.message });
+        collector.recordResult('Phase 1', '1.6 Google OAuth Redirect', 'FAIL', { message: e.message });
+        collector.recordBug('HIGH', 'Google OAuth Redirect Threw Exception', `${PROD_URL}/auth/google`, e.message);
     }
 
     // 1.7 Forgot Password Loop

@@ -84,11 +84,15 @@ export async function runPhase3(page, collector) {
             return res.status;
         }, PROD_URL);
         const presignOk = presignRes === 200 || presignRes === 422;
-        collector.recordResult('Phase 3', '3.4 3D Asset Manager Endpoint & Contract', presignOk ? 'PASS' : 'WARN', {
+        collector.recordResult('Phase 3', '3.4 3D Asset Manager Endpoint & Contract', presignOk ? 'PASS' : 'FAIL', {
             message: `3D Presign API HTTP status: ${presignRes}`
         });
+        if (!presignOk) {
+            collector.recordBug('HIGH', '3D Asset Presign Endpoint Failed', `${PROD_URL}/seller/products/models/presign`, `Status: ${presignRes}`);
+        }
     } catch (e) {
-        collector.recordResult('Phase 3', '3.4 3D Asset Manager', 'WARN', { message: e.message });
+        collector.recordResult('Phase 3', '3.4 3D Asset Manager', 'FAIL', { message: e.message });
+        collector.recordBug('HIGH', '3D Asset Presign Threw Exception', `${PROD_URL}/seller/products/models/presign`, e.message);
     }
 
     // 3.5 Marketing & Discounts
@@ -157,9 +161,12 @@ export async function runPhase3(page, collector) {
             }, PROD_URL, sampleOrderId);
 
             const isRouteApiHealthy = [200, 404, 422].includes(routeApiStatus);
-            collector.recordResult('Phase 3', '3.7b Delivery Route Preview API Contract', isRouteApiHealthy ? 'PASS' : 'WARN', {
+            collector.recordResult('Phase 3', '3.7b Delivery Route Preview API Contract', isRouteApiHealthy ? 'PASS' : 'FAIL', {
                 message: `Route Preview API HTTP status: ${routeApiStatus} (no 500 server crash)`
             });
+            if (!isRouteApiHealthy) {
+                collector.recordBug('HIGH', 'Seller Route Preview API Crash', `${PROD_URL}/orders/${sampleOrderId}/route-preview`, `Status: ${routeApiStatus}`);
+            }
         }
 
         await collector.scanDomQuality(page, 'Orders Fulfillment');
@@ -205,7 +212,10 @@ export async function runPhase3(page, collector) {
         const hasBalanceCards = await page.evaluate(() => {
             return !!document.body.innerText.match(/(Ready for Payout|Orders in Progress|Payouts Received|Operating Funds|Available Balance|Total Revenue|Base Funds|Finance)/i);
         });
-        collector.recordResult('Phase 3', '3.10 Accounting Balance Cards Rendered', hasBalanceCards ? 'PASS' : 'WARN');
+        collector.recordResult('Phase 3', '3.10 Accounting Balance Cards Rendered', hasBalanceCards ? 'PASS' : 'FAIL');
+        if (!hasBalanceCards) {
+            collector.recordBug('HIGH', 'Accounting Balance Cards Missing', `${PROD_URL}/accounting`, 'Financial balance cards not detected on Accounting desk');
+        }
         await collector.scanDomQuality(page, 'ERP Accounting');
     } catch (e) {
         collector.recordResult('Phase 3', '3.10 ERP Accounting', 'FAIL', { message: e.message });
@@ -256,7 +266,8 @@ export async function runPhase3(page, collector) {
             });
         }
     } catch (e) {
-        collector.recordResult('Phase 3', '3.11b ERP Payroll Desk', 'WARN', { message: e.message });
+        collector.recordResult('Phase 3', '3.11b ERP Payroll Desk', 'FAIL', { message: e.message });
+        collector.recordBug('HIGH', 'ERP Payroll Desk Load Failed', `${PROD_URL}/seller/payroll`, e.message);
     }
 
     // 3.12 Customer CRM & Reviews
@@ -273,7 +284,10 @@ export async function runPhase3(page, collector) {
 
         const hasMasterDetailPanes = await page.$('aside, [class*="ProductDirectorySidebar"], [class*="sidebar"]') !== null
             || await page.$('main') !== null;
-        collector.recordResult('Phase 3', '3.12 Seller Reviews Master-Detail Layout Present', hasMasterDetailPanes ? 'PASS' : 'WARN');
+        collector.recordResult('Phase 3', '3.12 Seller Reviews Master-Detail Layout Present', hasMasterDetailPanes ? 'PASS' : 'FAIL');
+        if (!hasMasterDetailPanes) {
+            collector.recordBug('HIGH', 'Seller Reviews Layout Missing', `${PROD_URL}/reviews`, 'Reviews master-detail panes not detected');
+        }
         await collector.scanDomQuality(page, 'Seller Reviews');
     } catch (e) {
         collector.recordResult('Phase 3', '3.12 CRM & Reviews', 'FAIL', { message: e.message });

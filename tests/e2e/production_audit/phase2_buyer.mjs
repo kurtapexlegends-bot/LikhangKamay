@@ -64,7 +64,10 @@ export async function runPhase2(page, collector) {
         const addressSection = await page.evaluate(() => {
             return !!document.body.innerText.match(/(Address|Delivery Address|Address Book)/i);
         });
-        collector.recordResult('Phase 2', '2.3 Address Section Rendered', addressSection ? 'PASS' : 'WARN');
+        collector.recordResult('Phase 2', '2.3 Address Section Rendered', addressSection ? 'PASS' : 'FAIL');
+        if (!addressSection) {
+            collector.recordBug('HIGH', 'Address Section Missing on Profile', `${PROD_URL}/profile`, 'Address book section failed to render on buyer profile');
+        }
         await collector.scanDomQuality(page, 'Buyer Profile');
     } catch (e) {
         collector.recordResult('Phase 2', '2.3 Profile & Address Book', 'FAIL', { message: e.message });
@@ -92,9 +95,13 @@ export async function runPhase2(page, collector) {
             // Inspect Shipping Method radio selectors (Standard Delivery or Workshop Pick Up)
             const deliveryOption = await page.$('input[value="Delivery"], input[value="delivery" i], input[name="shipping_method"]');
             const pickupOption = await page.$('input[value="Pick Up"], input[value="pickup" i]');
-            collector.recordResult('Phase 2', '2.4 Shipping Method Selectors Present', (deliveryOption || pickupOption) ? 'PASS' : 'WARN', {
+            const hasShippingSelectors = !!(deliveryOption || pickupOption);
+            collector.recordResult('Phase 2', '2.4 Shipping Method Selectors Present', hasShippingSelectors ? 'PASS' : 'FAIL', {
                 message: `Delivery selector: ${!!deliveryOption}, Pickup selector: ${!!pickupOption}`
             });
+            if (!hasShippingSelectors) {
+                collector.recordBug('HIGH', 'Missing Shipping Method Selectors on Checkout', `${PROD_URL}/checkout`, 'Neither delivery nor pickup selector found');
+            }
 
             // Inspect Submit Button state
             const submitBtn = (await findElementByText(page, 'button', 'Place Order')) || (await page.$('button[type="submit"]'));
@@ -154,9 +161,12 @@ export async function runPhase2(page, collector) {
             }, PROD_URL, sampleOrderId);
 
             const isRouteApiHealthy = [200, 404, 422, 403].includes(routeApiStatus);
-            collector.recordResult('Phase 2', '2.5b Buyer Order Route Preview API Contract', isRouteApiHealthy ? 'PASS' : 'WARN', {
+            collector.recordResult('Phase 2', '2.5b Buyer Order Route Preview API Contract', isRouteApiHealthy ? 'PASS' : 'FAIL', {
                 message: `Buyer Route Preview API HTTP status: ${routeApiStatus} (no 500 server crash)`
             });
+            if (!isRouteApiHealthy) {
+                collector.recordBug('HIGH', 'Buyer Route Preview API Crash', `${PROD_URL}/my-orders/${sampleOrderId}/route-preview`, `Status: ${routeApiStatus}`);
+            }
         }
     } catch (e) {
         collector.recordResult('Phase 2', '2.5 My Orders Page', 'FAIL', { message: e.message });

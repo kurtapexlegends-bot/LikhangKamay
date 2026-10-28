@@ -46,11 +46,15 @@ export async function runPhase6(page, collector) {
             return r.status;
         }, PROD_URL);
 
-        collector.recordResult('Phase 6', '6.2 Presigned Direct Upload Endpoint', (presignStatus === 200 || presignStatus === 401 || presignStatus === 422 || presignStatus === 419) ? 'PASS' : 'WARN', {
+        collector.recordResult('Phase 6', '6.2 Presigned Direct Upload Endpoint', (presignStatus === 200 || presignStatus === 401 || presignStatus === 422 || presignStatus === 419) ? 'PASS' : 'FAIL', {
             message: `HTTP Status: ${presignStatus}`
         });
+        if (presignStatus === 500 || presignStatus === 0) {
+            collector.recordBug('HIGH', 'Presigned Direct Upload Endpoint Failed', `${PROD_URL}/api/uploads/presign`, `HTTP status: ${presignStatus}`);
+        }
     } catch (e) {
-        collector.recordResult('Phase 6', '6.2 Presigned Direct Upload', 'WARN', { message: e.message });
+        collector.recordResult('Phase 6', '6.2 Presigned Direct Upload', 'FAIL', { message: e.message });
+        collector.recordBug('HIGH', 'Presigned Direct Upload Threw Exception', `${PROD_URL}/api/uploads/presign`, e.message);
     }
 
     // 6.3 Global Search API Endpoint
@@ -65,6 +69,9 @@ export async function runPhase6(page, collector) {
         collector.recordResult('Phase 6', '6.3 Universal Global Search API', (searchStatus === 200 || searchStatus === 401) ? 'PASS' : 'FAIL', {
             message: `Status: ${searchStatus}`
         });
+        if (searchStatus !== 200 && searchStatus !== 401) {
+            collector.recordBug('MEDIUM', 'Global Search API Unexpected Status', `${PROD_URL}/api/global-search`, `Status: ${searchStatus}`);
+        }
     } catch (e) {
         collector.recordResult('Phase 6', '6.3 Universal Global Search API', 'FAIL', { message: e.message });
     }
@@ -73,11 +80,15 @@ export async function runPhase6(page, collector) {
     try {
         const cronRes = await page.goto(`${PROD_URL}/webhooks/cron`, { waitUntil: 'networkidle2', timeout: 20000 });
         const cronStatus = cronRes ? cronRes.status() : 0;
-        collector.recordResult('Phase 6', '6.4 Webhook Cron Security Guard', cronStatus === 401 ? 'PASS' : 'WARN', {
+        collector.recordResult('Phase 6', '6.4 Webhook Cron Security Guard', cronStatus === 401 ? 'PASS' : 'FAIL', {
             message: `Unauthenticated cron returned HTTP ${cronStatus} (Expected 401)`
         });
+        if (cronStatus !== 401) {
+            collector.recordBug('CRITICAL', 'Webhook Cron Security Guard Bypassed/Broken', `${PROD_URL}/webhooks/cron`, `Expected HTTP 401 on unauthenticated cron, got: ${cronStatus}`);
+        }
     } catch (e) {
-        collector.recordResult('Phase 6', '6.4 Webhook Cron Security Guard', 'WARN', { message: e.message });
+        collector.recordResult('Phase 6', '6.4 Webhook Cron Security Guard', 'FAIL', { message: e.message });
+        collector.recordBug('HIGH', 'Webhook Cron Guard Threw Exception', `${PROD_URL}/webhooks/cron`, e.message);
     }
 
     // 6.5 PayMongo & Lalamove Live Sandbox Verification

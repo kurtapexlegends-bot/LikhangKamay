@@ -1,16 +1,17 @@
 # Production End-to-End Audit & Verification Matrix
 
 > **Target:** `https://www.likhangkamay.app`  
-> **Execution Date:** `2026-10-28T23:08:20+08:00`  
+> **Execution Date:** `2026-10-28T16:03:16.039Z`  
+> **Duration:** `192.7s`  
 > **Status:** **PASS (100% HEALTHY)**
 
 ## 1. Executive Summary
 
 | Metric | Value |
 | :--- | :--- |
-| **Total Scenarios Evaluated** | 96 |
-| **Passed Checks** | 96 |
-| **Warnings** | 0 |
+| **Total Scenarios Evaluated** | 97 |
+| **Passed Checks** | 95 |
+| **Warnings** | 2 |
 | **Failed Checks** | 0 |
 | **Active Bugs Logged** | 0 |
 
@@ -32,7 +33,7 @@ Zero critical bugs or runtime failures detected across all user journeys.
 | Phase 1 | 1.4 Artisan Profile Load | **PASS** | Target URL: https://www.likhangkamay.app/shop/silang-terracotta-works-42dewr |
 | Phase 1 | 1.5 Register Page Load | **PASS** | - |
 | Phase 1 | 1.5 Registration Validation Errors | **PASS** | Form validation errors properly displayed |
-| Phase 1 | 1.6 Google OAuth Redirect | **PASS** | Target URL reached: https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S-1606789350 |
+| Phase 1 | 1.6 Google OAuth Redirect | **PASS** | Target URL reached: https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S1410542213% |
 | Phase 1 | 1.7 Forgot Password Page Load | **PASS** | - |
 | Phase 1 | 1.7 Forgot Password Submit | **PASS** | Submission handled |
 | Phase 1 | 1.8 Artisan Register Page Load | **PASS** | - |
@@ -97,8 +98,8 @@ Zero critical bugs or runtime failures detected across all user journeys.
 | Phase 3 | 3.14 Shop Settings Page Load | **PASS** | - |
 | Phase 3 | 3.15 Seller Audit Log Load | **PASS** | - |
 | Phase 4 | 4.1 Staff Unauthenticated Gate Protection | **PASS** | Unauthenticated redirect URL: https://www.likhangkamay.app/login |
-| Phase 4 | 4.2 Staff Member Authentication (Optional Test Persona) | **PASS** | Synthetic staff persona not provisioned in live target; unauthenticated security gates verified. |
-| Phase 4 | 4.6 Logistics Rider Authentication (Optional Test Persona) | **PASS** | Synthetic driver persona not provisioned in live target; unauthenticated security gates verified. |
+| Phase 4 | 4.2 Staff Member Authentication (Unconfigured in Live Target) | **WARN** | Synthetic staff persona (test.staff@likhangkamay.local) not provisioned in live target; downstream staff checks skipped. |
+| Phase 4 | 4.6 Logistics Rider Authentication (Unconfigured in Live Target) | **WARN** | Synthetic driver persona (test.driver@likhangkamay.local) not provisioned in live target; downstream driver console checks skipped. |
 | Phase 5 | 5.1 SuperAdmin Authentication | **PASS** | URL: https://www.likhangkamay.app/admin/dashboard |
 | Phase 5 | 5.2 Executive Dashboard Load | **PASS** | - |
 | Phase 5 | 5.3 User Directory Load | **PASS** | - |
@@ -118,3 +119,4 @@ Zero critical bugs or runtime failures detected across all user journeys.
 | Phase 6 | 6.4 Webhook Cron Security Guard | **PASS** | Unauthenticated cron returned HTTP 401 (Expected 401) |
 | Phase 6 | 6.5 PayMongo GCash Sandbox Session Lifecycle | **PASS** | PayMongo GCash checkout session created, URL validated, and read-back verified in sandbox. |
 | Phase 6 | 6.6 Lalamove Sandbox Quotation, Booking & Webhook Sync | **PASS** | Lalamove sandbox quotation calculated, order booked with ASSIGNING_DRIVER, and webhook transitioned to COMPLETED. |
+| Phase 6 | 6.7 Client-Side File Payload Shield Contract (<4MB) | **PASS** | Client-side upload payload boundaries verified: protects Vercel edge gateway against HTTP 413. |

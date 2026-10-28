@@ -166,6 +166,15 @@ async function main() {
     const docPath = path.resolve('docs/architecture/e2e-production-audit.md');
     fs.writeFileSync(docPath, mdLines.join('\n'));
     console.log(`  Obsidian Documentation synced to: ${docPath}`);
+
+    const failedChecks = collector.results.filter(r => r.status === 'FAIL').length;
+    const hasFailures = failedChecks > 0 || collector.bugs.length > 0;
+
+    if (hasFailures) {
+        console.error(`\n[MASTER AUDIT FAILURE] Audit suite finished with ${failedChecks} failed checks and ${collector.bugs.length} bugs logged.`);
+        console.error(`  Exiting with terminal exit code 1 to prevent false passes.\n`);
+        process.exit(1);
+    }
 }
 
 main().catch(err => {

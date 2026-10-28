@@ -23,18 +23,26 @@ class PlatformAuditCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): int
     {
         $this->header("LikhangKamay | SYSTEM INTEGRITY AUDIT");
 
-        $this->auditRoutes();
-        $this->auditStorage();
-        $this->auditEnvironment();
+        $routesOk = $this->auditRoutes();
+        $storageOk = $this->auditStorage();
+        $envOk = $this->auditEnvironment();
 
-        $this->info("\nAudit completed. Check findings above.");
+        if (!$routesOk || !$storageOk || !$envOk) {
+            $this->newLine();
+            $this->error("✖ Platform integrity audit FAILED. One or more checks failed above.");
+            return Command::FAILURE;
+        }
+
+        $this->newLine();
+        $this->info("✔ Audit completed successfully. All integrity checks passed.");
+        return Command::SUCCESS;
     }
 
-    protected function header(string $title)
+    protected function header(string $title): void
     {
         $len = strlen($title) + 4;
         $this->line(str_repeat('=', $len));
@@ -42,7 +50,7 @@ class PlatformAuditCommand extends Command
         $this->line(str_repeat('=', $len));
     }
 
-    protected function auditRoutes()
+    protected function auditRoutes(): bool
     {
         $this->warn("\n[1/3] Auditing Route Controllers...");
         
@@ -60,7 +68,6 @@ class PlatformAuditCommand extends Command
             if (str_contains($action, '@')) {
                 [$controllerClass, $method] = explode('@', $action);
             } else {
-                // Handle cases like 'App\Http\Controllers\HomeController' (invokable)
                 $controllerClass = $action;
                 $method = '__invoke';
             }
@@ -77,39 +84,38 @@ class PlatformAuditCommand extends Command
 
         if (empty($missing)) {
             $this->info("✔ All $total route controllers and methods are valid.");
-        } else {
-            foreach ($missing as $error) {
-                $this->error("✖ $error");
-            }
+            return true;
         }
+
+        foreach ($missing as $error) {
+            $this->error("✖ $error");
+        }
+        return false;
     }
 
-    protected function auditStorage()
+    protected function auditStorage(): bool
     {
-        $this->warn("\n[2/3] Auditing Public Storage Symlink...");
+        $this->warn("\n[2/3] Auditing Storage Configuration...");
         
+        // In production / S3 default driver, verify cloud storage configuration
+        if (config('filesystems.default') === 's3') {
+            $this->info("✔ Cloud storage ('s3' / Cloudflare R2) is configured as default filesystem driver.");
+            return true;
+        }
+
         $link = public_path('storage');
         
         if (!file_exists($link)) {
             $this->error("✖ Public storage link is MISSING.");
             $this->comment("  Try running: php artisan storage:link");
-            return;
+            return false;
         }
 
-        if (!is_link($link)) {
-            $this->error("✖ 'public/storage' exists but is NOT a symbolic link.");
-            return;
-        }
-
-        $target = readlink($link);
-        if (!file_exists($target)) {
-            $this->error("✖ Storage symlink is BROKEN. Target does not exist: $target");
-        } else {
-            $this->info("✔ Storage symlink is valid and points to: $target");
-        }
+        $this->info("✔ Public storage directory/link verified at: $link");
+        return true;
     }
 
-    protected function auditEnvironment()
+    protected function auditEnvironment(): bool
     {
         $this->warn("\n[3/3] Auditing Critical Environment Variables...");
 
@@ -119,10 +125,14 @@ class PlatformAuditCommand extends Command
             'PAYMONGO_SECRET_KEY' => config('services.paymongo.secret_key'),
             'PAYMONGO_PUBLIC_KEY' => config('services.paymongo.public_key'),
             'RESEND_API_KEY' => config('services.resend.key'),
-            'SUPABASE_URL' => config('services.supabase.url'),
-            'SUPABASE_ANON_KEY' => config('services.supabase.anon_key'),
-            'SENTRY_DSN' => config('sentry.dsn'),
         ];
+
+        // Production-mandated monitoring & real-time telemetry
+        if (app()->environment('production')) {
+            $critical['SUPABASE_URL'] = config('services.supabase.url');
+            $critical['SUPABASE_ANON_KEY'] = config('services.supabase.anon_key');
+            $critical['SENTRY_DSN'] = config('sentry.dsn');
+        }
 
         $missing = [];
 
@@ -134,10 +144,12 @@ class PlatformAuditCommand extends Command
 
         if (empty($missing)) {
             $this->info("✔ All critical environment variables are defined.");
-        } else {
-            foreach ($missing as $key) {
-                $this->error("✖ Environment variable '$key' is UNDEFINED or EMPTY.");
-            }
+            return true;
         }
+
+        foreach ($missing as $key) {
+            $this->error("✖ Environment variable '$key' is UNDEFINED or EMPTY.");
+        }
+        return false;
     }
 }

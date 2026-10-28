@@ -28,12 +28,14 @@ export async function runPhase4(page, collector) {
                 message: `Logged in URL: ${page.url()}`
             });
         } else {
-            collector.recordResult('Phase 4', '4.2 Staff Member Authentication (Unconfigured in Live Target)', 'WARN', {
-                message: `Synthetic staff persona (test.staff@likhangkamay.local) not provisioned in live target; downstream staff checks skipped.`
+            collector.recordResult('Phase 4', '4.2 Staff Member Authentication', 'FAIL', {
+                message: `Staff persona (${ACCOUNTS.staff.email}) authentication failed. Staff dashboard, timecard, and attendance tests blocked.`
             });
+            collector.recordBug('HIGH', 'Staff Persona Authentication Failed', `${PROD_URL}/staff/dashboard`, `${ACCOUNTS.staff.email} failed to log in; seed personas with /webhooks/seed-personas or php artisan test:seed-personas`);
         }
     } catch (e) {
-        collector.recordResult('Phase 4', '4.2 Staff Member Authentication', 'WARN', { message: `Skipped: ${e.message}` });
+        collector.recordResult('Phase 4', '4.2 Staff Member Authentication', 'FAIL', { message: `Login exception: ${e.message}` });
+        collector.recordBug('HIGH', 'Staff Persona Login Crash', `${PROD_URL}/staff/dashboard`, e.message);
     }
 
     // 4.3 Staff Dashboard & Workspace Entitlements
@@ -71,11 +73,15 @@ export async function runPhase4(page, collector) {
             }, PROD_URL);
 
             const isClockInSuccess = clockInRes >= 200 && clockInRes < 400;
-            collector.recordResult('Phase 4', '4.4 Staff Attendance Clock-In Endpoint', isClockInSuccess ? 'PASS' : 'WARN', {
+            collector.recordResult('Phase 4', '4.4 Staff Attendance Clock-In Endpoint', isClockInSuccess ? 'PASS' : 'FAIL', {
                 message: `Attendance resume HTTP status: ${clockInRes}`
             });
+            if (!isClockInSuccess) {
+                collector.recordBug('HIGH', 'Staff Clock-In Endpoint Failed', `${PROD_URL}/staff/attendance/resume`, `HTTP status ${clockInRes}`);
+            }
         } catch (e) {
-            collector.recordResult('Phase 4', '4.4 Staff Attendance Clock-In', 'WARN', { message: e.message });
+            collector.recordResult('Phase 4', '4.4 Staff Attendance Clock-In', 'FAIL', { message: e.message });
+            collector.recordBug('HIGH', 'Staff Clock-In Threw Exception', `${PROD_URL}/staff/attendance/resume`, e.message);
         }
 
         // 4.5 Active Attendance Heartbeat Ping
@@ -94,14 +100,15 @@ export async function runPhase4(page, collector) {
             }, PROD_URL);
 
             const isHeartbeatOk = heartbeatStatus === 200;
-            collector.recordResult('Phase 4', '4.5 Active Staff Heartbeat Ping', isHeartbeatOk ? 'PASS' : 'WARN', {
+            collector.recordResult('Phase 4', '4.5 Active Staff Heartbeat Ping', isHeartbeatOk ? 'PASS' : 'FAIL', {
                 message: `Heartbeat HTTP status: ${heartbeatStatus}`
             });
-            if (heartbeatStatus === 500) {
-                collector.recordBug('HIGH', 'Staff Heartbeat Throws 500', `${PROD_URL}/staff/attendance/heartbeat`, 'Internal server error on heartbeat ping');
+            if (!isHeartbeatOk) {
+                collector.recordBug('HIGH', 'Staff Heartbeat Failed', `${PROD_URL}/staff/attendance/heartbeat`, `HTTP status: ${heartbeatStatus}`);
             }
         } catch (e) {
-            collector.recordResult('Phase 4', '4.5 Active Staff Heartbeat', 'WARN', { message: e.message });
+            collector.recordResult('Phase 4', '4.5 Active Staff Heartbeat', 'FAIL', { message: e.message });
+            collector.recordBug('HIGH', 'Staff Heartbeat Threw Exception', `${PROD_URL}/staff/attendance/heartbeat`, e.message);
         }
 
         // Logout staff
@@ -130,12 +137,14 @@ export async function runPhase4(page, collector) {
                 message: `Logged in URL: ${page.url()}`
             });
         } else {
-            collector.recordResult('Phase 4', '4.6 Logistics Rider Authentication (Unconfigured in Live Target)', 'WARN', {
-                message: `Synthetic driver persona (test.driver@likhangkamay.local) not provisioned in live target; downstream driver console checks skipped.`
+            collector.recordResult('Phase 4', '4.6 Logistics Rider Authentication', 'FAIL', {
+                message: `Driver persona (${ACCOUNTS.driver.email}) authentication failed. Driver deliveries console and telemetry tests blocked.`
             });
+            collector.recordBug('HIGH', 'Driver Persona Authentication Failed', `${PROD_URL}/staff/deliveries`, `${ACCOUNTS.driver.email} failed to log in; seed personas with /webhooks/seed-personas or php artisan test:seed-personas`);
         }
     } catch (e) {
-        collector.recordResult('Phase 4', '4.6 Logistics Rider Authentication', 'WARN', { message: `Skipped: ${e.message}` });
+        collector.recordResult('Phase 4', '4.6 Logistics Rider Authentication', 'FAIL', { message: `Login exception: ${e.message}` });
+        collector.recordBug('HIGH', 'Driver Persona Login Crash', `${PROD_URL}/staff/deliveries`, e.message);
     }
 
     if (driverLoggedIn) {

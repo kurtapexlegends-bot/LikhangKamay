@@ -128,9 +128,12 @@ export class AuditCollector {
 
         if (expectedComponent) {
             const componentMatches = inertia.component && inertia.component.toLowerCase().includes(expectedComponent.toLowerCase());
-            this.recordResult(phase, `${testName} [Component: ${inertia.component}]`, componentMatches ? 'PASS' : 'WARN', {
+            this.recordResult(phase, `${testName} [Component: ${inertia.component}]`, componentMatches ? 'PASS' : 'FAIL', {
                 message: componentMatches ? `Matched expected component: ${expectedComponent}` : `Expected "${expectedComponent}", got "${inertia.component}"`
             });
+            if (!componentMatches) {
+                this.recordBug('HIGH', `Inertia Component Mismatch: ${testName}`, page.url(), `Expected "${expectedComponent}", got "${inertia.component}"`, 'Ensure controller renders the correct Inertia page component');
+            }
         }
 
         const missingKeys = [];

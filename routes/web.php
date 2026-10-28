@@ -533,6 +533,9 @@ Route::get('/webhooks/migrate', function (\Illuminate\Http\Request $request) {
 
     try {
         \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        if ($request->boolean('seed_personas')) {
+            \Illuminate\Support\Facades\Artisan::call('test:seed-personas');
+        }
         \Illuminate\Support\Facades\Cache::forget('all_platform_settings');
         \Illuminate\Support\Facades\Cache::forget('system_settings_all');
         \Illuminate\Support\Facades\Cache::forget('setting_contact_info');
@@ -567,6 +570,32 @@ Route::get('/webhooks/migrate', function (\Illuminate\Http\Request $request) {
         ], 200);
     }
 })->name('webhooks.migrate');
+
+Route::get('/webhooks/seed-personas', function (\Illuminate\Http\Request $request) {
+    $user = $request->user();
+    $cronSecret = config('app.cron_secret');
+    $providedSecret = $request->query('secret') ?: $request->header('X-Vercel-Cron-Secret');
+
+    $isAuthorized = ($cronSecret && !empty($providedSecret) && hash_equals((string) $cronSecret, (string) $providedSecret))
+        || ($user && in_array($user->role, ['super_admin', 'admin'], true));
+
+    if (!$isAuthorized) {
+        return response()->json(['error' => 'Unauthorized.'], 401);
+    }
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('test:seed-personas');
+        return response()->json([
+            'status' => 'success',
+            'output' => \Illuminate\Support\Facades\Artisan::output()
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'status' => 'error',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+})->name('webhooks.seed-personas');
 
 Route::get('/ping', function (\Illuminate\Http\Request $request) {
     // Opportunistically drain pending database queue jobs during 5m container warmup pings
