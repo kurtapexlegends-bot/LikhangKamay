@@ -79,7 +79,7 @@ export async function runPhase3(page, collector) {
                     'X-CSRF-TOKEN': csrfToken || '',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({ filename: 'test.glb', file_type: 'model/gltf-binary' })
+                body: JSON.stringify({ filename: 'test.glb', contentType: 'model/gltf-binary', file_type: 'model/gltf-binary' })
             }).catch(e => ({ status: 0 }));
             return res.status;
         }, PROD_URL);

@@ -95,6 +95,16 @@ class E2ETestPersonaSeeder extends Seeder
             ]
         );
 
+        // Seller Compliance Agreement (Seller Terms)
+        \App\Models\SellerComplianceAgreement::updateOrCreate(
+            ['user_id' => $artisan->id, 'document_type' => 'seller_terms'],
+            [
+                'accepted_at' => now(),
+                'ip_address' => '127.0.0.1',
+                'user_agent' => 'E2E-Seeder',
+            ]
+        );
+
         // Artisan Test Product
         $category = Category::first();
         Product::withTrashed()->updateOrCreate(

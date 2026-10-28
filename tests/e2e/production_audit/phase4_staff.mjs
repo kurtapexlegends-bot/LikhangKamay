@@ -1,5 +1,7 @@
 import { PROD_URL, ACCOUNTS, loginAs } from './audit_config.mjs';
 
+const DUMMY_FACE_PHOTO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
 export async function runPhase4(page, collector) {
     console.log(`\n======================================================`);
     console.log(`  STARTING PHASE 4: Artisan Staff & Driver Operations`);
@@ -58,16 +60,17 @@ export async function runPhase4(page, collector) {
 
         // 4.4 Staff Clock-in / Attendance Session
         try {
-            const clockInRes = await page.evaluate(async (url) => {
+            const clockInRes = await page.evaluate(async (url, photo) => {
                 try {
                     const res = await window.axios.post(`${url}/staff/attendance/resume`, {
-                        liveness_verified: true
+                        liveness_verified: true,
+                        photo_data: photo
                     });
                     return res.status;
                 } catch (e) {
                     return e.response ? e.response.status : 0;
                 }
-            }, PROD_URL);
+            }, PROD_URL, DUMMY_FACE_PHOTO);
 
             const isClockInSuccess = clockInRes >= 200 && clockInRes < 400;
             collector.recordResult('Phase 4', '4.4 Staff Attendance Clock-In Endpoint', isClockInSuccess ? 'PASS' : 'FAIL', {
@@ -147,13 +150,14 @@ export async function runPhase4(page, collector) {
     if (driverLoggedIn) {
         // Driver clock-in to access delivery console
         try {
-            await page.evaluate(async (url) => {
+            await page.evaluate(async (url, photo) => {
                 try {
                     await window.axios.post(`${url}/staff/attendance/resume`, {
-                        liveness_verified: true
+                        liveness_verified: true,
+                        photo_data: photo
                     });
                 } catch {}
-            }, PROD_URL);
+            }, PROD_URL, DUMMY_FACE_PHOTO);
         } catch {}
 
         // 4.7 Mobile Driver Deliveries Console
