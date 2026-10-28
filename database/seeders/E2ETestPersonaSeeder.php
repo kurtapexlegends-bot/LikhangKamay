@@ -58,6 +58,7 @@ class E2ETestPersonaSeeder extends Seeder
                 'setup_completed_at' => now(),
                 'premium_tier' => 'super_premium',
                 'subscription_expires_at' => now()->addYears(10),
+                'enforce_strict_shift_window' => false,
                 'is_test' => true,
                 'deleted_at' => null,
             ]
@@ -155,6 +156,7 @@ class E2ETestPersonaSeeder extends Seeder
                 'role' => 'Operations Staff',
                 'salary' => 25000.00,
                 'status' => 'Active',
+                'schedule_type' => 'custom',
                 'allow_remote_clock_in' => true,
                 'enforce_strict_shift_window' => false,
                 'join_date' => now()->subMonths(6)->toDateString(),
@@ -197,6 +199,7 @@ class E2ETestPersonaSeeder extends Seeder
                 'employee_id' => 'EMP-TEST-DRV01',
                 'role' => 'Driver',
                 'salary' => 18000.00,
+                'schedule_type' => 'custom',
                 'vehicle_type' => 'Motorcycle',
                 'vehicle_plate_number' => 'CAV-9876',
                 'driver_license_number' => 'N01-12-345678',

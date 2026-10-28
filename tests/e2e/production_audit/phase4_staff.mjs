@@ -59,17 +59,14 @@ export async function runPhase4(page, collector) {
         // 4.4 Staff Clock-in / Attendance Session
         try {
             const clockInRes = await page.evaluate(async (url) => {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                const res = await fetch(`${url}/staff/attendance/resume`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ liveness_verified: true })
-                }).catch(e => ({ status: 0, error: e.message }));
-                return res.status;
+                try {
+                    const res = await window.axios.post(`${url}/staff/attendance/resume`, {
+                        liveness_verified: true
+                    });
+                    return res.status;
+                } catch (e) {
+                    return e.response ? e.response.status : 0;
+                }
             }, PROD_URL);
 
             const isClockInSuccess = clockInRes >= 200 && clockInRes < 400;
@@ -87,16 +84,12 @@ export async function runPhase4(page, collector) {
         // 4.5 Active Attendance Heartbeat Ping
         try {
             const heartbeatStatus = await page.evaluate(async (url) => {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                const res = await fetch(`${url}/staff/attendance/heartbeat`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                        'Accept': 'application/json'
-                    }
-                }).catch(e => ({ status: 0, error: e.message }));
-                return res.status;
+                try {
+                    const res = await window.axios.post(`${url}/staff/attendance/heartbeat`);
+                    return res.status;
+                } catch (e) {
+                    return e.response ? e.response.status : 0;
+                }
             }, PROD_URL);
 
             const isHeartbeatOk = heartbeatStatus === 200;
@@ -125,6 +118,10 @@ export async function runPhase4(page, collector) {
                     }
                 }).catch(() => null);
             }, PROD_URL);
+            const cookies = await page.cookies();
+            if (cookies.length > 0) {
+                await page.deleteCookie(...cookies);
+            }
         } catch {}
     }
 
@@ -151,16 +148,11 @@ export async function runPhase4(page, collector) {
         // Driver clock-in to access delivery console
         try {
             await page.evaluate(async (url) => {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                await fetch(`${url}/staff/attendance/resume`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ liveness_verified: true })
-                }).catch(() => null);
+                try {
+                    await window.axios.post(`${url}/staff/attendance/resume`, {
+                        liveness_verified: true
+                    });
+                } catch {}
             }, PROD_URL);
         } catch {}
 
@@ -203,6 +195,10 @@ export async function runPhase4(page, collector) {
                     }
                 }).catch(() => null);
             }, PROD_URL);
+            const cookies = await page.cookies();
+            if (cookies.length > 0) {
+                await page.deleteCookie(...cookies);
+            }
         } catch {}
     }
 
