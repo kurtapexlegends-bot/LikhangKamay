@@ -86,6 +86,7 @@ Webhooks from the Lalamove API dispatch events that update the `status` of `Orde
 ### Logistics Controllers
 *   [LalamoveDeliveryController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/LalamoveDeliveryController.php): Manages explicit seller actions to dispatch Lalamove riders and fetch delivery pricing.
 *   [SellerOrderController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/SellerOrderController.php): Controls seller order operations, including `routePreview` (`GET /orders/{id}/route-preview`) for on-demand Nominatim geocoding and delivery route verification.
+*   [BuyerOrderController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/BuyerOrderController.php): Controls buyer order histories, receipt downloads, dispute submissions, and `routePreview` (`GET /my-orders/{id}/route-preview`) for buyer-side live courier road tracking and telemetry.
 *   [DriverDeliveryController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Staff/DriverDeliveryController.php): Driver portal console for assigned drops, telemetry broadcasts, and vehicle verification.
 *   [OrderPrintController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/OrderPrintController.php): Manages PDF generation and formatting for physical shipping waybills.
 

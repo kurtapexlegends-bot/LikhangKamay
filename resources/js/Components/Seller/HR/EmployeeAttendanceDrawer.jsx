@@ -7,6 +7,7 @@ import { useToast } from '@/Components/ToastContext';
 export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, canEdit = true }) {
     const [loading, setLoading] = useState(false);
     const [summary, setSummary] = useState(null);
+    const [loadError, setLoadError] = useState(null);
     const [selectedPhoto, setSelectedPhoto] = useState(null);
     const [rejectingSessionId, setRejectingSessionId] = useState(null);
     const [rejectionReason, setRejectionReason] = useState('');
@@ -16,12 +17,16 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
     const fetchAttendanceLogs = () => {
         if (employee?.id) {
             setLoading(true);
+            setLoadError(null);
             window.axios
                 .get(route('hr.attendance-logs', { employee: employee.id }))
                 .then((res) => {
                     setSummary(res.data.summary);
                 })
-                .catch((err) => console.error('Failed to load employee attendance logs:', err))
+                .catch((err) => {
+                    console.error('Failed to load employee attendance logs:', err);
+                    setLoadError(err.response?.data?.message || 'Unable to load attendance records.');
+                })
                 .finally(() => setLoading(false));
         }
     };
@@ -327,6 +332,20 @@ export default function EmployeeAttendanceDrawer({ employee, isOpen, onClose, ca
                                                     )}
                                                 </div>
                                             </>
+                                        ) : loadError ? (
+                                            <div className="py-16 flex flex-col items-center justify-center gap-3 text-center px-4">
+                                                <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
+                                                    <AlertCircle size={20} />
+                                                </div>
+                                                <p className="text-xs font-semibold text-stone-700">{loadError}</p>
+                                                <button
+                                                    type="button"
+                                                    onClick={fetchAttendanceLogs}
+                                                    className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-clay-600 text-white text-xs font-bold hover:bg-clay-700 active:scale-95 transition"
+                                                >
+                                                    Try Again
+                                                </button>
+                                            </div>
                                         ) : null}
                                     </div>
 

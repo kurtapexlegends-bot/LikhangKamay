@@ -50,6 +50,7 @@ Security checks are managed in [TeamMessageController.php](file:///c:/laragon/ww
     To support conversations on specific tasks or alerts:
     *   Messages are linked via `parent_message_id`.
     *   The system returns threads in a nested structure handled by `GetTeamMessageThread`.
+    *   [TeamMessages.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Seller/Chat/TeamMessages.jsx) and [ThreadSidebar.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Chat/ThreadSidebar.jsx) manage frontend slide-over thread rendering with defensive error notices and manual retry controls on network drops.
 
 ### Core Business Actions
 *   [ResolveCurrentOrderContext.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Chat/ResolveCurrentOrderContext.php): Automatically resolves which active order context applies to the current chat workspace stream.

@@ -10,6 +10,8 @@ export default function ThreadSidebar({
     replies = [],
     onClose,
     loading = false,
+    error = null,
+    onRetry = null,
     onReplySuccess,
     onToggleReaction,
     eligibleContacts = [],
@@ -181,6 +183,19 @@ export default function ThreadSidebar({
                             <span className="w-1.5 h-1.5 bg-stone-300 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
                             <span className="w-1.5 h-1.5 bg-stone-300 rounded-full animate-bounce"></span>
                         </div>
+                    ) : error ? (
+                        <div className="py-8 text-center px-4 space-y-2">
+                            <p className="text-xs text-rose-600 font-semibold">{error}</p>
+                            {onRetry && (
+                                <button
+                                    type="button"
+                                    onClick={onRetry}
+                                    className="text-xs font-bold text-clay-600 hover:text-clay-700 underline"
+                                >
+                                    Try again
+                                </button>
+                            )}
+                        </div>
                     ) : (
                         replies.map((reply) => (
                             <div
@@ -322,7 +337,7 @@ export default function ThreadSidebar({
                         ))
                     )}
 
-                    {!loading && replies.length === 0 && (
+                    {!loading && !error && replies.length === 0 && (
                         <p className="text-center text-[11px] text-stone-400 italic py-6">
                             No replies yet. Start the thread.
                         </p>

@@ -7,6 +7,7 @@ import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/Seller
 import useEchoConnection from '@/hooks/useEchoConnection';
 import useTeamChatEcho from '@/hooks/useTeamChatEcho';
 import { AnimatePresence } from 'framer-motion';
+import { useToast } from '@/Components/ToastContext';
 
 // Subcomponents
 import ContactList from '@/Components/Seller/Chat/ContactList';
@@ -33,6 +34,8 @@ export default function TeamMessages({
     const [activeThreadParent, setActiveThreadParent] = useState(null);
     const [activeThreadReplies, setActiveThreadReplies] = useState([]);
     const [loadingThread, setLoadingThread] = useState(false);
+    const [threadError, setThreadError] = useState(null);
+    const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
 
     const [isCounterpartTyping, setIsCounterpartTyping] = useState(false);
@@ -83,23 +86,35 @@ export default function TeamMessages({
         }
     }, [currentChatUser?.id, currentChannel?.id]);
 
+    const fetchThreadReplies = (parentId) => {
+        if (!parentId || !window.axios) return;
+        setLoadingThread(true);
+        setThreadError(null);
+        window.axios.get(route('team-messages.threads.show', parentId))
+            .then(res => {
+                if (res.data?.success) {
+                    setActiveThreadReplies(res.data.replies || []);
+                }
+            })
+            .catch(err => {
+                console.error('Failed to load thread replies:', err);
+                const message = err.response?.data?.message || 'Failed to load thread replies.';
+                setThreadError(message);
+                if (typeof addToast === 'function') {
+                    addToast(message, 'error');
+                }
+            })
+            .finally(() => setLoadingThread(false));
+    };
+
     useEffect(() => {
         if (!activeThreadParent) {
             setActiveThreadReplies([]);
+            setThreadError(null);
             return;
         }
 
-        setLoadingThread(true);
-        if (window.axios) {
-            window.axios.get(route('team-messages.threads.show', activeThreadParent.id))
-                .then(res => {
-                    if (res.data?.success) {
-                        setActiveThreadReplies(res.data.replies);
-                    }
-                })
-                .catch(err => console.error(err))
-                .finally(() => setLoadingThread(false));
-        }
+        fetchThreadReplies(activeThreadParent.id);
     }, [activeThreadParent?.id]);
 
     useEffect(() => {
@@ -422,19 +437,12 @@ export default function TeamMessages({
                             parent={activeThreadParent}
                             replies={activeThreadReplies}
                             loading={loadingThread}
+                            error={threadError}
+                            onRetry={() => fetchThreadReplies(activeThreadParent.id)}
                             onClose={() => setActiveThreadParent(null)}
                             onToggleReaction={handleToggleReaction}
                             eligibleContacts={eligibleContacts}
-                            onReplySuccess={() => {
-                                if (window.axios) {
-                                    window.axios.get(route('team-messages.threads.show', activeThreadParent.id))
-                                        .then(res => {
-                                            if (res.data?.success) {
-                                                setActiveThreadReplies(res.data.replies);
-                                            }
-                                        });
-                                }
-                            }}
+                            onReplySuccess={() => fetchThreadReplies(activeThreadParent.id)}
                         />
                     )}
                 </AnimatePresence>

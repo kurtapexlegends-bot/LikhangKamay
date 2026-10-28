@@ -107,6 +107,7 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
      *   `HRController::approveAttendanceSession`: Approves flagged or off-site shifts, crediting hours to payroll.
      *   `HRController::rejectAttendanceSession`: Rejects flagged shifts with a recorded reason, permanently disqualifying the hours from payroll wage totals.
  *   **Frontend Inertia Page**: [TimeCardAudit.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Seller/HR/TimeCardAudit.jsx)
+ *   **Employee Attendance Drawer**: [EmployeeAttendanceDrawer.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/EmployeeAttendanceDrawer.jsx) provides slide-over inspection of employee monthly shifts, geofence badges, and shift review actions with defensive error states and retry controls.
  *   **UI Features**:
      *   **Header Profile & In-Content Breadcrumbs**: Displays user avatar synced with `UserAvatar`, employee ID, role badge, and assigned location with in-content breadcrumb navigation.
      *   **Metric Summary Cards**: 4 key metrics (`Total Worked`, `Approved Overtime`, `Undertime / Tardy`, `Rest Day OT`).
