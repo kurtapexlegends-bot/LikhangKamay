@@ -101,7 +101,7 @@ export async function runPhase1(page, collector) {
             const recipeInfo = await page.evaluate(() => {
                 return !!document.body.innerText.match(/(Handmade|Materials|Recipe|Crafted|Lead Time|Handled With Care)/i);
             });
-            collector.recordResult('Phase 1', '1.3 Recipe Transparency Pill', recipeInfo ? 'PASS' : 'WARN', {
+            collector.recordResult('Phase 1', '1.3 Recipe Transparency Pill', recipeInfo ? 'PASS' : 'FAIL', {
                 message: `Artisan craft specifications visible: ${recipeInfo}`
             });
 

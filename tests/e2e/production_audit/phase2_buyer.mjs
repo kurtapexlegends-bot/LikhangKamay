@@ -85,9 +85,10 @@ export async function runPhase2(page, collector) {
             const errors = checkoutPage?.props?.errors || {};
             const hasUnexpectedErrors = Object.keys(errors).length > 0;
             if (hasUnexpectedErrors) {
-                collector.recordResult('Phase 2', '2.4 Checkout Initial Errors Check', 'WARN', {
+                collector.recordResult('Phase 2', '2.4 Checkout Initial Errors Check', 'FAIL', {
                     message: `Initial checkout errors detected: ${JSON.stringify(errors)}`
                 });
+                collector.recordBug('HIGH', 'Checkout Initial Errors Present', `${PROD_URL}/checkout`, JSON.stringify(errors));
             } else {
                 collector.recordResult('Phase 2', '2.4 Checkout Clean Initial State', 'PASS');
             }

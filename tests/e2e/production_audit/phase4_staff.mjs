@@ -14,7 +14,7 @@ export async function runPhase4(page, collector) {
         await page.goto(`${PROD_URL}/staff/dashboard`, { waitUntil: 'networkidle2', timeout: 30000 });
         const currentUrl = page.url();
         const redirected = currentUrl.includes('/login') || currentUrl.includes('/staff');
-        collector.recordResult('Phase 4', '4.1 Staff Unauthenticated Gate Protection', redirected ? 'PASS' : 'WARN', {
+        collector.recordResult('Phase 4', '4.1 Staff Unauthenticated Gate Protection', redirected ? 'PASS' : 'FAIL', {
             message: `Unauthenticated redirect URL: ${currentUrl}`
         });
     } catch (e) {
@@ -177,7 +177,7 @@ export async function runPhase4(page, collector) {
             const hasDriverNav = await page.evaluate(() => {
                 return !!document.body.innerText.match(/(Start Route|Navigate|View Route|Route Map|Active Deliveries|In-House Logistics|Completed)/i);
             });
-            collector.recordResult('Phase 4', '4.7b Driver Navigation & Telemetry Console Ready', hasDriverNav ? 'PASS' : 'WARN', {
+            collector.recordResult('Phase 4', '4.7b Driver Navigation & Telemetry Console Ready', hasDriverNav ? 'PASS' : 'FAIL', {
                 message: 'In-house driver navigation and telemetry console state verified'
             });
 

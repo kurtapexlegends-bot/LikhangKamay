@@ -37,7 +37,7 @@ export async function runPhase3(page, collector) {
         await page.waitForSelector('#app', { timeout: 15000 }).catch(() => null);
         await collector.verifyInertiaPage(page, 'Phase 3', '3.2 Seller Dashboard Inertia Contract', 'Dashboard');
         const metricCards = await page.$$('[class*="grid"] > div, [class*="card"]');
-        collector.recordResult('Phase 3', '3.2 Seller Dashboard Load', metricCards.length > 0 ? 'PASS' : 'WARN', {
+        collector.recordResult('Phase 3', '3.2 Seller Dashboard Load', metricCards.length > 0 ? 'PASS' : 'FAIL', {
             message: `Found ${metricCards.length} dashboard metric elements`
         });
         await collector.scanDomQuality(page, 'Seller Dashboard');
@@ -56,11 +56,11 @@ export async function runPhase3(page, collector) {
 
         // Test "Create Product" button
         const createBtn = await findElementByText(page, 'button, a', 'Add Product|Create Product|New Product');
-        collector.recordResult('Phase 3', '3.3 Create Product Action Present', createBtn ? 'PASS' : 'WARN');
+        collector.recordResult('Phase 3', '3.3 Create Product Action Present', createBtn ? 'PASS' : 'FAIL');
 
         // Test Product search & filtering controls
         const searchOrFilter = await page.$('input[type="search"], input[placeholder*="search" i], [class*="search"], [class*="filter"]');
-        collector.recordResult('Phase 3', '3.3 Product Search & Filter Controls Available', (createBtn || searchOrFilter) ? 'PASS' : 'WARN', {
+        collector.recordResult('Phase 3', '3.3 Product Search & Filter Controls Available', (createBtn || searchOrFilter) ? 'PASS' : 'FAIL', {
             message: `Catalog search/filter input present: ${!!searchOrFilter}`
         });
         await collector.scanDomQuality(page, 'Product Catalog');
@@ -131,7 +131,7 @@ export async function runPhase3(page, collector) {
             await new Promise(r => setTimeout(r, 600));
         }
         const bulkActionElement = await page.$('a[href*="bulk-labels"], [class*="BulkActionsBar"], [class*="order"], table') || await findElementByText(page, 'button', 'Bulk');
-        collector.recordResult('Phase 3', '3.7 Bulk Labels Action Present', bulkActionElement ? 'PASS' : 'WARN', {
+        collector.recordResult('Phase 3', '3.7 Bulk Labels Action Present', bulkActionElement ? 'PASS' : 'FAIL', {
             message: 'Fulfillment queue controls and bulk actions verified'
         });
 
@@ -141,7 +141,7 @@ export async function runPhase3(page, collector) {
             await routeMapBtn.click().catch(() => null);
             await new Promise(r => setTimeout(r, 1500));
             const hasRouteModal = await page.$('[role="dialog"], [class*="OrderRoutePreview"], .leaflet-container') !== null;
-            collector.recordResult('Phase 3', '3.7b Delivery Route Preview Modal Rendered', hasRouteModal ? 'PASS' : 'WARN', {
+            collector.recordResult('Phase 3', '3.7b Delivery Route Preview Modal Rendered', hasRouteModal ? 'PASS' : 'FAIL', {
                 message: 'Interactive Leaflet road route preview modal verified'
             });
 
@@ -234,7 +234,7 @@ export async function runPhase3(page, collector) {
         const staffLimit = inertiaPage?.props?.staffProvisioning?.staffLimit;
         const isGatedByFreeTier = staffLimit === 0;
 
-        collector.recordResult('Phase 3', '3.11 Add Employee Action Present', (addEmpBtn || isGatedByFreeTier) ? 'PASS' : 'WARN', {
+        collector.recordResult('Phase 3', '3.11 Add Employee Action Present', (addEmpBtn || isGatedByFreeTier) ? 'PASS' : 'FAIL', {
             message: addEmpBtn ? 'Add employee button verified' : 'Free tier staff quota is 0 (gated as expected)'
         });
         await collector.scanDomQuality(page, 'ERP HR');
