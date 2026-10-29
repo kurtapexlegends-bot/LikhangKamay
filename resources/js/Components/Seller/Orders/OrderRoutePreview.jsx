@@ -15,7 +15,7 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function OrderRoutePreview({
-    isOpen,
+    isOpen = true,
     onClose,
     order,
     sellerCoordinates = null,
@@ -35,6 +35,18 @@ export default function OrderRoutePreview({
 
     const orderId = order?.order_number || order?.id || order?.db_id || null;
 
+    // Handle Escape key to close modal
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                onClose?.();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose]);
+
     useEffect(() => {
         if (!isOpen || !orderId) {
             fetchedOrderIdRef.current = null;
@@ -45,6 +57,9 @@ export default function OrderRoutePreview({
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.remove();
                 mapInstanceRef.current = null;
+            }
+            if (mapContainerRef.current && mapContainerRef.current._leaflet_id) {
+                delete mapContainerRef.current._leaflet_id;
             }
             return;
         }
@@ -217,6 +232,9 @@ export default function OrderRoutePreview({
                 mapInstanceRef.current.remove();
                 mapInstanceRef.current = null;
             }
+            if (mapContainerRef.current && mapContainerRef.current._leaflet_id) {
+                delete mapContainerRef.current._leaflet_id;
+            }
 
             const map = L.map(mapContainerRef.current, {
                 center: [pickupLat, pickupLng],
@@ -319,7 +337,9 @@ export default function OrderRoutePreview({
                 }
             }
 
-            map.fitBounds(polyline.getBounds(), { padding: [40, 40], maxZoom: 15, animate: false });
+            if (polyline.getBounds().isValid()) {
+                map.fitBounds(polyline.getBounds(), { padding: [40, 40], maxZoom: 15, animate: false });
+            }
             map.invalidateSize();
             mapInstanceRef.current = map;
         }, 150);
@@ -329,6 +349,9 @@ export default function OrderRoutePreview({
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.remove();
                 mapInstanceRef.current = null;
+            }
+            if (mapContainerRef.current && mapContainerRef.current._leaflet_id) {
+                delete mapContainerRef.current._leaflet_id;
             }
         };
     }, [isOpen, pickupLat, pickupLng, dropoffLat, dropoffLng, pickupLabel, pickupAddress, dropoffLabel, dropoffAddress, routeCoordinates, vehicleType, vehicleLabel, isRoadRouted, distanceKm, durationMins, routeData?.driver, createStudioIcon, createDropoffIcon, createVehicleMarkerIcon]);
@@ -343,12 +366,15 @@ export default function OrderRoutePreview({
 
     const handleFitRoute = useCallback(() => {
         if (mapInstanceRef.current && polylineRef.current) {
-            mapInstanceRef.current.fitBounds(polylineRef.current.getBounds(), {
-                padding: [40, 40],
-                maxZoom: 15,
-                animate: true,
-                duration: 0.5,
-            });
+            const bounds = polylineRef.current.getBounds();
+            if (bounds.isValid()) {
+                mapInstanceRef.current.fitBounds(bounds, {
+                    padding: [40, 40],
+                    maxZoom: 15,
+                    animate: true,
+                    duration: 0.5,
+                });
+            }
         }
     }, []);
 
@@ -371,7 +397,14 @@ export default function OrderRoutePreview({
     const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${pickupLat},${pickupLng}&destination=${dropoffLat},${dropoffLng}`;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div
+            onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                    onClose?.();
+                }
+            }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+        >
             <div className="relative w-full max-w-xl rounded-t-[2.5rem] sm:rounded-2xl bg-white p-5 shadow-2xl border-t sm:border border-stone-200 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-5 max-h-[92vh] overflow-y-auto">
                 <div className="sm:hidden w-full flex justify-center pb-3 -mt-1">
                     <div className="w-12 h-1.5 bg-stone-300 rounded-full" />

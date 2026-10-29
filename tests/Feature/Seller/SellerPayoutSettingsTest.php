@@ -36,7 +36,7 @@ class SellerPayoutSettingsTest extends TestCase
         $this->assertEquals('09175551234', $artisan->payout_account_number);
     }
 
-    public function test_artisan_can_update_bank_settlement_details(): void
+    public function test_artisan_can_update_maya_settlement_details(): void
     {
         $artisan = User::factory()->create([
             'role' => 'artisan',
@@ -45,19 +45,18 @@ class SellerPayoutSettingsTest extends TestCase
         ]);
 
         $response = $this->actingAs($artisan)->post(route('seller.settings.payout'), [
-            'disbursement_method' => 'bank',
-            'bank_name' => 'BDO Unibank',
+            'disbursement_method' => 'maya',
             'account_name' => 'Kurt Enterprise',
-            'account_number' => '1092 3847 5612',
+            'account_number' => '0918 123 4567',
         ]);
 
         $response->assertSessionHasNoErrors();
         $response->assertRedirect();
 
         $artisan->refresh();
-        $this->assertEquals('BDO Unibank', $artisan->payout_method);
+        $this->assertEquals('Maya', $artisan->payout_method);
         $this->assertEquals('Kurt Enterprise', $artisan->payout_account_name);
-        $this->assertEquals('109238475612', $artisan->payout_account_number);
+        $this->assertEquals('09181234567', $artisan->payout_account_number);
     }
 
     public function test_invalid_mobile_number_fails_validation(): void

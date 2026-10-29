@@ -90,7 +90,11 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
     const completedPolylineRef = useRef(null);
     const outerPolylineRef = useRef(null);
     const polylineRef = useRef(null);
-    const hasTelemetryFailedRef = useRef(false);
+    const telemetryFailuresRef = useRef(0);
+    const [isTelemetryHalted, setIsTelemetryHalted] = useState(false);
+    const [cameraViewMode, setCameraViewMode] = useState('route'); // 'route' | 'full'
+    const hasInitialFitDoneRef = useRef(false);
+    const MAX_TELEMETRY_FAILURES = 3;
 
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -116,6 +120,8 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
     // Synchronize telemetry dynamically when parent Inertia props refresh
     useEffect(() => {
         if (!delivery) return;
+        telemetryFailuresRef.current = 0;
+        setIsTelemetryHalted(false);
         setTelemetry(prev => ({
             latitude: delivery.current_latitude !== null && delivery.current_latitude !== undefined ? Number(delivery.current_latitude) : prev.latitude,
             longitude: delivery.current_longitude !== null && delivery.current_longitude !== undefined ? Number(delivery.current_longitude) : prev.longitude,
@@ -266,7 +272,10 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
             // 3. Client-side OSRM road geometry (from Vehicle to Buyer)
             try {
                 const osrmUrl = `https://router.project-osrm.org/route/v1/${vConfig.profile}/${startLng},${startLat};${dropoffLng},${dropoffLat}?overview=full&geometries=geojson`;
-                const osrmRes = await fetch(osrmUrl, { signal: AbortSignal.timeout(4500) });
+                const signal = typeof window !== 'undefined' && window.AbortSignal && typeof window.AbortSignal.timeout === 'function'
+                    ? window.AbortSignal.timeout(4500)
+                    : undefined;
+                const osrmRes = await fetch(osrmUrl, { signal });
                 if (osrmRes.ok) {
                     const data = await osrmRes.json();
                     if (data?.code === 'Ok' && data?.routes?.[0]?.geometry?.coordinates?.length > 0) {
@@ -332,21 +341,39 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
         };
     }, [startLat, startLng, dropoffLat, dropoffLng, orderId, role, telemetry.vehicle_type, order?.recommended_vehicle, isDelivering, pickupLat, pickupLng, activeDriverLat, activeDriverLng]);
 
-    // Fetch latest telemetry from endpoint
-    const fetchLatestTelemetry = useCallback(async () => {
-        if (!delivery?.id || hasTelemetryFailedRef.current) return;
+    // Fetch latest telemetry from endpoint with retry resilience
+    const fetchLatestTelemetry = useCallback(async (isManual = false) => {
+        if (!delivery?.id) return;
+        // If polling was halted after consecutive failures, only allow manual sync to resume it
+        if (isTelemetryHalted && !isManual) return;
+
+        // Reset failure tracking on explicit manual sync request
+        if (isManual) {
+            telemetryFailuresRef.current = 0;
+            setIsTelemetryHalted(false);
+        }
+
+        const ControllerClass = typeof window !== 'undefined' ? window.AbortController : null;
+        const controller = ControllerClass ? new ControllerClass() : null;
+        const timeoutId = setTimeout(() => controller?.abort(), 6000);
 
         try {
             setIsRefreshing(true);
             const response = await fetch(`/deliveries/${delivery.id}/telemetry`, {
+                signal: controller?.signal,
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 }
             });
+            clearTimeout(timeoutId);
 
             if (response.ok) {
                 const data = await response.json();
+                // Reset failure counter on successful GPS retrieval
+                telemetryFailuresRef.current = 0;
+                setIsTelemetryHalted(false);
+
                 if (data?.telemetry?.latitude && data?.telemetry?.longitude) {
                     setTelemetry(prev => ({
                         ...prev,
@@ -363,30 +390,41 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
                     setLastSyncTime(new Date());
                 }
             } else if (response.status === 404) {
-                // Permanently halt polling if telemetry endpoint returns 404
-                hasTelemetryFailedRef.current = true;
+                // Permanently halt polling if telemetry endpoint returns 404 (delivery finished or invalid)
+                setIsTelemetryHalted(true);
+                telemetryFailuresRef.current = MAX_TELEMETRY_FAILURES;
+            } else {
+                telemetryFailuresRef.current += 1;
+                if (telemetryFailuresRef.current >= MAX_TELEMETRY_FAILURES) {
+                    setIsTelemetryHalted(true);
+                }
             }
         } catch {
-            hasTelemetryFailedRef.current = true;
+            // Transient network failure (timeout / offline)
+            telemetryFailuresRef.current += 1;
+            if (telemetryFailuresRef.current >= MAX_TELEMETRY_FAILURES) {
+                setIsTelemetryHalted(true);
+            }
         } finally {
+            clearTimeout(timeoutId);
             setIsRefreshing(false);
         }
-    }, [delivery?.id]);
+    }, [delivery?.id, isTelemetryHalted]);
 
     // Polling effect when delivery is active in transit
     useEffect(() => {
         const isTransit = ['ON_GOING', 'PICKED_UP', 'IN_TRANSIT'].includes(String(delivery?.status || '').toUpperCase());
-        if (!isTransit || !delivery?.id || hasTelemetryFailedRef.current) return;
+        if (!isTransit || !delivery?.id || isTelemetryHalted) return;
 
         // Poll every 12 seconds while viewing
         const interval = setInterval(() => {
-            if (!document.hidden && !hasTelemetryFailedRef.current) {
-                fetchLatestTelemetry();
+            if (!document.hidden && !isTelemetryHalted) {
+                fetchLatestTelemetry(false);
             }
         }, 12000);
 
         return () => clearInterval(interval);
-    }, [delivery?.status, delivery?.id, fetchLatestTelemetry]);
+    }, [delivery?.status, delivery?.id, fetchLatestTelemetry, isTelemetryHalted]);
 
     // Helpers for driver pin and popup
     const getDriverPopupHtml = useCallback((t, vConfig) => {
@@ -436,6 +474,22 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
         iconAnchor: [16, 16],
         popupAnchor: [0, -16],
     }), []);
+
+    // Responsive fit bounds padding ensuring overlays (bottom radar HUD, top badges/buttons) never obscure markers or route
+    const getFitPadding = useCallback(() => {
+        if (!isFullScreen) {
+            return {
+                paddingTopLeft: [24, 48],
+                paddingBottomRight: [24, showRadarHud ? 68 : 22],
+                maxZoom: 15,
+            };
+        }
+        return {
+            paddingTopLeft: [showRadarHud ? 330 : 40, 60],
+            paddingBottomRight: [40, 40],
+            maxZoom: 15,
+        };
+    }, [isFullScreen, showRadarHud]);
 
     // 1. Initialize Map DOM
     useEffect(() => {
@@ -592,9 +646,12 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
             }
         }
 
-        // Auto-fit bounds with comfortable padding
+        // Auto-fit bounds with comfortable padding leaving space for HUD / top badges
         if (polyline.getBounds().isValid()) {
-            map.fitBounds(polyline.getBounds(), { padding: [35, 35], maxZoom: 15, animate: false });
+            map.fitBounds(polyline.getBounds(), {
+                ...getFitPadding(),
+                animate: false
+            });
         }
 
         mapInstanceRef.current = map;
@@ -635,8 +692,13 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
             outerPolylineRef.current.setStyle({
                 smoothFactor: 0.1,
             });
-            if (isRoadRouted && polylineRef.current.getBounds().isValid()) {
-                mapInstanceRef.current.fitBounds(polylineRef.current.getBounds(), { padding: [35, 35], maxZoom: 15, animate: false });
+            // Frame bounds once upon initial road geometry resolution to avoid jarring snaps during live GPS polling
+            if (isRoadRouted && !hasInitialFitDoneRef.current && polylineRef.current.getBounds().isValid()) {
+                hasInitialFitDoneRef.current = true;
+                mapInstanceRef.current.fitBounds(polylineRef.current.getBounds(), {
+                    ...getFitPadding(),
+                    animate: false
+                });
             }
         }
 
@@ -681,27 +743,90 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
                 }
             }
         }
-    }, [routeCoordinates, activeDriverLat, activeDriverLng, telemetry, vehicleConfig, isRoadRouted, getDriverPopupHtml, createDriverIcon, createVehicleWaypointIcon]);
+    }, [routeCoordinates, activeDriverLat, activeDriverLng, telemetry, vehicleConfig, isRoadRouted, getDriverPopupHtml, createDriverIcon, createVehicleWaypointIcon, getFitPadding, isDelivering, pickupLat, pickupLng]);
 
-    // Handle center map on route bounds
-    const handleCenterMap = () => {
-        if (mapInstanceRef.current && polylineRef.current && polylineRef.current.getBounds().isValid()) {
-            mapInstanceRef.current.fitBounds(polylineRef.current.getBounds(), { padding: [35, 35], maxZoom: 15 });
+    // Helper to compute composite bounding box of Studio Origin, Courier, and Buyer Destination
+    const getFullJourneyBounds = useCallback(() => {
+        const points = [];
+        if (pickupLat && pickupLng) points.push([pickupLat, pickupLng]);
+        if (dropoffLat && dropoffLng) points.push([dropoffLat, dropoffLng]);
+        if (activeDriverLat && activeDriverLng) points.push([activeDriverLat, activeDriverLng]);
+        if (Array.isArray(routeCoordinates) && routeCoordinates.length > 0) {
+            routeCoordinates.forEach(pt => {
+                if (Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1])) {
+                    points.push([Number(pt[0]), Number(pt[1])]);
+                }
+            });
         }
-    };
+        return points.length >= 2 ? L.latLngBounds(points) : null;
+    }, [pickupLat, pickupLng, dropoffLat, dropoffLng, activeDriverLat, activeDriverLng, routeCoordinates]);
+
+    // Handle center map on remaining active route bounds (Courier to Destination)
+    const handleCenterMap = useCallback(() => {
+        setCameraViewMode('route');
+        if (mapInstanceRef.current && polylineRef.current && polylineRef.current.getBounds().isValid()) {
+            mapInstanceRef.current.fitBounds(polylineRef.current.getBounds(), {
+                ...getFitPadding(),
+                animate: true,
+            });
+        }
+    }, [getFitPadding]);
+
+    // Fit entire journey (Studio Origin -> Live Courier -> Buyer Destination)
+    const handleFitFullJourney = useCallback(() => {
+        setCameraViewMode('full');
+        if (!mapInstanceRef.current) return;
+        const fullBounds = getFullJourneyBounds();
+        if (fullBounds && fullBounds.isValid()) {
+            mapInstanceRef.current.fitBounds(fullBounds, {
+                ...getFitPadding(),
+                animate: true,
+            });
+        }
+    }, [getFullJourneyBounds, getFitPadding]);
+
+    // Re-adjust view when radar HUD toggles to keep route and rider marker clear of overlay
+    useEffect(() => {
+        if (!mapInstanceRef.current) return;
+        if (cameraViewMode === 'full') {
+            const fullBounds = getFullJourneyBounds();
+            if (fullBounds && fullBounds.isValid()) {
+                mapInstanceRef.current.fitBounds(fullBounds, {
+                    ...getFitPadding(),
+                    animate: true,
+                });
+            }
+        } else if (polylineRef.current && polylineRef.current.getBounds().isValid()) {
+            mapInstanceRef.current.fitBounds(polylineRef.current.getBounds(), {
+                ...getFitPadding(),
+                animate: true,
+            });
+        }
+    }, [showRadarHud, cameraViewMode, getFullJourneyBounds, getFitPadding]);
 
     // Invalidate map size on full screen toggle
     useEffect(() => {
         if (mapInstanceRef.current) {
             const timer = setTimeout(() => {
                 mapInstanceRef.current.invalidateSize();
-                if (polylineRef.current && polylineRef.current.getBounds().isValid()) {
-                    mapInstanceRef.current.fitBounds(polylineRef.current.getBounds(), { padding: [40, 40], maxZoom: 15 });
+                if (cameraViewMode === 'full') {
+                    const fullBounds = getFullJourneyBounds();
+                    if (fullBounds && fullBounds.isValid()) {
+                        mapInstanceRef.current.fitBounds(fullBounds, {
+                            ...getFitPadding(),
+                            animate: false,
+                        });
+                    }
+                } else if (polylineRef.current && polylineRef.current.getBounds().isValid()) {
+                    mapInstanceRef.current.fitBounds(polylineRef.current.getBounds(), {
+                        ...getFitPadding(),
+                        animate: false,
+                    });
                 }
             }, 180);
             return () => clearTimeout(timer);
         }
-    }, [isFullScreen]);
+    }, [isFullScreen, cameraViewMode, getFullJourneyBounds, getFitPadding]);
 
     // Handle Phone / SMS click with desktop copy fallback & toast
     const handlePhoneAction = useCallback(async (e, phone, type = 'call') => {
@@ -782,23 +907,45 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
                         <button
                             type="button"
                             onClick={handleCenterMap}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white h-11 w-11 min-h-[44px] min-w-[44px] sm:w-auto sm:px-3 text-xs font-bold text-stone-600 hover:bg-stone-100 transition cursor-pointer active:scale-95"
-                            title="Center Route"
-                            aria-label="Center Route"
+                            className={`inline-flex items-center justify-center gap-1.5 rounded-xl border h-11 w-11 min-h-[44px] min-w-[44px] sm:w-auto sm:px-3 text-xs font-bold transition cursor-pointer active:scale-95 ${
+                                cameraViewMode === 'route'
+                                    ? 'bg-stone-100 text-stone-900 border-stone-300 shadow-2xs font-extrabold'
+                                    : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-100'
+                            }`}
+                            title="Fit Active Route (Courier to Destination)"
+                            aria-label="Fit Active Route"
                         >
                             <Compass size={15} className="text-clay-600" />
                             <span className="hidden sm:inline">Fit Route</span>
                         </button>
                         <button
                             type="button"
-                            onClick={fetchLatestTelemetry}
+                            onClick={handleFitFullJourney}
+                            className={`inline-flex items-center justify-center gap-1.5 rounded-xl border h-11 w-11 min-h-[44px] min-w-[44px] sm:w-auto sm:px-3 text-xs font-bold transition cursor-pointer active:scale-95 ${
+                                cameraViewMode === 'full'
+                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-2xs font-extrabold'
+                                    : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-100'
+                            }`}
+                            title="Fit Entire Journey (Studio Origin, Courier, Destination)"
+                            aria-label="Fit Entire Journey"
+                        >
+                            <RouteIcon size={15} className="text-emerald-600" />
+                            <span className="hidden sm:inline">Full Journey</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => fetchLatestTelemetry(true)}
                             disabled={isRefreshing}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white h-11 w-11 min-h-[44px] min-w-[44px] sm:w-auto sm:px-3 text-xs font-bold text-stone-600 hover:bg-stone-100 transition cursor-pointer active:scale-95"
-                            title="Sync GPS"
+                            className={`inline-flex items-center justify-center gap-1.5 rounded-xl border h-11 w-11 min-h-[44px] min-w-[44px] sm:w-auto sm:px-3 text-xs font-bold transition cursor-pointer active:scale-95 ${
+                                isTelemetryHalted 
+                                    ? 'border-amber-300 bg-amber-50/80 text-amber-800' 
+                                    : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-100'
+                            }`}
+                            title={isTelemetryHalted ? 'GPS Link paused after retries. Click to resume' : 'Sync GPS'}
                             aria-label="Sync GPS"
                         >
-                            <RefreshCw size={14} className={`text-stone-500 ${isRefreshing ? 'animate-spin text-clay-600' : ''}`} />
-                            <span className="hidden sm:inline">{isRefreshing ? 'Syncing...' : 'Sync GPS'}</span>
+                            <RefreshCw size={14} className={`${isRefreshing ? 'animate-spin text-clay-600' : (isTelemetryHalted ? 'text-amber-600' : 'text-stone-500')}`} />
+                            <span className="hidden sm:inline">{isRefreshing ? 'Syncing...' : (isTelemetryHalted ? 'Resume GPS' : 'Sync GPS')}</span>
                         </button>
                         <button
                             type="button"
@@ -824,10 +971,10 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
                 {!isFullScreen && (
                     <>
                         {/* Top-Left: Live Road Route & Speed Badge */}
-                        <div className="absolute top-2 left-2 z-[500] flex items-center gap-1.5 rounded-lg bg-white/95 px-2 sm:px-2.5 py-1 shadow-xs border border-stone-200/80 backdrop-blur-xs select-none max-w-[calc(100%-110px)] overflow-hidden">
+                        <div className="absolute top-2 left-2 z-[500] flex items-center gap-1.5 rounded-lg bg-white/95 px-2 sm:px-2.5 py-1 shadow-xs border border-stone-200/80 backdrop-blur-xs select-none max-w-[calc(100%-175px)] sm:max-w-xs overflow-hidden">
                             <span className="relative flex h-2 w-2 shrink-0">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isTelemetryHalted ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+                                <span className={`relative inline-flex rounded-full h-2 w-2 ${isTelemetryHalted ? 'bg-amber-500' : 'bg-emerald-500'}`} />
                             </span>
                             <span className="text-[10px] font-bold text-stone-800 truncate">
                                 {isRoadRouted ? `${vehicleConfig.type} Route` : (activeDriverLat ? 'In Transit' : 'Route')}
@@ -842,9 +989,14 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
                                     ~{estimatedMinutes}m
                                 </span>
                             )}
-                            {telemetry.speed_kph !== null && telemetry.speed_kph > 0 && (
+                            {telemetry.speed_kph !== null && telemetry.speed_kph > 0 && !isTelemetryHalted && (
                                 <span className="hidden sm:inline-flex rounded bg-emerald-50 border border-emerald-200/80 px-1 py-0.2 text-[9px] font-extrabold text-emerald-800 shrink-0">
                                     {Math.round(telemetry.speed_kph)} km/h
+                                </span>
+                            )}
+                            {isTelemetryHalted && (
+                                <span className="text-[9px] font-bold text-amber-600 shrink-0">
+                                    • Paused
                                 </span>
                             )}
                             {isLoadingRoute && (
@@ -853,12 +1005,12 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
                         </div>
 
                         {/* Top-Right: Compact Action Group */}
-                        <div className="absolute top-2 right-2 z-[1000] flex items-center gap-1 rounded-xl bg-white/95 p-1 shadow-xs border border-stone-200/80 backdrop-blur-xs select-none">
+                        <div className="absolute top-2 right-2 z-[1000] flex items-center gap-0.5 sm:gap-1 rounded-xl bg-white/95 p-0.5 sm:p-1 shadow-xs border border-stone-200/80 backdrop-blur-xs select-none">
                             <button
                                 type="button"
                                 onClick={() => setShowRadarHud(!showRadarHud)}
-                                className={`inline-flex items-center justify-center h-8 w-8 min-h-[32px] min-w-[32px] sm:h-7 sm:w-7 rounded-lg transition cursor-pointer ${
-                                    showRadarHud ? 'bg-emerald-600 text-white' : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+                                className={`inline-flex items-center justify-center h-7.5 w-7.5 min-h-[30px] min-w-[30px] sm:h-7 sm:w-7 rounded-lg transition cursor-pointer ${
+                                    showRadarHud ? 'bg-emerald-600 text-white shadow-2xs' : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                                 }`}
                                 title="Toggle Radar Telemetry"
                                 aria-label="Toggle Radar Telemetry"
@@ -868,26 +1020,41 @@ export default function BuyerDeliveryTrackingMap({ order, delivery, role = 'buye
                             <button
                                 type="button"
                                 onClick={handleCenterMap}
-                                className="inline-flex items-center justify-center h-8 w-8 min-h-[32px] min-w-[32px] sm:h-7 sm:w-7 rounded-lg text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition cursor-pointer"
-                                title="Center route"
-                                aria-label="Center route"
+                                className={`inline-flex items-center justify-center h-7.5 w-7.5 min-h-[30px] min-w-[30px] sm:h-7 sm:w-7 rounded-lg transition cursor-pointer ${
+                                    cameraViewMode === 'route' ? 'bg-stone-100 text-stone-900 font-bold border border-stone-200/80' : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+                                }`}
+                                title="Fit active route (Courier to Destination)"
+                                aria-label="Fit active route"
                             >
                                 <Compass size={14} className="text-clay-600" />
                             </button>
                             <button
                                 type="button"
-                                onClick={fetchLatestTelemetry}
+                                onClick={handleFitFullJourney}
+                                className={`inline-flex items-center justify-center h-7.5 w-7.5 min-h-[30px] min-w-[30px] sm:h-7 sm:w-7 rounded-lg transition cursor-pointer ${
+                                    cameraViewMode === 'full' ? 'bg-emerald-100 text-emerald-800 font-bold border border-emerald-300/80' : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+                                }`}
+                                title="Fit entire journey (origin to destination)"
+                                aria-label="Fit entire journey"
+                            >
+                                <RouteIcon size={13} className="text-emerald-600" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => fetchLatestTelemetry(true)}
                                 disabled={isRefreshing}
-                                className="inline-flex items-center justify-center h-8 w-8 min-h-[32px] min-w-[32px] sm:h-7 sm:w-7 rounded-lg text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition cursor-pointer"
-                                title="Sync GPS"
+                                className={`inline-flex items-center justify-center h-7.5 w-7.5 min-h-[30px] min-w-[30px] sm:h-7 sm:w-7 rounded-lg transition cursor-pointer ${
+                                    isTelemetryHalted ? 'text-amber-600 bg-amber-50 border border-amber-200' : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+                                }`}
+                                title={isTelemetryHalted ? 'GPS link paused. Tap to sync' : 'Sync GPS'}
                                 aria-label="Sync GPS"
                             >
-                                <RefreshCw size={12} className={`text-stone-500 ${isRefreshing ? 'animate-spin text-clay-600' : ''}`} />
+                                <RefreshCw size={12} className={isRefreshing ? 'animate-spin text-clay-600' : (isTelemetryHalted ? 'text-amber-600' : 'text-stone-500')} />
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setIsFullScreen(true)}
-                                className="inline-flex items-center justify-center h-8 w-8 min-h-[32px] min-w-[32px] sm:h-7 sm:w-7 rounded-lg text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition cursor-pointer"
+                                className="inline-flex items-center justify-center h-7.5 w-7.5 min-h-[30px] min-w-[30px] sm:h-7 sm:w-7 rounded-lg text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition cursor-pointer"
                                 title="Expand to full screen"
                                 aria-label="Expand to full screen"
                             >

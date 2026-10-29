@@ -165,8 +165,8 @@ export default function OrderCard({
                     <span className="inline-flex rounded-md border border-stone-200 bg-white px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-stone-600 tracking-tight shadow-2xs">
                         {order.shipping_method}
                     </span>
-                    {/* Only show in-app route estimation for active self-delivered orders without courier tracking */}
-                    {order.shipping_method === "Delivery" && !order.delivery && !["Completed", "Cancelled", "Rejected"].includes(order.status) && (
+                    {/* Route Preview on delivery orders */}
+                    {order.shipping_method === "Delivery" && (
                         <button
                             type="button"
                             onClick={() => setShowRouteModal(true)}
@@ -228,8 +228,14 @@ export default function OrderCard({
             {/* Route Map Modal */}
             {showRouteModal && (
                 <OrderRoutePreview
+                    isOpen={showRouteModal}
                     order={order}
                     onClose={() => setShowRouteModal(false)}
+                    sellerCoordinates={{
+                        lat: order.artisan?.latitude,
+                        lng: order.artisan?.longitude,
+                    }}
+                    sellerAddress={order.artisan?.address || order.artisan?.city || "Artisan Studio"}
                 />
             )}
 
