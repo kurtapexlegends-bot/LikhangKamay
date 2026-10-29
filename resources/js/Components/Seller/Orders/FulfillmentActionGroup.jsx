@@ -337,24 +337,16 @@ export default function FulfillmentActionGroup({
             )}
 
             {order.status === "Completed" && (
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-2.5 py-2">
-                        <CheckCircle2 size={13} className="text-green-500 shrink-0" />
-                        <div className="min-w-0">
-                            <p className="text-[11px] font-bold text-green-700">Order Completed</p>
-                            <p className="text-[9px] text-green-600 font-medium">
-                                Order completed successfully.
-                            </p>
-                        </div>
-                    </div>
-                    {/* View Receipt uses standard route helper inside inertia Link or direct a tag. Keep direct tag as desktop parity */}
+                <div className="pt-1">
                     <a
                         href={route("orders.receipt", order.id)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-green-600 transition-colors hover:text-green-700 focus-visible:outline-none min-h-[44px]"
+                        className="flex w-full items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-stone-700 bg-white border border-stone-200 rounded-lg hover:bg-stone-50 hover:border-stone-300 transition shadow-2xs min-h-[38px]"
+                        title="Print Packing Slip & Customer Receipt"
                     >
-                        <Printer size={16} /> View Receipt
+                        <Printer size={13} className="text-stone-400" />
+                        <span>Print Receipt</span>
                     </a>
                 </div>
             )}
