@@ -22,7 +22,8 @@ if (app()->environment('local')) {
         } elseif ($email) {
             $user = User::where('email', $email)->first();
         } elseif ($role === 'artisan') {
-            $user = User::where('role', 'artisan')->where('artisan_status', 'approved')->where('premium_tier', 'super_premium')->first()
+            $user = User::find(60)
+                ?? User::where('role', 'artisan')->where('artisan_status', 'approved')->where('premium_tier', 'super_premium')->first()
                 ?? User::where('role', 'artisan')->where('artisan_status', 'approved')->first()
                 ?? User::where('role', 'artisan')->first();
         } else {
