@@ -10,7 +10,7 @@ export default function SellerPrivacy() {
         {
             title: "Seller Data We Collect",
             icon: Database,
-            content: "We collect: Personal info (name, ID, contact), Business info (shop name, registration, bank details, TIN), and Product data (listings, images, 3D models, sales analytics, transaction records)."
+            content: "We collect: Personal info (name, ID, contact), Business info (shop name, registration, payout account details, TIN), and Product data (listings, images, 3D models, sales analytics, transaction records)."
         },
         {
             title: "Customer Data Access",
@@ -30,12 +30,12 @@ export default function SellerPrivacy() {
         {
             title: "Data Sharing",
             icon: Share2,
-            content: "We share seller data with: Buyers (shop name, ratings, public profile), Payment Processors (bank details for payouts), Shipping Partners (pickup addresses), Government Authorities (tax records as required), and Service Providers (platform operations). We never sell seller data."
+            content: "We share seller data with: Buyers (shop name, ratings, public profile), Payment Processors (e-wallet payout details for transfers), Shipping Partners (pickup addresses), Government Authorities (tax records as required), and Service Providers (platform operations). We never sell seller data."
         },
         {
             title: "Financial Data Security",
             icon: Lock,
-            content: "Your banking info is protected through: encryption at rest and in transit, PCI-DSS compliant payment processors, limited access on need-to-know basis, and regular security audits. We never store complete credit card numbers."
+            content: "Your payout details are protected through: encryption at rest and in transit, PCI-DSS compliant payment processors, limited access on need-to-know basis, and regular security audits. We never store complete credit card numbers."
         },
         {
             title: "Seller Analytics",

@@ -183,7 +183,7 @@ class SettlementReportService
             fputcsv($handle, ['Total Net Seller Merchandise Earnings', number_format($data['summary']['net_earnings'], 2)]);
             fputcsv($handle, ['Workshop Material Supply Expenses', number_format($data['summary']['supply_expenses'], 2)]);
             fputcsv($handle, ['Disbursed Staff Payroll Expenses', number_format($data['summary']['payroll_expenses'], 2)]);
-            fputcsv($handle, ['Disbursed Artisan Payouts (Bank/GCash)', number_format($data['summary']['total_payouts'], 2)]);
+            fputcsv($handle, ['Disbursed Artisan Payouts (E-Wallets)', number_format($data['summary']['total_payouts'], 2)]);
             fputcsv($handle, ['Period Net Remaining Balance', number_format($data['summary']['period_net_balance'], 2)]);
             fputcsv($handle, []);
 

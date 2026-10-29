@@ -327,7 +327,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                                     <div>
                                         <p className="font-bold text-amber-900">Add Your Payout Details</p>
                                         <p className="text-amber-700 font-medium mt-0.5">
-                                            You have earnings ready for payout. Add your GCash or bank account in Shop Settings so the platform can send your weekly transfers.
+                                            You have earnings ready for payout. Add your GCash or Maya e-wallet in Shop Settings so the platform can send your transfers.
                                         </p>
                                     </div>
                                 </div>
@@ -343,7 +343,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                         {/* Payout Rhythm Note */}
                         <div className="flex items-center justify-between text-[11px] text-stone-400 font-medium px-1">
                             <span>Payout Rhythm: Transfers are processed weekly for completed orders.</span>
-                            <span>Direct to GCash &amp; Banks</span>
+                            <span>Direct to GCash &amp; Maya</span>
                         </div>
 
                         {/* Standardized Filter Toolbar Header & Filter Panel */}

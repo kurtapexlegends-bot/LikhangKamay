@@ -62,7 +62,7 @@ export default function SellerAgreement() {
         {
             title: "Payments and Payouts",
             icon: Banknote,
-            content: "Seller net payouts reflect 100% of merchandise sales subtotal without percentage commission deductions. Payouts are processed weekly for balances exceeding ₱500. Provide valid bank account details. LikhangKamay is not responsible for delays from incorrect banking information."
+            content: "Seller net payouts reflect 100% of merchandise sales subtotal without percentage commission deductions. Payouts are processed weekly for completed orders. Provide a valid GCash or Maya mobile number. LikhangKamay is not responsible for delays caused by incorrect account details."
         },
         {
             title: "Prohibited Activities",

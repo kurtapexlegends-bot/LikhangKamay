@@ -206,15 +206,26 @@ class ArtisanSetupController extends Controller
 
     private function handleStepThree(UserModel $user, Request $request)
     {
+        $rawNumber = preg_replace('/\D/', '', (string) $request->input('payout_account_number'));
+        if (str_starts_with($rawNumber, '639')) {
+            $rawNumber = '0' . substr($rawNumber, 2);
+        }
+        $request->merge(['payout_account_number' => $rawNumber]);
+
         $validated = $request->validate([
-            'payout_method' => 'required|string|max:50',
-            'payout_account_name' => 'required|string|max:100',
-            'payout_account_number' => 'required|string|max:100',
+            'payout_method' => ['required', 'string', 'in:gcash,maya,GCash,Maya'],
+            'payout_account_name' => ['required', 'string', 'max:100'],
+            'payout_account_number' => ['required', 'string', 'regex:/^09\d{9}$/'],
+        ], [
+            'payout_method.in' => 'Please select either GCash or Maya.',
+            'payout_account_number.regex' => 'Please enter a valid 11-digit Philippine mobile number starting with 09.',
         ]);
 
+        $normalizedMethod = strtolower($validated['payout_method']) === 'maya' ? 'Maya' : 'GCash';
+
         $user->update([
-            'payout_method' => $validated['payout_method'],
-            'payout_account_name' => $validated['payout_account_name'],
+            'payout_method' => $normalizedMethod,
+            'payout_account_name' => trim($validated['payout_account_name']),
             'payout_account_number' => $validated['payout_account_number'],
             'setup_completed_at' => now(),
             'artisan_status' => 'pending',

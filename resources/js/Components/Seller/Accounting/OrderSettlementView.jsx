@@ -30,10 +30,12 @@ export default function OrderSettlementView({ item }) {
                                 <td className="py-2.5 text-stone-500">Shipping Fee Paid</td>
                                 <td className="py-2.5 text-right font-bold text-stone-900 whitespace-nowrap">{formatMoney(item.financials?.shipping_fee)}</td>
                             </tr>
-                            <tr>
-                                <td className="py-2.5 text-rose-600">Platform Commission</td>
-                                <td className="py-2.5 text-right font-bold text-rose-600 whitespace-nowrap">{formatSignedMoney(item.financials?.platform_fee, 'deduction')}</td>
-                            </tr>
+                            {Number(item.financials?.platform_fee || 0) > 0 && (
+                                <tr>
+                                    <td className="py-2.5 text-rose-600">Platform Commission</td>
+                                    <td className="py-2.5 text-right font-bold text-rose-600 whitespace-nowrap">{formatSignedMoney(item.financials?.platform_fee, 'deduction')}</td>
+                                </tr>
+                            )}
                             <tr>
                                 <td className="py-2.5 text-rose-600">Payment Processing Fee</td>
                                 <td className="py-2.5 text-right font-bold text-rose-600 whitespace-nowrap">{formatSignedMoney(item.financials?.convenience_fee, 'deduction')}</td>

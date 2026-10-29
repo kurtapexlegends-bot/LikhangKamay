@@ -73,7 +73,7 @@ export default function FundMetrics({ finances = {}, canEditAccounting, onEditBa
                         </h3>
                     </div>
                     <p className="text-[11px] text-stone-400 font-medium pt-1 border-t border-stone-100 truncate">
-                        Transferred to GCash / Bank
+                        Transferred to GCash / Maya
                     </p>
                 </div>
             </div>

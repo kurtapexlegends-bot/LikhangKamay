@@ -90,6 +90,9 @@ class SettingsController extends Controller
                 'payout_method' => $sellerOwner->payout_method ?? 'GCash',
                 'payout_account_name' => $sellerOwner->payout_account_name ?? '',
                 'payout_account_number' => $sellerOwner->payout_account_number ?? '',
+                'tin' => $sellerOwner->tin ?? '',
+                'is_vat_registered' => (bool) ($sellerOwner->is_vat_registered ?? false),
+                'tax_business_name' => $sellerOwner->tax_business_name ?? '',
             ],
             'products' => $products,
             'stats' => [
@@ -120,46 +123,32 @@ class SettingsController extends Controller
         $sellerOwner = $user->getEffectiveSeller() ?: $user;
 
         $request->validate([
-            'disbursement_method' => ['required', 'string', 'in:gcash,maya,bank,GCash,Maya,Bank Transfer'],
+            'disbursement_method' => ['required', 'string', 'in:gcash,maya,GCash,Maya'],
             'account_name' => ['required', 'string', 'min:2', 'max:100'],
             'account_number' => ['required', 'string', 'max:30'],
-            'bank_name' => ['nullable', 'string', 'max:100'],
         ]);
 
         $methodInput = strtolower($request->input('disbursement_method'));
         $rawNumber = (string) $request->input('account_number');
 
-        if (in_array($methodInput, ['gcash', 'maya'])) {
-            // Strip all non-numeric characters (spaces, dashes, parentheses, letters, symbols)
-            $digits = preg_replace('/[^0-9]/', '', $rawNumber);
+        // Strip all non-numeric characters (spaces, dashes, parentheses, letters, symbols)
+        $digits = preg_replace('/[^0-9]/', '', $rawNumber);
 
-            // Normalize +63 / 63 prefix to 09
-            if (str_starts_with($digits, '639') && strlen($digits) === 12) {
-                $digits = '0' . substr($digits, 2);
-            } elseif (str_starts_with($digits, '9') && strlen($digits) === 10) {
-                $digits = '0' . $digits;
-            }
-
-            if (!preg_match('/^09[0-9]{9}$/', $digits)) {
-                return back()->withErrors([
-                    'account_number' => 'Please enter a valid 11-digit Philippine mobile number starting with 09 (e.g. 0917 123 4567).',
-                ]);
-            }
-
-            $sellerOwner->payout_method = $methodInput === 'gcash' ? 'GCash' : 'Maya';
-            $sellerOwner->payout_account_number = $digits;
-        } else {
-            // Bank transfer: strip non-digits, require 8-20 digits
-            $cleanNumber = preg_replace('/[^0-9]/', '', $rawNumber);
-            if (strlen($cleanNumber) < 8 || strlen($cleanNumber) > 20) {
-                return back()->withErrors([
-                    'account_number' => 'Please enter a valid bank account number (8 to 20 digits).',
-                ]);
-            }
-
-            $sellerOwner->payout_method = $request->input('bank_name') ?: 'Bank Transfer';
-            $sellerOwner->payout_account_number = $cleanNumber;
+        // Normalize +63 / 63 prefix to 09
+        if (str_starts_with($digits, '639') && strlen($digits) === 12) {
+            $digits = '0' . substr($digits, 2);
+        } elseif (str_starts_with($digits, '9') && strlen($digits) === 10) {
+            $digits = '0' . $digits;
         }
+
+        if (!preg_match('/^09[0-9]{9}$/', $digits)) {
+            return back()->withErrors([
+                'account_number' => 'Please enter a valid 11-digit Philippine mobile number starting with 09 (e.g. 0917 123 4567).',
+            ]);
+        }
+
+        $sellerOwner->payout_method = $methodInput === 'gcash' ? 'GCash' : 'Maya';
+        $sellerOwner->payout_account_number = $digits;
 
         $sellerOwner->payout_account_name = trim($request->input('account_name'));
         $sellerOwner->save();
@@ -196,4 +185,44 @@ class SettingsController extends Controller
 
         return redirect()->back()->with('success', 'Module settings updated.');
     }
+
+    /**
+     * Update the artisan's Philippine BIR Tax & VAT Profile.
+     */
+    public function updateTax(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        abort_unless($user && ($user->isArtisan() || $user->isWorkspaceOwner()), 403, 'Only the shop owner can update tax settings.');
+
+        $sellerOwner = $user->getEffectiveSeller() ?: $user;
+
+        $request->validate([
+            'tin' => ['nullable', 'string', 'regex:/^(\d{3}-\d{3}-\d{3}(-\d{3,5})?|\d{9,14})$/'],
+            'is_vat_registered' => ['nullable', 'boolean'],
+            'tax_business_name' => ['nullable', 'string', 'max:255'],
+        ], [
+            'tin.regex' => 'Please enter a valid 9 or 12-digit Taxpayer Identification Number (e.g. 123-456-789 or 123-456-789-000).',
+        ]);
+
+        if ($request->filled('tin')) {
+            $digits = preg_replace('/[^0-9]/', '', (string) $request->input('tin'));
+            if (strlen($digits) === 9) {
+                $sellerOwner->tin = substr($digits, 0, 3) . '-' . substr($digits, 3, 3) . '-' . substr($digits, 6, 3);
+            } elseif (strlen($digits) >= 12) {
+                $sellerOwner->tin = substr($digits, 0, 3) . '-' . substr($digits, 3, 3) . '-' . substr($digits, 6, 3) . '-' . substr($digits, 9);
+            } else {
+                $sellerOwner->tin = $request->input('tin');
+            }
+        } else {
+            $sellerOwner->tin = null;
+        }
+
+        $sellerOwner->is_vat_registered = $request->boolean('is_vat_registered');
+        $sellerOwner->tax_business_name = $request->filled('tax_business_name') ? trim((string) $request->input('tax_business_name')) : null;
+        $sellerOwner->save();
+
+        return redirect()->back()->with('success', 'Tax profile updated successfully.');
+    }
 }
+

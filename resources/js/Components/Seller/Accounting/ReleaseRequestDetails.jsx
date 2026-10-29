@@ -115,10 +115,11 @@ export default function ReleaseRequestDetails({
                                 <td>Shipping Paid by Customer</td>
                                 <td class="text-right">PHP ${Number(item.financials?.shipping_fee || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                             </tr>
+                            ${Number(item.financials?.platform_fee || 0) > 0 ? `
                             <tr>
                                 <td style="color:#ef4444;">Platform Commission</td>
                                 <td class="text-right" style="color:#ef4444;">- PHP ${Number(item.financials?.platform_fee || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                            </tr>
+                            </tr>` : ''}
                             <tr>
                                 <td style="color:#ef4444;">Payment Processing Fee</td>
                                 <td class="text-right" style="color:#ef4444;">- PHP ${Number(item.financials?.convenience_fee || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>

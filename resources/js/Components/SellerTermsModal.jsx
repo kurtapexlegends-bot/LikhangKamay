@@ -184,7 +184,7 @@ export default function SellerTermsModal({ show, onClose, onAccept, onBack, type
                             <section>
                                 <h4 className="font-bold text-stone-900 mb-2">4. Commission, Subscriptions & Payouts</h4>
                                 <p>4.1. LikhangKamay charges <strong>0% Platform Sales Commission</strong> on merchandise sales, allowing artisans to keep 100% of their merchandise earnings. Platform operations and promotional services are supported through optional monthly artisan subscription tiers (Standard, Premium, Elite).</p>
-                                <p>4.2. Payouts are processed weekly via GCash, Maya, or Bank Transfer upon customer confirmation of receipt or delivery warranty clearance.</p>
+                                <p>4.2. Payouts are processed weekly via GCash or Maya upon customer confirmation of receipt or delivery warranty clearance.</p>
                             </section>
 
                             <section>

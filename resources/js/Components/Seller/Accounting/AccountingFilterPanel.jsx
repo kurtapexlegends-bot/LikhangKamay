@@ -94,7 +94,7 @@ export default function AccountingFilterPanel({
                     >
                         <option value="all">All Transaction Types</option>
                         <option value="sale">Sales Revenue &amp; Settlements</option>
-                        <option value="payout">GCash, Maya &amp; Bank Payouts</option>
+                        <option value="payout">GCash &amp; Maya Payouts</option>
                         <option value="payroll">Staff &amp; Payroll Runs</option>
                         <option value="stock_request">Material Supplies &amp; Restocks</option>
                         <option value="refund">Refund Deductions</option>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CreditCard, ArrowLeft, CheckCircle2, Wallet, Building2, Store, MapPin, ShieldCheck, Phone } from 'lucide-react';
+import { CreditCard, ArrowLeft, CheckCircle2, Wallet, Store, MapPin, ShieldCheck, Phone } from 'lucide-react';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
 import TextInput from '@/Components/TextInput';
@@ -31,7 +31,7 @@ export default function PaymentStep({
             id: 'GCash',
             name: 'GCash',
             badge: 'E-Wallet',
-            description: 'Instant payouts to your registered 11-digit mobile number.',
+            description: 'Direct payouts to your 11-digit GCash mobile number.',
             colorClass: 'text-blue-600',
         },
         {
@@ -40,13 +40,6 @@ export default function PaymentStep({
             badge: 'E-Wallet',
             description: 'Direct deposits to your Maya digital wallet account.',
             colorClass: 'text-emerald-600',
-        },
-        {
-            id: 'Bank Transfer',
-            name: 'Direct Bank Transfer',
-            badge: 'Coming Soon',
-            description: 'Direct BDO, BPI, UnionBank deposits.',
-            disabled: true,
         },
     ];
 
@@ -71,38 +64,29 @@ export default function PaymentStep({
             <div className="space-y-6">
                 <div>
                     <InputLabel value="Select Payout Method *" className="mb-2" />
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {methods.map((method) => {
                             const isSelected = data.payout_method === method.id;
                             return (
                                 <button
                                     key={method.id}
                                     type="button"
-                                    disabled={method.disabled}
                                     onClick={() => setData('payout_method', method.id)}
                                     className={`relative flex flex-col justify-between rounded-xl border p-4 text-left transition-all ${
-                                        method.disabled
-                                            ? 'border-stone-200 bg-stone-50/50 opacity-60 cursor-not-allowed'
-                                            : isSelected
-                                                ? 'border-clay-600 bg-clay-50/30 ring-1 ring-clay-600 shadow-xs'
-                                                : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/30 cursor-pointer'
+                                        isSelected
+                                            ? 'border-clay-600 bg-clay-50/30 ring-1 ring-clay-600 shadow-xs'
+                                            : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/30 cursor-pointer'
                                     }`}
                                 >
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-2">
-                                            {method.id === 'Bank Transfer' ? (
-                                                <Building2 size={16} className="text-stone-400" />
-                                            ) : (
-                                                <Wallet size={16} className={isSelected ? 'text-clay-600' : 'text-stone-400'} />
-                                            )}
+                                            <Wallet size={16} className={isSelected ? 'text-clay-600' : 'text-stone-400'} />
                                             <span className="text-sm font-bold text-stone-900">{method.name}</span>
                                         </div>
                                         <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
-                                            method.disabled
-                                                ? 'bg-stone-100 text-stone-500'
-                                                : isSelected
-                                                    ? 'bg-clay-100 text-clay-800'
-                                                    : 'bg-stone-100 text-stone-600'
+                                            isSelected
+                                                ? 'bg-clay-100 text-clay-800'
+                                                : 'bg-stone-100 text-stone-600'
                                         }`}>
                                             {method.badge}
                                         </span>
@@ -116,42 +100,34 @@ export default function PaymentStep({
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="payout_account_name" value="Account Holder Name *" />
+                    <InputLabel htmlFor="payout_account_name" value="Account Name *" />
                     <div className="mt-1">
                         <TextInput
                             id="payout_account_name"
                             value={data.payout_account_name}
                             onChange={(e) => setData('payout_account_name', e.target.value)}
-                            placeholder="Full name matching your submitted ID / permit"
+                            placeholder="Full name registered on your e-wallet"
                         />
                     </div>
-                    <p className="mt-1.5 text-xs text-stone-500">Must match the legal name on your business documentation.</p>
+                    <p className="mt-1.5 text-xs text-stone-500">The full name registered on your GCash or Maya account.</p>
                     <InputError message={errors.payout_account_name} className="mt-2" />
                 </div>
 
                 <div>
                     <InputLabel 
                         htmlFor="payout_account_number" 
-                        value={
-                            data.payout_method?.toLowerCase() === 'gcash' ? 'GCash Mobile Number *' :
-                            data.payout_method?.toLowerCase() === 'maya' ? 'Maya Mobile / Account Number *' :
-                            'Account Number *'
-                        } 
+                        value={data.payout_method?.toLowerCase() === 'maya' ? 'Maya Mobile Number *' : 'GCash Mobile Number *'} 
                     />
                     <div className="mt-1">
                         <TextInput
                             id="payout_account_number"
                             value={data.payout_account_number}
                             onChange={(e) => setData('payout_account_number', e.target.value)}
-                            placeholder={
-                                data.payout_method?.toLowerCase() === 'gcash' || data.payout_method?.toLowerCase() === 'maya'
-                                    ? '09XX XXX XXXX (11 digits)'
-                                    : 'Account Number'
-                            }
+                            placeholder="09XX XXX XXXX (11 digits)"
                             icon={Phone}
                         />
                     </div>
-                    <p className="mt-1.5 text-xs text-stone-500">Standard Philippine mobile numbers start with 09 (11 digits).</p>
+                    <p className="mt-1.5 text-xs text-stone-500">Standard Philippine 11-digit mobile number starting with 09.</p>
                     <InputError message={errors.payout_account_number} className="mt-2" />
                 </div>
 

@@ -123,7 +123,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
             icon: Shield,
             dpaNotice: true,
             sections: [
-                { title: "Seller Data We Collect", content: "Personal info (name, ID, contact), business info (shop name, bank details, TIN), and product data (listings, 3D models, sales analytics)." },
+                { title: "Seller Data We Collect", content: "Personal info (name, ID, contact), business info (shop name, payout details, TIN), and product data (listings, 3D models, sales analytics)." },
                 { title: "Customer Data Access", content: "You receive limited customer info for order fulfillment only. Do not store beyond transaction or share with third parties." },
                 { title: "Studio Staff & Attendance", content: "Quick face photos and store location coordinates captured during employee clock-in/out are processed strictly for attendance verification under RA 10173 and never shared with third parties." },
                 { title: "How We Use Seller Data", content: "Verify identity, process orders, transfer earnings, provide analytics, communicate updates, and comply with legal requirements." },

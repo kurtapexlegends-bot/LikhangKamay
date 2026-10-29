@@ -120,7 +120,7 @@
                 </td>
             </tr>
             <tr>
-                <td class="label-col">Gateway / Bank Reference Number</td>
+                <td class="label-col">E-Wallet Reference Number</td>
                 <td class="value-col" style="font-family: monospace; font-weight: 800; color: #1c1917;">
                     {{ $payout->reference_number ?: 'SYSTEM-ESCROW-RELEASE' }}
                 </td>

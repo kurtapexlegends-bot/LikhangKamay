@@ -1,82 +1,65 @@
 import React, { useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import { Banknote, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
+import { 
+    Smartphone, 
+    CreditCard, 
+    CheckCircle2, 
+    Loader2, 
+    Pencil, 
+    Check
+} from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import InputError from '@/Components/InputError';
+import TaxProfileCard from './TaxProfileCard';
 
-/**
- * Format Philippine mobile number into standard 09XX XXX XXXX format
- * automatically stripping non-digits, negatives, spaces, letters, and symbols.
- */
 function formatPhilippineMobileNumber(val) {
     if (!val) return '';
     let digits = String(val).replace(/\D/g, '');
-    
-    // Normalize +63 / 63 prefix to 09
-    if (digits.startsWith('639')) {
-        digits = '0' + digits.slice(2);
-    } else if (digits.startsWith('9')) {
-        digits = '0' + digits;
-    }
-    
+    if (digits.startsWith('639')) digits = '0' + digits.slice(2);
+    else if (digits.startsWith('9')) digits = '0' + digits;
     digits = digits.slice(0, 11);
-    
     if (digits.length <= 4) return digits;
     if (digits.length <= 7) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
     return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 11)}`;
 }
 
-/**
- * Clean and format bank account numbers (allow digits only, max 20)
- */
-function formatBankAccountNumber(val) {
-    if (!val) return '';
-    return String(val).replace(/\D/g, '').slice(0, 20);
+function maskMobileNumber(number) {
+    if (!number) return '•••• •••• ••••';
+    const clean = String(number).replace(/\s+/g, '');
+    if (clean.length >= 11) {
+        return `${clean.slice(0, 4)} •••• ${clean.slice(-4)}`;
+    }
+    return clean;
 }
 
 export default function FinancePayoutsTab({ sellerOwner = {}, permissions = {} }) {
     const { addToast } = useToast();
-    const canEdit = permissions?.can_edit_shop_settings || permissions?.can_edit_accounting;
+    const canEdit = Boolean(permissions?.can_edit_shop_settings || permissions?.can_edit_accounting);
 
-    // Detect initial disbursement method
     const existingMethod = (sellerOwner.payout_method || 'GCash').toLowerCase();
     const isMaya = existingMethod.includes('maya');
-    const isGcash = existingMethod.includes('gcash');
-    const isBank = !isMaya && !isGcash && Boolean(sellerOwner.payout_method);
+    const initialMethod = isMaya ? 'maya' : 'gcash';
 
-    const initialMethod = isMaya ? 'maya' : isBank ? 'bank' : 'gcash';
-    const initialBankName = isBank ? sellerOwner.payout_method : 'BDO Unibank';
     const rawAccountNumber = sellerOwner.payout_account_number || '';
-    const initialAccountNumber = initialMethod === 'bank'
-        ? rawAccountNumber
-        : formatPhilippineMobileNumber(rawAccountNumber);
+    const initialAccountNumber = formatPhilippineMobileNumber(rawAccountNumber);
 
+    const [isEditing, setIsEditing] = useState(!rawAccountNumber);
     const [saved, setSaved] = useState(false);
 
     const form = useForm({
         disbursement_method: initialMethod,
         account_name: sellerOwner.payout_account_name || sellerOwner.name || '',
         account_number: initialAccountNumber,
-        bank_name: initialBankName,
     });
 
     const handleNumberChange = (e) => {
-        const inputVal = e.target.value;
-        if (form.data.disbursement_method === 'bank') {
-            form.setData('account_number', formatBankAccountNumber(inputVal));
-        } else {
-            form.setData('account_number', formatPhilippineMobileNumber(inputVal));
-        }
+        form.setData('account_number', formatPhilippineMobileNumber(e.target.value));
     };
 
     const handleMethodChange = (val) => {
         form.setData((d) => ({
             ...d,
             disbursement_method: val,
-            bank_name: val === 'gcash' ? 'GCash' : val === 'maya' ? 'Maya' : (d.bank_name || 'BDO Unibank'),
-            account_number: val === 'bank'
-                ? formatBankAccountNumber(d.account_number)
-                : formatPhilippineMobileNumber(d.account_number),
         }));
     };
 
@@ -86,142 +69,204 @@ export default function FinancePayoutsTab({ sellerOwner = {}, permissions = {} }
             preserveScroll: true,
             onSuccess: () => {
                 setSaved(true);
-                if (addToast) {
-                    addToast('Settlement account details updated successfully.', 'success');
-                }
-                setTimeout(() => setSaved(false), 4000);
+                setIsEditing(false);
+                if (addToast) addToast('Payout account updated successfully.', 'success');
+                setTimeout(() => setSaved(false), 3500);
+            },
+            onError: (errs) => {
+                const firstError = Object.values(errs || {})[0];
+                if (addToast && firstError) addToast(firstError, 'error');
             },
         });
     };
 
+    const displayChannelName = initialMethod === 'maya' ? 'Maya' : 'GCash';
+    const ActiveIcon = initialMethod === 'maya' ? CreditCard : Smartphone;
+
     return (
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-2xs space-y-6">
-            <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 shrink-0">
-                    <Banknote size={20} />
-                </div>
-                <h3 className="text-base font-bold text-stone-900">Finance &amp; Payout Settlement</h3>
-            </div>
-
-            {/* Security Banner */}
-            <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 flex items-start gap-3">
-                <ShieldCheck size={20} className="text-emerald-700 shrink-0 mt-0.5" />
-                <div>
-                    <h4 className="text-xs font-bold text-emerald-900">Encrypted Settlement Gateway</h4>
-                    <p className="text-xs text-emerald-800 mt-0.5 leading-relaxed">
-                        Earnings from completed customer orders are disbursed directly to your designated account by the platform every week.
-                    </p>
-                </div>
-            </div>
-
-            {/* Saved Notification */}
-            {saved && (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold text-emerald-800 flex items-center gap-2">
-                    <CheckCircle2 size={16} />
-                    Settlement account details updated successfully!
-                </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-                        Disbursement Type
-                    </label>
-                    <div className="relative">
-                        <select
-                            value={form.data.disbursement_method}
-                            onChange={(e) => handleMethodChange(e.target.value)}
-                            disabled={!canEdit || form.processing}
-                            className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500 disabled:bg-stone-50 min-h-[44px] cursor-pointer"
-                        >
-                            <option value="gcash">GCash</option>
-                            <option value="maya">Maya</option>
-                            <option value="bank">Bank Transfer (InstaPay / PESONet)</option>
-                        </select>
-                    </div>
-                    <InputError message={form.errors.disbursement_method} className="mt-1" />
-                </div>
-
-                {form.data.disbursement_method === 'bank' && (
+        <div className="max-w-4xl space-y-6">
+            {/* 1. Payout Account Card */}
+            <div className="bg-white rounded-2xl border border-stone-200/80 p-5 sm:p-6 shadow-2xs space-y-5">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                     <div>
-                        <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-                            Select Bank
-                        </label>
-                        <select
-                            value={form.data.bank_name}
-                            onChange={(e) => form.setData('bank_name', e.target.value)}
-                            disabled={!canEdit || form.processing}
-                            className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500 disabled:bg-stone-50 min-h-[44px] cursor-pointer"
-                        >
-                            <option value="BDO Unibank">BDO Unibank</option>
-                            <option value="BPI">BPI (Bank of the Philippine Islands)</option>
-                            <option value="UnionBank">UnionBank of the Philippines</option>
-                            <option value="Metrobank">Metrobank</option>
-                            <option value="Landbank">Landbank of the Philippines</option>
-                            <option value="Security Bank">Security Bank</option>
-                            <option value="RCBC">RCBC (Rizal Commercial Banking Corp)</option>
-                            <option value="PNB">PNB (Philippine National Bank)</option>
-                        </select>
-                        <InputError message={form.errors.bank_name} className="mt-1" />
+                        <h3 className="text-sm font-bold text-stone-900">Payout Account</h3>
+                        <p className="text-xs text-stone-500 mt-0.5">
+                            Your shop earnings are sent directly to this e-wallet once customer orders are completed.
+                        </p>
                     </div>
+
+                    {!isEditing && rawAccountNumber && canEdit && (
+                        <button
+                            type="button"
+                            onClick={() => setIsEditing(true)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-bold text-stone-700 hover:bg-stone-50 transition cursor-pointer"
+                        >
+                            <Pencil size={13} />
+                            <span>Change Account</span>
+                        </button>
+                    )}
+                </div>
+
+                {saved && (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs font-semibold text-emerald-800 flex items-center gap-2">
+                        <CheckCircle2 size={15} /> Payout account saved!
+                    </div>
+                )}
+
+                {/* View State: Clean Connected Account Card */}
+                {!isEditing && rawAccountNumber ? (
+                    <div className="rounded-xl border border-stone-200 bg-stone-50/60 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                            <div className="w-11 h-11 rounded-xl bg-white border border-stone-200/90 flex items-center justify-center text-stone-700 shrink-0 shadow-2xs">
+                                <ActiveIcon size={20} />
+                            </div>
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-stone-900">
+                                        {displayChannelName}
+                                    </span>
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                        Active
+                                    </span>
+                                </div>
+                                <p className="text-xs text-stone-600 mt-0.5 font-medium truncate">
+                                    {sellerOwner.payout_account_name || sellerOwner.name}
+                                </p>
+                                <p className="text-xs font-mono text-stone-500 mt-0.5">
+                                    {maskMobileNumber(rawAccountNumber)}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="text-left sm:text-right border-t sm:border-t-0 border-stone-200/60 pt-3 sm:pt-0">
+                            <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block">
+                                Transfer Method
+                            </span>
+                            <span className="text-xs font-bold text-stone-800 mt-0.5 block">
+                                Direct E-Wallet Transfer
+                            </span>
+                            <span className="text-[11px] text-emerald-700 font-medium">
+                                No transfer fees
+                            </span>
+                        </div>
+                    </div>
+                ) : (
+                    /* Edit State: Clean Form */
+                    <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+                        <div>
+                            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                                Payout Method
+                            </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {[
+                                    { id: 'gcash', name: 'GCash', sub: 'Send payouts to your GCash number', icon: Smartphone },
+                                    { id: 'maya', name: 'Maya', sub: 'Send payouts to your Maya number', icon: CreditCard },
+                                ].map((channel) => {
+                                    const isSelected = form.data.disbursement_method === channel.id;
+                                    const ChannelIcon = channel.icon;
+                                    return (
+                                        <button
+                                            key={channel.id}
+                                            type="button"
+                                            onClick={() => handleMethodChange(channel.id)}
+                                            disabled={!canEdit || form.processing}
+                                            className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+                                                isSelected
+                                                    ? 'border-clay-700 bg-clay-50/20 ring-1 ring-clay-600/30 shadow-2xs'
+                                                    : 'border-stone-200 hover:border-stone-300 bg-white'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <ChannelIcon size={18} className={isSelected ? 'text-clay-700' : 'text-stone-500'} />
+                                                <div className="min-w-0">
+                                                    <span className="text-xs font-bold text-stone-900 block truncate">
+                                                        {channel.name}
+                                                    </span>
+                                                    <span className="text-[11px] text-stone-400 block truncate mt-0.5">
+                                                        {channel.sub}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {isSelected && (
+                                                <span className="w-4 h-4 rounded-full bg-clay-700 text-white flex items-center justify-center shrink-0 ml-1">
+                                                    <Check size={11} strokeWidth={3} />
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <InputError message={form.errors.disbursement_method} className="mt-1" />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                    Account Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={form.data.account_name}
+                                    onChange={(e) => form.setData('account_name', e.target.value)}
+                                    placeholder={sellerOwner.name || 'e.g. Juan Dela Cruz'}
+                                    disabled={!canEdit || form.processing}
+                                    className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500 disabled:bg-stone-50 min-h-[44px]"
+                                    required
+                                />
+                                <InputError message={form.errors.account_name} className="mt-1" />
+                                <p className="text-[11px] text-stone-400 mt-1">
+                                    The full name registered on your {form.data.disbursement_method === 'maya' ? 'Maya' : 'GCash'} account.
+                                </p>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                    Mobile Number
+                                </label>
+                                <input
+                                    type="text"
+                                    value={form.data.account_number}
+                                    onChange={handleNumberChange}
+                                    placeholder="0917 123 4567"
+                                    disabled={!canEdit || form.processing}
+                                    className="w-full rounded-xl border-stone-200 text-sm font-mono tracking-wider focus:border-clay-500 focus:ring-clay-500 disabled:bg-stone-50 min-h-[44px]"
+                                    required
+                                />
+                                <InputError message={form.errors.account_number} className="mt-1" />
+                                <p className="text-[11px] text-stone-400 mt-1 font-sans">
+                                    11-digit mobile number starting with 09.
+                                </p>
+                            </div>
+                        </div>
+
+                        {canEdit && (
+                            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-stone-100">
+                                {rawAccountNumber && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsEditing(false)}
+                                        className="px-4 py-2 rounded-xl border border-stone-200 text-xs font-bold text-stone-600 hover:bg-stone-50 transition min-h-[38px] cursor-pointer"
+                                    >
+                                        Cancel
+                                    </button>
+                                )}
+                                <button
+                                    type="submit"
+                                    disabled={form.processing}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-clay-700 hover:bg-clay-800 text-white text-xs font-bold transition shadow-xs disabled:opacity-50 min-h-[40px] cursor-pointer"
+                                >
+                                    {form.processing ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                                    <span>{form.processing ? 'Saving...' : 'Save Account'}</span>
+                                </button>
+                            </div>
+                        )}
+                    </form>
                 )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-                        Account Holder Name
-                    </label>
-                    <input
-                        type="text"
-                        value={form.data.account_name}
-                        onChange={(e) => form.setData('account_name', e.target.value)}
-                        placeholder="Registered Account Name (e.g. Juan Dela Cruz)"
-                        disabled={!canEdit || form.processing}
-                        className="w-full rounded-xl border-stone-200 text-sm focus:border-clay-500 focus:ring-clay-500 disabled:bg-stone-50 min-h-[44px]"
-                        required
-                    />
-                    <InputError message={form.errors.account_name} className="mt-1" />
-                </div>
-
-                <div>
-                    <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-                        {form.data.disbursement_method === 'bank' ? 'Bank Account Number' : 'Mobile Number (09XX XXX XXXX)'}
-                    </label>
-                    <input
-                        type="text"
-                        value={form.data.account_number}
-                        onChange={handleNumberChange}
-                        placeholder={form.data.disbursement_method === 'bank' ? 'e.g. 109238475612' : '0917 123 4567'}
-                        disabled={!canEdit || form.processing}
-                        className="w-full rounded-xl border-stone-200 text-sm font-mono tracking-wider focus:border-clay-500 focus:ring-clay-500 disabled:bg-stone-50 min-h-[44px]"
-                        required
-                    />
-                    <InputError message={form.errors.account_number} className="mt-1" />
-                    <p className="text-[11px] text-stone-400 mt-1 font-sans">
-                        {form.data.disbursement_method === 'bank'
-                            ? 'Enter 8 to 20 digit bank account number.'
-                            : 'Accepts 09XX, +639, or spaces. Automatically formatted to 11 digits.'}
-                    </p>
-                </div>
-            </div>
-
-            {canEdit && (
-                <div className="flex justify-end pt-2">
-                    <button
-                        type="submit"
-                        disabled={form.processing}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-clay-700 hover:bg-clay-800 text-white text-xs font-bold transition shadow-xs disabled:opacity-50 min-h-[40px] cursor-pointer"
-                    >
-                        {form.processing ? (
-                            <Loader2 size={15} className="animate-spin" />
-                        ) : (
-                            <CheckCircle2 size={15} />
-                        )}
-                        <span>{form.processing ? 'Saving...' : 'Save Settlement Details'}</span>
-                    </button>
-                </div>
-            )}
-        </form>
+            {/* 2. Tax Settings Card */}
+            <TaxProfileCard seller={sellerOwner} canEdit={canEdit} />
+        </div>
     );
 }

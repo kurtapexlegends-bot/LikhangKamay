@@ -311,9 +311,9 @@ class PayoutSampleDataSeeder extends Seeder
         // 4. Configure Vigan Heritage Pottery as fully settled (₱0.00)
         if ($vigan) {
             $vigan->update([
-                'payout_method' => 'Bank Transfer (BDO)',
+                'payout_method' => 'Maya',
                 'payout_account_name' => 'Vigan Heritage Clay Inc',
-                'payout_account_number' => '1092837465',
+                'payout_account_number' => '09181234567',
                 'artisan_status' => 'approved',
             ]);
         }

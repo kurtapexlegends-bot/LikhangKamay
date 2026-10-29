@@ -144,9 +144,9 @@ class SellerSearchService
                 'staff_feature_required' => true,
             ],
             [
-                'keywords' => ['finance & payouts', 'finance', 'payouts', 'paymongo', 'maya', 'gcash', 'bank', 'bank account', 'withdrawal', 'wallet', 'payment settings', 'e-wallet'],
+                'keywords' => ['finance & payouts', 'finance', 'payouts', 'paymongo', 'maya', 'gcash', 'e-wallet', 'withdrawal', 'wallet', 'payment settings'],
                 'title' => 'Finance & Payouts',
-                'subtitle' => 'Manage Paymongo e-wallet connections, bank accounts, and funds withdrawal methods',
+                'subtitle' => 'Manage e-wallet payout accounts (GCash, Maya) and tax settings',
                 'type' => 'Setting',
                 'url' => $shopSettingsUrl,
                 'icon' => 'credit-card',
