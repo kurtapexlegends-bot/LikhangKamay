@@ -1,4 +1,5 @@
 import React from "react";
+import { usePage } from "@inertiajs/react";
 import TextInput from "@/Components/TextInput";
 import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
@@ -22,6 +23,28 @@ export default function ProductFormBasicDetails({
     subscription,
     setActiveFormTab,
 }) {
+    const { auth } = usePage().props;
+    const isVatRegistered = Boolean(auth?.user?.is_vat_registered);
+    const numPrice = Number(data.price) || 0;
+    const numCost = Number(data.cost_price) || 0;
+
+    let vatableSales = 0;
+    let vatAmount = 0;
+    let netRevenue = 0;
+
+    if (isVatRegistered) {
+        vatableSales = numPrice > 0 ? Math.round((numPrice / 1.12) * 100) / 100 : 0;
+        vatAmount = numPrice > 0 ? Math.round((numPrice - vatableSales) * 100) / 100 : 0;
+        netRevenue = vatableSales;
+    } else {
+        netRevenue = numPrice;
+    }
+
+    const estimatedProfit = numPrice > 0 && numCost > 0 ? Math.round((netRevenue - numCost) * 100) / 100 : null;
+    const profitMarginPercent = numPrice > 0 && estimatedProfit !== null && netRevenue > 0
+        ? Math.round((estimatedProfit / netRevenue) * 1000) / 10 
+        : null;
+
     return (
         <div className="space-y-6 animate-fadeIn">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -264,6 +287,80 @@ export default function ProductFormBasicDetails({
                             <InputError message={errors.stock} className="mt-2" />
                         </div>
                     </div>
+
+                    {/* Live VAT & Profit Margin Transparency Widget */}
+                    {numPrice > 0 && (
+                        <div className="mt-4 rounded-xl border border-stone-200/90 bg-stone-50/70 p-3.5 sm:p-4 text-xs transition-all">
+                            <div className="flex items-center justify-between border-b border-stone-200/60 pb-2 mb-2.5">
+                                <span className="font-bold text-stone-700 text-xs">
+                                    What You Earn from This Price
+                                </span>
+                                <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
+                                    isVatRegistered 
+                                        ? 'bg-clay-100 text-clay-800 border border-clay-200' 
+                                        : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                }`}>
+                                    {isVatRegistered ? 'VAT-Registered Shop (12%)' : 'Non-VAT Shop (VAT-Exempt)'}
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-stone-600">
+                                <div>
+                                    <span className="text-[10px] uppercase font-bold text-stone-400 block">Customer Pays</span>
+                                    <span className="font-mono font-bold text-stone-900 text-sm">
+                                        ₱{numPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
+                                    <span className="text-[10px] text-stone-500 block mt-0.5">
+                                        Final price in your store
+                                    </span>
+                                </div>
+
+                                {isVatRegistered ? (
+                                    <>
+                                        <div>
+                                            <span className="text-[10px] uppercase font-bold text-stone-400 block">12% VAT for BIR</span>
+                                            <span className="font-mono font-bold text-amber-700 text-sm">
+                                                ₱{vatAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                            <span className="text-[10px] text-stone-500 block mt-0.5">Set aside for taxes</span>
+                                        </div>
+
+                                        <div>
+                                            <span className="text-[10px] uppercase font-bold text-stone-400 block">What Your Shop Keeps</span>
+                                            <span className="font-mono font-bold text-stone-900 text-sm">
+                                                ₱{netRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                            <span className="text-[10px] text-stone-500 block mt-0.5">Sales before expenses</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div>
+                                        <span className="text-[10px] uppercase font-bold text-stone-400 block">What Your Shop Keeps</span>
+                                        <span className="font-mono font-bold text-stone-900 text-sm">
+                                            ₱{netRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
+                                        <span className="text-[10px] text-emerald-700 font-medium block mt-0.5">100% yours • No added VAT</span>
+                                    </div>
+                                )}
+
+                                {estimatedProfit !== null ? (
+                                    <div>
+                                        <span className="text-[10px] uppercase font-bold text-stone-400 block">Your Estimated Profit</span>
+                                        <span className={`font-mono font-bold text-sm ${estimatedProfit >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                                            ₱{estimatedProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
+                                        <span className="text-[10px] text-stone-500 block mt-0.5">
+                                            {profitMarginPercent !== null ? `${profitMarginPercent}% profit margin` : 'Earnings minus costs'}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center text-[10px] text-stone-400 leading-tight">
+                                        <span>Add a Cost Price above to see your estimated profit.</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

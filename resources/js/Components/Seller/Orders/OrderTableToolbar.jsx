@@ -4,13 +4,9 @@ import {
     Search,
     X,
     Check,
-    SlidersHorizontal,
-    ChevronDown,
     LoaderCircle,
-    Printer,
     Info,
 } from "lucide-react";
-import ExportButton from "@/Components/ExportButton";
 
 export default function OrderTableToolbar({
     searchInputRef,
@@ -20,11 +16,6 @@ export default function OrderTableToolbar({
     toggleSelectAll,
     selectedOrderIds = [],
     paginatedOrders = [],
-    handleOpenFilters,
-    activeFiltersCount = 0,
-    isPopoverOpen = false,
-    popoverRef,
-    children,
 }) {
     const isAllSelected = selectedOrderIds.length === paginatedOrders.length && paginatedOrders.length > 0;
 
@@ -78,9 +69,8 @@ export default function OrderTableToolbar({
                 </div>
             </div>
 
-            {/* Right Controls: Select All Page + Export + Filters Popover */}
-            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap">
-                {/* Select All Page Checkbox */}
+            {/* Right Controls: Select All Page Checkbox */}
+            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
                 <label className="inline-flex min-h-[44px] sm:min-h-[38px] sm:h-[38px] items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-xs font-bold text-stone-700 hover:border-stone-300 hover:bg-stone-50 transition cursor-pointer select-none shadow-sm shrink-0 active:scale-95">
                     <button
                         type="button"
@@ -98,39 +88,6 @@ export default function OrderTableToolbar({
                     </button>
                     <span>{isAllSelected ? "Deselect Page" : "Select Page"}</span>
                 </label>
-
-                {/* Export Button */}
-                <ExportButton
-                    href={route("orders.export")}
-                    icon={Printer}
-                    variant="secondary"
-                    className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs active:scale-95"
-                >
-                    <span className="hidden sm:inline">Export</span>
-                </ExportButton>
-
-                {/* Standardized Filter Button on the Right */}
-                <div className="relative inline-block text-left" ref={popoverRef}>
-                    <button
-                        type="button"
-                        onClick={handleOpenFilters}
-                        className={`inline-flex min-h-[44px] sm:min-h-[38px] sm:h-[38px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-bold transition-all shadow-sm active:scale-95 ${
-                            activeFiltersCount > 0
-                                ? 'bg-clay-700 text-white border-clay-800 shadow-clay-200 hover:bg-clay-800'
-                                : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300 hover:bg-stone-50'
-                        }`}
-                    >
-                        <SlidersHorizontal size={14} strokeWidth={2.2} />
-                        <span>Filters</span>
-                        {activeFiltersCount > 0 && (
-                            <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-black text-white">
-                                {activeFiltersCount}
-                            </span>
-                        )}
-                        <ChevronDown size={14} strokeWidth={2.5} className={`transition-transform duration-200 ${isPopoverOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {children}
-                </div>
             </div>
         </div>
     );

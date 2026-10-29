@@ -46,6 +46,7 @@ class HandleInertiaRequests extends Middleware
                         'artisan_status', 'artisan_rejection_reason', 'premium_tier', 'payout_method',
                         'payout_account_name', 'approved_at', 'artisan_welcomed',
                         'street_address', 'saved_address', 'barangay', 'city', 'region', 'zip_code', 'phone_number',
+                        'is_vat_registered', 'tin',
                     ]),
                     [
                         'has_payout_account' => !empty($user->payout_account_number),

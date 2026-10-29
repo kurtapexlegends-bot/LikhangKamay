@@ -316,6 +316,43 @@ export async function runPhase3(page, collector) {
         const settingsLoaded = await page.$('main') !== null;
         collector.recordResult('Phase 3', '3.14 Shop Settings Page Load', settingsLoaded ? 'PASS' : 'FAIL');
         await collector.scanDomQuality(page, 'Shop Settings');
+
+        // 3.14b Seller Global Settings, E-Wallet Payout & Tax Profile
+        try {
+            await page.goto(`${PROD_URL}/seller/settings?tab=finance`, { waitUntil: 'networkidle2', timeout: 30000 });
+            await page.waitForSelector('main', { timeout: 10000 }).catch(() => null);
+            await new Promise(r => setTimeout(r, 1000));
+            await collector.verifyInertiaPage(page, 'Phase 3', '3.14b Seller Global Settings Inertia Contract', 'GlobalSettings');
+
+            const hasEwalletText = await page.evaluate(() => {
+                const text = document.body.innerText;
+                return /(GCash|Maya|Direct E-Wallet Transfer|Payout Method)/i.test(text);
+            });
+            collector.recordResult('Phase 3', '3.14b E-Wallet Disbursement Methods Rendered', hasEwalletText ? 'PASS' : 'FAIL', {
+                message: hasEwalletText ? 'GCash & Maya e-wallet payout controls verified' : 'E-wallet disbursement controls missing'
+            });
+
+            const hasTaxCard = await page.evaluate(() => {
+                const text = document.body.innerText;
+                return /(Tax Profile|VAT-Registered|Non-VAT|Taxpayer Identification Number|TIN|BIR)/i.test(text);
+            });
+            collector.recordResult('Phase 3', '3.14b BIR Tax Profile Card Rendered', hasTaxCard ? 'PASS' : 'FAIL', {
+                message: hasTaxCard ? 'BIR Tax Profile and VAT registration card verified' : 'Tax profile card missing'
+            });
+
+            // Assert deprecated commercial bank transfer inputs are absent
+            const hasDeprecatedBank = await page.evaluate(() => {
+                const text = document.body.innerText;
+                return /(Commercial Bank Transfer|BDO Unibank|Bank of the Philippine Islands|Metrobank)/i.test(text);
+            });
+            collector.recordResult('Phase 3', '3.14b Commercial Bank Transfers Deprecated & Absent', !hasDeprecatedBank ? 'PASS' : 'FAIL', {
+                message: !hasDeprecatedBank ? 'Commercial bank transfer options properly purged' : 'Deprecated bank transfer text detected'
+            });
+
+            await collector.scanDomQuality(page, 'Seller Global Settings Finance');
+        } catch (settingsError) {
+            collector.recordResult('Phase 3', '3.14b Seller Global Settings & Finance', 'FAIL', { message: settingsError.message });
+        }
     } catch (e) {
         collector.recordResult('Phase 3', '3.14 Subscriptions & Settings', 'FAIL', { message: e.message });
     }

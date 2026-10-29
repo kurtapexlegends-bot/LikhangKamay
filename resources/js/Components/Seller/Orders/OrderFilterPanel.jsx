@@ -6,7 +6,10 @@ import {
     RotateCcw,
     ChevronDown,
     Filter,
+    Printer,
+    SlidersHorizontal,
 } from "lucide-react";
+import ExportButton from "@/Components/ExportButton";
 import SlideOverDrawer from "@/Components/SlideOverDrawer";
 import OrderDateRangeFilter from "./OrderDateRangeFilter";
 import OrderPaymentFilter from "./OrderPaymentFilter";
@@ -266,14 +269,98 @@ export default function OrderFilterPanel({
 
     return (
         <>
-            {/* Standardized Segmented Status Pill Track */}
+            {/* Standardized Segmented Status Pill Track with Export & Filters on the Right */}
             <OrderBatchActionBar
                 activeTab={activeTab}
                 handleTabChange={handleTabChange}
                 getCount={getCount}
+                extraActions={
+                    <div className="flex items-center gap-2 sm:gap-2.5">
+                        {/* Export Button */}
+                        <ExportButton
+                            href={route("orders.export")}
+                            icon={Printer}
+                            variant="secondary"
+                            className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 rounded-xl shadow-2xs font-bold text-xs active:scale-95"
+                        >
+                            <span className="hidden sm:inline">Export</span>
+                        </ExportButton>
+
+                        {/* Standardized Filter Button on the Right */}
+                        <div className="relative inline-block text-left" ref={popoverRef}>
+                            <button
+                                type="button"
+                                onClick={handleOpenFilters}
+                                className={`inline-flex min-h-[44px] sm:min-h-[38px] sm:h-[38px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-bold transition-all shadow-sm active:scale-95 ${
+                                    activeFiltersCount > 0
+                                        ? 'bg-clay-700 text-white border-clay-800 shadow-clay-200 hover:bg-clay-800'
+                                        : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300 hover:bg-stone-50'
+                                }`}
+                            >
+                                <SlidersHorizontal size={14} strokeWidth={2.2} />
+                                <span>Filters</span>
+                                {activeFiltersCount > 0 && (
+                                    <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-black text-white">
+                                        {activeFiltersCount}
+                                    </span>
+                                )}
+                                <ChevronDown size={14} strokeWidth={2.5} className={`transition-transform duration-200 ${isPopoverOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {/* Desktop Popover Card */}
+                            {isPopoverOpen && (
+                                <div className="hidden lg:flex flex-col absolute right-0 z-[100] mt-2 w-[400px] max-h-[calc(100vh-180px)] rounded-2xl border border-stone-200 bg-white p-4 sm:p-5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+                                    <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-3 shrink-0">
+                                        <div className="flex items-center gap-2">
+                                            <Filter size={15} className="text-clay-700" />
+                                            <h3 className="text-sm font-bold text-stone-900">Filter Orders</h3>
+                                        </div>
+                                        {draftActiveCount > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setDraftPaymentMethod("all");
+                                                    setDraftFulfillmentType("all");
+                                                    setDraftStartDate("");
+                                                    setDraftEndDate("");
+                                                    setDraftFlaggedOnly("all");
+                                                }}
+                                                className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-500 hover:text-clay-700 transition"
+                                            >
+                                                <RotateCcw size={12} />
+                                                <span>Reset Selection</span>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto pr-1 space-y-4 max-h-[50vh] no-scrollbar">
+                                        {filterFieldsGrid}
+                                    </div>
+
+                                    <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between shrink-0 bg-white">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsPopoverOpen(false)}
+                                            className="rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 transition"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={applyDraftFilters}
+                                            className="rounded-xl bg-clay-700 px-5 py-2 text-xs font-bold text-white shadow-md shadow-clay-200 hover:bg-clay-800 transition active:scale-95"
+                                        >
+                                            Apply &amp; Close
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                }
             />
 
-            {/* Standardized Search & Right-Aligned Controls Toolbar */}
+            {/* Standardized Search & Select Page Toolbar */}
             <OrderTableToolbar
                 searchInputRef={searchInputRef}
                 searchQuery={searchQuery}
@@ -282,60 +369,7 @@ export default function OrderFilterPanel({
                 toggleSelectAll={toggleSelectAll}
                 selectedOrderIds={selectedOrderIds}
                 paginatedOrders={paginatedOrders}
-                handleOpenFilters={handleOpenFilters}
-                activeFiltersCount={activeFiltersCount}
-                isPopoverOpen={isPopoverOpen}
-                popoverRef={popoverRef}
-            >
-                {/* Desktop Popover Card */}
-                {isPopoverOpen && (
-                    <div className="hidden lg:flex flex-col absolute right-0 z-[100] mt-2 w-[400px] max-h-[calc(100vh-180px)] rounded-2xl border border-stone-200 bg-white p-4 sm:p-5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
-                        <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-3 shrink-0">
-                            <div className="flex items-center gap-2">
-                                <Filter size={15} className="text-clay-700" />
-                                <h3 className="text-sm font-bold text-stone-900">Filter Orders</h3>
-                            </div>
-                            {draftActiveCount > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setDraftPaymentMethod("all");
-                                        setDraftFulfillmentType("all");
-                                        setDraftStartDate("");
-                                        setDraftEndDate("");
-                                        setDraftFlaggedOnly("all");
-                                    }}
-                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-500 hover:text-clay-700 transition"
-                                >
-                                    <RotateCcw size={12} />
-                                    <span>Reset Selection</span>
-                                </button>
-                            )}
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto pr-1 space-y-4 max-h-[50vh] no-scrollbar">
-                            {filterFieldsGrid}
-                        </div>
-
-                        <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between shrink-0 bg-white">
-                            <button
-                                type="button"
-                                onClick={() => setIsPopoverOpen(false)}
-                                className="rounded-xl border border-stone-200 px-3.5 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 transition"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                onClick={applyDraftFilters}
-                                className="rounded-xl bg-clay-700 px-5 py-2 text-xs font-bold text-white shadow-md shadow-clay-200 hover:bg-clay-800 transition active:scale-95"
-                            >
-                                Apply &amp; Close
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </OrderTableToolbar>
+            />
 
             {/* Active Filter Tag Pills */}
             {activeFiltersCount > 0 && (
