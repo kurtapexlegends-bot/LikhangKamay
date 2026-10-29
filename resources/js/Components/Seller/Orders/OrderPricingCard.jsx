@@ -53,10 +53,29 @@ export default function OrderPricingCard({
                             PHP {Number(order.merchandise_subtotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
                     </div>
-                    <div className="flex justify-between text-stone-500">
-                        <span>Platform Commission:</span>
-                        <span className="font-semibold text-emerald-600">0% (₱0.00)</span>
-                    </div>
+                    {order.vat_type === 'vat_inclusive' || Number(order.vat_amount || 0) > 0 ? (
+                        <>
+                            <div className="flex justify-between text-stone-500 text-[10px] pl-2">
+                                <span>Vatable Sales:</span>
+                                <span className="font-mono text-stone-700">
+                                    PHP {Number(order.vatable_sales || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                            <div className="flex justify-between text-stone-500 text-[10px] pl-2">
+                                <span>12% Output VAT:</span>
+                                <span className="font-mono text-stone-700">
+                                    PHP {Number(order.vat_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex justify-between text-stone-500 text-[10px] pl-2">
+                            <span>Tax Classification:</span>
+                            <span className="text-[9px] font-medium text-stone-600 bg-stone-100 px-1 py-0.5 rounded border border-stone-200">
+                                VAT-Exempt Sale
+                            </span>
+                        </div>
+                    )}
                     <div className="flex justify-between font-bold pt-1.5 border-t border-stone-100/60 mb-2.5">
                         <span className="text-stone-900">Your Net Payout:</span>
                         <span className="text-emerald-600 font-extrabold text-[11px]">

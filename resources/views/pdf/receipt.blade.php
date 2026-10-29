@@ -10,6 +10,24 @@
         $totalPaid = (float) ($order->total_amount ?? ($merchandiseSubtotal + $convenienceFee + $shippingFee));
         $shippingAddressType = $order->shipping_address_type ? ucfirst(str_replace('_', ' ', $order->shipping_address_type)) : 'Standard';
         $docTitle = $isB2B ? "B2B Purchase Order & Wholesale Invoice - {$order->order_number}" : "Official Order Receipt - {$order->order_number}";
+
+        if (!empty($order->vat_type)) {
+            $isVatRegistered = ($order->vat_type === 'vat_inclusive');
+        } else {
+            $isVatRegistered = (bool) ($order->artisan?->is_vat_registered ?? false);
+        }
+
+        $vatRate = (float) ($order->vat_rate ?? 12.00);
+
+        if ($isVatRegistered) {
+            $vatableSales = (float) ($order->vatable_sales > 0 ? $order->vatable_sales : round($merchandiseSubtotal / 1.12, 2));
+            $vatAmount = (float) ($order->vat_amount > 0 ? $order->vat_amount : round($merchandiseSubtotal - $vatableSales, 2));
+            $vatExemptSales = 0.00;
+        } else {
+            $vatableSales = 0.00;
+            $vatAmount = 0.00;
+            $vatExemptSales = (float) ($order->vat_exempt_sales > 0 ? $order->vat_exempt_sales : $merchandiseSubtotal);
+        }
     @endphp
     <title>{{ $docTitle }}</title>
     <style>
@@ -45,7 +63,14 @@
         .items-table .unit { text-align: center; font-weight: 600; color: #57534e; }
         .items-table .price { text-align: right; font-weight: 700; }
         
-        .totals { margin-left: auto; width: 340px; font-size: 12px; }
+        .finance-grid { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+        .tax-card { flex: 1; padding: 12px 14px; background: #fafaf9; border: 1px solid #e7e5e4; border-radius: 8px; font-size: 11px; }
+        .tax-card h4 { font-size: 9px; font-weight: 800; color: #78716c; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; border-bottom: 1px solid #e7e5e4; padding-bottom: 4px; }
+        .tax-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .tax-table td { padding: 2.5px 0; }
+        .tax-table .tax-lbl { color: #57534e; }
+        .tax-table .tax-val { text-align: right; font-weight: 700; color: #1c1917; font-family: monospace; }
+        .totals { width: 340px; font-size: 12px; }
         .totals-row { display: flex; justify-content: space-between; padding: 5px 0; color: #57534e; }
         .totals-row.total { font-size: 15px; font-weight: 900; color: #844d2d; border-top: 2px solid #e7d8c9; padding-top: 8px; margin-top: 6px; }
         
@@ -110,8 +135,11 @@
         <div class="parties-grid">
             <div class="address-card">
                 <h3>Procuring Studio (Buyer)</h3>
-                <p class="party-name">{{ $order->user?->shop_name ?: ($order->customer_name ?: 'Buyer Studio') }}</p>
+                <p class="party-name">{{ $order->user?->tax_business_name ?: ($order->user?->shop_name ?: ($order->customer_name ?: 'Buyer Studio')) }}</p>
                 <p style="color: #57534e;">Authorized Contact: <strong>{{ $order->customer_name }}</strong></p>
+                @if($order->user?->tin)
+                    <p style="color: #78350f; font-size: 11px; font-family: monospace;">TIN: <strong>{{ $order->user->tin }}</strong></p>
+                @endif
                 @if($order->shipping_contact_phone)
                     <p style="color: #78716c;">Phone: {{ $order->shipping_contact_phone }}</p>
                 @endif
@@ -120,8 +148,11 @@
 
             <div class="address-card">
                 <h3>Supplier Studio (Artisan Workshop)</h3>
-                <p class="party-name">{{ $order->artisan?->shop_name ?: ($order->artisan?->name ?: 'Peer Artisan Studio') }}</p>
+                <p class="party-name">{{ $order->artisan?->tax_business_name ?: ($order->artisan?->shop_name ?: ($order->artisan?->name ?: 'Peer Artisan Studio')) }}</p>
                 <p style="color: #57534e;">Artisan Owner: <strong>{{ $order->artisan?->name ?: 'Artisan' }}</strong></p>
+                @if($order->artisan?->tin)
+                    <p style="color: #78350f; font-size: 11px; font-family: monospace;">TIN: <strong>{{ $order->artisan->tin }}</strong> ({{ $isVatRegistered ? 'VAT-Registered' : 'Non-VAT' }})</p>
+                @endif
                 <p style="color: #78716c;">Studio Location: {{ $order->artisan?->city ?: 'Philippines' }}</p>
                 <p style="margin-top: 4px; color: #57534e;">Logistics: <strong>{{ $order->shipping_method }}</strong></p>
             </div>
@@ -132,6 +163,9 @@
                 <h3>Customer / Shipping Destination</h3>
                 <p class="party-name">{{ $order->customer_name ?: ($order->user?->name ?: 'Customer') }}</p>
                 <div class="address-type">{{ $shippingAddressType }}</div>
+                @if($order->user?->tin)
+                    <p style="color: #78350f; font-size: 11px; font-family: monospace;">Buyer TIN: <strong>{{ $order->user->tin }}</strong></p>
+                @endif
                 @if($order->shipping_contact_phone)
                     <p style="color: #78716c; font-size: 11px;">Phone: {{ $order->shipping_contact_phone }}</p>
                 @endif
@@ -140,8 +174,11 @@
 
             <div class="address-card">
                 <h3>Artisan Workshop & Creator</h3>
-                <p class="party-name">{{ $order->artisan?->shop_name ?: ($order->artisan?->name ?: 'Artisan Studio') }}</p>
+                <p class="party-name">{{ $order->artisan?->tax_business_name ?: ($order->artisan?->shop_name ?: ($order->artisan?->name ?: 'Artisan Studio')) }}</p>
                 <p style="color: #57534e;">Creator: <strong>{{ $order->artisan?->name ?: 'Artisan' }}</strong></p>
+                @if($order->artisan?->tin)
+                    <p style="color: #78350f; font-size: 11px; font-family: monospace;">Seller TIN: <strong>{{ $order->artisan->tin }}</strong> ({{ $isVatRegistered ? 'VAT-Registered' : 'Non-VAT' }})</p>
+                @endif
                 @if($order->artisan?->city)
                     <p style="color: #78716c; font-size: 11px;">Studio Location: {{ $order->artisan->city }}</p>
                 @endif
@@ -187,24 +224,61 @@
         </tbody>
     </table>
 
-    <div class="totals">
-        <div class="totals-row">
-            <span>{{ $isB2B ? 'Materials Subtotal' : 'Items Subtotal' }}</span>
-            <span>PHP {{ number_format($merchandiseSubtotal, 2) }}</span>
+    <div class="finance-grid">
+        <div class="tax-card">
+            <h4>BIR Sales Invoice &amp; Tax Matrix</h4>
+            <table class="tax-table">
+                <tr>
+                    <td class="tax-lbl">Seller TIN:</td>
+                    <td class="tax-val">{{ $order->artisan?->tin ?: 'Unregistered' }}</td>
+                </tr>
+                <tr>
+                    <td class="tax-lbl">Tax Classification:</td>
+                    <td class="tax-val" style="font-family: inherit;">{{ $isVatRegistered ? '12% VAT' : 'Non-VAT (VAT-Exempt)' }}</td>
+                </tr>
+                @if($isVatRegistered)
+                <tr>
+                    <td class="tax-lbl">Vatable Sales (Net of VAT):</td>
+                    <td class="tax-val">PHP {{ number_format($vatableSales, 2) }}</td>
+                </tr>
+                <tr>
+                    <td class="tax-lbl">12% VAT:</td>
+                    <td class="tax-val">PHP {{ number_format($vatAmount, 2) }}</td>
+                </tr>
+                @if($vatExemptSales > 0)
+                <tr>
+                    <td class="tax-lbl">VAT-Exempt Sales:</td>
+                    <td class="tax-val">PHP {{ number_format($vatExemptSales, 2) }}</td>
+                </tr>
+                @endif
+                @else
+                <tr>
+                    <td class="tax-lbl">VAT-Exempt Sales:</td>
+                    <td class="tax-val">PHP {{ number_format($vatExemptSales ?: $merchandiseSubtotal, 2) }}</td>
+                </tr>
+                @endif
+            </table>
         </div>
-        @if($convenienceFee > 0)
-        <div class="totals-row">
-            <span>Service Fee</span>
-            <span>PHP {{ number_format($convenienceFee, 2) }}</span>
-        </div>
-        @endif
-        <div class="totals-row">
-            <span>Logistics & Courier Delivery</span>
-            <span>PHP {{ number_format($shippingFee, 2) }}</span>
-        </div>
-        <div class="totals-row total">
-            <span>{{ $isB2B ? 'Total Investment' : 'Total Paid' }}</span>
-            <span>PHP {{ number_format($totalPaid, 2) }}</span>
+
+        <div class="totals">
+            <div class="totals-row">
+                <span>{{ $isB2B ? 'Materials Subtotal' : 'Items Subtotal' }}</span>
+                <span>PHP {{ number_format($merchandiseSubtotal, 2) }}</span>
+            </div>
+            @if($convenienceFee > 0)
+            <div class="totals-row">
+                <span>Service Fee</span>
+                <span>PHP {{ number_format($convenienceFee, 2) }}</span>
+            </div>
+            @endif
+            <div class="totals-row">
+                <span>Logistics & Courier Delivery</span>
+                <span>PHP {{ number_format($shippingFee, 2) }}</span>
+            </div>
+            <div class="totals-row total">
+                <span>{{ $isB2B ? 'Total Investment' : 'Total Paid' }}</span>
+                <span>PHP {{ number_format($totalPaid, 2) }}</span>
+            </div>
         </div>
     </div>
 

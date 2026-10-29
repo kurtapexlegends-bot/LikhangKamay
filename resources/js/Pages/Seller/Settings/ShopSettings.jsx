@@ -14,6 +14,7 @@ import { compressImage } from '@/utils/imageCompressor';
 import WorkplaceLocationsManager from '@/Components/Seller/Settings/WorkplaceLocationsManager';
 import PickupScheduleSettings from '@/Components/Seller/Settings/PickupScheduleSettings';
 import FilterToolbarHeader from '@/Components/Seller/Shared/FilterToolbarHeader';
+import TaxProfileCard from '@/Components/Seller/Settings/Tabs/TaxProfileCard';
 import { resolveImageUrl } from '@/lib/media';
 
 export default function ShopSettings({ auth, user, stats, locations = [], pickupSchedule }) {
@@ -321,6 +322,11 @@ export default function ShopSettings({ auth, user, stats, locations = [], pickup
 
                                 </div>
                             </div>
+                        </div>
+
+                        {/* BIR Tax Profile & VAT Status */}
+                        <div className="mb-8">
+                            <TaxProfileCard seller={user} canEdit={canEditShopSettings} />
                         </div>
 
                         {/* Products Section — real preview */}

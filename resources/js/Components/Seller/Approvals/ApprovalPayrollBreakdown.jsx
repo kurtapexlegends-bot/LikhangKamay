@@ -86,7 +86,7 @@ export default function ApprovalPayrollBreakdown({ payload = {} }) {
                                     </div>
                                     <div>
                                         <span className="text-stone-400 block text-[9px] uppercase">Payout Method</span>
-                                        <span className="font-medium text-stone-700">{emp.payment_method || 'Bank Transfer'}</span>
+                                        <span className="font-medium text-stone-700">{emp.payment_method || 'GCash'}</span>
                                     </div>
                                 </div>
                             </div>

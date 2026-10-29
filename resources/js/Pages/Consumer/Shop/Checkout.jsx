@@ -59,12 +59,16 @@ export default function Checkout({ auth, pricing }) {
                 sellerId,
                 shopName: item.shop_name || item.seller || 'Shop',
                 location: item.seller_city || item.location || '',
+                is_vat_registered: Boolean(item.is_vat_registered),
                 items: [],
                 subtotal: 0,
             };
         }
         groups[sellerId].items.push(item);
         groups[sellerId].subtotal += item.price * item.qty;
+        if (item.is_vat_registered) {
+            groups[sellerId].is_vat_registered = true;
+        }
         return groups;
     }, {}), [checkoutItems]);
 
@@ -184,31 +188,51 @@ export default function Checkout({ auth, pricing }) {
         const shippingFeeTotal = data.shipping_method === 'Delivery'
             ? Number(shippingQuote.totalShippingFee || 0)
             : 0;
+        const vatableSalesTotal = Number(sellerGroups.reduce((sum, g) => sum + (g.is_vat_registered ? Number((g.subtotal / 1.12).toFixed(2)) : 0), 0).toFixed(2));
+        const vatAmountTotal = Number(sellerGroups.reduce((sum, g) => sum + (g.is_vat_registered ? Number((g.subtotal - Number((g.subtotal / 1.12).toFixed(2))).toFixed(2)) : 0), 0).toFixed(2));
+        const vatExemptSalesTotal = Number(sellerGroups.reduce((sum, g) => sum + (g.is_vat_registered ? 0 : Number(g.subtotal.toFixed(2))), 0).toFixed(2));
+        const hasVatRegistered = sellerGroups.some((g) => g.is_vat_registered);
+
         return {
             merchandiseSubtotal,
             platformFeeTotal,
             shippingFeeTotal,
+            vatableSalesTotal,
+            vatAmountTotal,
+            vatExemptSalesTotal,
+            hasVatRegistered,
             grandTotal: Number((merchandiseSubtotal + platformFeeTotal + shippingFeeTotal).toFixed(2)),
-            groups: sellerGroups.map((group) => ({
-                ...group,
-                platformFee: data.shipping_method === 'Delivery' ? platformFeeForSubtotal(group.subtotal) : 0,
-                shippingFee: data.shipping_method === 'Delivery'
-                    ? Number(shippingQuote.groups[String(group.sellerId)] || 0)
-                    : 0,
-                vehicleInfo: data.shipping_method === 'Delivery'
-                    ? (shippingQuote.vehicles?.[String(group.sellerId)] || null)
-                    : null,
-                pickupSchedule: data.shipping_method === 'Pick Up'
-                    ? (pickupSchedules[String(group.sellerId)] || null)
-                    : null,
-                total: Number((
-                    data.shipping_method === 'Delivery'
-                        ? group.subtotal
-                            + platformFeeForSubtotal(group.subtotal)
-                            + Number(shippingQuote.groups[String(group.sellerId)] || 0)
-                        : group.subtotal
-                ).toFixed(2)),
-            })),
+            groups: sellerGroups.map((group) => {
+                const isVat = Boolean(group.is_vat_registered);
+                const vatable = isVat ? Number((group.subtotal / 1.12).toFixed(2)) : 0;
+                const vat = isVat ? Number((group.subtotal - vatable).toFixed(2)) : 0;
+                const vatExempt = isVat ? 0 : Number(group.subtotal.toFixed(2));
+
+                return {
+                    ...group,
+                    is_vat_registered: isVat,
+                    vatable_sales: vatable,
+                    vat_amount: vat,
+                    vat_exempt_sales: vatExempt,
+                    platformFee: data.shipping_method === 'Delivery' ? platformFeeForSubtotal(group.subtotal) : 0,
+                    shippingFee: data.shipping_method === 'Delivery'
+                        ? Number(shippingQuote.groups[String(group.sellerId)] || 0)
+                        : 0,
+                    vehicleInfo: data.shipping_method === 'Delivery'
+                        ? (shippingQuote.vehicles?.[String(group.sellerId)] || null)
+                        : null,
+                    pickupSchedule: data.shipping_method === 'Pick Up'
+                        ? (pickupSchedules[String(group.sellerId)] || null)
+                        : null,
+                    total: Number((
+                        data.shipping_method === 'Delivery'
+                            ? group.subtotal
+                                + platformFeeForSubtotal(group.subtotal)
+                                + Number(shippingQuote.groups[String(group.sellerId)] || 0)
+                            : group.subtotal
+                    ).toFixed(2)),
+                };
+            }),
         };
     }, [convenienceFeeRate, data.shipping_method, sellerGroups, shippingQuote.groups, shippingQuote.totalShippingFee, shippingQuote.vehicles, pickupSchedules]);
 

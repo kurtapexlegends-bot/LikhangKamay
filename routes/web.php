@@ -290,6 +290,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         // SETTINGS
         Route::get('/seller/settings', [\App\Http\Controllers\Seller\SettingsController::class, 'index'])->middleware('artisan')->name('seller.settings.index');
         Route::post('/seller/settings/payout', [\App\Http\Controllers\Seller\SettingsController::class, 'updatePayout'])->middleware('artisan')->name('seller.settings.payout');
+        Route::post('/seller/settings/tax', [\App\Http\Controllers\Seller\SettingsController::class, 'updateTax'])->middleware('artisan')->name('seller.settings.tax');
         Route::get('/seller/payouts/{id}/voucher', [\App\Http\Controllers\Admin\PayoutController::class, 'voucher'])->middleware('artisan')->name('seller.payouts.voucher');
         Route::post('/settings/modules', [\App\Http\Controllers\Seller\SettingsController::class, 'updateModules'])->middleware('artisan')->name('settings.modules');
 

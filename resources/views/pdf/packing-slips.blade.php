@@ -261,7 +261,12 @@
         <tr>
             <td class="brand-section">
                 <p class="brand-subtitle">LikhangKamay Marketplace</p>
-                <h1 class="shop-name">{{ $artisan->name }}</h1>
+                <h1 class="shop-name">{{ $artisan->tax_business_name ?: $artisan->name }}</h1>
+                @if($artisan->tin)
+                    <p style="font-size: 8.5px; color: #57534e; margin: 2px 0 0 0; font-family: monospace;">
+                        TIN: {{ $artisan->tin }} &bull; {{ $artisan->is_vat_registered ? 'VAT-Registered Workshop' : 'Non-VAT (VAT-Exempt)' }}
+                    </p>
+                @endif
             </td>
             <td class="doc-section">
                 <h2 class="doc-title">Dispatch Slip</h2>
@@ -404,18 +409,46 @@
                         <td class="label">Items Subtotal:</td>
                         <td class="value">&#8369;{{ number_format($order->merchandise_subtotal, 2) }}</td>
                     </tr>
+                    @if($order->vat_type === 'vat_inclusive' || (float) $order->vat_amount > 0)
+                        <tr>
+                            <td class="label" style="font-size: 9.5px; color: #78716c;">Vatable Sales:</td>
+                            <td class="value" style="font-size: 9.5px;">&#8369;{{ number_format($order->vatable_sales, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label" style="font-size: 9.5px; color: #78716c;">12% VAT (Included):</td>
+                            <td class="value" style="font-size: 9.5px;">&#8369;{{ number_format($order->vat_amount, 2) }}</td>
+                        </tr>
+                    @else
+                        <tr>
+                            <td class="label" style="font-size: 9.5px; color: #78716c;">VAT-Exempt Sales:</td>
+                            <td class="value" style="font-size: 9.5px;">&#8369;{{ number_format($order->vat_exempt_sales ?: $order->merchandise_subtotal, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label" style="font-size: 9.5px; color: #78716c;">12% VAT:</td>
+                            <td class="value" style="font-size: 9.5px;">&#8369;0.00</td>
+                        </tr>
+                    @endif
                     <tr>
                         <td class="label">Shipping Fee:</td>
                         <td class="value">&#8369;{{ number_format($order->shipping_fee_amount, 2) }}</td>
                     </tr>
-                    <tr>
-                        <td class="label">Service Fee:</td>
-                        <td class="value">&#8369;{{ number_format($order->convenience_fee_amount, 2) }}</td>
-                    </tr>
+                    @if((float) $order->convenience_fee_amount > 0)
+                        <tr>
+                            <td class="label">Service Fee:</td>
+                            <td class="value">&#8369;{{ number_format($order->convenience_fee_amount, 2) }}</td>
+                        </tr>
+                    @endif
                     <tr class="total-row">
                         <td>Grand Total:</td>
                         <td>&#8369;{{ number_format($order->total_amount, 2) }}</td>
                     </tr>
+                    @if($artisan->tin)
+                        <tr>
+                            <td colspan="2" style="text-align: right; font-size: 8px; color: #78716c; padding-top: 4px;">
+                                Seller TIN: <span style="font-family: monospace; font-weight: bold;">{{ $artisan->tin }}</span> &bull; {{ $artisan->is_vat_registered ? 'VAT-Registered' : 'VAT-Exempt' }}
+                            </td>
+                        </tr>
+                    @endif
                 </table>
             </td>
         </tr>

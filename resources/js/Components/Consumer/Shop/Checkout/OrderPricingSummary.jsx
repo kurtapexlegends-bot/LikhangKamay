@@ -340,12 +340,20 @@ export default function OrderPricingSummary({
                             : 'Waiting for the delivery quote before enabling checkout.'}
                 </p>
             )}
+
+            <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-stone-400 font-medium border-t border-stone-100">
+                <span className="inline-block w-1 h-1 rounded-full bg-clay-400"></span>
+                <span>All listed retail prices are VAT-inclusive</span>
+            </div>
         </div>
     );
 
     const renderTotalDue = () => (
-        <div className="flex justify-between items-center text-sm font-bold text-stone-900">
-            <span className="text-stone-800">Total Due Now</span>
+        <div className="flex justify-between items-baseline text-sm font-bold text-stone-900">
+            <div>
+                <span className="text-stone-800">Total Due Now</span>
+                <span className="block text-[10.5px] font-normal text-stone-400">VAT inclusive</span>
+            </div>
             <span className="text-lg font-extrabold text-stone-900 shrink-0 whitespace-nowrap">{peso(summary.grandTotal)}</span>
         </div>
     );

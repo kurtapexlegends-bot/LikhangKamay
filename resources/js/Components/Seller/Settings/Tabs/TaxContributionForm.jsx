@@ -1,5 +1,5 @@
 import React from 'react';
-import { Landmark, ShieldCheck, HeartPulse, Home, FileText, CheckCircle2 } from 'lucide-react';
+import { Landmark, ShieldCheck, HeartPulse, Home, FileText, CheckCircle2, Receipt } from 'lucide-react';
 
 export default function TaxContributionForm() {
     return (
@@ -121,6 +121,19 @@ export default function TaxContributionForm() {
                     <p className="font-bold text-stone-900">BIR TRAIN Law Withholding Tax Exemption</p>
                     <p className="text-[11px] text-stone-600 leading-relaxed mt-0.5 font-medium">
                         Employees earning an annual compensation of <strong>₱250,000 or below</strong> (₱20,833.33/month) are 100% exempt from personal income tax withholding. Above this threshold, standard graduated withholding tax tables apply automatically.
+                    </p>
+                </div>
+            </div>
+
+            {/* 5. Workshop BIR VAT Invoicing Note */}
+            <div className="rounded-2xl border border-stone-200 bg-stone-50/60 p-4 flex items-start gap-3 text-xs text-stone-700">
+                <div className="w-8 h-8 rounded-xl bg-stone-100 text-stone-700 flex items-center justify-center shrink-0 border border-stone-200">
+                    <Receipt size={15} />
+                </div>
+                <div className="min-w-0">
+                    <p className="font-bold text-stone-900">Workshop Output VAT &amp; Sales Invoicing</p>
+                    <p className="text-[11px] text-stone-600 leading-relaxed mt-0.5 font-medium">
+                        To update your studio TIN or toggle between VAT-Registered (12% Output VAT) and Non-VAT (VAT-Exempt) sales invoicing, configure your settings in the <strong>Finance &amp; Payouts</strong> or <strong>Shop Settings</strong> panel.
                     </p>
                 </div>
             </div>
