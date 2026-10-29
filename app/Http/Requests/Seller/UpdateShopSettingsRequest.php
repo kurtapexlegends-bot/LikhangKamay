@@ -63,6 +63,9 @@ class UpdateShopSettingsRequest extends FormRequest
             'avatar_key' => 'nullable|string',
             'auto_reply_on_completion' => 'nullable|boolean',
             'auto_reply_completion_message' => 'nullable|string|max:1000',
+            'tin' => ['nullable', 'string', 'regex:/^(\d{3}-\d{3}-\d{3}(-\d{3,5})?|\d{9,14})$/'],
+            'is_vat_registered' => 'nullable|boolean',
+            'tax_business_name' => 'nullable|string|max:255',
         ];
     }
 }

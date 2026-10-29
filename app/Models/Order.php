@@ -55,6 +55,7 @@ class Order extends Model
         'pickup_date', 'pickup_time_slot', 'pickup_pin', 'pickup_location_id', 'pickup_location_snapshot',
         'return_reason', 'return_proof_image',
         'replacement_resolution_description', 'replacement_started_at', 'replacement_resolved_at',
+        'vat_type', 'vatable_sales', 'vat_amount', 'vat_exempt_sales', 'vat_rate',
         'is_test',
     ];
 
@@ -80,6 +81,10 @@ class Order extends Model
         'shipping_fee_amount' => 'decimal:2',
         'platform_commission_amount' => 'decimal:2',
         'seller_net_amount' => 'decimal:2',
+        'vatable_sales' => 'decimal:2',
+        'vat_amount' => 'decimal:2',
+        'vat_exempt_sales' => 'decimal:2',
+        'vat_rate' => 'decimal:2',
         'review_reminder_sent' => \App\Casts\PostgresCompatibleBoolean::class,
         'shipment_reminder_sent' => \App\Casts\PostgresCompatibleBoolean::class,
     ];

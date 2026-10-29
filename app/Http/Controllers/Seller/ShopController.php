@@ -231,6 +231,29 @@ class ShopController extends Controller
             $hasAvatarUpdate = true;
         }
 
+        if ($request->has('tin')) {
+            if ($request->filled('tin')) {
+                $digits = preg_replace('/[^0-9]/', '', (string) $request->input('tin'));
+                if (strlen($digits) === 9) {
+                    $user->tin = substr($digits, 0, 3) . '-' . substr($digits, 3, 3) . '-' . substr($digits, 6, 3);
+                } elseif (strlen($digits) >= 12) {
+                    $user->tin = substr($digits, 0, 3) . '-' . substr($digits, 3, 3) . '-' . substr($digits, 6, 3) . '-' . substr($digits, 9);
+                } else {
+                    $user->tin = $request->input('tin');
+                }
+            } else {
+                $user->tin = null;
+            }
+        }
+
+        if ($request->has('is_vat_registered')) {
+            $user->is_vat_registered = $request->boolean('is_vat_registered');
+        }
+
+        if ($request->has('tax_business_name')) {
+            $user->tax_business_name = $request->filled('tax_business_name') ? trim((string) $request->input('tax_business_name')) : null;
+        }
+
         $user->save();
 
         $lines = array_values(array_filter([

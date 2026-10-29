@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\User;
 
 class OrderFinanceService
 {
@@ -29,9 +30,9 @@ class OrderFinanceService
     }
 
     /**
-     * @return array<string, float>
+     * @return array<string, mixed>
      */
-    public function calculateAmounts(float $merchandiseSubtotal, string $shippingMethod, float $shippingFee = 0): array
+    public function calculateAmounts(float $merchandiseSubtotal, string $shippingMethod, float $shippingFee = 0, ?User $seller = null): array
     {
         $normalizedSubtotal = $this->money($merchandiseSubtotal);
         $convenienceFee = $shippingMethod === 'Delivery'
@@ -44,6 +45,21 @@ class OrderFinanceService
         $sellerNet = $normalizedSubtotal;
         $grandTotal = $this->money($normalizedSubtotal + $convenienceFee + $normalizedShippingFee);
 
+        $isVatRegistered = (bool) ($seller?->is_vat_registered);
+        $vatRate = 12.00;
+
+        if ($isVatRegistered) {
+            $vatableSales = $this->money($normalizedSubtotal / 1.12);
+            $vatAmount = $this->money($normalizedSubtotal - $vatableSales);
+            $vatExemptSales = 0.00;
+            $vatType = 'vat_inclusive';
+        } else {
+            $vatableSales = 0.00;
+            $vatAmount = 0.00;
+            $vatExemptSales = $normalizedSubtotal;
+            $vatType = 'vat_exempt';
+        }
+
         return [
             'merchandise_subtotal' => $normalizedSubtotal,
             'convenience_fee_amount' => $convenienceFee,
@@ -51,6 +67,11 @@ class OrderFinanceService
             'platform_commission_amount' => $platformCommission,
             'seller_net_amount' => $sellerNet,
             'total_amount' => $grandTotal,
+            'vat_type' => $vatType,
+            'vatable_sales' => $vatableSales,
+            'vat_amount' => $vatAmount,
+            'vat_exempt_sales' => $vatExemptSales,
+            'vat_rate' => $vatRate,
         ];
     }
 

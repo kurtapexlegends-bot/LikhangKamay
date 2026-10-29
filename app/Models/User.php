@@ -147,6 +147,9 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'dti_registration',
         'valid_id',
         'tin_id',
+        'tin',
+        'is_vat_registered',
+        'tax_business_name',
         'setup_completed_at',
         'saved_address',
         // Artisan Approval Fields
@@ -224,6 +227,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'modules_enabled' => 'array',
             'staff_module_permissions' => 'array',
             'must_change_password' => \App\Casts\PostgresCompatibleBoolean::class,
+            'is_vat_registered' => \App\Casts\PostgresCompatibleBoolean::class,
             'staff_plan_suspended_at' => 'datetime',
             'last_seen_at' => 'datetime',
             'grace_period_minutes' => 'integer',

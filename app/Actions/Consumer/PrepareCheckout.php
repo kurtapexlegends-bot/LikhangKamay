@@ -43,6 +43,7 @@ class PrepareCheckout
                     'supply_unit' => $product->supply_unit ?: 'pcs',
                     'qty' => $qty,
                     'lead_time' => (int) ($product->lead_time ?? 0),
+                    'is_vat_registered' => (bool) ($product->user?->is_vat_registered ?? false),
                     'img' => $product->img ?: StorageUrl::url($product->cover_photo_path, '/images/placeholder.svg'),
                     'image' => $product->img ?: StorageUrl::url($product->cover_photo_path, '/images/placeholder.svg'),
                 ];
@@ -92,6 +93,7 @@ class PrepareCheckout
                     $item['seller_city'] = $live->user?->city ?? ($item['seller_city'] ?? null);
                     $item['location'] = $live->user?->city ?? ($item['location'] ?? null);
                     $item['lead_time'] = (int) ($live->lead_time ?? 0);
+                    $item['is_vat_registered'] = (bool) ($live->user?->is_vat_registered ?? false);
                     $photo = $live->img ?: StorageUrl::url($live->cover_photo_path, '/images/placeholder.svg');
                     $item['img'] = $photo;
                     $item['image'] = $photo;

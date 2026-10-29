@@ -194,8 +194,8 @@ class SellerOrderController extends Controller
             'items' => function ($query) {
                 $query->select('id', 'order_id', 'product_id', 'product_name', 'variant', 'quantity', 'price', 'product_img', 'is_b2b_supply', 'supply_unit');
             },
-            'user:id,name,shop_name,city',
-            'artisan:id,name,shop_name,city',
+            'user:id,name,shop_name,city,tin,tax_business_name',
+            'artisan:id,name,shop_name,city,tin,is_vat_registered,tax_business_name',
             'delivery',
         ])
             ->where(function ($q) use ($id) {

@@ -230,7 +230,8 @@ class PlaceOrder
             $financeBySeller[(string) $artisanId] = $this->orderFinanceService->calculateAmounts(
                 $merchandiseSubtotal,
                 $request->shipping_method,
-                $shippingFee
+                $shippingFee,
+                $seller
             );
             $grandTotal += $financeBySeller[(string) $artisanId]['total_amount'];
         }
@@ -340,6 +341,11 @@ class PlaceOrder
                     'platform_commission_amount' => $finance['platform_commission_amount'],
                     'seller_net_amount' => $finance['seller_net_amount'],
                     'total_amount' => $finance['total_amount'],
+                    'vat_type' => $finance['vat_type'] ?? 'vat_exempt',
+                    'vatable_sales' => $finance['vatable_sales'] ?? 0.00,
+                    'vat_amount' => $finance['vat_amount'] ?? 0.00,
+                    'vat_exempt_sales' => $finance['vat_exempt_sales'] ?? 0.00,
+                    'vat_rate' => $finance['vat_rate'] ?? 12.00,
                     'status' => 'Pending',
                     'shipping_address' => $orderShippingAddress,
                     'shipping_address_type' => $shippingAddressType,
