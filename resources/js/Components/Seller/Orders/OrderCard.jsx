@@ -149,21 +149,29 @@ export default function OrderCard({
                 {/* Logistics */}
                 <div className="flex items-center gap-2 text-[11px] min-w-0 flex-wrap">
                     {order.shipping_address && (
-                        <div className="flex items-center gap-1 min-w-0 max-w-[280px]">
+                        <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.shipping_address)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 min-w-0 max-w-[280px] text-stone-600 hover:text-clay-700 transition"
+                            title={`Open in Google Maps: ${order.shipping_address}`}
+                        >
                             <MapPin size={11} className="text-stone-400 shrink-0" />
-                            <span className="truncate text-stone-600 font-medium" title={order.shipping_address}>
+                            <span className="truncate font-medium">
                                 {order.shipping_address}
                             </span>
-                        </div>
+                        </a>
                     )}
                     <span className="inline-flex rounded-md border border-stone-200 bg-white px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-stone-600 tracking-tight shadow-2xs">
                         {order.shipping_method}
                     </span>
-                    {order.shipping_method === "Delivery" && (
+                    {/* Only show in-app route estimation for active self-delivered orders without courier tracking */}
+                    {order.shipping_method === "Delivery" && !order.delivery && !["Completed", "Cancelled", "Rejected"].includes(order.status) && (
                         <button
                             type="button"
                             onClick={() => setShowRouteModal(true)}
                             className="inline-flex items-center gap-1 bg-white border border-stone-200 hover:border-clay-300 rounded-md px-1.5 py-0.5 text-[9px] font-bold text-stone-700 hover:text-clay-800 transition shadow-2xs cursor-pointer"
+                            title="Preview driving route to buyer"
                         >
                             <Route size={10} className="text-clay-600" /> Route Map
                         </button>
