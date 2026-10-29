@@ -190,30 +190,15 @@ export default function FulfillmentActionGroup({
             )}
 
             {(order.status === "Shipped" || order.status === "Ready for Pickup") && renderStickyActions(
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2">
-                        <Truck size={13} className="text-blue-400 shrink-0" />
-                        <div className="min-w-0">
-                            <p className="text-[11px] font-bold text-blue-700">
-                                {order.status === "Ready for Pickup" ? "Ready for Pickup" : "Shipment in Progress"}
-                            </p>
-                            <p className="text-[9px] text-blue-500">
-                                {order.status === "Ready for Pickup"
-                                    ? "Confirm handover and mark the order as picked up once the buyer receives the items."
-                                    : "Keep shipment proof visible, and upload final delivery proof when the parcel arrives."}
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        disabled={!canEditOrders}
-                        onClick={() => openShippingModal(order, "deliver")}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-teal-200 transition-colors hover:bg-teal-700 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
-                        type="button"
-                    >
-                        <MapPin size={18} />
-                        {order.status === "Ready for Pickup" ? "Mark as Picked Up" : "Mark as Delivered"}
-                    </button>
-                </div>
+                <button
+                    disabled={!canEditOrders}
+                    onClick={() => openShippingModal(order, "deliver")}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors hover:bg-teal-700 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 min-h-[40px]"
+                    type="button"
+                >
+                    <MapPin size={16} />
+                    {order.status === "Ready for Pickup" ? "Mark as Picked Up" : "Mark as Delivered"}
+                </button>
             )}
 
             {order.status === "Delivered" && !order.replacement_in_progress && !isLalamoveManagedOrder(order) && renderStickyActions(
