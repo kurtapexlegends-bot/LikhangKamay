@@ -32,6 +32,8 @@ export default function ArtisanSetup({ auth, rejectionReason, existingDocuments,
         barangay: normalizeCaviteAddressText(user.barangay || ''),
         region: defaultRegion,
         zip_code: user.zip_code || '',
+        latitude: user.latitude || null,
+        longitude: user.longitude || null,
         business_permit: null,
         dti_registration: null,
         valid_id: null,
@@ -132,44 +134,91 @@ export default function ArtisanSetup({ auth, rejectionReason, existingDocuments,
                     </div>
                 </header>
 
-                <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
+                <main className="mx-auto max-w-4xl px-3 sm:px-6 py-4 sm:py-8 md:py-10">
                     {/* Header Context */}
-                    <div className="mb-8 text-center">
-                        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-clay-200 bg-clay-50 px-3 py-1 text-xs font-semibold text-clay-800">
-                            <ShieldCheck size={14} className="text-clay-600" />
+                    <div className="mb-4 sm:mb-8 text-center">
+                        <div className="mb-2 sm:mb-3 inline-flex items-center gap-1.5 rounded-full border border-clay-200 bg-clay-50 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-semibold text-clay-800">
+                            <ShieldCheck size={13} className="text-clay-600" />
                             <span>Artisan Verification</span>
                         </div>
-                        <h1 className="mb-2 font-serif text-2xl font-bold text-stone-900 sm:text-3xl">
+                        <h1 className="mb-1 sm:mb-2 font-serif text-xl sm:text-3xl font-bold text-stone-900 tracking-tight">
                             Setup Your Artisan Shop
                         </h1>
-                        <p className="mx-auto max-w-lg text-sm text-stone-500">
+                        <p className="mx-auto max-w-lg text-xs sm:text-sm text-stone-500 hidden sm:block">
                             Complete your shop profile and credentials to begin selling your handcrafted creations to buyers nationwide.
                         </p>
                     </div>
 
                     {/* Responsive Stepper */}
-                    <div className="mb-8">
-                        {/* Mobile Stepper Progress Bar */}
-                        <div className="sm:hidden mb-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-bold text-stone-800">
-                                    Step {step} of 3: {stepTitles[step - 1]}
-                                </span>
-                                <span className="text-xs font-semibold text-clay-700">
-                                    {stepProgressPercent}%
-                                </span>
-                            </div>
-                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
-                                <div
-                                    className="h-full bg-clay-600 transition-all duration-300"
-                                    style={{ width: `${stepProgressPercent}%` }}
-                                />
+                    <div className="mb-4 sm:mb-8">
+                        {/* Mobile Segmented Step Indicators */}
+                        <div className="sm:hidden">
+                            <div className="grid grid-cols-3 gap-2">
+                                {[
+                                    { num: 1, label: 'Shop', icon: Store },
+                                    { num: 2, label: 'Documents', icon: ShieldCheck },
+                                    { num: 3, label: 'Payout', icon: CreditCard },
+                                ].map((s) => {
+                                    const isPast = step > s.num;
+                                    const isCurrent = step === s.num;
+                                    return (
+                                        <button
+                                            key={s.num}
+                                            type="button"
+                                            disabled={!isPast}
+                                            onClick={isPast ? () => setStep(s.num) : undefined}
+                                            className={`flex flex-col gap-1.5 p-2 rounded-xl border text-left transition-all ${
+                                                isCurrent
+                                                    ? 'bg-clay-50/90 border-clay-300 ring-1 ring-clay-300/40 shadow-2xs'
+                                                    : isPast
+                                                        ? 'bg-white border-stone-200 hover:bg-stone-50 cursor-pointer shadow-2xs'
+                                                        : 'bg-stone-50/50 border-stone-200/60 opacity-60 cursor-default'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-1.5">
+                                                <span
+                                                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                                                        isCurrent
+                                                            ? 'bg-clay-600 text-white'
+                                                            : isPast
+                                                                ? 'bg-emerald-600 text-white'
+                                                                : 'bg-stone-200 text-stone-600'
+                                                    }`}
+                                                >
+                                                    {isPast ? '✓' : s.num}
+                                                </span>
+                                                <span
+                                                    className={`text-xs font-bold truncate ${
+                                                        isCurrent
+                                                            ? 'text-clay-900'
+                                                            : isPast
+                                                                ? 'text-stone-800'
+                                                                : 'text-stone-500'
+                                                    }`}
+                                                >
+                                                    {s.label}
+                                                </span>
+                                            </div>
+                                            <div className="h-1 w-full rounded-full bg-stone-200/80 overflow-hidden">
+                                                <div
+                                                    className={`h-full transition-all duration-300 ${
+                                                        isCurrent
+                                                            ? 'bg-clay-600 w-full'
+                                                            : isPast
+                                                                ? 'bg-emerald-600 w-full'
+                                                                : 'w-0'
+                                                    }`}
+                                                />
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
 
-                        {/* Desktop Step Pills */}
+                        {/* Desktop & Tablet Step Pills */}
                         <div className="hidden sm:flex justify-center">
-                            <div className="inline-flex items-center gap-1 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-xs">
+                            <div className="inline-flex items-center gap-1 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-xs max-w-full overflow-x-auto no-scrollbar">
                                 <StepPill
                                     number={1}
                                     icon={<Store size={14} />}
@@ -178,7 +227,7 @@ export default function ArtisanSetup({ auth, rejectionReason, existingDocuments,
                                     current={step === 1}
                                     onClick={step > 1 ? () => setStep(1) : undefined}
                                 />
-                                <div className={`h-0.5 w-6 ${step >= 2 ? 'bg-clay-600' : 'bg-stone-200'}`} />
+                                <div className={`h-0.5 w-6 shrink-0 ${step >= 2 ? 'bg-clay-600' : 'bg-stone-200'}`} />
                                 <StepPill
                                     number={2}
                                     icon={<ShieldCheck size={14} />}
@@ -187,7 +236,7 @@ export default function ArtisanSetup({ auth, rejectionReason, existingDocuments,
                                     current={step === 2}
                                     onClick={step > 2 ? () => setStep(2) : undefined}
                                 />
-                                <div className={`h-0.5 w-6 ${step >= 3 ? 'bg-clay-600' : 'bg-stone-200'}`} />
+                                <div className={`h-0.5 w-6 shrink-0 ${step >= 3 ? 'bg-clay-600' : 'bg-stone-200'}`} />
                                 <StepPill
                                     number={3}
                                     icon={<CreditCard size={14} />}
@@ -195,7 +244,7 @@ export default function ArtisanSetup({ auth, rejectionReason, existingDocuments,
                                     active={step >= 3}
                                     current={step === 3}
                                 />
-                                <div className="h-0.5 w-6 bg-stone-200" />
+                                <div className="h-0.5 w-6 shrink-0 bg-stone-200" />
                                 <StepPill
                                     icon={<Clock size={14} />}
                                     label="Review"
@@ -207,7 +256,7 @@ export default function ArtisanSetup({ auth, rejectionReason, existingDocuments,
                     </div>
 
                     {/* Main Wizard Container */}
-                    <div className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-xs">
+                    <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-stone-200 bg-white shadow-xs">
                         {isRejected && (
                             <div className="border-b border-rose-200 bg-rose-50/70 transition-all duration-300">
                                 <button

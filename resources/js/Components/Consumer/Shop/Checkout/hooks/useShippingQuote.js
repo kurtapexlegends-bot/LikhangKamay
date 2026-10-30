@@ -67,6 +67,8 @@ export default function useShippingQuote({
                     shipping_city: data.shipping_city,
                     shipping_region: data.shipping_region,
                     shipping_postal_code: data.shipping_postal_code,
+                    shipping_latitude: data.shipping_latitude ?? data.latitude ?? null,
+                    shipping_longitude: data.shipping_longitude ?? data.longitude ?? null,
                 });
 
                 const groupsBySellerId = (response.data.groups || []).reduce((map, group) => {

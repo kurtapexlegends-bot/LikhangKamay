@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\CaviteAddress;
 use App\Support\StructuredAddress;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Str;
@@ -206,6 +207,201 @@ class AddressGeocodingService
             ['Dasmariñas City', 'Dasmariñas'],
             $query
         );
+    }
+
+    /**
+     * Reverse geocode coordinates using OpenStreetMap Nominatim with caching and Cavite normalization
+     *
+     * @return array{
+     *     is_within_cavite: bool,
+     *     street_address: string,
+     *     barangay: string,
+     *     city: string,
+     *     province: string,
+     *     region: string,
+     *     postal_code: string,
+     *     latitude: float,
+     *     longitude: float,
+     *     display_name: string,
+     *     warning: ?string
+     * }
+     */
+    public function reverseGeocode(float $latitude, float $longitude): array
+    {
+        $lat = round($latitude, 7);
+        $lng = round($longitude, 7);
+        $cacheLat = round($latitude, 5);
+        $cacheLng = round($longitude, 5);
+        $cacheKey = "geocode:reverse:{$cacheLat}_{$cacheLng}";
+
+        return Cache::remember($cacheKey, now()->addDays(30), function () use ($lat, $lng) {
+            $timeout = (int) config('services.nominatim.timeout', 3);
+            $connectTimeout = (int) config('services.nominatim.connect_timeout', 1);
+            $baseUrl = config('services.nominatim.base_url', 'https://nominatim.openstreetmap.org');
+
+            $rawAddress = [];
+            $displayName = '';
+
+            try {
+                /** @var Response $response */
+                $response = Http::acceptJson()
+                    ->withUserAgent(config('app.name', 'LikhangKamay') . '/1.0 logistics reverse-geocoding')
+                    ->connectTimeout($connectTimeout)
+                    ->timeout($timeout)
+                    ->get($baseUrl . '/reverse', [
+                        'lat' => $lat,
+                        'lon' => $lng,
+                        'format' => 'jsonv2',
+                        'addressdetails' => 1,
+                        'zoom' => 18,
+                    ]);
+
+                if ($response->successful()) {
+                    $result = $response->json();
+                    if (is_array($result)) {
+                        $rawAddress = (array) ($result['address'] ?? []);
+                        $displayName = (string) ($result['display_name'] ?? '');
+                    }
+                }
+            } catch (\Throwable) {
+                // Suppress Nominatim network/timeout exceptions and fallback gracefully
+            }
+
+            return $this->formatReverseGeocodedPayload($lat, $lng, $rawAddress, $displayName);
+        });
+    }
+
+    /**
+     * Parse and normalize Philippine and Cavite address details into canonical structure
+     *
+     * @param array<string, mixed> $rawAddress
+     * @return array{
+     *     is_within_cavite: bool,
+     *     street_address: string,
+     *     barangay: string,
+     *     city: string,
+     *     province: string,
+     *     region: string,
+     *     postal_code: string,
+     *     latitude: float,
+     *     longitude: float,
+     *     display_name: string,
+     *     warning: ?string
+     * }
+     */
+    private function formatReverseGeocodedPayload(float $lat, float $lng, array $rawAddress, string $displayName): array
+    {
+        // 1. Street / Road & POI
+        $street = trim((string) ($rawAddress['road'] ?? $rawAddress['street'] ?? $rawAddress['pedestrian'] ?? $rawAddress['residential'] ?? $rawAddress['footway'] ?? $rawAddress['path'] ?? ''));
+        $houseNumber = trim((string) ($rawAddress['house_number'] ?? ''));
+        $poi = trim((string) ($rawAddress['amenity'] ?? $rawAddress['shop'] ?? $rawAddress['office'] ?? $rawAddress['building'] ?? $rawAddress['tourism'] ?? $rawAddress['historic'] ?? ''));
+
+        if ($houseNumber !== '' && $street !== '') {
+            $streetAddress = "{$houseNumber} {$street}";
+        } elseif ($poi !== '' && $street !== '') {
+            $streetAddress = "{$poi}, {$street}";
+        } elseif ($street !== '') {
+            $streetAddress = $street;
+        } elseif ($poi !== '') {
+            $streetAddress = $poi;
+        } else {
+            $streetAddress = $houseNumber;
+        }
+
+        // 2. Raw Barangay candidates
+        $rawBarangay = trim((string) (
+            $rawAddress['quarter']
+            ?? $rawAddress['suburb']
+            ?? $rawAddress['village']
+            ?? $rawAddress['neighbourhood']
+            ?? $rawAddress['barangay']
+            ?? $rawAddress['city_district']
+            ?? ''
+        ));
+
+        // 3. Raw City candidates (CRITICAL: Never include 'county' as city!)
+        $rawCityCandidates = array_values(array_filter([
+            trim((string) ($rawAddress['city'] ?? '')),
+            trim((string) ($rawAddress['municipality'] ?? '')),
+            trim((string) ($rawAddress['town'] ?? '')),
+            trim((string) ($rawAddress['city_district'] ?? '')),
+        ], static fn ($val) => $val !== ''));
+
+        // 4. Raw Province and Region candidates
+        $rawProvince = trim((string) (
+            $rawAddress['county']
+            ?? $rawAddress['province']
+            ?? $rawAddress['state_district']
+            ?? ''
+        ));
+
+        $rawRegion = trim((string) (
+            $rawAddress['state']
+            ?? $rawAddress['region']
+            ?? ''
+        ));
+
+        // If no explicit province is given but region is Metro Manila, set province to Metro Manila
+        if ($rawProvince === '' && str_contains(strtolower($rawRegion), 'manila')) {
+            $rawProvince = 'Metro Manila';
+        }
+
+        // 5. Postal code
+        $rawPostalCode = trim((string) ($rawAddress['postcode'] ?? $rawAddress['postal_code'] ?? ''));
+
+        // 6. Match canonical Cavite city if possible
+        $matchedCity = null;
+        foreach ($rawCityCandidates as $candidate) {
+            if (CaviteAddress::isValidCity($candidate)) {
+                $matchedCity = CaviteAddress::resolveCanonicalCity($candidate);
+                break;
+            }
+        }
+
+        // Determine if within Cavite
+        $isWithinCavite = CaviteAddress::isCaviteLocation($lat, $lng, $rawProvince, $matchedCity ?? ($rawCityCandidates[0] ?? null));
+
+        if ($isWithinCavite) {
+            // If inside Cavite bounds but no city tag in OSM, fallback to nearest Cavite city
+            if ($matchedCity === null) {
+                $matchedCity = CaviteAddress::getNearestCity($lat, $lng);
+            }
+
+            $resolvedBarangay = CaviteAddress::resolveCanonicalBarangay($matchedCity, $rawBarangay) ?? $rawBarangay;
+            $resolvedPostalCode = $rawPostalCode !== '' && preg_match('/^\d{4}$/', $rawPostalCode)
+                ? $rawPostalCode
+                : (CaviteAddress::getPostalCodeForCity($matchedCity) ?? $rawPostalCode);
+
+            return [
+                'is_within_cavite' => true,
+                'street_address' => $streetAddress,
+                'barangay' => $resolvedBarangay,
+                'city' => $matchedCity,
+                'province' => CaviteAddress::PROVINCE,
+                'region' => CaviteAddress::PROVINCE,
+                'postal_code' => $resolvedPostalCode,
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'display_name' => $displayName,
+                'warning' => null,
+            ];
+        }
+
+        // Outside Cavite: return detected fields but flag non-Cavite with warning
+        $outsideCity = $rawCityCandidates[0] ?? '';
+        return [
+            'is_within_cavite' => false,
+            'street_address' => $streetAddress,
+            'barangay' => $rawBarangay,
+            'city' => $outsideCity,
+            'province' => $rawProvince !== '' ? $rawProvince : $rawRegion,
+            'region' => $rawRegion !== '' ? $rawRegion : $rawProvince,
+            'postal_code' => $rawPostalCode,
+            'latitude' => $lat,
+            'longitude' => $lng,
+            'display_name' => $displayName,
+            'warning' => 'The detected location is outside Cavite. LikhangKamay operations, workshops, and delivery addresses are strictly Cavite-only.',
+        ];
     }
 }
 

@@ -189,6 +189,8 @@ export default function ShippingAddressSelector({
             city: data.shipping_city,
             region: data.shipping_region,
             postal_code: data.shipping_postal_code,
+            latitude: data.shipping_latitude ?? null,
+            longitude: data.shipping_longitude ?? null,
         };
 
         const onSuccess = () => {

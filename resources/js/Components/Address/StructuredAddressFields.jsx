@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
@@ -11,6 +12,7 @@ import {
     CAVITE_REGION,
     getCaviteBarangaysForCity,
     normalizeCaviteAddressText,
+    resolveCanonicalCaviteCity,
 } from '@/lib/caviteAddresses';
 
 const normalizeValue = (value) => normalizeCaviteAddressText(value || '');
@@ -63,6 +65,8 @@ export default function StructuredAddressFields({
         [rawValue, matchedCity, cityValue],
     );
 
+    const [locationNotice, setLocationNotice] = useState(null);
+
     // Ensure region is always set to Cavite
     useEffect(() => {
         if (normalizeValue(rawValue('region')) !== normalizeValue(CAVITE_REGION)) {
@@ -73,6 +77,145 @@ export default function StructuredAddressFields({
     const updateField = (name, nextValue) => {
         setData(field(name), nextValue);
     };
+
+    const updateMultipleFields = useCallback((fieldsToUpdate) => {
+        if (typeof setData !== 'function') return;
+
+        let updaterCalled = false;
+        try {
+            setData((current) => {
+                if (typeof current === 'object' && current !== null) {
+                    updaterCalled = true;
+                    const next = { ...current };
+                    Object.entries(fieldsToUpdate).forEach(([k, v]) => {
+                        next[field(k)] = v;
+                        if (prefix && (k === 'latitude' || k === 'longitude') && k in current) {
+                            next[k] = v;
+                        }
+                    });
+                    return next;
+                }
+                return current;
+            });
+        } catch {
+            // Fall back to key-value updates
+        }
+
+        if (!updaterCalled) {
+            Object.entries(fieldsToUpdate).forEach(([k, v]) => {
+                setData(field(k), v);
+                if (prefix && (k === 'latitude' || k === 'longitude')) {
+                    setData(k, v);
+                }
+            });
+        }
+    }, [field, prefix, setData]);
+
+    const handleLocationSelect = useCallback(({ latitude, longitude, addressDetails = null }) => {
+        const fieldsToUpdate = {
+            latitude,
+            longitude,
+        };
+
+        if (addressDetails) {
+            if (!addressDetails.is_within_cavite) {
+                const noticeMsg = addressDetails.warning || 'The detected location is outside Cavite. Deliveries and workshops are strictly Cavite-only.';
+                setLocationNotice({
+                    type: 'warning',
+                    title: 'Location Outside Cavite',
+                    message: noticeMsg,
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('app-toast', {
+                        detail: {
+                            type: 'warning',
+                            message: 'Pinned location is outside Cavite. LikhangKamay operations and deliveries are Cavite-only.',
+                        }
+                    }));
+                }
+            } else {
+                setLocationNotice(null);
+
+                let resolvedCity = '';
+                let resolvedBrgy = '';
+
+                if (addressDetails.city) {
+                    const canonicalCity = resolveCanonicalCaviteCity(addressDetails.city) || addressDetails.city;
+                    const prevCity = rawValue('city');
+
+                    resolvedCity = canonicalCity;
+                    fieldsToUpdate.city = canonicalCity;
+
+                    if (addressDetails.barangay) {
+                        const availableBarangays = getCaviteBarangaysForCity(canonicalCity);
+                        const normalizeBrgyCompare = (val) => {
+                            if (!val) return '';
+                            return normalizeValue(val)
+                                .toLowerCase()
+                                .replace(/^(?:barangay|brgy\.?|bgy\.?)\s+/i, '')
+                                .replace(/\bviii\b/g, '8')
+                                .replace(/\bvii\b/g, '7')
+                                .replace(/\bvi\b/g, '6')
+                                .replace(/\biv\b/g, '4')
+                                .replace(/\bv\b/g, '5')
+                                .replace(/\biii\b/g, '3')
+                                .replace(/\bii\b/g, '2')
+                                .replace(/\bi\b/g, '1')
+                                .replace(/[^a-z0-9]/g, '');
+                        };
+                        const targetNorm = normalizeBrgyCompare(addressDetails.barangay);
+                        const matchedBrgy = availableBarangays.find(
+                            (b) => normalizeValue(b) === normalizeValue(addressDetails.barangay) ||
+                                   normalizeBrgyCompare(b) === targetNorm
+                        ) || addressDetails.barangay;
+                        resolvedBrgy = matchedBrgy;
+                        fieldsToUpdate.barangay = matchedBrgy;
+                    } else if (canonicalCity !== prevCity) {
+                        fieldsToUpdate.barangay = '';
+                    }
+                }
+
+                if (addressDetails.street_address) {
+                    fieldsToUpdate.street_address = addressDetails.street_address;
+                }
+
+                if (addressDetails.postal_code) {
+                    fieldsToUpdate.postal_code = addressDetails.postal_code;
+                }
+
+                fieldsToUpdate.region = CAVITE_REGION;
+
+                const formatted = formatStructuredAddress({
+                    street_address: fieldsToUpdate.street_address || rawValue('street_address'),
+                    barangay: fieldsToUpdate.barangay || rawValue('barangay'),
+                    city: fieldsToUpdate.city || matchedCity || cityValue || '',
+                    region: CAVITE_REGION,
+                    postal_code: fieldsToUpdate.postal_code || rawValue('postal_code'),
+                });
+
+                if (formatted) {
+                    fieldsToUpdate.full_address = formatted;
+                    if (prefix === 'shipping_') {
+                        fieldsToUpdate.shipping_address = formatted;
+                    }
+                }
+
+                if (typeof window !== 'undefined') {
+                    const placeHint = [resolvedCity, resolvedBrgy].filter(Boolean).join(' - ');
+                    window.dispatchEvent(new CustomEvent('app-toast', {
+                        detail: {
+                            type: 'info',
+                            message: placeHint ? `Address detected: ${placeHint}` : 'Address auto-filled from pinned location.',
+                            duration: 3500,
+                        }
+                    }));
+                }
+            }
+        }
+
+        updateMultipleFields(fieldsToUpdate);
+    }, [cityValue, matchedCity, prefix, rawValue, updateMultipleFields]);
 
     const labelSuffix = required ? ' *' : '';
 
@@ -177,13 +320,20 @@ export default function StructuredAddressFields({
                     longitude={rawValue('longitude')}
                     city={matchedCity || rawValue('city')}
                     barangay={rawValue('barangay')}
-                    onLocationSelect={({ latitude, longitude }) => {
-                        updateField('latitude', latitude);
-                        updateField('longitude', longitude);
-                    }}
+                    onLocationSelect={handleLocationSelect}
                     readOnly={readOnly}
                 />
             </Suspense>
+
+            {locationNotice && (
+                <div className="flex items-start gap-2.5 rounded-xl bg-amber-50 border border-amber-200/80 p-3 text-xs text-amber-800">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                        <p className="font-bold">{locationNotice.title}</p>
+                        <p className="mt-0.5 text-amber-700 leading-relaxed">{locationNotice.message}</p>
+                    </div>
+                </div>
+            )}
 
             {showPreview && (
                 <div className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">

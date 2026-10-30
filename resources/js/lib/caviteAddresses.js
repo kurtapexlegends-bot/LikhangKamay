@@ -48,8 +48,66 @@ export const CAVITE_BARANGAYS = Object.fromEntries(
 
 export const CAVITE_CITY_OPTIONS = Object.keys(CAVITE_BARANGAYS);
 
-export const getCaviteBarangaysForCity = (city = '') =>
-    CAVITE_BARANGAYS[normalizeCaviteAddressText(city)] || [];
+export const CAVITE_COMPONENT_CITIES = [
+    'Dasmariñas City',
+    'Bacoor City',
+    'Imus City',
+    'General Trias City',
+    'Tagaytay City',
+    'Trece Martires City',
+    'Cavite City',
+    'Carmona',
+];
+
+export const CAVITE_MUNICIPALITIES = [
+    'Silang',
+    'Tanza',
+    'Kawit',
+    'Naic',
+    'Rosario',
+    'General Mariano Alvarez',
+    'Indang',
+    'Amadeo',
+    'Alfonso',
+    'Noveleta',
+    'Mendez',
+    'Maragondon',
+    'Ternate',
+    'Magallanes',
+    'General Emilio Aguinaldo',
+];
+
+export const resolveCanonicalCaviteCity = (city = '') => {
+    const normalized = normalizeCaviteAddressText(city).toLowerCase();
+    if (!normalized) return '';
+    const cleanInput = normalized
+        .replace(/^(?:city|municipality)\s+of\s+/i, '')
+        .replace(/\s+(?:city|municipality)$/i, '')
+        .trim();
+
+    // Disambiguate 'Cavite' (province) from 'Cavite City' (city)
+    if (cleanInput === 'cavite' && !/\bcity\b/i.test(city)) {
+        return '';
+    }
+
+    for (const opt of CAVITE_CITY_OPTIONS) {
+        const normOpt = normalizeCaviteAddressText(opt).toLowerCase()
+            .replace(/^(?:city|municipality)\s+of\s+/i, '')
+            .replace(/\s+(?:city|municipality)$/i, '')
+            .trim();
+        if (cleanInput === normOpt) {
+            return opt;
+        }
+    }
+    return '';
+};
+
+export const getCaviteBarangaysForCity = (city = '') => {
+    const direct = CAVITE_BARANGAYS[normalizeCaviteAddressText(city)];
+    if (direct) return direct;
+    const canonical = resolveCanonicalCaviteCity(city);
+    return CAVITE_BARANGAYS[canonical] || [];
+};
 
 export const CAVITE_CITY_COORDINATES = {
     "bacoor city": { lat: 14.4624, lng: 120.9645 },
@@ -78,7 +136,8 @@ export const CAVITE_CITY_COORDINATES = {
 };
 
 export const getCaviteCoordinatesForCity = (city = '') => {
-    const key = normalizeCaviteAddressText(city).toLowerCase();
+    const canonical = resolveCanonicalCaviteCity(city) || city;
+    const key = normalizeCaviteAddressText(canonical).toLowerCase();
     return CAVITE_CITY_COORDINATES[key] || { lat: 14.3294, lng: 120.9367 }; // Default Cavite center
 };
 

@@ -221,19 +221,36 @@ export default function WorkplaceLocationModal({
         }
 
         navigator.geolocation.getCurrentPosition(
-            (position) => {
+            async (position) => {
                 const lat = Number(position.coords.latitude.toFixed(8));
                 const lng = Number(position.coords.longitude.toFixed(8));
+
+                let resolvedAddress = null;
+                try {
+                    const url = typeof route === 'function' ? route('api.geocode.reverse') : '/api/geocode/reverse';
+                    const res = await (window.axios ? window.axios.get(url, { params: { latitude: lat, longitude: lng } }) : fetch(`${url}?latitude=${lat}&longitude=${lng}`).then(r => r.json()));
+                    const payload = res?.data || res;
+                    if (payload && (payload.display_name || payload.street_address || payload.city)) {
+                        resolvedAddress = payload.display_name || [payload.street_address, payload.barangay, payload.city, payload.province].filter(Boolean).join(', ');
+                    }
+                } catch {
+                    // Ignore reverse geocode failure and preserve coordinate capture
+                }
+
                 finishLoading(() => {
                     setData((prev) => ({
                         ...prev,
                         latitude: lat,
                         longitude: lng,
+                        ...(resolvedAddress ? { address: resolvedAddress } : {}),
                     }));
-                    if (errors.latitude || errors.longitude) {
-                        clearErrors('latitude', 'longitude');
+                    if (resolvedAddress) {
+                        setSearchQuery(resolvedAddress.split(',')[0]);
                     }
-                    addToast('Current GPS coordinates captured.', 'success');
+                    if (errors.latitude || errors.longitude || (resolvedAddress && errors.address)) {
+                        clearErrors('latitude', 'longitude', 'address');
+                    }
+                    addToast(resolvedAddress ? 'Current location and address captured.' : 'Current location captured.', 'success');
                 });
             },
             (err) => {
@@ -241,7 +258,7 @@ export default function WorkplaceLocationModal({
                     if (err?.code === 1) {
                         addToast('Location access blocked. Please allow permissions in your address bar.', 'error');
                     } else {
-                        addToast('Unable to detect GPS. Tap map to pinpoint manually.', 'error');
+                        addToast('Unable to detect location. Tap map to pinpoint manually.', 'error');
                     }
                 });
             },
@@ -416,10 +433,10 @@ export default function WorkplaceLocationModal({
                                             disabled={detectingGps}
                                             onClick={detectGpsLocation}
                                             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300/80 text-xs font-bold transition shrink-0 min-h-[42px] cursor-pointer disabled:opacity-50"
-                                            title="Use Current Device GPS"
+                                            title="Use current location"
                                         >
                                             <Crosshair size={14} className={detectingGps ? 'animate-spin text-clay-600' : 'text-stone-600'} />
-                                            <span className="hidden sm:inline">{detectingGps ? 'Locating...' : 'My GPS'}</span>
+                                            <span className="hidden sm:inline">{detectingGps ? 'Locating...' : 'My Location'}</span>
                                         </button>
                                     </div>
                                     {errors.address && <InputError message={errors.address} className="mt-1" />}
@@ -611,7 +628,7 @@ export default function WorkplaceLocationModal({
                                     isLocating={detectingGps}
                                     height="100%"
                                     className="w-full h-full"
-                                    onLocationSelect={({ latitude, longitude }) => {
+                                    onLocationSelect={async ({ latitude, longitude }) => {
                                         setData((prev) => ({
                                             ...prev,
                                             latitude,
@@ -619,6 +636,27 @@ export default function WorkplaceLocationModal({
                                         }));
                                         if (errors.latitude || errors.longitude) {
                                             clearErrors('latitude', 'longitude');
+                                        }
+
+                                        try {
+                                            const url = typeof route === 'function' ? route('api.geocode.reverse') : '/api/geocode/reverse';
+                                            const res = await (window.axios ? window.axios.get(url, { params: { latitude, longitude } }) : fetch(`${url}?latitude=${latitude}&longitude=${longitude}`).then(r => r.json()));
+                                            const payload = res?.data || res;
+                                            if (payload && (payload.display_name || payload.street_address || payload.city)) {
+                                                const resolvedAddress = payload.display_name || [payload.street_address, payload.barangay, payload.city, payload.province].filter(Boolean).join(', ');
+                                                if (resolvedAddress) {
+                                                    setData((prev) => ({
+                                                        ...prev,
+                                                        address: resolvedAddress,
+                                                    }));
+                                                    setSearchQuery(resolvedAddress.split(',')[0]);
+                                                    if (errors.address) {
+                                                        clearErrors('address');
+                                                    }
+                                                }
+                                            }
+                                        } catch {
+                                            // Silently ignore reverse geocode error
                                         }
                                     }}
                                 />

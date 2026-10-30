@@ -176,9 +176,6 @@
                 <h3>Artisan Workshop & Creator</h3>
                 <p class="party-name">{{ $order->artisan?->tax_business_name ?: ($order->artisan?->shop_name ?: ($order->artisan?->name ?: 'Artisan Studio')) }}</p>
                 <p style="color: #57534e;">Creator: <strong>{{ $order->artisan?->name ?: 'Artisan' }}</strong></p>
-                @if($order->artisan?->tin)
-                    <p style="color: #78350f; font-size: 11px; font-family: monospace;">Seller TIN: <strong>{{ $order->artisan->tin }}</strong> ({{ $isVatRegistered ? 'VAT-Registered' : 'Non-VAT' }})</p>
-                @endif
                 @if($order->artisan?->city)
                     <p style="color: #78716c; font-size: 11px;">Studio Location: {{ $order->artisan->city }}</p>
                 @endif
@@ -230,7 +227,7 @@
             <table class="tax-table">
                 <tr>
                     <td class="tax-lbl">Seller TIN:</td>
-                    <td class="tax-val">{{ $order->artisan?->tin ?: 'Unregistered' }}</td>
+                    <td class="tax-val">{{ $order->artisan?->tin ?: 'Non-VAT Micro-Artisan' }}</td>
                 </tr>
                 <tr>
                     <td class="tax-lbl">Tax Classification:</td>

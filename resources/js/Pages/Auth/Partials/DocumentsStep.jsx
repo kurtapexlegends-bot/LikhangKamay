@@ -20,27 +20,30 @@ export default function DocumentsStep({
 
     return (
         <>
-            <form onSubmit={submit} className="p-6 sm:p-10">
-                <div className="mb-8">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-clay-50 border border-clay-200 text-clay-700 shadow-xs">
-                            <ShieldCheck size={22} strokeWidth={2} />
+            <form onSubmit={submit} className="p-4 sm:p-8 md:p-10">
+                <div className="mb-5 sm:mb-6 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 sm:gap-3">
+                        <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-clay-50 border border-clay-200 text-clay-700 shadow-xs shrink-0">
+                            <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-stone-900 tracking-tight">Artisan Verification Documents</h2>
-                            <p className="text-sm text-stone-500">Upload clear scans or photos of your government credentials and permits.</p>
+                            <h2 className="text-lg sm:text-xl font-bold text-stone-900 tracking-tight">Verification Documents</h2>
+                            <p className="text-xs text-stone-500 hidden sm:block">Upload clear scans or photos of your government credentials and permits.</p>
                         </div>
                     </div>
+                    <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider sm:hidden">
+                        Step 2 of 3
+                    </span>
                 </div>
 
-                <div className="mb-6 rounded-xl border border-stone-200 bg-stone-50/70 p-4 flex items-start gap-3">
-                    <ShieldCheck size={18} className="mt-0.5 shrink-0 text-clay-600" />
+                <div className="mb-5 sm:mb-6 rounded-xl border border-stone-200 bg-stone-50/70 p-3.5 sm:p-4 flex items-start gap-2.5 sm:gap-3">
+                    <ShieldCheck size={16} className="mt-0.5 shrink-0 text-clay-600" />
                     <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
                         <strong className="text-stone-900 font-semibold">Buyer Protection & Authenticity:</strong> Credentials are securely stored and reviewed solely by LikhangKamay verification officers to ensure handmade craftsmanship standards.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
                     <FileUploadField
                         label="Business or Mayor's Permit"
                         description="Or Barangay Micro-Business Certificate"
@@ -75,11 +78,11 @@ export default function DocumentsStep({
                     />
                 </div>
 
-                <div className="mt-10 flex items-center justify-between border-t border-stone-100 pt-6">
+                <div className="mt-8 sm:mt-10 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-stone-100 pt-5 sm:pt-6">
                     <button
                         type="button"
                         onClick={() => setStep(1)}
-                        className="inline-flex items-center gap-2 rounded-xl border border-stone-200 px-5 py-3 text-sm font-semibold text-stone-700 transition hover:bg-stone-50 active:bg-stone-100 cursor-pointer"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 px-5 py-3 text-sm font-semibold text-stone-700 transition hover:bg-stone-50 active:bg-stone-100 cursor-pointer min-h-[44px]"
                     >
                         <ArrowLeft size={16} />
                         <span>Back to Shop Info</span>
@@ -88,7 +91,7 @@ export default function DocumentsStep({
                     <button
                         type="submit"
                         disabled={processing}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-clay-600 px-7 py-3 text-sm font-semibold text-white shadow-xs transition hover:bg-clay-700 active:bg-clay-800 disabled:opacity-50 cursor-pointer"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-clay-600 px-7 py-3 text-sm font-semibold text-white shadow-xs transition hover:bg-clay-700 active:bg-clay-800 disabled:opacity-50 cursor-pointer min-h-[44px]"
                     >
                         <span>{processing ? 'Saving...' : 'Continue to Payments'}</span>
                         <ArrowRight size={16} />

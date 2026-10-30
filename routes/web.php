@@ -29,11 +29,12 @@ if (app()->environment('local')) {
         } else {
             $user = User::where('role', $role)->first() ?? User::where('role', 'super_admin')->first();
         }
+        $target = $request->query('redirect', '/admin/overview');
+
         if ($user) {
             Auth::guard('web')->login($user, true);
             $request->session()->regenerate();
             
-            $target = $request->query('redirect', '/admin/overview');
             if (str_contains($target, '/cart') || str_contains($target, '/checkout')) {
                 $products = \App\Models\Product::where('status', 'Active')->get()->unique('user_id')->take(2);
                 if ($products->isNotEmpty()) {
@@ -111,6 +112,10 @@ Route::post('/validate-constraint', [\App\Http\Controllers\Compliance\Validation
 Route::get('/api/search/suggestions', [\App\Http\Controllers\Consumer\SearchController::class, 'suggestions'])
     ->middleware('throttle:60,1')
     ->name('api.search.suggestions');
+
+Route::match(['get', 'post'], '/api/geocode/reverse', [\App\Http\Controllers\Core\GeocodingController::class, 'reverse'])
+    ->middleware('throttle:60,1')
+    ->name('api.geocode.reverse');
 
 // --- AUTHENTICATION ---
 Route::get('/artisan/register', function () {

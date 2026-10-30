@@ -42,6 +42,28 @@ export function ToastProvider({ children }) {
         setToasts(prev => prev.filter(t => t.id !== id));
     }, []);
 
+    useEffect(() => {
+        const handleToastEvent = (event) => {
+            if (event?.detail) {
+                const detail = event.detail;
+                if (typeof detail === 'string') {
+                    addToast(detail);
+                } else {
+                    addToast(
+                        detail.message || '',
+                        detail.type || 'info',
+                        detail.duration || 3500,
+                        detail.onAction || null,
+                        detail.actionLabel || 'Undo'
+                    );
+                }
+            }
+        };
+
+        window.addEventListener('app-toast', handleToastEvent);
+        return () => window.removeEventListener('app-toast', handleToastEvent);
+    }, [addToast]);
+
     return (
         <ToastContext.Provider value={{ addToast }}>
             {children}

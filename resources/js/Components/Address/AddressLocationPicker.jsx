@@ -1,11 +1,17 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapPin, Crosshair, Loader2, Maximize2, Minimize2, Check, X, Compass, Info } from 'lucide-react';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import { getCaviteCoordinatesForCity } from '@/lib/caviteAddresses';
+import {
+    getCaviteCoordinatesForCity,
+    CAVITE_COMPONENT_CITIES,
+    CAVITE_MUNICIPALITIES,
+    normalizeCaviteAddressText
+} from '@/lib/caviteAddresses';
 
 // Ensure standard Leaflet marker icons resolve correctly in Vite
 delete L.Icon.Default.prototype._getIconUrl;
@@ -15,13 +21,12 @@ L.Icon.Default.mergeOptions({
     shadowUrl: markerShadow,
 });
 
-const POPULAR_CAVITE_HUBS = [
-    'Dasmariñas City',
-    'Imus City',
-    'Bacoor City',
-    'General Trias City',
-    'Tagaytay City',
-];
+const getCityShortLabel = (cityName) => {
+    if (normalizeCaviteAddressText(cityName).toLowerCase() === 'cavite city') {
+        return 'Cavite City';
+    }
+    return cityName.replace(/\s+City$/i, '');
+};
 
 export default function AddressLocationPicker({
     latitude = null,
@@ -37,9 +42,61 @@ export default function AddressLocationPicker({
     const mapInstanceRef = useRef(null);
     const markerRef = useRef(null);
     const [isLocating, setIsLocating] = useState(false);
+    const [isResolvingAddress, setIsResolvingAddress] = useState(false);
     const [isPrecisionOpen, setIsPrecisionOpen] = useState(false);
 
+    const onLocationSelectRef = useRef(onLocationSelect);
+    useEffect(() => {
+        onLocationSelectRef.current = onLocationSelect;
+    }, [onLocationSelect]);
+
+    const abortControllerRef = useRef(null);
+
     const hasCoordinates = latitude !== null && longitude !== null && !isNaN(Number(latitude)) && !isNaN(Number(longitude));
+
+    const performReverseGeocode = useCallback(async (lat, lng) => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        setIsResolvingAddress(true);
+
+        try {
+            const url = typeof route === 'function' ? route('api.geocode.reverse') : '/api/geocode/reverse';
+            const response = await axios.get(
+                url,
+                {
+                    params: { latitude: lat, longitude: lng },
+                    signal: controller.signal,
+                }
+            );
+
+            setIsResolvingAddress(false);
+
+            if (response?.data && onLocationSelectRef.current) {
+                onLocationSelectRef.current({
+                    latitude: lat,
+                    longitude: lng,
+                    addressDetails: response.data,
+                });
+            }
+        } catch (err) {
+            if (axios.isCancel(err) || err?.name === 'CanceledError') {
+                return;
+            }
+            setIsResolvingAddress(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
     
     // Resolve initial center: provided coords > city center > Dasmariñas default
     const getInitialCenter = useCallback(() => {
@@ -87,19 +144,25 @@ export default function AddressLocationPicker({
                 }
             }, 200);
 
-            if (!readOnly && onLocationSelect) {
+            if (!readOnly) {
                 marker.on('dragend', (e) => {
                     const coord = e.target.getLatLng();
                     const nextLat = Number(coord.lat.toFixed(7));
                     const nextLng = Number(coord.lng.toFixed(7));
-                    onLocationSelect({ latitude: nextLat, longitude: nextLng });
+                    if (onLocationSelectRef.current) {
+                        onLocationSelectRef.current({ latitude: nextLat, longitude: nextLng });
+                    }
+                    performReverseGeocode(nextLat, nextLng);
                 });
 
                 map.on('click', (e) => {
                     const nextLat = Number(e.latlng.lat.toFixed(7));
                     const nextLng = Number(e.latlng.lng.toFixed(7));
                     marker.setLatLng([nextLat, nextLng]);
-                    onLocationSelect({ latitude: nextLat, longitude: nextLng });
+                    if (onLocationSelectRef.current) {
+                        onLocationSelectRef.current({ latitude: nextLat, longitude: nextLng });
+                    }
+                    performReverseGeocode(nextLat, nextLng);
                 });
             }
 
@@ -174,7 +237,14 @@ export default function AddressLocationPicker({
     // Handle "Use My Current Location" via Browser Geolocation API
     const handleLocateMe = () => {
         if (!navigator.geolocation) {
-            alert('Geolocation is not supported by your browser.');
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('app-toast', {
+                    detail: {
+                        type: 'warning',
+                        message: 'Geolocation is not supported by your browser.',
+                    }
+                }));
+            }
             return;
         }
 
@@ -190,16 +260,25 @@ export default function AddressLocationPicker({
                     mapInstanceRef.current.setView([userLat, userLng], 17, { animate: true });
                 }
 
-                if (onLocationSelect) {
-                    onLocationSelect({ latitude: userLat, longitude: userLng });
+                if (onLocationSelectRef.current) {
+                    onLocationSelectRef.current({ latitude: userLat, longitude: userLng });
                 }
+                performReverseGeocode(userLat, userLng);
             },
             (error) => {
                 setIsLocating(false);
-                if (error.code === 1) {
-                    alert('Location access is blocked. Please click the lock icon in your browser address bar to allow location permissions.');
-                } else {
-                    alert('Unable to detect your current location. Please check your device location settings or pin your location manually.');
+                const message = error.code === 1
+                    ? 'Location access is blocked. Please click the lock icon in your browser address bar to allow location permissions.'
+                    : 'Unable to detect your current location. Please check your device location settings or pin your location manually.';
+
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('app-toast', {
+                        detail: {
+                            type: 'warning',
+                            message,
+                            duration: 5000,
+                        }
+                    }));
                 }
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -213,13 +292,16 @@ export default function AddressLocationPicker({
         if (mapInstanceRef.current && markerRef.current) {
             mapInstanceRef.current.setView([coords.lat, coords.lng], 16, { animate: true });
             markerRef.current.setLatLng([coords.lat, coords.lng]);
-            if (onLocationSelect) {
-                onLocationSelect({ latitude: coords.lat, longitude: coords.lng });
+            if (onLocationSelectRef.current) {
+                onLocationSelectRef.current({ latitude: coords.lat, longitude: coords.lng });
             }
+            performReverseGeocode(coords.lat, coords.lng);
         }
     };
 
-    const locationNotice = hasCoordinates
+    const locationNotice = isResolvingAddress
+        ? 'Auto-detecting address and location...'
+        : hasCoordinates
         ? `Coordinates set (${Number(latitude).toFixed(4)}, ${Number(longitude).toFixed(4)}). Drag pin to exact gate or entrance.`
         : `Tap map or drag pin to your exact building entrance or gate.`;
 
@@ -228,7 +310,7 @@ export default function AddressLocationPicker({
             {/* Modal Backdrop when Precision View is Active */}
             {isPrecisionOpen && (
                 <div
-                    className="fixed inset-0 z-40 bg-stone-900/60 backdrop-blur-xs transition-opacity duration-200"
+                    className="fixed inset-0 !m-0 z-[150] bg-stone-900/60 backdrop-blur-xs transition-opacity duration-200"
                     onClick={() => setIsPrecisionOpen(false)}
                     aria-hidden="true"
                 />
@@ -238,22 +320,29 @@ export default function AddressLocationPicker({
             <div
                 className={`transition-all duration-200 ${
                     isPrecisionOpen
-                        ? 'fixed inset-3 sm:inset-8 z-50 m-auto max-w-3xl max-h-[92vh] bg-white rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col border border-stone-200 overflow-y-auto space-y-3'
-                        : `rounded-2xl border border-stone-200 bg-stone-50/50 p-3.5 space-y-2.5 ${className}`
+                        ? 'fixed inset-2 sm:inset-6 md:inset-8 !m-auto z-[160] max-w-3xl max-h-[92vh] bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-2xl flex flex-col border border-stone-200 overflow-y-auto space-y-3'
+                        : `rounded-2xl border border-stone-200 bg-stone-50/50 p-3 sm:p-3.5 space-y-2.5 ${className}`
                 }`}
                 role={isPrecisionOpen ? 'dialog' : undefined}
                 aria-modal={isPrecisionOpen ? 'true' : undefined}
-                aria-label={isPrecisionOpen ? 'Doorstep Location Precision Map' : undefined}
+                aria-label={isPrecisionOpen ? 'Doorstep Location Map' : undefined}
             >
                 {/* Header (Different modes) */}
                 {isPrecisionOpen ? (
                     <div className="flex items-start justify-between gap-3 pb-3 border-b border-stone-100">
                         <div>
                             <div className="flex items-center gap-2">
-                                <h3 className="text-base font-bold text-stone-900">Doorstep Pinpoint Precision</h3>
-                                <span className="rounded-md bg-clay-50 px-2 py-0.5 text-[10px] font-bold text-clay-800 border border-clay-200">
-                                    Courier Accuracy
-                                </span>
+                                <h3 className="text-base font-bold text-stone-900">Doorstep Location Map</h3>
+                                {isResolvingAddress ? (
+                                    <span className="inline-flex items-center gap-1 rounded-md bg-clay-50 px-2 py-0.5 text-[10px] font-bold text-clay-800 border border-clay-200">
+                                        <Loader2 className="w-3 h-3 animate-spin text-clay-600" />
+                                        Auto-filling...
+                                    </span>
+                                ) : (
+                                    <span className="rounded-md bg-clay-50 px-2 py-0.5 text-[10px] font-bold text-clay-800 border border-clay-200">
+                                        Courier Accuracy
+                                    </span>
+                                )}
                             </div>
                             <p className="text-xs text-stone-500 mt-0.5">
                                 Zoom in and drag the pin directly onto your gate, lobby, or doorstep for courier delivery.
@@ -264,7 +353,7 @@ export default function AddressLocationPicker({
                             type="button"
                             onClick={() => setIsPrecisionOpen(false)}
                             className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition shrink-0"
-                            aria-label="Close precision view"
+                            aria-label="Close expanded map"
                         >
                             <X size={18} />
                         </button>
@@ -274,7 +363,12 @@ export default function AddressLocationPicker({
                         <div className="flex items-center gap-2">
                             <MapPin className="w-4 h-4 text-clay-600 shrink-0" />
                             <span className="text-xs font-bold text-stone-900">Pin Delivery Location</span>
-                            {hasCoordinates ? (
+                            {isResolvingAddress ? (
+                                <span className="inline-flex items-center gap-1 rounded-md bg-clay-50 px-2 py-0.5 text-[10px] font-semibold text-clay-700 border border-clay-200">
+                                    <Loader2 className="w-3 h-3 animate-spin text-clay-600" />
+                                    Auto-filling...
+                                </span>
+                            ) : hasCoordinates ? (
                                 <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
                                     Pinned
                                 </span>
@@ -292,25 +386,25 @@ export default function AddressLocationPicker({
                                         type="button"
                                         onClick={handleLocateMe}
                                         disabled={isLocating}
-                                        className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-2.5 py-1 text-xs font-semibold text-stone-700 hover:bg-stone-50 hover:text-stone-900 active:scale-95 transition shadow-2xs disabled:opacity-50"
-                                        title="Auto-detect current GPS location"
+                                        className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-2.5 py-1 text-xs font-semibold text-stone-700 hover:bg-stone-50 hover:text-stone-900 active:scale-95 transition shadow-2xs disabled:opacity-50 min-h-[30px]"
+                                        title="Auto-detect current location"
                                     >
                                         {isLocating ? (
                                             <Loader2 className="w-3.5 h-3.5 animate-spin text-clay-600" />
                                         ) : (
                                             <Crosshair className="w-3.5 h-3.5 text-clay-600" />
                                         )}
-                                        <span>{isLocating ? 'Locating...' : 'Use My GPS'}</span>
+                                        <span>{isLocating ? 'Locating...' : 'My Location'}</span>
                                     </button>
 
                                     <button
                                         type="button"
                                         onClick={() => setIsPrecisionOpen(true)}
-                                        className="inline-flex items-center gap-1.5 rounded-xl border border-clay-200 bg-clay-50/70 px-2.5 py-1 text-xs font-semibold text-clay-800 hover:bg-clay-100 hover:text-clay-950 active:scale-95 transition shadow-2xs"
-                                        title="Open expanded precision map to zoom into your doorstep"
+                                        className="inline-flex items-center gap-1.5 rounded-xl border border-clay-200 bg-clay-50/70 px-2.5 py-1 text-xs font-semibold text-clay-800 hover:bg-clay-100 hover:text-clay-950 active:scale-95 transition shadow-2xs min-h-[30px]"
+                                        title="Open expanded map to zoom into your doorstep"
                                     >
                                         <Maximize2 className="w-3.5 h-3.5 text-clay-700" />
-                                        <span>Precision View</span>
+                                        <span>Expand Map</span>
                                     </button>
                                 </>
                             )}
@@ -320,46 +414,70 @@ export default function AddressLocationPicker({
 
                 {/* Sub-bar / Controls in Precision Mode */}
                 {isPrecisionOpen ? (
-                    <div className="flex flex-wrap items-center gap-1.5 pb-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mr-1 flex items-center gap-1">
-                            <Compass size={12} />
-                            Jump:
-                        </span>
+                    <div className="flex items-center justify-between gap-2 pb-1 w-full overflow-hidden">
+                        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth min-w-0 flex-1 pr-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mr-1 flex items-center gap-1 shrink-0 select-none">
+                                <Compass size={12} />
+                                Jump:
+                            </span>
 
-                        {city && (
-                            <button
-                                type="button"
-                                onClick={() => handleJumpToCity(city)}
-                                className="px-2.5 py-1 rounded-lg bg-clay-50 border border-clay-200 text-clay-800 text-xs font-semibold hover:bg-clay-100 transition active:scale-95"
+                            {city && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleJumpToCity(city)}
+                                    className="px-2.5 py-1 rounded-lg bg-clay-50 border border-clay-200 text-clay-800 text-xs font-semibold hover:bg-clay-100 transition active:scale-95 shrink-0 whitespace-nowrap"
+                                >
+                                    Center on {getCityShortLabel(city)}
+                                </button>
+                            )}
+
+                            {CAVITE_COMPONENT_CITIES.filter(
+                                (hub) => normalizeCaviteAddressText(hub).toLowerCase() !== normalizeCaviteAddressText(city || '').toLowerCase()
+                            ).map((hub) => (
+                                <button
+                                    key={hub}
+                                    type="button"
+                                    onClick={() => handleJumpToCity(hub)}
+                                    className="px-2 py-1 rounded-lg bg-stone-50 border border-stone-200 text-stone-700 text-xs font-medium hover:bg-stone-100 transition active:scale-95 shrink-0 whitespace-nowrap"
+                                >
+                                    {getCityShortLabel(hub)}
+                                </button>
+                            ))}
+
+                            <select
+                                onChange={(e) => {
+                                    if (e.target.value) {
+                                        handleJumpToCity(e.target.value);
+                                        e.target.value = '';
+                                    }
+                                }}
+                                defaultValue=""
+                                className="px-2 py-1 rounded-lg bg-stone-50 border border-stone-200 text-stone-700 text-xs font-medium hover:bg-stone-100 transition cursor-pointer shrink-0 whitespace-nowrap"
+                                title="Jump to other Cavite municipalities"
                             >
-                                Center on {city}
-                            </button>
-                        )}
+                                <option value="" disabled>More Towns...</option>
+                                {CAVITE_MUNICIPALITIES.map((town) => (
+                                    <option key={town} value={town}>
+                                        {town}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-                        {POPULAR_CAVITE_HUBS.filter((h) => h !== city).slice(0, 3).map((hub) => (
-                            <button
-                                key={hub}
-                                type="button"
-                                onClick={() => handleJumpToCity(hub)}
-                                className="px-2 py-1 rounded-lg bg-stone-50 border border-stone-200 text-stone-700 text-xs font-medium hover:bg-stone-100 transition active:scale-95"
-                            >
-                                {hub.replace(' City', '')}
-                            </button>
-                        ))}
-
-                        <div className="ml-auto">
+                        <div className="shrink-0 pl-1 border-l border-stone-200/60">
                             <button
                                 type="button"
                                 onClick={handleLocateMe}
                                 disabled={isLocating}
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-stone-300 bg-white px-3 py-1 text-xs font-semibold text-stone-700 hover:bg-stone-50 hover:text-stone-900 active:scale-95 transition shadow-2xs disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-stone-300 bg-white px-3 py-1 text-xs font-semibold text-stone-700 hover:bg-stone-50 hover:text-stone-900 active:scale-95 transition shadow-2xs disabled:opacity-50 whitespace-nowrap shrink-0 min-h-[30px]"
+                                title="Auto-detect current location"
                             >
                                 {isLocating ? (
                                     <Loader2 className="w-3.5 h-3.5 animate-spin text-clay-600" />
                                 ) : (
                                     <Crosshair className="w-3.5 h-3.5 text-clay-600" />
                                 )}
-                                <span>{isLocating ? 'Locating...' : 'Use My GPS'}</span>
+                                <span>{isLocating ? 'Locating...' : 'My Location'}</span>
                             </button>
                         </div>
                     </div>

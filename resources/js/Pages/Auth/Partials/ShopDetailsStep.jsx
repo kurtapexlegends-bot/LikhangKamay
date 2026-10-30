@@ -31,17 +31,23 @@ export default function ShopDetailsStep({
     const isCharCountValid = charCount >= 3 && charCount <= 30;
 
     return (
-        <form onSubmit={submit} className="p-6 sm:p-10">
-            <div className="mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-clay-50 border border-clay-200 text-clay-700 shadow-xs shrink-0">
-                        <Store size={22} strokeWidth={2} />
+        <form onSubmit={submit} className="p-4 sm:p-8 md:p-10">
+            <div className="mb-5 sm:mb-6 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                    <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-clay-50 border border-clay-200 text-clay-700 shadow-xs shrink-0">
+                        <Store className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
                     </div>
-                    <h2 className="text-xl font-bold text-stone-900 tracking-tight">Shop Information</h2>
+                    <div>
+                        <h2 className="text-lg sm:text-xl font-bold text-stone-900 tracking-tight">Shop Information</h2>
+                        <p className="text-xs text-stone-500 hidden sm:block">Basic brand details and workshop location</p>
+                    </div>
                 </div>
+                <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider sm:hidden">
+                    Step 1 of 3
+                </span>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
                 <div>
                     <div className="flex items-center justify-between mb-1.5">
                         <InputLabel htmlFor="shop_name" value="Shop Name *" />
@@ -105,11 +111,11 @@ export default function ShopDetailsStep({
                 </div>
             </div>
 
-            <div className="mt-10 flex items-center justify-end border-t border-stone-100 pt-6">
+            <div className="mt-8 sm:mt-10 flex items-center justify-end border-t border-stone-100 pt-5 sm:pt-6">
                 <button
                     type="submit"
                     disabled={processing}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-clay-600 px-7 py-3 text-sm font-semibold text-white shadow-xs transition hover:bg-clay-700 active:bg-clay-800 disabled:opacity-50 cursor-pointer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-clay-600 px-7 py-3 text-sm font-semibold text-white shadow-xs transition hover:bg-clay-700 active:bg-clay-800 disabled:opacity-50 cursor-pointer min-h-[44px]"
                 >
                     <span>{processing ? 'Saving...' : 'Continue to Documents'}</span>
                     <ArrowRight size={16} />

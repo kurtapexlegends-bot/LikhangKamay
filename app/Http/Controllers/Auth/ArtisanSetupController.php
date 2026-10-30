@@ -80,7 +80,9 @@ class ArtisanSetupController extends Controller
             'region' => 'required|string|max:255',
             'city' => 'required|string',
             'zip_code' => 'required|string|max:10',
-            'barangay' => 'required|string', 
+            'barangay' => 'required|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         $user->update([
@@ -93,7 +95,16 @@ class ArtisanSetupController extends Controller
             'zip_code' => $validated['zip_code'],
         ]);
 
-        if (!$user->addresses()->exists()) {
+        $address = $user->addresses()->first();
+        $fullAddress = StructuredAddress::formatPhilippineAddress([
+            'street_address' => $validated['street_address'],
+            'barangay' => $validated['barangay'],
+            'city' => $validated['city'],
+            'region' => $validated['region'],
+            'postal_code' => $validated['zip_code'],
+        ]);
+
+        if (!$address) {
             $user->addresses()->create([
                 'label' => 'Shop',
                 'address_type' => 'office',
@@ -104,14 +115,22 @@ class ArtisanSetupController extends Controller
                 'city' => $validated['city'],
                 'region' => $validated['region'],
                 'postal_code' => $validated['zip_code'],
-                'full_address' => StructuredAddress::formatPhilippineAddress([
-                    'street_address' => $validated['street_address'],
-                    'barangay' => $validated['barangay'],
-                    'city' => $validated['city'],
-                    'region' => $validated['region'],
-                    'postal_code' => $validated['zip_code'],
-                ]),
+                'latitude' => $validated['latitude'] ?? null,
+                'longitude' => $validated['longitude'] ?? null,
+                'full_address' => $fullAddress,
                 'is_default' => true,
+            ]);
+        } else {
+            $address->update([
+                'phone_number' => $validated['phone_number'],
+                'street_address' => $validated['street_address'],
+                'barangay' => $validated['barangay'],
+                'city' => $validated['city'],
+                'region' => $validated['region'],
+                'postal_code' => $validated['zip_code'],
+                'latitude' => $validated['latitude'] ?? $address->latitude,
+                'longitude' => $validated['longitude'] ?? $address->longitude,
+                'full_address' => $fullAddress,
             ]);
         }
 
