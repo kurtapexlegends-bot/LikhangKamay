@@ -58,6 +58,10 @@ Webhooks from the Lalamove API dispatch events that update the `status` of `Orde
 
 *   **Structure Validation**: Addresses are stored as structured columns rather than loose text blocks. They are formatted using `StructuredAddress::formatPhilippineAddress()` before geocoding.
 *   **Address Type Selection**: Default and custom address options (Home/Work) are handled on checkout using `UserAddress` models. Malformed or tampered address references trigger validation errors rather than allowing database query crashes.
+*   **Reverse-Geocoding & GPS Doorstep Auto-Fill**: [AddressLocationPicker.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Address/AddressLocationPicker.jsx) and [StructuredAddressFields.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Address/StructuredAddressFields.jsx) enable buyers and artisans to click "My Location", drag the map pin, or tap coordinates to auto-fill street, barangay, city, and postal code via the reverse geocoding endpoint `GET|POST /api/geocode/reverse` ([GeocodingController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Core/GeocodingController.php)).
+    *   Strict coordinate validation guards against empty, null, and Null Island (`0, 0`) coordinates to ensure the map defaults to the Cavite geographic centroid and stays centered on selected cities.
+    *   Reverse geocoding is powered by [AddressGeocodingService.php](file:///c:/laragon/www/LikhangKamay/app/Services/AddressGeocodingService.php) with a 30-day cache, 3s timeout, and defensive centroid fallback if Nominatim is temporarily unavailable.
+    *   Rate limiting (60 req/min) provides non-intrusive toast notifications if exceeded without disrupting the user form flow.
 
 ### Address Validation & Regional Scope
 *   **Strict Cavite Scope**: LikhangKamay operations, artisan studios, buyer delivery addresses, and logistics dispatching are strictly restricted to the **Province of Cavite** (23 official cities and municipalities). Addresses outside Cavite are rejected on registration, profile update, address management, and checkout.

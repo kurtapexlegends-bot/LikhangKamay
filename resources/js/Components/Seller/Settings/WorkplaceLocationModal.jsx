@@ -11,8 +11,6 @@ import {
     ChevronDown,
     ChevronUp,
     Sliders,
-    ShieldCheck,
-    AlertCircle,
     Navigation,
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
@@ -149,7 +147,7 @@ export default function WorkplaceLocationModal({
 
                 setSearchResults(results || []);
                 setShowSuggestions((results || []).length > 0);
-            } catch (err) {
+            } catch {
                 // Silently handle network interruptions
             } finally {
                 setIsDebouncing(false);
@@ -215,7 +213,7 @@ export default function WorkplaceLocationModal({
                     });
                     return;
                 }
-            } catch (e) {
+            } catch {
                 // Permission query not supported in all browsers
             }
         }

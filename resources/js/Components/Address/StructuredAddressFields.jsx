@@ -1,3 +1,4 @@
+/* global CustomEvent */
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import InputError from '@/Components/InputError';
@@ -67,12 +68,14 @@ export default function StructuredAddressFields({
 
     const [locationNotice, setLocationNotice] = useState(null);
 
+    const currentRegion = data[field('region')];
+
     // Ensure region is always set to Cavite
     useEffect(() => {
         if (normalizeValue(rawValue('region')) !== normalizeValue(CAVITE_REGION)) {
             setData(field('region'), CAVITE_REGION);
         }
-    }, [data[field('region')]]);
+    }, [currentRegion, field, rawValue, setData]);
 
     const updateField = (name, nextValue) => {
         setData(field(name), nextValue);
@@ -316,10 +319,9 @@ export default function StructuredAddressFields({
                 </div>
             }>
                 <AddressLocationPicker
-                    latitude={rawValue('latitude')}
-                    longitude={rawValue('longitude')}
+                    latitude={data[field('latitude')] ?? null}
+                    longitude={data[field('longitude')] ?? null}
                     city={matchedCity || rawValue('city')}
-                    barangay={rawValue('barangay')}
                     onLocationSelect={handleLocationSelect}
                     readOnly={readOnly}
                 />

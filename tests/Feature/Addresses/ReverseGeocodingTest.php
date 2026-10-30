@@ -318,4 +318,58 @@ class ReverseGeocodingTest extends TestCase
         // Must NOT falsely resolve to 'Cavite City'!
         $this->assertNotSame('Cavite City', $response->json('city'));
     }
+
+    public function test_reverse_geocode_without_csrf_via_post_succeeds(): void
+    {
+        Http::fake([
+            'https://nominatim.openstreetmap.org/reverse*' => Http::response([
+                'display_name' => 'Governor Drive, Trece Martires, Cavite, Philippines',
+                'address' => [
+                    'road' => 'Governor Drive',
+                    'city' => 'Trece Martires',
+                    'county' => 'Cavite',
+                    'postcode' => '4109',
+                ],
+            ], 200),
+        ]);
+
+        // Simulating raw POST request without CSRF token
+        $response = $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)
+            ->post('/api/geocode/reverse', [
+                'latitude' => 14.2827,
+                'longitude' => 120.8669,
+            ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'is_within_cavite' => true,
+            'city' => 'Trece Martires City',
+        ]);
+    }
+
+    public function test_null_island_and_zero_coordinates_are_strictly_outside_cavite(): void
+    {
+        // Null Island (0, 0)
+        $this->assertFalse(CaviteAddress::isWithinCaviteBounds(0.0, 0.0));
+        $this->assertFalse(CaviteAddress::isCaviteLocation(0.0, 0.0, 'Cavite', 'Imus City'));
+
+        // Reverse geocoding at (0, 0) must return outside Cavite
+        Http::fake([
+            'https://nominatim.openstreetmap.org/reverse*' => Http::response([
+                'display_name' => 'Gulf of Guinea, Atlantic Ocean',
+                'address' => [],
+            ], 200),
+        ]);
+
+        $response = $this->getJson(route('api.geocode.reverse', [
+            'latitude' => 0.0,
+            'longitude' => 0.0,
+        ]));
+
+        $response->assertOk();
+        $response->assertJson([
+            'is_within_cavite' => false,
+        ]);
+        $this->assertNotNull($response->json('warning'));
+    }
 }

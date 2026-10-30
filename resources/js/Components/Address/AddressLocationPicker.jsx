@@ -1,8 +1,9 @@
+/* global route, AbortController, CustomEvent */
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Crosshair, Loader2, Maximize2, Minimize2, Check, X, Compass, Info } from 'lucide-react';
+import { MapPin, Crosshair, Loader2, Maximize2, Check, X, Compass, Info } from 'lucide-react';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -28,11 +29,19 @@ const getCityShortLabel = (cityName) => {
     return cityName.replace(/\s+City$/i, '');
 };
 
+const isValidCoordinate = (lat, lng) => {
+    if (lat === null || lat === undefined || lat === '' || lng === null || lng === undefined || lng === '') {
+        return false;
+    }
+    const numLat = Number(lat);
+    const numLng = Number(lng);
+    return !isNaN(numLat) && !isNaN(numLng) && (numLat !== 0 || numLng !== 0);
+};
+
 export default function AddressLocationPicker({
     latitude = null,
     longitude = null,
     city = '',
-    barangay = '',
     onLocationSelect = null,
     readOnly = false,
     height = '240px',
@@ -52,7 +61,7 @@ export default function AddressLocationPicker({
 
     const abortControllerRef = useRef(null);
 
-    const hasCoordinates = latitude !== null && longitude !== null && !isNaN(Number(latitude)) && !isNaN(Number(longitude));
+    const hasCoordinates = isValidCoordinate(latitude, longitude);
 
     const performReverseGeocode = useCallback(async (lat, lng) => {
         if (abortControllerRef.current) {
@@ -87,6 +96,14 @@ export default function AddressLocationPicker({
                 return;
             }
             setIsResolvingAddress(false);
+            if (err?.response?.status === 429 && typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('app-toast', {
+                    detail: {
+                        type: 'warning',
+                        message: 'Too many location requests. Please wait a moment or enter your address manually.',
+                    }
+                }));
+            }
         }
     }, []);
 
@@ -173,6 +190,7 @@ export default function AddressLocationPicker({
                 markerRef.current = null;
             };
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Center map when city changes and no custom pin has been set yet
@@ -184,7 +202,7 @@ export default function AddressLocationPicker({
                 markerRef.current.setLatLng([cityCoord.lat, cityCoord.lng]);
             }
         }
-    }, [city]);
+    }, [city, hasCoordinates]);
 
     // Update marker position when latitude/longitude props change externally
     useEffect(() => {
@@ -197,7 +215,7 @@ export default function AddressLocationPicker({
                 mapInstanceRef.current.setView([newLat, newLng], 16, { animate: true });
             }
         }
-    }, [latitude, longitude]);
+    }, [latitude, longitude, hasCoordinates]);
 
     // Handle Precision Mode Resizing & Dragging
     useEffect(() => {

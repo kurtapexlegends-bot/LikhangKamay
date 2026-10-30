@@ -1,3 +1,4 @@
+/* global route */
 import React, { useState, useEffect, useRef } from 'react';
 import { router } from '@inertiajs/react';
 import { MapPin, AlertTriangle } from 'lucide-react';
@@ -189,8 +190,8 @@ export default function ShippingAddressSelector({
             city: data.shipping_city,
             region: data.shipping_region,
             postal_code: data.shipping_postal_code,
-            latitude: data.shipping_latitude ?? null,
-            longitude: data.shipping_longitude ?? null,
+            latitude: data.shipping_latitude ?? data.latitude ?? null,
+            longitude: data.shipping_longitude ?? data.longitude ?? null,
         };
 
         const onSuccess = () => {
