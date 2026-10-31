@@ -183,13 +183,27 @@ class Order extends Model
         });
     }
 
+    /** @var array<string>|null */
+    protected static ?array $cachedOrderColumns = null;
+
     /**
      * @param  array<string, mixed>  $attributes
      * @return array<string, mixed>
      */
     public static function filterSchemaCompatibleAttributes(array $attributes): array
     {
-        return $attributes;
+        if (static::$cachedOrderColumns === null) {
+            static::$cachedOrderColumns = rescue(
+                fn () => \Illuminate\Support\Facades\Schema::getColumnListing('orders'),
+                []
+            );
+        }
+
+        if (empty(static::$cachedOrderColumns)) {
+            return $attributes;
+        }
+
+        return array_intersect_key($attributes, array_flip(static::$cachedOrderColumns));
     }
 
     public static function supportsShippingFeeAmountColumn(): bool

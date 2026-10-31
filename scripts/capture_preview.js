@@ -28,6 +28,7 @@ function parseArgs() {
         width: 1440,
         height: 900,
         clickText: null,
+        port: 8000,
         wait: 0
     };
 
@@ -54,6 +55,8 @@ function parseArgs() {
             parsed.role = value;
         } else if (key === '--userId' && value) {
             parsed.userId = value;
+        } else if (key === '--port' && value) {
+            parsed.port = parseInt(value, 10);
         } else if (key === '--width' && value) {
             parsed.width = parseInt(value, 10);
         } else if (key === '--height' && value) {
@@ -76,7 +79,7 @@ function parseArgs() {
 }
 
 async function capture() {
-    const { routes, outDir, role, userId, width, height, clickSelector, clickText, fillSelector, fillValue, filename: customFilename, wait } = parseArgs();
+    const { routes, outDir, role, userId, width, height, clickSelector, clickText, fillSelector, fillValue, filename: customFilename, wait, port } = parseArgs();
     const chromePath = getBrowserExecutable();
 
     if (!fs.existsSync(outDir)) {
@@ -102,8 +105,8 @@ async function capture() {
         const destPath = path.join(outDir, filename);
 
         const authUrl = userId
-            ? `http://127.0.0.1:8000/dev/preview-auth?user_id=${encodeURIComponent(userId)}&redirect=${encodeURIComponent(targetRoute)}`
-            : `http://127.0.0.1:8000/dev/preview-auth?role=${encodeURIComponent(role)}&redirect=${encodeURIComponent(targetRoute)}`;
+            ? `http://127.0.0.1:${port}/dev/preview-auth?user_id=${encodeURIComponent(userId)}&redirect=${encodeURIComponent(targetRoute)}`
+            : `http://127.0.0.1:${port}/dev/preview-auth?role=${encodeURIComponent(role)}&redirect=${encodeURIComponent(targetRoute)}`;
         console.log(`[Remote Preview] Establishing session as ${userId ? `user ${userId}` : role}...`);
         try {
             await page.goto(authUrl, { waitUntil: 'load', timeout: 15000 });

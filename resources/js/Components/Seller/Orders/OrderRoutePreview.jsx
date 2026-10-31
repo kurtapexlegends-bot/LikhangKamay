@@ -33,7 +33,7 @@ export default function OrderRoutePreview({
     const [routeData, setRouteData] = useState(null);
     const [fetchError, setFetchError] = useState(null);
 
-    const orderId = order?.order_number || order?.id || order?.db_id || null;
+    const orderId = order?.db_id || (typeof order?.id === 'number' ? order.id : null) || order?.order_number || order?.id || null;
 
     // Handle Escape key to close modal
     useEffect(() => {

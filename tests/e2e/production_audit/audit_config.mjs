@@ -11,8 +11,8 @@ export const ACCOUNTS = {
         role: 'artisan'
     },
     buyer: {
-        email: process.env.E2E_BUYER_EMAIL || 'kurtstanleytalastas@gmail.com',
-        password: process.env.E2E_BUYER_PASSWORD || 'password',
+        email: process.env.E2E_BUYER_EMAIL || 'test.buyer@likhangkamay.local',
+        password: process.env.E2E_BUYER_PASSWORD || 'LikhangKamayTest2026!',
         role: 'buyer'
     },
     staff: {
@@ -26,8 +26,8 @@ export const ACCOUNTS = {
         role: 'driver'
     },
     admin: {
-        email: process.env.E2E_ADMIN_EMAIL || 'likhangkamaybusiness@gmail.com',
-        password: process.env.E2E_ADMIN_PASSWORD || 'password',
+        email: process.env.E2E_ADMIN_EMAIL || 'test.admin@likhangkamay.local',
+        password: process.env.E2E_ADMIN_PASSWORD || 'LikhangKamayTest2026!',
         role: 'super_admin'
     }
 };
@@ -47,26 +47,31 @@ export function resolveBrowserExecutable() {
 }
 
 export async function loginAs(page, email, password, expectedPath = '') {
-    for (let attempt = 1; attempt <= 2; attempt++) {
-        await page.goto(`${PROD_URL}/login`, { waitUntil: 'networkidle2', timeout: 30000 });
-        await page.waitForSelector('input#email', { timeout: 15000 });
-        await page.$eval('input#email', el => el.value = '').catch(() => null);
-        await page.$eval('input#password', el => el.value = '').catch(() => null);
-        await page.type('input#email', email);
-        await page.type('input#password', password);
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            await page.goto(`${PROD_URL}/login`, { waitUntil: 'networkidle2', timeout: 35000 });
+            await page.waitForSelector('input#email', { timeout: 15000 });
+            await page.$eval('input#email', el => el.value = '').catch(() => null);
+            await page.$eval('input#password', el => el.value = '').catch(() => null);
+            await page.type('input#email', email);
+            await page.type('input#password', password);
 
-        const submitBtn = await page.$('button[type="submit"]');
-        if (submitBtn) {
-            await submitBtn.click();
-        } else {
-            await page.keyboard.press('Enter');
-        }
+            const submitBtn = await page.$('button[type="submit"]');
+            if (submitBtn) {
+                await submitBtn.click();
+            } else {
+                await page.keyboard.press('Enter');
+            }
 
-        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 25000 }).catch(() => null);
-        await new Promise(r => setTimeout(r, 2000));
-        const currentUrl = page.url();
-        if (!currentUrl.includes('/login')) {
-            return true;
+            await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => null);
+            await new Promise(r => setTimeout(r, 2000));
+            const currentUrl = page.url();
+            if (!currentUrl.includes('/login')) {
+                return true;
+            }
+        } catch (err) {
+            console.log(`[loginAs] Attempt ${attempt} encountered error: ${err.message}. Retrying...`);
+            await new Promise(r => setTimeout(r, 2000));
         }
     }
     return !page.url().includes('/login');

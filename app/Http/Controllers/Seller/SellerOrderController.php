@@ -61,7 +61,11 @@ class SellerOrderController extends Controller
     public function routePreview(Request $request, string $id, OrderRoutePreviewService $routePreviewService)
     {
         $order = Order::where(function ($q) use ($id) {
-                $q->where('order_number', $id)->orWhere('id', $id);
+                if (is_numeric($id)) {
+                    $q->where('id', (int) $id)->orWhere('order_number', (string) $id);
+                } else {
+                    $q->where('order_number', (string) $id);
+                }
             })
             ->where('artisan_id', $this->sellerOwnerId())
             ->firstOrFail();

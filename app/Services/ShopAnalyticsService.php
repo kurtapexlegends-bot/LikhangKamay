@@ -63,6 +63,9 @@ class ShopAnalyticsService
     {
         $dailyOrders = Order::query()
             ->where('artisan_id', $sellerId)
+            ->where(function ($q) {
+                $q->where('is_test', false)->orWhereNull('is_test');
+            })
             ->whereDate('created_at', $date)
             ->get();
 
@@ -87,6 +90,9 @@ class ShopAnalyticsService
     {
         $orders = Order::query()
             ->where('artisan_id', $sellerId)
+            ->where(function ($q) {
+                $q->where('is_test', false)->orWhereNull('is_test');
+            })
             ->get();
 
         $completedOrders = $orders->where('status', 'Completed');

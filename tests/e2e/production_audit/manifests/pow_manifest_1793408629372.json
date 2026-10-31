@@ -1,0 +1,73 @@
+{
+  "manifest_version": "5.0.0-PROD-POW",
+  "run_id": "pow-7bd58c21-1632-4e1d-a1f5-4c9e85d530be",
+  "timestamp": "2026-10-31T01:03:49.372Z",
+  "host": "https://www.likhangkamay.app",
+  "protocol": "Layer 5 Proof-of-Work Multi-Persona Automated Pipeline",
+  "actors": {
+    "buyer": {
+      "email": "test.buyer@likhangkamay.local",
+      "role": "buyer",
+      "is_test": true,
+      "delivery_address": "Buhay na Tubig, Imus, Cavite 4103"
+    },
+    "seller": {
+      "email": "test.artisan@likhangkamay.local",
+      "role": "artisan",
+      "shop": "Cavite Test Craft Workshop",
+      "is_test": true
+    },
+    "driver": {
+      "email": "test.driver@likhangkamay.local",
+      "role": "driver",
+      "employee_id": 4,
+      "driver_name": "Test Logistics Rider",
+      "vehicle": "Motorcycle (CAV-9876)",
+      "is_test": true
+    }
+  },
+  "transaction": {
+    "order_id": 4,
+    "order_number": "ORD-6AE53E40AAEB9",
+    "item_sku": "TEST-BAMBOO-01",
+    "item_price_php": 1,
+    "is_test_flag": true,
+    "stock_audit": {
+      "stock_before": 999,
+      "stock_after": 998,
+      "delta": -1,
+      "atomic_decrement_verified": true
+    }
+  },
+  "logistics": {
+    "delivery_id": 1,
+    "tracking_number": "LK-INHOUSE-ORD-6AE53E40AAEB9",
+    "provider": "in_house",
+    "telemetry": {
+      "latitude": 14.4258,
+      "longitude": 120.9385,
+      "heading": 45,
+      "speed_kph": 28.5
+    },
+    "proof_of_delivery": {
+      "submitted": true,
+      "photo_format": "image/png (Direct Serverless Stream)"
+    }
+  },
+  "final_state": {
+    "order_status": "Completed",
+    "payment_status": "paid",
+    "warranty_window_started": true,
+    "bir_official_sales_invoice": {
+      "url": "https://www.likhangkamay.app/my-orders/ORD-6AE53E40AAEB9/receipt",
+      "sha256_hash": "a668cab5fd6c332a405af63ce1a30f0ecd23e3f62482a6998a7cbbfab7683b9f"
+    }
+  },
+  "analytics_isolation_guard": {
+    "status": "VERIFIED_ISOLATED",
+    "artisan_revenue_corrupted": false,
+    "platform_gmv_corrupted": false,
+    "is_test_filter_rule": "is_test = false enforced across ShopAnalyticsMetricsService, AdminAnalyticsService, and GenerateAnalyticsSnapshots"
+  },
+  "proof_of_work_signature": "54a2a731bc4c1a81cf116b25bed341b62db3c3d98834573f9140ffae53d3092b"
+}

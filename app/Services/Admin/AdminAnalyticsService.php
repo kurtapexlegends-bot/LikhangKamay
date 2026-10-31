@@ -31,6 +31,9 @@ class AdminAnalyticsService
     {
         $startPeriod = now()->subYears(3)->startOfYear();
         $orders = \App\Models\Order::where('created_at', '>=', $startPeriod)
+            ->where(function ($q) {
+                $q->where('is_test', false)->orWhereNull('is_test');
+            })
             ->select('id', 'status', 'total_amount', 'created_at')
             ->get();
 
@@ -123,18 +126,23 @@ class AdminAnalyticsService
         $activeThreshold = now()->subDays(30);
         $atRiskThreshold = now()->subDays(60);
 
-        $activeCount = User::where('role', 'artisan')->where('last_seen_at', '>=', $activeThreshold)->count();
-        $atRiskCount = User::where('role', 'artisan')
+        $artisanQuery = User::where('role', 'artisan')
+            ->where(function ($q) {
+                $q->where('is_test', false)->orWhereNull('is_test');
+            });
+
+        $activeCount = (clone $artisanQuery)->where('last_seen_at', '>=', $activeThreshold)->count();
+        $atRiskCount = (clone $artisanQuery)
             ->where('last_seen_at', '<', $activeThreshold)
             ->where('last_seen_at', '>=', $atRiskThreshold)
             ->count();
-        $churnedCount = User::where('role', 'artisan')
+        $churnedCount = (clone $artisanQuery)
             ->where(function ($q) use ($atRiskThreshold) {
                 $q->where('last_seen_at', '<', $atRiskThreshold)->orWhereNull('last_seen_at');
             })
             ->count();
 
-        $atRiskList = User::where('role', 'artisan')
+        $atRiskList = (clone $artisanQuery)
             ->where(function ($q) use ($activeThreshold) {
                 $q->where('last_seen_at', '<', $activeThreshold)
                   ->orWhereNull('last_seen_at');
@@ -171,6 +179,9 @@ class AdminAnalyticsService
                     ->join('products', 'order_items.product_id', '=', 'products.id')
                     ->join('orders', 'order_items.order_id', '=', 'orders.id')
                     ->whereColumn('products.category', 'categories.name')
+                    ->where(function ($q) {
+                        $q->where('orders.is_test', false)->orWhereNull('orders.is_test');
+                    })
                     ->whereNotIn('orders.status', ['Cancelled', 'Refunded', 'Rejected']);
             }, 'gmv')
             ->orderByDesc('gmv')
@@ -186,16 +197,23 @@ class AdminAnalyticsService
 
     protected function getPlatformHealthData(): array
     {
-        $totalOrders = \App\Models\Order::count();
-        $completedOrders = \App\Models\Order::whereIn('status', ['Delivered', 'Completed'])->count();
+        $baseOrders = \App\Models\Order::query()
+            ->where(function ($q) {
+                $q->where('is_test', false)->orWhereNull('is_test');
+            });
+
+        $totalOrders = (clone $baseOrders)->count();
+        $completedOrders = (clone $baseOrders)->whereIn('status', ['Delivered', 'Completed'])->count();
         $completionRate = $totalOrders > 0 ? round(($completedOrders / $totalOrders) * 100, 1) : 0;
 
-        $aov = \App\Models\Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->avg('total_amount') ?? 0;
+        $aov = (clone $baseOrders)->whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->avg('total_amount') ?? 0;
 
-        $totalReviews = \App\Models\Review::count();
+        $totalReviews = \App\Models\Review::whereHas('user', function ($q) {
+            $q->where('is_test', false)->orWhereNull('is_test');
+        })->count();
         $reviewRate = $totalOrders > 0 ? round(($totalReviews / $totalOrders) * 100, 1) : 0;
 
-        $refundedOrders = \App\Models\Order::where('status', 'Refunded')->count();
+        $refundedOrders = (clone $baseOrders)->where('status', 'Refunded')->count();
         $refundRate = $totalOrders > 0 ? round(($refundedOrders / $totalOrders) * 100, 1) : 0;
 
         return [
@@ -210,17 +228,26 @@ class AdminAnalyticsService
     {
         return User::where('role', 'artisan')
             ->where('artisan_status', 'approved')
+            ->where(function ($q) {
+                $q->where('users.is_test', false)->orWhereNull('users.is_test');
+            })
             ->select('users.id', 'users.name', 'users.shop_name', 'users.avatar', 'users.premium_tier', 'users.shop_slug')
             ->selectSub(function ($query) {
                 $query->selectRaw('COALESCE(SUM(total_amount), 0)')
                     ->from('orders')
                     ->whereColumn('orders.artisan_id', 'users.id')
+                    ->where(function ($q) {
+                        $q->where('orders.is_test', false)->orWhereNull('orders.is_test');
+                    })
                     ->whereNotIn('orders.status', ['Cancelled', 'Refunded', 'Rejected']);
             }, 'total_gmv')
             ->selectSub(function ($query) {
                 $query->selectRaw('COUNT(*)')
                     ->from('orders')
                     ->whereColumn('orders.artisan_id', 'users.id')
+                    ->where(function ($q) {
+                        $q->where('orders.is_test', false)->orWhereNull('orders.is_test');
+                    })
                     ->whereNotIn('orders.status', ['Cancelled', 'Refunded', 'Rejected']);
             }, 'orders_count')
             ->orderByDesc('total_gmv')

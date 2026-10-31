@@ -38,7 +38,16 @@ class GenerateAnalyticsSnapshots extends Command
 
         $query = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('users', 'orders.artisan_id', '=', 'users.id')
             ->where('orders.status', 'Completed')
+            ->where(function ($q) {
+                $q->where('orders.is_test', false)
+                  ->orWhereNull('orders.is_test');
+            })
+            ->where(function ($q) {
+                $q->where('users.is_test', false)
+                  ->orWhereNull('users.is_test');
+            })
             ->selectRaw("
                 orders.artisan_id as seller_id,
                 {$dateExpr} as date_str,

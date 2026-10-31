@@ -1,4 +1,4 @@
-import { PROD_URL } from './audit_config.mjs';
+import { PROD_URL, ACCOUNTS, loginAs } from './audit_config.mjs';
 
 export async function runPhase6(page, collector) {
     console.log(`\n======================================================`);
@@ -26,31 +26,55 @@ export async function runPhase6(page, collector) {
 
     // 6.2 Presigned Uploads Guard
     try {
-        await page.goto(`${PROD_URL}/login`, { waitUntil: 'networkidle2' });
-        const presignStatus = await page.evaluate(async (url) => {
-            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-            const token = csrfMeta ? csrfMeta.getAttribute('content') : '';
-            const r = await fetch(`${url}/api/uploads/presign`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': token
-                },
-                body: JSON.stringify({
-                    file_name: 'test_asset.glb',
-                    file_type: 'model/gltf-binary',
-                    file_size: 5000000
-                })
-            }).catch(err => ({ status: 0 }));
-            return r.status;
-        }, PROD_URL);
+        // Authenticate seller persona to perform authorized presign upload request
+        const sellerAuthOk = await loginAs(page, ACCOUNTS.seller.email, ACCOUNTS.seller.password);
+        if (!sellerAuthOk) {
+            collector.recordResult('Phase 6', '6.2 Presigned Direct Upload Endpoint', 'FAIL', {
+                message: 'Seller authentication failed; direct upload endpoint requires authenticated session'
+            });
+            collector.recordBug('HIGH', 'Presigned Upload Seller Auth Failed', `${PROD_URL}/login`, 'Could not authenticate seller for presigned upload');
+        } else {
+            const presignResult = await page.evaluate(async (url) => {
+                try {
+                    if (window.axios) {
+                        const res = await window.axios.post(`${url}/api/uploads/presign`, {
+                            folder: 'products/models',
+                            filename: 'test_asset.glb',
+                            contentType: 'model/gltf-binary'
+                        });
+                        return { status: res.status, data: res.data };
+                    }
+                    const xsrfMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+                    const xsrfToken = xsrfMatch ? decodeURIComponent(xsrfMatch[1]) : '';
+                    const r = await fetch(`${url}/api/uploads/presign`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-XSRF-TOKEN': xsrfToken
+                        },
+                        body: JSON.stringify({
+                            folder: 'products/models',
+                            filename: 'test_asset.glb',
+                            contentType: 'model/gltf-binary'
+                        })
+                    });
+                    const data = await r.json().catch(() => null);
+                    return { status: r.status, data };
+                } catch (err) {
+                    return { status: err?.response?.status || 0, data: err?.response?.data || null, error: err.message };
+                }
+            }, PROD_URL);
 
-        collector.recordResult('Phase 6', '6.2 Presigned Direct Upload Endpoint', (presignStatus === 200 || presignStatus === 401 || presignStatus === 422 || presignStatus === 419) ? 'PASS' : 'FAIL', {
-            message: `HTTP Status: ${presignStatus}`
-        });
-        if (presignStatus === 500 || presignStatus === 0) {
-            collector.recordBug('HIGH', 'Presigned Direct Upload Endpoint Failed', `${PROD_URL}/api/uploads/presign`, `HTTP status: ${presignStatus}`);
+            const isDirectUploadHealthy = presignResult.status === 200 && presignResult.data?.url;
+            collector.recordResult('Phase 6', '6.2 Presigned Direct Upload Endpoint', isDirectUploadHealthy ? 'PASS' : 'FAIL', {
+                message: `HTTP Status: ${presignResult.status}${presignResult.data?.url ? ' (Presigned direct URL received)' : ''}`
+            });
+
+            if (!isDirectUploadHealthy) {
+                collector.recordBug('HIGH', 'Presigned Direct Upload Endpoint Failed', `${PROD_URL}/api/uploads/presign`, `Expected HTTP 200 with presigned URL, got HTTP ${presignResult.status}`);
+            }
         }
     } catch (e) {
         collector.recordResult('Phase 6', '6.2 Presigned Direct Upload', 'FAIL', { message: e.message });
@@ -60,20 +84,45 @@ export async function runPhase6(page, collector) {
     // 6.3 Global Search API Endpoint
     try {
         const searchStatus = await page.evaluate(async (url) => {
-            const r = await fetch(`${url}/api/global-search?q=pottery`, {
+            const r = await fetch(`${url}/api/global-search?query=pottery`, {
                 headers: { 'Accept': 'application/json' }
             }).catch(() => ({ status: 0 }));
             return r.status;
         }, PROD_URL);
 
-        collector.recordResult('Phase 6', '6.3 Universal Global Search API', (searchStatus === 200 || searchStatus === 401) ? 'PASS' : 'FAIL', {
+        collector.recordResult('Phase 6', '6.3 Universal Global Search API', searchStatus === 200 ? 'PASS' : 'FAIL', {
             message: `Status: ${searchStatus}`
         });
-        if (searchStatus !== 200 && searchStatus !== 401) {
+        if (searchStatus !== 200) {
             collector.recordBug('MEDIUM', 'Global Search API Unexpected Status', `${PROD_URL}/api/global-search`, `Status: ${searchStatus}`);
         }
     } catch (e) {
         collector.recordResult('Phase 6', '6.3 Universal Global Search API', 'FAIL', { message: e.message });
+    }
+
+    // 6.3b Reverse Geocoding API Endpoint & Cavite Boundary Contract
+    try {
+        const geocodeResult = await page.evaluate(async (url) => {
+            const r = await fetch(`${url}/api/geocode/reverse?latitude=14.2456&longitude=120.9372`, {
+                headers: { 'Accept': 'application/json' }
+            }).catch(() => null);
+            if (!r) return { status: 0, data: null };
+            const data = await r.json().catch(() => null);
+            return { status: r.status, data };
+        }, PROD_URL);
+
+        const isGeocodeHealthy = geocodeResult.status === 200
+            && geocodeResult.data
+            && typeof geocodeResult.data.is_within_cavite === 'boolean';
+
+        collector.recordResult('Phase 6', '6.3b Reverse Geocoding API Contract', isGeocodeHealthy ? 'PASS' : 'FAIL', {
+            message: `Status: ${geocodeResult.status}, Within Cavite: ${geocodeResult.data?.is_within_cavite}, City: "${geocodeResult.data?.city || ''}"`
+        });
+        if (!isGeocodeHealthy) {
+            collector.recordBug('HIGH', 'Reverse Geocoding API Failure', `${PROD_URL}/api/geocode/reverse`, `Status: ${geocodeResult.status}, Response: ${JSON.stringify(geocodeResult.data)}`);
+        }
+    } catch (e) {
+        collector.recordResult('Phase 6', '6.3b Reverse Geocoding API Contract', 'FAIL', { message: e.message });
     }
 
     // 6.4 Webhook Authorization Guard

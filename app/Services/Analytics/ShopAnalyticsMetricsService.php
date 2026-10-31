@@ -24,6 +24,9 @@ class ShopAnalyticsMetricsService
 
         $getMetrics = function ($start, $end) use ($sellerId) {
             $ordersCount = (int) Order::where('artisan_id', $sellerId)
+                ->where(function ($q) {
+                    $q->where('is_test', false)->orWhereNull('is_test');
+                })
                 ->where('status', 'Completed')
                 ->whereBetween('created_at', [
                     $start->copy()->startOfDay(),
@@ -33,6 +36,9 @@ class ShopAnalyticsMetricsService
 
             $revenue = (float) OrderItem::whereHas('order', function ($q) use ($sellerId, $start, $end) {
                 $q->where('artisan_id', $sellerId)
+                    ->where(function ($sq) {
+                        $sq->where('is_test', false)->orWhereNull('is_test');
+                    })
                     ->where('status', 'Completed')
                     ->whereBetween('created_at', [
                         $start->copy()->startOfDay(),
@@ -42,6 +48,9 @@ class ShopAnalyticsMetricsService
 
             $cost = (float) OrderItem::whereHas('order', function ($q) use ($sellerId, $start, $end) {
                 $q->where('artisan_id', $sellerId)
+                    ->where(function ($sq) {
+                        $sq->where('is_test', false)->orWhereNull('is_test');
+                    })
                     ->where('status', 'Completed')
                     ->whereBetween('created_at', [
                         $start->copy()->startOfDay(),
@@ -85,6 +94,9 @@ class ShopAnalyticsMetricsService
                 return Order::query()
                     ->from('orders')
                     ->where('orders.artisan_id', $sellerId)
+                    ->where(function ($q) {
+                        $q->where('orders.is_test', false)->orWhereNull('orders.is_test');
+                    })
                     ->where('orders.status', 'Completed');
             }
 
@@ -92,6 +104,9 @@ class ShopAnalyticsMetricsService
                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
                 ->join('products', 'order_items.product_id', '=', 'products.id')
                 ->where('orders.artisan_id', $sellerId)
+                ->where(function ($q) {
+                    $q->where('orders.is_test', false)->orWhereNull('orders.is_test');
+                })
                 ->where('orders.status', 'Completed')
                 ->where('products.category', $categoryFilter);
         };
@@ -155,6 +170,9 @@ class ShopAnalyticsMetricsService
     {
         return OrderItem::whereHas('order', function ($query) use ($sellerId) {
             $query->where('artisan_id', $sellerId)
+                ->where(function ($q) {
+                    $q->where('is_test', false)->orWhereNull('is_test');
+                })
                 ->where('status', 'Completed');
         })
             ->join('products', 'order_items.product_id', '=', 'products.id')
@@ -184,6 +202,9 @@ class ShopAnalyticsMetricsService
     {
         return OrderItem::whereHas('order', function ($query) use ($sellerId) {
             $query->where('artisan_id', $sellerId)
+                ->where(function ($q) {
+                    $q->where('is_test', false)->orWhereNull('is_test');
+                })
                 ->where('status', 'Completed');
         })
             ->select([
@@ -219,6 +240,8 @@ class ShopAnalyticsMetricsService
 
         $reviews = Review::whereHas('product', function ($query) use ($sellerId) {
             $query->where('user_id', $sellerId);
+        })->whereHas('user', function ($q) {
+            $q->where('is_test', false)->orWhereNull('is_test');
         })->get();
 
         $reviewsLastMonth = $reviews->filter(function ($r) use ($endOfLastMonth) {
@@ -250,6 +273,9 @@ class ShopAnalyticsMetricsService
 
         $salesHeatmap = Order::query()
             ->where('artisan_id', $sellerId)
+            ->where(function ($q) {
+                $q->where('is_test', false)->orWhereNull('is_test');
+            })
             ->where('status', 'Completed')
             ->selectRaw("{$dayExpr} as day, {$hourExpr} as hour, COUNT(*) as count")
             ->groupByRaw("{$dayExpr}, {$hourExpr}")
@@ -257,7 +283,11 @@ class ShopAnalyticsMetricsService
 
         $diffExpr = $this->dateDiffExpression('order_items.created_at', 'products.created_at');
         $velocityData = OrderItem::whereHas('order', function($q) use ($sellerId) {
-                $q->where('artisan_id', $sellerId)->where('status', 'Completed');
+                $q->where('artisan_id', $sellerId)
+                    ->where(function ($sq) {
+                        $sq->where('is_test', false)->orWhereNull('is_test');
+                    })
+                    ->where('status', 'Completed');
             })
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->selectRaw("
@@ -274,7 +304,12 @@ class ShopAnalyticsMetricsService
         $slowMovers = Product::where('user_id', $sellerId)
             ->where('status', 'Active')
             ->whereDoesntHave('orderItems', function($q) {
-                $q->where('created_at', '>=', now()->subDays(30));
+                $q->where('created_at', '>=', now()->subDays(30))
+                  ->whereHas('order', function ($oq) {
+                      $oq->where(function ($sq) {
+                          $sq->where('is_test', false)->orWhereNull('is_test');
+                      });
+                  });
             })
             ->select(['id', 'name', 'stock', 'created_at'])
             ->take(5)
@@ -441,6 +476,9 @@ class ShopAnalyticsMetricsService
                 $endLastMonth = $now->copy()->subMonth()->endOfMonth();
 
                 $q = Order::where('artisan_id', $userId)
+                    ->where(function ($sub) {
+                        $sub->where('is_test', false)->orWhereNull('is_test');
+                    })
                     ->where('status', 'Completed');
 
                 $currentVal = (clone $q)->where('created_at', '>=', $startThisMonth);
@@ -469,10 +507,16 @@ class ShopAnalyticsMetricsService
             $avgValue = $ordersData['value'] > 0 ? $revenueData['value'] / $ordersData['value'] : 0;
 
             $prevRev = Order::where('artisan_id', $userId)
+                ->where(function ($q) {
+                    $q->where('is_test', false)->orWhereNull('is_test');
+                })
                 ->where('status', 'Completed')
                 ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])
                 ->sum('seller_net_amount');
             $prevOrd = Order::where('artisan_id', $userId)
+                ->where(function ($q) {
+                    $q->where('is_test', false)->orWhereNull('is_test');
+                })
                 ->where('status', 'Completed')
                 ->whereBetween('created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])
                 ->count();
@@ -487,6 +531,9 @@ class ShopAnalyticsMetricsService
 
             $monthExpr = $this->monthNumberExpression('created_at');
             $monthlyRaw = Order::where('artisan_id', $userId)
+                ->where(function ($q) {
+                    $q->where('is_test', false)->orWhereNull('is_test');
+                })
                 ->where('status', 'Completed')
                 ->where('created_at', '>=', Carbon::now()->subMonths(5)->startOfMonth())
                 ->selectRaw("{$monthExpr} as month_num, SUM(seller_net_amount) as value")
@@ -507,6 +554,9 @@ class ShopAnalyticsMetricsService
 
             $yearExpr = $this->yearNumberExpression('created_at');
             $yearlyRaw = Order::where('artisan_id', $userId)
+                ->where(function ($q) {
+                    $q->where('is_test', false)->orWhereNull('is_test');
+                })
                 ->where('status', 'Completed')
                 ->selectRaw("{$yearExpr} as year_num, SUM(seller_net_amount) as value")
                 ->groupByRaw($yearExpr)
@@ -527,7 +577,11 @@ class ShopAnalyticsMetricsService
             }
 
             $categoryData = OrderItem::whereHas('order', function ($q) use ($userId) {
-                    $q->where('artisan_id', $userId)->where('status', 'Completed');
+                    $q->where('artisan_id', $userId)
+                        ->where(function ($sq) {
+                            $sq->where('is_test', false)->orWhereNull('is_test');
+                        })
+                        ->where('status', 'Completed');
                 })
                 ->join('products', 'order_items.product_id', '=', 'products.id')
                 ->select([
@@ -557,10 +611,16 @@ class ShopAnalyticsMetricsService
                 ->sum('total_cost');
 
             $pendingOrders = Order::where('artisan_id', $userId)
+                ->where(function ($q) {
+                    $q->where('is_test', false)->orWhereNull('is_test');
+                })
                 ->where('status', 'Pending')
                 ->count();
 
             $stalledOrders = Order::where('artisan_id', $userId)
+                ->where(function ($q) {
+                    $q->where('is_test', false)->orWhereNull('is_test');
+                })
                 ->whereNotIn('status', ['Completed', 'Cancelled', 'Refunded', 'Replaced'])
                 ->where('created_at', '<=', Carbon::now()->subDays(3))
                 ->count();

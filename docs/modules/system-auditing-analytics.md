@@ -93,6 +93,8 @@ Whenever a seller owner changes starting capital balances (`base_funds`), the ad
     `avg('rating') where is_hidden_from_marketplace = false`
 *   **Daily Analytics Rollup**:
     To prevent database lock contention during checkout transactions, financial rollups are saved in `SellerAnalyticsSnapshot` as a daily batch snapshot.
+*   **Test Order & Persona Isolation**:
+    All analytics queries across [ShopAnalyticsService.php](file:///c:/laragon/www/LikhangKamay/app/Services/ShopAnalyticsService.php), [ShopAnalyticsMetricsService.php](file:///c:/laragon/www/LikhangKamay/app/Services/Analytics/ShopAnalyticsMetricsService.php), [AdminAnalyticsService.php](file:///c:/laragon/www/LikhangKamay/app/Services/Admin/AdminAnalyticsService.php), and [GenerateAnalyticsSnapshots.php](file:///c:/laragon/www/LikhangKamay/app/Console/Commands/GenerateAnalyticsSnapshots.php) strictly filter out automated E2E test transactions (`orders.is_test = false or orders.is_test is null`) and test accounts (`users.is_test = false or users.is_test is null`) to guarantee 100% pure organic financial metrics in production.
 *   **Sales Chart Accuracy**:
     In [ShopAnalyticsMetricsService.php](file:///c:/laragon/www/LikhangKamay/app/Services/Analytics/ShopAnalyticsMetricsService.php), `getSalesChartData` resolves the "All Categories" timeline by querying `Order` directly to prevent 1:N `order_items` join multiplication of `seller_net_amount`. When filtered by a specific category, it accurately sums line item amounts (`order_items.price * order_items.quantity`).
 *   **Variable Throttling**:

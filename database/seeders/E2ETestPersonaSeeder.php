@@ -74,7 +74,7 @@ class E2ETestPersonaSeeder extends Seeder
                 'street_address' => '101 Bayan Luma Street',
                 'city' => 'Imus',
                 'barangay' => 'Bucandala I',
-                'region' => 'Region IV-A (CALABARZON)',
+                'region' => 'Cavite',
                 'postal_code' => '4103',
                 'full_address' => '101 Bayan Luma Street, Bucandala I, Imus, Cavite 4103',
                 'latitude' => 14.4296,
@@ -105,16 +105,16 @@ class E2ETestPersonaSeeder extends Seeder
             ]
         );
 
-        // Artisan Test Product
+        // Artisan Test Product (Synthetic ₱1 Item)
         $category = Category::first();
         Product::withTrashed()->updateOrCreate(
             ['sku' => 'TEST-BAMBOO-01'],
             [
                 'user_id' => $artisan->id,
-                'name' => 'E2E Synthetic Bamboo Cup',
+                'name' => 'E2E Synthetic ₱1 Bamboo Cup',
                 'category' => $category?->name ?? 'Pottery & Ceramics',
-                'price' => 25.00,
-                'cost_price' => 15.00,
+                'price' => 1.00,
+                'cost_price' => 0.50,
                 'stock' => 999,
                 'status' => 'Active',
                 'lead_time' => 1,
@@ -149,7 +149,7 @@ class E2ETestPersonaSeeder extends Seeder
                 'street_address' => 'Block 4 Lot 12 Buhay na Tubig',
                 'city' => 'Imus',
                 'barangay' => 'Buhay na Tubig',
-                'region' => 'Region IV-A (CALABARZON)',
+                'region' => 'Cavite',
                 'postal_code' => '4103',
                 'full_address' => 'Block 4 Lot 12 Buhay na Tubig, Imus, Cavite 4103',
                 'latitude' => 14.4180,

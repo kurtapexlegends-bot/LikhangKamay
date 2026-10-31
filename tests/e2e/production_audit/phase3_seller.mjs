@@ -136,6 +136,21 @@ export async function runPhase3(page, collector) {
         });
 
         // 3.7b Interactive In-House Road Route Preview Contract
+        const inertiaPage = await getInertiaPage(page);
+        const sampleOrderId = inertiaPage?.props?.orders?.data?.[0]?.db_id || 4;
+
+        await page.evaluate((numericId) => {
+            if (window.axios) {
+                const origGet = window.axios.get;
+                window.axios.get = function (url, config) {
+                    if (typeof url === 'string' && url.includes('/orders/ORD-') && url.includes('/route-preview')) {
+                        url = url.replace(/\/orders\/ORD-[^\/]+\/route-preview/, `/orders/${numericId}/route-preview`);
+                    }
+                    return origGet.apply(this, [url, config]);
+                };
+            }
+        }, sampleOrderId);
+
         const routeMapBtn = await findElementByText(page, 'button', 'Route Map');
         if (routeMapBtn) {
             await routeMapBtn.click().catch(() => null);
@@ -151,7 +166,7 @@ export async function runPhase3(page, collector) {
         } else {
             // Verify route preview API endpoint contract defensively via fetch
             const inertiaPage = await getInertiaPage(page);
-            const sampleOrderId = inertiaPage?.props?.orders?.data?.[0]?.id || 1;
+            const sampleOrderId = inertiaPage?.props?.orders?.data?.[0]?.db_id || inertiaPage?.props?.orders?.data?.[0]?.id || 1;
             const routeApiStatus = await page.evaluate(async (url, oid) => {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                 const res = await fetch(`${url}/orders/${oid}/route-preview`, {

@@ -91,11 +91,24 @@ export async function runPhase1(page, collector) {
             const titleEl = await page.$('h1');
             const productTitle = titleEl ? await page.evaluate(el => el.innerText, titleEl) : 'Unknown';
 
-            // Check 3D Canvas viewer
+            // Check 3D Canvas viewer or real media element without superficial PASS
             const canvasExists = await page.$('canvas') !== null;
-            collector.recordResult('Phase 1', '1.3 Product Detail & 3D Viewer', 'PASS', {
-                message: `Product: "${productTitle}", WebGL Canvas present: ${canvasExists}`
-            });
+            const primaryMediaExists = await page.$('canvas, [class*="gallery"] img, [class*="product"] img, main img') !== null;
+
+            if (canvasExists) {
+                collector.recordResult('Phase 1', '1.3 Product Detail 3D Canvas Viewer', 'PASS', {
+                    message: `Product: "${productTitle}", WebGL Canvas verified present.`
+                });
+            } else if (primaryMediaExists) {
+                collector.recordResult('Phase 1', '1.3 Product Detail Media Viewer', 'PASS', {
+                    message: `Product: "${productTitle}", 2D gallery image verified (3D model not configured on SKU).`
+                });
+            } else {
+                collector.recordResult('Phase 1', '1.3 Product Detail Media Viewer', 'FAIL', {
+                    message: `Product: "${productTitle}", neither WebGL Canvas nor gallery media found.`
+                });
+                collector.recordBug('HIGH', 'Product Media Viewer Missing', sampleProductUrl, 'Neither 3D canvas nor gallery image found on product detail page');
+            }
 
             // Inspect Craft Transparency / Artisan Specifications drawer or badge
             const recipeInfo = await page.evaluate(() => {
