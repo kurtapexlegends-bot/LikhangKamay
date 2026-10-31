@@ -1,8 +1,8 @@
 {
   "meta": {
-    "target": "https://www.likhangkamay.app",
-    "timestamp": "2026-10-31T01:26:42.677Z",
-    "durationSeconds": 191.4,
+    "target": "http://127.0.0.1:8000",
+    "timestamp": "2026-10-31T03:07:26.388Z",
+    "durationSeconds": 150,
     "summary": {
       "total": 112,
       "passed": 112,
@@ -16,741 +16,741 @@
       "phase": "Phase 1",
       "testName": "1.1 Homepage Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:39.411Z",
+      "timestamp": "2026-10-31T03:05:00.050Z",
       "message": "Title: \"LikhangKamay - Artisan Marketplace\", Hero visible: true"
     },
     {
       "phase": "Phase 1",
       "testName": "1.2 Marketplace Catalog Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:42.132Z"
+      "timestamp": "2026-10-31T03:05:02.772Z"
     },
     {
       "phase": "Phase 1",
       "testName": "1.2 Search Input & Suggestions",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:43.431Z",
+      "timestamp": "2026-10-31T03:05:04.076Z",
       "message": "Debounce search executed"
     },
     {
       "phase": "Phase 1",
       "testName": "1.2 Sort Dropdown Exists",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:43.437Z"
+      "timestamp": "2026-10-31T03:05:04.083Z"
     },
     {
       "phase": "Phase 1",
       "testName": "1.3 Product Detail Media Viewer",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:45.012Z",
-      "message": "Product: \"Burnished Clay Water Pitcher & Jar\", 2D gallery image verified (3D model not configured on SKU)."
+      "timestamp": "2026-10-31T03:05:05.322Z",
+      "message": "Product: \"Nordic Raw Clay Floor Vase\", 2D gallery image verified (3D model not configured on SKU)."
     },
     {
       "phase": "Phase 1",
       "testName": "1.3 Recipe Transparency Pill",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:45.014Z",
+      "timestamp": "2026-10-31T03:05:05.324Z",
       "message": "Artisan craft specifications visible: true"
     },
     {
       "phase": "Phase 1",
       "testName": "1.3 Add to Cart Button Rendered",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:45.020Z"
+      "timestamp": "2026-10-31T03:05:05.328Z"
     },
     {
       "phase": "Phase 1",
       "testName": "1.4 Artisan Profile Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:46.338Z",
-      "message": "Target URL: https://www.likhangkamay.app/shop/silang-terracotta-works-42dewr"
+      "timestamp": "2026-10-31T03:05:06.487Z",
+      "message": "Target URL: http://127.0.0.1:8000/shop/silang-terracotta-works-ybewlf"
     },
     {
       "phase": "Phase 1",
       "testName": "1.5 Register Page Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:47.581Z"
+      "timestamp": "2026-10-31T03:05:07.613Z"
     },
     {
       "phase": "Phase 1",
       "testName": "1.5 Registration Validation Errors",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:48.620Z",
+      "timestamp": "2026-10-31T03:05:08.657Z",
       "message": "Form validation errors properly displayed"
     },
     {
       "phase": "Phase 1",
       "testName": "1.6 Google OAuth Redirect",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:49.716Z",
-      "message": "Target URL reached: https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S-1424121299"
+      "timestamp": "2026-10-31T03:05:09.617Z",
+      "message": "Target URL reached: https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S1823835%3A1"
     },
     {
       "phase": "Phase 1",
       "testName": "1.7 Forgot Password Page Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:51.196Z"
+      "timestamp": "2026-10-31T03:05:10.913Z"
     },
     {
       "phase": "Phase 1",
       "testName": "1.7 Forgot Password Submit",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:53.376Z",
+      "timestamp": "2026-10-31T03:05:13.180Z",
       "message": "Submission handled"
     },
     {
       "phase": "Phase 1",
       "testName": "1.8 Artisan Register Page Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:54.575Z"
+      "timestamp": "2026-10-31T03:05:14.317Z"
     },
     {
       "phase": "Phase 1",
       "testName": "1.9 Legal Page: /terms",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:56.011Z",
+      "timestamp": "2026-10-31T03:05:15.370Z",
       "message": "HTTP 200"
     },
     {
       "phase": "Phase 1",
       "testName": "1.9 Legal Page: /privacy",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:57.083Z",
+      "timestamp": "2026-10-31T03:05:16.358Z",
       "message": "HTTP 200"
     },
     {
       "phase": "Phase 1",
       "testName": "1.9 Legal Page: /seller-agreement",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:58.623Z",
+      "timestamp": "2026-10-31T03:05:17.398Z",
       "message": "HTTP 200"
     },
     {
       "phase": "Phase 1",
       "testName": "1.9 Legal Page: /seller-privacy",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:23:59.823Z",
+      "timestamp": "2026-10-31T03:05:18.417Z",
       "message": "HTTP 200"
     },
     {
       "phase": "Phase 2",
       "testName": "2.1 Buyer Authentication",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:09.539Z",
-      "message": "Current URL: https://www.likhangkamay.app/"
+      "timestamp": "2026-10-31T03:05:24.184Z",
+      "message": "Current URL: http://127.0.0.1:8000/"
     },
     {
       "phase": "Phase 2",
       "testName": "2.1 Buyer Session Props [Inertia Props]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:11.267Z",
+      "timestamp": "2026-10-31T03:05:25.784Z",
       "message": "Verified props [auth.user.email] present"
     },
     {
       "phase": "Phase 2",
       "testName": "2.2 Shop Catalog Props [Component: Consumer/Shop/Catalog]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:13.719Z",
+      "timestamp": "2026-10-31T03:05:28.530Z",
       "message": "Matched expected component: Catalog"
     },
     {
       "phase": "Phase 2",
       "testName": "2.2 Shop Catalog Props [Inertia Props]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:13.719Z",
+      "timestamp": "2026-10-31T03:05:28.530Z",
       "message": "Verified props [products] present"
     },
     {
       "phase": "Phase 2",
       "testName": "2.2 Product Detail Props [Component: Consumer/Shop/ProductShow]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:15.350Z",
+      "timestamp": "2026-10-31T03:05:29.846Z",
       "message": "Matched expected component: ProductShow"
     },
     {
       "phase": "Phase 2",
       "testName": "2.2 Product Detail Props [Inertia Props]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:15.351Z",
+      "timestamp": "2026-10-31T03:05:29.846Z",
       "message": "Verified props [product.id, product.name, product.price] present"
     },
     {
       "phase": "Phase 2",
       "testName": "2.2 Add To Cart Button Clicked",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:17.434Z"
+      "timestamp": "2026-10-31T03:05:31.904Z"
     },
     {
       "phase": "Phase 2",
       "testName": "2.2 Cart Page Props [Component: Consumer/Shop/Cart]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:18.817Z",
+      "timestamp": "2026-10-31T03:05:33.135Z",
       "message": "Matched expected component: Cart"
     },
     {
       "phase": "Phase 2",
       "testName": "2.2 Cart Page Props [Inertia Props]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:18.817Z",
+      "timestamp": "2026-10-31T03:05:33.136Z",
       "message": "Verified props [cart] present"
     },
     {
       "phase": "Phase 2",
       "testName": "2.3 Profile & Address Book Props [Component: Consumer/Profile/Edit]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:20.260Z",
+      "timestamp": "2026-10-31T03:05:34.317Z",
       "message": "Matched expected component: Profile"
     },
     {
       "phase": "Phase 2",
       "testName": "2.3 Profile & Address Book Props [Inertia Props]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:20.260Z",
+      "timestamp": "2026-10-31T03:05:34.317Z",
       "message": "Verified props [addresses] present"
     },
     {
       "phase": "Phase 2",
       "testName": "2.3 Address Section Rendered",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:20.262Z"
+      "timestamp": "2026-10-31T03:05:34.335Z"
     },
     {
       "phase": "Phase 2",
       "testName": "2.4 Checkout Inertia Contract [Component: Consumer/Shop/Checkout]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:21.674Z",
+      "timestamp": "2026-10-31T03:05:35.577Z",
       "message": "Matched expected component: Checkout"
     },
     {
       "phase": "Phase 2",
       "testName": "2.4 Checkout Inertia Contract [Inertia Props]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:21.674Z",
+      "timestamp": "2026-10-31T03:05:35.578Z",
       "message": "Verified props [items, pricing] present"
     },
     {
       "phase": "Phase 2",
       "testName": "2.4 Checkout Clean Initial State",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:21.674Z"
+      "timestamp": "2026-10-31T03:05:35.578Z"
     },
     {
       "phase": "Phase 2",
       "testName": "2.4 Shipping Method Selectors Present",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:21.716Z",
+      "timestamp": "2026-10-31T03:05:35.599Z",
       "message": "Delivery selector: true, Pickup selector: true"
     },
     {
       "phase": "Phase 2",
       "testName": "2.4 Place Order Action Present",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:21.720Z",
+      "timestamp": "2026-10-31T03:05:35.602Z",
       "message": "Label: \"Place Order\", Disabled: false"
     },
     {
       "phase": "Phase 2",
       "testName": "2.4b Philippine VAT-Inclusive Disclosure Present",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:21.721Z",
+      "timestamp": "2026-10-31T03:05:35.604Z",
       "message": "12% VAT inclusive pricing notice verified on Checkout"
     },
     {
       "phase": "Phase 2",
       "testName": "2.5 My Orders Inertia Props [Component: Consumer/Buyer/MyOrders]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:23.332Z",
+      "timestamp": "2026-10-31T03:05:38.075Z",
       "message": "Matched expected component: Orders"
     },
     {
       "phase": "Phase 2",
       "testName": "2.5 My Orders Inertia Props [Inertia Props]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:23.332Z",
+      "timestamp": "2026-10-31T03:05:38.076Z",
       "message": "Verified props [orders] present"
     },
     {
       "phase": "Phase 2",
       "testName": "2.5 Order Receipt Action Present",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:23.350Z"
+      "timestamp": "2026-10-31T03:05:38.104Z"
     },
     {
       "phase": "Phase 2",
       "testName": "2.5b Live Delivery Tracking Component Rendered",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:23.354Z",
+      "timestamp": "2026-10-31T03:05:38.109Z",
       "message": "Buyer order live tracking card or radar element verified"
     },
     {
       "phase": "Phase 2",
       "testName": "2.5c BIR Official Sales Invoice Endpoint Healthy",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:23.752Z",
-      "message": "BIR Receipt URL (/my-orders/4/receipt?download=1) HTTP status: 200"
+      "timestamp": "2026-10-31T03:05:38.231Z",
+      "message": "BIR Receipt URL (/my-orders/53/receipt?download=1) HTTP status: 200"
     },
     {
       "phase": "Phase 2",
       "testName": "2.6 Saved Wishlist Page Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:25.233Z"
+      "timestamp": "2026-10-31T03:05:39.440Z"
     },
     {
       "phase": "Phase 2",
       "testName": "2.7 Buyer Reviews Page Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:26.830Z"
+      "timestamp": "2026-10-31T03:05:40.666Z"
     },
     {
       "phase": "Phase 2",
       "testName": "2.8 Buyer Chat Window Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:28.402Z"
+      "timestamp": "2026-10-31T03:05:41.914Z"
     },
     {
       "phase": "Phase 2",
       "testName": "2.9 Notifications Page Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:30.117Z"
+      "timestamp": "2026-10-31T03:05:43.186Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.1 Seller Authentication",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:39.286Z",
-      "message": "Current URL: https://www.likhangkamay.app/dashboard"
+      "timestamp": "2026-10-31T03:05:48.568Z",
+      "message": "Current URL: http://127.0.0.1:8000/dashboard"
     },
     {
       "phase": "Phase 3",
       "testName": "3.1 Seller Session Props [Component: Seller/Layout/Dashboard]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:43.092Z",
+      "timestamp": "2026-10-31T03:05:51.829Z",
       "message": "Matched expected component: Dashboard"
     },
     {
       "phase": "Phase 3",
       "testName": "3.1 Seller Session Props [Inertia Props]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:43.092Z",
+      "timestamp": "2026-10-31T03:05:51.829Z",
       "message": "Verified props [auth.user.email] present"
     },
     {
       "phase": "Phase 3",
       "testName": "3.2 Seller Dashboard Inertia Contract [Component: Seller/Layout/Dashboard]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:45.130Z",
+      "timestamp": "2026-10-31T03:05:53.447Z",
       "message": "Matched expected component: Dashboard"
     },
     {
       "phase": "Phase 3",
       "testName": "3.2 Seller Dashboard Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:45.145Z",
-      "message": "Found 8 dashboard metric elements"
+      "timestamp": "2026-10-31T03:05:53.482Z",
+      "message": "Found 12 dashboard metric elements"
     },
     {
       "phase": "Phase 3",
       "testName": "3.3 Product Catalog Inertia Contract [Component: Seller/Catalog/ProductManager]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:48.253Z",
+      "timestamp": "2026-10-31T03:05:56.740Z",
       "message": "Matched expected component: Product"
     },
     {
       "phase": "Phase 3",
       "testName": "3.3 Product Catalog Inertia Contract [Inertia Props]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:48.253Z",
+      "timestamp": "2026-10-31T03:05:56.740Z",
       "message": "Verified props [products] present"
     },
     {
       "phase": "Phase 3",
       "testName": "3.3 Product Catalog Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:48.258Z"
+      "timestamp": "2026-10-31T03:05:56.797Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.3 Create Product Action Present",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:48.260Z"
+      "timestamp": "2026-10-31T03:05:56.798Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.3 Product Search & Filter Controls Available",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:48.262Z",
+      "timestamp": "2026-10-31T03:05:56.810Z",
       "message": "Catalog search/filter input present: true"
     },
     {
       "phase": "Phase 3",
       "testName": "3.4 3D Asset Manager Endpoint & Contract",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:48.839Z",
+      "timestamp": "2026-10-31T03:05:57.000Z",
       "message": "3D Presign API HTTP status: 200"
     },
     {
       "phase": "Phase 3",
       "testName": "3.5 Marketing Discounts Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:50.869Z"
+      "timestamp": "2026-10-31T03:05:58.431Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.6 Sponsorships Page Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:52.836Z"
+      "timestamp": "2026-10-31T03:05:59.943Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.7 Orders Fulfillment Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:55.044Z"
+      "timestamp": "2026-10-31T03:06:01.560Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.7 Bulk Labels Action Present",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:55.050Z",
+      "timestamp": "2026-10-31T03:06:01.564Z",
       "message": "Fulfillment queue controls and bulk actions verified"
     },
     {
       "phase": "Phase 3",
       "testName": "3.7b Delivery Route Preview Modal Rendered",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:56.608Z",
+      "timestamp": "2026-10-31T03:06:03.132Z",
       "message": "Interactive Leaflet road route preview modal verified"
     },
     {
       "phase": "Phase 3",
       "testName": "3.8 B2B Supply Hub Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:24:58.103Z"
+      "timestamp": "2026-10-31T03:06:04.675Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.9 ERP Procurement Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:00.166Z"
+      "timestamp": "2026-10-31T03:06:06.037Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.9 Stock Requests Desk Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:01.944Z"
+      "timestamp": "2026-10-31T03:06:07.336Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.10 ERP Accounting Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:05.050Z"
+      "timestamp": "2026-10-31T03:06:10.473Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.10 Accounting Balance Cards Rendered",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:05.052Z"
+      "timestamp": "2026-10-31T03:06:10.475Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.11 ERP HR & Attendance Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:06.726Z"
+      "timestamp": "2026-10-31T03:06:12.325Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.11 Add Employee Action Present",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:06.731Z",
+      "timestamp": "2026-10-31T03:06:12.336Z",
       "message": "Add employee button verified"
     },
     {
       "phase": "Phase 3",
       "testName": "3.11b ERP Payroll Desk Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:09.568Z"
+      "timestamp": "2026-10-31T03:06:14.938Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.12 Seller Chat CRM Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:11.854Z"
+      "timestamp": "2026-10-31T03:06:16.710Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.12 Seller Reviews Inertia Contract [Component: Seller/Chat/Reviews]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:14.666Z",
+      "timestamp": "2026-10-31T03:06:19.192Z",
       "message": "Matched expected component: Seller/Chat/Reviews"
     },
     {
       "phase": "Phase 3",
       "testName": "3.12 Seller Reviews Inertia Contract [Inertia Props]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:14.666Z",
+      "timestamp": "2026-10-31T03:06:19.192Z",
       "message": "Verified props [reviews, products] present"
     },
     {
       "phase": "Phase 3",
       "testName": "3.12 Seller Reviews Master-Detail Layout Present",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:14.672Z"
+      "timestamp": "2026-10-31T03:06:19.199Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.13 Team Messages Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:16.910Z"
+      "timestamp": "2026-10-31T03:06:20.589Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.14 Subscriptions Page Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:18.408Z"
+      "timestamp": "2026-10-31T03:06:21.987Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.14 Shop Settings Page Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:20.432Z"
+      "timestamp": "2026-10-31T03:06:23.662Z"
     },
     {
       "phase": "Phase 3",
       "testName": "3.14b Seller Global Settings Inertia Contract [Component: Seller/Settings/GlobalSettings]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:23.286Z",
+      "timestamp": "2026-10-31T03:06:25.945Z",
       "message": "Matched expected component: GlobalSettings"
     },
     {
       "phase": "Phase 3",
       "testName": "3.14b E-Wallet Disbursement Methods Rendered",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:23.288Z",
+      "timestamp": "2026-10-31T03:06:25.948Z",
       "message": "GCash & Maya e-wallet payout controls verified"
     },
     {
       "phase": "Phase 3",
       "testName": "3.14b BIR Tax Profile Card Rendered",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:23.289Z",
+      "timestamp": "2026-10-31T03:06:25.950Z",
       "message": "BIR Tax Profile and VAT registration card verified"
     },
     {
       "phase": "Phase 3",
       "testName": "3.14b Commercial Bank Transfers Deprecated & Absent",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:23.290Z",
+      "timestamp": "2026-10-31T03:06:25.952Z",
       "message": "Commercial bank transfer options properly purged"
     },
     {
       "phase": "Phase 3",
       "testName": "3.15 Seller Audit Log Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:24.807Z"
+      "timestamp": "2026-10-31T03:06:27.426Z"
     },
     {
       "phase": "Phase 4",
       "testName": "4.1 Staff Unauthenticated Gate Protection",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:30.497Z",
-      "message": "Unauthenticated redirect URL: https://www.likhangkamay.app/login"
+      "timestamp": "2026-10-31T03:06:29.756Z",
+      "message": "Unauthenticated redirect URL: http://127.0.0.1:8000/login"
     },
     {
       "phase": "Phase 4",
       "testName": "4.2 Staff Member Authentication",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:37.088Z",
-      "message": "Logged in URL: https://www.likhangkamay.app/staff/dashboard"
+      "timestamp": "2026-10-31T03:06:34.918Z",
+      "message": "Logged in URL: http://127.0.0.1:8000/staff/dashboard"
     },
     {
       "phase": "Phase 4",
       "testName": "4.3 Staff Dashboard Inertia Contract [Component: Staff/Dashboard]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:38.395Z",
+      "timestamp": "2026-10-31T03:06:36.366Z",
       "message": "Matched expected component: Staff/Dashboard"
     },
     {
       "phase": "Phase 4",
       "testName": "4.3 Staff Dashboard Inertia Contract [Inertia Props]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:38.395Z",
+      "timestamp": "2026-10-31T03:06:36.366Z",
       "message": "Verified props [hub] present"
     },
     {
       "phase": "Phase 4",
       "testName": "4.4 Staff Attendance Clock-In Endpoint",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:39.842Z",
+      "timestamp": "2026-10-31T03:06:36.827Z",
       "message": "Attendance resume HTTP status: 200"
     },
     {
       "phase": "Phase 4",
       "testName": "4.5 Active Staff Heartbeat Ping",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:40.349Z",
+      "timestamp": "2026-10-31T03:06:36.974Z",
       "message": "Heartbeat HTTP status: 200"
     },
     {
       "phase": "Phase 4",
       "testName": "4.6 Logistics Rider Authentication",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:48.989Z",
-      "message": "Logged in URL: https://www.likhangkamay.app/staff/deliveries"
+      "timestamp": "2026-10-31T03:06:44.084Z",
+      "message": "Logged in URL: http://127.0.0.1:8000/staff/deliveries"
     },
     {
       "phase": "Phase 4",
       "testName": "4.7 Driver Deliveries Inertia Contract [Component: Staff/DriverDeliveries]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:51.625Z",
+      "timestamp": "2026-10-31T03:06:46.041Z",
       "message": "Matched expected component: Staff/DriverDeliveries"
     },
     {
       "phase": "Phase 4",
       "testName": "4.7 Driver Deliveries Inertia Contract [Inertia Props]",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:51.625Z",
+      "timestamp": "2026-10-31T03:06:46.041Z",
       "message": "Verified props [activeDeliveries, completedToday, driverProfile] present"
     },
     {
       "phase": "Phase 4",
       "testName": "4.7b Driver Navigation & Telemetry Console Ready",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:25:51.627Z",
+      "timestamp": "2026-10-31T03:06:46.043Z",
       "message": "In-house driver navigation and telemetry console state verified"
     },
     {
       "phase": "Phase 5",
       "testName": "5.1 SuperAdmin Authentication",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:01.549Z",
-      "message": "URL: https://www.likhangkamay.app/admin/dashboard"
+      "timestamp": "2026-10-31T03:06:52.277Z",
+      "message": "URL: http://127.0.0.1:8000/admin/dashboard"
     },
     {
       "phase": "Phase 5",
       "testName": "5.2 Executive Dashboard Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:03.064Z"
+      "timestamp": "2026-10-31T03:06:53.699Z"
     },
     {
       "phase": "Phase 5",
       "testName": "5.3 User Directory Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:04.382Z"
+      "timestamp": "2026-10-31T03:06:55.155Z"
     },
     {
       "phase": "Phase 5",
       "testName": "5.4 Pending Artisans Desk Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:05.716Z"
+      "timestamp": "2026-10-31T03:06:56.285Z"
     },
     {
       "phase": "Phase 5",
       "testName": "5.5 Catalog Moderation Desk Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:07.227Z"
+      "timestamp": "2026-10-31T03:06:57.541Z"
     },
     {
       "phase": "Phase 5",
       "testName": "5.6 Disputes Arbitration Desk Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:09.018Z"
+      "timestamp": "2026-10-31T03:06:59.461Z"
     },
     {
       "phase": "Phase 5",
       "testName": "5.7 Compliance & Safety Desk Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:10.521Z"
+      "timestamp": "2026-10-31T03:07:00.644Z"
     },
     {
       "phase": "Phase 5",
       "testName": "5.8 Payouts Manager Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:11.932Z"
+      "timestamp": "2026-10-31T03:07:02.179Z"
     },
     {
       "phase": "Phase 5",
       "testName": "5.9 Email Studio Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:14.070Z"
+      "timestamp": "2026-10-31T03:07:03.833Z"
     },
     {
       "phase": "Phase 5",
       "testName": "5.10 Platform Operations Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:15.611Z"
+      "timestamp": "2026-10-31T03:07:05.453Z"
     },
     {
       "phase": "Phase 5",
       "testName": "5.11 Monetization Desk Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:17.757Z"
+      "timestamp": "2026-10-31T03:07:07.080Z"
     },
     {
       "phase": "Phase 5",
       "testName": "5.12 Taxonomy Engine Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:19.682Z"
+      "timestamp": "2026-10-31T03:07:08.351Z"
     },
     {
       "phase": "Phase 5",
       "testName": "5.13 System Settings Load",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:21.276Z"
+      "timestamp": "2026-10-31T03:07:09.526Z"
     },
     {
       "phase": "Phase 6",
       "testName": "6.1 Serverless Warmup /ping",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:23.044Z",
+      "timestamp": "2026-10-31T03:07:10.760Z",
       "message": "Status: 200, Body: \"pong\""
     },
     {
       "phase": "Phase 6",
       "testName": "6.2 Presigned Direct Upload Endpoint",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:33.293Z",
+      "timestamp": "2026-10-31T03:07:16.686Z",
       "message": "HTTP Status: 200 (Presigned direct URL received)"
     },
     {
       "phase": "Phase 6",
       "testName": "6.3 Universal Global Search API",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:34.310Z",
+      "timestamp": "2026-10-31T03:07:17.081Z",
       "message": "Status: 200"
     },
     {
       "phase": "Phase 6",
       "testName": "6.3b Reverse Geocoding API Contract",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:34.685Z",
+      "timestamp": "2026-10-31T03:07:17.511Z",
       "message": "Status: 200, Within Cavite: true, City: \"Silang\""
     },
     {
       "phase": "Phase 6",
       "testName": "6.4 Webhook Cron Security Guard",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:36.046Z",
+      "timestamp": "2026-10-31T03:07:18.664Z",
       "message": "Unauthenticated cron returned HTTP 401 (Expected 401)"
     },
     {
       "phase": "Phase 6",
       "testName": "6.5 PayMongo GCash Sandbox Session Lifecycle",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:42.176Z",
+      "timestamp": "2026-10-31T03:07:24.531Z",
       "message": "PayMongo GCash checkout session created, URL validated, and read-back verified in sandbox."
     },
     {
       "phase": "Phase 6",
       "testName": "6.6 Lalamove Sandbox Quotation, Booking & Webhook Sync",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:42.176Z",
+      "timestamp": "2026-10-31T03:07:24.531Z",
       "message": "Lalamove sandbox quotation calculated, order booked with ASSIGNING_DRIVER, and webhook transitioned to COMPLETED."
     },
     {
       "phase": "Phase 6",
       "testName": "6.7 Client-Side File Payload Shield Contract (<4MB)",
       "status": "PASS",
-      "timestamp": "2026-10-31T01:26:42.178Z",
-      "message": "Client-side upload payload boundaries verified: protects Vercel edge gateway against HTTP 413."
+      "timestamp": "2026-10-31T03:07:25.928Z",
+      "message": "Client-side upload payload boundaries verified: Found 2 DOM file upload inputs. High-res photo canvas compressed to 26.1KB (<4MB ceiling). Non-image oversized payload rejected by boundary check."
     }
   ],
   "bugs": [],
@@ -758,373 +758,48 @@
   "consoleErrors": [
     {
       "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
+      "url": "http://127.0.0.1:8000/",
+      "text": "Failed to load resource: the server responded with a status of 419 (unknown status)"
     },
     {
       "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/",
-      "text": "Failed to load resource: the server responded with a status of 419 ()"
+      "url": "http://127.0.0.1:8000/",
+      "text": "Failed to load resource: the server responded with a status of 419 (unknown status)"
     },
     {
       "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/",
-      "text": "Failed to load resource: the server responded with a status of 419 ()"
+      "url": "http://127.0.0.1:8000/",
+      "text": "Failed to load resource: the server responded with a status of 419 (unknown status)"
     },
     {
       "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/",
-      "text": "Failed to load resource: the server responded with a status of 419 ()"
+      "url": "http://127.0.0.1:8000/",
+      "text": "Failed to load resource: the server responded with a status of 419 (unknown status)"
     },
     {
       "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/",
-      "text": "Failed to load resource: the server responded with a status of 419 ()"
+      "url": "http://127.0.0.1:8000/",
+      "text": "Failed to load resource: the server responded with a status of 419 (unknown status)"
     },
     {
       "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/",
-      "text": "Failed to load resource: the server responded with a status of 419 ()"
-    },
-    {
-      "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/",
-      "text": "Failed to load resource: the server responded with a status of 419 ()"
-    },
-    {
-      "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/shop",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/product/wRJNVKxeyEuag9gkV6aTVA",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/product/wRJNVKxeyEuag9gkV6aTVA",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/cart",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/profile",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/my-orders",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/saved",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/my-reviews",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/buyer/chat",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 2 - Buyer",
-      "url": "https://www.likhangkamay.app/notifications",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
+      "url": "http://127.0.0.1:8000/",
+      "text": "Failed to load resource: the server responded with a status of 419 (unknown status)"
     },
     {
       "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/products",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/products",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/discounts",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/sponsorships",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/sponsorships",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/orders",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/orders",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/supply-hub",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/procurement",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/procurement/stock-requests",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/accounting",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/accounting",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/hr",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/hr?tab=payroll",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/hr?tab=payroll",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/chat",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/reviews",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/reviews",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/team-messages",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/subscription",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/shop-settings",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/seller/settings?tab=finance",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/seller/settings?tab=finance",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 3 - Seller",
-      "url": "https://www.likhangkamay.app/audit-log",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 4 - Staff & Driver",
-      "url": "https://www.likhangkamay.app/staff/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 4 - Staff & Driver",
-      "url": "https://www.likhangkamay.app/staff/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 4 - Staff & Driver",
-      "url": "https://www.likhangkamay.app/staff/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 4 - Staff & Driver",
-      "url": "https://www.likhangkamay.app/staff/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 4 - Staff & Driver",
-      "url": "https://www.likhangkamay.app/staff/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 4 - Staff & Driver",
-      "url": "https://www.likhangkamay.app/staff/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 4 - Staff & Driver",
-      "url": "https://www.likhangkamay.app/staff/deliveries",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 4 - Staff & Driver",
-      "url": "https://www.likhangkamay.app/staff/deliveries",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 4 - Staff & Driver",
-      "url": "https://www.likhangkamay.app/staff/deliveries",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/users-manager",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/users-manager?tab=approvals",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/catalog",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/disputes",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/compliance",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/payouts",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/settings?tab=email",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/operations",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/monetization",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/categories",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 5 - SuperAdmin",
-      "url": "https://www.likhangkamay.app/admin/settings",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
+      "url": "http://127.0.0.1:8000/shop-settings",
+      "text": "Warning: validateDOMNesting(...): %s cannot appear as a descendant of <%s>.%s <form> form \n    at form\n    at TaxProfileCard (http://[::1]:5173/resources/js/Components/Seller/Settings/Tabs/TaxProfileCard.jsx:31:42)\n    at div\n    at div\n    at form\n    at ShopSettings (http://[::1]:5173/resources/js/Pages/Seller/Settings/ShopSettings.jsx:51:40)\n    at div\n    at main\n    at div\n    at SellerWorkspaceLayout (http://[::1]:5173/resources/js/Layouts/SellerWorkspaceLayout.jsx:31:49)\n    at App (http://[::1]:5173/node_modules/.vite/deps/@inertiajs_react.js?v=b3f78054:14926:3)\n    at PopChildMeasure (http://[::1]:5173/node_modules/.vite/deps/framer-motion.js?v=b3f78054:7957:23)\n    at PopChild (http://[::1]:5173/node_modules/.vite/deps/framer-motion.js?v=b3f78054:7984:21)\n    at PresenceChild (http://[::1]:5173/node_modules/.vite/deps/framer-motion.js?v=b3f78054:8032:24)\n    at AnimatePresence (http://[::1]:5173/node_modules/.vite/deps/framer-motion.js?v=b3f78054:8109:26)\n    at ToastProvider (http://[::1]:5173/resources/js/Components/ToastContext.jsx:27:33)\n    at ErrorBoundary (http://[::1]:5173/resources/js/Components/ErrorBoundary.jsx:8:5)"
     },
     {
       "phase": "Phase 6 - Technical",
-      "url": "https://www.likhangkamay.app/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
+      "url": "http://127.0.0.1:8000/webhooks/cron",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
     },
     {
       "phase": "Phase 6 - Technical",
-      "url": "https://www.likhangkamay.app/dashboard",
-      "text": "WebSocket connection to 'wss://gejtworzfvhmezqdvqmt.supabase.co/rest/v1/realtime/v1/websocket?apikey=sb_publishable_n0sYVjfnbKLI1MdKZa2OSg_IQY5YLnr&vsn=2.0.0' failed: HTTP Authentication failed; no valid credentials available"
-    },
-    {
-      "phase": "Phase 6 - Technical",
-      "url": "https://www.likhangkamay.app/webhooks/cron",
-      "text": "Failed to load resource: the server responded with a status of 401 ()"
+      "url": "http://127.0.0.1:8000/shop-settings",
+      "text": "Warning: validateDOMNesting(...): %s cannot appear as a descendant of <%s>.%s <form> form \n    at form\n    at TaxProfileCard (http://[::1]:5173/resources/js/Components/Seller/Settings/Tabs/TaxProfileCard.jsx:31:42)\n    at div\n    at div\n    at form\n    at ShopSettings (http://[::1]:5173/resources/js/Pages/Seller/Settings/ShopSettings.jsx:51:40)\n    at div\n    at main\n    at div\n    at SellerWorkspaceLayout (http://[::1]:5173/resources/js/Layouts/SellerWorkspaceLayout.jsx:31:49)\n    at App (http://[::1]:5173/node_modules/.vite/deps/@inertiajs_react.js?v=b3f78054:14926:3)\n    at PopChildMeasure (http://[::1]:5173/node_modules/.vite/deps/framer-motion.js?v=b3f78054:7957:23)\n    at PopChild (http://[::1]:5173/node_modules/.vite/deps/framer-motion.js?v=b3f78054:7984:21)\n    at PresenceChild (http://[::1]:5173/node_modules/.vite/deps/framer-motion.js?v=b3f78054:8032:24)\n    at AnimatePresence (http://[::1]:5173/node_modules/.vite/deps/framer-motion.js?v=b3f78054:8109:26)\n    at ToastProvider (http://[::1]:5173/resources/js/Components/ToastContext.jsx:27:33)\n    at ErrorBoundary (http://[::1]:5173/resources/js/Components/ErrorBoundary.jsx:8:5)"
     }
   ],
   "httpErrors": [
@@ -1132,43 +807,43 @@
       "phase": "Phase 2 - Buyer",
       "status": 419,
       "method": "POST",
-      "url": "https://www.likhangkamay.app/sponsorship-events/track"
+      "url": "http://127.0.0.1:8000/sponsorship-events/track"
     },
     {
       "phase": "Phase 2 - Buyer",
       "status": 419,
       "method": "POST",
-      "url": "https://www.likhangkamay.app/sponsorship-events/track"
+      "url": "http://127.0.0.1:8000/sponsorship-events/track"
     },
     {
       "phase": "Phase 2 - Buyer",
       "status": 419,
       "method": "POST",
-      "url": "https://www.likhangkamay.app/sponsorship-events/track"
+      "url": "http://127.0.0.1:8000/sponsorship-events/track"
     },
     {
       "phase": "Phase 2 - Buyer",
       "status": 419,
       "method": "POST",
-      "url": "https://www.likhangkamay.app/sponsorship-events/track"
+      "url": "http://127.0.0.1:8000/sponsorship-events/track"
     },
     {
       "phase": "Phase 2 - Buyer",
       "status": 419,
       "method": "POST",
-      "url": "https://www.likhangkamay.app/sponsorship-events/track"
+      "url": "http://127.0.0.1:8000/sponsorship-events/track"
     },
     {
       "phase": "Phase 2 - Buyer",
       "status": 419,
       "method": "POST",
-      "url": "https://www.likhangkamay.app/sponsorship-events/track"
+      "url": "http://127.0.0.1:8000/sponsorship-events/track"
     },
     {
       "phase": "Phase 6 - Technical",
       "status": 401,
       "method": "GET",
-      "url": "https://www.likhangkamay.app/webhooks/cron"
+      "url": "http://127.0.0.1:8000/webhooks/cron"
     }
   ]
 }

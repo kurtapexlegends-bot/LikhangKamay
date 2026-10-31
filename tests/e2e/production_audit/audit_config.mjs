@@ -2,7 +2,24 @@ import fs from 'fs';
 import path from 'path';
 import puppeteer from 'puppeteer-core';
 
-export const PROD_URL = process.env.TARGET_URL || process.env.APP_URL || 'https://www.likhangkamay.app';
+function resolveBaseUrl() {
+    if (process.env.TARGET_URL) return process.env.TARGET_URL.trim();
+    if (process.env.APP_URL) return process.env.APP_URL.trim();
+    try {
+        const envPath = path.resolve('.env');
+        if (fs.existsSync(envPath)) {
+            const envContent = fs.readFileSync(envPath, 'utf8');
+            const match = envContent.match(/^APP_URL=(.+)$/m);
+            if (match && match[1]) {
+                const parsed = match[1].trim().replace(/^['"]|['"]$/g, '');
+                if (parsed) return parsed;
+            }
+        }
+    } catch {}
+    return 'https://www.likhangkamay.app';
+}
+
+export const PROD_URL = resolveBaseUrl();
 
 export const ACCOUNTS = {
     seller: {
@@ -254,7 +271,10 @@ export class AuditCollector {
             const url = res.url();
             // Don't flag intended 401s on unauth checks or 404s on optional assets
             if (status >= 400 && !url.includes('favicon.ico')) {
-                const isInternal = url.includes('likhangkamay.app');
+                const prodHost = (() => {
+                    try { return new URL(PROD_URL).host; } catch { return ''; }
+                })();
+                const isInternal = (prodHost && url.includes(prodHost)) || url.includes('likhangkamay.app') || url.includes('127.0.0.1') || url.includes('localhost');
                 if (isInternal) {
                     this.httpErrors.push({
                         phase: phaseName,

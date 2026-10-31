@@ -1,8 +1,12 @@
+import fs from 'fs';
 import path from 'path';
 import puppeteer from 'puppeteer-core';
 import { PROD_URL, ACCOUNTS, resolveBrowserExecutable, loginAs } from './audit_config.mjs';
 
-const SCREENSHOTS_DIR = 'C:\\Users\\acost\\.gemini\\antigravity\\brain\\7751a349-3894-4ceb-833b-ed90ef2c3359\\screenshots';
+const SCREENSHOTS_DIR = path.resolve('tests/e2e/production_audit/screenshots');
+if (!fs.existsSync(SCREENSHOTS_DIR)) {
+    fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+}
 
 async function runLiveHeadedWalkthrough() {
     console.log('\n=============================================================');
@@ -92,39 +96,61 @@ async function runLiveHeadedWalkthrough() {
         await capture(sellerPage, '13_artisan_subscription');
         await sellerCtx.close();
 
-        // ========== 4. SUPER ADMIN GOVERNANCE ==========
-        console.log('\n--- 4. Testing Super Admin Governance Suite ---');
+        // ========== 4. ARTISAN STAFF & DRIVER OPERATIONS ==========
+        console.log('\n--- 4. Testing Artisan Staff & Driver Operations ---');
+        // 4a. Staff Member Journey
+        const staffCtx = await browser.createBrowserContext();
+        const staffPage = await staffCtx.newPage();
+        await staffPage.setViewport({ width: 1366, height: 850 });
+
+        await loginAs(staffPage, ACCOUNTS.staff.email, ACCOUNTS.staff.password, '/staff/dashboard');
+        await staffPage.goto(`${PROD_URL}/staff/dashboard`, { waitUntil: 'networkidle2' });
+        await capture(staffPage, '14_staff_dashboard');
+        await staffCtx.close();
+
+        // 4b. Logistics Rider Journey
+        const driverCtx = await browser.createBrowserContext();
+        const driverPage = await driverCtx.newPage();
+        await driverPage.setViewport({ width: 1366, height: 850 });
+
+        await loginAs(driverPage, ACCOUNTS.driver.email, ACCOUNTS.driver.password, '/staff/deliveries');
+        await driverPage.goto(`${PROD_URL}/staff/deliveries`, { waitUntil: 'networkidle2' });
+        await capture(driverPage, '15_driver_deliveries_console');
+        await driverCtx.close();
+
+        // ========== 5. SUPER ADMIN GOVERNANCE ==========
+        console.log('\n--- 5. Testing Super Admin Governance Suite ---');
         const adminCtx = await browser.createBrowserContext();
         const adminPage = await adminCtx.newPage();
         await adminPage.setViewport({ width: 1366, height: 850 });
 
         await loginAs(adminPage, ACCOUNTS.admin.email, ACCOUNTS.admin.password);
-        await capture(adminPage, '14_admin_executive_dashboard');
+        await capture(adminPage, '16_admin_executive_dashboard');
 
         await adminPage.goto(`${PROD_URL}/admin/users-manager`, { waitUntil: 'networkidle2' });
-        await capture(adminPage, '15_admin_users_manager');
+        await capture(adminPage, '17_admin_users_manager');
 
         await adminPage.goto(`${PROD_URL}/admin/users-manager?tab=approvals`, { waitUntil: 'networkidle2' });
-        await capture(adminPage, '16_admin_pending_artisans');
+        await capture(adminPage, '18_admin_pending_artisans');
 
         await adminPage.goto(`${PROD_URL}/admin/catalog`, { waitUntil: 'networkidle2' });
-        await capture(adminPage, '17_admin_catalog_moderation');
+        await capture(adminPage, '19_admin_catalog_moderation');
 
         await adminPage.goto(`${PROD_URL}/admin/disputes`, { waitUntil: 'networkidle2' });
-        await capture(adminPage, '18_admin_disputes_arbitration');
+        await capture(adminPage, '20_admin_disputes_arbitration');
 
         await adminPage.goto(`${PROD_URL}/admin/payouts`, { waitUntil: 'networkidle2' });
-        await capture(adminPage, '19_admin_payouts_escrow');
+        await capture(adminPage, '21_admin_payouts_escrow');
 
         await adminPage.goto(`${PROD_URL}/admin/operations`, { waitUntil: 'networkidle2' });
-        await capture(adminPage, '20_admin_operations_diagnostics');
+        await capture(adminPage, '22_admin_operations_diagnostics');
 
         await adminPage.goto(`${PROD_URL}/admin/settings`, { waitUntil: 'networkidle2' });
-        await capture(adminPage, '21_admin_system_settings');
+        await capture(adminPage, '23_admin_system_settings');
         await adminCtx.close();
 
         console.log('\n=============================================================');
-        console.log('  LIVE WALKTHROUGH COMPLETE: ALL 21 SCREENSHOTS SAVED!');
+        console.log('  LIVE WALKTHROUGH COMPLETE: ALL 23 SCREENSHOTS SAVED!');
         console.log('=============================================================\n');
 
     } catch (e) {

@@ -16,6 +16,7 @@ class CatalogService
      */
     public const CATALOG_CARD_COLUMNS = [
         'products.id',
+        'products.sku',
         'products.user_id',
         'products.name',
         'products.slug',
@@ -489,6 +490,7 @@ class CatalogService
 
         return [
             'id' => $product->id,
+            'sku' => $product->sku,
             'slug' => $product->slug,
             'name' => $product->name,
             'price' => number_format($product->effective_price, 2),

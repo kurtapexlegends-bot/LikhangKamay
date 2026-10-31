@@ -83,10 +83,10 @@ export async function runLiveTransactionPipeline() {
         await buyerPage.goto(`${PROD_URL}/shop?search=Bamboo`, { waitUntil: 'networkidle2', timeout: 30000 });
         const catalogInertia = await getInertiaPage(buyerPage);
         const catalogProducts = catalogInertia?.props?.products?.data || [];
-        const catalogItem = catalogProducts.find(p => p.sku === pipelineState.sku || p.name?.includes('Bamboo')) || catalogProducts[0];
+        const catalogItem = catalogProducts.find(p => p.sku === pipelineState.sku);
 
-        if (!catalogItem) {
-            throw new Error('Synthetic ₱1 product TEST-BAMBOO-01 not found in catalog. Ensure test personas are seeded.');
+        if (!catalogItem || catalogItem.sku !== pipelineState.sku) {
+            throw new Error(`Synthetic ₱1 product ${pipelineState.sku} not found in catalog. Ensure test personas are seeded.`);
         }
 
         // Navigate to product detail page to retrieve verified product specifications and stock before checkout
@@ -144,16 +144,19 @@ export async function runLiveTransactionPipeline() {
                     const res = await window.axios.post(`${url}/checkout`, payload);
                     return { status: res.status, data: res.data };
                 }
+                const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                 const xsrfMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
                 const xsrfToken = xsrfMatch ? decodeURIComponent(xsrfMatch[1]) : '';
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                if (metaCsrf) headers['X-CSRF-TOKEN'] = metaCsrf;
+                if (xsrfToken) headers['X-XSRF-TOKEN'] = xsrfToken;
                 const res = await fetch(`${url}/checkout`, {
                     method: 'POST',
                     credentials: 'same-origin',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-XSRF-TOKEN': xsrfToken
-                    },
+                    headers,
                     body: JSON.stringify(payload)
                 });
                 return { status: res.status, data: await res.json().catch(() => null), redirected: res.redirected, url: res.url };
@@ -176,6 +179,12 @@ export async function runLiveTransactionPipeline() {
             throw new Error('Placed order could not be located on buyer my-orders page.');
         }
 
+        const orderCreatedAtMs = new Date(placedOrder.created_at).getTime();
+        const pipelineStartMs = new Date(pipelineState.startedAt).getTime() - 5000;
+        if (orderCreatedAtMs < pipelineStartMs) {
+            throw new Error(`Order #${placedOrder.order_number} created_at (${placedOrder.created_at}) is older than pipeline start (${pipelineState.startedAt}). Stale historical order detected.`);
+        }
+
         pipelineState.orderId = placedOrder.id;
         pipelineState.orderNumber = placedOrder.order_number;
 
@@ -184,6 +193,10 @@ export async function runLiveTransactionPipeline() {
         const reDetailInertia = await getInertiaPage(buyerPage);
         pipelineState.stockAfter = Number(reDetailInertia?.props?.product?.stock);
         pipelineState.stockDecremented = (pipelineState.stockBefore - pipelineState.stockAfter === 1);
+
+        if (!pipelineState.stockDecremented) {
+            throw new Error('Atomic stock decrement verification failed: stock did not decrement by 1');
+        }
 
         logStage('2. Buyer Order Placement & Stock Decrement', 'PASS', {
             message: `Order #${pipelineState.orderNumber} (ID: ${pipelineState.orderId}) created. Stock Before: ${pipelineState.stockBefore}, Stock After: ${pipelineState.stockAfter} (Decrement Verified: ${pipelineState.stockDecremented})`
@@ -237,10 +250,14 @@ export async function runLiveTransactionPipeline() {
         }, PROD_URL);
 
         const availableDrivers = driversPayload.drivers || [];
-        const selectedDriver = availableDrivers.find(d => d.role?.toLowerCase().includes('driver') || d.is_clocked_in) || availableDrivers[0];
+        const selectedDriver = availableDrivers.find(d =>
+            d.email === ACCOUNTS.driver.email ||
+            d.user?.email === ACCOUNTS.driver.email ||
+            d.name?.includes('Logistics Rider')
+        );
 
         if (!selectedDriver) {
-            throw new Error('No in-house logistics driver found for the artisan workshop.');
+            throw new Error(`No in-house logistics driver found matching ${ACCOUNTS.driver.email} for the artisan workshop.`);
         }
 
         pipelineState.driverEmployeeId = selectedDriver.id;
@@ -318,7 +335,7 @@ export async function runLiveTransactionPipeline() {
         await driverPage.goto(`${PROD_URL}/staff/deliveries`, { waitUntil: 'networkidle2', timeout: 30000 });
         const deliveriesInertia = await getInertiaPage(driverPage);
         const activeDeliveriesList = deliveriesInertia?.props?.activeDeliveries || [];
-        const matchedDelivery = activeDeliveriesList.find(d => d.order_number === pipelineState.orderNumber) || activeDeliveriesList[0];
+        const matchedDelivery = activeDeliveriesList.find(d => d.order_number === pipelineState.orderNumber);
 
         if (!matchedDelivery || !matchedDelivery.id) {
             throw new Error(`Active delivery for Order #${pipelineState.orderNumber} not found in driver deliveries console.`);
@@ -442,8 +459,16 @@ export async function runLiveTransactionPipeline() {
         const finalOrdersList = finalOrdersInertia?.props?.orders?.data || finalOrdersInertia?.props?.orders || [];
         const verifiedFinalOrder = finalOrdersList.find(o => o.order_number === pipelineState.orderNumber);
 
-        pipelineState.finalOrderStatus = verifiedFinalOrder?.status || 'Completed';
-        pipelineState.finalPaymentStatus = verifiedFinalOrder?.payment_status || 'paid';
+        if (!verifiedFinalOrder) {
+            throw new Error(`Order #${pipelineState.orderNumber} not found on buyer my-orders page.`);
+        }
+
+        if (verifiedFinalOrder.status !== 'Completed' || verifiedFinalOrder.payment_status !== 'paid') {
+            throw new Error(`Final order verification failed for Order #${pipelineState.orderNumber}: status='${verifiedFinalOrder.status}' (expected 'Completed'), payment_status='${verifiedFinalOrder.payment_status}' (expected 'paid')`);
+        }
+
+        pipelineState.finalOrderStatus = verifiedFinalOrder.status;
+        pipelineState.finalPaymentStatus = verifiedFinalOrder.payment_status;
         pipelineState.invoiceUrl = `${PROD_URL}/my-orders/${pipelineState.orderNumber}/receipt`;
 
         // Fetch official BIR Sales Invoice HTML
