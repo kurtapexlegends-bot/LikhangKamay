@@ -548,7 +548,7 @@ class StaffAttendanceService
             }
 
             $minutesSilent = $lastSignOfLife->diffInMinutes($now);
-            $isPastDay = $session->attendance_date ? $session->attendance_date->lt($now->toDateString()) : false;
+            $isPastDay = $session->attendance_date ? ($session->attendance_date->toDateString() < $now->toDateString()) : false;
 
             if ($minutesSilent >= $timeoutMinutes || ($isPastDay && $minutesSilent >= 60)) {
                 // Retroactively cap at last sign of life + 15 minutes
@@ -583,7 +583,7 @@ class StaffAttendanceService
             ->latest("clock_in_at")
             ->first();
 
-        if ($session && $session->attendance_date && $session->attendance_date->lt($this->now()->toDateString())) {
+        if ($session && $session->attendance_date && ($session->attendance_date->toDateString() < $this->now()->toDateString())) {
             $this->autoPauseInactiveSessions();
             return StaffAttendanceSession::query()
                 ->where("staff_user_id", $staff->id)
@@ -933,7 +933,7 @@ class StaffAttendanceService
         }
 
         $now = $this->now();
-        $isPastDay = $session->attendance_date ? $session->attendance_date->lt($now->toDateString()) : false;
+        $isPastDay = $session->attendance_date ? ($session->attendance_date->toDateString() < $now->toDateString()) : false;
 
         // If session was left open on a past day, cap worked duration at last heartbeat/activity or 15 mins after clock_in
         if ($isPastDay) {

@@ -66,7 +66,7 @@ class HandleInertiaRequests extends Middleware
             // Evaluate core metadata on initial visit for test compatibility
             'sellerSubscription' => fn () => $user ? app(SellerEntitlementService::class)->getSubscriptionPayload($user) : null,
             'sellerSidebar' => fn () => $user ? $user->getSellerSidebarEntitlements() : null,
-            'attendance' => fn () => ($user && $user->isStaff()) ? app(StaffAttendanceService::class)->buildLogoutContext($user) : null,
+            'attendance' => fn () => ($user && $user->isStaff()) ? rescue(fn () => app(StaffAttendanceService::class)->buildLogoutContext($user), null, false) : null,
             
             // Cart count from session - lightweight but still good to keep accessible
             'cartCount' => fn () => (int) array_sum(array_column(Session::get('cart', []), 'qty')),
