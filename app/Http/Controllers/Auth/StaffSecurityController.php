@@ -77,7 +77,14 @@ class StaffSecurityController extends Controller
         }
 
         return Inertia::render('Auth/StaffLogoutChoice', [
-            'attendance' => $attendanceService->buildLogoutContext($user),
+            'attendance' => rescue(fn () => $attendanceService->buildLogoutContext($user), fn () => [
+                'has_open_session' => false,
+                'current_state' => 'paused',
+                'today_worked_minutes' => 0,
+                'today_worked_seconds_base' => 0,
+                'server_time' => now()->toIso8601String(),
+                'server_timestamp' => now()->timestamp,
+            ], false),
         ]);
     }
 
@@ -154,31 +161,38 @@ class StaffSecurityController extends Controller
 
     public function heartbeat(Request $request, StaffAttendanceService $attendanceService): JsonResponse
     {
-        $user = $this->getStaffUser($request);
+        try {
+            $user = $this->getStaffUser($request);
 
-        if ($attendanceService->requiresResumePrompt($user)) {
+            if ($attendanceService->requiresResumePrompt($user)) {
+                return response()->json([
+                    'requires_resume' => true,
+                    'resume_prompt' => rescue(fn () => $attendanceService->buildResumeContext($user), [], false),
+                ], 423);
+            }
+
+            $session = $attendanceService->getOpenSession($user);
+
+            if (!$session) {
+                return response()->json([
+                    'ok' => true,
+                    'active' => false,
+                ]);
+            }
+
+            $session = $attendanceService->touchHeartbeat($user);
+
             return response()->json([
-                'requires_resume' => true,
-                'resume_prompt' => $attendanceService->buildResumeContext($user),
-            ], 423);
-        }
-
-        $session = $attendanceService->getOpenSession($user);
-
-        if (!$session) {
+                'ok' => true,
+                'active' => true,
+                'last_heartbeat_at' => $session?->last_heartbeat_at?->toIso8601String(),
+            ]);
+        } catch (\Throwable $e) {
             return response()->json([
                 'ok' => true,
                 'active' => false,
             ]);
         }
-
-        $session = $attendanceService->touchHeartbeat($user);
-
-        return response()->json([
-            'ok' => true,
-            'active' => true,
-            'last_heartbeat_at' => $session?->last_heartbeat_at?->toIso8601String(),
-        ]);
     }
 
     public function updatePassword(Request $request): RedirectResponse

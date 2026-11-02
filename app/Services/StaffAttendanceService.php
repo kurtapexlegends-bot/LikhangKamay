@@ -526,74 +526,98 @@ class StaffAttendanceService
 
     public function autoPauseInactiveSessions(?CarbonInterface $referenceTime = null): int
     {
-        $now = $referenceTime ? Carbon::parse($referenceTime) : $this->now();
-        $timeoutMinutes = 120; // 2 hours of absolute silence
+        try {
+            $now = $referenceTime ? Carbon::parse($referenceTime) : $this->now();
+            $timeoutMinutes = 120; // 2 hours of absolute silence
 
-        $sessions = StaffAttendanceSession::query()
-            ->whereNull('clock_out_at')
-            ->get();
+            $sessions = StaffAttendanceSession::query()
+                ->whereNull('clock_out_at')
+                ->get();
 
-        $closedCount = 0;
+            $closedCount = 0;
 
-        foreach ($sessions as $session) {
-            $lastSignOfLife = $session->clock_in_at;
-            if (!$lastSignOfLife) {
-                continue;
-            }
-            if ($session->last_heartbeat_at && $session->last_heartbeat_at->gt($lastSignOfLife)) {
-                $lastSignOfLife = $session->last_heartbeat_at;
-            }
-            if ($session->last_activity_at && $session->last_activity_at->gt($lastSignOfLife)) {
-                $lastSignOfLife = $session->last_activity_at;
-            }
+            foreach ($sessions as $session) {
+                try {
+                    $clockIn = $session->clock_in_at ? Carbon::parse($session->clock_in_at) : null;
+                    if (!$clockIn) {
+                        continue;
+                    }
+                    $lastSignOfLife = $clockIn->copy();
+                    if ($session->last_heartbeat_at) {
+                        $hb = Carbon::parse($session->last_heartbeat_at);
+                        if ($hb->gt($lastSignOfLife)) {
+                            $lastSignOfLife = $hb;
+                        }
+                    }
+                    if ($session->last_activity_at) {
+                        $act = Carbon::parse($session->last_activity_at);
+                        if ($act->gt($lastSignOfLife)) {
+                            $lastSignOfLife = $act;
+                        }
+                    }
 
-            $minutesSilent = $lastSignOfLife->diffInMinutes($now);
-            $isPastDay = $session->attendance_date ? ($session->attendance_date->toDateString() < $now->toDateString()) : false;
+                    $minutesSilent = $lastSignOfLife->diffInMinutes($now);
+                    $attDate = $session->attendance_date ? Carbon::parse($session->attendance_date) : null;
+                    $isPastDay = $attDate ? ($attDate->toDateString() < $now->toDateString()) : false;
 
-            if ($minutesSilent >= $timeoutMinutes || ($isPastDay && $minutesSilent >= 60)) {
-                // Retroactively cap at last sign of life + 15 minutes
-                $closedAt = $lastSignOfLife->copy()->addMinutes(15);
-                if ($closedAt->gt($now)) {
-                    $closedAt = $now->copy();
+                    if ($minutesSilent >= $timeoutMinutes || ($isPastDay && $minutesSilent >= 60)) {
+                        $closedAt = $lastSignOfLife->copy()->addMinutes(15);
+                        if ($closedAt->gt($now)) {
+                            $closedAt = $now->copy();
+                        }
+
+                        $workedMinutes = max(0, $clockIn->diffInMinutes($closedAt));
+
+                        $session->update([
+                            'clock_out_at' => $closedAt,
+                            'last_heartbeat_at' => $session->last_heartbeat_at && Carbon::parse($session->last_heartbeat_at)->gt($closedAt) ? Carbon::parse($session->last_heartbeat_at) : $closedAt,
+                            'last_activity_at' => $session->last_activity_at && Carbon::parse($session->last_activity_at)->gt($closedAt) ? Carbon::parse($session->last_activity_at) : $closedAt,
+                            'close_mode' => self::MODE_PAUSED,
+                            'close_reason' => self::CLOSE_REASON_INACTIVITY_TIMEOUT,
+                            'worked_minutes' => $workedMinutes,
+                        ]);
+
+                        $closedCount++;
+                    }
+                } catch (\Throwable $sessionEx) {
+                    \Illuminate\Support\Facades\Log::warning("autoPauseInactiveSessions error on session #{$session->id}: " . $sessionEx->getMessage());
                 }
-
-                $workedMinutes = max(0, $session->clock_in_at->diffInMinutes($closedAt));
-
-                $session->update([
-                    'clock_out_at' => $closedAt,
-                    'last_heartbeat_at' => $session->last_heartbeat_at && $session->last_heartbeat_at->gt($closedAt) ? $session->last_heartbeat_at : $closedAt,
-                    'last_activity_at' => $session->last_activity_at && $session->last_activity_at->gt($closedAt) ? $session->last_activity_at : $closedAt,
-                    'close_mode' => self::MODE_PAUSED,
-                    'close_reason' => self::CLOSE_REASON_INACTIVITY_TIMEOUT,
-                    'worked_minutes' => $workedMinutes,
-                ]);
-
-                $closedCount++;
             }
-        }
 
-        return $closedCount;
+            return $closedCount;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("autoPauseInactiveSessions fatal: " . $e->getMessage());
+            return 0;
+        }
     }
 
     public function getOpenSession(User $staff): ?StaffAttendanceSession
     {
-        $session = StaffAttendanceSession::query()
-            ->where("staff_user_id", $staff->id)
-            ->whereNull('clock_out_at')
-            ->latest("clock_in_at")
-            ->first();
-
-        if ($session && $session->attendance_date && ($session->attendance_date->toDateString() < $this->now()->toDateString())) {
-            $this->autoPauseInactiveSessions();
-            return StaffAttendanceSession::query()
+        try {
+            $session = StaffAttendanceSession::query()
                 ->where("staff_user_id", $staff->id)
                 ->whereNull('clock_out_at')
-                ->whereDate('attendance_date', $this->now()->toDateString())
                 ->latest("clock_in_at")
                 ->first();
-        }
 
-        return $session;
+            if ($session && $session->attendance_date) {
+                $attDate = Carbon::parse($session->attendance_date);
+                if ($attDate->toDateString() < $this->now()->toDateString()) {
+                    $this->autoPauseInactiveSessions();
+                    return StaffAttendanceSession::query()
+                        ->where("staff_user_id", $staff->id)
+                        ->whereNull('clock_out_at')
+                        ->whereDate('attendance_date', $this->now()->toDateString())
+                        ->latest("clock_in_at")
+                        ->first();
+                }
+            }
+
+            return $session;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("getOpenSession error: " . $e->getMessage());
+            return null;
+        }
     }
 
     public function getLatestSession(User $staff): ?StaffAttendanceSession
@@ -764,88 +788,110 @@ class StaffAttendanceService
      */
     public function buildLogoutContext(User $staff): array
     {
-        $this->autoPauseInactiveSessions();
+        try {
+            $this->autoPauseInactiveSessions();
 
-        $openSession = $this->getOpenSession($staff);
-        $latestSession = $openSession ?: $this->getLatestSession($staff);
-        $currentState = 'no_record';
-        $todaySessions = $this->getTodaySessions($staff);
-        $todayFirstClockIn = $todaySessions
-            ->sortBy("clock_in_at")
-            ->first()?->clock_in_at;
-        $todayWorkedMinutes = $todaySessions->sum(function (StaffAttendanceSession $session) {
-            return $this->resolveWorkedMinutes($session);
-        });
-        $todayCompletedWorkedSeconds = $todaySessions
-            ->filter(fn (StaffAttendanceSession $session) => (bool) $session->clock_out_at)
-            ->sum(fn (StaffAttendanceSession $session) => max(0, (int) $session->worked_minutes) * 60);
+            $openSession = $this->getOpenSession($staff);
+            $latestSession = $openSession ?: $this->getLatestSession($staff);
+            $currentState = 'no_record';
+            $todaySessions = $this->getTodaySessions($staff);
+            $todayFirstClockIn = $todaySessions
+                ->sortBy("clock_in_at")
+                ->first()?->clock_in_at;
+            $todayWorkedMinutes = (int) $todaySessions->sum(function (StaffAttendanceSession $session) {
+                return $this->resolveWorkedMinutes($session);
+            });
+            $todayCompletedWorkedSeconds = (int) $todaySessions
+                ->filter(fn (StaffAttendanceSession $session) => (bool) $session->clock_out_at)
+                ->sum(fn (StaffAttendanceSession $session) => max(0, (int) $session->worked_minutes) * 60);
 
-        if ($openSession) {
-            $currentState = 'clocked_in';
-        } elseif ($latestSession?->close_mode === self::MODE_PAUSED) {
-            $currentState = 'paused';
-        } elseif ($latestSession?->close_mode === self::MODE_CLOCKED_OUT) {
-            $currentState = 'clocked_out';
+            if ($openSession) {
+                $currentState = 'clocked_in';
+            } elseif ($latestSession?->close_mode === self::MODE_PAUSED) {
+                $currentState = 'paused';
+            } elseif ($latestSession?->close_mode === self::MODE_CLOCKED_OUT) {
+                $currentState = 'clocked_out';
+            }
+
+            $staff->loadMissing('employee.assignedLocation');
+            $assignedLocation = $staff->employee?->assignedLocation;
+            if (!$assignedLocation) {
+                $assignedLocation = \App\Models\SellerLocation::where('user_id', $staff->getEffectiveSellerId())
+                    ->where('is_active', DB::raw('true'))
+                    ->first();
+            }
+
+            $sellerOwner = User::find($staff->getEffectiveSellerId());
+            $employee = $staff->employee;
+            $shiftPolicy = $employee 
+                ? $employee->getEffectiveShiftPolicy($sellerOwner, $this->now()) 
+                : ($sellerOwner ? $sellerOwner->getEffectiveShiftPolicy($this->now()) : [
+                    'schedule_type' => 'default',
+                    'is_custom' => false,
+                    'working_days' => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
+                    'shift_start_time' => '08:00',
+                    'shift_end_time' => '17:00',
+                    'grace_period_minutes' => 15,
+                    'earliest_clock_in_minutes' => 30,
+                    'enforce_strict_shift_window' => true,
+                    'break_window_start' => '11:30',
+                    'break_window_end' => '13:30',
+                    'break_allowance_minutes' => 60,
+                    'standard_workday_hours' => 8.0,
+                ]);
+
+            $shiftPolicy['is_today_scheduled_workday'] = $employee ? $employee->isScheduledWorkingDay($this->now(), $sellerOwner) : true;
+            $shiftPolicy['is_today_rest_day'] = $employee ? $employee->isRestDay($this->now(), $sellerOwner) : false;
+
+            return [
+                'has_open_session' => (bool) $openSession,
+                'clock_in_at' => $openSession?->clock_in_at ? Carbon::parse($openSession->clock_in_at)->toIso8601String() : null,
+                'attendance_date' => $openSession?->attendance_date ? Carbon::parse($openSession->attendance_date)->toDateString() : null,
+                'current_state' => $currentState,
+                'latest_action_at' => $latestSession?->clock_out_at ? Carbon::parse($latestSession->clock_out_at)->toIso8601String() : null,
+                'today_first_clock_in' => $todayFirstClockIn ? Carbon::parse($todayFirstClockIn)->toIso8601String() : null,
+                'today_worked_minutes' => $todayWorkedMinutes,
+                'today_worked_seconds_base' => $todayCompletedWorkedSeconds,
+                'active_session_started_at' => $openSession?->clock_in_at ? Carbon::parse($openSession->clock_in_at)->toIso8601String() : null,
+                'break_started_at' => ($currentState === 'paused' && $latestSession?->clock_out_at)
+                    ? Carbon::parse($latestSession->clock_out_at)->toIso8601String()
+                    : null,
+                'staff_email' => $staff->email,
+                'masked_email' => $this->maskEmail((string) $staff->email),
+                'shift_policy' => $shiftPolicy,
+                'server_time' => $this->now()->toIso8601String(),
+                'server_timestamp' => $this->now()->timestamp,
+                'assigned_location' => $assignedLocation ? [
+                    'id' => $assignedLocation->id,
+                    'name' => $assignedLocation->name,
+                    'latitude' => (float) $assignedLocation->latitude,
+                    'longitude' => (float) $assignedLocation->longitude,
+                    'radius_meters' => (int) ($assignedLocation->radius_meters ?: 200),
+                    'enforce_strict_geofence' => (bool) $assignedLocation->enforce_strict_geofence,
+                    'daily_workplace_pin' => rescue(fn () => $assignedLocation->getOrGenerateDailyPin(), '0000', false),
+                ] : null,
+            ];
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("buildLogoutContext fallback: " . $e->getMessage());
+            return [
+                'has_open_session' => false,
+                'clock_in_at' => null,
+                'attendance_date' => null,
+                'current_state' => 'paused',
+                'latest_action_at' => null,
+                'today_first_clock_in' => null,
+                'today_worked_minutes' => 0,
+                'today_worked_seconds_base' => 0,
+                'active_session_started_at' => null,
+                'break_started_at' => null,
+                'staff_email' => $staff->email,
+                'masked_email' => $this->maskEmail((string) $staff->email),
+                'shift_policy' => [],
+                'server_time' => $this->now()->toIso8601String(),
+                'server_timestamp' => $this->now()->timestamp,
+                'assigned_location' => null,
+            ];
         }
-
-        $staff->loadMissing('employee.assignedLocation');
-        $assignedLocation = $staff->employee?->assignedLocation;
-        if (!$assignedLocation) {
-            $assignedLocation = \App\Models\SellerLocation::where('user_id', $staff->getEffectiveSellerId())
-                ->where('is_active', DB::raw('true'))
-                ->first();
-        }
-
-        $sellerOwner = User::find($staff->getEffectiveSellerId());
-        $employee = $staff->employee;
-        $shiftPolicy = $employee 
-            ? $employee->getEffectiveShiftPolicy($sellerOwner, $this->now()) 
-            : ($sellerOwner ? $sellerOwner->getEffectiveShiftPolicy($this->now()) : [
-                'schedule_type' => 'default',
-                'is_custom' => false,
-                'working_days' => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
-                'shift_start_time' => '08:00',
-                'shift_end_time' => '17:00',
-                'grace_period_minutes' => 15,
-                'earliest_clock_in_minutes' => 30,
-                'enforce_strict_shift_window' => true,
-                'break_window_start' => '11:30',
-                'break_window_end' => '13:30',
-                'break_allowance_minutes' => 60,
-                'standard_workday_hours' => 8.0,
-            ]);
-
-        $shiftPolicy['is_today_scheduled_workday'] = $employee ? $employee->isScheduledWorkingDay($this->now(), $sellerOwner) : true;
-        $shiftPolicy['is_today_rest_day'] = $employee ? $employee->isRestDay($this->now(), $sellerOwner) : false;
-
-        return [
-            'has_open_session' => (bool) $openSession,
-            'clock_in_at' => $openSession?->clock_in_at?->toIso8601String(),
-            'attendance_date' => $openSession?->attendance_date?->toDateString(),
-            'current_state' => $currentState,
-            'latest_action_at' => $latestSession?->clock_out_at?->toIso8601String(),
-            'today_first_clock_in' => $todayFirstClockIn?->toIso8601String(),
-            'today_worked_minutes' => $todayWorkedMinutes,
-            'today_worked_seconds_base' => $todayCompletedWorkedSeconds,
-            'active_session_started_at' => $openSession?->clock_in_at?->toIso8601String(),
-            'break_started_at' => $currentState === 'paused'
-                ? $latestSession?->clock_out_at?->toIso8601String()
-                : null,
-            'staff_email' => $staff->email,
-            'masked_email' => $this->maskEmail((string) $staff->email),
-            'shift_policy' => $shiftPolicy,
-            'server_time' => $this->now()->toIso8601String(),
-            'server_timestamp' => $this->now()->timestamp,
-            'assigned_location' => $assignedLocation ? [
-                'id' => $assignedLocation->id,
-                'name' => $assignedLocation->name,
-                'latitude' => (float) $assignedLocation->latitude,
-                'longitude' => (float) $assignedLocation->longitude,
-                'radius_meters' => (int) ($assignedLocation->radius_meters ?: 200),
-                'enforce_strict_geofence' => (bool) $assignedLocation->enforce_strict_geofence,
-                'daily_workplace_pin' => $assignedLocation->getOrGenerateDailyPin(),
-            ] : null,
-        ];
     }
 
     /**
@@ -928,22 +974,34 @@ class StaffAttendanceService
 
     protected function resolveWorkedMinutes(StaffAttendanceSession $session): int
     {
-        if ($session->clock_out_at) {
-            return max(0, (int) $session->worked_minutes);
+        try {
+            if ($session->clock_out_at) {
+                return max(0, (int) $session->worked_minutes);
+            }
+
+            $now = $this->now();
+            $attDate = $session->attendance_date ? Carbon::parse($session->attendance_date) : null;
+            $isPastDay = $attDate ? ($attDate->toDateString() < $now->toDateString()) : false;
+
+            $clockIn = $session->clock_in_at ? Carbon::parse($session->clock_in_at) : null;
+            if (!$clockIn) {
+                return 0;
+            }
+
+            // If session was left open on a past day, cap worked duration at last heartbeat/activity or 15 mins after clock_in
+            if ($isPastDay) {
+                $lastActive = $session->last_activity_at 
+                    ? Carbon::parse($session->last_activity_at) 
+                    : ($session->last_heartbeat_at ? Carbon::parse($session->last_heartbeat_at) : $clockIn);
+                return max(0, $clockIn->diffInMinutes($lastActive));
+            }
+
+            // For open sessions today, cap at elapsed minutes up to current time (max 16 hours / 960 mins)
+            $elapsed = $clockIn->diffInMinutes($now);
+            return min(960, max(0, $elapsed));
+        } catch (\Throwable $e) {
+            return 0;
         }
-
-        $now = $this->now();
-        $isPastDay = $session->attendance_date ? ($session->attendance_date->toDateString() < $now->toDateString()) : false;
-
-        // If session was left open on a past day, cap worked duration at last heartbeat/activity or 15 mins after clock_in
-        if ($isPastDay) {
-            $lastActive = $session->last_activity_at ?: ($session->last_heartbeat_at ?: $session->clock_in_at);
-            return max(0, $session->clock_in_at->diffInMinutes($lastActive));
-        }
-
-        // For open sessions today, cap at elapsed minutes up to current time (max 16 hours / 960 mins)
-        $elapsed = $session->clock_in_at ? $session->clock_in_at->diffInMinutes($now) : 0;
-        return min(960, max(0, $elapsed));
     }
 
     protected function resolveMonth(?CarbonInterface $month = null): CarbonInterface

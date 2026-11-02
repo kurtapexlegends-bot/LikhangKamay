@@ -53,7 +53,7 @@ class StaffDashboardController extends Controller
                 str_contains(strtolower($user->employee->role ?? ''), 'driver')
                 || str_contains(strtolower($user->employee->role ?? ''), 'logistics')
             ));
-        $hasOpenSession = $attendanceService->getOpenSession($user) !== null;
+        $hasOpenSession = rescue(fn () => $attendanceService->getOpenSession($user) !== null, false, false);
 
         if ($isDriver && $hasOpenSession) {
             return redirect()->route('staff.deliveries');
