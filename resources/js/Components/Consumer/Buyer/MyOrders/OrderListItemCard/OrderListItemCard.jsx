@@ -178,7 +178,7 @@ export default function OrderListItemCard({
                             <span>Workshop Pickup Pass</span>
                         </div>
                         <p className="text-[11px] text-stone-600 mt-0.5 truncate">
-                            {order.pickup_location_snapshot || order.seller_address || 'Artisan Workshop'} • {order.pickup_date} ({order.pickup_time_slot})
+                            {(typeof order.pickup_location_snapshot === 'object' ? (order.pickup_location_snapshot?.address || order.pickup_location_snapshot?.name) : order.pickup_location_snapshot) || order.seller_address || 'Artisan Workshop'} • {order.pickup_date} ({order.pickup_time_slot})
                         </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">

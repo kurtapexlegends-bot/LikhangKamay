@@ -1,0 +1,51 @@
+{
+  "manifest_version": "4.0.0-PROD-2STREAM-POW",
+  "run_id": "iab-de83395f-1c05-4a69-8a10-410ad9316a01",
+  "timestamp": "2026-11-02T11:40:32Z",
+  "host": "https://www.likhangkamay.app",
+  "protocol": "2-Stream Assembly Line E2E Browser Suite (Production Ground Truth)",
+  "execution_mode": "subagent_isolated",
+  "elite_seller_verified": true,
+  "defense_assets_verified": true,
+  "streams_executed": {
+    "stream_a_commercial": true,
+    "stream_b_disputes_and_admin": true
+  },
+  "orders_tracked": {
+    "order_a": {
+      "order_number": "ORD-6AE8687523208",
+      "db_id": 11,
+      "payment_method": "paymongo_gcash",
+      "payment_intent": "pi_77bmhSGCHSp7Z6J9o8M6egLY",
+      "voucher_applied": "TESTSAVE10",
+      "rider": "CAV-9876",
+      "status": "Delivered",
+      "bir_invoice_sha256": "a0cf5d5603487b96d151dda932c773a11d23c958b1af71a738248e9ddbd4babe"
+    },
+    "order_b": {
+      "order_number": "ORD-6AE868EE852BD",
+      "db_id": 12,
+      "pickup_mode": "in_store_pickup",
+      "pickup_pin_verified": true,
+      "pickup_pin": "6714",
+      "status": "Pending"
+    },
+    "order_c": {
+      "order_number": "ORD-6AE869294B2CB",
+      "db_id": 13,
+      "courier": "manual_courier",
+      "tracking_number": "LLM-SANDBOX-7823901",
+      "dispute_id": 2,
+      "dispute_status": "resolved_refunded",
+      "admin_arbitration": "Approve Return & Issue Refund",
+      "final_order_status": "Refunded"
+    }
+  },
+  "rbac_audit": {
+    "unauthorized_route": "/admin/dashboard",
+    "persona": "test.buyer@likhangkamay.local",
+    "status_code": 403,
+    "barrier_verified": true
+  },
+  "final_verdict": "PASS"
+}

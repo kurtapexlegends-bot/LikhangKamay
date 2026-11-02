@@ -154,7 +154,7 @@ class AddressGeocodingService
         }
 
         // Strip micro-prefixes: Blk 35 Lot 17, Block 3 Lot 4, Lot 5, Phase 2, Unit 10, Rm 1, #123, etc.
-        $pattern = '/^(?:(?:blk|block)\s*[\w\d-]+(?:\s*(?:lot|lt)\s*[\w\d-]+)?|(?:lot|lt)\s*[\w\d-]+|phase\s*[\w\d-]+|unit\s*[\w\d-]+|rm\s*[\w\d-]+|room\s*[\w\d-]+|#\s*[\w\d-]+)\s*,\s*/i';
+        $pattern = '/^(?:(?:blk|block)\s*[\w\d-]+(?:\s*(?:lot|lt)\s*[\w\d-]+)?|(?:lot|lt)\s*[\w\d-]+|phase\s*[\w\d-]+|unit\s*[\w\d-]+|rm\s*[\w\d-]+|room\s*[\w\d-]+|#\s*[\w\d-]+)(?:\s*,\s*|\s+(?=[a-zA-Z]))/i';
         $cleaned = preg_replace($pattern, '', $query);
         if ($cleaned !== null && $cleaned !== $query) {
             $cleaned = preg_replace($pattern, '', $cleaned);
