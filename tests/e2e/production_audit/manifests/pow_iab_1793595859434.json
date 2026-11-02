@@ -1,0 +1,54 @@
+{
+  "manifest_version": "2.0.0-PROD-IAB-POW",
+  "run_id": "iab-09af543d-01b5-4c6c-beeb-2c6bf65bad30",
+  "timestamp": "2026-11-02T05:04:19.427Z",
+  "host": "https://www.likhangkamay.app",
+  "protocol": "Interactive Full-System In-Built Browser E2E Suite (Production Ground Truth)",
+  "execution_mode": "subagent_isolated",
+  "elite_seller_verified": true,
+  "phases_covered": [
+    "Phase 1: Guest Visitor & Public Catalog",
+    "Phase 2: Buyer Checkout, BIR 12% VAT & Printable Invoice",
+    "Phase 3: Elite Artisan ERP Studio (All 16 Modules)",
+    "Phase 4: Operations Staff Security Gate & Attendance",
+    "Phase 5: Logistics Rider Dispatch & Proof-of-Delivery",
+    "Phase 6: Super Admin Platform Governance & RBAC Barrier",
+    "Phase 7: Dual-Plane Assertion"
+  ],
+  "actors": {
+    "buyer": "test.buyer@likhangkamay.local",
+    "seller": "test.artisan@likhangkamay.local",
+    "staff": "test.staff@likhangkamay.local",
+    "driver": "test.driver@likhangkamay.local",
+    "admin": "test.admin@likhangkamay.local"
+  },
+  "transaction": {
+    "order_id": 5,
+    "order_number": "ORD-6AE8132936B64",
+    "item_sku": "TEST-BAMBOO-01",
+    "item_name": "E2E Synthetic Bamboo Cup",
+    "item_price_php": 25.00,
+    "shipping_fee_php": 55.00,
+    "service_fee_php": 0.75,
+    "total_php": 80.75,
+    "payment_method": "cod",
+    "is_test_flag": true,
+    "stock_before": 998,
+    "stock_after": 997,
+    "atomic_stock_decrement_verified": true
+  },
+  "logistics": {
+    "order_id": 5,
+    "tracking_number": "ORD-6AE8132936B64",
+    "route_preview_verified": true,
+    "status": "Accepted",
+    "driver": "test.driver@likhangkamay.local",
+    "vehicle": "Motorcycle CAV-9876"
+  },
+  "security_barriers": {
+    "staff_unauthenticated_barrier": "PASS (redirect to /login)",
+    "staff_unauthorized_accounting": "PASS (HTTP 403 Restricted)",
+    "buyer_admin_dashboard_barrier": "PASS (HTTP 403 Restricted)"
+  },
+  "final_verdict": "PASS"
+}

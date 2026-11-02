@@ -293,8 +293,8 @@ export default function SellerSidebar({
                     <ChevronLeft size={12} className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
                 </button>
 
-                <div className={`relative flex shrink-0 items-center border-b border-clay-100/30 bg-transparent py-3 min-w-0 overflow-hidden transition-[padding] duration-300 ${
-                    isCollapsed ? 'px-5 justify-center' : 'px-4 pr-7 justify-between'
+                <div className={`relative flex shrink-0 items-center border-b border-clay-100/30 bg-transparent py-3 min-w-0 transition-[padding] duration-300 ${
+                    isCollapsed ? 'px-5 justify-center overflow-hidden' : 'px-4 pr-7 justify-between overflow-visible'
                 }`}>
                     <div className="flex min-w-0 items-center overflow-hidden">
                         <img 

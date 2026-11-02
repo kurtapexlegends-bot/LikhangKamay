@@ -271,55 +271,61 @@ class ShopAnalyticsMetricsService
         $dayExpr = $this->dayOfWeekExpression('created_at');
         $hourExpr = $this->hourExpression('created_at');
 
-        $salesHeatmap = Order::query()
-            ->where('artisan_id', $sellerId)
-            ->where(function ($q) {
-                $q->where('is_test', false)->orWhereNull('is_test');
-            })
-            ->where('status', 'Completed')
-            ->selectRaw("{$dayExpr} as day, {$hourExpr} as hour, COUNT(*) as count")
-            ->groupByRaw("{$dayExpr}, {$hourExpr}")
-            ->get();
+        $salesHeatmap = rescue(function () use ($sellerId, $dayExpr, $hourExpr) {
+            return Order::query()
+                ->where('artisan_id', $sellerId)
+                ->where(function ($q) {
+                    $q->where('is_test', false)->orWhereNull('is_test');
+                })
+                ->where('status', 'Completed')
+                ->selectRaw("{$dayExpr} as day, {$hourExpr} as hour, COUNT(*) as count")
+                ->groupByRaw("{$dayExpr}, {$hourExpr}")
+                ->get();
+        }, collect(), report: false);
 
         $diffExpr = $this->dateDiffExpression('order_items.created_at', 'products.created_at');
-        $velocityData = OrderItem::whereHas('order', function($q) use ($sellerId) {
-                $q->where('artisan_id', $sellerId)
-                    ->where(function ($sq) {
-                        $sq->where('is_test', false)->orWhereNull('is_test');
-                    })
-                    ->where('status', 'Completed');
-            })
-            ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->selectRaw("
-                products.id,
-                products.name,
-                AVG({$diffExpr}) as avg_days_to_sell
-            ")
-            ->groupBy('products.id', 'products.name')
-            ->havingRaw("AVG({$diffExpr}) > 0")
-            ->orderBy('avg_days_to_sell')
-            ->take(5)
-            ->get();
+        $velocityData = rescue(function () use ($sellerId, $diffExpr) {
+            return OrderItem::whereHas('order', function($q) use ($sellerId) {
+                    $q->where('artisan_id', $sellerId)
+                        ->where(function ($sq) {
+                            $sq->where('is_test', false)->orWhereNull('is_test');
+                        })
+                        ->where('status', 'Completed');
+                })
+                ->join('products', 'order_items.product_id', '=', 'products.id')
+                ->selectRaw("
+                    products.id,
+                    products.name,
+                    AVG({$diffExpr}) as avg_days_to_sell
+                ")
+                ->groupBy('products.id', 'products.name')
+                ->havingRaw("AVG({$diffExpr}) > 0")
+                ->orderBy('avg_days_to_sell')
+                ->take(5)
+                ->get();
+        }, collect(), report: false);
 
-        $slowMovers = Product::where('user_id', $sellerId)
-            ->where('status', 'Active')
-            ->whereDoesntHave('orderItems', function($q) {
-                $q->where('created_at', '>=', now()->subDays(30))
-                  ->whereHas('order', function ($oq) {
-                      $oq->where(function ($sq) {
-                          $sq->where('is_test', false)->orWhereNull('is_test');
+        $slowMovers = rescue(function () use ($sellerId) {
+            return Product::where('user_id', $sellerId)
+                ->where('status', 'Active')
+                ->whereDoesntHave('orderItems', function($q) {
+                    $q->where('created_at', '>=', now()->subDays(30))
+                      ->whereHas('order', function ($oq) {
+                          $oq->where(function ($sq) {
+                              $sq->where('is_test', false)->orWhereNull('is_test');
+                          });
                       });
-                  });
-            })
-            ->select(['id', 'name', 'stock', 'created_at'])
-            ->take(5)
-            ->get()
-            ->map(fn($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'stock' => $p->stock,
-                'days_inactive' => Carbon::parse($p->created_at)->diffInDays(now()),
-            ]);
+                })
+                ->select(['id', 'name', 'stock', 'created_at'])
+                ->take(5)
+                ->get()
+                ->map(fn($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'stock' => $p->stock,
+                    'days_inactive' => Carbon::parse($p->created_at)->diffInDays(now()),
+                ]);
+        }, collect(), report: false);
 
         return [
             'sales_heatmap' => $salesHeatmap,

@@ -39,7 +39,8 @@ stateDiagram-v2
 *   **Heartbeat Frequency**: Every 60 seconds (`HEARTBEAT_INTERVAL_SECONDS = 60`), the frontend sends a ping to update the `last_heartbeat_at` field.
 *   **Auto-Pause Triggers**:
     If a session has no heartbeat or activity for 120 minutes (`autoPauseInactiveSessions`), the session is automatically closed.
-    *   **Past Days Capping**: If a session remains unclosed from a past day, it is retroactively closed, capping its length at the last recorded sign of life + 15 minutes.
+    *   **Past Days Capping**: If a session remains unclosed from a past day, it is retroactively closed by `autoPauseInactiveSessions()`, capping its length at the last recorded sign of life + 15 minutes. `buildLogoutContext()` and `getOpenSession()` proactively trigger auto-pause on load, preventing stale sessions from spanning multiple calendar days.
+    *   **Runaway Counter Cap**: Client-side attendance docks ([StaffAttendanceDock.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Sidebar/StaffAttendanceDock.jsx) and [StaffLogoutModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/StaffLogoutModal.jsx)) cap active shift display calculations to a maximum 16-hour work window, guaranteeing that abandoned test sessions never display runaway numbers (e.g. 100+ hours) under "Time Worked Today".
     *   **Resume Work Gate**: Closed timeout sessions set `close_reason = inactivity_timeout`. When the user attempts to click a dashboard module, they are blocked by a **Resume Prompt** overlay until they authenticate.
 
 ### Field Staff Clock-In & Low-Bandwidth Resilience

@@ -9,7 +9,9 @@ const formatElapsedTimer = (startedAt, currentTimestamp) => {
     const startedAtMs = new Date(startedAt).getTime();
     if (Number.isNaN(startedAtMs)) return null;
 
-    const totalSeconds = Math.max(0, Math.floor((currentTimestamp - startedAtMs) / 1000));
+    const rawSeconds = Math.max(0, Math.floor((currentTimestamp - startedAtMs) / 1000));
+    // Guard against runaway counters on abandoned sessions (cap at standard 16h shift limit)
+    const totalSeconds = Math.min(rawSeconds, 16 * 3600);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;

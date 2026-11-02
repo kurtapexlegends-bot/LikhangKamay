@@ -30,25 +30,55 @@ class AnalyticsController extends Controller
         $cacheKey = "seller_analytics_data_{$sellerId}_" . md5($categoryFilter);
         $analyticsData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($metricsService, $sellerId, $categoryFilter, $shopAnalyticsService) {
             return [
-                'rollup' => $shopAnalyticsService->getAnalyticsRollup($sellerId),
-                'financials' => $metricsService->getFinancialMetrics($sellerId),
-                'followerMetrics' => $metricsService->getFollowerMetrics($sellerId),
-                'chartData' => $metricsService->getSalesChartData($sellerId, $categoryFilter),
-                'categoryPerformance' => $metricsService->getCategoryPerformance($sellerId),
-                'topProducts' => $metricsService->getTopProducts($sellerId),
-                'reviewStats' => $metricsService->getReviewStats($sellerId),
-                'intelligence' => $metricsService->getSalesIntelligence($sellerId),
+                'rollup' => rescue(fn () => $shopAnalyticsService->getAnalyticsRollup($sellerId), [
+                    'date' => now()->toDateString(),
+                    'daily' => ['sales' => 0, 'orders_count' => 0, 'completed_orders_count' => 0],
+                    'all_time' => ['total_sales' => 0, 'orders_count' => 0, 'aov' => 0, 'orders_by_status' => []],
+                    'low_stock_alerts' => ['count' => 0, 'threshold' => 10, 'products' => []],
+                ], report: false),
+                'financials' => rescue(fn () => $metricsService->getFinancialMetrics($sellerId), [
+                    'current' => ['revenue' => 0, 'cost' => 0, 'profit' => 0, 'orders' => 0, 'avg' => 0, 'margin' => 0],
+                    'growth' => ['revenue' => 0, 'orders' => 0, 'avg' => 0, 'profit' => 0, 'margin' => 0],
+                ], report: false),
+                'followerMetrics' => rescue(fn () => $metricsService->getFollowerMetrics($sellerId), [
+                    'total' => 0, 'new_this_month' => 0, 'new_last_month' => 0, 'growth_rate' => 0,
+                ], report: false),
+                'chartData' => rescue(fn () => $metricsService->getSalesChartData($sellerId, $categoryFilter), [
+                    'monthly' => [], 'yearly' => [],
+                ], report: false),
+                'categoryPerformance' => rescue(fn () => $metricsService->getCategoryPerformance($sellerId), collect(), report: false),
+                'topProducts' => rescue(fn () => $metricsService->getTopProducts($sellerId), collect(), report: false),
+                'reviewStats' => rescue(fn () => $metricsService->getReviewStats($sellerId), [
+                    'total' => 0, 'average' => 0, 'growth' => 0, 'breakdown' => ['5' => 0, '4' => 0, '3' => 0, '2' => 0, '1' => 0],
+                ], report: false),
+                'intelligence' => rescue(fn () => $metricsService->getSalesIntelligence($sellerId), [
+                    'sales_heatmap' => collect(), 'sales_velocity' => collect(), 'slow_movers' => collect(),
+                ], report: false),
             ];
         });
 
-        $rollup = $analyticsData['rollup'];
-        $financials = $analyticsData['financials'];
-        $followerMetrics = $analyticsData['followerMetrics'];
-        $chartData = $analyticsData['chartData'];
-        $categoryPerformance = $analyticsData['categoryPerformance'];
-        $topProducts = $analyticsData['topProducts'];
-        $reviewStats = $analyticsData['reviewStats'];
-        $intelligence = $analyticsData['intelligence'];
+        $rollup = $analyticsData['rollup'] ?? [
+            'date' => now()->toDateString(),
+            'daily' => ['sales' => 0, 'orders_count' => 0, 'completed_orders_count' => 0],
+            'all_time' => ['total_sales' => 0, 'orders_count' => 0, 'aov' => 0, 'orders_by_status' => []],
+            'low_stock_alerts' => ['count' => 0, 'threshold' => 10, 'products' => []],
+        ];
+        $financials = $analyticsData['financials'] ?? [
+            'current' => ['revenue' => 0, 'cost' => 0, 'profit' => 0, 'orders' => 0, 'avg' => 0, 'margin' => 0],
+            'growth' => ['revenue' => 0, 'orders' => 0, 'avg' => 0, 'profit' => 0, 'margin' => 0],
+        ];
+        $followerMetrics = $analyticsData['followerMetrics'] ?? [
+            'total' => 0, 'new_this_month' => 0, 'new_last_month' => 0, 'growth_rate' => 0,
+        ];
+        $chartData = $analyticsData['chartData'] ?? ['monthly' => [], 'yearly' => []];
+        $categoryPerformance = $analyticsData['categoryPerformance'] ?? collect();
+        $topProducts = $analyticsData['topProducts'] ?? collect();
+        $reviewStats = $analyticsData['reviewStats'] ?? [
+            'total' => 0, 'average' => 0, 'growth' => 0, 'breakdown' => ['5' => 0, '4' => 0, '3' => 0, '2' => 0, '1' => 0],
+        ];
+        $intelligence = $analyticsData['intelligence'] ?? [
+            'sales_heatmap' => collect(), 'sales_velocity' => collect(), 'slow_movers' => collect(),
+        ];
 
         $canViewSponsorshipAnalytics = $seller->isEliteTier();
         $sponsorshipAnalytics = $canViewSponsorshipAnalytics

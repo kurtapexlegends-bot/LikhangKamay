@@ -577,11 +577,23 @@ class StaffAttendanceService
 
     public function getOpenSession(User $staff): ?StaffAttendanceSession
     {
-        return StaffAttendanceSession::query()
+        $session = StaffAttendanceSession::query()
             ->where("staff_user_id", $staff->id)
             ->whereNull('clock_out_at')
             ->latest("clock_in_at")
             ->first();
+
+        if ($session && $session->attendance_date && $session->attendance_date->lt($this->now()->toDateString())) {
+            $this->autoPauseInactiveSessions();
+            return StaffAttendanceSession::query()
+                ->where("staff_user_id", $staff->id)
+                ->whereNull('clock_out_at')
+                ->whereDate('attendance_date', $this->now()->toDateString())
+                ->latest("clock_in_at")
+                ->first();
+        }
+
+        return $session;
     }
 
     public function getLatestSession(User $staff): ?StaffAttendanceSession
@@ -752,6 +764,8 @@ class StaffAttendanceService
      */
     public function buildLogoutContext(User $staff): array
     {
+        $this->autoPauseInactiveSessions();
+
         $openSession = $this->getOpenSession($staff);
         $latestSession = $openSession ?: $this->getLatestSession($staff);
         $currentState = 'no_record';

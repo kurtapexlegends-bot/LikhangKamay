@@ -34,13 +34,13 @@ export default function SidebarSettingsPopover({
                 )}
             </button>
 
-            {showGearHint && (
-                <div className="absolute right-0 top-8 z-[80] w-44 rounded-lg bg-gray-900 p-2 text-[10px] font-medium text-white">
+            {showGearHint && !isElite && (
+                <div className="absolute right-0 top-9 z-[80] w-48 rounded-xl bg-stone-900/95 text-stone-100 p-2.5 text-[10px] font-medium shadow-xl border border-stone-800">
                     Use this gear to enable extra capabilities.
                     <button
                         onClick={dismissGearHint}
                         aria-label="Dismiss module settings hint"
-                        className="block mt-1.5 text-[9px] text-gray-300 hover:text-white"
+                        className="block mt-1 text-[9px] text-amber-400 hover:text-amber-300 font-semibold"
                     >
                         Dismiss
                     </button>
