@@ -1,0 +1,72 @@
+﻿{
+    "manifest_version":  "3.0.0-PROD-RELAY-POW",
+    "run_id":  "iab-c2e2a984-dacc-4dc8-b874-92eb43292c22",
+    "timestamp":  "2026-11-02T09:43:15.4119047+00:00",
+    "timestamp_utc":  "2026-11-02T09:43:15.4119047+00:00",
+    "host":  "https://www.likhangkamay.app",
+    "protocol":  "Interactive Full-System Closed-Loop Relay Suite (Production Ground Truth)",
+    "execution_mode":  "subagent_isolated",
+    "git_commit":  "65c7ef689704234efe71eee01a08f30aac8a86ef",
+    "elite_seller_verified":  true,
+    "defense_assets_verified":  true,
+    "phases_covered":  [
+                           "Phase 1 \u0026 2: Buyer Live 3D Probe, Commission Chat Attachment \u0026 COD Order",
+                           "Phase 3: Elite Artisan Active Product CRUD (GLB), CSV Bulk Import \u0026 Driver Assignment",
+                           "Phase 4: Operations Staff Face/Code Clock-In, Order Packing \u0026 Shift Cycle",
+                           "Phase 5: Logistics Rider Vehicle Pre-Check, Route Telemetry \u0026 POD Drop-Off",
+                           "Phase 6: Buyer Feedback, Closed-Loop 5-Star Review \u0026 BIR Receipt",
+                           "Phase 7: Super Admin KYC Zoom Audit, Ledger Reconciliation \u0026 RBAC Barrier"
+                       ],
+    "actors":  {
+                   "buyer":  "test.buyer@likhangkamay.local",
+                   "seller":  "test.artisan@likhangkamay.local",
+                   "staff":  "test.staff@likhangkamay.local",
+                   "driver":  "test.driver@likhangkamay.local",
+                   "admin":  "test.admin@likhangkamay.local"
+               },
+    "relay_order":  {
+                        "order_id":  5,
+                        "order_number":  "ORD-6AE8132936B64",
+                        "delivery_id":  2,
+                        "payment_method":  "cod",
+                        "is_test_flag":  true,
+                        "item_sku":  "TEST-BAMBOO-01",
+                        "item_name":  "E2E Synthetic Bamboo Cup",
+                        "item_price_php":  25,
+                        "shipping_fee_php":  55,
+                        "service_fee_php":  0.75,
+                        "total_php":  80.75,
+                        "stock_before":  2,
+                        "stock_after":  1,
+                        "stock_decrement_verified":  true,
+                        "proof_of_delivery_verified":  true,
+                        "customer_review_submitted":  true,
+                        "bir_sales_invoice_sha256":  "9DFD0C03B664B9EF45540C90EE94951480CA64691493B088725FCC17D1F0F4E3"
+                    },
+    "defense_assets_used":  [
+                                "C:\\Users\\acost\\OneDrive\\Pictures\\DEFENSE IMAGES\\Custom Commission Sketch (Chat Attachment).jpg",
+                                "C:\\Users\\acost\\OneDrive\\Pictures\\DEFENSE IMAGES\\Product\\Blue Feather Vase\\Blue Feather Vase.glb",
+                                "C:\\Users\\acost\\OneDrive\\Pictures\\DEFENSE IMAGES\\Product\\Blue Feather Vase\\Main Cover.png",
+                                "C:\\Users\\acost\\OneDrive\\Pictures\\DEFENSE IMAGES\\products_sample.csv",
+                                "C:\\Users\\acost\\OneDrive\\Pictures\\DEFENSE IMAGES\\ArtisanStaff\\HR.png",
+                                "C:\\Users\\acost\\OneDrive\\Pictures\\DEFENSE IMAGES\\Proof of Delivery (POD).jpg"
+                            ],
+    "artifacts":  {
+                      "phase5_rider_delivery_pod.png":  "B33B687CEB50E029478937378D05722B741326E18114BEABFA748AC971FAAFDA",
+                      "phase5_rider_dashboard_completed.png":  "EAC00034B486EA57992EC255EAD8F28C643D3F7FE9DBA9D166B528BA8AF4F2BB",
+                      "phase6_buyer_order_delivered.png":  "AB97EC88A306088B68DCB9E3FFAC8E59BE83C618E2E482930F16B9588CC8F39A",
+                      "phase6_buyer_vat_invoice.png":  "9DFD0C03B664B9EF45540C90EE94951480CA64691493B088725FCC17D1F0F4E3",
+                      "phase6_buyer_review_submitted.png":  "FFD1D26CC5646D70EC8EAA3FE13E463446FAFD7DDB1258EB938193D3E91A212D",
+                      "phase7_admin_dashboard_activity.png":  "0778B6FCEF30210546F9E42D84E69CBFFD7817142AC212258E2E0A4AD155BB79",
+                      "phase7_admin_staff_hierarchy.png":  "26FD43869085FAB429FEDCCC327B67CA9891360516FE41CC4195501878DE7DD6",
+                      "phase7_admin_payout_settlement.png":  "1D2F16CBE3CA86D447ABCEA73146F8FF1ADA6DF337E51DD6373FFED6CC3EA61B",
+                      "phase7_buyer_rbac_403_restricted.png":  "4EE3A3AB0BE0AD5EEAB250D50B83AE1612EB2193EB7A663C38B601251A9E0876"
+                  },
+    "security_barriers":  {
+                              "staff_team_messaging_readonly":  "PASS (Input disabled and placeholder indicates read-only)",
+                              "staff_unauthorized_accounting":  "PASS (HTTP 403 Restricted)",
+                              "buyer_admin_dashboard_barrier":  "PASS (HTTP 403 Restricted - Access Restricted)"
+                          },
+    "final_verdict":  "PASS",
+    "hash":  "65D58494644EE5BF49718ACE17944B6707033EF28129DCF4603304FD57FAB73B"
+}

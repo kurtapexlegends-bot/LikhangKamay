@@ -48,6 +48,7 @@ _ide_helper_models.php
 /old_orders*.jsx
 /original.jsx
 /repomix-output.xml
+/tests/fixtures/
 
 # Project docs to keep local-only
 /PROJECT_GUIDELINES.md
