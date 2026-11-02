@@ -44,6 +44,18 @@ class Order extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const STATUS_PENDING = 'Pending';
+    public const STATUS_ACCEPTED = 'Accepted';
+    public const STATUS_PROCESSING = 'Processing';
+    public const STATUS_READY_FOR_PICKUP = 'Ready for Pickup';
+    public const STATUS_SHIPPED = 'Shipped';
+    public const STATUS_DELIVERED = 'Delivered';
+    public const STATUS_COMPLETED = 'Completed';
+    public const STATUS_CANCELLED = 'Cancelled';
+    public const STATUS_REJECTED = 'Rejected';
+    public const STATUS_REFUNDED = 'Refunded';
+    public const STATUS_REPLACED = 'Replaced';
+
     protected $fillable = [
         'artisan_id', 'user_id', 'order_number', 'customer_name', 
         'merchandise_subtotal', 'convenience_fee_amount', 'shipping_fee_amount', 'platform_commission_amount', 'seller_net_amount',

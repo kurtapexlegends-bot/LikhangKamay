@@ -363,6 +363,7 @@ export default function OrderPricingSummary({
         return (
             <div className="pt-0.5">
                 <button
+                    type="submit"
                     onClick={submitCheckout}
                     disabled={submitDisabled || isPendingArtisan}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-clay-600 py-2.5 text-sm font-bold text-white shadow-sm shadow-clay-200 transition-all duration-200 hover:bg-clay-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"

@@ -26,7 +26,8 @@ This document maps all Artisan Console Commands (`app/Console/Commands/`) and cr
 *   **Verify PayMongo Payments**:
     *   Command Class: [VerifyPaymongoPayments.php](file:///c:/laragon/www/LikhangKamay/app/Console/Commands/VerifyPaymongoPayments.php)
     *   Signature: `paymongo:verify`
-    *   Logic: Safely verifies unresolved PayMongo sessions for orders and subscription upgrades, transitioning successful ones to `paid` status.
+    *   Logic: Safely verifies unresolved PayMongo sessions for orders and subscription upgrades within a 24-hour lookback window using chunked execution (`chunkById(25)`). Transitions successful sessions to `paid` status, handles API failures per-item without halting chunks, and includes post-cancellation reconciliation logic flagging orders paid after cancellation for admin/artisan review and refund processing.
+    *   Unit Test Suite: [VerifyPaymongoPaymentsTest.php](file:///c:/laragon/www/LikhangKamay/tests/Feature/Console/VerifyPaymongoPaymentsTest.php)
 *   **Expire Sponsorships**:
     *   Command Class: [ExpireSponsorships.php](file:///c:/laragon/www/LikhangKamay/app/Console/Commands/ExpireSponsorships.php)
     *   Signature: `sponsorships:expire`
@@ -99,6 +100,10 @@ The background execution intervals are consolidated within the console router: [
 ## 6. Serverless Queue & Production Webhook Runners
 
 In serverless production environments (Vercel / AWS Lambda), daemon workers (`queue:work` without flags) cannot run indefinitely. The platform offloads queue execution to atomic, short-lived HTTP webhook runners:
+
+*   **GitHub Actions High-Frequency Cron Scheduler**: [.github/workflows/cron-scheduler.yml](file:///c:/laragon/www/LikhangKamay/.github/workflows/cron-scheduler.yml)
+    *   Triggers every 5 minutes (`*/5 * * * *`) and via `workflow_dispatch`.
+    *   Executes automated 15-second bounded `curl` pings targeting `$APP_URL/webhooks/cron/queue` and `$APP_URL/webhooks/cron` passing `X-Vercel-Cron-Secret` header to maintain continuous sub-daily serverless job processing without depending on paid third-party cron providers.
 
 *   **Queue Worker Webhook**: `GET /webhooks/cron/queue`
     *   **Execution**: Invokes `php artisan queue:work --stop-when-empty --max-time=10`.

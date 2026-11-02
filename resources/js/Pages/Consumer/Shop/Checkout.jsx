@@ -260,7 +260,7 @@ export default function Checkout({ auth, pricing }) {
     }, [hasPickupDisabledSeller, data.shipping_method, setData]);
 
     const needsDeliveryContactDetails = data.shipping_method === 'Delivery' && (!data.recipient_name.trim() || !data.phone_number.trim());
-    const submitDisabled = processing;
+    const submitDisabled = processing || (data.shipping_method === 'Delivery' && shippingQuote.status !== 'ready');
 
     const submitCheckout = (event) => {
         event.preventDefault();

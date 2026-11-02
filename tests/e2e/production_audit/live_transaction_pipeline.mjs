@@ -107,70 +107,91 @@ export async function runLiveTransactionPipeline() {
         });
 
         // ====================================================================
-        // STAGE 2: Buyer Checkout of Synthetic ₱1 Item (COD, Cavite)
+        // STAGE 2: Buyer Checkout of Synthetic ₱1 Item via Real DOM Interaction
         // ====================================================================
-        console.log('\n--- Stage 2: Buyer Checkout (Synthetic ₱1 Item, is_test=true) ---');
+        console.log('\n--- Stage 2: Buyer Checkout via Real DOM Interaction (is_test=true) ---');
 
-        const checkoutPayload = {
-            items: [
-                {
-                    id: targetProductId,
-                    qty: 1,
-                    variant: 'Standard',
-                    price: 1.00,
-                    name: product.name,
-                    artisan_id: targetArtisanId
-                }
-            ],
-            shipping_method: 'Delivery',
-            shipping_address_type: 'home',
-            payment_method: 'COD',
-            shipping_address: 'Block 4 Lot 12 Buhay na Tubig, Imus, Cavite 4103',
-            shipping_street_address: 'Block 4 Lot 12 Buhay na Tubig',
-            shipping_barangay: 'Buhay na Tubig',
-            shipping_city: 'Imus',
-            shipping_region: 'Cavite',
-            shipping_postal_code: '4103',
-            shipping_latitude: 14.4180,
-            shipping_longitude: 120.9520,
-            recipient_name: 'Test Verified Buyer',
-            phone_number: '09170000002',
-            total: 1.00
-        };
+        const checkoutUrl = `${PROD_URL}/checkout?product_id=${targetProductId}&quantity=1&variant=Standard`;
+        await buyerPage.goto(checkoutUrl, { waitUntil: 'networkidle2', timeout: 35000 });
 
-        const placeResult = await buyerPage.evaluate(async (url, payload) => {
-            try {
-                if (window.axios) {
-                    const res = await window.axios.post(`${url}/checkout`, payload);
-                    return { status: res.status, data: res.data };
-                }
-                const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                const xsrfMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
-                const xsrfToken = xsrfMatch ? decodeURIComponent(xsrfMatch[1]) : '';
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                };
-                if (metaCsrf) headers['X-CSRF-TOKEN'] = metaCsrf;
-                if (xsrfToken) headers['X-XSRF-TOKEN'] = xsrfToken;
-                const res = await fetch(`${url}/checkout`, {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers,
-                    body: JSON.stringify(payload)
-                });
-                return { status: res.status, data: await res.json().catch(() => null), redirected: res.redirected, url: res.url };
-            } catch (err) {
-                return { status: err?.response?.status || 0, data: err?.response?.data || null, error: err.message };
-            }
-        }, PROD_URL, checkoutPayload);
+        // 1. Assert checkout form fields and layout render
+        await buyerPage.waitForSelector('button[type="submit"]', { timeout: 20000 });
+        const checkoutPageTitle = await buyerPage.evaluate(() => document.title);
+        const hasAddressSection = await buyerPage.evaluate(() => {
+            return Array.from(document.querySelectorAll('h2, h3, div')).some(el => el.textContent.includes('Shipping Address'));
+        });
 
-        if (![200, 302].includes(placeResult.status)) {
-            throw new Error(`Checkout placement request failed with HTTP ${placeResult.status}`);
+        if (!hasAddressSection) {
+            throw new Error(`Checkout page loaded (${checkoutPageTitle}) but Shipping Address section was not found.`);
         }
 
-        // Navigate to my-orders to obtain real database order primary keys
+        // 2. Interact with DOM: Type delivery notes / instructions
+        const notesToggleBtn = await buyerPage.evaluateHandle(() => {
+            const buttons = Array.from(document.querySelectorAll('button'));
+            return buttons.find(b => b.textContent.includes('Add Instructions') || b.textContent.includes('Delivery Notes'));
+        });
+        if (notesToggleBtn && notesToggleBtn.asElement()) {
+            await notesToggleBtn.asElement().click().catch(() => null);
+        }
+
+        const notesTextarea = await buyerPage.waitForSelector('textarea', { timeout: 4000 }).catch(() => null);
+        if (notesTextarea) {
+            await notesTextarea.type('Automated E2E Verification - Fragile Craft Item', { delay: 10 });
+        }
+
+        // Check if contact/recipient fields require input (e.g. Incomplete Details or New Address)
+        const recipientInput = await buyerPage.$('input[placeholder*="recipient" i], input[placeholder*="name" i]');
+        if (recipientInput) {
+            const val = await recipientInput.evaluate(el => el.value);
+            if (!val || val.trim() === '') {
+                await recipientInput.type('Test Verified Buyer', { delay: 10 });
+            }
+        }
+        const phoneInput = await buyerPage.$('input[placeholder*="09" i], input[placeholder*="Phone" i]');
+        if (phoneInput) {
+            const val = await phoneInput.evaluate(el => el.value);
+            if (!val || val.trim() === '') {
+                await phoneInput.type('09170000002', { delay: 10 });
+            }
+        }
+
+        // 3. Wait for Shipping Quote to settle and Place Order submit button to be enabled
+        await buyerPage.waitForFunction(() => {
+            const buttons = Array.from(document.querySelectorAll('button[type="submit"]'));
+            const text = document.body.innerText || '';
+            const isCalculating = text.includes('Calculating...');
+            const visibleBtn = buttons.find(b => (b.offsetWidth > 0 || b.offsetHeight > 0 || b.getClientRects().length > 0));
+            return visibleBtn && !visibleBtn.disabled && !visibleBtn.textContent.includes('Processing') && !isCalculating;
+        }, { timeout: 30000 });
+
+        // Settle buffer to ensure all debounced async handlers finished
+        await new Promise(r => setTimeout(r, 600));
+
+        // 4. Click the actual React Place Order button (triggering Inertia useForm POST)
+        const submitButtonHandle = await buyerPage.evaluateHandle(() => {
+            const buttons = Array.from(document.querySelectorAll('button[type="submit"]'));
+            return buttons.find(b => (b.offsetWidth > 0 || b.offsetHeight > 0 || b.getClientRects().length > 0) && !b.disabled);
+        });
+        const submitButton = submitButtonHandle.asElement();
+        if (!submitButton) {
+            throw new Error('Visible submit button (button[type="submit"]) not found or not enabled on Checkout page.');
+        }
+
+        await submitButton.click();
+
+        // 5. Await Inertia navigation transition to /my-orders
+        try {
+            await buyerPage.waitForFunction(() => {
+                return window.location.pathname.includes('/my-orders');
+            }, { timeout: 30000 });
+        } catch (waitErr) {
+            const pageText = await buyerPage.evaluate(() => document.body.innerText);
+            throw new Error(`Inertia navigation to /my-orders failed after clicking Place Order: ${waitErr.message}. Page snippet: ${pageText.slice(0, 400)}`);
+        }
+
+        // Refresh /my-orders page to hydrate clean document dataset for props verification
         await buyerPage.goto(`${PROD_URL}/my-orders`, { waitUntil: 'networkidle2', timeout: 30000 });
+
         const ordersInertia = await getInertiaPage(buyerPage);
         const buyerOrders = ordersInertia?.props?.orders?.data || ordersInertia?.props?.orders || [];
         const placedOrder = buyerOrders[0];

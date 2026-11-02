@@ -73,7 +73,6 @@ export const useRealtime = () => {
         let orderChannel = null;
         let adminChannel = null;
         let fallbackPollTimeout = null;
-        let isRealtimeSubscribed = false;
         let isDisposed = false;
 
         const getPollKeys = () => {
@@ -135,7 +134,7 @@ export const useRealtime = () => {
             }
 
             fallbackPollTimeout = setTimeout(() => {
-                if (isDisposed || isRealtimeSubscribed) return;
+                if (isDisposed) return;
 
                 if (typeof document !== 'undefined' && document.hidden) {
                     // Sleep while tab is backgrounded; wake up on focus/visibilitychange
@@ -159,7 +158,7 @@ export const useRealtime = () => {
                     showProgress: false,
                     onFinish: () => {
                         isReloadingRef.current = false;
-                        if (!isDisposed && !isRealtimeSubscribed) {
+                        if (!isDisposed) {
                             const nextDelay = isDegradedRef.current ? 18000 : 5000;
                             scheduleFallbackPoll(nextDelay);
                         }
@@ -221,10 +220,9 @@ export const useRealtime = () => {
                 )
                 .subscribe((status) => {
                     if (status === 'SUBSCRIBED') {
-                        isRealtimeSubscribed = true;
-                        stopFallbackPolling();
+                        // Do not shut down fallback polling when Supabase connects:
+                        // production mutations live in Neon PostgreSQL.
                     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-                        isRealtimeSubscribed = false;
                         startFallbackPolling();
                     }
                 });
@@ -321,20 +319,14 @@ export const useRealtime = () => {
                     .subscribe();
             }
 
-            // Safety timeout: if Supabase websocket doesn't subscribe within 3 seconds, start fallback polling
-            const connectionGuard = setTimeout(() => {
-                if (!isRealtimeSubscribed) {
-                    startFallbackPolling();
-                }
-            }, 3000);
+            // Always run fallback polling alongside Supabase: production database mutations commit to Neon PostgreSQL
+            startFallbackPolling();
 
             // Visibility / focus event listener for immediate sync
             const handleFocusSync = () => {
                 if (typeof document !== 'undefined' && !document.hidden && typeof navigator !== 'undefined' && navigator.onLine) {
                     executeSync();
-                    if (!isRealtimeSubscribed) {
-                        startFallbackPolling();
-                    }
+                    startFallbackPolling();
                 }
             };
             window.addEventListener('focus', handleFocusSync);
@@ -343,7 +335,6 @@ export const useRealtime = () => {
             return () => {
                 isDisposed = true;
                 isReloadingRef.current = false;
-                clearTimeout(connectionGuard);
                 window.removeEventListener('focus', handleFocusSync);
                 document.removeEventListener('visibilitychange', handleFocusSync);
                 if (notificationChannel) supabase.removeChannel(notificationChannel);

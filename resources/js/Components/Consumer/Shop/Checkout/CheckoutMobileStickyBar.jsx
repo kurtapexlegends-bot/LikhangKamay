@@ -48,6 +48,7 @@ export default function CheckoutMobileStickyBar({
                         </p>
                     </div>
                     <button
+                        type="submit"
                         onClick={submitCheckout}
                         disabled={submitDisabled || isPendingArtisan}
                         className="flex h-11 flex-[1.2] items-center justify-center gap-2 rounded-xl bg-clay-600 px-4 text-sm font-bold text-white shadow-sm shadow-clay-200 transition hover:bg-clay-700 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95"
@@ -79,6 +80,7 @@ export default function CheckoutMobileStickyBar({
                 widthClass="max-w-xl"
                 footer={
                     <button
+                        type="submit"
                         onClick={(event) => {
                             setShowMobileSummary(false);
                             submitCheckout(event);

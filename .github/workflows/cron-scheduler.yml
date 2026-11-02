@@ -1,0 +1,29 @@
+name: High-Frequency Cron Scheduler
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping-cron:
+    name: Ping Scheduled Webhooks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Queue Worker Webhook
+        env:
+          APP_URL: ${{ secrets.APP_URL || 'https://www.likhangkamay.app' }}
+          CRON_SECRET: ${{ secrets.VERCEL_CRON_SECRET || secrets.CRON_SECRET }}
+        run: |
+          curl -sS -f --max-time 15 \
+            -H "X-Vercel-Cron-Secret: $CRON_SECRET" \
+            "$APP_URL/webhooks/cron/queue" || echo "Queue ping failed or timed out"
+
+      - name: Trigger Schedule Runner Webhook
+        env:
+          APP_URL: ${{ secrets.APP_URL || 'https://www.likhangkamay.app' }}
+          CRON_SECRET: ${{ secrets.VERCEL_CRON_SECRET || secrets.CRON_SECRET }}
+        run: |
+          curl -sS -f --max-time 15 \
+            -H "X-Vercel-Cron-Secret: $CRON_SECRET" \
+            "$APP_URL/webhooks/cron" || echo "Schedule ping failed or timed out"
