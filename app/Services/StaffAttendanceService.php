@@ -420,7 +420,8 @@ class StaffAttendanceService
         }
 
         $now = $closedAt ? Carbon::parse($closedAt) : $this->now();
-        $workedMinutes = max(0, $openSession->clock_in_at->diffInMinutes($now));
+        $clockIn = $openSession->clock_in_at ? Carbon::parse($openSession->clock_in_at) : $now;
+        $workedMinutes = max(0, $clockIn->diffInMinutes($now));
         $resolvedReason = $reason ?: $this->defaultCloseReasonFor($mode);
 
         $isEarlyDeparture = false;
@@ -431,15 +432,15 @@ class StaffAttendanceService
             $staff->loadMissing('employee');
             $sellerOwner = User::find($staff->getEffectiveSellerId());
             $shiftPolicy = $staff->employee 
-                ? $staff->employee->getEffectiveShiftPolicy($sellerOwner, $openSession->clock_in_at ?: $now) 
-                : ($sellerOwner ? $sellerOwner->getEffectiveShiftPolicy($openSession->clock_in_at ?: $now) : [
+                ? $staff->employee->getEffectiveShiftPolicy($sellerOwner, $clockIn) 
+                : ($sellerOwner ? $sellerOwner->getEffectiveShiftPolicy($clockIn) : [
                     'shift_start_time' => '08:00',
                     'shift_end_time' => '17:00',
                 ]);
 
             if (!empty($shiftPolicy['shift_end_time']) && $openSession->clock_in_at) {
                 try {
-                    $shiftDateStr = $openSession->clock_in_at->toDateString();
+                    $shiftDateStr = $clockIn->toDateString();
                     $shiftStart = Carbon::parse($shiftDateStr . ' ' . ($shiftPolicy['shift_start_time'] ?? '08:00'), config('app.timezone'));
                     $shiftEnd = Carbon::parse($shiftDateStr . ' ' . $shiftPolicy['shift_end_time'], config('app.timezone'));
 
