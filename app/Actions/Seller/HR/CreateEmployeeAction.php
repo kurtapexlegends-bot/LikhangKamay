@@ -22,7 +22,7 @@ class CreateEmployeeAction
      * @param array<string, mixed> $validated
      * @return array{success: bool, message: string, employee: Employee|null, staffAccount: User|null, emailFailed: bool}
      */
-    public function execute(User $seller, User $actor, array $validated, ?int $employeeId = null): array
+    public function execute(User $seller, User $actor, array $validated, ?string $employeeId = null): array
     {
         $supportedModules = $this->entitlementService->getSupportedStaffModules();
 
