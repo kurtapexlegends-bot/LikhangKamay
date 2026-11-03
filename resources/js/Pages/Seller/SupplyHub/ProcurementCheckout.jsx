@@ -34,7 +34,13 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
         vehicles: {},
     });
 
-    const { data, setData, post, processing, errors, setError, clearErrors } = useForm({
+    const checkoutPayloadItems = useMemo(() => items.map(it => ({
+        id: Number(it.id),
+        qty: Number(it.qty || 1),
+        variant: it.variant || null,
+    })), [items]);
+
+    const { data, setData, post, transform, processing, errors, setError, clearErrors } = useForm({
         shipping_method: 'Delivery',
         selected_address_id: defaultAddress?.id || 'new',
         shipping_address_type: defaultAddress?.address_type || 'office',
@@ -51,7 +57,12 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
         shipping_longitude: defaultAddress?.longitude ?? null,
         payment_method: 'GCash',
         notes: 'Artisan Workshop Sourcing Order',
-        items: items.map(it => it.cart_key || String(it.id)),
+        items: items.map(it => ({
+            id: Number(it.id),
+            qty: Number(it.qty || 1),
+            variant: it.variant || null,
+        })),
+        total: 0,
     });
 
     // Group items by seller studio
@@ -102,6 +113,14 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
     const platformFee = Number((merchandiseSubtotal * convenienceFeeRate).toFixed(2));
     const grandTotal = Number((merchandiseSubtotal + platformFee).toFixed(2));
 
+    useEffect(() => {
+        setData('items', checkoutPayloadItems);
+    }, [checkoutPayloadItems, setData]);
+
+    useEffect(() => {
+        setData('total', grandTotal);
+    }, [grandTotal, setData]);
+
     const handleSubmit = (e) => {
         e.preventDefault();
         if (processing) return;
@@ -121,6 +140,11 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
         }
 
         clearErrors();
+        transform((curr) => ({
+            ...curr,
+            items: checkoutPayloadItems,
+            total: grandTotal,
+        }));
         post(route('seller.supply-hub.checkout.store'), {
             preserveScroll: true,
         });
@@ -270,8 +294,8 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
                             {/* Submit Button */}
                             <button
                                 type="submit"
-                                disabled={processing}
-                                className="hidden lg:flex w-full rounded-xl bg-clay-600 py-3.5 text-xs font-bold text-white shadow-md hover:bg-clay-700 disabled:opacity-50 transition-all active:scale-95 items-center justify-center gap-2 cursor-pointer"
+                                disabled={processing || (data.shipping_method === 'Delivery' && !data.selected_address_id)}
+                                className="hidden lg:flex w-full rounded-xl bg-clay-600 py-3.5 text-xs font-bold text-white shadow-md hover:bg-clay-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 items-center justify-center gap-2 cursor-pointer"
                             >
                                 <span>Place Material Order</span>
                                 <ArrowRight size={14} />
@@ -295,7 +319,7 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
                         <button
                             type="button"
                             onClick={handleSubmit}
-                            disabled={processing || !data.selected_address_id}
+                            disabled={processing || (data.shipping_method === 'Delivery' && !data.selected_address_id)}
                             className="flex-1 max-w-[210px] flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-clay-600 hover:bg-clay-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs shadow-md shadow-clay-200 transition-all active:scale-95 cursor-pointer"
                         >
                             <span>Confirm & Order</span>
