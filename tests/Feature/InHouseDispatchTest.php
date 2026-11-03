@@ -246,6 +246,34 @@ class InHouseDispatchTest extends TestCase
         $this->assertEquals(1, $driverData['active_deliveries_count']);
     }
 
+    public function test_dispatch_accepts_driver_id_payload_from_frontend(): void
+    {
+        $driver = $this->createDriver($this->premiumSeller, [
+            'name' => 'Kuya Jobert',
+            'role' => 'Logistics / Driver',
+            'vehicle_plate_number' => 'JOB-9999',
+        ]);
+
+        $order = $this->createOrder($this->premiumSeller, [
+            'order_number' => 'ORD-DRIVER-ID-001',
+            'shipping_address' => '123 Imus Blvd, Cavite',
+            'total_amount' => 850.00,
+        ]);
+
+        $response = $this->actingAs($this->premiumSeller)->post(route('orders.dispatch-in-house', $order->order_number), [
+            'driver_id' => $driver->id,
+            'dispatch_notes' => 'Frontend driver_id payload test.',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $delivery = OrderDelivery::where('order_id', $order->id)->first();
+        $this->assertNotNull($delivery);
+        $this->assertEquals($driver->id, $delivery->driver_employee_id);
+        $this->assertEquals('Frontend driver_id payload test.', $delivery->dispatch_notes);
+    }
+
     public function test_driver_can_view_deliveries_and_complete_with_proof_of_delivery(): void
     {
         $driverUser = User::factory()->create([

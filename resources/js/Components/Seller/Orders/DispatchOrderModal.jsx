@@ -270,6 +270,7 @@ export default function DispatchOrderModal({
             router.post(
                 route("orders.dispatch-in-house", orderNumber),
                 {
+                    employee_id: selectedDriverId,
                     driver_id: selectedDriverId,
                     dispatch_notes: dispatchNotes,
                 },

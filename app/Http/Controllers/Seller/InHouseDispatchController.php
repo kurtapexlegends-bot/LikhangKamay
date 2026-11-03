@@ -36,6 +36,10 @@ class InHouseDispatchController extends Controller
      */
     public function dispatch(string $id, Request $request, InHouseDispatchService $dispatchService): RedirectResponse
     {
+        if (!$request->has('employee_id') && $request->has('driver_id')) {
+            $request->merge(['employee_id' => $request->input('driver_id')]);
+        }
+
         $request->validate([
             'employee_id' => ['required', 'integer'],
             'dispatch_notes' => ['nullable', 'string', 'max:500'],
@@ -77,6 +81,10 @@ class InHouseDispatchController extends Controller
      */
     public function bulkDispatch(Request $request, InHouseDispatchService $dispatchService): RedirectResponse
     {
+        if (!$request->has('employee_id') && $request->has('driver_id')) {
+            $request->merge(['employee_id' => $request->input('driver_id')]);
+        }
+
         $request->validate([
             'order_ids' => ['required', 'array', 'min:1'],
             'order_ids.*' => ['required', 'string'],
