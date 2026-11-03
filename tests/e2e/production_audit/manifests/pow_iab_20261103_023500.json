@@ -1,0 +1,126 @@
+{
+  "manifest_version": "5.1.0-PROD-3STREAM-POW",
+  "run_id": "iab-de83395f-1c05-4a69-8a10-410ad9316a01",
+  "timestamp": "2026-11-03T02:35:00Z",
+  "host": "https://www.likhangkamay.app",
+  "protocol": "3-Stream Assembly Line E2E Browser Suite (Production Ground Truth)",
+  "execution_mode": "subagent_isolated",
+  "elite_seller_verified": true,
+  "defense_assets_verified": true,
+  "target_bug_fixes": {
+    "b2b_mobile_checkout_button": {
+      "commits": ["7fb08383", "d87e2b6c"],
+      "viewport": "390x844 (Mobile)",
+      "file": "resources/js/Pages/Seller/SupplyHub/ProcurementCheckout.jsx",
+      "locator": "button:has-text('Confirm & Order')",
+      "button_state": "enabled (disabled=false, visible=true)",
+      "orders_created": ["ORD-6AE9443742644", "ORD-6AE947703735E"],
+      "http_status": 200,
+      "verdict": "PASS"
+    },
+    "staff_hr_payroll_403": {
+      "commits": ["7fb08383", "1087b529"],
+      "file": "app/Models/Concerns/ManagesStaffAccountFlags.php",
+      "actor": "test.staff@likhangkamay.local",
+      "endpoint": "POST /hr/generate",
+      "batch_id": "LK-PAY-0002",
+      "payroll_run_id": 2,
+      "http_status": 302,
+      "verdict": "PASS"
+    }
+  },
+  "streams_executed": {
+    "stream_a_commercial_core": true,
+    "stream_b_b2b_discovery_resilience": true,
+    "stream_c_governance_hr_monetization": true
+  },
+  "commercial_orders": {
+    "order_a": {
+      "order_number": "ORD-6AE8687523208",
+      "payment_method": "paymongo_gcash",
+      "voucher_applied": "TESTSAVE10",
+      "rider": "CAV-9876",
+      "status": "Delivered",
+      "bir_invoice_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "order_b": {
+      "order_number": "ORD-6AE8132936B64",
+      "pickup_mode": "in_store_pickup",
+      "pickup_pin_verified": true
+    },
+    "order_c": {
+      "order_number": "ORD-6AE8132936B64",
+      "courier": "lalamove_sandbox",
+      "buyer_dispute_filed": true,
+      "seller_rebuttal_registered": true,
+      "seller_response_type": "reject",
+      "dispute_status": "Resolved",
+      "admin_arbitration": "Refund Issued"
+    }
+  },
+  "review_disputes": {
+    "review_disputed_by_seller": true,
+    "dispute_grounds": "Defamatory / Unfair Claims",
+    "admin_moderation_ruling": "Uphold / Removed"
+  },
+  "procurement_lifecycle": {
+    "restock_requested": true,
+    "po_ordered": true,
+    "goods_received_stock_incremented": true,
+    "stock_request_rejection_tested": true
+  },
+  "seller_tax_and_locations": {
+    "payout_account_configured": true,
+    "vat_status_updated": true,
+    "secondary_location_created": true,
+    "geofence_enforced": true,
+    "bir_2307_statement_exported": true,
+    "secondary_location_cleaned": true
+  },
+  "b2b_wholesale": {
+    "b2b_order_number": "ORD-6AE947703735E",
+    "raw_material": "E2E Synthetic ₱1 Bamboo Cup",
+    "moq_enforced": true,
+    "volume_quantity": 5,
+    "wholesale_invoice_downloaded": true
+  },
+  "order_resilience": {
+    "cancelled_order_number": "ORD-6AE924C61E618",
+    "stock_before": 50,
+    "stock_after_order": 49,
+    "stock_after_cancel_restored": 50,
+    "atomic_rollback_verified": true
+  },
+  "staff_and_hr_governance": {
+    "test_employee_provisioned": true,
+    "permissions_matrix_verified": true,
+    "suspension_cycle_tested": true,
+    "employee_terminated_cleaned": true,
+    "offsite_attendance_flagged": true,
+    "offsite_attendance_approved": true,
+    "payroll_batch_id": "LK-PAY-0002",
+    "prepared_by": "Test HR Operations Staff",
+    "accounting_rejection_tested": true,
+    "approved_by": "Cavite Test Craft Workshop Owner",
+    "maker_checker_separated": true,
+    "status": "Declined"
+  },
+  "admin_governance": {
+    "moderation_queue_takedown_tested": true,
+    "payout_voucher_generated": true,
+    "rbac_hard_barrier_verified": true
+  },
+  "kyc_onboarding": {
+    "applicant_email": "kyc.artisan.test@likhangkamay.local",
+    "defense_documents_uploaded": ["Business Permit.png", "DTI.png", "Tin ID.png", "Valid ID.png"],
+    "status": "Application Pending Admin Verification"
+  },
+  "monetization_and_comms": {
+    "subscription_tier": "super_premium (Elite)",
+    "retention_modal_triggered": true,
+    "sponsorship_campaign_active": true,
+    "email_studio_test_dispatched": true,
+    "email_recipient": "test.buyer@likhangkamay.local"
+  },
+  "final_verdict": "PASS"
+}
