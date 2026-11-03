@@ -1,0 +1,92 @@
+﻿{
+    "final_verdict":  "PASS",
+    "erp_maker_checker":  {
+                              "barrier_message":  "For security, you cannot approve a request that you submitted yourself.",
+                              "prepared_by":  "Test Master Artisan",
+                              "approver_attempted":  "Test Master Artisan",
+                              "payroll_batch_id":  "LK-PAY-0001",
+                              "status":  "Pending Review (Strict Segregation Enforced)",
+                              "maker_checker_separated":  true
+                          },
+    "monetization_and_comms":  {
+                                   "retention_modal_triggered":  true,
+                                   "email_studio_test_dispatched":  true,
+                                   "retention_modal_verified":  "100% Active Benefits Guarantee",
+                                   "delivery_speed_ms":  283,
+                                   "days_remaining":  3653,
+                                   "sponsorship_campaign_active":  true,
+                                   "email_recipient":  "test.buyer@likhangkamay.local",
+                                   "email_template":  "Buyer Order Confirmation \u0026 Receipt",
+                                   "subscription_tier":  "super_premium (Elite)",
+                                   "sponsorship_product":  "TEST-BAMBOO-01",
+                                   "mail_service":  "RESEND"
+                               },
+    "protocol":  "3-Stream Assembly Line E2E Browser Suite (Production Ground Truth)",
+    "run_id":  "iab-edae585b-2a24-439b-bf4e-85b7ac492ce4",
+    "host":  "https://www.likhangkamay.app",
+    "timestamp":  "2026-11-03T00:21:30.4965426+00:00",
+    "elite_seller_verified":  true,
+    "manifest_version":  "5.0.0-PROD-3STREAM-POW",
+    "defense_assets_verified":  true,
+    "order_resilience":  {
+                             "atomic_rollback_verified":  true,
+                             "stock_after_cancel_restored":  50,
+                             "stock_before":  50,
+                             "stock_after_order":  49,
+                             "product_id":  20,
+                             "cancelled_order_number":  "ORD-6AE924C61E618"
+                         },
+    "b2b_wholesale":  {
+                          "b2b_order_number":  "ORD-6AE923B255E30",
+                          "raw_material":  "E2E Synthetic ₱1 Bamboo Cup (TEST-BAMBOO-01)",
+                          "wholesale_unit_price":  0.8,
+                          "volume_quantity":  5,
+                          "wholesale_invoice_downloaded":  true,
+                          "moq_enforced":  true
+                      },
+    "streams_executed":  {
+                             "stream_a_commercial_core":  true,
+                             "stream_b_b2b_discovery_resilience":  true,
+                             "stream_c_governance_hr_monetization":  true
+                         },
+    "kyc_onboarding":  {
+                           "shop_name":  "Kyc Test Studio",
+                           "status":  "Application Under Review",
+                           "applicant_email":  "kyc.artisan.test@likhangkamay.local",
+                           "defense_documents_uploaded":  [
+                                                              "Business Permit.png",
+                                                              "DTI.png",
+                                                              "Tin ID.png",
+                                                              "Valid ID.png"
+                                                          ]
+                       },
+    "commercial_orders":  {
+                              "order_b":  {
+                                              "pickup_pin_verified":  true,
+                                              "pickup_pin":  "6714",
+                                              "pickup_mode":  "in_store_pickup",
+                                              "order_number":  "ORD-6AE868EE852BD"
+                                          },
+                              "order_a":  {
+                                              "rider":  "CAV-9876",
+                                              "payment_method":  "paymongo_gcash",
+                                              "bir_invoice_sha256":  "a0cf5d5603487b96d151dda932c773a11d23c958b1af71a738248e9ddbd4babe",
+                                              "order_number":  "ORD-6AE8687523208",
+                                              "voucher_applied":  "TESTSAVE10",
+                                              "status":  "Delivered"
+                                          },
+                              "order_c":  {
+                                              "courier":  "lalamove_sandbox",
+                                              "dispute_status":  "Resolved",
+                                              "tracking_number":  "LLM-SANDBOX-7823901",
+                                              "order_number":  "ORD-6AE869294B2CB",
+                                              "admin_arbitration":  "Refund Issued"
+                                          }
+                          },
+    "execution_mode":  "subagent_isolated",
+    "security_barriers":  {
+                              "accounting_maker_checker_barrier":  "PASS (Enforced self-approval block)",
+                              "b2b_supply_hub_moq_barrier":  "PASS (HTTP 422 validation block for \u003c 5 units)",
+                              "buyer_admin_dashboard_barrier":  "PASS (HTTP 403 Forbidden - Access Restricted)"
+                          }
+}

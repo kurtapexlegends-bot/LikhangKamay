@@ -110,6 +110,13 @@ class OrderWorkflowHelper
                 $request->input('shipping_postal_code'),
             ])->contains(fn ($value) => StructuredAddress::clean($value) !== null);
 
+            if (!$request->filled('shipping_address_type')) {
+                $defaultAddressType = $buyer->addresses()->where('is_default', true)->value('address_type');
+                $request->merge([
+                    'shipping_address_type' => $defaultAddressType ?: ($buyer->isArtisan() ? 'office' : 'home'),
+                ]);
+            }
+
             if ($hasStructuredShippingInput) {
                 $request->validate([
                     'shipping_street_address' => 'required|string|max:255',

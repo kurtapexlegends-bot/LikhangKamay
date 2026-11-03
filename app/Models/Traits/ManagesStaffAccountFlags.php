@@ -150,6 +150,7 @@ trait ManagesStaffAccountFlags
             self::STAFF_ACCESS_PERMISSION_CAN_EDIT,
             self::STAFF_ACCESS_PERMISSION_UPDATE,
             self::STAFF_ACCESS_PERMISSION_FULL,
+            'edit',
             'update_access',
             'full_access' => self::STAFF_ACCESS_PERMISSION_CAN_EDIT,
             self::STAFF_ACCESS_PERMISSION_READ_ONLY => self::STAFF_ACCESS_PERMISSION_READ_ONLY,

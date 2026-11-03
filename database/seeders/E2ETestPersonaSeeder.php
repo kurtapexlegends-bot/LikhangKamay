@@ -176,11 +176,11 @@ class E2ETestPersonaSeeder extends Seeder
 
         $staffPermissions = [
             'workspace_access' => true,
-            'hr' => 'edit',
-            'orders' => 'edit',
-            'products' => 'edit',
-            'team_messages' => 'edit',
-            'reviews' => 'edit',
+            'hr' => 'can_edit',
+            'orders' => 'can_edit',
+            'products' => 'can_edit',
+            'team_messages' => 'can_edit',
+            'reviews' => 'can_edit',
         ];
 
         User::withTrashed()->updateOrCreate(

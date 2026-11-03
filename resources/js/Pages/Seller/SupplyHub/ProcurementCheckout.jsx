@@ -37,6 +37,7 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
     const { data, setData, post, processing, errors, setError, clearErrors } = useForm({
         shipping_method: 'Delivery',
         selected_address_id: defaultAddress?.id || 'new',
+        shipping_address_type: defaultAddress?.address_type || 'office',
         recipient_name: defaultAddress?.recipient_name || auth?.user?.shop_name || auth?.user?.name || '',
         phone_number: defaultAddress?.phone_number || auth?.user?.phone || '',
         shipping_street_address: defaultAddress?.street_address || '',
@@ -294,7 +295,7 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
                         <button
                             type="button"
                             onClick={handleSubmit}
-                            disabled={processing || !selectedAddressId}
+                            disabled={processing || !data.selected_address_id}
                             className="flex-1 max-w-[210px] flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-clay-600 hover:bg-clay-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs shadow-md shadow-clay-200 transition-all active:scale-95 cursor-pointer"
                         >
                             <span>Confirm & Order</span>
