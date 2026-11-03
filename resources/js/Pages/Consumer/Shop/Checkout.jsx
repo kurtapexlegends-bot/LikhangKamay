@@ -16,6 +16,7 @@ import MultiWorkshopPickupSection from '@/Components/Consumer/Shop/Checkout/Mult
 import CheckoutDeliveryNotesCard from '@/Components/Consumer/Shop/Checkout/CheckoutDeliveryNotesCard';
 import CheckoutMobileStickyBar from '@/Components/Consumer/Shop/Checkout/CheckoutMobileStickyBar';
 import { CheckoutEmptyCartState, CheckoutAdminRestrictedState } from '@/Components/Consumer/Shop/Checkout/CheckoutStatusNotice';
+import FormErrorSummary from '@/Components/Common/FormErrorSummary';
 import useCheckoutCart from '@/Components/Consumer/Shop/Checkout/hooks/useCheckoutCart';
 import useShippingQuote from '@/Components/Consumer/Shop/Checkout/hooks/useShippingQuote';
 
@@ -380,6 +381,8 @@ export default function Checkout({ auth, pricing }) {
                     totalSellers={totalSellers} 
                     sellerGroups={sellerGroups} 
                 />
+
+                <FormErrorSummary errors={errors} className="mb-4" />
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5 lg:gap-6">
                     <div className="space-y-3.5 md:col-span-2">

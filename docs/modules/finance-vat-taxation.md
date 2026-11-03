@@ -34,7 +34,9 @@ LikhangKamay enforces direct-to-mobile e-wallet disbursements for all seller ear
 
 ---
 
-## 3. Computerized BIR Sales Invoice
+## 3. Computerized BIR Sales Invoice & EOPT Act (RA 11976)
 Rendered via [`receipt.blade.php`](file:///c:/laragon/www/LikhangKamay/resources/views/pdf/receipt.blade.php):
+* Standardized to **Sales Invoice** (standardizing commercial terminology pursuant to Republic Act No. 11976 - Ease of Paying Taxes Act).
 * Adapts dynamically: hides zero-rated/zero-vat rows for domestic transactions.
 * Includes Seller TIN, Registered Business Name, itemized unit prices, and formal BIR Tax Matrix.
+* UI consumer actions in [`OrderCardHeader.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Consumer/Buyer/MyOrders/OrderListItemCard/OrderCardHeader.jsx) and [`OrderCardActions.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Consumer/Buyer/MyOrders/OrderListItemCard/OrderCardActions.jsx) link to computerized commercial sales invoices.

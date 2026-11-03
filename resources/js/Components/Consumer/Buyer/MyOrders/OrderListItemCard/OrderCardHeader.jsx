@@ -27,10 +27,10 @@ export default function OrderCardHeader({ order }) {
                             target="_blank"
                             rel="noreferrer"
                             className="font-bold text-stone-600 hover:text-stone-900 underline flex items-center gap-1 transition"
-                            title="Download official receipt"
+                            title="Download official BIR sales invoice (RA 11976)"
                         >
                             <FileText size={11} className="text-stone-400" />
-                            <span>Receipt PDF</span>
+                            <span>Sales Invoice</span>
                         </a>
                     </div>
                 </div>

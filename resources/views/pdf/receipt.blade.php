@@ -9,7 +9,7 @@
         $shippingFee = (float) ($order->shipping_fee_amount ?? 0);
         $totalPaid = (float) ($order->total_amount ?? ($merchandiseSubtotal + $convenienceFee + $shippingFee));
         $shippingAddressType = $order->shipping_address_type ? ucfirst(str_replace('_', ' ', $order->shipping_address_type)) : 'Standard';
-        $docTitle = $isB2B ? "B2B Purchase Order & Wholesale Invoice - {$order->order_number}" : "Official Order Receipt - {$order->order_number}";
+        $docTitle = $isB2B ? "B2B Purchase Order & Wholesale Sales Invoice - {$order->order_number}" : "Sales Invoice - {$order->order_number}";
 
         if (!empty($order->vat_type)) {
             $isVatRegistered = ($order->vat_type === 'vat_inclusive');
@@ -95,7 +95,7 @@
     <div class="no-print" style="text-align: center; margin-bottom: 24px;">
         <button onclick="window.print()" style="background: #844d2d; color: white; padding: 10px 24px; border: none; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 13px; box-shadow: 0 2px 8px rgba(132, 77, 45, 0.25); display: inline-flex; items-center; gap: 8px;">
             <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
-            {{ $isB2B ? 'Print / Export Purchase Order & Invoice' : 'Print / Save Official Receipt' }}
+            {{ $isB2B ? 'Print / Export Purchase Order & Sales Invoice' : 'Print / Save Sales Invoice' }}
         </button>
         <p style="font-size: 11px; color: #78716c; margin-top: 8px; font-weight: 500;">
             Tip: In your print window, select <strong>"Save as PDF"</strong> to save a digital copy to your device.
@@ -105,7 +105,10 @@
     <div class="header">
         <div class="logo">LikhangKamay</div>
         <div class="receipt-title">
-            {{ $isB2B ? 'Official B2B Purchase Order & Wholesale Commercial Invoice' : 'Official E-Commerce Order Receipt' }}
+            {{ $isB2B ? 'Official B2B Purchase Order & Wholesale Commercial Invoice' : 'Official E-Commerce Order Receipt & Commercial Sales Invoice' }}
+        </div>
+        <div style="font-size: 10px; color: #78716c; font-weight: 600; margin-top: 3px;">
+            Commercial Sales Invoice pursuant to Republic Act No. 11976 (Ease of Paying Taxes Act)
         </div>
         @if($isB2B)
             <div class="b2b-badge">Artisan Material Procurement</div>
@@ -281,11 +284,11 @@
 
     <div class="footer">
         @if($isB2B)
-            <p>Official B2B Purchase Order & Commercial Wholesale Invoice · Verified Peer Artisan Studio Sourcing on LikhangKamay.</p>
+            <p>Official B2B Purchase Order & Commercial Wholesale Sales Invoice · Verified Peer Artisan Studio Sourcing on LikhangKamay.</p>
         @else
             <p>Thank you for supporting Filipino artisans & local craft creators on LikhangKamay.</p>
         @endif
-        <p style="margin-top: 4px;">Official Computer-Generated Document · Issued on {{ now()->format('F d, Y h:i A') }}</p>
+        <p style="margin-top: 4px;">Official Computer-Generated Commercial Sales Invoice pursuant to R.A. 11976 · Issued on {{ now()->format('F d, Y h:i A') }}</p>
     </div>
 </body>
 </html>

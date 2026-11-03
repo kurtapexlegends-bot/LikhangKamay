@@ -14,6 +14,7 @@ import { formatStructuredAddress } from '@/lib/addressFormatting';
 import ShippingMethodSelector from '@/Components/Consumer/Shop/Checkout/ShippingMethodSelector';
 import ShippingAddressSelector from '@/Components/Consumer/Shop/Checkout/ShippingAddressSelector/ShippingAddressSelector';
 import PaymentMethodSelector from '@/Components/Consumer/Shop/Checkout/PaymentMethodSelector';
+import FormErrorSummary from '@/Components/Common/FormErrorSummary';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -192,6 +193,7 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
                 </div>
 
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <FormErrorSummary errors={errors} className="col-span-full" />
                     
                     {/* Left Column: Delivery & Payment Options */}
                     {/* Left Column: Delivery & Payment Options */}

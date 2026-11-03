@@ -80,3 +80,14 @@ To maintain a bespoke, developer-crafted aesthetic:
 *   **Low-Bandwidth 3D Model Guard**:
     Interactive 3D GLB assets (~1.5–3.5 MB) in consumer galleries ([ProductImageGallery.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Consumer/Shop/ProductShow/ProductImageGallery.jsx)) and admin drawers ([ProductInspectionDrawer.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Admin/Catalog/ProductInspectionDrawer.jsx)) detect connection degradation via [useNetworkStatus.js](file:///c:/laragon/www/LikhangKamay/resources/js/hooks/useNetworkStatus.js) and `navigator.connection.saveData`. When degraded, automatic downloading is intercepted by a lightweight notice card requiring explicit user confirmation ("Load 3D Model").
 
+---
+
+## 7. Form Validation & Error Visibility Standard
+
+*   **Sticky / Top Aggregate Error Summary**:
+    Complex checkout forms, multi-section settings, and nested modal sheets mount [`FormErrorSummary.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Common/FormErrorSummary.jsx) to eliminate silent form blocking:
+    *   **Visibility**: Renders reactively whenever `Object.keys(errors).length > 0` (`role="alert"`, `aria-live="assertive"`).
+    *   **Palette**: Soft earthy rose banner (`bg-rose-50/95`, `border-rose-200`, `text-rose-900`) without gradient AI slop or decorative emojis.
+    *   **Smooth Navigation**: Automatically scrolls the error summary into user viewport and lists each field error with an anchor button that jumps directly to the matching form element via smooth scroll and element focus.
+
+

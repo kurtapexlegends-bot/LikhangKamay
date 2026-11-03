@@ -52,9 +52,9 @@ export default function OrderCardActions({
     const getMobileSecondaryActions = () => {
         const actions = [];
         
-        // Receipt (Always available)
+        // Sales Invoice (Always available)
         actions.push({
-            label: 'Download Receipt',
+            label: 'Download Invoice',
             icon: Download,
             href: `/my-orders/${order.id}/receipt?download=1`,
             type: 'link'
@@ -131,16 +131,16 @@ export default function OrderCardActions({
         <div className="flex flex-row items-center justify-end gap-2 border-t border-stone-200/60 bg-stone-50/50 px-4 py-3 w-full">
             {/* --- DESKTOP FOOTER ACTIONS (Strictly Preserved) --- */}
             <div className="hidden sm:flex flex-row items-center gap-2 flex-wrap justify-end overflow-visible">
-                {/* Download Receipt (Desktop header already has receipt; footer only shows if not in active dispute) */}
+                {/* Download Sales Invoice (Desktop header already has invoice; footer only shows if not in active dispute) */}
                 {order.status !== 'Refund/Return' && (
                     <a 
                         href={`/my-orders/${order.id}/receipt?download=1`}
                         target="_blank"
                         rel="noreferrer"
-                        title="Download official order receipt"
+                        title="Download official BIR sales invoice (RA 11976)"
                         className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3.5 text-[11px] font-bold text-stone-700 shadow-2xs transition hover:border-clay-300 hover:bg-stone-50 min-h-[36px] cursor-pointer"
                     >
-                        <Download size={13} className="text-stone-500" /> Download Receipt
+                        <Download size={13} className="text-stone-500" /> Download Invoice
                     </a>
                 )}
 

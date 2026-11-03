@@ -6,6 +6,7 @@ import EmployeeModalFooter from './EmployeeModalFooter';
 import RolePermissionSelector from './RolePermissionSelector';
 import BasicEmployeeInfoSection from './BasicEmployeeInfoSection';
 import PortalCredentialsSection from './PortalCredentialsSection';
+import FormErrorSummary from '@/Components/Common/FormErrorSummary';
 import useConstraintValidation from '@/hooks/useConstraintValidation';
 import { useToast } from '@/Components/ToastContext';
 import {
@@ -318,6 +319,8 @@ export default function EmployeeFormModal({
 
                 {/* Form Body */}
                 <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-[#FDFBF9]">
+                    <FormErrorSummary errors={errors} />
+
                     {/* Basic Info (1. Staff Profile, 2. Compensation, 3. Location & Verification, 4. Work Schedule & Shifts) */}
                     <BasicEmployeeInfoSection
                         data={data}

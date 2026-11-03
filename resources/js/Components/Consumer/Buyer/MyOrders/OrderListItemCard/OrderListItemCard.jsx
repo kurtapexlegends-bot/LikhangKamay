@@ -249,7 +249,7 @@ export default function OrderListItemCard({
                         </span>
                     </div>
                     <div className="pt-1 flex items-center justify-center gap-1 text-[9.5px] text-stone-400 font-medium">
-                        <span>All listed retail prices are VAT-inclusive • Download receipt for official BIR tax matrix</span>
+                        <span>All listed retail prices are VAT-inclusive • Download sales invoice for official BIR tax matrix (RA 11976)</span>
                     </div>
                 </div>
             )}
