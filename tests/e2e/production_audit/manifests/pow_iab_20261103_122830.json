@@ -1,0 +1,145 @@
+{
+  "manifest_version": "1.0.0",
+  "environment": "production",
+  "base_url": "https://www.likhangkamay.app",
+  "execution_timestamp": "2026-11-03T12:28:30+08:00",
+  "summary": {
+    "total_steps": 12,
+    "passed": 12,
+    "failed": 0,
+    "overall_status": "SUCCESS"
+  },
+  "stream_a": {
+    "step_1": {
+      "artisan_id": 21,
+      "email": "test.artisan@likhangkamay.local",
+      "payout_account": "GCash 09171234567",
+      "tin": "123-456-789-000",
+      "voucher": "TESTSAVE10",
+      "secondary_location_id": 2,
+      "bom_attached": { "product_id": 20, "supply_id": 11, "qty": 2.0 },
+      "model_3d": "products/models/23dc91e0-135c-40f1-858c-29dfb5ca83ed.glb"
+    },
+    "step_2": {
+      "buyer_id": 22,
+      "email": "test.buyer@likhangkamay.local",
+      "orders": [
+        { "id": 19, "order_number": "ORD-6AE956929391A", "method": "GCash", "total": 750.25 },
+        { "id": 20, "order_number": "ORD-6AE957146184A", "method": "Pickup", "pickup_pin": "6794", "total": 675.00 },
+        { "id": 21, "order_number": "ORD-6AE9572F07562", "method": "COD", "total": 750.25 }
+      ]
+    },
+    "step_3": {
+      "order_a_accepted": 19,
+      "bom_stock_deducted": { "from": 50.0, "to": 48.0 },
+      "order_a_driver_plate": "CAV-9876",
+      "order_b_pickup_completed": 20,
+      "order_c_lalamove_tracking": "3620310124520489542",
+      "orders_csv_exported": true
+    },
+    "step_4": {
+      "driver_email": "test.driver@likhangkamay.local",
+      "delivery_id": 4,
+      "telemetry_ping": { "lat": 14.418, "lon": 120.952, "heading": 85, "speed_kph": 38 },
+      "delivery_status": "COMPLETED",
+      "rider_runs": 1,
+      "rider_earnings": 50.00
+    },
+    "step_5": {
+      "order_a_status": "Completed",
+      "official_receipt_url": "/my-orders/19/receipt",
+      "official_receipt_sha256": "bf3bf47c9057b803b0b4b0e79b67bbe5bb6f75104ae05c0ac18c7df6ba03c0dd",
+      "review_id": 3,
+      "review_rating": 5,
+      "dispute_id": 3,
+      "disputed_order_id": 21
+    },
+    "step_5_5": {
+      "counter_dispute_submitted": true,
+      "review_dispute_submitted": true,
+      "dispute_escalated_by_buyer": true,
+      "rbac_buyer_admin_attempt": { "status": 403, "result": "Access Restricted" }
+    },
+    "step_6": {
+      "admin_email": "test.admin@likhangkamay.local",
+      "dispute_arbitration": { "id": 3, "decision": "refund" },
+      "review_moderation": { "id": 1, "decision": "rejected (upheld)" },
+      "catalog_approval": { "product_id": 20, "status": "Active" },
+      "payout_disbursement": { "id": 1, "ref": "PAY-E2E-20261103-480885", "amount": 500.00, "voucher_url": "/admin/payouts/1/voucher" },
+      "admin_settings_touched": false
+    }
+  },
+  "stream_b": {
+    "step_7": {
+      "accounting_segregation_verified": true,
+      "supply_restock": { "supply_id": 11, "initial": 48.0, "restocked": 20.0, "current": 68.0 },
+      "buyer_artisan": "artisan.silang@likhangkamay.com",
+      "b2b_order_id": "ORD-6AE95EC603BFD",
+      "b2b_total": 145.64,
+      "b2b_invoice_url": "/supply-hub/orders/ORD-6AE95EC603BFD/invoice",
+      "b2b_invoice_sha256": "fe0eea66e79a89297f397fd81e0e016483f737efeef11931c9424acfa2e84723"
+    },
+    "step_8": {
+      "shop_filters": { "locations": "Imus", "materials": "Stoneware" },
+      "matched_product_id": 20,
+      "canvas_3d_verified": { "dimensions": "650x650", "controls_exercised": true },
+      "wishlist_verified": true
+    },
+    "step_9": {
+      "baseline_stock": 47,
+      "ordered_qty": 1,
+      "order_id": 23,
+      "order_number": "ORD-6AE95F7A2C6C8",
+      "decremented_stock": 46,
+      "cancelled_reason": "Ordered by mistake",
+      "cancelled_status": "Cancelled",
+      "rolled_back_stock": 47
+    }
+  },
+  "stream_c": {
+    "step_10": {
+      "applicant_user_id": 25,
+      "shop_name": "Kyc Test Studio",
+      "email": "kyc.artisan.test@likhangkamay.local",
+      "credentials_inspected": ["business_permit", "dti_registration", "valid_id", "tin_id"],
+      "zoom_magnifier_exercised": true,
+      "approved": true
+    },
+    "step_11": {
+      "payroll_run_generated": { "id": 3, "reference": "LK-PAY-3", "month": "November 2026", "amount": 25710.23 },
+      "owner_approval_declined": { "approval_id": 2, "reason": "Verify overtime deduction hours" },
+      "staff_provisioning_lifecycle": {
+        "name": "Test Apprentice Potter",
+        "employee_id": 6,
+        "login_account_id": 27,
+        "permissions": { "orders": "read_only", "products": "can_edit", "hr": false },
+        "suspended": true,
+        "reactivated": true,
+        "deleted": true
+      },
+      "attendance_approved": { "session_id": 7, "staff_name": "Test Logistics Rider", "approver_id": 21 },
+      "monthly_settlement_csv": {
+        "period": "November 2026",
+        "filename": "settlement_statement_2026_11_cavite-test-craft-workshop.csv",
+        "size_bytes": 1204,
+        "sha256": "85605d21134869ff2b8b7da6417e43dcb59f7e7d8e217a6171d8208758fea3d6"
+      },
+      "secondary_location_teardown": { "location_id": 2, "deleted": true, "remaining_count": 0 }
+    },
+    "step_12": {
+      "subscription_tier": "super_premium (Elite)",
+      "retention_modal_exercised": true,
+      "sponsorship_request_id": 5,
+      "product_id": 20,
+      "sponsorship_approved": true,
+      "sponsored_product_verified": true,
+      "test_email_dispatched": {
+        "template": "sponsorship_status",
+        "recipient": "test.admin@likhangkamay.local",
+        "latency_ms": 14,
+        "driver": "resend",
+        "status": 200
+      }
+    }
+  }
+}
