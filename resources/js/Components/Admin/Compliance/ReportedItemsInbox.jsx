@@ -12,10 +12,11 @@ export default function ReportedItemsInbox({
     setSelectedTicket,
     handleFlagAction,
     isNavigating,
-    flagsPagination
+    flagsPagination,
+    defaultFilter = 'all'
 }) {
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterCategory, setFilterCategory] = useState('active');
+    const [filterCategory, setFilterCategory] = useState(defaultFilter);
     const pillsScrollRef = useRef(null);
 
     useEffect(() => {
@@ -46,17 +47,18 @@ export default function ReportedItemsInbox({
                 closed++;
             } else {
                 active++;
-                if (ticket.ticketType === 'flag' && ticket.targetType === 'Product') {
-                    productFlags++;
-                } else if (ticket.ticketType === 'flag' && ticket.targetType === 'User') {
-                    userFlags++;
-                } else if (ticket.ticketType === 'dispute') {
-                    disputes++;
-                }
+            }
+            if (ticket.ticketType === 'flag' && ticket.targetType === 'Product') {
+                productFlags++;
+            } else if (ticket.ticketType === 'flag' && ticket.targetType === 'User') {
+                userFlags++;
+            } else if (ticket.ticketType === 'dispute') {
+                disputes++;
             }
         });
 
         return {
+            all: tickets.length,
             active,
             product_flags: productFlags,
             user_flags: userFlags,
@@ -72,9 +74,9 @@ export default function ReportedItemsInbox({
 
             if (filterCategory === 'active' && isClosed) return false;
             if (filterCategory === 'closed' && !isClosed) return false;
-            if (filterCategory === 'product_flags' && (ticket.ticketType !== 'flag' || ticket.targetType !== 'Product' || isClosed)) return false;
-            if (filterCategory === 'user_flags' && (ticket.ticketType !== 'flag' || ticket.targetType !== 'User' || isClosed)) return false;
-            if (filterCategory === 'disputes' && (ticket.ticketType !== 'dispute' || isClosed)) return false;
+            if (filterCategory === 'product_flags' && (ticket.ticketType !== 'flag' || ticket.targetType !== 'Product')) return false;
+            if (filterCategory === 'user_flags' && (ticket.ticketType !== 'flag' || ticket.targetType !== 'User')) return false;
+            if (filterCategory === 'disputes' && ticket.ticketType !== 'dispute') return false;
 
             if (!query) return true;
             return [
@@ -88,6 +90,13 @@ export default function ReportedItemsInbox({
             ].some(val => String(val || '').toLowerCase().includes(query));
         });
     }, [tickets, searchQuery, filterCategory]);
+
+    // Deselect if active selected ticket is filtered out by search or category tab
+    useEffect(() => {
+        if (selectedTicket && !filteredTickets.some(t => t.id === selectedTicket.id)) {
+            setSelectedTicket(null);
+        }
+    }, [filteredTickets, selectedTicket, setSelectedTicket]);
 
     const getTypeIcon = (ticket) => {
         if (ticket.ticketType === 'dispute') return <MessageSquare size={10} />;
@@ -170,6 +179,7 @@ export default function ReportedItemsInbox({
                     className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pt-0.5 scroll-smooth touch-pan-x overscroll-contain"
                 >
                     {[
+                        { key: 'all', label: 'All', count: categoryCounts.all },
                         { key: 'active', label: 'Active', count: categoryCounts.active },
                         { key: 'product_flags', label: 'Products', count: categoryCounts.product_flags },
                         { key: 'user_flags', label: 'Users', count: categoryCounts.user_flags },
@@ -212,7 +222,7 @@ export default function ReportedItemsInbox({
                     <div className="p-10 text-center">
                         <CheckCircle2 size={28} className="mx-auto mb-2.5 text-stone-300" />
                         <p className="font-bold text-stone-800 text-xs">No moderation tickets match your filters.</p>
-                        <p className="text-[11px] text-stone-400 mt-1">Select &ldquo;All Active&rdquo; or clear search to inspect tickets.</p>
+                        <p className="text-[11px] text-stone-400 mt-1">Select &ldquo;All&rdquo; or clear search to inspect tickets.</p>
                     </div>
                 ) : (
                     <ul className="divide-y divide-stone-100">

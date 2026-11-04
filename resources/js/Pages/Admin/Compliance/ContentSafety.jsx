@@ -21,7 +21,7 @@ import ReportedItemsInbox from '@/Components/Admin/Compliance/ReportedItemsInbox
 import ReportDetailsCard from '@/Components/Admin/Compliance/ReportDetailsCard';
 import ModerationActionModal from '@/Components/Admin/Compliance/ModerationActionModal';
 
-export default function ContentSafety({ flags, disputes = [], defaultFilter = 'active' }) {
+export default function ContentSafety({ flags, disputes = [], defaultFilter = 'all' }) {
     const { addToast } = useToast();
 
     // ----------------------------------------------------
@@ -97,9 +97,6 @@ export default function ContentSafety({ flags, disputes = [], defaultFilter = 'a
         if (!selectedTicketId) return null;
         return unifiedTickets.find(t => t.id === selectedTicketId) || null;
     }, [unifiedTickets, selectedTicketId]);
-
-    // Desktop default inspector fallback
-    const desktopInspectorTicket = selectedTicket || unifiedTickets[0] || null;
 
     useEffect(() => {
         const unbindStart = router.on('start', () => setIsNavigating(true));
@@ -211,14 +208,15 @@ export default function ContentSafety({ flags, disputes = [], defaultFilter = 'a
                         handleFlagAction={handleFlagAction}
                         isNavigating={isNavigating}
                         flagsPagination={flags}
+                        defaultFilter={defaultFilter}
                     />
 
                     {/* Right: Rich Context-Aware Inspector & Action Card */}
                     <div className="hidden lg:flex flex-1 bg-white border border-stone-200/80 rounded-2xl shadow-2xs flex-col overflow-hidden h-full">
-                        {desktopInspectorTicket ? (
+                        {selectedTicket ? (
                             <div className="flex-1 flex flex-col overflow-hidden bg-white rounded-2xl">
                                 <ReportDetailsCard 
-                                    selectedTicket={desktopInspectorTicket} 
+                                    selectedTicket={selectedTicket} 
                                     handleFlagAction={handleFlagAction}
                                     openDisputeActionModal={openDisputeActionModal}
                                     setDisputeDeleteState={setDisputeDeleteState}

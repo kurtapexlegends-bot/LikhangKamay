@@ -120,7 +120,6 @@ class DisputeController extends Controller
         $like = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
 
         $disputes = Dispute::with(['order.user', 'order.artisan', 'order.items.product'])
-            ->where('status', 'escalated')
             ->when($search, function ($q) use ($search, $like) {
                 $q->where(function ($sq) use ($search, $like) {
                     $sq->where('reason', $like, "%{$search}%")
@@ -135,7 +134,7 @@ class DisputeController extends Controller
                         });
                 });
             })
-            ->orderBy('updated_at', 'desc')
+            ->latest('updated_at')
             ->get();
 
         return Inertia::render('Admin/Disputes/DisputeEscalationDashboard', [

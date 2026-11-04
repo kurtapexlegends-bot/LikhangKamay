@@ -39,10 +39,10 @@ export default function ArbitrationConfirmModal({
                     <div>
                         <h3 className="text-base font-bold text-stone-900">
                             {decision === 'refund' 
-                                ? 'Confirm Full Refund to Buyer' 
+                                ? 'Approve Full Refund' 
                                 : decision === 'partial_refund'
-                                ? 'Confirm Partial Refund (50% Split)'
-                                : 'Confirm Release Escrow to Artisan'}
+                                ? 'Split 50% Partial Refund'
+                                : 'Decline Claim & Pay Shop'}
                         </h3>
                         <p className="text-xs text-stone-500 mt-0.5">
                             Dispute #{dispute.id} · Order #{dispute.order?.order_number || dispute.order_id}
@@ -53,14 +53,14 @@ export default function ArbitrationConfirmModal({
                 <div className="p-4 rounded-xl bg-stone-50 border border-stone-200/80 text-xs text-stone-700 leading-relaxed space-y-2">
                     {decision === 'refund' ? (
                         <p>
-                            You are about to <strong className="text-stone-900">approve a full refund</strong> of{' '}
+                            You are approving a <strong className="text-stone-900">full refund</strong> of{' '}
                             <strong className="text-clay-800">₱{totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</strong>{' '}
                             to <strong className="text-stone-900">{buyerName}</strong>. 
-                            Funds held in escrow will be refunded to the customer.
+                            The payment will be refunded to the customer.
                         </p>
                     ) : decision === 'partial_refund' ? (
                         <p>
-                            You are about to <strong className="text-stone-900">split the order total 50/50</strong>. 
+                            You are splitting the order total <strong className="text-stone-900">50/50</strong>. 
                             <strong className="text-amber-900"> ₱{halfAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</strong> will be refunded to{' '}
                             <strong className="text-stone-900">{buyerName}</strong>, and the remaining{' '}
                             <strong className="text-stone-900">₱{halfAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</strong> will be released to{' '}
@@ -68,13 +68,14 @@ export default function ArbitrationConfirmModal({
                         </p>
                     ) : (
                         <p>
-                            You are about to <strong className="text-stone-900">resolve this dispute in the artisan's favor</strong>. 
-                            The dispute will be closed and escrowed order funds will be released to{' '}
+                            You are about to <strong className="text-stone-900">decline the customer's return claim</strong>. 
+                            The dispute will be closed and the order payment of{' '}
+                            <strong className="text-stone-900">₱{totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</strong> will be released to{' '}
                             <strong className="text-stone-900">{shopName}</strong>.
                         </p>
                     )}
                     <p className="text-[11px] text-stone-500 italic pt-1 border-t border-stone-200/60">
-                        Resolution notes will be recorded permanently in audit logs and sent to both parties.
+                        Decision notes will be saved in the case history and sent to both customer and shop.
                     </p>
                 </div>
 

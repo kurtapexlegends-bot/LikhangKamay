@@ -8,8 +8,8 @@ import { MoveHorizontal, RotateCcw, ImageIcon, AlertCircle } from 'lucide-react'
 export default function ImageDiffSlider({
     beforeImage,
     afterImage,
-    beforeLabel = 'Artisan Pre-Shipment',
-    afterLabel = 'Buyer Reported Defect',
+    beforeLabel = 'Shop Pre-Shipment',
+    afterLabel = 'Customer Defect Photo',
     beforeOptions = [],
     afterOptions = [],
     selectedBeforeIndex = 0,
@@ -100,11 +100,11 @@ export default function ImageDiffSlider({
                         <MoveHorizontal size={14} />
                     </span>
                     <div>
-                        <h4 className="text-xs font-black text-stone-900 uppercase tracking-wider">
-                            Evidence Comparison Slider
+                        <h4 className="text-xs font-bold text-stone-900">
+                            Photo Evidence Comparison
                         </h4>
                         <p className="text-[10px] text-stone-500 font-medium">
-                            Drag the center divider or use arrow keys to inspect surface discrepancies
+                            Drag the center divider or use arrow keys to compare photos
                         </p>
                     </div>
                 </div>
@@ -128,7 +128,7 @@ export default function ImageDiffSlider({
             {/* Interactive Split Frame */}
             <div
                 ref={containerRef}
-                className="relative w-full aspect-[16/10] sm:aspect-[16/9] max-h-[380px] bg-stone-900 select-none overflow-hidden cursor-ew-resize"
+                className="relative w-full aspect-[16/10] sm:aspect-[16/9] max-h-[380px] bg-stone-100 select-none overflow-hidden cursor-ew-resize border-y border-stone-100"
                 onMouseDown={handleMouseDown}
                 onTouchStart={() => setIsDragging(true)}
                 onTouchMove={handleTouchMove}
@@ -148,9 +148,9 @@ export default function ImageDiffSlider({
                             }}
                         />
                     ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-stone-950 text-stone-400 p-4 text-center">
-                            <AlertCircle size={24} className="mb-1 text-stone-500" />
-                            <p className="text-xs font-medium">No buyer defect proof uploaded</p>
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-stone-100 text-stone-500 p-4 text-center">
+                            <AlertCircle size={22} className="mb-1 text-stone-400" />
+                            <p className="text-xs font-semibold text-stone-700">No customer defect photo uploaded</p>
                         </div>
                     )}
                 </div>
@@ -179,9 +179,10 @@ export default function ImageDiffSlider({
                                 }}
                             />
                         ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center bg-stone-900 text-stone-400 p-4 text-center">
-                                <AlertCircle size={24} className="mb-1 text-stone-500" />
-                                <p className="text-xs font-medium">No artisan dispatch photo</p>
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-stone-100 text-stone-500 p-4 text-center">
+                                <AlertCircle size={22} className="mb-1 text-stone-400" />
+                                <p className="text-xs font-semibold text-stone-700">No shop packing photo</p>
+                                <p className="text-[10px] text-stone-400 mt-0.5">The shop did not upload pre-shipment photos</p>
                             </div>
                         )}
                     </div>
@@ -192,21 +193,21 @@ export default function ImageDiffSlider({
                     className="absolute top-0 bottom-0 z-20 pointer-events-none flex flex-col items-center"
                     style={{ left: `${sliderPosition}%`, transform: 'translateX(-50%)' }}
                 >
-                    <div className="w-0.5 h-full bg-white shadow-[0_0_8px_rgba(0,0,0,0.6)]" />
-                    <div className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-stone-900 text-white border-2 border-white shadow-lg pointer-events-auto cursor-ew-resize hover:scale-105 active:scale-95 transition-transform">
-                        <MoveHorizontal size={14} className="text-clay-300" />
+                    <div className="w-0.5 h-full bg-stone-700/80 shadow-[0_0_8px_rgba(0,0,0,0.3)]" />
+                    <div className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-stone-800 text-white border-2 border-white shadow-md pointer-events-auto cursor-ew-resize hover:scale-105 active:scale-95 transition-transform">
+                        <MoveHorizontal size={14} className="text-stone-200" />
                     </div>
                 </div>
 
                 {/* Floating Labels */}
                 <div className="absolute top-3 left-3 z-10 pointer-events-none">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-900/80 backdrop-blur-sm text-stone-100 text-[10px] font-bold border border-white/20 shadow-sm">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-900/85 backdrop-blur-sm text-stone-100 text-[10px] font-bold border border-white/20 shadow-sm">
                         <span className="w-2 h-2 rounded-full bg-indigo-400" />
                         {beforeLabel}
                     </span>
                 </div>
                 <div className="absolute top-3 right-3 z-10 pointer-events-none">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-900/80 backdrop-blur-sm text-stone-100 text-[10px] font-bold border border-white/20 shadow-sm">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-900/85 backdrop-blur-sm text-stone-100 text-[10px] font-bold border border-white/20 shadow-sm">
                         <span className="w-2 h-2 rounded-full bg-rose-400" />
                         {afterLabel}
                     </span>
@@ -230,8 +231,8 @@ export default function ImageDiffSlider({
                     {/* Before Image Selectors */}
                     {beforeOptions.length > 1 && (
                         <div className="space-y-1.5">
-                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                                Artisan Photos ({beforeOptions.length})
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                                Shop Photos ({beforeOptions.length})
                             </span>
                             <div className="flex gap-1.5 overflow-x-auto pb-1">
                                 {beforeOptions.map((opt, idx) => {
@@ -242,7 +243,7 @@ export default function ImageDiffSlider({
                                             key={idx}
                                             type="button"
                                             onClick={() => onSelectBefore && onSelectBefore(idx)}
-                                            className={`relative w-12 h-12 rounded-lg overflow-hidden border shrink-0 transition-all ${
+                                            className={`relative w-12 h-12 rounded-lg overflow-hidden border shrink-0 transition-all cursor-pointer ${
                                                 isSelected
                                                     ? 'border-indigo-600 ring-2 ring-indigo-500/30'
                                                     : 'border-stone-200 opacity-60 hover:opacity-100'
@@ -272,8 +273,8 @@ export default function ImageDiffSlider({
                     {/* After Image Selectors */}
                     {afterOptions.length > 1 && (
                         <div className="space-y-1.5">
-                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                                Buyer Proof Photos ({afterOptions.length})
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                                Customer Photos ({afterOptions.length})
                             </span>
                             <div className="flex gap-1.5 overflow-x-auto pb-1">
                                 {afterOptions.map((opt, idx) => {

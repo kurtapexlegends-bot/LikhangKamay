@@ -4,13 +4,13 @@ import ImageDiffSlider from '@/Components/Common/ImageDiffSlider';
 import {
     AlertTriangle,
     Package,
-    User,
     Store,
     Eye,
     X,
     CheckCircle2,
     ArrowLeft,
-    Scale
+    Scale,
+    Clock
 } from 'lucide-react';
 
 export default function DisputeInspectorContent({
@@ -22,16 +22,15 @@ export default function DisputeInspectorContent({
     isSubmitting,
     openConfirmModal,
     openLightbox,
-    onBack
+    onBack,
+    onClose
 }) {
     const [selectedBeforeIdx, setSelectedBeforeIdx] = useState(0);
     const [selectedAfterIdx, setSelectedAfterIdx] = useState(0);
 
     const order = dispute.order;
-    const buyerName = order?.user?.name || order?.customer_name || 'Buyer';
-    const buyerEmail = order?.user?.email || '';
-    const shopName = order?.artisan?.shop_name || order?.artisan?.name || 'Artisan Shop';
-    const ownerName = order?.artisan?.name || '';
+    const buyerName = order?.user?.name || order?.customer_name || 'Customer';
+    const shopName = order?.artisan?.shop_name || order?.artisan?.name || 'Shop';
     const totalAmount = order?.total_amount ? Number(order.total_amount) : 0;
     const items = order?.items || [];
     const proofPhotos = Array.isArray(dispute.proof_photos) ? dispute.proof_photos : [];
@@ -40,13 +39,55 @@ export default function DisputeInspectorContent({
         : (Array.isArray(order?.packing_photos) 
             ? order.packing_photos 
             : (order?.proof_of_delivery ? [order.proof_of_delivery] : []));
+    
     const catalogPhotos = items
-        .map((i) => i.product_img || i.product?.cover_photo_path)
+        .map((i) => i.product_img || i.product?.cover_photo_path || (i.product?.img && !i.product.img.includes('placeholder') ? i.product.img : null))
         .filter(Boolean);
     const comparisonSellerPhotos = sellerPhotos.length > 0 ? sellerPhotos : catalogPhotos;
     const isCatalogFallback = sellerPhotos.length === 0 && catalogPhotos.length > 0;
-    const beforeLabel = isCatalogFallback ? 'Catalog Reference' : 'Artisan Pre-Shipment';
+    const beforeLabel = isCatalogFallback ? 'Catalog Reference' : 'Shop Pre-Shipment';
     const hasComparisonImages = proofPhotos.length > 0 || comparisonSellerPhotos.length > 0;
+
+    const getInspectorStatusBadge = () => {
+        switch (dispute.status) {
+            case 'escalated':
+                return (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-800 border border-amber-200/80">
+                        <AlertTriangle size={11} className="text-amber-600" /> Needs Review
+                    </span>
+                );
+            case 'resolved_refunded':
+                return (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800 border border-emerald-200/80">
+                        <CheckCircle2 size={11} className="text-emerald-600" /> Refund Approved
+                    </span>
+                );
+            case 'resolved_rejected':
+                return (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-stone-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-700 border border-stone-200/80">
+                        <X size={11} className="text-stone-500" /> Payment Released to Shop
+                    </span>
+                );
+            case 'seller_accepted':
+                return (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800 border border-emerald-200/80">
+                        <CheckCircle2 size={11} className="text-emerald-600" /> Shop Accepted Refund
+                    </span>
+                );
+            case 'seller_proposed_replacement':
+                return (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-800 border border-indigo-200/80">
+                        <Store size={11} className="text-indigo-600" /> Replacement Offered
+                    </span>
+                );
+            default:
+                return (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-sky-800 border border-sky-200/80">
+                        <Clock size={11} className="text-sky-600" /> In Progress
+                    </span>
+                );
+        }
+    };
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-white">
@@ -75,22 +116,30 @@ export default function DisputeInspectorContent({
                     </span>
                 </div>
 
-                <div className="shrink-0">
-                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-800 border border-amber-200/80">
-                        <AlertTriangle size={11} className="text-amber-600" /> Needs Platform Review
-                    </span>
+                <div className="flex items-center gap-2 shrink-0">
+                    {getInspectorStatusBadge()}
+                    {onClose && (
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="hidden lg:flex p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition cursor-pointer"
+                            title="Close Inspector"
+                        >
+                            <X size={15} />
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* Scrollable Case Body */}
-            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 bg-[#FAF9F6] custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 bg-[#FAF9F6] custom-scrollbar">
                 {/* 1. Disputed Order Summary */}
-                <div className="bg-white border border-stone-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3">
+                <div className="bg-white border border-stone-200/80 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3.5">
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 pb-3">
                         <div className="flex items-center gap-2">
                             <Package size={15} className="text-clay-700" />
-                            <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider">
-                                Disputed Order Information
+                            <h4 className="text-xs font-bold text-stone-900">
+                                Order Summary
                             </h4>
                         </div>
 
@@ -155,10 +204,10 @@ export default function DisputeInspectorContent({
                 {/* 2. Visual Evidence Diff Slider */}
                 {hasComparisonImages && (
                     <ImageDiffSlider
-                        beforeImage={comparisonSellerPhotos[selectedBeforeIdx] || comparisonSellerPhotos[0]}
-                        afterImage={proofPhotos[selectedAfterIdx] || proofPhotos[0]}
+                        beforeImage={comparisonSellerPhotos[selectedBeforeIdx] || comparisonSellerPhotos[0] || null}
+                        afterImage={proofPhotos[selectedAfterIdx] || proofPhotos[0] || null}
                         beforeLabel={beforeLabel}
-                        afterLabel="Buyer Defect Proof"
+                        afterLabel="Customer Defect Photo"
                         beforeOptions={comparisonSellerPhotos}
                         afterOptions={proofPhotos}
                         selectedBeforeIndex={selectedBeforeIdx}
@@ -168,56 +217,58 @@ export default function DisputeInspectorContent({
                     />
                 )}
 
-                {/* 3. Detailed Evidence Dossier: Buyer vs Seller */}
+                {/* 3. Detailed Side-by-Side Dossier: Customer vs Shop */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Buyer Request Box */}
-                    <div className="bg-white border border-stone-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3.5">
-                        <div className="flex items-center gap-2 border-b border-stone-100 pb-2.5">
-                            <User size={14} className="text-clay-700" />
-                            <h4 className="text-[11px] font-black text-stone-800 uppercase tracking-wider">
-                                Buyer Request & Photos
-                            </h4>
-                        </div>
-
-                        {/* Buyer Profile */}
-                        <div className="flex items-center gap-2.5">
-                            <UserAvatar user={order?.user} className="h-8 w-8 border border-stone-200" />
-                            <div className="min-w-0">
-                                <p className="text-xs font-bold text-stone-900 truncate">{buyerName}</p>
-                                {buyerEmail && <p className="text-[10px] text-stone-400 truncate">{buyerEmail}</p>}
+                    {/* Customer Request Box */}
+                    <div className="bg-white border border-stone-200/80 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3.5">
+                        <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <UserAvatar user={order?.user} className="h-6 w-6 border border-stone-200 shrink-0" />
+                                <div className="min-w-0">
+                                    <h4 className="text-xs font-bold text-stone-900 truncate">
+                                        {buyerName}
+                                    </h4>
+                                    <span className="text-[10px] font-medium text-stone-400 block truncate">
+                                        Customer Request
+                                    </span>
+                                </div>
                             </div>
+
+                            <span className="inline-flex rounded-lg border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 shrink-0">
+                                Customer Claim
+                            </span>
                         </div>
 
-                        {/* Reason */}
+                        {/* Stated Reason */}
                         <div>
                             <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">
-                                Reason for Request
+                                Customer&apos;s Issue
                             </span>
-                            <div className="bg-[#FCFBF9] p-3 rounded-xl border border-stone-200/70">
-                                <p className="text-xs text-stone-800 leading-relaxed font-medium">
+                            <div className="bg-amber-50/50 p-3 rounded-xl border border-amber-200/60">
+                                <p className="text-xs font-bold text-stone-900 leading-relaxed">
                                     &ldquo;{dispute.reason}&rdquo;
                                 </p>
                             </div>
                         </div>
 
-                        {/* Additional Details */}
+                        {/* Customer Additional Notes / Escalation Reason */}
                         {dispute.escalation_reason && (
                             <div>
-                                <span className="block text-[10px] font-bold text-amber-800 uppercase tracking-wider mb-1">
-                                    Additional Details from Buyer
+                                <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">
+                                    Customer&apos;s Note
                                 </span>
-                                <div className="bg-amber-50/50 p-3 rounded-xl border border-amber-200/70">
-                                    <p className="text-xs text-amber-950 italic leading-relaxed font-medium">
+                                <div className="bg-[#FCFBF9] p-3 rounded-xl border border-stone-200/70">
+                                    <p className="text-xs text-stone-800 leading-relaxed font-medium">
                                         &ldquo;{dispute.escalation_reason}&rdquo;
                                     </p>
                                 </div>
                             </div>
                         )}
 
-                        {/* Proof Photos Gallery */}
+                        {/* Attached Proof Photos */}
                         <div>
                             <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5">
-                                Attached Photos ({proofPhotos.length})
+                                Customer Photos ({proofPhotos.length})
                             </span>
                             {proofPhotos.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
@@ -233,10 +284,10 @@ export default function DisputeInspectorContent({
                                                 <img
                                                     src={photoUrl}
                                                     className="h-full w-full object-cover"
-                                                    alt={`Proof ${pIdx + 1}`}
+                                                    alt={`Customer Evidence ${pIdx + 1}`}
                                                     onError={(e) => {
-                                                        e.target.onerror = null;
-                                                        e.target.src = '/images/placeholder.svg';
+                                                        e.currentTarget.onerror = null;
+                                                        e.currentTarget.src = '/images/placeholder.svg';
                                                     }}
                                                 />
                                                 <div className="absolute inset-0 bg-stone-900/20 group-hover:bg-stone-900/40 transition-colors flex items-center justify-center text-white opacity-0 group-hover:opacity-100">
@@ -247,36 +298,30 @@ export default function DisputeInspectorContent({
                                     })}
                                 </div>
                             ) : (
-                                <p className="text-[11px] text-stone-400 font-medium italic">No photos attached.</p>
+                                <p className="text-[11px] text-stone-400 font-medium italic">
+                                    No photos uploaded by customer.
+                                </p>
                             )}
                         </div>
                     </div>
 
-                    {/* Artisan Response Box */}
-                    <div className="bg-white border border-stone-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3.5">
-                        <div className="flex items-center gap-2 border-b border-stone-100 pb-2.5">
-                            <Store size={14} className="text-indigo-700" />
-                            <h4 className="text-[11px] font-black text-stone-800 uppercase tracking-wider">
-                                Artisan&apos;s Response
-                            </h4>
-                        </div>
-
-                        {/* Seller Profile */}
-                        <div className="flex items-center gap-2.5">
-                            <UserAvatar user={order?.artisan} className="h-8 w-8 border border-stone-200" />
-                            <div className="min-w-0">
-                                <p className="text-xs font-bold text-stone-900 truncate">{shopName}</p>
-                                {ownerName && <p className="text-[10px] text-stone-400 truncate">Artisan: {ownerName}</p>}
+                    {/* Shop Response Box */}
+                    <div className="bg-white border border-stone-200/80 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3.5">
+                        <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <UserAvatar user={order?.artisan} className="h-6 w-6 border border-stone-200 shrink-0" />
+                                <div className="min-w-0">
+                                    <h4 className="text-xs font-bold text-stone-900 truncate">
+                                        {shopName}
+                                    </h4>
+                                    <span className="text-[10px] font-medium text-stone-400 block truncate">
+                                        Shop Response
+                                    </span>
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Response Type */}
-                        <div>
-                            <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">
-                                Artisan Action
-                            </span>
-                            <span className="inline-flex rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] font-bold uppercase text-stone-700">
-                                {dispute.seller_response_type === 'replacement' ? 'Proposed Replacement' : dispute.seller_response_type === 'reject' ? 'Declined Request' : dispute.seller_response_type || 'No Response'}
+                            <span className="inline-flex rounded-lg border border-stone-200 bg-stone-50 px-2 py-0.5 text-[10px] font-bold text-stone-700 shrink-0">
+                                {dispute.seller_response_type === 'replacement' ? 'Offered Replacement' : dispute.seller_response_type === 'reject' ? 'Declined Refund' : dispute.seller_response_type || 'No Response Yet'}
                             </span>
                         </div>
 
@@ -284,7 +329,7 @@ export default function DisputeInspectorContent({
                         {dispute.seller_proposed_description && (
                             <div>
                                 <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">
-                                    Proposed Replacement Details
+                                    Replacement Offer
                                 </span>
                                 <div className="bg-[#FCFBF9] p-3 rounded-xl border border-stone-200/70">
                                     <p className="text-xs text-stone-800 leading-relaxed font-medium">
@@ -294,15 +339,15 @@ export default function DisputeInspectorContent({
                             </div>
                         )}
 
-                        {/* Rejection Explanation */}
+                        {/* Rejection / Shop Explanation */}
                         {dispute.seller_explanation && (
                             <div>
                                 <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">
-                                    Artisan Explanation
+                                    Shop&apos;s Explanation
                                 </span>
                                 <div className="bg-[#FCFBF9] p-3 rounded-xl border border-stone-200/70">
                                     <p className="text-xs text-stone-800 leading-relaxed font-medium">
-                                        {dispute.seller_explanation}
+                                        &ldquo;{dispute.seller_explanation}&rdquo;
                                     </p>
                                 </div>
                             </div>
@@ -311,7 +356,7 @@ export default function DisputeInspectorContent({
                         {/* Pre-Shipment Packing Photos */}
                         <div>
                             <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5">
-                                Pre-Shipment & Packing Photos ({sellerPhotos.length})
+                                Shop Packing Photos ({sellerPhotos.length})
                             </span>
                             {sellerPhotos.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
@@ -329,8 +374,8 @@ export default function DisputeInspectorContent({
                                                     className="h-full w-full object-cover"
                                                     alt={`Packing Photo ${sIdx + 1}`}
                                                     onError={(e) => {
-                                                        e.target.onerror = null;
-                                                        e.target.src = '/images/placeholder.svg';
+                                                        e.currentTarget.onerror = null;
+                                                        e.currentTarget.src = '/images/placeholder.svg';
                                                     }}
                                                 />
                                                 <div className="absolute inset-0 bg-stone-900/20 group-hover:bg-stone-900/40 transition-colors flex items-center justify-center text-white opacity-0 group-hover:opacity-100">
@@ -342,81 +387,102 @@ export default function DisputeInspectorContent({
                                 </div>
                             ) : (
                                 <p className="text-[11px] text-stone-400 font-medium italic">
-                                    No pre-shipment packing photos uploaded by artisan.
+                                    No pre-shipment packing photos uploaded by the shop.
                                 </p>
                             )}
                         </div>
 
                         {!dispute.seller_proposed_description && !dispute.seller_explanation && sellerPhotos.length === 0 && (
                             <p className="text-xs text-stone-400 font-medium italic pt-2">
-                                The artisan did not submit additional explanation details.
+                                The shop did not submit an additional explanation.
                             </p>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Pinned Decision Footer */}
-            <div className="px-5 py-4 border-t border-stone-100 bg-white shrink-0 space-y-3">
-                <div className="flex items-center justify-between">
-                    <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider">
-                        Resolution Reason <span className="text-rose-600">*</span>
-                    </label>
-                    <span className="text-[10px] text-stone-400 font-mono">
-                        {notes.length}/1000
-                    </span>
+            {/* Pinned Decision Footer or Resolution Notes */}
+            {dispute.status === 'escalated' ? (
+                <div className="px-4 py-3 sm:px-5 sm:py-3.5 border-t border-stone-100 bg-white shrink-0 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-bold text-stone-700">
+                            Decision Notes <span className="text-rose-600">*</span>
+                        </label>
+                        <span className="text-[10px] text-stone-400 font-mono">
+                            {notes.length}/1000
+                        </span>
+                    </div>
+
+                    <textarea
+                        rows={2}
+                        maxLength={1000}
+                        value={notes}
+                        onChange={(e) => {
+                            setNotes(e.target.value);
+                            if (error) setError('');
+                        }}
+                        placeholder="Add a note explaining your decision for the customer and shop..."
+                        className="w-full border-stone-200 rounded-xl focus:border-clay-500 focus:ring-1 focus:ring-clay-500 shadow-2xs text-xs font-medium resize-none placeholder-stone-400 py-1.5 px-3"
+                    />
+
+                    {error && (
+                        <p className="text-xs font-bold text-rose-600 flex items-center gap-1">
+                            <AlertTriangle size={12} /> {error}
+                        </p>
+                    )}
+
+                    <div className="grid grid-cols-3 gap-2 pt-0.5">
+                        <button
+                            type="button"
+                            onClick={() => openConfirmModal('reject')}
+                            disabled={isSubmitting}
+                            className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-2 bg-white border border-stone-200 text-stone-700 rounded-xl text-xs font-bold hover:bg-stone-50 transition shadow-2xs min-h-[36px] cursor-pointer disabled:opacity-50"
+                            title="Decline claim and pay shop"
+                        >
+                            <Store size={13} className="text-stone-600 shrink-0" />
+                            <span className="truncate">Decline (Pay Shop)</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => openConfirmModal('partial_refund')}
+                            disabled={isSubmitting}
+                            className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-2 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-bold hover:bg-amber-100 transition shadow-2xs min-h-[36px] cursor-pointer disabled:opacity-50"
+                            title="50% Partial Refund"
+                        >
+                            <Scale size={13} className="text-amber-700 shrink-0" />
+                            <span className="truncate">50% Refund</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => openConfirmModal('refund')}
+                            disabled={isSubmitting}
+                            className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-2 bg-clay-700 text-white rounded-xl text-xs font-bold hover:bg-clay-800 transition shadow-2xs min-h-[36px] cursor-pointer disabled:opacity-50"
+                            title="Approve full refund"
+                        >
+                            <CheckCircle2 size={13} className="shrink-0" />
+                            <span className="truncate">Approve Refund</span>
+                        </button>
+                    </div>
                 </div>
-
-                <textarea
-                    rows={2}
-                    maxLength={1000}
-                    value={notes}
-                    onChange={(e) => {
-                        setNotes(e.target.value);
-                        if (error) setError('');
-                    }}
-                    placeholder="Document your findings and reasons for this resolution..."
-                    className="w-full border-stone-200 rounded-xl focus:border-clay-500 focus:ring-1 focus:ring-clay-500 shadow-2xs text-xs font-medium resize-none"
-                />
-
-                {error && (
-                    <p className="text-xs font-bold text-rose-600 flex items-center gap-1">
-                        <AlertTriangle size={12} /> {error}
-                    </p>
-                )}
-
-                <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
-                    <button
-                        type="button"
-                        onClick={() => openConfirmModal('reject')}
-                        disabled={isSubmitting}
-                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white border border-stone-200 text-stone-700 rounded-xl text-xs font-bold hover:bg-stone-50 transition shadow-2xs min-h-[38px] cursor-pointer disabled:opacity-50 shrink-0"
-                    >
-                        <Store size={13} className="text-stone-600" />
-                        <span>Release Escrow to Artisan</span>
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => openConfirmModal('partial_refund')}
-                        disabled={isSubmitting}
-                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-bold hover:bg-amber-100 transition shadow-2xs min-h-[38px] cursor-pointer disabled:opacity-50 shrink-0"
-                    >
-                        <Scale size={13} className="text-amber-700" />
-                        <span>Partial Refund (50% Split)</span>
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => openConfirmModal('refund')}
-                        disabled={isSubmitting}
-                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-clay-700 text-white rounded-xl text-xs font-bold hover:bg-clay-800 transition shadow-2xs min-h-[38px] cursor-pointer disabled:opacity-50 shrink-0"
-                    >
-                        <CheckCircle2 size={13} />
-                        <span>Approve Full Refund</span>
-                    </button>
+            ) : (
+                <div className="px-5 py-4 border-t border-stone-100 bg-[#FCFBF9] shrink-0 space-y-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">
+                            Arbitration Ruling &amp; Decision Notes
+                        </span>
+                        {dispute.resolved_at && (
+                            <span className="text-[10px] text-stone-400 font-medium">
+                                Resolved on {new Date(dispute.resolved_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </span>
+                        )}
+                    </div>
+                    <div className="p-3 bg-white border border-stone-200/80 rounded-xl text-xs text-stone-700 font-medium leading-relaxed shadow-2xs">
+                        {dispute.admin_notes || 'No administrative notes were recorded for this resolution.'}
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
