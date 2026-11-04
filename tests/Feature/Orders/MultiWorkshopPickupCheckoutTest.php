@@ -131,6 +131,40 @@ class MultiWorkshopPickupCheckoutTest extends TestCase
         $this->assertNotEmpty($order2->pickup_pin);
     }
 
+    public function test_workshop_pickup_checkout_supports_gcash_payment_method(): void
+    {
+        $pickupService = app(PickupScheduleService::class);
+        $earliest1 = $pickupService->calculateEarliestPickupDate($this->artisan1, 0);
+        $slots1 = $pickupService->getAvailableSlotsForDate($this->artisan1, $earliest1);
+        $slot1Label = collect($slots1)->firstWhere('is_available', true)['label'] ?? '09:00 AM - 12:00 PM';
+
+        $response = $this->actingAs($this->buyer)->post(route('checkout.store'), [
+            'shipping_method' => 'Pick Up',
+            'payment_method' => 'GCash',
+            'total' => 300,
+            'items' => [
+                [
+                    'id' => $this->product1->id,
+                    'qty' => 1,
+                    'variant' => 'Standard',
+                    'artisan_id' => $this->artisan1->id,
+                ],
+            ],
+            'pickup_schedules' => [
+                (string) $this->artisan1->id => [
+                    'date' => $earliest1->toDateString(),
+                    'slot' => $slot1Label,
+                ],
+            ],
+        ]);
+
+        $order = Order::where('artisan_id', $this->artisan1->id)->where('user_id', $this->buyer->id)->first();
+        $this->assertNotNull($order);
+        $this->assertEquals('Pick Up', $order->shipping_method);
+        $this->assertEquals('GCash', $order->payment_method);
+        $this->assertNotEmpty($order->pickup_pin);
+    }
+
     public function test_multi_workshop_pickup_rejects_past_or_unprepared_date_for_specific_artisan(): void
     {
         $pickupService = app(PickupScheduleService::class);

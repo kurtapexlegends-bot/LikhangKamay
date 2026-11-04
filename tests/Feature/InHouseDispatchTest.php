@@ -305,7 +305,9 @@ class InHouseDispatchTest extends TestCase
         $order = $this->createOrder($this->premiumSeller, [
             'order_number' => 'ORD-DELIV-002',
             'shipping_address' => 'Unit 4B Acacia Tower, Makati City',
-            'total_amount' => 500.00,
+            'total_amount' => 555.00,
+            'seller_net_amount' => 500.00,
+            'shipping_fee_amount' => 55.00,
         ]);
 
         $service = app(InHouseDispatchService::class);
@@ -334,6 +336,7 @@ class InHouseDispatchTest extends TestCase
         $order->refresh();
         $this->assertEquals('Delivered', $order->status);
         $this->assertNotNull($order->delivered_at);
+        $this->assertEquals(555.00, (float) $order->seller_net_amount);
 
         // Driver availability returns to Available
         $driversWithAvail = $service->getDriversWithLiveAvailability($this->premiumSeller);

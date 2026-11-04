@@ -34,50 +34,44 @@ export default function PaymentMethodSelector({ paymentMethod, setPaymentMethod,
 
                 {/* GCash */}
                 <label className={`relative flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 sm:p-3 transition-all ${
-                    isPickUp 
-                        ? 'cursor-not-allowed border-stone-100 bg-stone-50/40 opacity-60' 
-                        : paymentMethod === 'GCash' 
-                            ? 'border-blue-500 bg-blue-50/25 ring-1 ring-blue-500 shadow-2xs' 
-                            : 'border-stone-200 bg-white hover:border-blue-300'
+                    paymentMethod === 'GCash' 
+                        ? 'border-blue-500 bg-blue-50/25 ring-1 ring-blue-500 shadow-2xs' 
+                        : 'border-stone-200 bg-white hover:border-blue-300'
                 }`}>
                     <input 
                         type="radio" 
                         name="payment" 
                         value="GCash" 
                         checked={paymentMethod === 'GCash'} 
-                        onChange={() => !isPickUp && setPaymentMethod('GCash')} 
-                        disabled={isPickUp} 
-                        className="mt-0.5 h-4 w-4 text-blue-600 border-stone-300 focus:ring-blue-500 focus:ring-offset-0 disabled:opacity-50" 
+                        onChange={() => setPaymentMethod('GCash')} 
+                        className="mt-0.5 h-4 w-4 text-blue-600 border-stone-300 focus:ring-blue-500 focus:ring-offset-0" 
                     />
                     <div className="min-w-0">
                         <p className="font-bold text-stone-900 text-xs sm:text-[13px]">GCash</p>
                         <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">
-                            {isPickUp ? 'Unavailable for workshop pickup' : 'Instant mobile e-wallet payment.'}
+                            Instant mobile e-wallet payment.
                         </p>
                     </div>
                 </label>
 
                 {/* Maya */}
                 <label className={`relative flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 sm:p-3 transition-all ${
-                    isPickUp 
-                        ? 'cursor-not-allowed border-stone-100 bg-stone-50/40 opacity-60' 
-                        : paymentMethod === 'Maya' 
-                            ? 'border-emerald-600 bg-emerald-50/25 ring-1 ring-emerald-600 shadow-2xs' 
-                            : 'border-stone-200 bg-white hover:border-emerald-300'
+                    paymentMethod === 'Maya' 
+                        ? 'border-emerald-600 bg-emerald-50/25 ring-1 ring-emerald-600 shadow-2xs' 
+                        : 'border-stone-200 bg-white hover:border-emerald-300'
                 }`}>
                     <input 
                         type="radio" 
                         name="payment" 
                         value="Maya" 
                         checked={paymentMethod === 'Maya'} 
-                        onChange={() => !isPickUp && setPaymentMethod('Maya')} 
-                        disabled={isPickUp} 
-                        className="mt-0.5 h-4 w-4 text-emerald-600 border-stone-300 focus:ring-emerald-500 focus:ring-offset-0 disabled:opacity-50" 
+                        onChange={() => setPaymentMethod('Maya')} 
+                        className="mt-0.5 h-4 w-4 text-emerald-600 border-stone-300 focus:ring-emerald-500 focus:ring-offset-0" 
                     />
                     <div className="min-w-0">
                         <p className="font-bold text-stone-900 text-xs sm:text-[13px]">Maya</p>
                         <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">
-                            {isPickUp ? 'Unavailable for workshop pickup' : 'Direct Maya e-wallet & QR payment.'}
+                            Direct Maya e-wallet & QR payment.
                         </p>
                     </div>
                 </label>
@@ -86,7 +80,7 @@ export default function PaymentMethodSelector({ paymentMethod, setPaymentMethod,
             {isPickUp && (
                 <div className="flex items-center gap-2 rounded-xl bg-amber-50/70 border border-amber-200/70 px-3 py-1.5 text-[11px] text-amber-900">
                     <Info size={13} className="shrink-0 text-amber-700" />
-                    <span>Workshop pick up orders are settled directly via Cash on Delivery.</span>
+                    <span>Workshop pick up orders can be prepaid online via GCash/Maya or settled via Cash upon pickup.</span>
                 </div>
             )}
             

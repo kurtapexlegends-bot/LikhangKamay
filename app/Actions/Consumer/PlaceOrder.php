@@ -97,7 +97,9 @@ class PlaceOrder
         $shippingLatitude = $shippingContext['shipping_latitude'] ?? null;
         $shippingLongitude = $shippingContext['shipping_longitude'] ?? null;
 
-        $paymentMethod = $request->shipping_method === 'Pick Up' ? 'COD' : $request->payment_method;
+        $paymentMethod = in_array($request->payment_method, ['GCash', 'Maya', 'COD'], true)
+            ? $request->payment_method
+            : 'COD';
 
         if ($request->boolean('save_address') && $request->shipping_method === 'Delivery' && $selectedAddress === null) {
             $buyer->addresses()->update(['is_default' => DB::raw('false')]);

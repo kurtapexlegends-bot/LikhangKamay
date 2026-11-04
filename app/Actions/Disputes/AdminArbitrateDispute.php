@@ -51,10 +51,19 @@ class AdminArbitrateDispute
                     'resolved_at' => now(),
                 ]);
 
-                $order->update([
-                    'status' => 'Refunded',
-                    'payment_status' => $isPartial ? 'partially_refunded' : 'refunded',
-                ]);
+                if ($isPartial) {
+                    $halfSellerNet = round(((float) $order->seller_net_amount) * 0.5, 2);
+                    $order->update([
+                        'status' => 'Completed',
+                        'payment_status' => 'partially_refunded',
+                        'seller_net_amount' => $halfSellerNet,
+                    ]);
+                } else {
+                    $order->update([
+                        'status' => 'Refunded',
+                        'payment_status' => 'refunded',
+                    ]);
+                }
             } elseif ($decision === 'reject') {
                 // Reject claim, restore order status back to Completed
                 $dispute->update([

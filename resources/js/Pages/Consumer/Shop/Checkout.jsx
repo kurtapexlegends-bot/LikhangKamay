@@ -424,7 +424,6 @@ export default function Checkout({ auth, pricing }) {
                                                             onClick={() => setData((prev) => ({
                                                                 ...prev,
                                                                 shipping_method: 'Pick Up',
-                                                                payment_method: 'COD',
                                                             }))}
                                                             className="inline-flex items-center gap-1.5 font-semibold text-clay-700 underline hover:text-clay-900 text-xs"
                                                         >

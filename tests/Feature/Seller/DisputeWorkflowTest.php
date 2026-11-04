@@ -409,6 +409,58 @@ class DisputeWorkflowTest extends TestCase
         Notification::assertSentTo($seller, \App\Notifications\DisputeStatusNotification::class);
     }
 
+    public function test_admin_can_arbitrate_partial_refund(): void
+    {
+        Notification::fake();
+
+        $seller = User::factory()->artisanApproved()->create();
+        $buyer = User::factory()->create();
+        $admin = User::factory()->superAdmin()->create();
+
+        $order = Order::create([
+            'artisan_id' => $seller->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-DISP-008-PARTIAL',
+            'customer_name' => 'Buyer Test',
+            'total_amount' => 200,
+            'seller_net_amount' => 200,
+            'status' => 'Refund/Return',
+            'payment_method' => 'COD',
+            'payment_status' => 'paid',
+            'shipping_address' => 'Cavite',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        $dispute = Dispute::create([
+            'order_id' => $order->id,
+            'status' => 'escalated',
+            'reason' => 'Minor aesthetic defect',
+            'proof_photos' => ['test.jpg'],
+            'escalation_reason' => 'Seller offered replacement but buyer prefers discount.',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->post(route('admin.disputes.arbitrate', $dispute->id), [
+                'decision' => 'partial_refund',
+                'admin_notes' => '50/50 compromise approved.',
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
+
+        $dispute->refresh();
+        $order->refresh();
+
+        $this->assertEquals('resolved_refunded', $dispute->status);
+        $this->assertEquals('partial_refund', $dispute->admin_decision);
+        $this->assertEquals('Completed', $order->status);
+        $this->assertEquals('partially_refunded', $order->payment_status);
+        $this->assertEquals(100.0, (float) $order->seller_net_amount);
+
+        Notification::assertSentTo($buyer, \App\Notifications\DisputeStatusNotification::class);
+        Notification::assertSentTo($seller, \App\Notifications\DisputeStatusNotification::class);
+    }
+
     public function test_admin_can_arbitrate_rejection(): void
     {
         Notification::fake();

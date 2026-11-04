@@ -351,12 +351,37 @@ class InHouseDispatchService
                 ],
             ]);
 
-            $order->update([
+            $orderUpdates = [
                 'status' => 'Delivered',
                 'delivered_at' => now(),
                 'auto_complete_at' => now()->addDays(1),
                 'warranty_expires_at' => now()->addDays(1),
-            ]);
+            ];
+
+            // For in-house fulfillment, the artisan studio absorbs rider and fuel expenses.
+            // Credit the customer-paid delivery fee to the artisan's net payout balance upon completed delivery.
+            $shippingFee = (float) ($order->shipping_fee_amount ?? 0);
+            if ($shippingFee > 0) {
+                $hasAlreadyCreditedShipping = $lockedDelivery->events()
+                    ->where('event_type', 'IN_HOUSE_SHIPPING_CREDITED')
+                    ->exists();
+
+                if (!$hasAlreadyCreditedShipping) {
+                    $orderUpdates['seller_net_amount'] = round(((float) $order->seller_net_amount) + $shippingFee, 2);
+                    $lockedDelivery->events()->create([
+                        'provider' => OrderDelivery::PROVIDER_IN_HOUSE,
+                        'event_key' => 'IN_HOUSE_SHIPPING_CREDITED_' . $order->order_number . '_' . Str::uuid(),
+                        'event_type' => 'IN_HOUSE_SHIPPING_CREDITED',
+                        'external_order_id' => $lockedDelivery->external_order_id ?: ('LK-INHOUSE-' . $order->order_number),
+                        'payload' => [
+                            'credited_shipping_fee' => $shippingFee,
+                            'new_seller_net_amount' => $orderUpdates['seller_net_amount'],
+                        ],
+                    ]);
+                }
+            }
+
+            $order->update($orderUpdates);
 
             if ($order->user) {
                 $order->user->notify(new OrderDeliveryUpdateNotification(
