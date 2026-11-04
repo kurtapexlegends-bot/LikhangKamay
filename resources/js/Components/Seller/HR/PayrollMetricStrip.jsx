@@ -12,9 +12,11 @@ export default function PayrollMetricStrip({ summary, totalAmount }) {
     const overtime = summary?.overtime || 0;
     const deductions = summary?.deductions || 0;
     const netPay = totalAmount || summary?.net_pay || 0;
+    const employerContrib = summary?.employer_contributions || 0;
+    const hasEmployerContrib = employerContrib > 0;
 
     return (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className={`grid grid-cols-2 ${hasEmployerContrib ? 'md:grid-cols-3 lg:grid-cols-5' : 'lg:grid-cols-4'} gap-3`}>
             <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-2xs">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Gross Base Pay</p>
                 <p className="mt-1.5 text-lg font-bold text-stone-900 tracking-tight sm:text-xl">
@@ -36,8 +38,20 @@ export default function PayrollMetricStrip({ summary, totalAmount }) {
                 <p className="mt-1.5 text-lg font-bold text-rose-700 tracking-tight sm:text-xl">
                     {deductions > 0 ? `-${money(deductions)}` : '₱0.00'}
                 </p>
-                <p className="mt-1 text-[11px] text-stone-500 font-medium">Absences & undertime</p>
+                <p className="mt-1 text-[11px] text-stone-500 font-medium">
+                    {summary?.statutory_deductions > 0 ? 'Absences & statutory taxes' : 'Absences & undertime'}
+                </p>
             </div>
+
+            {hasEmployerContrib && (
+                <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-2xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Employer Share</p>
+                    <p className="mt-1.5 text-lg font-bold text-stone-900 tracking-tight sm:text-xl">
+                        {money(employerContrib)}
+                    </p>
+                    <p className="mt-1 text-[11px] text-stone-500 font-medium">SSS, PhilHealth & Pag-IBIG</p>
+                </div>
+            )}
 
             <div className="rounded-2xl border border-clay-200/80 bg-[#FCF7F2] p-4 shadow-2xs">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-clay-700">Net Pay Disbursed</p>

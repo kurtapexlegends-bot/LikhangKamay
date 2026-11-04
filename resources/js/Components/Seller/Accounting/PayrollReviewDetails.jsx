@@ -84,6 +84,38 @@ export default function PayrollReviewDetails({ item, inline = false }) {
                 </div>
             </div>
 
+            {/* Statutory Summary Card if statutory deductions exist */}
+            {Number(item.statutory_summary?.total_statutory_ee || 0) > 0 && (
+                <div className="rounded-xl border border-clay-200/80 bg-[#FCF7F2]/60 p-3.5 shadow-2xs space-y-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-clay-800">
+                            Philippine Statutory Deductions &amp; Tax Summary
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            BIR / DOLE Compliant
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 border-t border-clay-200/60 text-xs">
+                        <div>
+                            <span className="text-[10px] font-semibold text-stone-500 block">SSS (Staff EE):</span>
+                            <strong className="text-stone-900">{formatMoney(item.statutory_summary.sss_ee)}</strong>
+                        </div>
+                        <div>
+                            <span className="text-[10px] font-semibold text-stone-500 block">PhilHealth:</span>
+                            <strong className="text-stone-900">{formatMoney(item.statutory_summary.philhealth_ee)}</strong>
+                        </div>
+                        <div>
+                            <span className="text-[10px] font-semibold text-stone-500 block">Pag-IBIG (HDMF):</span>
+                            <strong className="text-stone-900">{formatMoney(item.statutory_summary.pagibig_ee)}</strong>
+                        </div>
+                        <div>
+                            <span className="text-[10px] font-semibold text-stone-500 block">Withholding Tax:</span>
+                            <strong className="text-stone-900">{formatMoney(item.statutory_summary.withholding_tax)}</strong>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Employee Line Ledger Table */}
             <div className="rounded-xl border border-stone-200 bg-white shadow-xs overflow-hidden">
                 <div className="px-5 py-3 border-b border-stone-200 bg-stone-50/50 flex items-center justify-between">

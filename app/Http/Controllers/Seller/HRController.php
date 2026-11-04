@@ -321,12 +321,14 @@ class HRController extends Controller
             'break_window_start' => ['nullable', 'string', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d$/'],
             'break_window_end' => ['nullable', 'string', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d$/'],
             'break_allowance_minutes' => 'nullable|integer|min:0|max:180',
+            'enable_statutory_deductions' => 'nullable|boolean',
         ]);
 
         User::where('id', $this->sellerOwnerId())->update([
             'overtime_rate' => $request->overtime_rate ?? 50.00,
             'overtime_multiplier' => $request->overtime_multiplier ?? 1.25,
             'payroll_factor_method' => $request->payroll_factor_method ?? 'custom',
+            'enable_statutory_deductions' => $request->boolean('enable_statutory_deductions'),
             'rest_day_ot_multiplier' => $request->rest_day_ot_multiplier ?? 1.69,
             'holiday_ot_multiplier' => $request->holiday_ot_multiplier ?? 2.60,
             'payroll_working_days' => $request->payroll_working_days,

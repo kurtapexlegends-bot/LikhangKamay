@@ -100,10 +100,32 @@ export default function PayrollGenerator({
         setData('items', newItems);
     };
 
+    const isStatutoryEnabled = Boolean(sellerSettings?.enable_statutory_deductions);
+
     const getEstimatedTotal = () => {
         return data.items
             .filter(i => i.isSelected)
             .reduce((acc, item) => acc + calculateNetPay(item, sellerSettings), 0);
+    };
+
+    const getEstimatedEmployerLiabilities = () => {
+        if (!isStatutoryEnabled) return 0;
+        return data.items
+            .filter(i => i.isSelected)
+            .reduce((acc, item) => {
+                const bd = calculatePayrollBreakdown(item, sellerSettings);
+                return acc + (bd?.totalStatutoryEr || 0);
+            }, 0);
+    };
+
+    const getEstimatedStatutoryDeductions = () => {
+        if (!isStatutoryEnabled) return 0;
+        return data.items
+            .filter(i => i.isSelected)
+            .reduce((acc, item) => {
+                const bd = calculatePayrollBreakdown(item, sellerSettings);
+                return acc + ((bd?.totalStatutoryEe || 0) + (bd?.withholdingTax || 0));
+            }, 0);
     };
 
 
@@ -428,15 +450,40 @@ export default function PayrollGenerator({
 
                 {/* Summary / Estimate Footer Row */}
                 {selectedStaffItems.length > 0 && (
-                    <div className="shrink-0 flex flex-col sm:flex-row justify-between items-center bg-[#FCF7F2] border-t border-stone-200 px-6 py-4.5 gap-3">
-                        <span className="text-clay-700 font-bold text-xs tracking-wider uppercase">
-                            Staff Selected: {selectedStaffItems.length} of {data.items.length}
-                        </span>
-                        <div className="flex items-center gap-2">
-                            <span className="text-stone-500 font-bold text-[10px] uppercase tracking-wider">Estimated Total Payroll:</span>
-                            <span className="text-base font-bold text-clay-950">
-                                {formatPrecisePeso(getEstimatedTotal())}
+                    <div className="shrink-0 flex flex-col sm:flex-row justify-between items-center bg-[#FCF7F2] border-t border-stone-200 px-6 py-3.5 gap-3">
+                        <div className="flex items-center gap-3">
+                            <span className="text-clay-700 font-bold text-xs tracking-wider uppercase">
+                                Staff Selected: {selectedStaffItems.length} of {data.items.length}
                             </span>
+                            {isStatutoryEnabled && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                    Statutory Deductions Active
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                            {isStatutoryEnabled && (
+                                <>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-stone-500 font-bold text-[10px] uppercase tracking-wider">Statutory &amp; Tax:</span>
+                                        <span className="text-xs font-bold text-rose-700">
+                                            -{formatPrecisePeso(getEstimatedStatutoryDeductions())}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-stone-500 font-bold text-[10px] uppercase tracking-wider">Employer Share:</span>
+                                        <span className="text-xs font-bold text-stone-900">
+                                            +{formatPrecisePeso(getEstimatedEmployerLiabilities())}
+                                        </span>
+                                    </div>
+                                </>
+                            )}
+                            <div className="flex items-center gap-2">
+                                <span className="text-stone-500 font-bold text-[10px] uppercase tracking-wider">Estimated Net Payroll:</span>
+                                <span className="text-base font-bold text-clay-950">
+                                    {formatPrecisePeso(getEstimatedTotal())}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 )}

@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\DB;
 
 class PayrollCalculatorService
 {
+    protected StatutoryDeductionService $statutoryService;
+
+    public function __construct(?StatutoryDeductionService $statutoryService = null)
+    {
+        $this->statutoryService = $statutoryService ?? new StatutoryDeductionService();
+    }
+
     /**
      * Compute a payroll item for a single employee based on monthly inputs and optional attendance logs.
      *
@@ -80,10 +87,34 @@ class PayrollCalculatorService
         // Deductions (unpaid absences only)
         $absenceDeduction = $absences * $dailyRate;
         $undertimeDeduction = $undertime * $hourlyRate;
-        $totalDeductions = $absenceDeduction + $undertimeDeduction;
+        $attendanceDeductions = $absenceDeduction + $undertimeDeduction;
 
-        // Net Pay
-        $netPay = max(0, $employee->salary + $totalOtPay - $totalDeductions);
+        // Gross Taxable Pay = Base salary adjusted for absences & undertime + Overtime pay
+        $grossTaxablePay = max(0.0, (float) $employee->salary + $totalOtPay - $attendanceDeductions);
+
+        $isStatutoryEnabled = (bool) ($seller->enable_statutory_deductions ?? false);
+
+        if ($isStatutoryEnabled) {
+            $statutory = $this->statutoryService->calculateAll((float) $employee->salary, $grossTaxablePay);
+            $netPay = max(0.0, round($grossTaxablePay - $statutory['total_statutory_ee'] - $statutory['withholding_tax'], 2));
+        } else {
+            $statutory = [
+                'gross_pay' => round($grossTaxablePay, 2),
+                'taxable_income' => null,
+                'sss_ee' => 0.0,
+                'sss_er' => 0.0,
+                'philhealth_ee' => 0.0,
+                'philhealth_er' => 0.0,
+                'pagibig_ee' => 0.0,
+                'pagibig_er' => 0.0,
+                'total_statutory_ee' => 0.0,
+                'total_statutory_er' => 0.0,
+                'withholding_tax' => 0.0,
+                'total_employee_deductions' => 0.0,
+                'total_employer_contributions' => 0.0,
+            ];
+            $netPay = max(0.0, (float) $employee->salary + $totalOtPay - $attendanceDeductions);
+        }
 
         return [
             'employee_id' => $employee->id,
@@ -102,6 +133,17 @@ class PayrollCalculatorService
             'rest_day_ot_pay' => round($restDayOtPay, 2),
             'holiday_ot_hours' => $holidayOt,
             'holiday_ot_pay' => round($holidayOtPay, 2),
+            'gross_pay' => round($grossTaxablePay, 2),
+            'taxable_income' => $statutory['taxable_income'],
+            'sss_ee' => $statutory['sss_ee'],
+            'sss_er' => $statutory['sss_er'],
+            'philhealth_ee' => $statutory['philhealth_ee'],
+            'philhealth_er' => $statutory['philhealth_er'],
+            'pagibig_ee' => $statutory['pagibig_ee'],
+            'pagibig_er' => $statutory['pagibig_er'],
+            'withholding_tax' => $statutory['withholding_tax'],
+            'total_statutory_ee' => $statutory['total_statutory_ee'],
+            'total_statutory_er' => $statutory['total_statutory_er'],
             'net_pay' => round($netPay, 2),
             'meta' => [
                 'daily_rate' => round($dailyRate, 2),
@@ -117,6 +159,18 @@ class PayrollCalculatorService
                 'rest_day_ot' => $restDayOt,
                 'holiday_ot' => $holidayOt,
                 'undertime' => $undertime,
+                'statutory_enabled' => $isStatutoryEnabled,
+                'gross_pay' => round($grossTaxablePay, 2),
+                'taxable_income' => $statutory['taxable_income'],
+                'sss_ee' => $statutory['sss_ee'],
+                'sss_er' => $statutory['sss_er'],
+                'philhealth_ee' => $statutory['philhealth_ee'],
+                'philhealth_er' => $statutory['philhealth_er'],
+                'pagibig_ee' => $statutory['pagibig_ee'],
+                'pagibig_er' => $statutory['pagibig_er'],
+                'withholding_tax' => $statutory['withholding_tax'],
+                'total_statutory_ee' => $statutory['total_statutory_ee'],
+                'total_statutory_er' => $statutory['total_statutory_er'],
             ]
         ];
     }
@@ -155,7 +209,24 @@ class PayrollCalculatorService
                 'rest_day_ot_pay' => $calculated['rest_day_ot_pay'],
                 'holiday_ot_hours' => $calculated['holiday_ot_hours'],
                 'holiday_ot_pay' => $calculated['holiday_ot_pay'],
-                'deductions' => round($calculated['absence_deduction'] + $calculated['undertime_deduction'], 2),
+                'gross_pay' => $calculated['gross_pay'],
+                'taxable_income' => $calculated['taxable_income'],
+                'sss_ee' => $calculated['sss_ee'],
+                'sss_er' => $calculated['sss_er'],
+                'philhealth_ee' => $calculated['philhealth_ee'],
+                'philhealth_er' => $calculated['philhealth_er'],
+                'pagibig_ee' => $calculated['pagibig_ee'],
+                'pagibig_er' => $calculated['pagibig_er'],
+                'withholding_tax' => $calculated['withholding_tax'],
+                'total_statutory_ee' => $calculated['total_statutory_ee'],
+                'total_statutory_er' => $calculated['total_statutory_er'],
+                'deductions' => round(
+                    $calculated['absence_deduction'] +
+                    $calculated['undertime_deduction'] +
+                    $calculated['total_statutory_ee'] +
+                    $calculated['withholding_tax'],
+                    2
+                ),
                 'net_pay' => $calculated['net_pay'],
                 'meta' => $calculated['meta'],
             ];
@@ -231,6 +302,15 @@ class PayrollCalculatorService
                     'holiday_ot_hours' => $calculated['holiday_ot_hours'],
                     'holiday_ot_pay' => $calculated['holiday_ot_pay'],
                     'absence_deduction' => $calculated['absence_deduction'],
+                    'gross_pay' => $calculated['gross_pay'],
+                    'taxable_income' => $calculated['taxable_income'],
+                    'sss_ee' => $calculated['sss_ee'],
+                    'sss_er' => $calculated['sss_er'],
+                    'philhealth_ee' => $calculated['philhealth_ee'],
+                    'philhealth_er' => $calculated['philhealth_er'],
+                    'pagibig_ee' => $calculated['pagibig_ee'],
+                    'pagibig_er' => $calculated['pagibig_er'],
+                    'withholding_tax' => $calculated['withholding_tax'],
                     'bonus' => 0,
                     'net_pay' => $calculated['net_pay'],
                 ]));

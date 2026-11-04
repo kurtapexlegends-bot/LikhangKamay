@@ -65,8 +65,14 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
     The system maps worked hours to salary based on the seller's configured basic pay rates.
 *   **Overtime Multipliers**:
     *   Standard Overtime Rate: Basic rate $\times$ Overtime multiplier (e.g. 1.25x).
-    *   Rest Day Overtime: Basic rate $\times$ Rest day OT multiplier (e.g. 1.5x).
-    *   Holiday Overtime: Basic rate $\times$ Holiday OT multiplier (e.g. 2.0x).
+    *   Rest Day Overtime: Basic rate $\times$ Rest day OT multiplier (e.g. 1.69x).
+    *   Holiday Overtime: Basic rate $\times$ Holiday OT multiplier (e.g. 2.60x).
+*   **Philippine Statutory Deductions & Tax (DOLE / BIR Compliant)**:
+    When enabled via workshop settings (`enable_statutory_deductions`), [StatutoryDeductionService.php](file:///c:/laragon/www/LikhangKamay/app/Services/HR/StatutoryDeductionService.php) computes statutory contributions and withholding tax dynamically:
+    *   **SSS (RA 11199)**: 14% total (4.5% employee share capped at ₱1,350/mo, 9.5% employer share capped at ₱2,850/mo based on ₱30k MSC ceiling and ₱4k floor).
+    *   **PhilHealth (RA 11223)**: 5% total split equally (2.5% employee, 2.5% employer), clamped between ₱10,000 floor (₱250 EE) and ₱100,000 ceiling (₱2,500 EE).
+    *   **Pag-IBIG (HDMF Circular No. 460)**: 2.0% basic pay, strictly capped at ₱200/mo employee share and ₱200/mo employer share.
+    *   **BIR TRAIN Law (RA 10963) Withholding Tax**: Taxable Income = Gross Taxable Pay $-$ Total Statutory Employee Deductions. Monthly graduated schedule applies with 100% tax exemption for taxable earnings $\le$ ₱20,833.33/mo.
 *   **Balance Release Gate**:
     Like Stock Requests, Payroll releases require sufficient financial balance check in a database transaction with a lock on the seller user (`lockForUpdate`).
 
@@ -74,8 +80,8 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
 *   [ProvisionStaffAccount.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/HR/ProvisionStaffAccount.php): Handles provisioning employee logins, binding them to the seller owner, and storing role permission mappings.
 
 ### Payroll Review & Audit UI Architecture
-*   **Executive Metrics Header**: Displays 3 high-level metrics (`Total Payout`, `Staff Included`, `Net Treasury Impact`) and a treasury status pill in [PayrollReviewDetails.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Accounting/PayrollReviewDetails.jsx).
-*   **Employee Line Ledger**: Scannable tabular breakdown of Base Salary, Deductions, Overtime, and Net Payout.
+*   **Executive Metrics Header**: Displays 3 high-level metrics (`Total Payout`, `Staff Included`, `Net Treasury Impact`), a treasury status pill, and a DOLE/BIR compliant statutory summary card in [PayrollReviewDetails.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Accounting/PayrollReviewDetails.jsx).
+*   **Employee Line Ledger**: Scannable tabular breakdown of Base Salary, Deductions (Absences + Undertime + Statutory EE), Overtime, and Net Payout.
 *   **Calculation Audit Popover**: [PayrollCalculationModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/PayrollCalculationModal.jsx) opens via an "Audit Formula" button per employee row to inspect daily/hourly formulas, overtime multipliers, and sub-totals.
 *   **Container-Sticky Action Footer**: Rendered inline in [ReleaseRequestDetails.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Accounting/ReleaseRequestDetails.jsx), dynamically docking to the bottom of the card container (`sticky bottom-4 z-20`) when auditing long employee lists.
 
@@ -84,10 +90,11 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
 *   [HRWorkflowHelper.php](file:///c:/laragon/www/LikhangKamay/app/Support/HRWorkflowHelper.php): Helper utility automating employee shifts validation and overtime calculations.
 *   [HRRolePresets.php](file:///c:/laragon/www/LikhangKamay/app/Support/HR/HRRolePresets.php): Defines system-wide role matrices and modular workspace privileges.
 *   [HRStaffProvisioner.php](file:///c:/laragon/www/LikhangKamay/app/Support/HR/HRStaffProvisioner.php): Manages the mechanical creation and database persistence of new staff login records.
-*   [HREmployeeLoader.php](file:///c:/laragon/www/LikhangKamay/app/Support/HR/HREmployeeLoader.php): Eager loads HR-specific relationships and capabilities for staff sessions.
+*   [HREmployeeLoader.php](file:///c:/laragon/www/LikhangKamay/app/Support/HR/HREmployeeLoader.php): Eager loads HR-specific relationships, historical statutory snapshot immutability, and capabilities for staff sessions.
 
 ### HR Domain Services
-*   [PayrollCalculatorService.php](file:///c:/laragon/www/LikhangKamay/app/Services/HR/PayrollCalculatorService.php): Service executing the salary and overtime arithmetic for payroll runs.
+*   [StatutoryDeductionService.php](file:///c:/laragon/www/LikhangKamay/app/Services/HR/StatutoryDeductionService.php): Pure deterministic service executing Philippine statutory calculations for SSS, PhilHealth, Pag-IBIG, and BIR TRAIN Law withholding tax.
+*   [PayrollCalculatorService.php](file:///c:/laragon/www/LikhangKamay/app/Services/HR/PayrollCalculatorService.php): Service executing the salary, overtime, and statutory deduction arithmetic for payroll runs.
 *   [AttendanceAggregatorService.php](file:///c:/laragon/www/LikhangKamay/app/Services/HR/AttendanceAggregatorService.php): Aggregates daily worked hours, overtime, and tardiness metrics for HR reports.
 *   [StaffAttendanceService.php](file:///c:/laragon/www/LikhangKamay/app/Services/StaffAttendanceService.php): Handles checking staff in/out, recording heartbeats, timeout sweeps, and geofence validation (supports both soft-flagging manager approval and strict hard-blocking based on `enforce_strict_geofence`).
 

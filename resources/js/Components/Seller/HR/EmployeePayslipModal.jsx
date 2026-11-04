@@ -17,9 +17,20 @@ export default function EmployeePayslipModal({ item, payroll, sellerName, isOpen
     const meta = item.meta || {};
     const dailyRate = Number(meta.daily_rate || (item.base_salary ? item.base_salary / 22 : 0));
     const hourlyRate = Number(meta.hourly_rate || (dailyRate / 8));
+    const sssEe = Number(item.sss_ee || 0);
+    const sssEr = Number(item.sss_er || 0);
+    const philhealthEe = Number(item.philhealth_ee || 0);
+    const philhealthEr = Number(item.philhealth_er || 0);
+    const pagibigEe = Number(item.pagibig_ee || 0);
+    const pagibigEr = Number(item.pagibig_er || 0);
+    const withholdingTax = Number(item.withholding_tax || 0);
+    const hasStatutory = sssEe > 0 || philhealthEe > 0 || pagibigEe > 0 || withholdingTax > 0;
+    const totalStatutoryEe = sssEe + philhealthEe + pagibigEe + withholdingTax;
+    const totalStatutoryEr = sssEr + philhealthEr + pagibigEr;
+
     const totalOt = Number(item.overtime_pay || 0) + Number(item.rest_day_ot_pay || 0) + Number(item.holiday_ot_pay || 0);
-    const totalDeductions = Number(item.absence_deduction || 0) + Number(item.undertime_deduction || 0);
-    const grossPay = Number(item.base_salary || 0) + totalOt;
+    const totalDeductions = Number(item.absence_deduction || 0) + Number(item.undertime_deduction || 0) + totalStatutoryEe;
+    const grossPay = Number(item.gross_pay || (Number(item.base_salary || 0) + totalOt));
     const netPay = Number(item.net_pay || 0);
     const payslipRefNo = `PS-${payroll.id || '32'}-${item.id || '01'}`;
 
@@ -226,7 +237,7 @@ export default function EmployeePayslipModal({ item, payroll, sellerName, isOpen
                                             <td className="py-1.5 text-right font-semibold text-stone-400">{money(0)}</td>
                                         </tr>
                                     )}
-                                    {Number(item.undertime_deduction || 0) > 0 ? (
+                                     {Number(item.undertime_deduction || 0) > 0 ? (
                                         <tr>
                                             <td className="py-1.5 font-medium text-stone-800">Undertime / Tardiness</td>
                                             <td className="py-1.5 text-center text-stone-500">{item.undertime_hours || 0} hrs</td>
@@ -239,6 +250,32 @@ export default function EmployeePayslipModal({ item, payroll, sellerName, isOpen
                                             <td className="py-1.5 text-right font-semibold text-stone-400">{money(0)}</td>
                                         </tr>
                                     )}
+                                    {hasStatutory && (
+                                        <>
+                                            <tr>
+                                                <td className="py-1.5 font-medium text-stone-800">SSS Contribution (EE)</td>
+                                                <td className="py-1.5 text-center text-stone-500">4.5%</td>
+                                                <td className="py-1.5 text-right font-bold text-rose-700">-{money(sssEe)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-1.5 font-medium text-stone-800">PhilHealth Premium (EE)</td>
+                                                <td className="py-1.5 text-center text-stone-500">2.5%</td>
+                                                <td className="py-1.5 text-right font-bold text-rose-700">-{money(philhealthEe)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-1.5 font-medium text-stone-800">Pag-IBIG Savings (EE)</td>
+                                                <td className="py-1.5 text-center text-stone-500">2.0%</td>
+                                                <td className="py-1.5 text-right font-bold text-rose-700">-{money(pagibigEe)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-1.5 font-medium text-stone-800">BIR Withholding Tax</td>
+                                                <td className="py-1.5 text-center text-stone-500">TRAIN</td>
+                                                <td className="py-1.5 text-right font-bold text-stone-700">
+                                                    {withholdingTax > 0 ? `-${money(withholdingTax)}` : money(0)}
+                                                </td>
+                                            </tr>
+                                        </>
+                                    )}
                                 </tbody>
                             </table>
                             <div className="flex justify-between items-center pt-1.5 border-t border-stone-100 text-xs font-extrabold text-stone-900">
@@ -247,6 +284,23 @@ export default function EmployeePayslipModal({ item, payroll, sellerName, isOpen
                             </div>
                         </div>
                     </div>
+
+                    {/* Employer Social Contributions Summary Box */}
+                    {totalStatutoryEr > 0 && (
+                        <div className="rounded-xl border border-stone-200 bg-stone-50/70 p-3 text-xs space-y-1.5">
+                            <div className="flex justify-between items-center border-b border-stone-200/60 pb-1">
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-600">
+                                    Employer Share Contributions (Workshop Liability)
+                                </span>
+                                <span className="text-[9px] font-bold text-stone-500">Non-deductible from employee</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 text-[11px] text-stone-600 pt-0.5">
+                                <div>SSS ER (9.5%): <strong className="text-stone-800">{money(sssEr)}</strong></div>
+                                <div>PhilHealth ER (2.5%): <strong className="text-stone-800">{money(philhealthEr)}</strong></div>
+                                <div>Pag-IBIG ER: <strong className="text-stone-800">{money(pagibigEr)}</strong></div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Net Take-Home Pay Callout Banner */}
                     <div className="rounded-xl bg-[#FAF6F0] border border-[#E7D8C9] p-4 text-center">

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Calculator, CheckCircle2, AlertTriangle, ShieldCheck, Clock, Calendar } from 'lucide-react';
+import { calculateStatutoryDeductions } from '@/utils/hrHelpers';
 
 export default function LiveWageSimulator({ data = {} }) {
     const [sampleSalary, setSampleSalary] = useState(20000);
@@ -28,6 +29,9 @@ export default function LiveWageSimulator({ data = {} }) {
         const holidayHourly = hourly * holidayMultiplier;
 
         const isCompliant = otMultiplier >= 1.25 && restMultiplier >= 1.69 && holidayMultiplier >= 2.60;
+        const isStatutoryActive = Boolean(data.enable_statutory_deductions);
+        const statutory = isStatutoryActive ? calculateStatutoryDeductions(monthly, monthly) : null;
+        const netMonthly = isStatutoryActive && statutory ? Math.max(0, monthly - statutory.totalEmployeeDeductions) : monthly;
 
         return {
             daily,
@@ -36,6 +40,9 @@ export default function LiveWageSimulator({ data = {} }) {
             restHourly,
             holidayHourly,
             isCompliant,
+            isStatutoryActive,
+            statutory,
+            netMonthly,
         };
     }, [
         sampleSalary,
@@ -45,6 +52,7 @@ export default function LiveWageSimulator({ data = {} }) {
         data.overtime_multiplier,
         data.rest_day_ot_multiplier,
         data.holiday_ot_multiplier,
+        data.enable_statutory_deductions,
     ]);
 
     const formatMoney = (val) =>
@@ -179,12 +187,61 @@ export default function LiveWageSimulator({ data = {} }) {
                 </div>
             </div>
 
+            {/* Statutory Deductions Preview (Active State) */}
+            {simulation.isStatutoryActive && simulation.statutory && (
+                <div className="space-y-2 pt-2 border-t border-stone-100">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                            Statutory Take-Home Preview
+                        </span>
+                        <span className="text-[9px] font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                            Auto Active
+                        </span>
+                    </div>
+
+                    <div className="bg-stone-50/80 rounded-2xl p-3 border border-stone-200/70 text-xs space-y-1.5">
+                        <div className="flex justify-between text-[11px] text-stone-600">
+                            <span>SSS EE (4.5%):</span>
+                            <span className="font-semibold text-rose-700">-₱{formatMoney(simulation.statutory.sssEe)}</span>
+                        </div>
+                        <div className="flex justify-between text-[11px] text-stone-600">
+                            <span>PhilHealth EE (2.5%):</span>
+                            <span className="font-semibold text-rose-700">-₱{formatMoney(simulation.statutory.philhealthEe)}</span>
+                        </div>
+                        <div className="flex justify-between text-[11px] text-stone-600">
+                            <span>Pag-IBIG EE:</span>
+                            <span className="font-semibold text-rose-700">-₱{formatMoney(simulation.statutory.pagibigEe)}</span>
+                        </div>
+                        <div className="flex justify-between text-[11px] text-stone-600">
+                            <span>BIR Tax (TRAIN):</span>
+                            <span className="font-semibold text-stone-700">
+                                {simulation.statutory.withholdingTax > 0 ? `-₱${formatMoney(simulation.statutory.withholdingTax)}` : '₱0.00 (Exempt)'}
+                            </span>
+                        </div>
+                        <div className="pt-1.5 border-t border-stone-200/60 flex justify-between items-center text-xs font-bold">
+                            <span className="text-stone-800">Net Take-Home:</span>
+                            <span className="text-clay-800 font-extrabold text-sm">₱{formatMoney(simulation.netMonthly)}</span>
+                        </div>
+                        <div className="flex justify-between text-[11px] text-stone-600 border-t border-stone-200/40 pt-1">
+                            <span>Employer Share (ER):</span>
+                            <span className="font-semibold text-stone-800">+₱{formatMoney(simulation.statutory.totalStatutoryEr)}</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Active Policy Summary Pills */}
             <div className="pt-3 border-t border-stone-100 space-y-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">
                     Active Policy Rules
                 </span>
                 <div className="flex flex-wrap gap-1.5">
+                    {simulation.isStatutoryActive && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            <CheckCircle2 size={11} className="text-emerald-600" />
+                            Statutory Active
+                        </span>
+                    )}
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-semibold bg-stone-100 text-stone-700">
                         <Calendar size={11} className="text-stone-500" />
                         {data.payroll_factor_method === '261'

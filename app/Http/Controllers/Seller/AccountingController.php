@@ -121,13 +121,21 @@ class AccountingController extends Controller
 
             fputcsv($file, []);
             fputcsv($file, ['PENDING PAYROLL']);
-            fputcsv($file, ['Payroll ID', 'Month', 'Requester', 'Employees', 'Amount', 'Status', 'Created At']);
+            fputcsv($file, ['Payroll ID', 'Month', 'Requester', 'Employees', 'Gross Amount', 'Statutory EE', 'Withholding Tax', 'Employer Share', 'Amount', 'Status', 'Created At']);
             foreach ($pendingPayrolls as $payroll) {
+                $statutoryEe = $payroll->items ? $payroll->items->sum(fn($i) => ($i->sss_ee ?? 0) + ($i->philhealth_ee ?? 0) + ($i->pagibig_ee ?? 0)) : 0;
+                $statutoryEr = $payroll->items ? $payroll->items->sum(fn($i) => ($i->sss_er ?? 0) + ($i->philhealth_er ?? 0) + ($i->pagibig_er ?? 0)) : 0;
+                $tax = $payroll->items ? $payroll->items->sum('withholding_tax') : 0;
+                $gross = $payroll->items ? ($payroll->items->sum('gross_pay') ?: $payroll->total_amount) : $payroll->total_amount;
                 fputcsv($file, [
                     $payroll->id,
                     $payroll->month,
                     $this->resolveRequester($payroll)?->name,
                     $payroll->employee_count,
+                    round((float) $gross, 2),
+                    round((float) $statutoryEe, 2),
+                    round((float) $tax, 2),
+                    round((float) $statutoryEr, 2),
                     $payroll->total_amount,
                     $payroll->status,
                     optional($payroll->created_at)->format('Y-m-d H:i:s'),
@@ -136,13 +144,21 @@ class AccountingController extends Controller
 
             fputcsv($file, []);
             fputcsv($file, ['PAYROLL HISTORY']);
-            fputcsv($file, ['Payroll ID', 'Month', 'Requester', 'Employees', 'Amount', 'Status', 'Reviewed At', 'Reason']);
+            fputcsv($file, ['Payroll ID', 'Month', 'Requester', 'Employees', 'Gross Amount', 'Statutory EE', 'Withholding Tax', 'Employer Share', 'Amount', 'Status', 'Reviewed At', 'Reason']);
             foreach ($payrollHistory as $payroll) {
+                $statutoryEe = $payroll->items ? $payroll->items->sum(fn($i) => ($i->sss_ee ?? 0) + ($i->philhealth_ee ?? 0) + ($i->pagibig_ee ?? 0)) : 0;
+                $statutoryEr = $payroll->items ? $payroll->items->sum(fn($i) => ($i->sss_er ?? 0) + ($i->philhealth_er ?? 0) + ($i->pagibig_er ?? 0)) : 0;
+                $tax = $payroll->items ? $payroll->items->sum('withholding_tax') : 0;
+                $gross = $payroll->items ? ($payroll->items->sum('gross_pay') ?: $payroll->total_amount) : $payroll->total_amount;
                 fputcsv($file, [
                     $payroll->id,
                     $payroll->month,
                     $this->resolveRequester($payroll)?->name,
                     $payroll->employee_count,
+                    round((float) $gross, 2),
+                    round((float) $statutoryEe, 2),
+                    round((float) $tax, 2),
+                    round((float) $statutoryEr, 2),
                     $payroll->total_amount,
                     $payroll->status,
                     optional($payroll->updated_at)->format('Y-m-d H:i:s'),

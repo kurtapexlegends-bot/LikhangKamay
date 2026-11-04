@@ -73,6 +73,7 @@ class SettingsController extends Controller
                 'overtime_rate' => $sellerOwner->overtime_rate,
                 'overtime_multiplier' => $sellerOwner->overtime_multiplier ?? 1.25,
                 'payroll_factor_method' => $sellerOwner->payroll_factor_method ?? 'custom',
+                'enable_statutory_deductions' => (bool) ($sellerOwner->enable_statutory_deductions ?? false),
                 'rest_day_ot_multiplier' => $sellerOwner->rest_day_ot_multiplier ?? 1.69,
                 'holiday_ot_multiplier' => $sellerOwner->holiday_ot_multiplier ?? 2.60,
                 'payroll_working_days' => $sellerOwner->payroll_working_days ?? 26,

@@ -1,7 +1,9 @@
 import React from 'react';
-import { Landmark, ShieldCheck, HeartPulse, Home, FileText, CheckCircle2, Receipt } from 'lucide-react';
+import { Landmark, ShieldCheck, HeartPulse, Home, FileText, CheckCircle2, Receipt, Power } from 'lucide-react';
 
-export default function TaxContributionForm() {
+export default function TaxContributionForm({ data = {}, setData, canEdit = true }) {
+    const isEnabled = Boolean(data?.enable_statutory_deductions);
+
     return (
         <div className="bg-white rounded-3xl border border-stone-200/80 p-5 sm:p-6 shadow-2xs space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
@@ -13,16 +15,80 @@ export default function TaxContributionForm() {
                         <h3 className="text-base font-bold text-stone-900 tracking-tight">
                             Statutory Deductions &amp; Tax Contributions
                         </h3>
+                        <p className="text-xs text-stone-500 font-medium mt-0.5">
+                            Philippine Social Legislation &amp; TRAIN Law (RA 10963) Compliance
+                        </p>
                     </div>
                 </div>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/70 text-[11px] font-bold self-start sm:self-auto">
-                    <CheckCircle2 size={13} /> BIR / DOLE Compliant
-                </span>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${
+                        isEnabled
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200/70'
+                            : 'bg-stone-100 text-stone-600 border-stone-200'
+                    }`}>
+                        <CheckCircle2 size={13} /> {isEnabled ? 'Automated Deductions Active' : 'Attendance Only Mode'}
+                    </span>
+                </div>
+            </div>
+
+            {/* Interactive Enable/Disable Toggle Card */}
+            <div className={`p-4 rounded-2xl border transition-all ${
+                isEnabled
+                    ? 'border-emerald-300 bg-emerald-50/40 ring-1 ring-emerald-200/60'
+                    : 'border-stone-200 bg-stone-50/60'
+            }`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
+                            isEnabled
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                : 'bg-stone-200/60 text-stone-500 border-stone-200'
+                        }`}>
+                            <Power size={18} />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-bold text-stone-900">
+                                    Automate Statutory Deductions on Payroll
+                                </h4>
+                                <span className={`inline-flex items-center text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                                    isEnabled
+                                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                        : 'bg-stone-200/70 text-stone-600 border-stone-300'
+                                }`}>
+                                    {isEnabled ? 'Active' : 'Disabled'}
+                                </span>
+                            </div>
+                            <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+                                {isEnabled
+                                    ? 'Automatically compute SSS, PhilHealth, Pag-IBIG employee deductions, employer contributions, and BIR TRAIN Law withholding tax on all payroll runs.'
+                                    : 'Statutory deductions are currently disabled. Payroll will compute take-home pay based purely on base salary, overtime, and attendance adjustments.'}
+                            </p>
+                        </div>
+                    </div>
+
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0 self-end sm:self-center">
+                        <input
+                            type="checkbox"
+                            checked={isEnabled}
+                            onChange={(e) => {
+                                if (canEdit && setData) {
+                                    setData('enable_statutory_deductions', e.target.checked);
+                                }
+                            }}
+                            disabled={!canEdit}
+                            className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 peer-disabled:opacity-50"></div>
+                    </label>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
                 {/* 1. SSS Contribution Card */}
-                <div className="rounded-2xl border border-stone-200/90 bg-stone-50/40 p-4 space-y-2.5 shadow-2xs">
+                <div className={`rounded-2xl border p-4 space-y-2.5 shadow-2xs transition-colors ${
+                    isEnabled ? 'border-stone-200/90 bg-white' : 'border-stone-200 bg-stone-50/40 opacity-80'
+                }`}>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <ShieldCheck size={16} className="text-clay-600" />
@@ -52,7 +118,9 @@ export default function TaxContributionForm() {
                 </div>
 
                 {/* 2. PhilHealth Card */}
-                <div className="rounded-2xl border border-stone-200/90 bg-stone-50/40 p-4 space-y-2.5 shadow-2xs">
+                <div className={`rounded-2xl border p-4 space-y-2.5 shadow-2xs transition-colors ${
+                    isEnabled ? 'border-stone-200/90 bg-white' : 'border-stone-200 bg-stone-50/40 opacity-80'
+                }`}>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <HeartPulse size={16} className="text-emerald-600" />
@@ -82,7 +150,9 @@ export default function TaxContributionForm() {
                 </div>
 
                 {/* 3. Pag-IBIG (HDMF) Card */}
-                <div className="rounded-2xl border border-stone-200/90 bg-stone-50/40 p-4 space-y-2.5 shadow-2xs">
+                <div className={`rounded-2xl border p-4 space-y-2.5 shadow-2xs transition-colors ${
+                    isEnabled ? 'border-stone-200/90 bg-white' : 'border-stone-200 bg-stone-50/40 opacity-80'
+                }`}>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Home size={16} className="text-amber-600" />
@@ -105,7 +175,7 @@ export default function TaxContributionForm() {
                             <strong className="text-stone-900">2.0% (max ₱200)</strong>
                         </div>
                         <div className="flex justify-between text-stone-500 text-[10px] pt-1">
-                            <span>Mandatory Minimum:</span>
+                            <span>Mandatory Cap:</span>
                             <span>₱200 / month</span>
                         </div>
                     </div>
@@ -120,7 +190,7 @@ export default function TaxContributionForm() {
                 <div className="min-w-0">
                     <p className="font-bold text-stone-900">BIR TRAIN Law Withholding Tax Exemption</p>
                     <p className="text-[11px] text-stone-600 leading-relaxed mt-0.5 font-medium">
-                        Employees earning an annual compensation of <strong>₱250,000 or below</strong> (₱20,833.33/month) are 100% exempt from personal income tax withholding. Above this threshold, standard graduated withholding tax tables apply automatically.
+                        Employees earning a taxable compensation of <strong>₱250,000 or below</strong> annually (₱20,833.33/month) are 100% exempt from personal income tax withholding. Above this threshold, graduated withholding tax tables apply automatically.
                     </p>
                 </div>
             </div>

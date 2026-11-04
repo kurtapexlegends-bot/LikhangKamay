@@ -64,6 +64,71 @@ export default function LiveCalculationInspector({ item, breakdown, settings }) 
                     </div>
                 </div>
 
+                {breakdown.isStatutoryEnabled && (
+                    <>
+                        {/* Employee Statutory Deductions Panel */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">
+                                    Statutory Deductions (Employee Share)
+                                </span>
+                                <span className="text-[9px] font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                    Auto Applied
+                                </span>
+                            </div>
+                            <div className="bg-rose-50/40 p-3 rounded-xl border border-rose-100 text-[11px] space-y-1.5">
+                                <div className="flex justify-between">
+                                    <span className="text-stone-600">SSS Contribution (4.5%):</span>
+                                    <span className="font-semibold text-rose-700">-{formatPrecisePeso(breakdown.sssEe)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-stone-600">PhilHealth Premium (2.5%):</span>
+                                    <span className="font-semibold text-rose-700">-{formatPrecisePeso(breakdown.philhealthEe)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-stone-600">Pag-IBIG Savings:</span>
+                                    <span className="font-semibold text-rose-700">-{formatPrecisePeso(breakdown.pagibigEe)}</span>
+                                </div>
+                                <div className="flex justify-between border-t border-rose-200/50 pt-1 mt-1">
+                                    <span className="text-stone-600">BIR Withholding Tax (TRAIN):</span>
+                                    <span className="font-semibold text-stone-800">
+                                        {breakdown.withholdingTax > 0 ? `-${formatPrecisePeso(breakdown.withholdingTax)}` : '₱0.00 (Exempt)'}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between border-t border-rose-200/50 pt-1 mt-1 font-bold text-rose-800">
+                                    <span>Total Mandatory Deductions:</span>
+                                    <span>-{formatPrecisePeso(breakdown.totalStatutoryEe + breakdown.withholdingTax)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Employer Contributions Panel */}
+                        <div className="space-y-2">
+                            <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">
+                                Workshop Employer Contributions (Liability)
+                            </span>
+                            <div className="bg-stone-50 p-3 rounded-xl border border-stone-200/70 text-[11px] space-y-1.5">
+                                <div className="flex justify-between">
+                                    <span className="text-stone-600">SSS Employer Share (9.5%):</span>
+                                    <span className="font-semibold text-stone-800">{formatPrecisePeso(breakdown.sssEr)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-stone-600">PhilHealth Employer Share (2.5%):</span>
+                                    <span className="font-semibold text-stone-800">{formatPrecisePeso(breakdown.philhealthEr)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-stone-600">Pag-IBIG Employer Share:</span>
+                                    <span className="font-semibold text-stone-800">{formatPrecisePeso(breakdown.pagibigEr)}</span>
+                                </div>
+                                <div className="flex justify-between border-t border-stone-200 pt-1 mt-1 font-bold text-stone-900">
+                                    <span>Total Employer Burden:</span>
+                                    <span>{formatPrecisePeso(breakdown.totalStatutoryEr)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
+
                 <div className="border-t border-stone-100 pt-3 space-y-2">
                     <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">Calculation Summary</span>
                     <div className="space-y-2">
@@ -86,13 +151,16 @@ export default function LiveCalculationInspector({ item, breakdown, settings }) 
 
                         <div className="bg-red-50/50 p-2.5 rounded-xl border border-red-100 flex justify-between items-start">
                             <div>
-                                <span className="text-[10px] text-red-700 font-bold uppercase tracking-wider">Deductions</span>
+                                <span className="text-[10px] text-red-700 font-bold uppercase tracking-wider">
+                                    {breakdown.isStatutoryEnabled ? 'Attendance & Tax Deductions' : 'Deductions'}
+                                </span>
                                 <div className="text-[9px] text-stone-400 mt-0.5 space-y-0.5">
                                     {(Number(item.absences_days) || 0) > 0 && <div>Absence: {item.absences_days}d x {formatPrecisePeso(breakdown.dailyRate)}</div>}
                                     {(Number(item.undertime_hours) || 0) > 0 && <div>Undertime: {item.undertime_hours}h x {formatPrecisePeso(breakdown.hourlyRate)}</div>}
+                                    {breakdown.isStatutoryEnabled && <div>Statutory & Tax: {formatPrecisePeso(breakdown.totalStatutoryEe + breakdown.withholdingTax)}</div>}
                                 </div>
                             </div>
-                            <span className="text-xs font-bold text-red-700 shrink-0">-{formatPrecisePeso(breakdown.absenceDeduction + breakdown.undertimeDeduction)}</span>
+                            <span className="text-xs font-bold text-red-700 shrink-0">-{formatPrecisePeso(breakdown.totalEmployeeDeductions)}</span>
                         </div>
                     </div>
                 </div>
@@ -100,7 +168,9 @@ export default function LiveCalculationInspector({ item, breakdown, settings }) 
                 <div className="bg-stone-900 text-white p-3 rounded-xl flex items-center justify-between shadow-sm">
                     <div>
                         <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest block">Estimated Net Salary</span>
-                        <span className="text-[9px] text-stone-300 font-semibold block mt-0.5">Salary + OT - Deductions</span>
+                        <span className="text-[9px] text-stone-300 font-semibold block mt-0.5">
+                            {breakdown.isStatutoryEnabled ? 'Gross Earnings - All Deductions & Taxes' : 'Salary + OT - Deductions'}
+                        </span>
                     </div>
                     <span className="font-bold text-base text-clay-400 shrink-0">{formatPrecisePeso(breakdown.net)}</span>
                 </div>

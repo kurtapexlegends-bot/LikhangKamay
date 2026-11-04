@@ -374,7 +374,88 @@ export const getEmployeeDirectoryStatus = (employee, attendanceStatus) => {
     };
 };
 
+export const calculateSss = (monthlySalary) => {
+    const salary = Number(monthlySalary) || 0;
+    if (salary <= 0) return { ee: 0, er: 0, total: 0, msc: 0 };
+    const msc = Math.min(30000, Math.max(4000, salary));
+    const ee = Math.min(1350, Math.round(msc * 0.045 * 100) / 100);
+    const er = Math.min(2850, Math.round(msc * 0.095 * 100) / 100);
+    return {
+        ee,
+        er,
+        total: Math.round((ee + er) * 100) / 100,
+        msc,
+    };
+};
+
+export const calculatePhilHealth = (monthlySalary) => {
+    const salary = Number(monthlySalary) || 0;
+    if (salary <= 0) return { ee: 0, er: 0, total: 0 };
+    const clamped = Math.min(100000, Math.max(10000, salary));
+    const ee = Math.round(clamped * 0.025 * 100) / 100;
+    const er = Math.round(clamped * 0.025 * 100) / 100;
+    return {
+        ee,
+        er,
+        total: Math.round((ee + er) * 100) / 100,
+    };
+};
+
+export const calculatePagIbig = (monthlySalary) => {
+    const salary = Number(monthlySalary) || 0;
+    if (salary <= 0) return { ee: 0, er: 0, total: 0 };
+    const ee = Math.min(200, Math.round(salary * 0.02 * 100) / 100);
+    const er = Math.min(200, Math.round(salary * 0.02 * 100) / 100);
+    return {
+        ee,
+        er,
+        total: Math.round((ee + er) * 100) / 100,
+    };
+};
+
+export const calculateWithholdingTax = (taxableIncome) => {
+    const income = Number(taxableIncome) || 0;
+    if (income <= 20833.33) return 0;
+    if (income <= 33333.33) return Math.round((income - 20833.33) * 0.15 * 100) / 100;
+    if (income <= 66666.67) return Math.round((1875.00 + (income - 33333.33) * 0.20) * 100) / 100;
+    if (income <= 166666.67) return Math.round((8541.67 + (income - 66666.67) * 0.25) * 100) / 100;
+    if (income <= 666666.67) return Math.round((33541.67 + (income - 166666.67) * 0.30) * 100) / 100;
+    return Math.round((183541.67 + (income - 666666.67) * 0.35) * 100) / 100;
+};
+
+export const calculateStatutoryDeductions = (baseSalary, grossTaxablePay) => {
+    const salary = Number(baseSalary) || 0;
+    const gross = Number(grossTaxablePay) || 0;
+    const sss = calculateSss(salary);
+    const philHealth = calculatePhilHealth(salary);
+    const pagIbig = calculatePagIbig(salary);
+
+    const totalStatutoryEe = Math.round((sss.ee + philHealth.ee + pagIbig.ee) * 100) / 100;
+    const totalStatutoryEr = Math.round((sss.er + philHealth.er + pagIbig.er) * 100) / 100;
+
+    const taxableIncome = Math.max(0, Math.round((gross - totalStatutoryEe) * 100) / 100);
+    const withholdingTax = calculateWithholdingTax(taxableIncome);
+
+    return {
+        grossPay: gross,
+        taxableIncome,
+        sssEe: sss.ee,
+        sssEr: sss.er,
+        philhealthEe: philHealth.ee,
+        philhealthEr: philHealth.er,
+        pagibigEe: pagIbig.ee,
+        pagibigEr: pagIbig.er,
+        totalStatutoryEe,
+        totalStatutoryEr,
+        withholdingTax,
+        totalEmployeeDeductions: Math.round((totalStatutoryEe + withholdingTax) * 100) / 100,
+        totalEmployerContributions: totalStatutoryEr,
+    };
+};
+
 export const calculateNetPay = (item, sellerSettings = {}) => {
+    if (!item) return 0;
+    
     const workingDays = sellerSettings.payroll_working_days || 22;
     const factorMethod = sellerSettings.payroll_factor_method || 'custom';
     const otMultiplier = sellerSettings.overtime_multiplier || 1.25;
@@ -401,8 +482,16 @@ export const calculateNetPay = (item, sellerSettings = {}) => {
     const absenceDeduction = (Number(item.absences_days) || 0) * dailyRate;
     const undertimeDeduction = (Number(item.undertime_hours) || 0) * hourlyRate;
     
-    let net = item.salary + otPay - absenceDeduction - undertimeDeduction;
-    return net > 0 ? net : 0;
+    const grossTaxablePay = Math.max(0, item.salary + otPay - absenceDeduction - undertimeDeduction);
+
+    if (sellerSettings.enable_statutory_deductions) {
+        const statutory = calculateStatutoryDeductions(item.salary, grossTaxablePay);
+        const net = grossTaxablePay - statutory.totalStatutoryEe - statutory.withholdingTax;
+        return net > 0 ? Math.round(net * 100) / 100 : 0;
+    }
+
+    const net = item.salary + otPay - absenceDeduction - undertimeDeduction;
+    return net > 0 ? Math.round(net * 100) / 100 : 0;
 };
 
 export const calculatePayrollBreakdown = (item, sellerSettings = {}) => {
@@ -442,7 +531,15 @@ export const calculatePayrollBreakdown = (item, sellerSettings = {}) => {
     const absenceDeduction = (Number(item.absences_days) || 0) * dailyRate;
     const undertimeDeduction = (Number(item.undertime_hours) || 0) * hourlyRate;
     
-    const net = item.salary + totalOtPay - absenceDeduction - undertimeDeduction;
+    const grossTaxablePay = Math.max(0, item.salary + totalOtPay - absenceDeduction - undertimeDeduction);
+
+    const isStatutoryEnabled = Boolean(sellerSettings.enable_statutory_deductions);
+    const statutory = calculateStatutoryDeductions(item.salary, grossTaxablePay);
+
+    let net = item.salary + totalOtPay - absenceDeduction - undertimeDeduction;
+    if (isStatutoryEnabled) {
+        net = grossTaxablePay - statutory.totalStatutoryEe - statutory.withholdingTax;
+    }
 
     return {
         dailyRate,
@@ -457,7 +554,20 @@ export const calculatePayrollBreakdown = (item, sellerSettings = {}) => {
         totalOtPay,
         absenceDeduction,
         undertimeDeduction,
-        net: net > 0 ? net : 0
+        grossTaxablePay: Math.round(grossTaxablePay * 100) / 100,
+        isStatutoryEnabled,
+        sssEe: statutory.sssEe,
+        sssEr: statutory.sssEr,
+        philhealthEe: statutory.philhealthEe,
+        philhealthEr: statutory.philhealthEr,
+        pagibigEe: statutory.pagibigEe,
+        pagibigEr: statutory.pagibigEr,
+        totalStatutoryEe: statutory.totalStatutoryEe,
+        totalStatutoryEr: statutory.totalStatutoryEr,
+        taxableIncome: statutory.taxableIncome,
+        withholdingTax: statutory.withholdingTax,
+        totalEmployeeDeductions: Math.round((absenceDeduction + undertimeDeduction + (isStatutoryEnabled ? statutory.totalEmployeeDeductions : 0)) * 100) / 100,
+        net: net > 0 ? Math.round(net * 100) / 100 : 0
     };
 };
 

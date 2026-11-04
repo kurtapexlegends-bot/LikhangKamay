@@ -19,12 +19,16 @@ export default function DryRunPreviewPanel({ dryRunResults, activeStep }) {
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {dryRunResults.items.map(res => {
                     const totalOt = Number(res.overtime_pay || 0) + Number(res.rest_day_ot_pay || 0) + Number(res.holiday_ot_pay || 0);
+                    const statEe = Number(res.total_statutory_ee ?? res.statutory_ee ?? 0) + Number(res.withholding_tax ?? 0);
+                    const statEr = Number(res.total_statutory_er ?? res.statutory_er ?? 0);
                     return (
                         <div key={`dry-run-${res.employee_name}`} className="rounded-xl border border-stone-200 bg-stone-50/50 p-3 flex justify-between items-center text-xs">
                             <div className="min-w-0">
                                 <span className="font-bold text-stone-850 truncate block">{res.employee_name}</span>
                                 <span className="text-[9px] text-stone-500 mt-0.5 block">
                                     OT: +{formatPeso(totalOt)} | Ded: -{formatPeso(res.deductions)}
+                                    {statEe > 0 && ` (Stat: -${formatPeso(statEe)})`}
+                                    {statEr > 0 && ` | ER: +${formatPeso(statEr)}`}
                                 </span>
                             </div>
                             <span className="font-bold text-clay-700 shrink-0 text-right">{formatPrecisePeso(res.net_pay)}</span>

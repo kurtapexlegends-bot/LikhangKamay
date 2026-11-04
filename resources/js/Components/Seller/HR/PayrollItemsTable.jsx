@@ -9,38 +9,42 @@ const money = (value) => new Intl.NumberFormat('en-PH', {
 }).format(Number(value || 0));
 
 export const getBreakdown = (item) => {
-    if (!item.meta) {
-        const base = Number(item.base_salary || 0);
-        const daily = base / 22;
-        const hourly = daily / 8;
-        return {
-            dailyRate: daily,
-            hourlyRate: hourly,
-            formulaText: `₱${base.toLocaleString()} / 22 (Fallback)`,
-            regularOtRate: hourly * 1.25,
-            restDayOtRate: hourly * 1.69,
-            holidayOtRate: hourly * 2.60,
-            regularOtPay: Number(item.overtime_pay || 0),
-            restDayOtPay: Number(item.rest_day_ot_pay || 0),
-            holidayOtPay: Number(item.holiday_ot_pay || 0),
-            totalOtPay: Number(item.overtime_pay || 0) + Number(item.rest_day_ot_pay || 0) + Number(item.holiday_ot_pay || 0),
-            absenceDeduction: Number(item.absence_deduction || 0),
-            undertimeDeduction: Number(item.undertime_deduction || 0),
-            net: Number(item.net_pay || 0)
-        };
-    }
+    const meta = item.meta || {};
+    const base = Number(item.base_salary || 0);
 
-    const meta = item.meta;
-    const dailyRate = Number(meta.daily_rate || 0);
-    const hourlyRate = Number(meta.hourly_rate || 0);
-    
+    const sssEe = Number(item.sss_ee ?? meta.sss_ee ?? 0);
+    const philhealthEe = Number(item.philhealth_ee ?? meta.philhealth_ee ?? 0);
+    const pagibigEe = Number(item.pagibig_ee ?? meta.pagibig_ee ?? 0);
+    const withholdingTax = Number(item.withholding_tax ?? meta.withholding_tax ?? 0);
+    const statutoryEe = sssEe + philhealthEe + pagibigEe + withholdingTax;
+
+    const sssEr = Number(item.sss_er ?? meta.sss_er ?? 0);
+    const philhealthEr = Number(item.philhealth_er ?? meta.philhealth_er ?? 0);
+    const pagibigEr = Number(item.pagibig_er ?? meta.pagibig_er ?? 0);
+    const statutoryEr = sssEr + philhealthEr + pagibigEr;
+
+    const grossPay = Number(item.gross_pay ?? meta.gross_pay ?? 0);
+    const taxableIncome = Number(item.taxable_income ?? meta.taxable_income ?? 0);
+    const hasStatutory = statutoryEe > 0 || statutoryEr > 0;
+
+    let dailyRate = 0;
+    let hourlyRate = 0;
     let formulaText = '';
-    if (meta.factor_method === '261') {
-        formulaText = `(₱${Number(item.base_salary).toLocaleString()} * 12) / 261`;
-    } else if (meta.factor_method === '313') {
-        formulaText = `(₱${Number(item.base_salary).toLocaleString()} * 12) / 313`;
+
+    if (!item.meta) {
+        dailyRate = base / 22;
+        hourlyRate = dailyRate / 8;
+        formulaText = `₱${base.toLocaleString()} / 22 (Fallback)`;
     } else {
-        formulaText = `₱${Number(item.base_salary).toLocaleString()} / ${meta.working_days || 22}`;
+        dailyRate = Number(meta.daily_rate || 0);
+        hourlyRate = Number(meta.hourly_rate || 0);
+        if (meta.factor_method === '261') {
+            formulaText = `(₱${base.toLocaleString()} * 12) / 261`;
+        } else if (meta.factor_method === '313') {
+            formulaText = `(₱${base.toLocaleString()} * 12) / 313`;
+        } else {
+            formulaText = `₱${base.toLocaleString()} / ${meta.working_days || 22}`;
+        }
     }
 
     const regularOtRate = hourlyRate * Number(meta.overtime_multiplier || 1.25);
@@ -54,6 +58,8 @@ export const getBreakdown = (item) => {
 
     const absenceDeduction = Number(item.absence_deduction || 0);
     const undertimeDeduction = Number(item.undertime_deduction || 0);
+    const attendanceDeduction = absenceDeduction + undertimeDeduction;
+    const totalDeductions = attendanceDeduction + statutoryEe;
 
     return {
         dailyRate,
@@ -68,7 +74,21 @@ export const getBreakdown = (item) => {
         totalOtPay,
         absenceDeduction,
         undertimeDeduction,
-        net: Number(item.net_pay || 0)
+        attendanceDeduction,
+        totalDeductions,
+        sssEe,
+        philhealthEe,
+        pagibigEe,
+        withholdingTax,
+        statutoryEe,
+        sssEr,
+        philhealthEr,
+        pagibigEr,
+        statutoryEr,
+        grossPay,
+        taxableIncome,
+        hasStatutory,
+        net: Number(item.net_pay || 0),
     };
 };
 
@@ -114,7 +134,7 @@ export default function PayrollItemsTable({ items = [], onViewPayslip }) {
                         {items.map((item) => {
                             const breakdown = getBreakdown(item);
                             const isExpanded = !!expandedRows[item.id];
-                            const totalDeductions = breakdown.absenceDeduction + breakdown.undertimeDeduction;
+                            const totalDeductions = breakdown.totalDeductions;
                             const initials = (item.employee_name || 'E')
                                 .split(' ')
                                 .map(n => n[0])
@@ -173,8 +193,17 @@ export default function PayrollItemsTable({ items = [], onViewPayslip }) {
                                                 <div>
                                                     <span className="font-bold text-rose-700">-{money(totalDeductions)}</span>
                                                     <div className="text-[10px] text-stone-500">
-                                                        {breakdown.absenceDeduction > 0 && `Abs: ${money(breakdown.absenceDeduction)}`}
-                                                        {breakdown.undertimeDeduction > 0 && ` • Und: ${money(breakdown.undertimeDeduction)}`}
+                                                        {breakdown.hasStatutory ? (
+                                                            <>
+                                                                {breakdown.attendanceDeduction > 0 && `Abs: ${money(breakdown.attendanceDeduction)} • `}
+                                                                <span>Stat: {money(breakdown.statutoryEe)}</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                {breakdown.absenceDeduction > 0 && `Abs: ${money(breakdown.absenceDeduction)}`}
+                                                                {breakdown.undertimeDeduction > 0 && ` • Und: ${money(breakdown.undertimeDeduction)}`}
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ) : (
@@ -267,13 +296,70 @@ export default function PayrollItemsTable({ items = [], onViewPayslip }) {
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center justify-between bg-stone-100/70 border border-stone-200/80 p-3 rounded-xl text-xs">
-                                                        <div className="flex items-center gap-4 text-stone-600">
+                                                    {breakdown.hasStatutory && (
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-1">
+                                                            <div className="space-y-1.5">
+                                                                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Statutory Deductions (Employee Share)</p>
+                                                                <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-150 space-y-1 text-[11px]">
+                                                                    <div className="flex justify-between">
+                                                                        <span className="text-stone-500">SSS EE (4.5%):</span>
+                                                                        <span className="font-semibold text-rose-700">-{money(breakdown.sssEe)}</span>
+                                                                    </div>
+                                                                    <div className="flex justify-between">
+                                                                        <span className="text-stone-500">PhilHealth EE (2.5%):</span>
+                                                                        <span className="font-semibold text-rose-700">-{money(breakdown.philhealthEe)}</span>
+                                                                    </div>
+                                                                    <div className="flex justify-between">
+                                                                        <span className="text-stone-500">Pag-IBIG EE (2.0%):</span>
+                                                                        <span className="font-semibold text-rose-700">-{money(breakdown.pagibigEe)}</span>
+                                                                    </div>
+                                                                    <div className="flex justify-between">
+                                                                        <span className="text-stone-500">Withholding Tax (BIR):</span>
+                                                                        <span className="font-semibold text-rose-700">-{money(breakdown.withholdingTax)}</span>
+                                                                    </div>
+                                                                    <div className="flex justify-between border-t border-stone-200/60 pt-1 font-bold">
+                                                                        <span className="text-stone-700">Total Statutory EE:</span>
+                                                                        <span className="text-rose-700">-{money(breakdown.statutoryEe)}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="space-y-1.5">
+                                                                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Employer Contributions (Liability)</p>
+                                                                <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-150 space-y-1 text-[11px]">
+                                                                    <div className="flex justify-between">
+                                                                        <span className="text-stone-500">SSS ER (9.5%):</span>
+                                                                        <span className="font-semibold text-stone-800">{money(breakdown.sssEr)}</span>
+                                                                    </div>
+                                                                    <div className="flex justify-between">
+                                                                        <span className="text-stone-500">PhilHealth ER (2.5%):</span>
+                                                                        <span className="font-semibold text-stone-800">{money(breakdown.philhealthEr)}</span>
+                                                                    </div>
+                                                                    <div className="flex justify-between">
+                                                                        <span className="text-stone-500">Pag-IBIG ER (2.0%):</span>
+                                                                        <span className="font-semibold text-stone-800">{money(breakdown.pagibigEr)}</span>
+                                                                    </div>
+                                                                    <div className="flex justify-between border-t border-stone-200/60 pt-1 font-bold">
+                                                                        <span className="text-stone-700">Total Employer Share:</span>
+                                                                        <span className="text-stone-900">{money(breakdown.statutoryEr)}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-stone-100/70 border border-stone-200/80 p-3 rounded-xl text-xs gap-2">
+                                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-stone-600 text-[11px]">
                                                             <span>Base: <strong className="text-stone-900">{money(item.base_salary)}</strong></span>
                                                             <span>+ OT: <strong className="text-emerald-700">+{money(breakdown.totalOtPay)}</strong></span>
-                                                            <span>- Deductions: <strong className="text-rose-700">-{money(totalDeductions)}</strong></span>
+                                                            {breakdown.attendanceDeduction > 0 && (
+                                                                <span>- Abs/Und: <strong className="text-rose-700">-{money(breakdown.attendanceDeduction)}</strong></span>
+                                                            )}
+                                                            {breakdown.statutoryEe > 0 && (
+                                                                <span>- Statutory/Tax: <strong className="text-rose-700">-{money(breakdown.statutoryEe)}</strong></span>
+                                                            )}
                                                         </div>
-                                                        <div className="text-right">
+                                                        <div className="text-right shrink-0">
                                                             <span className="text-[10px] uppercase font-bold text-stone-400 mr-2">Net Pay:</span>
                                                             <span className="font-bold text-sm text-stone-900">{money(item.net_pay)}</span>
                                                         </div>
@@ -294,7 +380,7 @@ export default function PayrollItemsTable({ items = [], onViewPayslip }) {
                 {items.map((item) => {
                     const breakdown = getBreakdown(item);
                     const isExpanded = !!expandedRows[item.id];
-                    const totalDeductions = breakdown.absenceDeduction + breakdown.undertimeDeduction;
+                    const totalDeductions = breakdown.totalDeductions;
 
                     return (
                         <div key={item.id} className="bg-white rounded-2xl border border-stone-200/80 p-4 shadow-2xs space-y-3 mb-3 last:mb-0">
@@ -378,6 +464,33 @@ export default function PayrollItemsTable({ items = [], onViewPayslip }) {
                                             <span className="text-stone-500">Reg OT:</span>
                                             <span>{money(breakdown.regularOtRate)}/hr</span>
                                         </div>
+
+                                        {breakdown.hasStatutory && (
+                                            <div className="space-y-1 pt-2 border-t border-stone-200/60">
+                                                <div className="flex justify-between">
+                                                    <span className="text-stone-500">SSS EE:</span>
+                                                    <span className="font-medium text-rose-700">-{money(breakdown.sssEe)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-stone-500">PhilHealth EE:</span>
+                                                    <span className="font-medium text-rose-700">-{money(breakdown.philhealthEe)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-stone-500">Pag-IBIG EE:</span>
+                                                    <span className="font-medium text-rose-700">-{money(breakdown.pagibigEe)}</span>
+                                                </div>
+                                                {breakdown.withholdingTax > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-stone-500">Withholding Tax:</span>
+                                                        <span className="font-medium text-rose-700">-{money(breakdown.withholdingTax)}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-between border-t border-stone-200/50 pt-1 font-semibold text-stone-800">
+                                                    <span>Employer Share:</span>
+                                                    <span>{money(breakdown.statutoryEr)}</span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}

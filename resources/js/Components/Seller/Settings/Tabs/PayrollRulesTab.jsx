@@ -68,6 +68,7 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
         overtime_rate: sellerOwner.overtime_rate || 50.00,
         overtime_multiplier: sellerOwner.overtime_multiplier || 1.25,
         payroll_factor_method: sellerOwner.payroll_factor_method || 'custom',
+        enable_statutory_deductions: sellerOwner.enable_statutory_deductions !== undefined ? Boolean(sellerOwner.enable_statutory_deductions) : false,
         rest_day_ot_multiplier: sellerOwner.rest_day_ot_multiplier || 1.69,
         holiday_ot_multiplier: sellerOwner.holiday_ot_multiplier || 2.60,
         payroll_working_days: sellerOwner.payroll_working_days || 22,
@@ -293,7 +294,11 @@ export default function PayrollRulesTab({ sellerOwner, permissions }) {
                     )}
 
                     {activeSection === 'statutory' && (
-                        <TaxContributionForm />
+                        <TaxContributionForm
+                            data={data}
+                            setData={setData}
+                            canEdit={canEdit}
+                        />
                     )}
                 </div>
 

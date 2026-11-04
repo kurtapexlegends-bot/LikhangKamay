@@ -171,6 +171,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'overtime_rate',
         'overtime_multiplier',
         'payroll_factor_method',
+        'enable_statutory_deductions',
         'rest_day_ot_multiplier',
         'holiday_ot_multiplier',
         'payroll_working_days',
@@ -246,6 +247,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'artisan_welcomed' => \App\Casts\PostgresCompatibleBoolean::class,
             'is_verified' => \App\Casts\PostgresCompatibleBoolean::class,
             'is_test' => \App\Casts\PostgresCompatibleBoolean::class,
+            'enable_statutory_deductions' => \App\Casts\PostgresCompatibleBoolean::class,
         ];
     }
 

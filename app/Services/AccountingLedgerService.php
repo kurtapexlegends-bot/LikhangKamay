@@ -447,9 +447,26 @@ class AccountingLedgerService
                 'available_balance' => $currentBalance,
                 'remaining_balance' => $currentBalance - $amount,
             ],
+            'statutory_summary' => [
+                'gross_pay' => (float) $payroll->items->sum(fn ($i) => (float) ($i->gross_pay ?? $i->base_salary)),
+                'total_deductions' => (float) $payroll->items->sum('deductions'),
+                'sss_ee' => (float) $payroll->items->sum('sss_ee'),
+                'sss_er' => (float) $payroll->items->sum('sss_er'),
+                'philhealth_ee' => (float) $payroll->items->sum('philhealth_ee'),
+                'philhealth_er' => (float) $payroll->items->sum('philhealth_er'),
+                'pagibig_ee' => (float) $payroll->items->sum('pagibig_ee'),
+                'pagibig_er' => (float) $payroll->items->sum('pagibig_er'),
+                'withholding_tax' => (float) $payroll->items->sum('withholding_tax'),
+                'total_statutory_ee' => (float) ($payroll->items->sum('sss_ee') + $payroll->items->sum('philhealth_ee') + $payroll->items->sum('pagibig_ee')),
+                'total_employer_contributions' => (float) ($payroll->items->sum('sss_er') + $payroll->items->sum('philhealth_er') + $payroll->items->sum('pagibig_er')),
+            ],
             'line_items' => $payroll->items->map(function (PayrollItem $item) use ($workingDays) {
                 $dailyRate = $workingDays > 0 ? ((float) $item->base_salary / $workingDays) : 0;
                 $hourlyRate = $dailyRate / 8;
+                $statutoryEe = (float) (($item->sss_ee ?? 0) + ($item->philhealth_ee ?? 0) + ($item->pagibig_ee ?? 0) + ($item->withholding_tax ?? 0));
+                $absenceDeduction = round((float) $item->absences_days * $dailyRate, 2);
+                $undertimeDeduction = round((float) $item->undertime_hours * $hourlyRate, 2);
+                $totalDeductions = (float) ($item->deductions ?? ($absenceDeduction + $undertimeDeduction + $statutoryEe));
 
                 return [
                     'id' => $item->id,
@@ -457,11 +474,23 @@ class AccountingLedgerService
                     'base_salary' => (float) $item->base_salary,
                     'days_worked' => (float) $item->days_worked,
                     'absences_days' => (float) $item->absences_days,
-                    'absence_deduction' => round((float) $item->absences_days * $dailyRate, 2),
+                    'absence_deduction' => $absenceDeduction,
                     'undertime_hours' => (float) $item->undertime_hours,
-                    'undertime_deduction' => round((float) $item->undertime_hours * $hourlyRate, 2),
+                    'undertime_deduction' => $undertimeDeduction,
                     'overtime_hours' => (float) $item->overtime_hours,
                     'overtime_pay' => (float) $item->overtime_pay,
+                    'gross_pay' => (float) ($item->gross_pay ?? $item->base_salary),
+                    'taxable_income' => $item->taxable_income !== null ? (float) $item->taxable_income : null,
+                    'sss_ee' => (float) ($item->sss_ee ?? 0),
+                    'sss_er' => (float) ($item->sss_er ?? 0),
+                    'philhealth_ee' => (float) ($item->philhealth_ee ?? 0),
+                    'philhealth_er' => (float) ($item->philhealth_er ?? 0),
+                    'pagibig_ee' => (float) ($item->pagibig_ee ?? 0),
+                    'pagibig_er' => (float) ($item->pagibig_er ?? 0),
+                    'withholding_tax' => (float) ($item->withholding_tax ?? 0),
+                    'total_statutory_ee' => (float) (($item->sss_ee ?? 0) + ($item->philhealth_ee ?? 0) + ($item->pagibig_ee ?? 0)),
+                    'total_employer_contributions' => (float) (($item->sss_er ?? 0) + ($item->philhealth_er ?? 0) + ($item->pagibig_er ?? 0)),
+                    'deductions' => $totalDeductions,
                     'net_pay' => (float) $item->net_pay,
                 ];
             })->values()->all(),
@@ -590,13 +619,13 @@ class AccountingLedgerService
             ->take(50)
             ->get();
 
-        $pendingPayrolls = Payroll::with(['requester:id,name,role', 'user:id,name,role'])
+        $pendingPayrolls = Payroll::with(['requester:id,name,role', 'user:id,name,role', 'items'])
             ->where('user_id', $seller->id)
             ->where('status', 'Pending')
             ->latest()
             ->get();
 
-        $payrollHistory = Payroll::with(['requester:id,name,role', 'user:id,name,role'])
+        $payrollHistory = Payroll::with(['requester:id,name,role', 'user:id,name,role', 'items'])
             ->where('user_id', $seller->id)
             ->whereIn('status', ['Paid', 'Rejected'])
             ->latest()

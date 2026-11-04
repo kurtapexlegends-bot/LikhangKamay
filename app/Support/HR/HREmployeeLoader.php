@@ -136,6 +136,7 @@ class HREmployeeLoader
             'break_window_start' => $seller->break_window_start ?? '11:30',
             'break_window_end' => $seller->break_window_end ?? '13:30',
             'break_allowance_minutes' => (int) ($seller->break_allowance_minutes ?? 60),
+            'enable_statutory_deductions' => (bool) ($seller->enable_statutory_deductions ?? false),
             'attendance_month_label' => $activePeriod->format('F Y'),
             'attendance_month_value' => $activePeriod->format('Y-m'),
             'created_at' => $seller->created_at ? $seller->created_at->toIso8601String() : now(config('app.timezone'))->toIso8601String(),
@@ -276,7 +277,19 @@ class HREmployeeLoader
         $payrollService = app(PayrollCalculatorService::class);
 
         $lineItems = $payroll->items->map(function (PayrollItem $item) use ($seller, $payrollService) {
+            $isStatutoryOnItem = $item->taxable_income !== null || ((float) ($item->sss_ee ?? 0) > 0);
+
             if (!$item->employee) {
+                $sssEe = (float) ($item->sss_ee ?? 0);
+                $sssEr = (float) ($item->sss_er ?? 0);
+                $philhealthEe = (float) ($item->philhealth_ee ?? 0);
+                $philhealthEr = (float) ($item->philhealth_er ?? 0);
+                $pagibigEe = (float) ($item->pagibig_ee ?? 0);
+                $pagibigEr = (float) ($item->pagibig_er ?? 0);
+                $withholdingTax = (float) ($item->withholding_tax ?? 0);
+                $totalStatutoryEe = round($sssEe + $philhealthEe + $pagibigEe, 2);
+                $totalStatutoryEr = round($sssEr + $philhealthEr + $pagibigEr, 2);
+
                 return [
                     'id' => $item->id,
                     'employee_name' => $item->employee_name ?? "Employee #{$item->employee_id}",
@@ -294,6 +307,18 @@ class HREmployeeLoader
                     'rest_day_ot_pay' => (float) $item->rest_day_ot_pay,
                     'holiday_ot_hours' => (float) $item->holiday_ot_hours,
                     'holiday_ot_pay' => (float) $item->holiday_ot_pay,
+                    'gross_pay' => (float) ($item->gross_pay ?? $item->base_salary),
+                    'taxable_income' => $item->taxable_income !== null ? (float) $item->taxable_income : null,
+                    'sss_ee' => $sssEe,
+                    'sss_er' => $sssEr,
+                    'philhealth_ee' => $philhealthEe,
+                    'philhealth_er' => $philhealthEr,
+                    'pagibig_ee' => $pagibigEe,
+                    'pagibig_er' => $pagibigEr,
+                    'withholding_tax' => $withholdingTax,
+                    'total_statutory_ee' => $totalStatutoryEe,
+                    'total_statutory_er' => $totalStatutoryEr,
+                    'deductions' => round($totalStatutoryEe + $withholdingTax, 2),
                     'net_pay' => (float) $item->net_pay,
                     'meta' => null,
                 ];
@@ -308,7 +333,26 @@ class HREmployeeLoader
                 'holiday_ot_hours' => (float) $item->holiday_ot_hours,
             ];
 
-            $calculated = $payrollService->calculateEmployeeRow($item->employee, $inputs, $seller);
+            // Use item's historical statutory status to preserve immutable payroll calculations
+            $itemSeller = clone $seller;
+            $itemSeller->enable_statutory_deductions = $isStatutoryOnItem;
+
+            $calculated = $payrollService->calculateEmployeeRow($item->employee, $inputs, $itemSeller);
+
+            $sssEe = $item->sss_ee !== null ? (float) $item->sss_ee : (float) ($calculated['sss_ee'] ?? 0);
+            $sssEr = $item->sss_er !== null ? (float) $item->sss_er : (float) ($calculated['sss_er'] ?? 0);
+            $philhealthEe = $item->philhealth_ee !== null ? (float) $item->philhealth_ee : (float) ($calculated['philhealth_ee'] ?? 0);
+            $philhealthEr = $item->philhealth_er !== null ? (float) $item->philhealth_er : (float) ($calculated['philhealth_er'] ?? 0);
+            $pagibigEe = $item->pagibig_ee !== null ? (float) $item->pagibig_ee : (float) ($calculated['pagibig_ee'] ?? 0);
+            $pagibigEr = $item->pagibig_er !== null ? (float) $item->pagibig_er : (float) ($calculated['pagibig_er'] ?? 0);
+            $withholdingTax = $item->withholding_tax !== null ? (float) $item->withholding_tax : (float) ($calculated['withholding_tax'] ?? 0);
+
+            $totalStatutoryEe = round($sssEe + $philhealthEe + $pagibigEe, 2);
+            $totalStatutoryEr = round($sssEr + $philhealthEr + $pagibigEr, 2);
+
+            $absenceDeduction = (float) $calculated['absence_deduction'];
+            $undertimeDeduction = (float) $calculated['undertime_deduction'];
+            $totalDeductions = round($absenceDeduction + $undertimeDeduction + $totalStatutoryEe + $withholdingTax, 2);
 
             return [
                 'id' => $item->id,
@@ -318,15 +362,27 @@ class HREmployeeLoader
                 'days_worked' => (float) $item->days_worked,
                 'absences_days' => (float) $item->absences_days,
                 'paid_leave_days' => (float) $item->paid_leave_days,
-                'absence_deduction' => $calculated['absence_deduction'],
+                'absence_deduction' => $absenceDeduction,
                 'undertime_hours' => (float) $item->undertime_hours,
-                'undertime_deduction' => $calculated['undertime_deduction'],
+                'undertime_deduction' => $undertimeDeduction,
                 'overtime_hours' => (float) $item->overtime_hours,
                 'overtime_pay' => (float) $item->overtime_pay,
                 'rest_day_ot_hours' => (float) $item->rest_day_ot_hours,
                 'rest_day_ot_pay' => (float) $item->rest_day_ot_pay,
                 'holiday_ot_hours' => (float) $item->holiday_ot_hours,
                 'holiday_ot_pay' => (float) $item->holiday_ot_pay,
+                'gross_pay' => (float) ($item->gross_pay ?? $calculated['gross_pay'] ?? 0),
+                'taxable_income' => $item->taxable_income !== null ? (float) $item->taxable_income : $calculated['taxable_income'],
+                'sss_ee' => $sssEe,
+                'sss_er' => $sssEr,
+                'philhealth_ee' => $philhealthEe,
+                'philhealth_er' => $philhealthEr,
+                'pagibig_ee' => $pagibigEe,
+                'pagibig_er' => $pagibigEr,
+                'withholding_tax' => $withholdingTax,
+                'total_statutory_ee' => $totalStatutoryEe,
+                'total_statutory_er' => $totalStatutoryEr,
+                'deductions' => $totalDeductions,
                 'net_pay' => (float) $item->net_pay,
                 'meta' => $calculated['meta'],
             ];
@@ -354,8 +410,21 @@ class HREmployeeLoader
             ] : null,
             'summary' => [
                 'base_pay' => (float) $lineItems->sum('base_salary'),
-                'deductions' => (float) $lineItems->sum(fn(array $item) => $item['absence_deduction'] + $item['undertime_deduction']),
+                'gross_pay' => (float) $lineItems->sum('gross_pay'),
+                'attendance_deductions' => (float) $lineItems->sum(fn(array $item) => $item['absence_deduction'] + $item['undertime_deduction']),
+                'deductions' => (float) $lineItems->sum(fn(array $item) => $item['absence_deduction'] + $item['undertime_deduction'] + ($item['total_statutory_ee'] ?? 0) + ($item['withholding_tax'] ?? 0)),
                 'overtime' => (float) $lineItems->sum(fn(array $item) => $item['overtime_pay'] + ($item['rest_day_ot_pay'] ?? 0) + ($item['holiday_ot_pay'] ?? 0)),
+                'sss_ee' => (float) $lineItems->sum('sss_ee'),
+                'sss_er' => (float) $lineItems->sum('sss_er'),
+                'philhealth_ee' => (float) $lineItems->sum('philhealth_ee'),
+                'philhealth_er' => (float) $lineItems->sum('philhealth_er'),
+                'pagibig_ee' => (float) $lineItems->sum('pagibig_ee'),
+                'pagibig_er' => (float) $lineItems->sum('pagibig_er'),
+                'withholding_tax' => (float) $lineItems->sum('withholding_tax'),
+                'total_statutory_ee' => (float) $lineItems->sum('total_statutory_ee'),
+                'total_statutory_er' => (float) $lineItems->sum('total_statutory_er'),
+                'statutory_deductions' => (float) $lineItems->sum(fn(array $item) => ($item['total_statutory_ee'] ?? 0) + ($item['withholding_tax'] ?? 0)),
+                'employer_contributions' => (float) $lineItems->sum('total_statutory_er'),
                 'net_pay' => (float) $lineItems->sum('net_pay'),
             ],
             'line_items' => $lineItems->all(),
