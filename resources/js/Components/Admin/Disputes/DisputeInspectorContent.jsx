@@ -431,38 +431,38 @@ export default function DisputeInspectorContent({
                         </p>
                     )}
 
-                    <div className="grid grid-cols-3 gap-2 pt-0.5">
+                    <div className="flex flex-wrap items-center justify-end gap-2.5 pt-0.5">
                         <button
                             type="button"
                             onClick={() => openConfirmModal('reject')}
                             disabled={isSubmitting}
-                            className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-2 bg-white border border-stone-200 text-stone-700 rounded-xl text-xs font-bold hover:bg-stone-50 transition shadow-2xs min-h-[36px] cursor-pointer disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white border border-stone-200 text-stone-700 rounded-xl text-xs font-bold hover:bg-stone-50 transition shadow-2xs min-h-[38px] cursor-pointer disabled:opacity-50 shrink-0"
                             title="Decline claim and pay shop"
                         >
-                            <Store size={13} className="text-stone-600 shrink-0" />
-                            <span className="truncate">Decline (Pay Shop)</span>
+                            <Store size={13} className="text-stone-600" />
+                            <span>Decline Claim (Pay Shop)</span>
                         </button>
 
                         <button
                             type="button"
                             onClick={() => openConfirmModal('partial_refund')}
                             disabled={isSubmitting}
-                            className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-2 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-bold hover:bg-amber-100 transition shadow-2xs min-h-[36px] cursor-pointer disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-bold hover:bg-amber-100 transition shadow-2xs min-h-[38px] cursor-pointer disabled:opacity-50 shrink-0"
                             title="50% Partial Refund"
                         >
-                            <Scale size={13} className="text-amber-700 shrink-0" />
-                            <span className="truncate">50% Refund</span>
+                            <Scale size={13} className="text-amber-700" />
+                            <span>50% Partial Refund</span>
                         </button>
 
                         <button
                             type="button"
                             onClick={() => openConfirmModal('refund')}
                             disabled={isSubmitting}
-                            className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-2 bg-clay-700 text-white rounded-xl text-xs font-bold hover:bg-clay-800 transition shadow-2xs min-h-[36px] cursor-pointer disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-clay-700 text-white rounded-xl text-xs font-bold hover:bg-clay-800 transition shadow-2xs min-h-[38px] cursor-pointer disabled:opacity-50 shrink-0"
                             title="Approve full refund"
                         >
-                            <CheckCircle2 size={13} className="shrink-0" />
-                            <span className="truncate">Approve Refund</span>
+                            <CheckCircle2 size={13} />
+                            <span>Approve Full Refund</span>
                         </button>
                     </div>
                 </div>

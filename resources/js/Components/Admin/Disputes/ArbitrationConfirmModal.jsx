@@ -96,7 +96,7 @@ export default function ArbitrationConfirmModal({
                             decision === 'refund'
                                 ? 'bg-clay-700 hover:bg-clay-800'
                                 : decision === 'partial_refund'
-                                ? 'bg-amber-750 hover:bg-amber-850'
+                                ? 'bg-amber-600 hover:bg-amber-700'
                                 : 'bg-stone-800 hover:bg-stone-900'
                         }`}
                     >
@@ -106,7 +106,7 @@ export default function ArbitrationConfirmModal({
                                 ? 'Confirm Full Refund' 
                                 : decision === 'partial_refund'
                                 ? 'Confirm 50% Refund' 
-                                : 'Confirm Release Escrow to Artisan'}
+                                : 'Confirm Decline Claim (Pay Shop)'}
                         </span>
                     </button>
                 </div>
