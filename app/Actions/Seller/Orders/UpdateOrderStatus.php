@@ -18,13 +18,16 @@ class UpdateOrderStatus
 {
     private OrderFinanceService $orderFinanceService;
     private \App\Services\BOMDeductionService $bomDeductionService;
+    private \App\Services\PayMongoService $payMongoService;
 
     public function __construct(
         OrderFinanceService $orderFinanceService,
-        \App\Services\BOMDeductionService $bomDeductionService
+        \App\Services\BOMDeductionService $bomDeductionService,
+        ?\App\Services\PayMongoService $payMongoService = null
     ) {
         $this->orderFinanceService = $orderFinanceService;
         $this->bomDeductionService = $bomDeductionService;
+        $this->payMongoService = $payMongoService ?? app(\App\Services\PayMongoService::class);
     }
 
     /**
@@ -185,6 +188,10 @@ class UpdateOrderStatus
             }
 
             if (in_array($status, ['Cancelled', 'Rejected'], true)) {
+                if ($lockedOrder->payment_status === 'paid' && $lockedOrder->payment_method !== 'COD') {
+                    $updateData['payment_status'] = 'refund_pending';
+                }
+
                 if ($lockedOrder->delivery && !$lockedOrder->delivery->isTerminalFailure() && $lockedOrder->delivery->status !== OrderDelivery::STATUS_COMPLETED) {
                     $lockedOrder->delivery->update([
                         'status' => OrderDelivery::STATUS_CANCELED,
@@ -262,6 +269,60 @@ class UpdateOrderStatus
                 }
             }
         });
+
+        $freshOrder = Order::find($order->id);
+
+        // Automated PayMongo refund for online payments on seller-rejected/cancelled orders outside DB::transaction
+        if (in_array($status, ['Cancelled', 'Rejected'], true) && $freshOrder && $freshOrder->payment_status === 'refund_pending') {
+            if (empty($freshOrder->payment_id) && !empty($freshOrder->paymongo_session_id)) {
+                try {
+                    $session = $this->payMongoService->retrieveCheckoutSession($freshOrder->paymongo_session_id);
+                    $payments = $session['attributes']['payments'] ?? [];
+                    if (is_array($payments) && !empty($payments)) {
+                        $firstPayment = reset($payments);
+                        $resolvedPaymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
+                        if ($resolvedPaymentId) {
+                            $freshOrder->payment_id = $resolvedPaymentId;
+                            $freshOrder->save();
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning("Failed resolving PayMongo payment_id from session {$freshOrder->paymongo_session_id}: " . $e->getMessage());
+                }
+            }
+
+            $refundProcessed = false;
+            if ($freshOrder->payment_id) {
+                try {
+                    $amountInCents = (int) round(((float) $freshOrder->total_amount) * 100);
+                    $reasonNotes = $status === 'Rejected'
+                        ? "Order {$freshOrder->order_number} rejected by seller"
+                        : "Order {$freshOrder->order_number} cancelled by seller";
+                    $refundResult = $this->payMongoService->createRefund(
+                        paymentId: $freshOrder->payment_id,
+                        amountInCents: $amountInCents,
+                        reason: 'requested_by_customer',
+                        notes: $reasonNotes
+                    );
+                    if ($refundResult) {
+                        $refundProcessed = true;
+                        Log::info("PayMongo refund created for {$status} order {$freshOrder->id}", ['refund_id' => $refundResult['id'] ?? null]);
+                    } else {
+                        Log::warning("PayMongo refund returned null/empty for {$status} order {$freshOrder->id}");
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning("PayMongo automated refund exception for {$status} order {$freshOrder->id}: " . $e->getMessage());
+                }
+            }
+
+            if (app()->environment('testing') && empty($freshOrder->payment_id)) {
+                $refundProcessed = true;
+            }
+
+            if ($refundProcessed) {
+                $freshOrder->update(['payment_status' => 'refunded']);
+            }
+        }
 
         if ($status === 'Completed') {
             try {

@@ -23,6 +23,14 @@ class ProductPolicy
      */
     public function view(User $user, Product $product): bool
     {
+        // Allow peer artisans with Supply Hub access to view published active B2B wholesale materials
+        if ($product->is_b2b_supply && $product->status === 'Active' && $user->isArtisan()) {
+            $seller = $user->getEffectiveSeller() ?? $user;
+            if ($seller->canAccessSupplyHub()) {
+                return true;
+            }
+        }
+
         return $user->getEffectiveSellerId() === $product->user_id
             && ($user->isSellerOwner()
                 || $user->hasStaffCapability('inventory.manage')

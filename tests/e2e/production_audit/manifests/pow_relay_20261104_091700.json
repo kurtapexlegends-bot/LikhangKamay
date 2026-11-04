@@ -1,0 +1,72 @@
+{
+  "manifest_version": "5.2.0-PROD-RELAY-ADDITIVE-POW",
+  "run_id": "relay-20261104-live-prod",
+  "timestamp": "2026-11-04T01:17:00Z",
+  "host": "https://www.likhangkamay.app",
+  "phase": "relay",
+  "protocol": "Stream A Commercial Relay + Additive Functional Operations",
+  "execution_mode": "subagent_isolated",
+  "elite_seller_verified": true,
+  "defense_assets_verified": true,
+  "commercial_orders": {
+    "order_a": {
+      "order_number": "ORD-6AEA7EDD73AC5",
+      "db_id": 33,
+      "payment_method": "paymongo_gcash",
+      "voucher_applied": "TESTSAVE10",
+      "rider": "CAV-9876",
+      "pod_photo": "Proof_of_Delivery_ORD-6AEA7EDD73AC5.jpg",
+      "status": "Completed",
+      "bir_invoice_sha256": "24837f8dde3a3f06ef6026c336e26e96406984f20de1487b7c8bb575589266aa"
+    },
+    "order_b": {
+      "order_number": "ORD-6AEA7F55B4E65",
+      "db_id": 34,
+      "pickup_mode": "in_store_pickup",
+      "pickup_location": "Silang Ceramic Studio",
+      "pickup_pin": "8090"
+    },
+    "order_c": {
+      "order_number": "ORD-6AEA7F815B8D2",
+      "db_id": 35,
+      "courier": "lalamove_sandbox",
+      "tracking_number": "LLM-SANDBOX-CAVITE",
+      "status": "Shipped"
+    },
+    "split_orders": {
+      "order_split_a": "ORD-6AEA7FAE3A1D8",
+      "order_split_b": "ORD-6AEA7FAE21E4A",
+      "dual_invoices_verified": true
+    }
+  },
+  "additive_operations_verified": {
+    "buyer": {
+      "follow_shop_toggled": true,
+      "buy_again_tested": true,
+      "cart_cleared_cleanly": true,
+      "wishlist_cleared_cleanly": true,
+      "cancel_return_verified": true,
+      "leaflet_route_preview_rendered": true
+    },
+    "artisan": {
+      "quick_restock_modal_verified": true,
+      "quick_deduct_modal_verified": true,
+      "voucher_crud_verified": true,
+      "canned_chat_template_tested": true,
+      "review_reply_deletion_tested": true,
+      "bulk_dispatch_modal_verified": true
+    },
+    "admin": {
+      "taxonomy_category_crud_verified": true,
+      "disciplinary_warning_logged": true,
+      "tier_override_atomically_reverted": true,
+      "activity_log_inspected": true,
+      "rbac_hard_barrier_verified": true
+    }
+  },
+  "resilience_shields": {
+    "client_side_4_5mb_shield": true,
+    "websocket_polling_fallback": true
+  },
+  "final_verdict": "PASS"
+}

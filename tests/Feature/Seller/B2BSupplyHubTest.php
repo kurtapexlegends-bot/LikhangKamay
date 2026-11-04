@@ -869,5 +869,28 @@ class B2BSupplyHubTest extends TestCase
             ->where('openOrdersCount', 1)
         );
     }
+
+    public function test_peer_artisan_with_supply_hub_clearance_can_view_b2b_product_detail_page(): void
+    {
+        $response = $this->actingAs($this->buyerArtisan)
+            ->get(route('product.show', $this->b2bClaySack->id));
+
+        $response->assertOk();
+    }
+
+    public function test_regular_buyer_cannot_view_b2b_product_detail_page_and_receives_404(): void
+    {
+        $response = $this->actingAs($this->regularBuyer)
+            ->get(route('product.show', $this->b2bClaySack->id));
+
+        $response->assertNotFound();
+    }
+
+    public function test_unauthenticated_guest_cannot_view_b2b_product_detail_page_and_receives_404(): void
+    {
+        $response = $this->get(route('product.show', $this->b2bClaySack->id));
+
+        $response->assertNotFound();
+    }
 }
 

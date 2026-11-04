@@ -273,4 +273,60 @@ class RefundAccuracyTest extends TestCase
         $this->assertSame('Cancelled', $order->status);
         $this->assertSame('pending', $order->payment_status);
     }
+
+    public function test_seller_reject_paid_order_executes_paymongo_refund_and_sets_refunded(): void
+    {
+        $seller = User::factory()->create(['role' => 'artisan', 'artisan_status' => 'approved']);
+        $buyer = User::factory()->create(['role' => 'buyer']);
+        $product = $this->createProduct($seller, stock: 10, price: 450);
+
+        $order = Order::create([
+            'order_number' => 'ORD-REF-SELLER-REJECT-001',
+            'user_id' => $buyer->id,
+            'artisan_id' => $seller->id,
+            'customer_name' => $buyer->name,
+            'total_amount' => 500.00,
+            'merchandise_subtotal' => 450.00,
+            'shipping_fee_amount' => 50.00,
+            'status' => 'Pending',
+            'payment_method' => 'GCash',
+            'payment_status' => 'paid',
+            'payment_id' => 'pay_seller_reject_test_123',
+            'shipping_method' => 'Delivery',
+            'shipping_address' => '456 Pottery Lane, Silang, Cavite',
+        ]);
+
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'price' => 450.00,
+            'quantity' => 1,
+        ]);
+
+        $paymongoMock = Mockery::mock(PayMongoService::class);
+        $paymongoMock->shouldReceive('createRefund')
+            ->once()
+            ->withArgs(function ($paymentId, $amountInCents, $reason, $notes) {
+                return $paymentId === 'pay_seller_reject_test_123'
+                    && $amountInCents === 50000
+                    && str_contains($notes, 'rejected by seller');
+            })
+            ->andReturn([
+                'id' => 'ref_seller_reject_test_999',
+                'status' => 'succeeded',
+                'amount' => 50000,
+            ]);
+
+        $updateOrderStatusAction = new \App\Actions\Seller\Orders\UpdateOrderStatus(
+            app(\App\Services\OrderFinanceService::class),
+            app(\App\Services\BOMDeductionService::class),
+            $paymongoMock
+        );
+
+        $updateOrderStatusAction->execute($order, ['status' => 'Rejected'], $seller, null);
+
+        $order->refresh();
+        $this->assertSame('Rejected', $order->status);
+        $this->assertSame('refunded', $order->payment_status);
+    }
 }

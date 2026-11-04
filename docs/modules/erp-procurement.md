@@ -86,3 +86,13 @@ Automated through [`BOMDeductionService.php`](file:///c:/laragon/www/LikhangKama
 *   **Pessimistic Concurrency Locks (`lockForUpdate`)**: Supply IDs are deterministically sorted (`sort($supplyIds)`) and acquired via `Supply::query()->whereIn('id', $supplyIds)->lockForUpdate()` inside `DB::transaction()` to prevent database deadlocks and race condition quantity overwrite traps under concurrent order acceptance.
 *   **Threshold Trigger**: If deducted supplies reach or fall below their configured `min_stock` threshold, the service auto-generates a draft [`StockRequest`](file:///c:/laragon/www/LikhangKamay/app/Models/StockRequest.php) for the workshop owner.
 *   **Cancellation Restoration**: If an order in `Processing` or `Ready for Pickup` is cancelled or rejected, `restoreForOrder()` acquires sorted row locks and restores the exact deducted raw supply quantities.
+
+---
+
+## 6. B2B Supply Hub & Peer Artisan Wholesale Access
+
+Governed by [ProductPolicy.php](file:///c:/laragon/www/LikhangKamay/app/Policies/ProductPolicy.php) and [ProductController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/ProductController.php):
+
+*   **Catalog Segregation**: Products flagged as raw material wholesale supplies (`is_b2b_supply = true`) are segregated from consumer retail feeds.
+*   **Access Clearance**: Peer artisans with Supply Hub privileges (`canAccessSupplyHub()`) are authorized to inspect product detail pages (`/product/{id}`) and purchase inventory in bulk above the Minimum Order Quantity (MOQ).
+*   **Retail Protection**: Unauthenticated guests and standard consumer accounts attempting to visit wholesale raw material listings are issued an immediate `404 Not Found` response, ensuring B2B catalog isolation.

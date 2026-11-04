@@ -1,0 +1,138 @@
+{
+  "manifest_version": "5.1.0-PROD-3STREAM-POW",
+  "run_id": "iab-20261103-live-prod-3stream",
+  "timestamp": "2026-11-03T13:45:00Z",
+  "host": "https://www.likhangkamay.app",
+  "protocol": "3-Stream Assembly Line E2E Browser Suite (Production Ground Truth)",
+  "execution_mode": "subagent_isolated",
+  "elite_seller_verified": true,
+  "defense_assets_verified": true,
+  "streams_executed": {
+    "stream_a_commercial_core": true,
+    "stream_b_b2b_discovery_resilience": true,
+    "stream_c_governance_hr_monetization": true
+  },
+  "commercial_orders": {
+    "order_a": {
+      "order_number": "ORD-6AE9BD6887AFA",
+      "payment_method": "paymongo_gcash",
+      "voucher_applied": "TESTSAVE10",
+      "rider": "CAV-9876",
+      "status": "Delivered",
+      "bir_invoice_sha256": "6ec202c2794dd0542cbb3ae9c95393e029cf33e6249ef97ac1adbab87f8a9485"
+    },
+    "order_b": {
+      "order_number": "ORD-6AE9BDCBB6619",
+      "pickup_mode": "in_store_pickup",
+      "pickup_pin_verified": true,
+      "pickup_pin": "4133"
+    },
+    "order_c": {
+      "order_number": "ORD-6AE9BDE16B8FD",
+      "courier": "lalamove_sandbox",
+      "tracking_number": "LLM-CAV-2026-98765",
+      "buyer_dispute_filed": true,
+      "seller_rebuttal_registered": true,
+      "seller_response_type": "reject",
+      "dispute_status": "Resolved",
+      "admin_arbitration": "Refund Issued"
+    }
+  },
+  "review_disputes": {
+    "review_disputed_by_seller": true,
+    "dispute_grounds": "Defamatory / Unfair Claims",
+    "admin_moderation_ruling": "Uphold / Removed"
+  },
+  "procurement_lifecycle": {
+    "restock_requested": true,
+    "stock_request_id": 5,
+    "po_ordered": true,
+    "goods_received_stock_incremented": true,
+    "stock_request_rejection_tested": true,
+    "stock_request_rejected_id": 4
+  },
+  "seller_tax_and_locations": {
+    "payout_account_configured": true,
+    "vat_status_updated": true,
+    "secondary_location_created": true,
+    "geofence_enforced": true,
+    "bir_2307_statement_exported": true,
+    "secondary_location_cleaned": true
+  },
+  "b2b_wholesale": {
+    "b2b_order_number": "ORD-6AE9D1563E8BA",
+    "raw_material": "Stoneware Clay Bulk Pack / TEST-BAMBOO-01",
+    "moq_enforced": true,
+    "volume_quantity": 5,
+    "wholesale_invoice_downloaded": true,
+    "wholesale_invoice_number": "INV-WS-ORD-6AE9D1563E8BA"
+  },
+  "order_resilience": {
+    "cancelled_order_number": "ORD-6AE9CEEF638F3",
+    "stock_before": 42,
+    "stock_after_order": 41,
+    "stock_after_cancel_restored": 42,
+    "atomic_rollback_verified": true
+  },
+  "staff_and_hr_governance": {
+    "test_employee_provisioned": true,
+    "permissions_matrix_verified": true,
+    "suspension_cycle_tested": true,
+    "employee_terminated_cleaned": true,
+    "offsite_attendance_flagged": true,
+    "offsite_attendance_approved": true,
+    "payroll_batch_id": "BATCH-5",
+    "payroll_batch_amount": 3645.04,
+    "prepared_by": "Test HR Operations Staff",
+    "accounting_rejection_tested": true,
+    "approved_by": "Cavite Test Craft Workshop Owner",
+    "maker_checker_separated": true,
+    "status": "Approved"
+  },
+  "admin_governance": {
+    "moderation_queue_takedown_tested": true,
+    "payout_voucher_generated": true,
+    "payout_voucher_ref": "PAY-E2E-20261103-480885",
+    "rbac_hard_barrier_verified": true
+  },
+  "kyc_onboarding": {
+    "applicant_email": "test.artisan@likhangkamay.local",
+    "defense_documents_uploaded": [
+      "Business Permit.png",
+      "DTI.png",
+      "Tin ID.png",
+      "Valid ID.png"
+    ],
+    "status": "Application Pending Admin Verification"
+  },
+  "monetization_and_comms": {
+    "subscription_tier": "super_premium (Elite)",
+    "retention_modal_triggered": true,
+    "sponsorship_campaign_active": true,
+    "email_studio_test_dispatched": true,
+    "email_recipient": "test.buyer@likhangkamay.local",
+    "email_provider": "RESEND",
+    "delivery_latency_ms": 309
+  },
+  "high_value_resilience_workflows": {
+    "multi_seller_cart_split": {
+      "split_order_a": "ORD-6AE9BE1C830E2",
+      "split_order_b": "ORD-6AE9BE1C97F8D",
+      "dual_invoices_verified": true
+    },
+    "client_side_4_5mb_shield": {
+      "oversized_file_blocked": true,
+      "inline_warning_rendered": true,
+      "vercel_edge_413_prevented": true
+    },
+    "vacated_workshop_guard": {
+      "defensive_redirect_verified": true,
+      "zero_unhandled_500_errors": true
+    },
+    "websocket_polling_fallback": {
+      "wss_traffic_blocked": true,
+      "inertia_polling_fallback_active": true
+    }
+  },
+  "final_verdict": "PASS"
+}

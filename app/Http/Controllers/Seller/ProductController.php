@@ -409,7 +409,14 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         $viewer = Auth::user();
-        if ($product->status !== 'Active' || $product->is_b2b_supply) {
+        if ($product->is_b2b_supply) {
+            $effectiveSeller = $viewer?->getEffectiveSeller() ?? $viewer;
+            $canViewB2B = $viewer && $viewer->isArtisan() && $effectiveSeller?->canAccessSupplyHub();
+
+            if (!$canViewB2B && (!$viewer || Gate::denies('view', $product))) {
+                abort(404);
+            }
+        } elseif ($product->status !== 'Active') {
             if (!$viewer || Gate::denies('view', $product)) {
                 abort(404);
             }
