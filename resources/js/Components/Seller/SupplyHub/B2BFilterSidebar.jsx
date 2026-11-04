@@ -196,7 +196,9 @@ function B2BFilterSidebar({
                                     className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl font-medium transition-colors text-left text-xs cursor-pointer ${
                                         isSelected 
                                             ? 'bg-clay-50 text-clay-800 font-bold border border-clay-200/70 shadow-2xs' 
-                                            : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
+                                            : count === 0
+                                                ? 'text-stone-400 opacity-60 hover:opacity-100 hover:bg-stone-50 hover:text-stone-700'
+                                                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                                     }`}
                                 >
                                     <span className="truncate">{cat}</span>

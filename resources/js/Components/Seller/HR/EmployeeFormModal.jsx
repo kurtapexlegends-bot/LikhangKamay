@@ -243,6 +243,7 @@ export default function EmployeeFormModal({
         if (mode === 'add') {
             const isProvisioningLogin = data.create_login_account;
             post(route('hr.store'), {
+                preserveScroll: true,
                 onSuccess: (page) => {
                     onClose();
                     addToast(page?.props?.flash?.success || (isProvisioningLogin ? 'Employee and staff login created. Verification code sent.' : 'Employee added.'), 'success');
@@ -254,6 +255,7 @@ export default function EmployeeFormModal({
         } else {
             if (!employee) return;
             patch(route('hr.update', employee.id), {
+                preserveScroll: true,
                 onSuccess: (page) => {
                     onClose();
                     addToast(page?.props?.flash?.success || 'Employee details updated.', 'success');

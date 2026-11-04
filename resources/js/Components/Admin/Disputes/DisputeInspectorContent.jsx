@@ -470,7 +470,7 @@ export default function DisputeInspectorContent({
                 <div className="px-5 py-4 border-t border-stone-100 bg-[#FCFBF9] shrink-0 space-y-2">
                     <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">
-                            Arbitration Ruling &amp; Decision Notes
+                            Dispute Resolution &amp; Decision Notes
                         </span>
                         {dispute.resolved_at && (
                             <span className="text-[10px] text-stone-400 font-medium">

@@ -99,6 +99,7 @@ export default function HRSettingsModal({
         e.preventDefault();
         if (!canEditHrRecords) return;
         post(route('hr.settings'), {
+            preserveScroll: true,
             onSuccess: () => {
                 onClose();
                 addToast('Workshop & Payroll settings saved.', 'success');

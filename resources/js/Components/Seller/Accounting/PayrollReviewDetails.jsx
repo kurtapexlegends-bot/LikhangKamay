@@ -66,17 +66,17 @@ export default function PayrollReviewDetails({ item, inline = false }) {
                 {/* 3 Executive Metrics */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-stone-100 bg-white">
                     <div className="p-4">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">1. Total Payroll Payout</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Total Payroll Payout</p>
                         <p className="mt-1 text-lg font-bold text-stone-900">{formatMoney(item.amount)}</p>
                     </div>
 
                     <div className="p-4">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">2. Staff Included</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Staff Included</p>
                         <p className="mt-1 text-lg font-bold text-stone-900">{item.employee_count} Employees</p>
                     </div>
 
                     <div className="p-4">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">3. Net Treasury Impact</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Net Treasury Impact</p>
                         <p className={`mt-1 text-lg font-bold ${!isSufficient ? 'text-rose-600' : 'text-stone-900'}`}>
                             {formatMoney(item.fund_snapshot?.remaining_balance)}
                         </p>

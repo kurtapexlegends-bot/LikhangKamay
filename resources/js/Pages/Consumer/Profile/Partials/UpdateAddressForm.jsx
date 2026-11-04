@@ -188,9 +188,6 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
             <header className="flex items-center justify-between mb-6">
                 <div>
                     <h3 className="text-lg font-bold text-stone-900">Addresses</h3>
-                    <p className="mt-1 text-sm text-stone-500">
-                        Manage your shipping and billing addresses.
-                    </p>
                 </div>
                 <button 
                     onClick={() => (isAdding || editingAddressId ? cancelForm() : startAdding())}

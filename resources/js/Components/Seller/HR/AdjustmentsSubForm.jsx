@@ -92,7 +92,7 @@ export default function AdjustmentsSubForm({ item, index, updateItem }) {
                     <span className="text-[10px] font-bold text-stone-500 block uppercase tracking-wider">Hourly Adjustments</span>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <div>
-                            <label className="text-[10px] font-bold text-amber-800 block mb-1 uppercase tracking-wider truncate" title="Undertime Hours">Undertime</label>
+                            <label className="text-[10px] font-bold text-amber-800 block mb-1 uppercase tracking-wider truncate" title="Undertime Hours">UT (hrs)</label>
                             <input
                                 type="number"
                                 className="w-full rounded-xl border border-amber-200 bg-white p-2 text-xs font-bold text-amber-950 text-center shadow-none focus:border-amber-500 focus:ring-amber-500 min-h-[40px]"

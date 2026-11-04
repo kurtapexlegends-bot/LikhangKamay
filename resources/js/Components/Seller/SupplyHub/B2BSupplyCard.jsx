@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { 
     Store, ShieldCheck, MapPin, Plus, Minus, 
-    ShoppingCart, ArrowUpRight, Bike, Car, Truck, Percent, Eye 
+    ShoppingCart, Bike, Car, Truck, Eye 
 } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { resolveImageUrl } from '@/lib/media';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const formatSupplyUnit = (unit, count) => {
+    if (!unit) return 'pcs';
+    if (count <= 1 || unit.toLowerCase().endsWith('s')) return unit;
+    return `${unit}s`;
+};
 
 function B2BSupplyCard({
     supply,
@@ -92,12 +98,12 @@ function B2BSupplyCard({
                 {/* Top Badges */}
                 <div className="absolute top-1.5 left-1.5 right-1.5 sm:top-2 sm:left-2 sm:right-2 z-10 flex items-center justify-between pointer-events-none gap-1">
                     <span className="bg-stone-900/80 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-md shadow-2xs">
-                        Min. {minOrderQty} {item.supply_unit || 'pcs'}
+                        Min. {minOrderQty} {formatSupplyUnit(item.supply_unit, minOrderQty)}
                     </span>
 
                     {discountPercentage && discountPercentage > 0 && (
-                        <span className="bg-rose-600 text-white text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full shadow-sm flex items-center gap-0.5">
-                            <Percent size={8} className="sm:w-2.5 sm:h-2.5" /> -{discountPercentage}%
+                        <span className="bg-rose-600 text-white text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full shadow-xs">
+                            -{discountPercentage}%
                         </span>
                     )}
                 </div>
@@ -114,15 +120,15 @@ function B2BSupplyCard({
             <div className="p-2.5 sm:p-3.5 flex flex-col flex-1 justify-between space-y-2 sm:space-y-2.5">
                 <div className="space-y-1 sm:space-y-1.5">
                     {/* Studio Attribution & City */}
-                    <div className="flex items-center justify-between gap-1 text-[10px] sm:text-[11px] text-stone-500">
-                        <div className="flex items-center gap-1 min-w-0 font-medium">
+                    <div className="flex items-center justify-between gap-1.5 text-[10px] sm:text-[11px] text-stone-500">
+                        <div className="flex items-center gap-1 min-w-0 flex-1 font-medium">
                             <Store size={11} className="text-clay-600 shrink-0" />
-                            <span className="truncate font-semibold text-stone-800">{sellerName}</span>
+                            <span className="truncate font-semibold text-stone-800" title={sellerName}>{sellerName}</span>
                             {isSellerVerified && (
                                 <ShieldCheck size={11} className="text-blue-600 shrink-0" />
                             )}
                         </div>
-                        <span className="hidden min-[400px]:flex items-center gap-0.5 text-stone-400 shrink-0 text-[9px] sm:text-[10px]">
+                        <span className="hidden min-[480px]:flex items-center gap-0.5 text-stone-400 shrink-0 text-[9px] sm:text-[10px]">
                             <MapPin size={9} />
                             {sellerCity}
                         </span>
@@ -132,11 +138,12 @@ function B2BSupplyCard({
                     <div>
                         <h3 
                             onClick={handleDetailClick}
-                            className="font-bold text-stone-900 text-xs line-clamp-1 leading-snug group-hover:text-clay-700 transition-colors cursor-pointer"
+                            className="font-bold text-stone-900 text-xs line-clamp-2 min-h-[2rem] leading-snug group-hover:text-clay-700 transition-colors cursor-pointer"
+                            title={item.name}
                         >
                             {item.name}
                         </h3>
-                        <span className="inline-block rounded bg-stone-100 px-1.5 py-0.2 text-[8px] sm:text-[9px] font-semibold text-stone-500 mt-0.5">
+                        <span className="inline-block rounded bg-stone-100 px-1.5 py-0.2 text-[8px] sm:text-[9px] font-semibold text-stone-500 mt-1">
                             {item.category}
                         </span>
                     </div>
@@ -216,10 +223,9 @@ function B2BSupplyCard({
                     <button
                         type="button"
                         onClick={handleQuickOrderClick}
-                        className="w-full sm:w-auto sm:flex-1 h-10 sm:h-[38px] min-h-[40px] sm:min-h-[38px] flex items-center justify-center gap-1 rounded-xl bg-clay-600 px-3 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-all cursor-pointer active:scale-95"
+                        className="w-full sm:w-auto sm:flex-1 h-10 sm:h-[38px] min-h-[40px] sm:min-h-[38px] flex items-center justify-center rounded-xl bg-clay-600 px-3 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-all cursor-pointer active:scale-95"
                     >
                         <span>Order</span>
-                        <ArrowUpRight size={13} className="sm:w-3.5 sm:h-3.5" />
                     </button>
                 </div>
             </div>

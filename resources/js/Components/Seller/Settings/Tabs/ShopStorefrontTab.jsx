@@ -141,7 +141,7 @@ export default function ShopStorefrontTab({ sellerOwner, stats, products = [], p
                                 <Camera className="w-6 h-6" />
                             </div>
                             <span className="text-sm font-semibold drop-shadow">Click to change banner</span>
-                            <span className="text-xs text-white/70">1200 x 300 recommended • max 5 MB</span>
+                            <span className="text-xs text-white/70">1200 × 300 recommended • max 4 MB</span>
                         </div>
                     </div>
 
