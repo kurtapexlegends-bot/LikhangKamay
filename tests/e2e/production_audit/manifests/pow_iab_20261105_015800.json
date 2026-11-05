@@ -1,0 +1,184 @@
+{
+  "manifest_version": "5.1.0-PROD-3STREAM-POW",
+  "run_id": "iab-20261105-015800",
+  "timestamp": "2026-11-05T01:58:00Z",
+  "host": "https://www.likhangkamay.app",
+  "protocol": "3-Stream Assembly Line E2E Browser Suite (Production Ground Truth)",
+  "execution_mode": "subagent_isolated",
+  "elite_seller_verified": true,
+  "defense_assets_verified": true,
+  "streams_executed": {
+    "stream_a_commercial_core": true,
+    "stream_b_b2b_discovery_resilience": true,
+    "stream_c_governance_hr_monetization": true
+  },
+  "commercial_orders": {
+    "order_a": {
+      "id": 38,
+      "order_number": "ORD-6AEBD7CAA5818",
+      "payment_method": "paymongo_gcash",
+      "payment_reference": "pay_3XyEsF74R9mXGuqJMTGfLRYR",
+      "voucher_applied": "TESTSAVE10",
+      "fulfillment": "in_house_driver",
+      "rider": "CAV-9876",
+      "driver_name": "Test Logistics Rider",
+      "status": "Completed",
+      "in_house_shipping_fee_credited": true,
+      "review_rating": 5,
+      "bir_invoice_sha256": "9cd5b9f91f65129fbc84819454072858df7f63c52166967271e89ccb42b0e1fa"
+    },
+    "order_b": {
+      "id": 39,
+      "order_number": "ORD-6AEBD82BDB1B8",
+      "payment_method": "cod",
+      "pickup_mode": "in_store_pickup",
+      "pickup_location": "Silang Ceramic Studio",
+      "pickup_pin": "3276",
+      "pickup_pin_verified": true,
+      "cashless_prepayment_supported": true,
+      "status": "Pending"
+    },
+    "order_c": {
+      "id": 40,
+      "order_number": "ORD-6AEBD850DF85B",
+      "payment_method": "cod",
+      "fulfillment": "doorstep_delivery",
+      "courier": "lalamove_sandbox",
+      "tracking_reference": "LLM-SANDBOX-CAVITE",
+      "buyer_dispute_filed": true,
+      "dispute_reason": "Item arrived with hairline crack along base.",
+      "seller_rebuttal_registered": true,
+      "seller_response_type": "reject",
+      "dispute_status": "Declined",
+      "admin_arbitration": "Decline Claim (Pay Shop)",
+      "final_status": "Completed",
+      "seller_net_retention_verified": true
+    }
+  },
+  "review_disputes": {
+    "review_disputed_by_seller": true,
+    "dispute_grounds": "Defamatory / Unfair Claims",
+    "admin_moderation_ruling": "Uphold / Removed"
+  },
+  "procurement_lifecycle": {
+    "restock_requested": true,
+    "po_ordered": true,
+    "goods_received_stock_incremented": true,
+    "stock_request_rejection_tested": true
+  },
+  "seller_tax_and_locations": {
+    "payout_account_configured": true,
+    "vat_status_updated": true,
+    "secondary_location_created": true,
+    "geofence_enforced": true,
+    "bir_2307_statement_exported": true,
+    "secondary_location_cleaned": true
+  },
+  "b2b_wholesale": {
+    "b2b_order_number": "ORD-6AEBE1CBC480F",
+    "po_reference": "PO-ORD-6AEBE1CBC480F",
+    "buyer_workshop": "Silang Terracotta Works (artisan.silang@likhangkamay.com)",
+    "supplier_workshop": "Cavite Test Craft Workshop (test.artisan@likhangkamay.local)",
+    "material": "E2E Synthetic ₱1 Bamboo Cup",
+    "moq_enforced": true,
+    "volume_quantity": 5,
+    "unit_rate_php": 45.0,
+    "materials_subtotal_php": 225.0,
+    "total_investment_php": 372.75,
+    "wholesale_invoice_downloaded": true,
+    "invoice_sha256": "6498e7cdcbd469ce7068e6c6e5cca5a3b355dba319db94daa00f8c73decee781"
+  },
+  "order_resilience": {
+    "cancelled_order_number": "ORD-6AEBE09B3C8D7",
+    "order_id": 43,
+    "stock_before": 34,
+    "stock_after_order": 33,
+    "stock_after_cancel_restored": 34,
+    "atomic_rollback_verified": true
+  },
+  "staff_and_hr_governance": {
+    "test_employee_provisioned": true,
+    "permissions_matrix_verified": true,
+    "suspension_cycle_tested": true,
+    "employee_terminated_cleaned": true,
+    "offsite_attendance_flagged": true,
+    "offsite_distance_meters": 12062,
+    "offsite_attendance_approved": true,
+    "payroll_batch_id": "LK-PAY-0005",
+    "prepared_by": "Test HR Operations Staff",
+    "accounting_rejection_tested": true,
+    "approved_by": "Cavite Test Craft Workshop Owner",
+    "maker_checker_separated": true,
+    "status": "Approved"
+  },
+  "admin_governance": {
+    "moderation_queue_takedown_tested": true,
+    "payout_voucher_generated": true,
+    "rbac_hard_barrier_verified": true,
+    "taxonomy_category_crud_verified": true
+  },
+  "kyc_onboarding": {
+    "applicant_email": "test.onboarding@likhangkamay.local",
+    "defense_documents_uploaded": [
+      "Business Permit.png",
+      "DTI.png",
+      "Tin ID.png",
+      "Valid ID.png"
+    ],
+    "status": "Application Pending Admin Verification"
+  },
+  "monetization_and_comms": {
+    "subscription_tier": "super_premium (Elite Plan Active Products 2 / 50)",
+    "retention_modal_triggered": true,
+    "sponsorship_campaign_active": true,
+    "email_studio_test_dispatched": true,
+    "email_recipient": "test.buyer@likhangkamay.local"
+  },
+  "high_value_resilience_workflows": {
+    "multi_seller_cart_split": {
+      "split_order_a": "ORD-6AEBD888D1225",
+      "split_order_b": "ORD-6AEBD888E8199",
+      "dual_invoices_verified": true
+    },
+    "client_side_4_5mb_shield": {
+      "oversized_file_blocked": true,
+      "inline_warning_rendered": true,
+      "vercel_edge_413_prevented": true
+    },
+    "vacated_workshop_guard": {
+      "defensive_redirect_verified": true,
+      "zero_unhandled_500_errors": true
+    },
+    "websocket_polling_fallback": {
+      "wss_traffic_blocked": true,
+      "inertia_polling_fallback_active": true
+    }
+  },
+  "extended_functional_operations": {
+    "buyer_subsystems": {
+      "buy_again_tested": true,
+      "follow_shop_toggled": true,
+      "cancel_return_verified": true,
+      "leaflet_route_preview_rendered": true,
+      "cart_cleared_cleanly": true
+    },
+    "artisan_studio_ops": {
+      "quick_restock_modal_verified": true,
+      "quick_deduct_modal_verified": true,
+      "voucher_crud_verified": true,
+      "canned_chat_template_tested": true,
+      "review_reply_deletion_tested": true,
+      "bulk_dispatch_modal_verified": true,
+      "presigned_3d_endpoint_verified": true
+    },
+    "governance_and_staff": {
+      "taxonomy_category_crud_verified": true,
+      "disciplinary_warning_logged": true,
+      "tier_override_atomically_reverted": true,
+      "staff_password_atomically_reverted": true,
+      "team_chat_channel_and_threads_verified": true,
+      "trash_center_restoration_verified": true
+    }
+  },
+  "final_verdict": "PASS"
+}

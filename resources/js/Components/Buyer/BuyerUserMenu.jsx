@@ -1,8 +1,9 @@
+/* global route */
 import React from 'react';
 import Dropdown from '@/Components/Dropdown';
 import UserAvatar from '@/Components/UserAvatar';
 import { 
-    ChevronDown, User, ShoppingBag, Heart, Clock, Shield, LogOut 
+    ChevronDown, User, ShoppingBag, Heart, Star, Clock, Shield, LogOut 
 } from 'lucide-react';
 
 export default function BuyerUserMenu({ 
@@ -43,6 +44,9 @@ export default function BuyerUserMenu({
                             </Dropdown.Link>
                             <Dropdown.Link href={route('my-orders.index')}>
                                 <ShoppingBag size={16} className="inline mr-2"/> My Purchases
+                            </Dropdown.Link>
+                            <Dropdown.Link href={route('buyer.reviews')}>
+                                <Star size={16} className="inline mr-2"/> My Reviews
                             </Dropdown.Link>
                             <Dropdown.Link href={route('saved.index')}>
                                 <Heart size={16} className="inline mr-2"/> Saved
