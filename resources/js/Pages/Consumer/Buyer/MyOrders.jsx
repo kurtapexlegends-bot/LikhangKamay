@@ -292,18 +292,35 @@ export default function MyOrders({ auth, orders = [] }) {
                     <div className="flex-1 min-w-0 w-full">
                         {/* Page Header (Desktop version, hidden on mobile) */}
                         <div className="hidden lg:flex items-center justify-between mb-6">
-                            <h1 className="text-xl font-black tracking-tight text-stone-900">My Purchases</h1>
-                            <span className="text-xs bg-clay-100 text-clay-700 px-3 py-1 rounded-full font-bold">
-                                {getTabCount(activeTab)} Orders
-                            </span>
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-xl font-black tracking-tight text-stone-900">My Purchases</h1>
+                                <span className="text-xs bg-clay-100 text-clay-700 px-3 py-1 rounded-full font-bold">
+                                    {getTabCount(activeTab)} Orders
+                                </span>
+                            </div>
+                            <Link
+                                href={route('buyer.reviews')}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 hover:border-stone-300 hover:bg-stone-50 transition-colors shadow-2xs"
+                            >
+                                <span>My Reviews</span>
+                                <ArrowRight size={13} className="text-stone-400" />
+                            </Link>
                         </div>
 
                         {/* Mobile-only Header */}
-                        <div className="mb-4 lg:hidden flex items-center justify-between">
-                            <h1 className="text-lg font-black tracking-tight text-stone-900">My Purchases</h1>
-                            <span className="text-[10px] bg-clay-100 text-clay-700 px-2 py-0.5 rounded-full font-bold">
-                                {getTabCount(activeTab)} Orders
-                            </span>
+                        <div className="mb-4 lg:hidden flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <h1 className="text-lg font-black tracking-tight text-stone-900 truncate">My Purchases</h1>
+                                <span className="text-[10px] bg-clay-100 text-clay-700 px-2 py-0.5 rounded-full font-bold shrink-0">
+                                    {getTabCount(activeTab)}
+                                </span>
+                            </div>
+                            <Link
+                                href={route('buyer.reviews')}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 shadow-2xs active:scale-95 transition-all shrink-0 min-h-[36px]"
+                            >
+                                <span>My Reviews</span>
+                            </Link>
                         </div>
 
                         {/* Mobile-only Tabs Slider Container */}

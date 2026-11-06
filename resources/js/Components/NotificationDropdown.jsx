@@ -18,11 +18,11 @@ const matchesNotificationFilter = (notification, filterKey) => {
     }
 
     if (filterKey === 'messages') {
-        return ['new_message', 'team_message', 'team_channel_message', 'team_mention'].includes(notification.type);
+        return ['new_message', 'team_message', 'team_channel_message', 'team_mention', 'review_reply'].includes(notification.type);
     }
 
     if (filterKey === 'attention') {
-        return ['low_stock', 'low_stock_warning', 'supply_depleted', 'accounting_rejected', 'accounting_request', 'artisan_application', 'sponsorship_status', 'review_moderation_status', 'refund_request', 'shipment_deadline', 'product_moderation', 'new_review', 'dispute_escalated', 'dispute_accepted', 'dispute_replacement_proposed', 'dispute_rejected', 'dispute_arbitrated_refund', 'dispute_arbitrated_rejected', 'disciplinary_action', 'off_site_clock_in'].includes(notification.type);
+        return ['low_stock', 'low_stock_warning', 'supply_depleted', 'accounting_rejected', 'accounting_request', 'artisan_application', 'sponsorship_status', 'review_moderation_status', 'review_reply', 'refund_request', 'shipment_deadline', 'product_moderation', 'new_review', 'dispute_escalated', 'dispute_accepted', 'dispute_replacement_proposed', 'dispute_rejected', 'dispute_arbitrated_refund', 'dispute_arbitrated_rejected', 'disciplinary_action', 'off_site_clock_in'].includes(notification.type);
     }
 
     return true;
@@ -145,6 +145,11 @@ export default function NotificationDropdown() {
                 return {
                     icon: <Star size={16} className="text-amber-500" />,
                     bgClass: 'bg-amber-50'
+                };
+            case 'review_reply':
+                return {
+                    icon: <MessageCircle size={16} className="text-clay-600" />,
+                    bgClass: 'bg-clay-50'
                 };
             case 'review_moderation_status':
             case 'refund_request':

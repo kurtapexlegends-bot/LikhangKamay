@@ -136,8 +136,10 @@ class NotificationPresenter
             'team_message', 'team_channel_message', 'team_mention' => self::resolveTeamMessageUrl($data, $user),
             'new_order', 'payment_confirmed', 'refund_request', 'shipment_deadline' => self::resolveOrderUrl($data, $user),
             'new_review' => self::resolveReviewUrl($data, $user),
+            'review_reply' => self::resolveReviewReplyUrl($data, $user),
             'low_stock', 'low_stock_warning' => self::resolveStockUrl($data, $user),
-            'replacement_resolution', 'review_moderation_status' => self::resolveBuyerOrderUrl($data, $user),
+            'replacement_resolution' => self::resolveBuyerOrderUrl($data, $user),
+            'review_moderation_status', 'review_dispute_status' => self::resolveReviewModerationUrl($data, $user),
             'sponsorship_status' => self::resolveSponsorshipUrl($data, $user),
             'artisan_application' => self::resolveArtisanApplicationUrl($data, $user),
             'supply_depleted' => self::resolveProcurementUrl($data, $user),
@@ -228,11 +230,11 @@ class NotificationPresenter
     private static function resolveReviewUrl(array $data, ?User $user): ?string
     {
         if ($user?->isBuyer()) {
-            return route('my-orders.index');
+            return route('buyer.reviews');
         }
 
         if ($user?->isAdmin()) {
-            return route('admin.catalog.index', ['tab' => 'moderation']);
+            return route('admin.compliance', ['tab' => 'disputes']);
         }
 
         if ($user?->isArtisan()) {
@@ -246,6 +248,56 @@ class NotificationPresenter
         }
 
         return route('reviews.index');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function resolveReviewReplyUrl(array $data, ?User $user): ?string
+    {
+        if ($user?->isBuyer()) {
+            $params = !empty($data['review_id']) ? ['review' => $data['review_id']] : [];
+            return route('buyer.reviews', $params);
+        }
+
+        if ($user?->isArtisan()) {
+            return route('reviews.index');
+        }
+
+        if ($user?->isStaff()) {
+            return $user->canAccessSellerModule('reviews')
+                ? route('reviews.index')
+                : route('staff.dashboard');
+        }
+
+        return self::sanitizeFallbackUrl($data['url'] ?? null, $user) ?: route('buyer.reviews');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function resolveReviewModerationUrl(array $data, ?User $user): ?string
+    {
+        if ($user?->isBuyer()) {
+            $params = !empty($data['review_id']) ? ['review' => $data['review_id']] : [];
+            return route('buyer.reviews', $params);
+        }
+
+        if ($user?->isAdmin()) {
+            return route('admin.compliance', ['tab' => 'disputes']);
+        }
+
+        if ($user?->isArtisan()) {
+            return route('reviews.index');
+        }
+
+        if ($user?->isStaff()) {
+            return $user->canAccessSellerModule('reviews')
+                ? route('reviews.index')
+                : route('staff.dashboard');
+        }
+
+        return self::sanitizeFallbackUrl($data['url'] ?? null, $user) ?: route('buyer.reviews');
     }
 
     /**

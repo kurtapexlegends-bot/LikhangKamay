@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\ReviewDispute;
+use App\Notifications\ArtisanReviewReplyNotification;
 use App\Services\StorageUrl;
 use App\Support\RichTextSanitizer;
 use Illuminate\Http\Request;
@@ -110,12 +111,23 @@ class ReviewController extends Controller
             'seller_reply' => 'required|string|max:2000',
         ]);
 
-        $review = Review::with('product')->findOrFail($id);
+        $review = Review::with(['product.user', 'user'])->findOrFail($id);
         $this->authorizeSellerOwnership($review->product->user_id);
 
+        $sanitizedReply = RichTextSanitizer::sanitize($request->seller_reply);
         $review->update([
-            'seller_reply' => RichTextSanitizer::sanitize($request->seller_reply),
+            'seller_reply' => $sanitizedReply,
         ]);
+
+        if ($review->user && $review->user->id !== auth()->id()) {
+            $shopName = $review->product?->user?->shop_name ?: ($review->product?->user?->name ?: 'Artisan');
+            $productName = $review->product?->name ?? 'Handcrafted Item';
+            $review->user->notify(new ArtisanReviewReplyNotification(
+                $review,
+                $shopName,
+                $productName
+            ));
+        }
 
         return back()->with('success', 'Reply posted successfully!');
     }

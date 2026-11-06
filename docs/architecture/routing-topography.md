@@ -61,6 +61,14 @@ graph TD
     *   `/ping`: Lightweight, database-free warming route.
     *   `/webhooks/cron/queue`: High-frequency queue execution endpoint secured by cron token validation.
 
+### Protected Consumer & Buyer Routes
+Protected under `auth`:
+*   **My Orders Portal**: `/my-orders` (`name('my-orders.index')`)
+*   **Buyer Reviews Portal**: `/my-reviews` (`name('buyer.reviews')`) with deep-linking query `/my-reviews?review={id}`
+*   **Review Mutations**: `PATCH /reviews/{id}` (`reviews.update`), `DELETE /reviews/{id}` (`reviews.destroy`)
+*   **Dispute Actions**: `/my-orders/{id}/dispute` (`name('disputes.buyer.create')`)
+*   **Buyer Notifications**: `/notifications` (`name('notifications.index')`)
+
 ### Seller Management Modules
 Protected under `seller.workspace` and feature-toggled via `seller.module`:
 *   **Orders Dashboard**: `/orders` (Module: `orders`)

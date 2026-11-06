@@ -61,6 +61,11 @@ export default function Notifications({ notifications = [], unreadNotificationCo
                     icon: <Star size={20} className="text-amber-500" />,
                     bgClass: 'bg-amber-50'
                 };
+            case 'review_reply':
+                return {
+                    icon: <MessageCircle size={20} className="text-clay-600" />,
+                    bgClass: 'bg-clay-50'
+                };
             case 'review_moderation_status':
             case 'refund_request':
             case 'dispute_accepted':

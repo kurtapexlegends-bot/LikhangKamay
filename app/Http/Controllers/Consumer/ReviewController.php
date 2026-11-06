@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Consumer;
 
+use App\Actions\Review\FetchBuyerReviewsAction;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Product;
@@ -20,26 +21,10 @@ class ReviewController extends Controller
 {
     use InteractsWithSellerContext;
     
-    public function buyerIndex()
+    public function buyerIndex(FetchBuyerReviewsAction $action)
     {
-        $reviews = Review::where('user_id', Auth::id())
-            ->with(['product'])
-            ->latest()
-            ->get()
-            ->map(fn($review) => [
-                'id' => $review->id,
-                'rating' => $review->rating,
-                'comment' => $review->comment,
-                'date' => $review->created_at->format('M d, Y'),
-                'seller_reply' => $review->seller_reply,
-                'product' => [
-                    'name' => $review->product?->name,
-                    'image' => StorageUrl::url($review->product?->cover_photo_path),
-                ]
-            ]);
-
         return Inertia::render('Consumer/Buyer/Reviews', [
-            'reviews' => $reviews
+            'reviews' => $action->execute((int) Auth::id()),
         ]);
     }
 

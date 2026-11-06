@@ -64,3 +64,25 @@ Managed in [ModerationController.php](file:///c:/laragon/www/LikhangKamay/app/Ht
 *   [SellerRespondToDispute.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Disputes/SellerRespondToDispute.php): Saves the seller's explanation, proposed remedy, or refund consent.
 *   [AdminArbitrateDispute.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Disputes/AdminArbitrateDispute.php): Runs final super admin resolution choices (refund release or rejection). Commits dispute and order state changes within the database transaction and releases row locks before triggering external PayMongo refunds, preventing row-lock starvation and transaction timeouts.
 *   [BuyerReactToDispute.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Disputes/BuyerReactToDispute.php): Tracks the customer's response to the seller's proposed resolution.
+*   [FetchBuyerReviewsAction.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Review/FetchBuyerReviewsAction.php): Gathers authenticated buyer reviews with eager-loaded product, shop owner, and dispute relations, computing average ratings, review status summaries, and compact artisan replies.
+
+---
+
+## 4. Buyer Review Management Portal (`/my-reviews`)
+
+The dedicated Buyer Reviews Portal (`GET /my-reviews`, `name('buyer.reviews')`) provides buyers with a unified, transparent space to manage their product feedback, track artisan replies, and monitor moderation safety states.
+
+### Key Components & Layout Parity
+*   **Parity with `/my-orders`**: Shared layout architecture featuring the Buyer Profile card, summary KPI boxes (`Total Reviews`, `Average Rating`), category filter tabs, and an interactive `Artisan Replies` compact drawer in [BuyerReviewSidebar.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Consumer/Buyer/Reviews/BuyerReviewSidebar.jsx).
+*   **Sidebar Reply Feed & Smooth Interaction**: Clicking an artisan reply snippet in the sidebar automatically scrolls to the review card and triggers a temporary focus highlight (`ring-2 ring-clay-500`).
+*   **Content Safety & Moderation States**:
+    *   `Public Review`: Active and published review visible across the storefront.
+    *   `Under Moderation Review`: The review is actively disputed by the artisan (`disputes.status in ['pending', 'under_review']`).
+    *   `Passed Safety Review`: An artisan dispute on the review was formally reviewed and dismissed/rejected by admin (`disputes.status === 'rejected'`).
+    *   `Hidden from Storefront`: The review was upheld by moderation and suppressed from public view.
+*   **Review Lifecycle Mutations**:
+    *   `PATCH /reviews/{id}`: Modal rating and feedback edit via [EditReviewModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Consumer/Buyer/Reviews/EditReviewModal.jsx).
+    *   `DELETE /reviews/{id}`: Soft or permanent removal of buyer review.
+*   **Notification Integration & Deep-Linking**:
+    *   When an artisan submits a response, [ArtisanReviewReplyNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/ArtisanReviewReplyNotification.php) is queued.
+    *   Notifications deep-link directly to `/my-reviews?review={id}`, auto-scrolling to the card and focusing it.

@@ -37,7 +37,7 @@ class ReviewModerationStatusNotification extends Notification
             'product_id' => $this->review->product_id,
             'product_name' => $productName,
             'hidden_from_marketplace' => $this->isHiddenFromMarketplace,
-            'url' => route('my-orders.index'),
+            'url' => route('buyer.reviews', ['review' => $this->review->id]),
         ];
     }
 }
