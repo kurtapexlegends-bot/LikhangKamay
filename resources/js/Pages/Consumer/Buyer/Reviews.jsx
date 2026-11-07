@@ -7,7 +7,8 @@ import {
     Search, 
     X,
     ShoppingBag,
-    Trash2
+    Trash2,
+    User
 } from 'lucide-react';
 import Modal from '@/Components/Modal';
 import ConfirmationModal from '@/Components/ConfirmationModal';
@@ -330,13 +331,22 @@ export default function Reviews({ auth, reviews = [] }) {
                                     {filteredReviews.length} {filteredReviews.length === 1 ? 'Review' : 'Reviews'}
                                 </span>
                             </div>
-                            <Link
-                                href={route('my-orders.index')}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 hover:border-stone-300 hover:bg-stone-50 transition-colors shadow-2xs"
-                            >
-                                <ShoppingBag size={13} className="text-stone-400" />
-                                <span>My Purchases</span>
-                            </Link>
+                            <div className="flex items-center gap-2">
+                                <Link
+                                    href={route('profile.edit')}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 hover:border-stone-300 hover:bg-stone-50 transition-colors shadow-2xs"
+                                >
+                                    <User size={13} className="text-stone-400" />
+                                    <span>Profile</span>
+                                </Link>
+                                <Link
+                                    href={route('my-orders.index')}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 hover:border-stone-300 hover:bg-stone-50 transition-colors shadow-2xs"
+                                >
+                                    <ShoppingBag size={13} className="text-stone-400" />
+                                    <span>My Purchases</span>
+                                </Link>
+                            </div>
                         </div>
 
                         {/* Mobile Header */}
@@ -347,12 +357,21 @@ export default function Reviews({ auth, reviews = [] }) {
                                     {filteredReviews.length}
                                 </span>
                             </div>
-                            <Link
-                                href={route('my-orders.index')}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 shadow-2xs active:scale-95 transition-all shrink-0 min-h-[34px]"
-                            >
-                                <span>Purchases</span>
-                            </Link>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <Link
+                                    href={route('profile.edit')}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 shadow-2xs active:scale-95 transition-all shrink-0 min-h-[34px]"
+                                >
+                                    <User size={12} className="text-stone-400" />
+                                    <span>Profile</span>
+                                </Link>
+                                <Link
+                                    href={route('my-orders.index')}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 shadow-2xs active:scale-95 transition-all shrink-0 min-h-[34px]"
+                                >
+                                    <span>Purchases</span>
+                                </Link>
+                            </div>
                         </div>
 
                         {/* Mobile Tabs Slider */}

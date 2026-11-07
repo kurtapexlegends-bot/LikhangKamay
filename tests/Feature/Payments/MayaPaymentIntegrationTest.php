@@ -89,9 +89,9 @@ class MayaPaymentIntegrationTest extends TestCase
     }
 
     /**
-     * Test 2: Store pickup always defaults to COD even if Maya was passed.
+     * Test 2: Store pickup supports Maya cashless prepayment.
      */
-    public function test_store_pickup_order_forces_cod_regardless_of_online_method_passed(): void
+    public function test_store_pickup_order_supports_maya_payment_method(): void
     {
         $response = $this->actingAs($this->buyer)->post(route('checkout.store'), [
             'items' => [
@@ -108,7 +108,7 @@ class MayaPaymentIntegrationTest extends TestCase
         $this->assertDatabaseHas('orders', [
             'user_id' => $this->buyer->id,
             'shipping_method' => 'Pick Up',
-            'payment_method' => 'COD',
+            'payment_method' => 'Maya',
         ]);
     }
 

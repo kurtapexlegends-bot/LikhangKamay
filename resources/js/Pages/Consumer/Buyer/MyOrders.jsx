@@ -1,7 +1,7 @@
 /* global route */
 import React, { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Search, ShoppingBag, CheckCircle, XCircle, Store, ArrowRight } from 'lucide-react';
+import { Search, ShoppingBag, CheckCircle, XCircle, Store, ArrowRight, User, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import BuyerNavbar from '@/Layouts/BuyerNavbar';
@@ -44,6 +44,16 @@ export default function MyOrders({ auth, orders = [] }) {
         const status = String(order.delivery.status || '').toUpperCase();
         return !['COMPLETED', 'CANCELED', 'REJECTED', 'EXPIRED'].includes(status);
     });
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                window.localStorage.removeItem('lk_cart_backup');
+            } catch {
+                // ignore
+            }
+        }
+    }, []);
 
     useEffect(() => {
         if (!hasActiveCourierTracking || typeof window === 'undefined') {
@@ -298,13 +308,22 @@ export default function MyOrders({ auth, orders = [] }) {
                                     {getTabCount(activeTab)} Orders
                                 </span>
                             </div>
-                            <Link
-                                href={route('buyer.reviews')}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 hover:border-stone-300 hover:bg-stone-50 transition-colors shadow-2xs"
-                            >
-                                <span>My Reviews</span>
-                                <ArrowRight size={13} className="text-stone-400" />
-                            </Link>
+                            <div className="flex items-center gap-2">
+                                <Link
+                                    href={route('profile.edit')}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 hover:border-stone-300 hover:bg-stone-50 transition-colors shadow-2xs"
+                                >
+                                    <User size={13} className="text-stone-400" />
+                                    <span>Profile</span>
+                                </Link>
+                                <Link
+                                    href={route('buyer.reviews')}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 hover:border-stone-300 hover:bg-stone-50 transition-colors shadow-2xs"
+                                >
+                                    <Star size={13} className="text-stone-400" />
+                                    <span>My Reviews</span>
+                                </Link>
+                            </div>
                         </div>
 
                         {/* Mobile-only Header */}
@@ -315,12 +334,22 @@ export default function MyOrders({ auth, orders = [] }) {
                                     {getTabCount(activeTab)}
                                 </span>
                             </div>
-                            <Link
-                                href={route('buyer.reviews')}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 shadow-2xs active:scale-95 transition-all shrink-0 min-h-[36px]"
-                            >
-                                <span>My Reviews</span>
-                            </Link>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <Link
+                                    href={route('profile.edit')}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 shadow-2xs active:scale-95 transition-all shrink-0 min-h-[34px]"
+                                >
+                                    <User size={12} className="text-stone-400" />
+                                    <span>Profile</span>
+                                </Link>
+                                <Link
+                                    href={route('buyer.reviews')}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-700 hover:text-stone-900 shadow-2xs active:scale-95 transition-all shrink-0 min-h-[34px]"
+                                >
+                                    <Star size={12} className="text-stone-400" />
+                                    <span>Reviews</span>
+                                </Link>
+                            </div>
                         </div>
 
                         {/* Mobile-only Tabs Slider Container */}

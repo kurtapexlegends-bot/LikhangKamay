@@ -73,6 +73,7 @@ class HandleInertiaRequests extends Middleware
             
             // LAZY LOADED: Notifications list (only loaded when requested/dropdown is opened)
             'notifications' => Inertia::lazy(fn () => $user ? rescue(fn () => NotificationPresenter::presentCollection($user->getNotificationsQuery()->latest()->take(10)->get(), $user), [], false) : []),
+            'hasMoreNotifications' => Inertia::lazy(fn () => $user ? rescue(fn () => $user->getNotificationsQuery()->count() > 10, false, false) : false),
             
             // Shared counts evaluated on initial page load (micro-cached to prevent DB query spam on rapid navigation)
             'unreadNotificationCount' => fn () => $user ? rescue(fn () => Cache::remember("user_{$user->id}_unread_notif_count", 10, fn () => $user->getUnreadNotificationsQuery()->count()), 0, false) : 0,

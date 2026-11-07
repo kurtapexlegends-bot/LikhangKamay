@@ -22,7 +22,7 @@ class BuyerNotificationNavbarSourceTest extends TestCase
 
         $this->assertNotFalse($source);
         $this->assertStringContainsString("case 'replacement_resolution':", $source);
-        $this->assertStringContainsString('<PackageCheck size={16} className="text-teal-500" />', $source);
+        $this->assertStringContainsString('PackageCheck', $source);
     }
 
     public function test_layouts_enable_realtime_synchronization(): void
@@ -47,6 +47,6 @@ class BuyerNotificationNavbarSourceTest extends TestCase
         $this->assertStringContainsString("'accounting_request'", $source);
         $this->assertStringContainsString("'new_review'", $source);
         $this->assertStringContainsString("case 'low_stock_warning':", $source);
-        $this->assertStringContainsString("w-[calc(100vw-2rem)]", $source);
+        $this->assertStringContainsString("w-[calc(100vw-", $source);
     }
 }

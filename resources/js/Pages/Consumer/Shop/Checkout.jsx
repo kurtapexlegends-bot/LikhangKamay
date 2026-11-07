@@ -361,6 +361,15 @@ export default function Checkout({ auth, pricing }) {
         clearErrors();
         post(route('checkout.store'), {
             preserveScroll: true,
+            onSuccess: () => {
+                if (typeof window !== 'undefined') {
+                    try {
+                        window.localStorage.removeItem('lk_cart_backup');
+                    } catch {
+                        // ignore storage errors
+                    }
+                }
+            },
         });
     };
 

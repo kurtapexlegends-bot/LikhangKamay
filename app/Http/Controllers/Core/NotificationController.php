@@ -19,21 +19,34 @@ class NotificationController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
         
-        $notifications = NotificationPresenter::presentCollection(
-            $user->getNotificationsQuery()->latest()->take(30)->get(),
-            $user
-        );
+        $offset = max(0, (int) $request->input('offset', 0));
+        $limit = min(30, max(1, (int) $request->input('limit', 10)));
+        
+        $totalCount = $user->getNotificationsQuery()->count();
         $unreadCount = $user->getUnreadNotificationsQuery()->count();
 
         if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            $items = $user->getNotificationsQuery()
+                ->latest()
+                ->skip($offset)
+                ->take($limit)
+                ->get();
+
+            $notifications = NotificationPresenter::presentCollection($items, $user);
+            $hasMore = $totalCount > ($offset + count($notifications));
+
             return response()->json([
                 'notifications' => $notifications,
+                'has_more' => $hasMore,
+                'total_count' => $totalCount,
                 'unread_count' => $unreadCount,
             ]);
         }
 
+        // For direct Inertia visits (e.g. mobile full page or direct URL visit), load top 30 items
+        $initialItems = $user->getNotificationsQuery()->latest()->take(30)->get();
         return Inertia::render('Consumer/Buyer/Notifications', [
-            'notifications' => $notifications,
+            'notifications' => NotificationPresenter::presentCollection($initialItems, $user),
             'unreadNotificationCount' => $unreadCount,
         ]);
     }

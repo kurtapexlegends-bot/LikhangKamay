@@ -76,6 +76,14 @@ The real-time interface is driven by dedicated broadcasting events:
 *   [NewTeamChannelMessageNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/NewTeamChannelMessageNotification.php) | [NewTeamMessageNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/NewTeamMessageNotification.php): Broadcasts alerts for staff workspace mentions.
 *   [TeamMessageMentionedNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/TeamMessageMentionedNotification.php): Triggers an alert when a user is specifically `@mentioned` in chat.
 
+### Notifications Architecture & Dropdown Navigation
+*   **Dual-Layer Facebook-Style Dropdown Pagination**: Managed by [NotificationDropdown.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/NotificationDropdown.jsx) and [HandleInertiaRequests.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/HandleInertiaRequests.php):
+    *   Initial popover load renders a compact list capped at 10 items.
+    *   When additional notifications exist (`hasMoreNotifications = true`), an in-dropdown `"See previous notifications"` action button dynamically loads previous historical alerts in chunks via `router.reload` or cursor fetching, eliminating unnecessary navigation away from the active screen.
+    *   Mobile viewports retain direct full-screen routing to `/notifications` with touch-friendly cards.
+    *   Interactive filter pills categorize notifications into `All`, `Unread`, `Orders`, and `Messages` (or role-specific categories like `Attention` for Super Admin).
+*   **Cross-Portal Buyer Navigation**: In [BuyerUserMenu.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Buyer/BuyerUserMenu.jsx), buyers can directly navigate to their profile modal (`[Profile]` with User icon) or reviews management desk (`[My Reviews]` with Star icon) alongside a dynamic email verification security indicator pill (`Security: Verified` in emerald or `Unverified` in amber).
+
 ### WebSocket Broadcast Channels
 Real-time client listener channels are defined and authorized within [channels.php](file:///c:/laragon/www/LikhangKamay/routes/channels.php):
 *   `App.Models.User.{id}`: Restricts database system notifications to the target user.

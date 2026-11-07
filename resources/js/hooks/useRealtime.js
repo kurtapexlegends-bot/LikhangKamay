@@ -10,11 +10,13 @@ import useNetworkStatus from '@/hooks/useNetworkStatus';
  * Falls back to active Inertia polling if Supabase is unavailable in local environment.
  */
 export const useRealtime = () => {
-    const { auth, notifications, currentChatUser, currentChannel } = usePage().props;
+    const { props, url } = usePage();
+    const { auth, notifications, currentChatUser, currentChannel } = props;
     const { addToast } = useToast();
     const { isDegraded } = useNetworkStatus();
     const user = auth?.user;
-    const prevNotificationsRef = useRef(undefined);
+    const seenNotificationIdsRef = useRef(new Set());
+    const prevUrlRef = useRef(url);
     const initialReloadFinished = useRef(false);
     const isReloadingRef = useRef(false);
     const isDegradedRef = useRef(isDegraded);
@@ -22,34 +24,60 @@ export const useRealtime = () => {
         isDegradedRef.current = isDegraded;
     }, [isDegraded]);
 
-    // Track when notifications prop changes to display visual toasts for newly received unread items
+    // Track when notifications prop changes to display visual toasts ONLY for genuinely new real-time unread items
     useEffect(() => {
         if (!user) {
             initialReloadFinished.current = false;
-            prevNotificationsRef.current = undefined;
+            seenNotificationIdsRef.current.clear();
+            prevUrlRef.current = url;
             return;
         }
 
         // If notifications is undefined, it has not been loaded (or has been flushed by full visit)
         if (notifications === undefined) {
-            initialReloadFinished.current = false;
-            prevNotificationsRef.current = undefined;
             return;
         }
-        
-        if (!initialReloadFinished.current) {
-            prevNotificationsRef.current = notifications;
+
+        const isNavigating = prevUrlRef.current !== url;
+        prevUrlRef.current = url;
+
+        const isNotificationsPage = 
+            (url && url.startsWith('/notifications')) || 
+            (typeof window !== 'undefined' && window.location.pathname.startsWith('/notifications'));
+
+        // If this is initial load, page navigation, or the user is viewing the notifications page,
+        // register all existing IDs so they are never flagged as new notifications, and never show toasts.
+        if (!initialReloadFinished.current || isNavigating || isNotificationsPage) {
+            (notifications || []).forEach(n => {
+                if (n?.id) seenNotificationIdsRef.current.add(n.id);
+            });
             initialReloadFinished.current = true;
             return;
         }
 
-        const prev = prevNotificationsRef.current || [];
-        const newUnread = (notifications || []).filter(n => 
-            !n.read_at && !prev.some(p => p.id === n.id)
-        );
+        // Only process items that are unread, never seen, and created recently (within last 2 minutes)
+        const now = Date.now();
+        const newUnread = (notifications || []).filter(n => {
+            if (!n || n.read_at || seenNotificationIdsRef.current.has(n.id)) {
+                return false;
+            }
+
+            // Recency guard: real-time events are created within the last 2 minutes.
+            // Historical unread items from expanded paginations/reloads must never trigger toast popups.
+            if (n.created_at_raw) {
+                const createdAtMs = new Date(n.created_at_raw).getTime();
+                if (!isNaN(createdAtMs) && (now - createdAtMs > 120000)) {
+                    seenNotificationIdsRef.current.add(n.id);
+                    return false;
+                }
+            }
+
+            return true;
+        });
         
         if (newUnread.length > 0) {
             newUnread.forEach(n => {
+                seenNotificationIdsRef.current.add(n.id);
                 if (n.type === 'new_message' || n.type === 'team_message') {
                     if (currentChatUser && Number(n.sender_id) === Number(currentChatUser.id)) {
                         return; // Skip toast for active conversation counterpart
@@ -62,8 +90,11 @@ export const useRealtime = () => {
                 );
             });
         }
-        prevNotificationsRef.current = notifications;
-    }, [notifications, user, addToast, currentChatUser, currentChannel]);
+
+        (notifications || []).forEach(n => {
+            if (n?.id) seenNotificationIdsRef.current.add(n.id);
+        });
+    }, [notifications, url, user, addToast, currentChatUser, currentChannel]);
 
     useEffect(() => {
         if (!user) return;
