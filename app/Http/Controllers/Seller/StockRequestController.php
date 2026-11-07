@@ -141,12 +141,24 @@ class StockRequestController extends Controller
     {
         Gate::authorize('manage', $stockRequest);
 
+        $allowedStatuses = [
+            StockRequest::STATUS_ACCOUNTING_APPROVED,
+            StockRequest::STATUS_ORDERED,
+            StockRequest::STATUS_PARTIALLY_RECEIVED,
+            StockRequest::STATUS_RECEIVED,
+        ];
+
+        if (!in_array($stockRequest->status, $allowedStatuses, true)) {
+            return back()->with('error', 'Only approved or dispatched stock requests can be received.');
+        }
+
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1',
             'sync_inventory' => 'nullable|boolean',
         ]);
         
-        $remaining = $stockRequest->quantity - $stockRequest->received_quantity;
+        $currentReceived = (int) ($stockRequest->received_quantity ?? 0);
+        $remaining = $stockRequest->quantity - $currentReceived;
         if ($validated['quantity'] > $remaining) {
             return back()->with('error', "Cannot receive more than requested remaining ({$remaining}).");
         }
@@ -157,7 +169,7 @@ class StockRequestController extends Controller
             /** @var StockRequest $locked */
             $locked = StockRequest::where('id', $stockRequest->id)->lockForUpdate()->firstOrFail();
 
-            $locked->received_quantity += $validated['quantity'];
+            $locked->received_quantity = (int) ($locked->received_quantity ?? 0) + $validated['quantity'];
 
             if ($syncDirectly) {
                 // Immediately increment supply balance
@@ -168,12 +180,12 @@ class StockRequestController extends Controller
 
                         if ($linkedProduct = $supply->product) {
                             $supply->refresh();
-                            $linkedProduct->update(['stock' => $supply->quantity]);
+                            $linkedProduct->update(['stock' => (int) $supply->quantity]);
                         }
                     }
                 }
 
-                $locked->transferred_quantity += $validated['quantity'];
+                $locked->transferred_quantity = (int) ($locked->transferred_quantity ?? 0) + $validated['quantity'];
 
                 if ($locked->transferred_quantity >= $locked->quantity) {
                     $locked->status = StockRequest::STATUS_COMPLETED;

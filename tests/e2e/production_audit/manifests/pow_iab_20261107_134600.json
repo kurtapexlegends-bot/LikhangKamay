@@ -1,0 +1,100 @@
+{
+  "manifest_id": "pow_iab_20261107_134600",
+  "audit_version": "2.6.0",
+  "timestamp": "2026-11-07T13:46:00+08:00",
+  "target_host": "https://www.likhangkamay.app",
+  "environment": "production",
+  "engine": "subagent_devtools_chrome",
+  "overall_verdict": "PASS_FULLY_MUTATED",
+  "summary": {
+    "streams_completed": ["STREAM_A", "STREAM_B", "STREAM_C"],
+    "total_workflows_tested": 32,
+    "active_state_mutations": 24,
+    "unhandled_server_errors": 0,
+    "zero_tolerance_naked_pass_violation": false
+  },
+  "minted_entities": {
+    "order_a": {
+      "order_number": "ORD-6AEEAFA8B13A7",
+      "internal_id": 46,
+      "flow": "Voucher TESTSAVE10 + PayMongo GCash Sandbox",
+      "amount": 784.25,
+      "payment_status": "Paid",
+      "lifecycle_terminal_status": "Completed",
+      "assigned_driver": "Test Logistics Rider (CAV-9876)",
+      "delivery_proof": "Proof of Delivery (POD).jpg attached",
+      "sales_invoice_sha256": "1890161332927bef42c8422cce3ef945ff44f768e6a99cebb54d02d97a265018"
+    },
+    "order_b": {
+      "order_number": "ORD-6AEEAFE688F38",
+      "flow": "In-Store Workshop Pickup",
+      "pickup_location": "Silang Ceramic Studio",
+      "pickup_pin": "8008",
+      "status": "Pending"
+    },
+    "order_c": {
+      "order_number": "ORD-6AEEAFF9093C7",
+      "internal_id": 48,
+      "flow": "Lalamove Courier COD -> Dispute & Arbitration",
+      "amount": 784.25,
+      "lalamove_tracking_id": "PH100261107130227956520010095358579",
+      "dispute_id": 5,
+      "dispute_reason": "Defective or Damaged Item: Item arrived with hairline crack along base.",
+      "rebuttal_submitted": true,
+      "arbitration_ruling": "Administrative ruling: Customer defect substantiated via comparison inspection. Full refund granted.",
+      "terminal_status": "Resolved / Arbitrated"
+    },
+    "order_split_a": {
+      "order_number": "ORD-6AEEB02192032",
+      "workshop": "Amadeo Stoneware Studio",
+      "amount": 549.70,
+      "payment_method": "COD"
+    },
+    "order_split_b": {
+      "order_number": "ORD-6AEEB02197C20",
+      "workshop": "Cavite Test Craft Workshop",
+      "amount": 784.25,
+      "payment_method": "COD"
+    },
+    "order_b2b_wholesale": {
+      "order_number": "ORD-6AEEB80C63C6C",
+      "buyer_artisan": "artisan.silang@likhangkamay.com",
+      "materials_subtotal": 225.00,
+      "service_fee": 6.75,
+      "total_amount": 231.75,
+      "invoice_endpoint": "/supply-hub/orders/ORD-6AEEB80C63C6C/invoice",
+      "invoice_status": "HTTP 200 OK (10.4KB)"
+    },
+    "order_cancelled_rollback": {
+      "order_number": "ORD-6AEEB8913799B",
+      "internal_id": 52,
+      "flow": "Immediate Buyer Cancellation with +1 Inventory Rollback",
+      "target_product": "Handcrafted Glazed Ceramic Vase",
+      "stock_before": 34,
+      "stock_after": 34,
+      "rollback_verified": true
+    },
+    "procurement_stock_request": {
+      "request_id": 6,
+      "material": "Stoneware Clay",
+      "quantity_kg": 10,
+      "dual_control_requester_barrier_enforced": true
+    },
+    "temporary_entities_purged": {
+      "staff_seat": "EMP-249676 (Temp E2E Staff - Logistics & Driver)",
+      "taxonomy_category": "Temporary E2E Category (temp-e2e-cat)",
+      "discount_voucher": "TEMPDELETE15 (15% off, ended early & purged)",
+      "secondary_location": "Silang Ceramic Studio (purged, 0 orphan constraints)"
+    }
+  },
+  "governance_and_resilience_assertions": {
+    "client_payload_4_5mb_shield": "PASS (Immediate client-side rejection of 5MB buffer, 0 HTTP 413 leaked)",
+    "vacated_shop_cart_guard": "PASS (Non-blocking warning badge, 0 unhandled 500 crashes)",
+    "off_site_geofence_audit": "PASS (Flagged 12,062m off-site clock-in, HR approved exception)",
+    "maker_checker_payroll": "PASS (Generated -> Declined by Accounting -> Resubmitted & Released)",
+    "threejs_webgl_orbitcontrols": "PASS (Rendered 650x650 canvas, 0 WebGL/JS errors on rotation)",
+    "reviews_portal_interactions": "PASS (Smooth scroll to #review-18, ring-2 ring-clay-500 highlight, in-dropdown pagination 10 -> 20)",
+    "admin_email_studio_dispatch": "PASS (HTTP 200, Resend driver, 294ms latency)",
+    "rbac_hard_security_barrier": "PASS (HTTP 403 RESTRICTED when test.buyer attempted /admin/dashboard)"
+  }
+}

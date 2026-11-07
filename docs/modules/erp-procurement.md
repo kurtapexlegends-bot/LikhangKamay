@@ -96,3 +96,13 @@ Governed by [ProductPolicy.php](file:///c:/laragon/www/LikhangKamay/app/Policies
 *   **Catalog Segregation**: Products flagged as raw material wholesale supplies (`is_b2b_supply = true`) are segregated from consumer retail feeds.
 *   **Access Clearance**: Peer artisans with Supply Hub privileges (`canAccessSupplyHub()`) are authorized to inspect product detail pages (`/product/{id}`) and purchase inventory in bulk above the Minimum Order Quantity (MOQ).
 *   **Retail Protection**: Unauthenticated guests and standard consumer accounts attempting to visit wholesale raw material listings are issued an immediate `404 Not Found` response, ensuring B2B catalog isolation.
+
+---
+
+## 7. Inward Goods Receiving & Inventory Synchronization
+
+Governed by [StockRequestController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/StockRequestController.php):
+
+*   **Status Precondition**: Inward goods receiving (`POST /procurement/stock-requests/{stockRequest}/receive`) enforces strict lifecycle validation. Only stock requests in `accounting_approved`, `ordered`, `partially_received`, or `received` states are eligible for inventory intake. Unapproved or pending requests return an immediate graceful warning redirect to protect inventory balances from unauthorized or unreleased intake.
+*   **Inventory Synchronization**: When `sync_inventory = true`, inward shipments automatically increment the active [`Supply`](file:///c:/laragon/www/LikhangKamay/app/Models/Supply.php) balance under row-level pessimistic locks (`lockForUpdate()`), updating the linked finished product's stock count.
+

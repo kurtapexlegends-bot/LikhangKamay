@@ -49,7 +49,9 @@ The agent and any invoked subagent are STRICTLY FORBIDDEN from reporting any che
    - The exact selector used (e.g. `button[type="submit"]`, `input#email`, `a[href="/orders"]`).
    - The observed element label/text from the page's AX tree (`tab_ax_get_state`).
    - The resulting URL after navigation.
-5. **Real DOM Interactions Only (Banned Synthetic Bypasses):** Text inputs must be populated using `playwright_locator_fill` or `fill_form`. Buttons must be clicked using `playwright_locator_click` or `click`. Bypassing forms via raw `fetch()` or `window.axios.post` is strictly forbidden.
+5. **Real DOM Interactions Only (Banned Synthetic Bypasses):** Text inputs must be populated using `playwright_locator_fill` or `fill_form`. Buttons must be clicked using `playwright_locator_click` or `click`.
+   - **Absolute Ban on `fetch()` / `axios` within `evaluate_script`:** Bypassing interactive modals, forms, dispute filings, arbitrations, cancellations, exports, or wishlists via raw `fetch()`, `axios`, or XHR inside `evaluate_script` constitutes an immediate FAILING verdict. The ONLY authorized raw `fetch()` call is the background session teardown `fetch('/logout')`.
+   - **Absolute Ban on "Code-Reading" as Workflow Completion:** Inspecting source files (`view_file` on controllers/React views) on disk is permanently banned as a substitute for live browser navigation. The runner must physically navigate the browser to the target route and interact with rendered UI elements.
 6. **No Naked Button Clicks (Post-Click Triple Assertion):** After triggering any state-changing action button (`Place Order`, `Accept Order`, `Start Crafting`, `Confirm Studio Dispatch`, `Complete Delivery`, `Submit Review`, `Publish Product`), the runner MUST assert:
    - *Network Resolution:* The request completes with HTTP `200` (or `302 redirect`).
    - *DOM State Mutation:* The target DOM element visually transitions (e.g., status pill badge changes from `Processing` to `Delivered`).
@@ -303,13 +305,14 @@ To test all 30+ workflows and 9 subsystem domains without redundant logins or co
      - Create temporary discount voucher: Code `TEMPDELETE15`, Type `15%`, Min Spend `₱200`.
      - Update voucher details (`PATCH /discounts/{id}`): modify minimum spend to `₱250`. Assert table state reflects update.
      - Delete temporary voucher (`DELETE /discounts/{id}`). Assert clean removal with zero orphan constraints.
-6. **Active Product Creation with Real 3D Model (`/seller/products/create`):**
+6. **Active Product Creation with Real 3D Model (`ProductFormModal.jsx` on `/products`):**
+   - Click `Add Product` on `/products` to open `ProductFormModal.jsx`.
    - Title: `"Handcrafted Glazed Ceramic Vase"`
    - Category: `"Pottery & Ceramics"`, Base Price: `750`, Stock: `50`.
    - Recipe (BOM): Link material `"Stoneware Clay"` (2kg).
    - Upload Cover: `Product\Blue Feather Vase\Main Cover.png`.
    - Upload 3D Model: `Product\Blue Feather Vase\Blue Feather Vase.glb` (1.16MB) in `input[accept=".glb,.gltf"]`.
-   - Click Publish Product. Assert redirect to `/seller/products` with green success notification.
+   - Click Publish Product. Assert redirect to `/products` with green success notification.
 7. **Catalog Lifecycle Controls, Quick Modals & Bulk Status (`/seller/products`):**
    - Locate test product in listing table.
    - **Inline Quick Restock Modal Test:** On product row, click `+ Restock` button (`RestockModal.jsx`): input `5` units, submit (`POST /products/{id}/restock`). Assert stock increments by 5 (`50 -> 55`) with instant green toast.
@@ -360,10 +363,10 @@ To test all 30+ workflows and 9 subsystem domains without redundant logins or co
    - Remove item. Cart updates cleanly.
    - Re-add ₱1 synthetic item `TEST-BAMBOO-01`.
    - Record baseline product stock (`stock_before`) on product detail page.
-5. **Place Order A (Voucher + PayMongo GCash Sandbox):**
+5. **Place Order A (Catalog Promotion + PayMongo GCash Sandbox):**
    - Navigate to `/checkout`.
    - Select primary Cavite address.
-   - Apply voucher code `TESTSAVE10`. Assert 10% discount deduction renders on order summary.
+   - Assert product promotional discount or active sale price renders on order summary.
    - Select **PayMongo GCash** sandbox.
    - Click Place Order. In the PayMongo sandbox authorization view, complete payment approval.
    - Assert redirect to `/payment/success` -> `/my-orders`.
