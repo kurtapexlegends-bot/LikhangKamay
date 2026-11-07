@@ -335,7 +335,7 @@ export default function PayrollGenerator({
                                                         </button>
                                                     </div>
                                                     
-                                                    <AdjustmentsSubForm item={item} index={index} updateItem={updatePayrollItem} />
+                                                    <AdjustmentsSubForm item={item} index={index} updateItem={updatePayrollItem} idPrefix="mob" />
                                                 </div>
                                             );
                                         })
@@ -399,7 +399,7 @@ export default function PayrollGenerator({
                                                 </div>
 
                                                 <div onClick={e => e.stopPropagation()}>
-                                                    <AdjustmentsSubForm item={item} index={index} updateItem={updatePayrollItem} />
+                                                    <AdjustmentsSubForm item={item} index={index} updateItem={updatePayrollItem} idPrefix="desk" />
                                                 </div>
                                             </div>
                                         );

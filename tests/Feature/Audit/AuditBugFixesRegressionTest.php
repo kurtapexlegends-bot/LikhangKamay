@@ -493,4 +493,29 @@ class AuditBugFixesRegressionTest extends TestCase
         $this->assertGreaterThan(0, $data['health']['completionRate']);
         $this->assertGreaterThan(0, $data['health']['refundRate']);
     }
+
+    public function test_user_addresses_get_redirects_defensively_to_profile_addresses_tab(): void
+    {
+        $buyer = User::factory()->create(['role' => 'buyer']);
+
+        // Unauthenticated -> redirected to login
+        $this->get('/user-addresses')->assertRedirect(route('login'));
+
+        // Authenticated -> redirected to profile with addresses tab
+        $response = $this->actingAs($buyer)->get('/user-addresses');
+        $response->assertRedirect(route('profile.edit', ['tab' => 'addresses']));
+    }
+
+    public function test_my_orders_dispute_get_redirects_defensively_to_my_orders_index_with_dispute_query(): void
+    {
+        $buyer = User::factory()->create(['role' => 'buyer']);
+
+        // Unauthenticated -> redirected to login
+        $this->get('/my-orders/ORD-999/dispute')->assertRedirect(route('login'));
+
+        // Authenticated -> redirected to my-orders index with dispute parameter
+        $response = $this->actingAs($buyer)->get('/my-orders/ORD-999/dispute');
+        $response->assertRedirect(route('my-orders.index', ['dispute' => 'ORD-999']));
+    }
 }
+

@@ -178,6 +178,15 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
     *   [`StaffInspectorPane.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/StaffInspectorPane.jsx): Right-side inspector drawer showing selected employee stats, shift hours, and attendance quick actions.
     *   [`NetworkStatusBanner.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Common/NetworkStatusBanner.jsx): High-z-index floating toast pill (`z-[200]`) providing non-colliding offline and reconnection status feedback across full and collapsed workspace views.
 
+---
+
+## 8. Payroll Adjustments Sub-Form & Viewport Scoping
+
+*   **Adjustments Sub-Form**: [`AdjustmentsSubForm.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/AdjustmentsSubForm.jsx)
+    *   **Precision Constraint Handling**: All numeric adjustment inputs (`absences_days`, `paid_leave_days`, `undertime_hours`, `overtime_hours`, `rest_day_ot_hours`, `holiday_ot_hours`) configure `step="any"`, allowing imported biometric and timecard hours with fractional hundredths (e.g., `23.68`, `22.17`) without triggering native browser HTML5 `stepMismatch` constraint validation.
+    *   **Dual Viewport Scoping (`idPrefix`)**: [`PayrollGenerator.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/PayrollGenerator.jsx) renders the adjustment form in both mobile (`block md:hidden`) and desktop (`hidden md:flex`) layouts. The component accepts an `idPrefix` (`"mob"` vs `"desk"`), ensuring globally unique DOM `id` attributes and preventing `<label htmlFor="...">` focus hijacking into off-screen elements.
+    *   **Quick Adjustment Presets**: Micro-adjustment chips (`+1h Reg OT`, `+1h Rest OT`, etc.) compute increments using `Math.round((val + amt) * 100) / 100`, preserving hundredth-hour precision without unwanted truncation.
+
 
 
 

@@ -147,22 +147,36 @@ If any row in this table is skipped, contains `None`, or references an ID from a
    - Supply Hub ordering and product viewing is strictly reserved for verified Elite artisans (`canAccessSupplyHub()`), and an artisan cannot buy their own products.
    - Active wholesale raw material listings (`/product/{id}`) are accessible to peer artisans who have Supply Hub clearance (`ProductPolicy@view`); unauthenticated visitors and standard retail buyers receive HTTP 404 to maintain strict B2B wholesale isolation.
    - When purchasing items authored by `test.artisan` (Shop ID 21), switch to buyer artisan `artisan.silang@likhangkamay.com` (Password: `LikhangKamay2026!`).
+7. **Strict UI Navigation & Interactive Modals (No URL Bar Endpoint Typing):**
+   - Never type API action endpoints or write routes (e.g. `/user-addresses`, `/my-orders/{id}/dispute`) directly into the browser URL address bar.
+   - Always click the actual rendered UI triggers: click the `"Addresses"` tab in `/profile` (or navigate directly to `/profile?tab=addresses`), click `"Report Issue / Return"` on the delivered order card in `/my-orders`, click `"Add Product"` on `/products`, etc.
+   - Typing POST/action endpoints directly in the URL bar initiates GET requests and triggers unnecessary redirects or 405 Method Not Allowed errors.
 
 ---
 
 ## 4. Local Defense Assets & Two-Tier Upload Protocol
 
-Agents are STRICTLY FORBIDDEN from skipping file inputs (`<input type="file">`). The local test environment includes dedicated, high-resolution defense assets.
+Agents are STRICTLY FORBIDDEN from skipping file inputs (`<input type="file">`). The test environment includes dedicated, high-resolution defense assets mirrored inside the repository workspace to avoid cross-drive security sandbox errors.
 
-### A. Local Defense Asset Root Directory
-```text
-C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\
-```
+### A. Defense Asset Directories (Primary Workspace & Fallback)
+
+1. **Primary (In-Workspace Sandbox Path):**
+   ```text
+   c:\laragon\www\LikhangKamay\tests\fixtures\defense_assets\
+   ```
+   *(Native workspace path: allows Chromium DevTools, Playwright, and local test runners to bind assets directly without cross-drive security sandbox errors).*
+
+2. **External Fallback:**
+   ```text
+   C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\
+   ```
 
 ### B. Mandatory Two-Tier File Upload Protocol
 When encountering any file dropzone or upload trigger:
 1. **Tier 1 (Native Playwright File Chooser):**
    - Identify the input: `input[type="file"]`, `input[accept*="image"]`, `input[accept*=".glb"]`, or `input[accept*=".csv"]`.
+   - Prefer the primary in-workspace path: `tests/fixtures/defense_assets/...` (or absolute `c:\laragon\www\LikhangKamay\tests\fixtures\defense_assets\...`).
+   - If missing, fall back to `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\...`.
    - Bind the local absolute file path using `playwright_file_chooser_set_files` or `setInputFiles(absolutePath)`.
 2. **Tier 2 (In-Browser DataTransfer / File Construction Bypass):**
    - *Cross-Workspace Sandbox Bypass:* If Chrome DevTools MCP or the Chromium runner blocks external filesystem paths outside the repository sandbox (e.g. `SecurityError`), the agent MUST inject the file directly into the DOM via `playwright_evaluate`:
@@ -182,19 +196,19 @@ When encountering any file dropzone or upload trigger:
 
 ### C. Asset-to-Selector Mapping Table
 
-| Flow / Feature | Relative Asset Path | Absolute Target File | Target Input Selector / Dropzone |
-| :--- | :--- | :--- | :--- |
-| **Artisan KYC Onboarding** | `Artisan Docx\Business Permit.png` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\Business Permit.png` | `input[name="permit_photo"]` |
-| **Artisan KYC Onboarding** | `Artisan Docx\DTI.png` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\DTI.png` | `input[name="dti_certificate"]` |
-| **Artisan KYC Onboarding** | `Artisan Docx\Tin ID.png` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\Tin ID.png` | `input[name="tin_photo"]` |
-| **Artisan KYC Onboarding** | `Artisan Docx\Valid ID.png` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\Valid ID.png` | `input[name="valid_id"]` |
-| **Storefront Cover Banner** | `Shop Cover Banner (Wide).jpg` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Shop Cover Banner (Wide).jpg` | `input[name="cover_photo"]` in Shop Settings |
-| **Product Studio Cover** | `Product\Blue Feather Vase\Main Cover.png` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Product\Blue Feather Vase\Main Cover.png` | `input#cover_image`, `input[name="cover"]` |
-| **Product 3D Model** | `Product\Blue Feather Vase\Blue Feather Vase.glb` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Product\Blue Feather Vase\Blue Feather Vase.glb` | `input[accept=".glb,.gltf"]`, `input#model_file` |
-| **Bulk Inventory Import** | `products_sample.csv` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\products_sample.csv` | `input[type="file"][accept*=".csv"]` in Bulk Modal |
-| **Chat Commission Attachment** | `Custom Commission Sketch (Chat Attachment).jpg` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Custom Commission Sketch (Chat Attachment).jpg` | `input[type="file"]` via Chat Paperclip Button |
-| **Staff Attendance Face Scan** | `ArtisanStaff\HR.png` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\ArtisanStaff\HR.png` | Camera upload trigger / face verification |
-| **Driver Proof of Delivery** | `Proof of Delivery (POD).jpg` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Proof of Delivery (POD).jpg` | `input[name="pod_photo"]`, POD Modal File Input |
+| Flow / Feature | Relative Asset Path | Primary Target File (In-Workspace) | Fallback External File | Target Input Selector / Dropzone |
+| :--- | :--- | :--- | :--- | :--- |
+| **Artisan KYC Onboarding** | `Artisan Docx\Business Permit.png` | `tests\fixtures\defense_assets\Artisan Docx\Business Permit.png` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\Business Permit.png` | `input[name="permit_photo"]` |
+| **Artisan KYC Onboarding** | `Artisan Docx\DTI.png` | `tests\fixtures\defense_assets\Artisan Docx\DTI.png` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\DTI.png` | `input[name="dti_certificate"]` |
+| **Artisan KYC Onboarding** | `Artisan Docx\Tin ID.png` | `tests\fixtures\defense_assets\Artisan Docx\Tin ID.png` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\Tin ID.png` | `input[name="tin_photo"]` |
+| **Artisan KYC Onboarding** | `Artisan Docx\Valid ID.png` | `tests\fixtures\defense_assets\Artisan Docx\Valid ID.png` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\Valid ID.png` | `input[name="valid_id"]` |
+| **Storefront Cover Banner** | `Shop Cover Banner (Wide).jpg` | `tests\fixtures\defense_assets\Shop Cover Banner (Wide).jpg` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Shop Cover Banner (Wide).jpg` | `input[name="cover_photo"]` in Shop Settings |
+| **Product Studio Cover** | `Product\Blue Feather Vase\Main Cover.png` | `tests\fixtures\defense_assets\Product\Blue Feather Vase\Main Cover.png` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Product\Blue Feather Vase\Main Cover.png` | `input#cover_image`, `input[name="cover"]` |
+| **Product 3D Model** | `Product\Blue Feather Vase\Blue Feather Vase.glb` | `tests\fixtures\defense_assets\Product\Blue Feather Vase\Blue Feather Vase.glb` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Product\Blue Feather Vase\Blue Feather Vase.glb` | `input[accept=".glb,.gltf"]`, `input#model_file` |
+| **Bulk Inventory Import** | `products_sample.csv` | `tests\fixtures\defense_assets\products_sample.csv` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\products_sample.csv` | `input[type="file"][accept*=".csv"]` in Bulk Modal |
+| **Chat Commission Attachment** | `Custom Commission Sketch (Chat Attachment).jpg` | `tests\fixtures\defense_assets\Custom Commission Sketch (Chat Attachment).jpg` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Custom Commission Sketch (Chat Attachment).jpg` | `input[type="file"]` via Chat Paperclip Button |
+| **Staff Attendance Face Scan** | `ArtisanStaff\HR.png` | `tests\fixtures\defense_assets\ArtisanStaff\HR.png` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\ArtisanStaff\HR.png` | Camera upload trigger / face verification |
+| **Driver Proof of Delivery** | `Proof of Delivery (POD).jpg` | `tests\fixtures\defense_assets\Proof of Delivery (POD).jpg` | `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Proof of Delivery (POD).jpg` | `input[name="pod_photo"]`, POD Modal File Input |
 
 ---
 
@@ -279,7 +293,7 @@ To test all 30+ workflows and 9 subsystem domains without redundant logins or co
 
 1. **Authentication:** Log in as `test.artisan@likhangkamay.local` (`LikhangKamayTest2026!`). Assert redirect to `/seller/dashboard`.
 2. **Shop Branding & Pickup Schedule (`/shop-settings`):**
-   - Upload `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Shop Cover Banner (Wide).jpg` as cover banner.
+   - Upload `tests\fixtures\defense_assets\Shop Cover Banner (Wide).jpg` (or fallback `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Shop Cover Banner (Wide).jpg`) as cover banner.
    - Update shop bio: `"Authentic Cavite handcrafted pottery and artisan ceramics."`. Save changes.
    - Configure Cavite workshop pickup schedule: uniform mode, 09:00 - 17:00, `max_advance_days: 14` (`/seller/pickup-schedules`). Save schedule.
 3. **Disbursement Account & Tax Configuration (`/seller/settings`):**
@@ -322,7 +336,7 @@ To test all 30+ workflows and 9 subsystem domains without redundant logins or co
    - If product has moderation flag, test Resubmit for Review action (`POST /products/{id}/resubmit`).
    - Test Bulk Status Toggle: Select multiple product checkboxes, click Bulk Actions -> `Update Visibility / Status` (`POST /products/bulk-status`). Assert updated toast renders.
 8. **Bulk Inventory CSV Import (`/seller/products`):**
-   - Click Bulk Import. Attach `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\products_sample.csv`.
+   - Click Bulk Import. Attach `tests\fixtures\defense_assets\products_sample.csv` (or fallback `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\products_sample.csv`).
    - Confirm import. Assert inventory adds CSV products.
 9. **Procurement & Raw Materials (`/procurement`):**
    - Add raw material `"Stoneware Clay"`, unit cost `₱50/kg`, safety stock alert `10kg`.
@@ -338,7 +352,8 @@ To test all 30+ workflows and 9 subsystem domains without redundant logins or co
 *Persona:* `test.buyer@likhangkamay.local`
 
 1. **Authentication:** Log in as `test.buyer@likhangkamay.local`.
-2. **Address Book & Workshop Follow Engagement (`/user-addresses`, `/shop`):**
+2. **Address Book & Workshop Follow Engagement (`/profile?tab=addresses`, `/shop`):**
+   - **UI Navigation Rule:** Do NOT type the write endpoint `/user-addresses` directly into the browser address bar. Navigate to `/profile` and click the **"Addresses"** tab (or navigate directly to `/profile?tab=addresses`) to interact with the Address Book modal.
    - Add secondary Cavite address: `"Block 7 Lot 8 Bucandala III, Imus, Cavite 4103"`.
    - Toggle default address. Test coordinate pin adjustment.
    - **Follow / Unfollow Workshop Test:**
@@ -352,7 +367,7 @@ To test all 30+ workflows and 9 subsystem domains without redundant logins or co
      - Assert client-side shield immediately intercepts the file: inline error alert renders (`"Files must be 4MB or smaller. Please choose a smaller file."`), file input resets (`value = ''`), and the send button remains disabled. Assert zero HTTP 413 requests reach the Vercel gateway.
    - **WebSocket Drop -> HTTP Polling Degradation Test:**
      - Simulate WebSocket disconnection by executing DevTools network block on `wss://*` (or dispatching channel error).
-     - Attach valid defense asset: `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Custom Commission Sketch (Chat Attachment).jpg`.
+     - Attach valid defense asset: `tests\fixtures\defense_assets\Custom Commission Sketch (Chat Attachment).jpg` (or fallback `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Custom Commission Sketch (Chat Attachment).jpg`).
      - Message: `"Can you customize this with gold leaf accents for an anniversary commission?"`.
      - Send message. Assert that background Inertia fallback polling (`useRealtime.js` / `Chat.jsx`) automatically triggers, successfully synchronizing the sent bubble and zoom lightbox without manual browser refresh.
 4. **Cart Interactivity, Buy-Again & Cleansing Controls:**
@@ -403,10 +418,19 @@ To test all 30+ workflows and 9 subsystem domains without redundant logins or co
    - Verify BOM raw materials deducted accordingly in `/procurement`.
    - Click `Assign Logistics Driver`. Assign in-house rider (`Test Logistics Rider` / `CAV-9876`). Confirm assignment.
    - **Artisan Order Rejection & Automated Refund Assertion:** When an artisan rejects (`Rejected`) or cancels (`Cancelled`) an already-paid order (`payment_status === 'paid'`), assert `UpdateOrderStatus` sets `payment_status = 'refund_pending'` under database transaction and dispatches `PayMongoService->createRefund()` outside transaction locks, transitioning `payment_status` to `refunded`.
-3. **Dispatch Order C via Lalamove Sandbox (`/orders`) — Two-Tier Dispatch Rule:**
+3. **Dispatch Order C via Lalamove Sandbox (`/orders`) — Two-Tier Dispatch Rule & Option 3 Portal Simulator:**
    - Locate `ORD-C-XXXXX`.
    - **Tier 1 (Automated Sandbox Booking):** Click `Book Courier Dispatch (Lalamove)`. Assert real-time quotation calculation resolves and Lalamove sandbox booking ID is assigned.
    - **Tier 2 (Third-Party Throttled / Unroutable Fallback):** If `rest.sandbox.lalamove.com` returns HTTP 429 (rate-limited), 500, or routing coordinate mismatch, execute the authorized manual waybill dispatch fallback: enter tracking reference `LLM-SANDBOX-CAVITE` (or `LLM-SANDBOX-XXXX`) and click `Confirm Manual Waybill Dispatch`. Record the fallback in the manifest so external third-party sandbox downtime does not halt clearance.
+   - **Option 3: Lalamove Sandbox Simulator Status Advance (Mandatory for Complete Dispute Flow):**
+     * When Order C is booked via Lalamove Sandbox, open `https://partnerportal.lalamove.com/records`.
+     * If not signed in, log in with Lalamove credentials:
+       - **Email:** `kurtstanleytalastas@gmail.com`
+       - **Password:** `Kurt09193939832!`
+     * Ensure the region selector dropdown is set to: **Philippines** $\rightarrow$ **Manila NCR & South Luzon (Rizal, Bulacan, Cavite, Laguna, Quezon, Batangas, Bicol)(Sandbox)**.
+     * Locate the order row by matching the Cavite delivery address, LikhangKamay Order ID (`ORD-C-XXXXX`), or Lalamove tracking number.
+     * Click the **Action** button on the record row to advance the delivery status to **Completed / Delivered**.
+      * Return to LikhangKamay and navigate to `/my-orders`: Order C now reflects `Delivered` status. Click `"Order Received"` to mark it `Completed`, unlocking the 1-day dispute warranty and the `"Return"` button for the downstream dispute and rebuttal flow!
 4. **Bulk Fulfillment Operations & Fleet Dispatch:**
    - Select multiple orders in queue. Click `Bulk Labels` (`/orders/bulk-labels`) and `Bulk Packing Slips` (`/orders/bulk-packing-slips`).
    - Assert printable label and packing slip modals render properly.
@@ -454,7 +478,7 @@ To test all 30+ workflows and 9 subsystem domains without redundant logins or co
    - **Proof of Delivery (POD) Drop-Off:**
      - Click `Complete Delivery`.
      - Recipient Name: `"Test Verified Buyer"`, Relationship: `"Direct Recipient"`.
-     - Attach `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Proof of Delivery (POD).jpg`.
+     - Attach `tests\fixtures\defense_assets\Proof of Delivery (POD).jpg` (or fallback `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Proof of Delivery (POD).jpg`).
      - Click Confirm Delivery. Assert status transitions to `Delivered` with green checkmark badge. For in-house studio driver dispatches, assert the customer-paid `shipping_fee_amount` is automatically credited to the artisan's `seller_net_amount` with an `IN_HOUSE_SHIPPING_CREDITED` delivery audit event.
 4. **Session Evacuation:** Execute Section 3 Session Evacuation Protocol.
 
@@ -493,12 +517,15 @@ To test all 30+ workflows and 9 subsystem domains without redundant logins or co
      - Test in-dropdown pagination: verify dropdown displays 10 notifications on initial open with a `See previous notifications` button at the bottom of the list on desktop/iPad. Click `See previous notifications` -> assert next batch loads asynchronously into the panel without full-page redirect.
      - Click notification -> navigates to `/my-reviews?review={id}`.
      - Assert the URL parameter automatically scrolls to and applies the focus ring highlight on the target review card.
-5. **File Return & Dispute on Order C (`/my-orders/{id}/dispute`):**
-   - Locate `ORD-C-XXXXX`. Click `Report Issue / File Dispute`.
+5. **Confirm Delivery & File Return/Dispute on Order C (`ReturnRequestModal.jsx` in `/my-orders`):**
+   - **UI Navigation Rule:** Do NOT type the endpoint `/my-orders/{id}/dispute` into the browser URL address bar (which is an API POST route).
+   - In `/my-orders`, locate `ORD-C-XXXXX` (which now reflects `Delivered` status via Option 3 Lalamove Portal simulator advance).
+   - Click the **"Order Received"** button on the order card and confirm in the receipt modal. Order C transitions to `Completed`, activating the 1-day dispute warranty window.
+   - Click the **"Return"** button on the completed order card to mount the interactive return/dispute modal dialog (`ReturnRequestModal.jsx`).
    - Reason: Select `"Defective or Damaged Item"`.
    - Description: `"Item arrived with hairline crack along base."`.
-   - Attach defect photo (`Product\Broken Image.png` or `Proof of Delivery (POD).jpg`).
-   - Submit dispute claim. Assert dispute status transitions to `Under Review / Pending Seller Rebuttal`.
+   - Attach defect photo (`tests\fixtures\defense_assets\Product\Broken Image.png` or fallback `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Product\Broken Image.png`).
+   - Submit dispute claim (`POST /my-orders/{id}/dispute`). Assert dispute status transitions to `Under Review / Pending Seller Rebuttal`.
 6. **Buyer Cancel Return Request & Live Leaflet Route Preview:**
    - **Cancel Return Request Test:** On an order where return was requested, test buyer-initiated withdrawal: click `Cancel Return Request` (`POST /my-orders/{id}/cancel-return`). Assert return status reverts to `Completed` / `Delivered` with zero orphan state.
    - **Live Leaflet Rider Tracking Preview:** Click `Track Delivery` / `View Route` (`GET /my-orders/{id}/route-preview`). Assert `BuyerDeliveryTrackingMap.jsx` modal mounts: verifies Leaflet map canvas initializes, origin workshop and buyer coordinates are pinned, and road polyline resolves without unhandled JavaScript/WebGL errors. Close modal.
@@ -692,10 +719,10 @@ To test all 30+ workflows and 9 subsystem domains without redundant logins or co
      - Bio: `"Traditional weaving and ceramics from Alfonso, Cavite."`.
      - Municipality: `"Alfonso"`, Address: `"Sitio Maligaya, Alfonso, Cavite"`.
    - **Step 2: Upload Legal KYC Documents (Two-Tier Upload with Defense Assets):**
-     - Business Permit: `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\Business Permit.png` $\rightarrow$ `input[name="permit_photo"]`
-     - DTI Certificate: `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\DTI.png` $\rightarrow$ `input[name="dti_certificate"]`
-     - TIN ID: `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\Tin ID.png` $\rightarrow$ `input[name="tin_photo"]`
-     - Government Valid ID: `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\Valid ID.png` $\rightarrow$ `input[name="valid_id"]`
+     - Business Permit: `tests\fixtures\defense_assets\Artisan Docx\Business Permit.png` (or fallback `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\Business Permit.png`) $\rightarrow$ `input[name="permit_photo"]`
+     - DTI Certificate: `tests\fixtures\defense_assets\Artisan Docx\DTI.png` (or fallback `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\DTI.png`) $\rightarrow$ `input[name="dti_certificate"]`
+     - TIN ID: `tests\fixtures\defense_assets\Artisan Docx\Tin ID.png` (or fallback `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\Tin ID.png`) $\rightarrow$ `input[name="tin_photo"]`
+     - Government Valid ID: `tests\fixtures\defense_assets\Artisan Docx\Valid ID.png` (or fallback `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\Artisan Docx\Valid ID.png`) $\rightarrow$ `input[name="valid_id"]`
    - **Step 3: Terms & Agreement:**
      - Accept Artisan Terms (`POST /artisan/accept-terms`).
    - Click `Submit Application`.
@@ -998,7 +1025,7 @@ The agent's response upon completing `/e2e-browser` must strictly follow this fo
 **PoW Manifest:** `[Link to pow_iab_*.json]`  
 **Execution Mode:** `Subagent Isolated (3-Stream Assembly Line)`  
 **Elite Seller Status:** `CONFIRMED (super_premium / 16 modules unlocked)`  
-**Defense Assets Used:** `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\`  
+**Defense Assets Used:** `tests\fixtures\defense_assets\` (Fallback: `C:\Users\acost\OneDrive\Pictures\DEFENSE IMAGES\`)  
 
 | Stream / Domain | Actions & Subsystems Covered | Assets / Data Bound | State Mutations Corroborated | Verdict |
 | :--- | :--- | :--- | :--- | :--- |

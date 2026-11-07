@@ -125,3 +125,12 @@ The initialization and bootstrap configurations are run within [AppServiceProvid
     5.  `forgot-password` (`throttle:3,1`): Restricts reset request emails to 3 per minute per IP.
     6.  `validate-active` (`throttle:60,1`): Limits local storage validation lookups to 60 per minute per IP.
     7.  `complete-profile` (`throttle:5,1`): Restricts social profile finalization requests to 5 per minute per IP.
+
+---
+
+## 6. Defensive Redirects & Modal Deep-Linking
+
+To eliminate fatal `HTTP 405 Method Not Allowed` crashes from browser direct navigations or link shares to API-only mutation routes, [web.php](file:///c:/laragon/www/LikhangKamay/routes/web.php) declares defensive GET fallbacks:
+*   `GET /user-addresses`: Defensively redirects authenticated buyers to `route('profile.edit', ['tab' => 'addresses'])` where address management UI is rendered.
+*   `GET /my-orders/{id}/dispute`: Defensively redirects buyers to `route('my-orders.index', ['dispute' => $id])`. [MyOrders.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Consumer/Buyer/MyOrders.jsx) parses the `?dispute=` query parameter on mount and automatically opens the return/dispute modal for the target order.
+

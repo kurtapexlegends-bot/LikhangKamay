@@ -1,10 +1,15 @@
 import React from 'react';
 
-export default function AdjustmentsSubForm({ item, index, updateItem }) {
+export default function AdjustmentsSubForm({ item, index, updateItem, idPrefix = '' }) {
     const handleAdd = (field, amount) => {
         const currentVal = Number(item[field] || 0);
-        const nextVal = Math.max(0, Math.round((currentVal + amount) * 10) / 10);
+        const nextVal = Math.max(0, Math.round((currentVal + amount) * 100) / 100);
         updateItem(index, field, nextVal);
+    };
+
+    const getFieldId = (field) => {
+        const prefix = idPrefix ? `${idPrefix}_` : '';
+        return index !== undefined ? `${prefix}adjustment_${field}_${index}` : `${prefix}adjustment_${field}`;
     };
 
     return (
@@ -61,26 +66,30 @@ export default function AdjustmentsSubForm({ item, index, updateItem }) {
                     <span className="text-[10px] font-bold text-stone-500 block uppercase tracking-wider">Leave & Absence Days</span>
                     <div className="grid grid-cols-2 gap-2.5">
                         <div>
-                            <label className="text-[10px] font-bold text-rose-700 block mb-1 uppercase tracking-wider">Unpaid Absences</label>
+                            <label htmlFor={getFieldId('absences_days')} className="text-[10px] font-bold text-rose-700 block mb-1 uppercase tracking-wider">Unpaid Absences</label>
                             <input
+                                id={getFieldId('absences_days')}
+                                name="absences_days"
                                 type="number"
                                 className="w-full rounded-xl border border-rose-200 bg-white p-2 text-xs font-bold text-rose-900 text-center shadow-none focus:border-rose-500 focus:ring-rose-500 min-h-[40px]"
                                 value={item.absences_days ?? ''}
                                 onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                                 onChange={(e) => updateItem(index, 'absences_days', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
-                                min="0" max="31" step="0.5"
+                                min="0" max="31" step="any"
                                 placeholder="0"
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-emerald-700 block mb-1 uppercase tracking-wider">Paid Leaves</label>
+                            <label htmlFor={getFieldId('paid_leave_days')} className="text-[10px] font-bold text-emerald-700 block mb-1 uppercase tracking-wider">Paid Leaves</label>
                             <input
+                                id={getFieldId('paid_leave_days')}
+                                name="paid_leave_days"
                                 type="number"
                                 className="w-full rounded-xl border border-emerald-200 bg-white p-2 text-xs font-bold text-emerald-900 text-center shadow-none focus:border-emerald-500 focus:ring-emerald-500 min-h-[40px]"
                                 value={item.paid_leave_days ?? ''}
                                 onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                                 onChange={(e) => updateItem(index, 'paid_leave_days', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
-                                min="0" max="31" step="0.5"
+                                min="0" max="31" step="any"
                                 placeholder="0"
                             />
                         </div>
@@ -92,50 +101,58 @@ export default function AdjustmentsSubForm({ item, index, updateItem }) {
                     <span className="text-[10px] font-bold text-stone-500 block uppercase tracking-wider">Hourly Adjustments</span>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <div>
-                            <label className="text-[10px] font-bold text-amber-800 block mb-1 uppercase tracking-wider truncate" title="Undertime Hours">UT (hrs)</label>
+                            <label htmlFor={getFieldId('undertime_hours')} className="text-[10px] font-bold text-amber-800 block mb-1 uppercase tracking-wider truncate" title="Undertime Hours">UT (hrs)</label>
                             <input
+                                id={getFieldId('undertime_hours')}
+                                name="undertime_hours"
                                 type="number"
                                 className="w-full rounded-xl border border-amber-200 bg-white p-2 text-xs font-bold text-amber-950 text-center shadow-none focus:border-amber-500 focus:ring-amber-500 min-h-[40px]"
                                 value={item.undertime_hours ?? ''}
                                 onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                                 onChange={(e) => updateItem(index, 'undertime_hours', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
-                                min="0" step="0.5"
+                                min="0" step="any"
                                 placeholder="0"
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-clay-700 block mb-1 uppercase tracking-wider truncate" title="Regular OT Hours">Reg OT</label>
+                            <label htmlFor={getFieldId('overtime_hours')} className="text-[10px] font-bold text-clay-700 block mb-1 uppercase tracking-wider truncate" title="Regular OT Hours">Reg OT</label>
                             <input
+                                id={getFieldId('overtime_hours')}
+                                name="overtime_hours"
                                 type="number"
                                 className="w-full rounded-xl border border-[#E7D8C9] bg-white p-2 text-xs font-bold text-clay-950 text-center shadow-none focus:border-clay-500 focus:ring-clay-500 min-h-[40px]"
                                 value={item.overtime_hours ?? ''}
                                 onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                                 onChange={(e) => updateItem(index, 'overtime_hours', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
-                                min="0" step="0.5"
+                                min="0" step="any"
                                 placeholder="0"
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-clay-700 block mb-1 uppercase tracking-wider truncate" title="Rest Day OT Hours">Rest OT</label>
+                            <label htmlFor={getFieldId('rest_day_ot_hours')} className="text-[10px] font-bold text-clay-700 block mb-1 uppercase tracking-wider truncate" title="Rest Day OT Hours">Rest OT</label>
                             <input
+                                id={getFieldId('rest_day_ot_hours')}
+                                name="rest_day_ot_hours"
                                 type="number"
                                 className="w-full rounded-xl border border-[#E7D8C9] bg-white p-2 text-xs font-bold text-clay-950 text-center shadow-none focus:border-clay-500 focus:ring-clay-500 min-h-[40px]"
                                 value={item.rest_day_ot_hours ?? ''}
                                 onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                                 onChange={(e) => updateItem(index, 'rest_day_ot_hours', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
-                                min="0" step="0.5"
+                                min="0" step="any"
                                 placeholder="0"
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-clay-700 block mb-1 uppercase tracking-wider truncate" title="Holiday OT Hours">Hol OT</label>
+                            <label htmlFor={getFieldId('holiday_ot_hours')} className="text-[10px] font-bold text-clay-700 block mb-1 uppercase tracking-wider truncate" title="Holiday OT Hours">Hol OT</label>
                             <input
+                                id={getFieldId('holiday_ot_hours')}
+                                name="holiday_ot_hours"
                                 type="number"
                                 className="w-full rounded-xl border border-[#E7D8C9] bg-white p-2 text-xs font-bold text-clay-950 text-center shadow-none focus:border-clay-500 focus:ring-clay-500 min-h-[40px]"
                                 value={item.holiday_ot_hours ?? ''}
                                 onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                                 onChange={(e) => updateItem(index, 'holiday_ot_hours', e.target.value === '' ? '' : parseFloat(e.target.value.replace(/-/g, "")))}
-                                min="0" step="0.5"
+                                min="0" step="any"
                                 placeholder="0"
                             />
                         </div>

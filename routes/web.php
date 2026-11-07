@@ -184,6 +184,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::delete('/profile', [\App\Http\Controllers\Core\ProfileController::class, 'destroy'])->name('profile.destroy');
 
         // USER ADDRESSES
+        Route::get('/user-addresses', fn() => redirect()->route('profile.edit', ['tab' => 'addresses']));
         Route::post('/user-addresses', [\App\Http\Controllers\Consumer\UserAddressController::class, 'store'])->name('user-addresses.store');
         Route::patch('/user-addresses/{id}', [\App\Http\Controllers\Consumer\UserAddressController::class, 'update'])->name('user-addresses.update');
         Route::patch('/user-addresses/{id}/set-default', [\App\Http\Controllers\Consumer\UserAddressController::class, 'setDefault'])->name('user-addresses.set-default');
@@ -444,6 +445,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::get('/my-orders/{id}/route-preview', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'routePreview'])->name('my-orders.route-preview');
 
         // Disputes
+        Route::get('/my-orders/{id}/dispute', fn($id) => redirect()->route('my-orders.index', ['dispute' => $id]));
         Route::post('/my-orders/{id}/dispute', [\App\Http\Controllers\Core\DisputeController::class, 'buyerInitiateDispute'])->name('my-orders.dispute');
         Route::post('/disputes/{id}/react', [\App\Http\Controllers\Core\DisputeController::class, 'buyerReact'])->name('disputes.react');
 

@@ -1,0 +1,185 @@
+{
+  "manifest_version": "5.1.0-PROD-3STREAM-POW",
+  "run_id": "iab-20261107-201200",
+  "timestamp": "2026-11-07T12:12:00Z",
+  "host": "https://www.likhangkamay.app",
+  "protocol": "3-Stream Assembly Line E2E Browser Suite (Production Ground Truth)",
+  "execution_mode": "subagent_isolated",
+  "elite_seller_verified": true,
+  "defense_assets_verified": true,
+  "streams_executed": {
+    "stream_a_commercial_core": true,
+    "stream_b_b2b_discovery_resilience": true,
+    "stream_c_governance_hr_monetization": true
+  },
+  "commercial_orders": {
+    "order_a": {
+      "order_number": "ORD-6AEF0477667E8",
+      "payment_method": "paymongo_gcash",
+      "payment_reference": "pay_PM3iAzcPMBJoXN6Q411nzXR3",
+      "amount": "₱764.25",
+      "voucher_applied": "Promotional Catalog Discount",
+      "rider": "CAV-9876",
+      "status": "Delivered",
+      "in_house_shipping_fee_credited": true,
+      "bir_invoice_sha256": "b08f48697e41d283da0a8c18f3cd0263a82f90cd599256b77687fd51905ed066"
+    },
+    "order_b": {
+      "order_number": "ORD-6AEF04B857685",
+      "pickup_mode": "in_store_pickup",
+      "pickup_slot": "Silang Ceramic Studio • Nov 11, 2026 (09:00 AM - 05:00 PM)",
+      "pickup_pin_verified": true,
+      "claim_pin": "3164",
+      "cashless_prepayment_supported": true
+    },
+    "order_c": {
+      "order_number": "ORD-6AEF04D2A8C60",
+      "courier": "lalamove_sandbox",
+      "lalamove_tracking_id": "3623211042865889510",
+      "amount": "₱784.25",
+      "buyer_dispute_filed": true,
+      "dispute_id": 6,
+      "dispute_reason": "Defective or Damaged Item",
+      "seller_rebuttal_registered": true,
+      "seller_response_type": "reject",
+      "dispute_status": "Resolved",
+      "admin_arbitration": "Approved Full Refund (resolved_refunded)",
+      "seller_net_retention_verified": true
+    }
+  },
+  "review_disputes": {
+    "review_disputed_by_seller": true,
+    "dispute_grounds": "Defamatory / Unfair Claims",
+    "admin_moderation_ruling": "Uphold / Removed",
+    "artisan_reply_notification_dispatched": true,
+    "buyer_portal_deep_link_verified": true
+  },
+  "procurement_lifecycle": {
+    "restock_requested": true,
+    "po_ordered": true,
+    "goods_received_stock_incremented": true,
+    "stock_request_rejection_tested": true
+  },
+  "seller_tax_and_locations": {
+    "payout_account_configured": true,
+    "vat_status_updated": true,
+    "secondary_location_created": true,
+    "geofence_enforced": true,
+    "bir_2307_statement_exported": true,
+    "secondary_location_cleaned": true
+  },
+  "b2b_wholesale": {
+    "b2b_order_number": "ORD-6AEF0E2AC892F",
+    "raw_material": "E2E Synthetic ₱1 Bamboo Cup (5 kg bulk)",
+    "moq_enforced": true,
+    "volume_quantity": 5,
+    "total_amount": "₱372.75",
+    "net_payout": "₱225.00",
+    "lalamove_tracking_id": "3623211042865889594",
+    "wholesale_invoice_downloaded": true,
+    "invoice_endpoint": "/supply-hub/sales/ORD-6AEF0E2AC892F/invoice (200 OK, 10,469 bytes)"
+  },
+  "order_resilience": {
+    "cancelled_order_number": "ORD-6AEF0FE8026C9",
+    "stock_before": 989,
+    "stock_after_order": 988,
+    "stock_after_cancel_restored": 989,
+    "atomic_rollback_verified": true
+  },
+  "staff_and_hr_governance": {
+    "test_employee_provisioned": true,
+    "employee_identifier": "Test Apprentice Potter (EMP-851583)",
+    "permissions_matrix_verified": true,
+    "suspension_cycle_tested": true,
+    "employee_terminated_cleaned": true,
+    "offsite_attendance_flagged": true,
+    "offsite_attendance_approved": true,
+    "payroll_batch_id": "LK-PAY-0004",
+    "prepared_by": "Test HR Operations Staff",
+    "accounting_rejection_tested": true,
+    "accounting_remarks": "Verify overtime deduction hours for rider.",
+    "approved_by": "Cavite Test Craft Workshop Owner",
+    "maker_checker_separated": true,
+    "status": "Approved"
+  },
+  "admin_governance": {
+    "moderation_queue_takedown_tested": true,
+    "payout_voucher_generated": true,
+    "rbac_hard_barrier_verified": true
+  },
+  "kyc_onboarding": {
+    "applicant_email": "test.artisan.fresh@likhangkamay.local",
+    "shop_name": "Cavite Artisan Studio 2026",
+    "address": "123 Heritage Crafts Way, Burol I, Dasmarinas City, Cavite 4114",
+    "defense_documents_uploaded": [
+      "Business Permit.png",
+      "DTI.png",
+      "Valid ID.png",
+      "Tin ID.png"
+    ],
+    "status": "/artisan/pending (Awaiting Verification)"
+  },
+  "monetization_and_comms": {
+    "subscription_tier": "super_premium (Elite)",
+    "retention_modal_triggered": true,
+    "sponsorship_campaign_active": true,
+    "email_studio_test_dispatched": true,
+    "email_recipient": "test.buyer@likhangkamay.local",
+    "dispatch_driver": "RESEND",
+    "delivery_latency_ms": 381
+  },
+  "high_value_resilience_workflows": {
+    "multi_seller_cart_split": {
+      "split_order_a": "ORD-6AEF04F393475",
+      "split_order_b": "ORD-6AEF04F37B379",
+      "shop_a": "Amadeo Stoneware Studio",
+      "shop_b": "Cavite Test Craft Workshop",
+      "dual_invoices_verified": true
+    },
+    "client_side_4_5mb_shield": {
+      "oversized_file_blocked": true,
+      "inline_warning_rendered": true,
+      "vercel_edge_413_prevented": true
+    },
+    "vacated_workshop_guard": {
+      "defensive_redirect_verified": true,
+      "zero_unhandled_500_errors": true
+    },
+    "websocket_polling_fallback": {
+      "wss_traffic_blocked": true,
+      "inertia_polling_fallback_active": true
+    }
+  },
+  "extended_functional_operations": {
+    "buyer_subsystems": {
+      "buy_again_tested": true,
+      "follow_shop_toggled": true,
+      "cancel_return_verified": true,
+      "leaflet_route_preview_rendered": true,
+      "cart_cleared_cleanly": true,
+      "buyer_reviews_portal_parity_verified": true,
+      "artisan_reply_sidebar_scroll_verified": true,
+      "content_safety_badges_audited": true,
+      "review_edit_and_delete_verified": true,
+      "reply_notification_deep_link_verified": true
+    },
+    "artisan_studio_ops": {
+      "quick_restock_modal_verified": true,
+      "quick_deduct_modal_verified": true,
+      "voucher_crud_verified": true,
+      "canned_chat_template_tested": true,
+      "review_reply_deletion_tested": true,
+      "bulk_dispatch_modal_verified": true,
+      "presigned_3d_endpoint_verified": true
+    },
+    "governance_and_staff": {
+      "taxonomy_category_crud_verified": true,
+      "disciplinary_warning_logged": true,
+      "tier_override_atomically_reverted": true,
+      "staff_password_atomically_reverted": true,
+      "team_chat_channel_and_threads_verified": true,
+      "trash_center_restoration_verified": true
+    }
+  },
+  "final_verdict": "PASS"
+}

@@ -56,6 +56,20 @@ export default function MyOrders({ auth, orders = [] }) {
     }, []);
 
     useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const params = new URLSearchParams(window.location.search);
+        const disputeId = params.get('dispute');
+        if (disputeId && activeOrders.length > 0) {
+            const targetOrder = activeOrders.find(
+                (o) => String(o.id) === String(disputeId) || String(o.order_number) === String(disputeId)
+            );
+            if (targetOrder) {
+                setReturnModalState({ isOpen: true, order: targetOrder });
+            }
+        }
+    }, [activeOrders]);
+
+    useEffect(() => {
         if (!hasActiveCourierTracking || typeof window === 'undefined') {
             return undefined;
         }
