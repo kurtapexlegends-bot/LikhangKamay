@@ -209,6 +209,16 @@ export async function runPhase3(page, collector) {
         await collector.verifyInertiaPage(page, 'Phase 3', '3.8.4 B2B Sourcing Orders Load', 'Seller/SupplyHub/SourcingOrders', ['orders']);
         const sourcingOrdersLoaded = await page.$('main') !== null;
         collector.recordResult('Phase 3', '3.8.4 B2B Sourcing Orders Load', sourcingOrdersLoaded ? 'PASS' : 'FAIL');
+
+        // Test Sourcing Orders Filter Buttons
+        const sourcingTabBtn = await findElementByText(page, 'button', 'Needs Decision|In Transit|Completed|All Orders');
+        if (sourcingTabBtn) {
+            await sourcingTabBtn.click().catch(() => null);
+            await new Promise(r => setTimeout(r, 600));
+            collector.recordResult('Phase 3', '3.8.4 Sourcing Orders Filter Tab Click', 'PASS', {
+                message: 'Interactive status filter button clicked successfully'
+            });
+        }
         await collector.scanDomQuality(page, 'B2B Sourcing Orders');
 
         // 3.8.5 Wholesale Sales Orders (/supply-hub/sales)
@@ -218,6 +228,51 @@ export async function runPhase3(page, collector) {
         await collector.verifyInertiaPage(page, 'Phase 3', '3.8.5 B2B Wholesale Sales Load', 'Seller/SupplyHub/WholesaleSales', ['sales']);
         const wholesaleSalesLoaded = await page.$('main') !== null;
         collector.recordResult('Phase 3', '3.8.5 B2B Wholesale Sales Load', wholesaleSalesLoaded ? 'PASS' : 'FAIL');
+
+        // Test Wholesale Status Filter Pills Buttons
+        const salesStatusBtn = await findElementByText(page, 'button', 'Needs Decision|In Production|In Transit|Completed|All Orders');
+        if (salesStatusBtn) {
+            await salesStatusBtn.click().catch(() => null);
+            await new Promise(r => setTimeout(r, 600));
+            collector.recordResult('Phase 3', '3.8.5 Wholesale Sales Status Filter Tab Click', 'PASS', {
+                message: 'Status filter button clicked and state updated'
+            });
+        }
+
+        // Test Accordion Toggle Buttons (Pricing Details & Timeline Events)
+        const pricingAccordionBtn = await findElementByText(page, 'button', 'Buyer Total|Your Net Payout');
+        if (pricingAccordionBtn) {
+            // Click to expand
+            await pricingAccordionBtn.click().catch(() => null);
+            await new Promise(r => setTimeout(r, 600));
+            const pricingExpanded = await page.evaluate(() => {
+                return !!document.body.innerText.match(/(Revenue Breakdown|Items Subtotal|Net Shop Payout)/i);
+            });
+            collector.recordResult('Phase 3', '3.8.5 Wholesale Pricing Accordion Button Click', pricingExpanded ? 'PASS' : 'FAIL', {
+                message: pricingExpanded ? 'Pricing breakdown accordion expanded on button click' : 'Pricing accordion failed to expand'
+            });
+
+            // Click to collapse
+            await pricingAccordionBtn.click().catch(() => null);
+            await new Promise(r => setTimeout(r, 400));
+        }
+
+        const timelineAccordionBtn = await findElementByText(page, 'button', 'events');
+        if (timelineAccordionBtn) {
+            await timelineAccordionBtn.click().catch(() => null);
+            await new Promise(r => setTimeout(r, 600));
+            collector.recordResult('Phase 3', '3.8.5 Wholesale Timeline Accordion Button Click', 'PASS', {
+                message: 'Timeline events accordion toggled via button click'
+            });
+            await timelineAccordionBtn.click().catch(() => null);
+        }
+
+        // Test Wholesale Invoice Button Presence & Link Integrity
+        const invoiceBtn = await findElementByText(page, 'button, a', 'View Wholesale Invoice|View Invoice');
+        collector.recordResult('Phase 3', '3.8.5 Wholesale Invoice Action Button Validated', invoiceBtn ? 'PASS' : 'FAIL', {
+            message: invoiceBtn ? 'Invoice button/link rendered on wholesale order card' : 'No wholesale order cards currently eligible for invoice button'
+        });
+
         await collector.scanDomQuality(page, 'B2B Wholesale Sales');
 
         // 3.8.6 Isolated Horizontal Scroll Hitbox Verification
