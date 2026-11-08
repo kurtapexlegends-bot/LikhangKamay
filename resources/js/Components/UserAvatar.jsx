@@ -23,7 +23,7 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
             : undefined;
 
     return (
-        <div className="relative inline-flex" title={tooltipTitle}>
+        <div className="relative inline-flex shrink-0" title={tooltipTitle}>
             {isPremium && (
                 <div className="absolute -top-2 -right-1.5 z-10 rotate-[15deg] text-amber-500">
                     <Crown size={16} strokeWidth={2.5} className="fill-amber-400" />
@@ -34,12 +34,12 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
                     <Sparkles size={14} strokeWidth={2.5} className="fill-violet-400" />
                 </div>
             )}
-            <div className={`${className} rounded-full bg-stone-100 flex items-center justify-center text-stone-700 font-bold uppercase overflow-hidden ${isElite || isPremium ? 'ring-2 ring-offset-2' : ''} ${isElite ? 'ring-violet-500' : isPremium ? 'ring-amber-500' : ''} shrink-0`}>
+            <div className={`rounded-full bg-stone-100 flex items-center justify-center text-stone-700 font-bold uppercase overflow-hidden aspect-square shrink-0 ${isElite || isPremium ? 'ring-2 ring-offset-2' : ''} ${isElite ? 'ring-violet-500' : isPremium ? 'ring-amber-500' : ''} ${className}`}>
                 {avatarSrc && !hasError ? (
                     <img 
                         src={avatarSrc}
                         alt={user.shop_name || user.name} 
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover rounded-full aspect-square block"
                         loading="lazy"
                         decoding="async"
                         onError={() => setHasError(true)}

@@ -433,8 +433,8 @@ export default function BuyerChat({ auth, conversations = [], activeMessages = [
             </div>
 
             {/* Chat Workspace Container */}
-            <main id="main-content" tabIndex={-1} className={`flex-1 min-h-0 overflow-hidden max-w-7xl w-full mx-auto sm:px-6 lg:px-8 sm:py-6 focus:outline-none ${!showMobileList ? 'p-0 sm:px-4' : 'p-4'}`}>
-                <div className="bg-white border border-gray-100 shadow-lg overflow-hidden flex flex-col sm:flex-row w-full h-full sm:rounded-2xl">
+            <main id="main-content" tabIndex={-1} className={`flex-1 min-h-0 overflow-hidden max-w-7xl w-full mx-auto sm:px-4 lg:px-6 sm:py-3 focus:outline-none ${!showMobileList ? 'p-0 sm:px-3' : 'p-2 sm:p-3'}`}>
+                <div className="bg-white border-0 sm:border border-gray-100 shadow-none sm:shadow-md overflow-hidden flex flex-col sm:flex-row w-full h-full sm:rounded-xl">
                     
                     {/* Contacts sidebar pane */}
                     <BuyerChatContacts
@@ -474,6 +474,7 @@ export default function BuyerChat({ auth, conversations = [], activeMessages = [
                                 currentChatUser={selectedUser} 
                                 form={form}
                                 userOrders={activeUserOrdersList}
+                                hasMessages={messages.length > 0}
                                 onSendStart={(tempMsg) => setPendingMessages(prev => [...prev, tempMsg])}
                                 onSendFinished={(tempId, success, serverMsg) => {
                                     if (success && serverMsg) {

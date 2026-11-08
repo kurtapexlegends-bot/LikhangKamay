@@ -300,38 +300,38 @@ export default function OrderContextCard({ order: initialOrder, viewer = 'buyer'
     );
 
     return (
-        <section className="flex flex-col border-b border-gray-200 bg-white shadow-sm z-10 transition-all shrink-0">
+        <section className="flex flex-col border-b border-gray-150 bg-white/95 backdrop-blur-xs shadow-2xs z-10 transition-all shrink-0">
             {/* COMPACT STRIP (Always visible) */}
             <div 
-                className="px-3 py-2 sm:px-4 sm:py-2.5 lg:px-6 flex items-center justify-between gap-3 cursor-pointer hover:bg-gray-50/80 transition-colors"
+                className="px-3.5 py-2 sm:px-4 sm:py-2.5 lg:px-5 flex items-center justify-between gap-2.5 cursor-pointer hover:bg-stone-50/80 transition-colors"
                 onClick={handleHeaderClick}
             >
                 <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
-                    <div className="p-1.5 sm:p-2 bg-clay-50/80 border border-clay-100 text-clay-600 rounded-xl shadow-sm">
+                    <div className="p-1.5 sm:p-2 bg-clay-50 border border-clay-100 text-clay-600 rounded-lg shadow-2xs shrink-0">
                         <ShoppingBag size={16} />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span className="truncate text-sm font-bold text-gray-900">{order.orderNumber}</span>
-                            <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold leading-none ${statusConfig.badge}`}>
-                                <StatusIcon size={12} />
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="truncate text-xs sm:text-sm font-bold text-gray-900 font-mono">{order.orderNumber}</span>
+                            <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-tight ${statusConfig.badge}`}>
+                                <StatusIcon size={11} />
                                 {order.status}
                             </span>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-gray-500 mt-1 font-medium">
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500 mt-0.5 font-medium">
                             <span>{unitsCount} item{unitsCount === 1 ? '' : 's'}</span>
                             <span>•</span>
-                            <span className="text-green-700 font-bold">{currency.format(order.totalAmount || 0)}</span>
+                            <span className="text-emerald-700 font-bold">{currency.format(order.totalAmount || 0)}</span>
                         </div>
                     </div>
                 </div>
                 
-                <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                    <span className="text-xs font-bold text-clay-600 bg-clay-50 hover:bg-clay-100 px-2.5 py-1 rounded-lg transition items-center gap-1">
+                <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                    <span className="text-xs font-bold text-clay-700 bg-clay-50/80 hover:bg-clay-100 border border-clay-100/60 px-2.5 py-1 rounded-lg transition inline-flex items-center gap-1">
                         View Details
                     </span>
                     {hasMultipleActiveOrders && (
-                        <span className="rounded-md bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600 hidden sm:block">
+                        <span className="rounded bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600 hidden sm:block">
                             1 of {activeOrdersCount} active
                         </span>
                     )}

@@ -62,7 +62,7 @@ class DirectMessageService
                     ->pluck('count', 'sender_id');
             }
 
-            $conversations = $contacts->map(function($user) use ($userId, $latestMessagesQuery, $unreadCounts) {
+            $conversations = $contacts->map(function($user) use ($userId, $latestMessagesQuery, $unreadCounts, $sellerPerspective) {
                 $lastMsg = $latestMessagesQuery->first(function($msg) use ($userId, $user) {
                     return ($msg->sender_id == $userId && $msg->receiver_id == $user->id) ||
                            ($msg->sender_id == $user->id && $msg->receiver_id == $userId);
@@ -70,7 +70,8 @@ class DirectMessageService
 
                 return [
                     'id' => $user->id,
-                    'name' => $user->name,
+                    'name' => (!$sellerPerspective && $user->shop_name) ? $user->shop_name : $user->name,
+                    'shop_name' => $user->shop_name,
                     'avatar' => $user->avatar,
                     'avatar_url' => StorageUrl::url($user->avatar),
                     'initial' => substr($user->shop_name ?: $user->name, 0, 1),
