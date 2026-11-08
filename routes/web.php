@@ -423,6 +423,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::get('/saved', function () {
             return Inertia::render('Consumer/Buyer/Saved');
         })->name('saved.index');
+        Route::redirect('/wishlist', '/saved');
 
         // BUYER SIGNALS (WISHLIST & FOLLOWED SHOPS)
         Route::get('/buyer/signals', [\App\Http\Controllers\Consumer\BuyerSignalController::class, 'index'])->name('buyer.signals.index');

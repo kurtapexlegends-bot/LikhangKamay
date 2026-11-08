@@ -14,6 +14,7 @@ use App\Http\Requests\Consumer\StoreReviewRequest;
 use App\Http\Requests\Consumer\UpdateReviewRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -64,13 +65,35 @@ class ReviewController extends Controller
             $photoPaths = [];
         }
 
-        $review = Review::create([
-            'user_id' => Auth::id(),
-            'product_id' => $request->product_id,
-            'rating' => $request->rating,
-            'comment' => $request->comment ? RichTextSanitizer::sanitize($request->comment) : null,
-            'photos' => $photoPaths,
-        ]);
+        $review = DB::transaction(function () use ($request, $photoPaths) {
+            $trashedReview = Review::onlyTrashed()
+                ->lockForUpdate()
+                ->where('user_id', Auth::id())
+                ->where('product_id', $request->product_id)
+                ->first();
+
+            if ($trashedReview) {
+                $trashedReview->restore();
+                $trashedReview->update([
+                    'rating' => $request->rating,
+                    'comment' => $request->comment ? RichTextSanitizer::sanitize($request->comment) : null,
+                    'photos' => $photoPaths,
+                    'seller_reply' => null,
+                    'is_hidden_from_marketplace' => false,
+                    'hidden_at' => null,
+                    'hidden_by' => null,
+                ]);
+                return $trashedReview;
+            }
+
+            return Review::create([
+                'user_id' => Auth::id(),
+                'product_id' => $request->product_id,
+                'rating' => $request->rating,
+                'comment' => $request->comment ? RichTextSanitizer::sanitize($request->comment) : null,
+                'photos' => $photoPaths,
+            ]);
+        });
 
         $product = Product::with('user')->find($request->product_id);
         if ($product && $product->user && $product->user->id !== Auth::id()) {

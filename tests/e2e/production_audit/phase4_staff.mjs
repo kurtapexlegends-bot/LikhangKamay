@@ -1,4 +1,4 @@
-import { PROD_URL, ACCOUNTS, loginAs } from './audit_config.mjs';
+import { PROD_URL, ACCOUNTS, loginAs, findElementByText } from './audit_config.mjs';
 
 const DUMMY_FACE_PHOTO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
@@ -107,25 +107,80 @@ export async function runPhase4(page, collector) {
             collector.recordBug('HIGH', 'Staff Heartbeat Threw Exception', `${PROD_URL}/staff/attendance/heartbeat`, e.message);
         }
 
-        // Logout staff
+        // 4.5b Staff Shift Clock-Out & Attendance Clean Teardown
         try {
-            await page.goto(`${PROD_URL}/staff/logout`, { waitUntil: 'networkidle2', timeout: 30000 });
-            await page.evaluate(async (url) => {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                await fetch(`${url}/staff/logout/direct`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                        'Accept': 'application/json'
+            await page.goto(`${PROD_URL}/staff/dashboard`, { waitUntil: 'networkidle2', timeout: 30000 });
+            await page.waitForSelector('#app', { timeout: 15000 }).catch(() => null);
+
+            let clockedOutViaUI = false;
+
+            // Attempt DOM click on StaffAttendanceDock button
+            const dockButton = await page.$('button:has(svg.lucide-clock), button:has(span.animate-ping)')
+                || await findElementByText(page, 'button', 'Shift Active|On Break|Clock In');
+            if (dockButton) {
+                await dockButton.click().catch(() => null);
+                await new Promise(r => setTimeout(r, 600));
+
+                // If StaffLogoutModal opened, click Clock Out & Sign Out
+                const clockOutBtn = await findElementByText(page, 'button', 'Clock Out & Sign Out|Closing Shift');
+                if (clockOutBtn) {
+                    await clockOutBtn.click().catch(() => null);
+                    await new Promise(r => setTimeout(r, 600));
+
+                    // If EarlyClockOutModal opened, click Confirm Clock-Out
+                    const confirmEarlyBtn = await findElementByText(page, 'button', 'Confirm Clock-Out');
+                    if (confirmEarlyBtn) {
+                        await confirmEarlyBtn.click().catch(() => null);
                     }
-                }).catch(() => null);
-            }, PROD_URL);
+
+                    // Wait for redirect to home after logout
+                    await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 8000 }).catch(() => null);
+                    clockedOutViaUI = !page.url().includes('/staff/dashboard');
+                }
+            }
+
+            let clockOutStatus = clockedOutViaUI ? 200 : 0;
+
+            // If not logged out via UI, execute programmatic clock-out fallback
+            if (!clockedOutViaUI) {
+                const clockOutRes = await page.evaluate(async (url) => {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    try {
+                        const res = await fetch(`${url}/staff/logout`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken || '',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                action: 'clock_out',
+                                early_departure_reason: 'Automated E2E Audit Teardown'
+                            })
+                        });
+                        return { status: res.status };
+                    } catch (e) {
+                        return { status: 0, error: e.message };
+                    }
+                }, PROD_URL);
+                clockOutStatus = clockOutRes.status;
+            }
+
+            const isClockOutOk = clockedOutViaUI || [200, 302].includes(clockOutStatus);
+            collector.recordResult('Phase 4', '4.5b Staff Shift Clock-Out & Attendance Teardown', isClockOutOk ? 'PASS' : 'FAIL', {
+                message: clockedOutViaUI
+                    ? 'Shift closed and signed out cleanly via interactive UI dock/modal'
+                    : `Shift closed and clocked out cleanly with HTTP status: ${clockOutStatus}`
+            });
+
+            // Clean residual cookies
             const cookies = await page.cookies();
             if (cookies.length > 0) {
                 await page.deleteCookie(...cookies);
             }
-        } catch {}
+        } catch (e) {
+            collector.recordResult('Phase 4', '4.5b Staff Shift Clock-Out & Attendance Teardown', 'FAIL', { message: e.message });
+        }
     }
 
     // 4.6 In-House Logistics Driver Rider Experience

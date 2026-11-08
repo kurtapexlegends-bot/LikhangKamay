@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Employee;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\SellerPickupSchedule;
 use App\Models\User;
@@ -107,7 +109,7 @@ class E2ETestPersonaSeeder extends Seeder
 
         // Artisan Test Product (Synthetic ₱1 Item)
         $category = Category::first();
-        Product::withTrashed()->updateOrCreate(
+        $bambooProduct = Product::withTrashed()->updateOrCreate(
             ['sku' => 'TEST-BAMBOO-01'],
             [
                 'user_id' => $artisan->id,
@@ -119,6 +121,29 @@ class E2ETestPersonaSeeder extends Seeder
                 'status' => 'Active',
                 'lead_time' => 1,
                 'description' => 'Synthetic test product for automated E2E lifecycle and verification.',
+                'deleted_at' => null,
+            ]
+        );
+
+        // Artisan B2B Wholesale Supply Product
+        Product::withTrashed()->updateOrCreate(
+            ['sku' => 'B2B-CLAY-62'],
+            [
+                'user_id' => $artisan->id,
+                'name' => 'Silang Red Mountain Terracotta Clay (25kg Sack)',
+                'category' => 'Raw Clay & Slips',
+                'price' => 340.00,
+                'wholesale_price' => 290.00,
+                'wholesale_min_qty' => 4,
+                'cost_price' => 200.00,
+                'stock' => 150,
+                'moq' => 4,
+                'supply_unit' => 'bag',
+                'weight' => 25,
+                'status' => 'Active',
+                'is_b2b_supply' => true,
+                'lead_time' => 1,
+                'description' => 'Locally harvested and double-screened red earthenware clay. Ideal for wheel throwing and hand-building pottery.',
                 'deleted_at' => null,
             ]
         );
@@ -155,6 +180,44 @@ class E2ETestPersonaSeeder extends Seeder
                 'latitude' => 14.4180,
                 'longitude' => 120.9520,
                 'is_default' => true,
+            ]
+        );
+
+        // Buyer Seeded Completed Test Order (Enables customer review lifecycle verification)
+        $completedTestOrder = Order::withTrashed()->updateOrCreate(
+            ['order_number' => 'ORD-TEST-E2E-COMPLETED-01'],
+            [
+                'user_id' => $buyer->id,
+                'artisan_id' => $artisan->id,
+                'customer_name' => $buyer->name,
+                'merchandise_subtotal' => 1.00,
+                'shipping_fee_amount' => 0.00,
+                'convenience_fee_amount' => 0.00,
+                'platform_commission_amount' => 0.05,
+                'seller_net_amount' => 0.95,
+                'total_amount' => 1.00,
+                'status' => 'Completed',
+                'shipping_address' => 'Block 4 Lot 12 Buhay na Tubig, Imus, Cavite 4103',
+                'payment_method' => 'COD',
+                'payment_status' => 'paid',
+                'shipping_method' => 'Delivery',
+                'accepted_at' => now()->subDays(2),
+                'shipped_at' => now()->subDay(),
+                'delivered_at' => now()->subDay(),
+                'received_at' => now()->subDay(),
+                'is_test' => true,
+                'deleted_at' => null,
+            ]
+        );
+
+        OrderItem::updateOrCreate(
+            ['order_id' => $completedTestOrder->id, 'product_id' => $bambooProduct->id],
+            [
+                'product_name' => $bambooProduct->name,
+                'price' => 1.00,
+                'cost' => 0.50,
+                'quantity' => 1,
+                'is_b2b_supply' => false,
             ]
         );
 
@@ -243,11 +306,58 @@ class E2ETestPersonaSeeder extends Seeder
             ]
         );
 
+        // 6. Buyer Artisan Persona (Silang Terracotta Works for B2B Sourcing Relay)
+        $buyerArtisan = User::withTrashed()->updateOrCreate(
+            ['email' => 'artisan.silang@likhangkamay.com'],
+            [
+                'name' => 'Elena Bautista',
+                'first_name' => 'Elena',
+                'last_name' => 'Bautista',
+                'password' => Hash::make('LikhangKamay2026!'),
+                'role' => 'artisan',
+                'shop_name' => 'Silang Terracotta Works',
+                'phone_number' => '09171234567',
+                'street_address' => 'Bypass Road, Brgy. San Vicente 2',
+                'city' => 'Silang',
+                'barangay' => 'San Vicente 2',
+                'region' => 'Region IV-A (CALABARZON)',
+                'zip_code' => '4118',
+                'artisan_status' => 'approved',
+                'email_verified_at' => now(),
+                'setup_completed_at' => now(),
+                'premium_tier' => 'super_premium',
+                'subscription_expires_at' => now()->addYears(10),
+                'enforce_strict_shift_window' => false,
+                'is_test' => true,
+                'deleted_at' => null,
+            ]
+        );
+
+        UserAddress::updateOrCreate(
+            ['user_id' => $buyerArtisan->id, 'address_type' => 'office'],
+            [
+                'label' => 'Workshop Studio',
+                'recipient_name' => 'Silang Terracotta Works',
+                'phone_number' => '09171234567',
+                'street_address' => 'Bypass Road, Brgy. San Vicente 2',
+                'city' => 'Silang',
+                'barangay' => 'San Vicente 2',
+                'region' => 'Cavite',
+                'postal_code' => '4118',
+                'full_address' => 'Bypass Road, Brgy. San Vicente 2, Silang, Cavite 4118',
+                'latitude' => 14.2287,
+                'longitude' => 120.9742,
+                'is_default' => true,
+            ]
+        );
+
         $this->command?->info('E2E Test Personas successfully seeded (all flagged is_test=true):');
         $this->command?->info('- Admin:   test.admin@likhangkamay.local');
         $this->command?->info('- Artisan: test.artisan@likhangkamay.local');
         $this->command?->info('- Buyer:   test.buyer@likhangkamay.local');
         $this->command?->info('- Staff:   test.staff@likhangkamay.local');
         $this->command?->info('- Driver:  test.driver@likhangkamay.local');
+        $this->command?->info('- Buyer Artisan: artisan.silang@likhangkamay.com');
     }
 }
+

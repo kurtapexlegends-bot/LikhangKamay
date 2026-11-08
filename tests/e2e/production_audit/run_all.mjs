@@ -8,6 +8,7 @@ import { runPhase3 } from './phase3_seller.mjs';
 import { runPhase4 } from './phase4_staff.mjs';
 import { runPhase5 } from './phase5_admin.mjs';
 import { runPhase6 } from './phase6_technical.mjs';
+import { runLiveB2BTransactionPipeline } from './live_b2b_transaction_pipeline.mjs';
 
 async function main() {
     console.log(`\n======================================================`);
@@ -86,6 +87,20 @@ async function main() {
         }
     } finally {
         await browser.close();
+    }
+
+    // --- PHASE 7: B2B Wholesale Supply Hub Transaction Relay ---
+    try {
+        console.log(`\n======================================================`);
+        console.log(`  STARTING B2B SUPPLY HUB MULTI-ARTISAN RELAY`);
+        console.log(`======================================================\n`);
+        const b2bManifest = await runLiveB2BTransactionPipeline();
+        collector.recordResult('B2B Relay', 'Layer 5 B2B Sourcing & Auto-Restock Pipeline', b2bManifest ? 'PASS' : 'FAIL', {
+            message: `Order #${b2bManifest?.procurement_order?.order_number || b2bManifest?.run_id} Completed. SHA-256: ${(b2bManifest?.proof_of_work_signature || '').slice(0, 16)}...`
+        });
+    } catch (e) {
+        collector.recordResult('B2B Relay', 'Layer 5 B2B Sourcing & Auto-Restock Pipeline', 'FAIL', { message: e.message });
+        collector.recordBug('HIGH', 'B2B Sourcing Hub Transaction Relay Failed', `${PROD_URL}/supply-hub`, e.message);
     }
 
     const duration = ((Date.now() - collector.startTime) / 1000).toFixed(1);

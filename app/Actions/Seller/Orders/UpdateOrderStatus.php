@@ -347,12 +347,21 @@ class UpdateOrderStatus
             return false;
         }
 
+        // B2B Wholesale Supply orders between peer studios and synthetic test orders
+        if ((bool) ($order->is_test ?? false) || $order->items?->contains('is_b2b_supply', true)) {
+            return false;
+        }
+
         return in_array($nextStatus, ['Shipped', 'Ready for Pickup', 'Delivered'], true)
             && !$order->delivery?->external_order_id;
     }
 
     private function statusRequiresFreshProofImage(Order $order, string $nextStatus): bool
     {
+        if ((bool) ($order->is_test ?? false) || $order->items?->contains('is_b2b_supply', true)) {
+            return false;
+        }
+
         return $nextStatus === 'Delivered' && $order->shipping_method === 'Delivery';
     }
 

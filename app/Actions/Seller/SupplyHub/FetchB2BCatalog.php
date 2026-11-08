@@ -39,6 +39,7 @@ class FetchB2BCatalog
             ->select([
                 'products.id',
                 'products.user_id',
+                'products.sku',
                 'products.name',
                 'products.slug',
                 'products.description',

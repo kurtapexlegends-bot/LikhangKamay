@@ -46,7 +46,20 @@ export const ACCOUNTS = {
         email: process.env.E2E_ADMIN_EMAIL || 'test.admin@likhangkamay.local',
         password: process.env.E2E_ADMIN_PASSWORD || 'LikhangKamayTest2026!',
         role: 'super_admin'
+    },
+    buyerArtisan: {
+        email: process.env.E2E_BUYER_ARTISAN_EMAIL || 'artisan.silang@likhangkamay.com',
+        password: process.env.E2E_BUYER_ARTISAN_PASSWORD || 'LikhangKamay2026!',
+        role: 'artisan'
     }
+};
+
+export const SHARED_AUDIT_STATE = {
+    syntheticProductId: null,
+    syntheticProductSku: 'TEST-BAMBOO-01',
+    syntheticArtisanId: null,
+    createdReviewId: null,
+    createdReviewProductId: null,
 };
 
 const CHROME_PATHS = [

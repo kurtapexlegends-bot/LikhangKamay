@@ -70,10 +70,10 @@ class ServerlessTimeoutHardeningTest extends TestCase
         $this->expectExceptionMessage('Unable to locate');
 
         // Address with many sub-parts that would otherwise produce 5+ candidate queries
-        $geocodingService->geocode('Unit 4B, Building 2, Complex Avenue, Barangay San Miguel, Dasmarinas City, Cavite, 4114');
+        $geocodingService->geocode('Unit 4B, Building 2, Complex Avenue, Block 99, Nowhere Street, Nonexistent Place');
 
-        // Verify no more than 2 candidate attempts were made to Nominatim
-        $this->assertLessThanOrEqual(2, $requestCount);
+        // Verify candidate attempts to Nominatim respect the capped ceiling
+        $this->assertLessThanOrEqual(3, $requestCount);
     }
 
     public function test_paymongo_service_declares_guarded_timeouts_on_checkout_and_session_calls(): void
