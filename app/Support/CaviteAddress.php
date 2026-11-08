@@ -386,4 +386,24 @@ class CaviteAddress
 
         return $city;
     }
+
+    /**
+     * Find a Cavite city/municipality mention in an address string
+     */
+    public static function findCaviteCityInAddress(?string $address): ?string
+    {
+        if ($address === null || trim($address) === '') {
+            return null;
+        }
+
+        $normalized = self::normalize($address);
+
+        foreach (self::CITY_COORDINATES as $cityKey => $coords) {
+            if (preg_match('/\b' . preg_quote($cityKey, '/') . '\b/i', $normalized)) {
+                return $cityKey;
+            }
+        }
+
+        return null;
+    }
 }

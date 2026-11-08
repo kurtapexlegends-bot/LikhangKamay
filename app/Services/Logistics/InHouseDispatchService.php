@@ -268,7 +268,7 @@ class InHouseDispatchService
                     $lockedOrder,
                     'Order dispatched with studio driver',
                     "Your order is on the way with studio driver {$driver->name} (" . ($driver->vehicle_type ?: 'Motorcycle') . ").",
-                    route('my-orders.index')
+                    $lockedOrder->buyerTrackingUrl()
                 ));
             }
 
@@ -388,7 +388,7 @@ class InHouseDispatchService
                     $order,
                     'Order delivered successfully',
                     'Your order has been delivered by our studio driver. Please review your parcel and confirm receipt.',
-                    route('my-orders.index')
+                    $order->buyerTrackingUrl()
                 ));
             }
 

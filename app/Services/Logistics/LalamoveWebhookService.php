@@ -287,7 +287,7 @@ class LalamoveWebhookService
                     $isReplacementExchange
                         ? 'Lalamove completed the replacement exchange. Please confirm receipt of the replacement item once it is safely with you.'
                         : 'Lalamove marked your delivery as completed. Please confirm receipt once it arrives to you safely.',
-                    route('my-orders.index')
+                    $order->buyerTrackingUrl()
                 ));
             }
 
@@ -308,14 +308,14 @@ class LalamoveWebhookService
                     $order,
                     'Delivery issue detected',
                     'The courier reported a delivery problem. The order will automatically be cancelled if unresolved within 24 hours.',
-                    route('my-orders.index')
+                    $order->buyerTrackingUrl()
                 ));
 
                 $order->artisan?->notify(new OrderDeliveryUpdateNotification(
                     $order,
                     'Delivery Problem Reported',
                     'The courier reported an unresolved delivery issue. The order will automatically be cancelled if unresolved within 24 hours.',
-                    route('orders.index')
+                    $order->sellerTrackingUrl()
                 ));
             }
 

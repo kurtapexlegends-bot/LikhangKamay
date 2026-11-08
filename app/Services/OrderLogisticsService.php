@@ -175,8 +175,8 @@ class OrderLogisticsService
 
         $recipientPayload = [
             'stopId' => $quotationStops[1]['stopId'],
-            'name' => (string) $order->shipping_recipient_name,
-            'phone' => $this->lalamoveService->normalizePhone((string) $order->shipping_contact_phone),
+            'name' => $order->getResolvedRecipientName(),
+            'phone' => $this->lalamoveService->normalizePhone($order->getResolvedContactPhone()),
         ];
 
         $shippingRemarks = trim((string) $order->shipping_notes);
@@ -360,8 +360,8 @@ class OrderLogisticsService
             'recipients' => [
                 [
                     'stopId' => $quotationStops[1]['stopId'],
-                    'name' => (string) $order->shipping_recipient_name,
-                    'phone' => $this->lalamoveService->normalizePhone((string) $order->shipping_contact_phone),
+                    'name' => $order->getResolvedRecipientName(),
+                    'phone' => $this->lalamoveService->normalizePhone($order->getResolvedContactPhone()),
                     'remarks' => $replacementExchangeRemark,
                 ],
                 [
@@ -554,8 +554,8 @@ class OrderLogisticsService
             }
         }
 
-        $buyerUrl = route('my-orders.index');
-        $sellerUrl = route('orders.index');
+        $buyerUrl = $order->buyerTrackingUrl();
+        $sellerUrl = $order->sellerTrackingUrl();
 
         $order->user?->notify(new OrderDeliveryUpdateNotification(
             $order,
@@ -605,11 +605,11 @@ class OrderLogisticsService
             $missing[] = 'Buyer delivery address is still too broad. Complete the street, barangay, city, and province before booking Lalamove.';
         }
 
-        if (trim((string) $order->shipping_recipient_name) === '') {
+        if ($order->getResolvedRecipientName() === '') {
             $missing[] = 'Buyer recipient name is missing.';
         }
 
-        if (trim((string) $order->shipping_contact_phone) === '') {
+        if ($order->getResolvedContactPhone() === '') {
             $missing[] = 'Buyer contact number is missing.';
         }
 
@@ -690,7 +690,7 @@ class OrderLogisticsService
                     $lockedOrder,
                     $notificationTitle,
                     $notificationMessage,
-                    route('my-orders.index')
+                    $lockedOrder->buyerTrackingUrl()
                 ));
             }
 

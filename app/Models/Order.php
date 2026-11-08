@@ -182,6 +182,22 @@ class Order extends Model
         });
     }
 
+    /**
+     * Get the tracking/orders portal URL for the buyer.
+     */
+    public function buyerTrackingUrl(): string
+    {
+        return $this->isB2BOrder() ? route('seller.supply-hub.orders') : route('my-orders.index');
+    }
+
+    /**
+     * Get the tracking/orders portal URL for the seller.
+     */
+    public function sellerTrackingUrl(): string
+    {
+        return $this->isB2BOrder() ? route('seller.supply-hub.sales') : route('orders.index');
+    }
+
     protected static function boot()
     {
         parent::boot();
@@ -253,5 +269,36 @@ class Order extends Model
     public function getResolvedSellerNetAmount(): float
     {
         return round((float) ($this->getAttribute('seller_net_amount') ?? 0), 2);
+    }
+
+    /**
+     * Get the resolved recipient name for logistics and shipping.
+     */
+    public function getResolvedRecipientName(): string
+    {
+        $name = trim((string) $this->shipping_recipient_name);
+        if ($name !== '') {
+            return $name;
+        }
+
+        $customer = trim((string) $this->customer_name);
+        if ($customer !== '') {
+            return $customer;
+        }
+
+        return trim((string) ($this->user?->name ?: ($this->user?->shop_name ?: '')));
+    }
+
+    /**
+     * Get the resolved recipient contact phone for logistics and shipping.
+     */
+    public function getResolvedContactPhone(): string
+    {
+        $phone = trim((string) $this->shipping_contact_phone);
+        if ($phone !== '') {
+            return $phone;
+        }
+
+        return trim((string) ($this->user?->phone ?: ($this->user?->phone_number ?: '')));
     }
 }

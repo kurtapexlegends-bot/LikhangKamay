@@ -72,6 +72,22 @@ class AddressGeocodingService
                 }
             }
 
+            // Defensive Fallback: If street/subdivision is unmapped or fictitious, resolve to Cavite municipality centroid
+            foreach ($seedQueries as $seedQuery) {
+                $cityKey = CaviteAddress::findCaviteCityInAddress($seedQuery);
+                if ($cityKey && isset(CaviteAddress::CITY_COORDINATES[$cityKey])) {
+                    $coords = CaviteAddress::CITY_COORDINATES[$cityKey];
+                    $canonical = CaviteAddress::resolveCanonicalCity($cityKey) ?? ucfirst($cityKey);
+                    return [
+                        'lat' => (string) $coords['lat'],
+                        'lng' => (string) $coords['lng'],
+                        'display_name' => "{$canonical}, Cavite, Philippines",
+                        'matched_query' => "{$canonical}, Cavite",
+                        'normalized_matched_query' => StructuredAddress::normalizeForComparison("{$canonical}, Cavite"),
+                    ];
+                }
+            }
+
             throw new \RuntimeException("Unable to locate the {$context} address for courier booking.");
         });
     }

@@ -10,7 +10,7 @@ import Modal from "@/Components/Modal";
  * - Single-click trigger to open full interactive GPS tracking map in a modal.
  * - Zero nested accordion clutter, zero text clipping.
  */
-export default function OrderCourierTracking({ order }) {
+export default function OrderCourierTracking({ order, role = "seller" }) {
     const isReplacementExchange = order?.delivery?.flow_type === "replacement_exchange";
 
     if (
@@ -85,7 +85,7 @@ export default function OrderCourierTracking({ order }) {
                         </div>
 
                         <div className="overflow-hidden rounded-xl border border-stone-200">
-                            <BuyerDeliveryTrackingMap order={order} delivery={order.delivery} role="seller" />
+                            <BuyerDeliveryTrackingMap order={order} delivery={order.delivery} role={role} />
                         </div>
                     </div>
                 </Modal>

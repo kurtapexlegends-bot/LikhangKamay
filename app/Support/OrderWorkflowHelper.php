@@ -453,11 +453,11 @@ class OrderWorkflowHelper
             $requirements[] = 'Buyer delivery address is too broad. Complete the street, barangay, city, and province.';
         }
 
-        if (blank($order->shipping_recipient_name)) {
+        if ($order->getResolvedRecipientName() === '') {
             $requirements[] = 'Buyer recipient name is missing.';
         }
 
-        if (blank($order->shipping_contact_phone)) {
+        if ($order->getResolvedContactPhone() === '') {
             $requirements[] = 'Buyer contact number is missing.';
         }
 
