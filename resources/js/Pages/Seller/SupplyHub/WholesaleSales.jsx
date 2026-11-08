@@ -1,11 +1,12 @@
 /* global route */
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
 import { Truck, Search, ShoppingCart, Boxes, X } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
+import useIsolatedHorizontalScroll from '@/hooks/useIsolatedHorizontalScroll';
 import DispatchOrderModal from '@/Components/Seller/Orders/DispatchOrderModal';
 import WholesaleOrderStatusModal from '@/Components/Seller/SupplyHub/WholesaleOrderStatusModal';
 import WholesaleInvoiceModal from '@/Components/Seller/SupplyHub/WholesaleInvoiceModal';
@@ -37,6 +38,11 @@ export default function WholesaleSales({
     const totalOpenInboundOrders = openOrdersCount !== undefined
         ? Number(openOrdersCount)
         : Number(activeOrdersCount || 0);
+
+    const subNavRef = useRef(null);
+    const statusPillsRef = useRef(null);
+    useIsolatedHorizontalScroll(subNavRef);
+    useIsolatedHorizontalScroll(statusPillsRef);
 
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [actionModal, setActionModal] = useState({ isOpen: false, order: null, nextStatus: '', trackingNumber: '', notes: '' });
@@ -167,12 +173,8 @@ export default function WholesaleSales({
                 {/* Top Sub-Navigation Pill Tabs & Cart Row */}
                 <div className="flex items-center justify-between gap-2 border-b border-stone-200/80 pb-2.5 sm:pb-3">
                     <div 
-                        className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1 touch-pan-x overscroll-x-contain"
-                        onWheel={(e) => {
-                            if (e.currentTarget.scrollWidth > e.currentTarget.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                                e.currentTarget.scrollLeft += e.deltaY;
-                            }
-                        }}
+                        ref={subNavRef}
+                        className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1 touch-pan-y overscroll-contain"
                     >
                         <div className="p-1 bg-stone-100/70 rounded-2xl inline-flex items-center gap-1">
                             <Link
@@ -252,12 +254,8 @@ export default function WholesaleSales({
                     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                         {/* Status Pills */}
                         <div 
-                            className="flex items-center gap-1 overflow-x-auto scrollbar-none p-1 bg-stone-100/70 rounded-2xl text-xs font-bold touch-pan-x overscroll-x-contain"
-                            onWheel={(e) => {
-                                if (e.currentTarget.scrollWidth > e.currentTarget.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                                    e.currentTarget.scrollLeft += e.deltaY;
-                                }
-                            }}
+                            ref={statusPillsRef}
+                            className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto scrollbar-none p-1 bg-stone-100/70 rounded-2xl text-xs font-bold touch-pan-y overscroll-contain"
                         >
                             {[
                                 { id: 'all', label: 'All Orders' },

@@ -1,5 +1,6 @@
 /* global route */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
+import useIsolatedHorizontalScroll from '@/hooks/useIsolatedHorizontalScroll';
 import { Head, Link, useForm } from '@inertiajs/react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
@@ -25,6 +26,9 @@ export default function MyListings({
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
     const [editingProduct, setEditingProduct] = useState(null);
+
+    const subNavRef = useRef(null);
+    useIsolatedHorizontalScroll(subNavRef);
 
     const totalOpenOrders = openOrdersCount !== undefined
         ? Number(openOrdersCount)
@@ -120,7 +124,10 @@ export default function MyListings({
             <div className="p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 pb-12">
                 {/* Studio Workspace Tab Navigation */}
                 <div className="flex items-center justify-between gap-2 border-b border-stone-200/80 pb-2.5 sm:pb-3">
-                    <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1">
+                    <div 
+                        ref={subNavRef}
+                        className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1 touch-pan-y overscroll-contain"
+                    >
                         <div className="p-1 bg-stone-100/70 rounded-2xl inline-flex items-center gap-1">
                             <Link
                                 href={route('seller.supply-hub.index')}

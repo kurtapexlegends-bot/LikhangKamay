@@ -1,5 +1,6 @@
 /* global route */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
+import useIsolatedHorizontalScroll from '@/hooks/useIsolatedHorizontalScroll';
 import { Head, Link, router } from '@inertiajs/react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
@@ -32,6 +33,9 @@ export default function Index({
 }) {
     const { addToast } = useToast() || { addToast: () => {} };
     const { openSidebar } = useSellerWorkspaceShell();
+
+    const subNavRef = useRef(null);
+    useIsolatedHorizontalScroll(subNavRef);
 
     const totalOpenOrders = openOrdersCount !== undefined
         ? Number(openOrdersCount)
@@ -145,7 +149,10 @@ export default function Index({
 
                 {/* Sub-Navigation Pill Tabs & Cart Row */}
                 <div className="flex items-center justify-between gap-2 border-b border-stone-200/80 pb-2.5 sm:pb-3">
-                    <div className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1">
+                    <div 
+                        ref={subNavRef}
+                        className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1 touch-pan-y overscroll-contain"
+                    >
                         <div className="p-1 bg-stone-100/70 rounded-2xl inline-flex items-center gap-1">
                             <Link
                                 href={route('seller.supply-hub.index')}

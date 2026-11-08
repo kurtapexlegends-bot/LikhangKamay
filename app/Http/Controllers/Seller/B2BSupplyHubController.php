@@ -240,8 +240,9 @@ class B2BSupplyHubController extends Controller
     ) {
         /** @var User|null $actor */
         $actor = Auth::user();
+        $seller = $actor?->getEffectiveSeller() ?? $actor;
 
-        if (!$actor || !$actor->isArtisan()) {
+        if (!$seller || !$seller->isArtisan()) {
             abort(403, 'Unauthorized.');
         }
 
@@ -252,7 +253,7 @@ class B2BSupplyHubController extends Controller
                     $q->where('order_number', (string) $id);
                 }
             })
-            ->where('artisan_id', $actor->id)
+            ->where('artisan_id', $seller->id)
             ->firstOrFail();
 
         $proofPath = null;

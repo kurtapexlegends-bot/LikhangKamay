@@ -15,6 +15,7 @@ import ShippingMethodSelector from '@/Components/Consumer/Shop/Checkout/Shipping
 import ShippingAddressSelector from '@/Components/Consumer/Shop/Checkout/ShippingAddressSelector/ShippingAddressSelector';
 import PaymentMethodSelector from '@/Components/Consumer/Shop/Checkout/PaymentMethodSelector';
 import FormErrorSummary from '@/Components/Common/FormErrorSummary';
+import useShippingQuote from '@/Components/Consumer/Shop/Checkout/hooks/useShippingQuote';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -27,13 +28,6 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
     const addresses = userAddresses.length > 0 ? userAddresses : (auth?.user?.addresses || []);
     const defaultAddress = addresses.find((addr) => addr.is_default) || addresses[0] || null;
     const convenienceFeeRate = pricing?.convenience_fee_rate ?? 0.04;
-
-    const [shippingQuote, setShippingQuote] = useState({
-        status: 'ready',
-        totalShippingFee: 0,
-        groups: {},
-        vehicles: {},
-    });
 
     const checkoutPayloadItems = useMemo(() => items.map(it => ({
         id: Number(it.id),
@@ -64,6 +58,28 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
             variant: it.variant || null,
         })),
         total: 0,
+    });
+
+    const activeShippingAddress = useMemo(() => {
+        return [
+            data.shipping_street_address,
+            data.shipping_barangay,
+            data.shipping_city,
+            data.shipping_region,
+            data.shipping_postal_code,
+        ].filter(Boolean).join(', ');
+    }, [
+        data.shipping_street_address,
+        data.shipping_barangay,
+        data.shipping_city,
+        data.shipping_region,
+        data.shipping_postal_code,
+    ]);
+
+    const { shippingQuote } = useShippingQuote({
+        data,
+        activeShippingAddress,
+        checkoutItems: items,
     });
 
     // Group items by seller studio
@@ -112,7 +128,8 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
     // Financial totals
     const merchandiseSubtotal = sellerGroups.reduce((sum, g) => sum + g.subtotal, 0);
     const platformFee = Number((merchandiseSubtotal * convenienceFeeRate).toFixed(2));
-    const grandTotal = Number((merchandiseSubtotal + platformFee).toFixed(2));
+    const shippingFee = Number(shippingQuote.totalShippingFee || 0);
+    const grandTotal = Number((merchandiseSubtotal + platformFee + shippingFee).toFixed(2));
 
     useEffect(() => {
         setData('items', checkoutPayloadItems);
@@ -287,6 +304,21 @@ export default function ProcurementCheckout({ auth, items = [], pricing, userAdd
                                     <span>Service Fee (4%):</span>
                                     <span className="font-bold text-stone-800">{formatCurrency(platformFee)}</span>
                                 </div>
+                                <div className="flex justify-between text-stone-500">
+                                    <span>Courier Shipping:</span>
+                                    <span className="font-bold text-stone-800">
+                                        {shippingQuote.status === 'loading' ? (
+                                            <span className="text-stone-400 font-normal">Calculating...</span>
+                                        ) : (
+                                            formatCurrency(shippingFee)
+                                        )}
+                                    </span>
+                                </div>
+                                {shippingQuote.errorMessage && (
+                                    <p className="text-[11px] text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                                        {shippingQuote.errorMessage}
+                                    </p>
+                                )}
                                 <div className="flex justify-between items-baseline pt-2 border-t border-stone-200">
                                     <span className="font-bold text-stone-900 text-sm">Total Due:</span>
                                     <span className="font-black text-clay-700 text-lg">{formatCurrency(grandTotal)}</span>

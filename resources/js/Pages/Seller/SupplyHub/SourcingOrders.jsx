@@ -1,5 +1,5 @@
 /* global route */
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
+import useIsolatedHorizontalScroll from '@/hooks/useIsolatedHorizontalScroll';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import CompactPagination from '@/Components/CompactPagination';
 import SourcingOrderFilterToolbar from './SourcingOrderFilterToolbar';
@@ -33,6 +34,9 @@ export default function SourcingOrders({
     const totalOpenOrders = openOrdersCount !== undefined
         ? Number(openOrdersCount)
         : (Number(activeOrdersCount || 0) + Number(deliveredOrdersCount || 0));
+
+    const subNavRef = useRef(null);
+    useIsolatedHorizontalScroll(subNavRef);
 
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, order: null });
@@ -164,12 +168,8 @@ export default function SourcingOrders({
                 {/* Top Sub-Navigation Pill Tabs & Cart Row */}
                 <div className="flex items-center justify-between gap-2 border-b border-stone-200/80 pb-2.5 sm:pb-3">
                     <div 
-                        className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1 touch-pan-x overscroll-x-contain"
-                        onWheel={(e) => {
-                            if (e.currentTarget.scrollWidth > e.currentTarget.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                                e.currentTarget.scrollLeft += e.deltaY;
-                            }
-                        }}
+                        ref={subNavRef}
+                        className="flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1 touch-pan-y overscroll-contain"
                     >
                         <div className="p-1 bg-stone-100/70 rounded-2xl inline-flex items-center gap-1">
                             <Link

@@ -96,6 +96,8 @@ Governed by [ProductPolicy.php](file:///c:/laragon/www/LikhangKamay/app/Policies
 *   **Catalog Segregation**: Products flagged as raw material wholesale supplies (`is_b2b_supply = true`) are segregated from consumer retail feeds.
 *   **Access Clearance**: Peer artisans with Supply Hub privileges (`canAccessSupplyHub()`) are authorized to inspect product detail pages (`/product/{id}`) and purchase inventory in bulk above the Minimum Order Quantity (MOQ).
 *   **Retail Protection**: Unauthenticated guests and standard consumer accounts attempting to visit wholesale raw material listings are issued an immediate `404 Not Found` response, ensuring B2B catalog isolation.
+*   **Wholesale Sales & Sourcing Management**: [B2BSupplyHubController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/B2BSupplyHubController.php) controls peer-to-peer raw material transactions. Sourcing orders (`/supply-hub/orders`) and wholesale sales (`/supply-hub/sales`) provide dedicated status pipelines (`pending`, `processing`, `shipped`, `delivered`, `completed`, `cancelled`).
+*   **Horizontal Scroll Hitbox Isolation**: Segmented status toolbars across Supply Hub and Seller workspaces utilize [`useIsolatedHorizontalScroll.js`](file:///c:/laragon/www/LikhangKamay/resources/js/hooks/useIsolatedHorizontalScroll.js) to intercept non-passive wheel events, enabling fluid horizontal navigation while preventing window/screen scrolling leaks.
 
 ---
 

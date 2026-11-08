@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Search, X } from 'lucide-react';
+import useIsolatedHorizontalScroll from '@/hooks/useIsolatedHorizontalScroll';
 
 export default function SourcingOrderFilterToolbar({
     activeTab = 'all',
@@ -13,6 +14,9 @@ export default function SourcingOrderFilterToolbar({
     onSearch,
     onClearSearch,
 }) {
+    const statusPillsRef = useRef(null);
+    useIsolatedHorizontalScroll(statusPillsRef);
+
     const filterTabs = [
         { id: 'all', label: 'All Orders' },
         { id: 'active', label: 'Active Shipments', count: activeOrdersCount },
@@ -26,12 +30,8 @@ export default function SourcingOrderFilterToolbar({
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                 {/* Status Pills */}
                 <div 
-                    className="flex items-center gap-1 overflow-x-auto scrollbar-none p-1 bg-stone-100/70 rounded-2xl text-xs font-bold touch-pan-x overscroll-x-contain"
-                    onWheel={(e) => {
-                        if (e.currentTarget.scrollWidth > e.currentTarget.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                            e.currentTarget.scrollLeft += e.deltaY;
-                        }
-                    }}
+                    ref={statusPillsRef}
+                    className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto scrollbar-none p-1 bg-stone-100/70 rounded-2xl text-xs font-bold touch-pan-y overscroll-contain"
                 >
                     {filterTabs.map((tab) => {
                         const isActive = activeTab === tab.id;
