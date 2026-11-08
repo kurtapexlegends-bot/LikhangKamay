@@ -100,6 +100,11 @@ Every Proof-of-Work report returned by `/e2e-browser` MUST include this explicit
 | **B2B Confirm Delivery**| `button:has-text("Confirm Delivery")` | Sourcing In Transit | Sourcing Delivered | `200 OK` | `ORD-B2B-WS-XXXX` | `path/to/b2b_delivered.png` |
 | **B2B Wholesale Invoice**| `/supply-hub/sales/{id}/invoice` | Wholesale Sales Card | Wholesale VAT Invoice Streamed | `200 OK` | `ORD-B2B-WS-XXXX` | `path/to/b2b_invoice.png` |
 | **Hitbox Scroll Isolation**| Wheel event over `[class*="overflow-x-auto"]` | Tab Track Hover | Status track scrolled horizontally, screen scroll = 0 | Local DOM | Intercepted & Isolated | `path/to/hitbox_isolation.png` |
+| **Wishlist Toggle & Remove** | `button[title="Save for Later"]` | Catalog Product Card | `/saved` DOM Verified $\rightarrow$ Removed | `200 OK` | Wishlist Toggle Synced | `path/to/wishlist_toggle.png` |
+| **Live Chat Inquiry Exchange** | `button[type="submit"]` | `/buyer/chat?user_id=X` | Inquiry Message Bubble Rendered | `200 OK` | Direct Message ID Minted | `path/to/chat_bubble.png` |
+| **Customer Review Lifecycle** | `button:has-text("Submit Review")` | `/my-orders` $\rightarrow$ `/reviews` | Buyer Review $\rightarrow$ Seller Reply $\rightarrow$ Purged | `200 OK` | Review ID Created & Cleaned | `path/to/review_lifecycle.png` |
+| **Staff Shift Teardown** | `button:has-text("Confirm Clock-Out")` | Attendance Dock | Shift Closed Cleanly (Zero Timesheet Spills) | `200 OK` | Shift Attendance Terminated | `path/to/shift_teardown.png` |
+| **Staff Seat Provisioning** | `button:has-text("Add Employee")` | `/people` | Apprentice Seat Created $\rightarrow$ Verified $\rightarrow$ Deleted | `200 OK` | Employee ID Minted & Purged | `path/to/staff_seat.png` |
 
 If any row in this table is skipped, contains `None`, or references an ID from a previous run, the entire suite is marked **FAIL (INCOMPLETE MUTATION)**.
 
