@@ -95,6 +95,11 @@ Every Proof-of-Work report returned by `/e2e-browser` MUST include this explicit
 | **Admin Taxonomy CRUD**| `button:has-text("Add Category")` | Categories Tree | Category Created $\rightarrow$ Deleted | `200 OK` | Category Created & Cleaned | `path/to/taxonomy_crud.png` |
 | **Admin Tier & Note**  | `/admin/users-manager/{id}` | Elite (`super_premium`) | Disciplinary Note Saved; Tier Mutated & Restored | `200 OK` | Tier Reverted to Elite | `path/to/admin_discipline.png` |
 | **Staff Pass Reversion**| `form#password-update` | Staff Password Form | Updated to Temp $\rightarrow$ Reverted to Default | `200 OK` | Reverted to Default Pass | `path/to/staff_password.png` |
+| **B2B Sourcing Order** | `button:has-text("Place B2B Order")` | Sourcing Cart / Checkout | Inbound Sourcing Orders View | `302` $\rightarrow$ `200 OK` | `ORD-B2B-WS-XXXX` (Fresh B2B Order) | `path/to/b2b_placed.png` |
+| **B2B Order Dispatch**  | `button:has-text("Mark Dispatched")` | `Needs Decision` / Accepted | In Production / Dispatched | `200 OK` | `ORD-B2B-WS-XXXX` | `path/to/b2b_dispatched.png` |
+| **B2B Confirm Delivery**| `button:has-text("Confirm Delivery")` | Sourcing In Transit | Sourcing Delivered | `200 OK` | `ORD-B2B-WS-XXXX` | `path/to/b2b_delivered.png` |
+| **B2B Wholesale Invoice**| `/supply-hub/sales/{id}/invoice` | Wholesale Sales Card | Wholesale VAT Invoice Streamed | `200 OK` | `ORD-B2B-WS-XXXX` | `path/to/b2b_invoice.png` |
+| **Hitbox Scroll Isolation**| Wheel event over `[class*="overflow-x-auto"]` | Tab Track Hover | Status track scrolled horizontally, screen scroll = 0 | Local DOM | Intercepted & Isolated | `path/to/hitbox_isolation.png` |
 
 If any row in this table is skipped, contains `None`, or references an ID from a previous run, the entire suite is marked **FAIL (INCOMPLETE MUTATION)**.
 
@@ -640,13 +645,23 @@ To test all 30+ workflows and 9 subsystem domains without redundant logins or co
    - Navigate to `/supply-hub/cart`. Verify volume pricing calculation: `5 × ₱45 = ₱225`.
    - Proceed to `/supply-hub/checkout`. Select Cavite workshop delivery address. Click `Place B2B Order`.
    - Assert redirect to `/supply-hub/orders` with B2B order number (`B2B-ORD-XXXXX`).
-6. **Wholesale Sales Order Management & Invoice (`/supply-hub/sales`):**
+6. **Wholesale Sales Order Management & Dispatch (`/supply-hub/sales`):**
    - Execute Section 3 Session Evacuation Protocol. Log back in as `test.artisan@likhangkamay.local`. Navigate to `/supply-hub/sales`.
-   - Locate `B2B-ORD-XXXXX`.
-   - Transition status to `Confirmed / Preparing Dispatch` (`POST /supply-hub/sales/{id}/status`).
+   - Locate `B2B-ORD-XXXXX` (or freshly placed B2B order).
+   - **Accordion Expansions:** Click `Pricing Details` and `Timeline` toggles; assert granular breakdowns mount smoothly without re-rendering or jumping.
+   - **Order Acceptance & Dispatch:** Click `Accept` $\rightarrow$ status updates to `Accepted`. Click `Mark Dispatched` (or open dispatch modal). Verify logistics pre-flight respects resolved recipient name and phone fallbacks.
    - Click `Download B2B Wholesale Invoice` (`GET /supply-hub/sales/{id}/invoice`).
    - Assert invoice PDF/HTML streams with wholesale VAT breakdown and Cavite addresses.
-7. **Session Evacuation:** Execute Section 3 Session Evacuation Protocol.
+7. **Buyer Artisan Inbound Delivery Confirmation (`/supply-hub/orders`):**
+   - Log back in as buyer artisan `artisan.silang@likhangkamay.com`. Navigate to `/supply-hub/orders`.
+   - Locate the dispatched order in `In Transit`.
+   - Click `Confirm Delivery` (`POST /supply-hub/orders/{id}/confirm-delivery`).
+   - Assert order transitions to `Delivered (Awaiting Confirmation)` or `Completed`, inventory stocks increment automatically, and studio supplies reflect newly received raw materials.
+8. **Horizontal Scroll Hitbox Isolation Verification:**
+   - On `/supply-hub/sales` and `/supply-hub/orders`, hover over the horizontal status filter pills track (`All Orders`, `Needs Decision`, `In Production / Packing`, `In Transit`, `Delivered`, etc.).
+   - Dispatch wheel events over the container.
+   - Assert that the container scrolls horizontally (`scrollLeft` changes) while `window.scrollY` remains strictly unchanged (`0`), confirming complete hitbox isolation and zero simultaneous page scroll leakage.
+9. **Session Evacuation:** Execute Section 3 Session Evacuation Protocol.
 
 ---
 

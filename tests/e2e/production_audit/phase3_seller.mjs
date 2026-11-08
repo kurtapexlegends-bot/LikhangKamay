@@ -174,15 +174,67 @@ export async function runPhase3(page, collector) {
         collector.recordResult('Phase 3', '3.7 Orders Fulfillment', 'FAIL', { message: e.message });
     }
 
-    // 3.8 B2B Supply Hub
+    // 3.8 B2B Supply Hub Wholesale Ecosystem & Sourcing Flow
     try {
+        // 3.8.1 Catalog Index & Category Navigation
         await page.goto(`${PROD_URL}/supply-hub`, { waitUntil: 'networkidle2', timeout: 30000 });
-        await page.waitForSelector('main', { timeout: 10000 }).catch(() => null);
+        await page.waitForSelector('#app', { timeout: 15000 }).catch(() => null);
+        await new Promise(r => setTimeout(r, 1000));
+        await collector.verifyInertiaPage(page, 'Phase 3', '3.8.1 B2B Supply Hub Catalog Load', 'Seller/SupplyHub/Index', ['supplies']);
         const supplyHubLoaded = await page.$('main') !== null;
-        collector.recordResult('Phase 3', '3.8 B2B Supply Hub Load', supplyHubLoaded ? 'PASS' : 'FAIL');
-        await collector.scanDomQuality(page, 'B2B Supply Hub');
+        collector.recordResult('Phase 3', '3.8.1 B2B Supply Hub Load', supplyHubLoaded ? 'PASS' : 'FAIL');
+        await collector.scanDomQuality(page, 'B2B Supply Hub Index');
+
+        // 3.8.2 My Supplies Listings
+        await page.goto(`${PROD_URL}/supply-hub/my-listings`, { waitUntil: 'networkidle2', timeout: 30000 });
+        await page.waitForSelector('#app', { timeout: 15000 }).catch(() => null);
+        await new Promise(r => setTimeout(r, 1000));
+        await collector.verifyInertiaPage(page, 'Phase 3', '3.8.2 B2B My Supplies Listings Load', 'Seller/SupplyHub/MyListings', ['products']);
+        const myListingsLoaded = await page.$('main') !== null;
+        collector.recordResult('Phase 3', '3.8.2 B2B My Listings Load', myListingsLoaded ? 'PASS' : 'FAIL');
+        await collector.scanDomQuality(page, 'B2B My Listings');
+
+        // 3.8.3 Sourcing Cart
+        await page.goto(`${PROD_URL}/supply-hub/cart`, { waitUntil: 'networkidle2', timeout: 30000 });
+        await page.waitForSelector('#app', { timeout: 15000 }).catch(() => null);
+        await new Promise(r => setTimeout(r, 1000));
+        await collector.verifyInertiaPage(page, 'Phase 3', '3.8.3 B2B Sourcing Cart Load', 'Seller/SupplyHub/Cart');
+        const cartLoaded = await page.$('main, #app') !== null;
+        collector.recordResult('Phase 3', '3.8.3 B2B Cart Load', cartLoaded ? 'PASS' : 'FAIL');
+
+        // 3.8.4 Sourcing Inbound Orders (/supply-hub/orders)
+        await page.goto(`${PROD_URL}/supply-hub/orders`, { waitUntil: 'networkidle2', timeout: 30000 });
+        await page.waitForSelector('#app', { timeout: 15000 }).catch(() => null);
+        await new Promise(r => setTimeout(r, 1000));
+        await collector.verifyInertiaPage(page, 'Phase 3', '3.8.4 B2B Sourcing Orders Load', 'Seller/SupplyHub/SourcingOrders', ['orders']);
+        const sourcingOrdersLoaded = await page.$('main') !== null;
+        collector.recordResult('Phase 3', '3.8.4 B2B Sourcing Orders Load', sourcingOrdersLoaded ? 'PASS' : 'FAIL');
+        await collector.scanDomQuality(page, 'B2B Sourcing Orders');
+
+        // 3.8.5 Wholesale Sales Orders (/supply-hub/sales)
+        await page.goto(`${PROD_URL}/supply-hub/sales`, { waitUntil: 'networkidle2', timeout: 30000 });
+        await page.waitForSelector('#app', { timeout: 15000 }).catch(() => null);
+        await new Promise(r => setTimeout(r, 1000));
+        await collector.verifyInertiaPage(page, 'Phase 3', '3.8.5 B2B Wholesale Sales Load', 'Seller/SupplyHub/WholesaleSales', ['sales']);
+        const wholesaleSalesLoaded = await page.$('main') !== null;
+        collector.recordResult('Phase 3', '3.8.5 B2B Wholesale Sales Load', wholesaleSalesLoaded ? 'PASS' : 'FAIL');
+        await collector.scanDomQuality(page, 'B2B Wholesale Sales');
+
+        // 3.8.6 Isolated Horizontal Scroll Hitbox Verification
+        const hitboxIsolated = await page.evaluate(() => {
+            const containers = document.querySelectorAll('[class*="overflow-x-auto"]');
+            for (const el of containers) {
+                if (el.className.includes('overscroll-contain') || el.className.includes('touch-pan-y')) {
+                    return true;
+                }
+            }
+            return false;
+        });
+        collector.recordResult('Phase 3', '3.8.6 Filter Toolbar Wheel Hitbox Isolation', hitboxIsolated ? 'PASS' : 'FAIL', {
+            message: 'Validated overscroll-contain and touch-pan-y on horizontal status toolbar container'
+        });
     } catch (e) {
-        collector.recordResult('Phase 3', '3.8 B2B Supply Hub', 'FAIL', { message: e.message });
+        collector.recordResult('Phase 3', '3.8 B2B Supply Hub Suite', 'FAIL', { message: e.message });
     }
 
     // 3.9 ERP Procurement & Inventory

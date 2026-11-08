@@ -28,9 +28,11 @@ Scan all asynchronous operations, API hooks, and form controllers across the sys
 2. **Missing Validation Feedback & Early Server Aborts:**
    - Scan Form Requests and Controller actions for raw `abort(500)` or unhandled exceptions that bypass structured JSON validation.
    - Verify that client-side forms receive and display field-level validation errors rather than generic, silent failures.
-3. **External Service Resilience:**
+3. **External Service Resilience & Logistics Pre-Flights:**
    - Scan third-party integrations (PayMongo, Lalamove, Nominatim, Resend) across orders, payments, logistics, and notifications.
    - Verify all external HTTP calls enforce strict timeouts (3–5s) and provide safe fallback responses instead of causing unhandled 500 server crashes.
+   - Verify logistics booking services (`OrderLogisticsService.php`, `OrderWorkflowHelper.php`) execute defensive pre-flight validation with fallback resolution (`Order::getResolvedRecipientName()`, `Order::getResolvedContactPhone()`), preventing courier dispatch crashes on legacy orders or missing address book fields.
+   - Verify geocoding services (`AddressGeocodingService.php`) provide municipality centroid fallbacks (`CaviteAddress::findCaviteCityInAddress()`) for unindexed Cavite subdivisions, ensuring courier quotations and route previews never fail on missing OSM nodes.
 4. **Client-Side Aggregate 4.5MB Payload Shield & Image Compression:**
    - Scan every `<input type="file">` and multi-file form (disputes, returns, product media, legal docs).
    - Verify forms calculate cumulative byte size across all attached raw `File` instances (<4MB total aggregate) before invoking Inertia `post()` to prevent edge gateway HTTP 413 drops that crash silently without Inertia error handling.
