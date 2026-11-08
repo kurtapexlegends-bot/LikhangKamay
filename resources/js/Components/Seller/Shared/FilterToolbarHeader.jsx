@@ -64,10 +64,15 @@ export default function FilterToolbarHeader({
         checkScrollBounds();
         el.addEventListener("scroll", checkScrollBounds, { passive: true });
 
-        // Wheel to horizontal scroll
+        // Wheel to horizontal scroll with isolated hitbox (prevents simultaneous screen scrolling)
         const handleWheel = (e) => {
-            if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+            if (el.scrollWidth > el.clientWidth) {
+                if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+                    e.stopPropagation();
+                    return;
+                }
                 e.preventDefault();
+                e.stopPropagation();
                 el.scrollLeft += e.deltaY;
             }
         };
@@ -158,7 +163,7 @@ export default function FilterToolbarHeader({
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
                             onMouseLeave={handleMouseUp}
-                            className="flex-1 min-w-0 overflow-x-auto no-scrollbar scrollbar-hide py-1 -my-1 overscroll-x-contain touch-pan-x select-none"
+                            className="flex-1 min-w-0 overflow-x-auto no-scrollbar scrollbar-hide py-1 -my-1 overscroll-contain touch-pan-y select-none"
                         >
                             <div className="h-[38px] p-1 bg-stone-100/80 rounded-xl inline-flex items-center gap-1 shrink-0 snap-x border border-stone-200/60 box-border">
                                 {tabs.map((tab) => {

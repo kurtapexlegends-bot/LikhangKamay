@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useToast } from '@/Components/ToastContext';
+import useIsolatedHorizontalScroll from '@/hooks/useIsolatedHorizontalScroll';
 import DisputeInspectorContent from '@/Components/Admin/Disputes/DisputeInspectorContent';
 import DisputeLightboxModal from '@/Components/Admin/Disputes/DisputeLightboxModal';
 import ArbitrationConfirmModal from '@/Components/Admin/Disputes/ArbitrationConfirmModal';
@@ -25,6 +26,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
     const pillsScrollRef = useRef(null);
+    useIsolatedHorizontalScroll(pillsScrollRef);
 
     // Deep-linking from Global Search or Direct Links
     useEffect(() => {
@@ -296,7 +298,7 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                             {/* Filter Pills with Badge Numbers */}
                             <div 
                                 ref={pillsScrollRef}
-                                className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pt-0.5 scroll-smooth touch-pan-x overscroll-contain"
+                                className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pt-0.5 scroll-smooth touch-pan-y overscroll-contain"
                             >
                                 {[
                                     { key: 'all', label: 'All', count: categoryCounts.all },

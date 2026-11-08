@@ -1,5 +1,6 @@
 /* global route */
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import useIsolatedHorizontalScroll from '@/hooks/useIsolatedHorizontalScroll';
 import { router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { ShieldAlert, Loader2, CheckCircle2, Check, X, Search, Package, User, MessageSquare, Star, Clock, AlertTriangle, ShieldCheck } from 'lucide-react';
@@ -18,21 +19,7 @@ export default function ReportedItemsInbox({
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState(defaultFilter);
     const pillsScrollRef = useRef(null);
-
-    useEffect(() => {
-        const el = pillsScrollRef.current;
-        if (!el) return;
-
-        const handleWheel = (e) => {
-            if (e.deltaY !== 0) {
-                e.preventDefault();
-                el.scrollLeft += e.deltaY;
-            }
-        };
-
-        el.addEventListener('wheel', handleWheel, { passive: false });
-        return () => el.removeEventListener('wheel', handleWheel);
-    }, []);
+    useIsolatedHorizontalScroll(pillsScrollRef);
 
     const categoryCounts = useMemo(() => {
         let active = 0;
@@ -176,7 +163,7 @@ export default function ReportedItemsInbox({
                 {/* Filter Pills with Badge Numbers */}
                 <div 
                     ref={pillsScrollRef}
-                    className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pt-0.5 scroll-smooth touch-pan-x overscroll-contain"
+                    className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pt-0.5 scroll-smooth touch-pan-y overscroll-contain"
                 >
                     {[
                         { key: 'all', label: 'All', count: categoryCounts.all },
