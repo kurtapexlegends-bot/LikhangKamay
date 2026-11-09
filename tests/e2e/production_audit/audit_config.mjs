@@ -4,18 +4,7 @@ import puppeteer from 'puppeteer-core';
 
 function resolveBaseUrl() {
     if (process.env.TARGET_URL) return process.env.TARGET_URL.trim();
-    if (process.env.APP_URL) return process.env.APP_URL.trim();
-    try {
-        const envPath = path.resolve('.env');
-        if (fs.existsSync(envPath)) {
-            const envContent = fs.readFileSync(envPath, 'utf8');
-            const match = envContent.match(/^APP_URL=(.+)$/m);
-            if (match && match[1]) {
-                const parsed = match[1].trim().replace(/^['"]|['"]$/g, '');
-                if (parsed) return parsed;
-            }
-        }
-    } catch {}
+    if (process.env.PROD_URL) return process.env.PROD_URL.trim();
     return 'https://www.likhangkamay.app';
 }
 
