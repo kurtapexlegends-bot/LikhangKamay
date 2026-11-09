@@ -1,0 +1,45 @@
+{
+  "manifest_version": "5.0.0-PROD-B2B-POW",
+  "run_id": "pow-b2b-c32fbb59-5e6c-47ef-b07b-c61c0e9c9433",
+  "timestamp": "2026-11-09T04:54:46.598Z",
+  "host": "https://www.likhangkamay.app",
+  "protocol": "Layer 5 Proof-of-Work Multi-Artisan B2B Supply Hub Relay",
+  "actors": {
+    "buyer_artisan": {
+      "email": "artisan.silang@likhangkamay.com",
+      "role": "artisan",
+      "shop": "Silang Terracotta Works",
+      "is_test": true,
+      "address": "Bypass Road, Brgy. San Vicente 2, Silang, Cavite 4118"
+    },
+    "seller_artisan": {
+      "email": "test.artisan@likhangkamay.local",
+      "role": "artisan",
+      "shop": "Cavite Test Craft Workshop",
+      "is_test": true
+    }
+  },
+  "transaction": {
+    "order_id": "ORD-6AF151E446467",
+    "order_number": "ORD-6AF151E446467",
+    "material_sku": "B2B-CLAY-62",
+    "material_name": "Silang Red Mountain Terracotta Clay (25kg Sack)",
+    "is_b2b_supply": true,
+    "is_test_flag": true,
+    "raw_material_stock_audit": {
+      "stock_before": 8,
+      "stock_after": 12,
+      "delta": 4,
+      "stock_increment_verified": true
+    }
+  },
+  "final_state": {
+    "order_status": "Completed",
+    "restock_synced": true,
+    "b2b_commercial_invoice": {
+      "url": "https://www.likhangkamay.app/supply-hub/orders/ORD-6AF151E446467/invoice",
+      "sha256_hash": "41ec55dd214d53b297d3be8a7feb3a410ceb6fc4a6383c2485af51318604dd8f"
+    }
+  },
+  "proof_of_work_signature": "36ab3dabe4375b49c301aa263f78ddaf3f0bbc5925e827a17b5cc92b8e84edd0"
+}

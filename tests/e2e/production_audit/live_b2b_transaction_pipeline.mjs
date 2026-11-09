@@ -273,7 +273,14 @@ export async function runLiveB2BTransactionPipeline() {
 
         const clickModalButton = async (page, btnText) => {
             return await page.evaluate((text) => {
-                const buttons = Array.from(document.querySelectorAll('button'));
+                const modalContainers = Array.from(document.querySelectorAll('div[role="dialog"], div[aria-modal="true"], div.fixed.inset-0'));
+                let buttons = [];
+                for (const modal of modalContainers) {
+                    buttons.push(...Array.from(modal.querySelectorAll('button')));
+                }
+                if (buttons.length === 0) {
+                    buttons = Array.from(document.querySelectorAll('button'));
+                }
                 const btn = buttons.find(b => (b.innerText || '').trim().includes(text) && !b.disabled);
                 if (btn) {
                     btn.click();
@@ -419,7 +426,7 @@ export async function runLiveB2BTransactionPipeline() {
         let buyerConfirmViaDOM = false;
         if (buyerConfirmClicked) {
             await new Promise(r => setTimeout(r, 800));
-            buyerConfirmViaDOM = await clickModalButton(buyerVerifyPage, 'Confirm');
+            buyerConfirmViaDOM = await clickModalButton(buyerVerifyPage, 'Confirm & Restock Studio');
             
             // Wait for Inertia request to settle and status to transition to Completed
             try {
