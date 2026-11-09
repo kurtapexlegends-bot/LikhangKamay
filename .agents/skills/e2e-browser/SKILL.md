@@ -19,7 +19,7 @@ description: >-
   - Common Password: `LikhangKamayTest2026!`
 
 ### B. Strict Production Exclusions & Guardrails (Permanent Bans)
-1. **NO Real Webcam Facial Recognition:** Do NOT force hardware camera access; strictly use PIN `0000` or the `"Use Email Code"` fallback rendered by [`LivenessFaceScanner.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Staff/Dashboard/LivenessFaceScanner.jsx#L571-L587).
+1. **NO Real Webcam Facial Recognition:** Do NOT force hardware camera access; strictly use PIN `0000` or the `"Use Email Code"` fallback rendered by [`LivenessFaceScanner.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Staff/Dashboard/LivenessFaceScanner.jsx#L571-L587). Test personas (`@likhangkamay.local` or `is_test = true`) deterministically verify attendance with Email Security Code `000000`, and `allow_remote_clock_in` bypasses physical workshop geofence limits.
 2. **NO Global Admin Settings Manipulation:** Do NOT touch `/admin/settings` (do NOT alter platform fee rates, commission toggles, or platform maintenance mode switches).
 3. **NO Social OAuth Redirects:** Do NOT test Google or Facebook OAuth login redirects.
 4. **NO Multi-Tab Concurrency / Race Condition Tests:** Do NOT simulate multi-user simultaneous last-unit purchases in browser tabs.

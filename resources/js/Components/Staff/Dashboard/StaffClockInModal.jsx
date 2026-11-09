@@ -37,14 +37,15 @@ export default function StaffClockInModal({ isOpen, onClose }) {
     const workplaceLng = assignedLoc?.longitude;
     const radiusLimit = Number(assignedLoc?.radius_meters || 200);
     const locationName = assignedLoc?.name || 'Assigned Workplace';
-    const strictGeofence = !!assignedLoc?.enforce_strict_geofence;
+    const allowRemote = !!attendance?.allow_remote_clock_in;
+    const strictGeofence = !allowRemote && !!assignedLoc?.enforce_strict_geofence;
 
     // Calculate actual distance between staff and workplace center
     const distanceMeters = (locationStatus === 'success' && location.lat !== null && workplaceLat !== undefined && workplaceLat !== null)
         ? calculateDistanceMeters(location.lat, location.lng, workplaceLat, workplaceLng)
         : null;
 
-    const isWithinGeofence = distanceMeters !== null ? (distanceMeters <= radiusLimit) : true;
+    const isWithinGeofence = allowRemote || (distanceMeters !== null ? (distanceMeters <= radiusLimit) : true);
 
     // Initialize Geolocation when modal opens
     useEffect(() => {

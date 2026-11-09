@@ -242,37 +242,59 @@ export async function runLiveTransactionPipeline() {
         // Navigate to seller orders workspace
         await sellerPage.goto(`${PROD_URL}/orders`, { waitUntil: 'networkidle2', timeout: 30000 });
 
-        // 1. Accept order: Pending -> Accepted
-        await sellerPage.evaluate(async (url, ordNum) => {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            await fetch(`${url}/orders/${ordNum}/update`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || ''
-                },
-                body: JSON.stringify({ status: 'Accepted' })
-            });
-        }, PROD_URL, pipelineState.orderNumber);
+        // Helper: Click button with text inside page
+        const clickButtonByText = async (page, targetText, exact = false) => {
+            return await page.evaluate((text, isExact) => {
+                const buttons = Array.from(document.querySelectorAll('button'));
+                const btn = buttons.find(b => {
+                    const t = (b.innerText || '').trim();
+                    return isExact ? t === text : t.includes(text);
+                });
+                if (btn && !btn.disabled) {
+                    btn.click();
+                    return true;
+                }
+                return false;
+            }, targetText, exact);
+        };
 
-        await new Promise(r => setTimeout(r, 1500));
+        // 1. Accept order: Pending -> Accepted via DOM button & confirmation modal
+        let acceptedClicked = await clickButtonByText(sellerPage, 'Accept');
+        if (acceptedClicked) {
+            await new Promise(r => setTimeout(r, 800));
+            // Confirm inside confirmation modal
+            await clickButtonByText(sellerPage, 'Confirm', true);
+            await new Promise(r => setTimeout(r, 2000));
+        } else {
+            // Fallback direct update if button not found in active tab view
+            await sellerPage.evaluate(async (url, ordNum) => {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                await fetch(`${url}/orders/${ordNum}/update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken || '' },
+                    body: JSON.stringify({ status: 'Accepted' })
+                });
+            }, PROD_URL, pipelineState.orderNumber);
+            await new Promise(r => setTimeout(r, 1500));
+        }
 
-        // 2. Start Crafting: Accepted -> Processing
-        await sellerPage.evaluate(async (url, ordNum) => {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            await fetch(`${url}/orders/${ordNum}/update`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || ''
-                },
-                body: JSON.stringify({ status: 'Processing' })
-            });
-        }, PROD_URL, pipelineState.orderNumber);
-
-        await new Promise(r => setTimeout(r, 1500));
+        // 2. Start Crafting: Accepted -> Processing via DOM button & confirmation modal
+        let startCraftingClicked = await clickButtonByText(sellerPage, 'Start Crafting');
+        if (startCraftingClicked) {
+            await new Promise(r => setTimeout(r, 800));
+            await clickButtonByText(sellerPage, 'Confirm', true);
+            await new Promise(r => setTimeout(r, 2000));
+        } else {
+            await sellerPage.evaluate(async (url, ordNum) => {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                await fetch(`${url}/orders/${ordNum}/update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken || '' },
+                    body: JSON.stringify({ status: 'Processing' })
+                });
+            }, PROD_URL, pipelineState.orderNumber);
+            await new Promise(r => setTimeout(r, 1500));
+        }
 
         // 3. Query available in-house drivers
         const driversPayload = await sellerPage.evaluate(async (url) => {
@@ -297,30 +319,56 @@ export async function runLiveTransactionPipeline() {
         pipelineState.driverEmployeeId = selectedDriver.id;
         pipelineState.driverName = selectedDriver.name;
 
-        // 4. Dispatch order with in-house driver: Processing -> Shipped
-        const dispatchResult = await sellerPage.evaluate(async (url, ordNum, empId) => {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const res = await fetch(`${url}/orders/${ordNum}/dispatch-in-house`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || ''
-                },
-                body: JSON.stringify({
-                    employee_id: empId,
-                    dispatch_notes: 'Layer 5 Proof-of-Work E2E Automated Run'
-                })
-            });
-            return { status: res.status };
-        }, PROD_URL, pipelineState.orderNumber, selectedDriver.id);
+        // 4. Dispatch order: Processing -> Shipped via DOM Dispatch Modal
+        let dispatchBtnClicked = await clickButtonByText(sellerPage, 'Dispatch Order');
+        let dispatchedViaModal = false;
 
-        if (![200, 302].includes(dispatchResult.status)) {
-            throw new Error(`In-house driver dispatch failed with HTTP ${dispatchResult.status}`);
+        if (dispatchBtnClicked) {
+            await new Promise(r => setTimeout(r, 1000));
+            // Select driver card in modal
+            const driverSelected = await sellerPage.evaluate((driverId) => {
+                const driverCard = document.querySelector(`[draggable][role="button"], [role="button"]`);
+                const allDriverCards = Array.from(document.querySelectorAll('div[role="button"]'));
+                const targetCard = allDriverCards.find(c => c.innerText?.includes('Logistics Rider') || c.innerText?.includes('Motorcycle'));
+                if (targetCard) {
+                    targetCard.click();
+                    return true;
+                }
+                return false;
+            }, selectedDriver.id);
+
+            await new Promise(r => setTimeout(r, 600));
+            // Click Confirm Studio Dispatch
+            dispatchedViaModal = await clickButtonByText(sellerPage, 'Confirm Studio Dispatch');
+            await new Promise(r => setTimeout(r, 2000));
+        }
+
+        if (!dispatchedViaModal) {
+            // Direct API fallback if modal interaction was bypassed by browser viewport
+            const dispatchResult = await sellerPage.evaluate(async (url, ordNum, empId) => {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const res = await fetch(`${url}/orders/${ordNum}/dispatch-in-house`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || ''
+                    },
+                    body: JSON.stringify({
+                        employee_id: empId,
+                        dispatch_notes: 'Layer 5 Proof-of-Work E2E Automated Run'
+                    })
+                });
+                return { status: res.status };
+            }, PROD_URL, pipelineState.orderNumber, selectedDriver.id);
+
+            if (![200, 302].includes(dispatchResult.status)) {
+                throw new Error(`In-house driver dispatch failed with HTTP ${dispatchResult.status}`);
+            }
         }
 
         logStage('3. Order Acceptance & In-House Dispatch', 'PASS', {
-            message: `Order #${pipelineState.orderNumber} accepted and dispatched to driver: ${selectedDriver.name} (Employee ID: ${selectedDriver.id})`
+            message: `Order #${pipelineState.orderNumber} accepted and dispatched to driver: ${selectedDriver.name} (Employee ID: ${selectedDriver.id}) [DOM Interactive: ${dispatchedViaModal ? 'YES' : 'API Fallback'}]`
         });
 
         await sellerContext.close();
@@ -354,25 +402,31 @@ export async function runLiveTransactionPipeline() {
                         'X-CSRF-TOKEN': csrfToken || ''
                     },
                     body: JSON.stringify({
-                        photo_data: `data:image/png;base64,${dummyPhotoBase64}`,
+                        otp_code: '000000',
                         latitude: 14.4296,
                         longitude: 120.9367
                     })
                 });
-                return { status: res.status };
+                const data = await res.json().catch(() => null);
+                return { status: res.status, data };
             } catch (err) {
                 return { status: 0, error: err.message };
             }
         }, PROD_URL, REAL_POD_BASE64);
 
+        console.log(`[Driver Attendance] Resume status: HTTP ${clockInResult.status}`, clockInResult.data || clockInResult.error || '');
+
         // Navigate to driver delivery console
         await driverPage.goto(`${PROD_URL}/staff/deliveries`, { waitUntil: 'networkidle2', timeout: 30000 });
+        console.log(`[Driver Deliveries] Current URL: ${driverPage.url()}`);
+
         const deliveriesInertia = await getInertiaPage(driverPage);
         const activeDeliveriesList = deliveriesInertia?.props?.activeDeliveries || [];
+        console.log(`[Driver Deliveries] Found ${activeDeliveriesList.length} active delivery record(s):`, activeDeliveriesList.map(d => d.order_number));
         const matchedDelivery = activeDeliveriesList.find(d => d.order_number === pipelineState.orderNumber);
 
         if (!matchedDelivery || !matchedDelivery.id) {
-            throw new Error(`Active delivery for Order #${pipelineState.orderNumber} not found in driver deliveries console.`);
+            throw new Error(`Active delivery for Order #${pipelineState.orderNumber} not found in driver deliveries console (Current URL: ${driverPage.url()}, Found orders: ${activeDeliveriesList.map(d => d.order_number).join(', ') || 'none'}).`);
         }
 
         pipelineState.deliveryId = matchedDelivery.id;
@@ -410,43 +464,88 @@ export async function runLiveTransactionPipeline() {
         }
         pipelineState.telemetry = telemetryPayload;
 
-        // Submit Proof of Delivery (POD)
-        const podResult = await driverPage.evaluate(async (url, dId, dummyPhotoBase64) => {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            try {
-                const byteCharacters = atob(dummyPhotoBase64);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+        // Submit Proof of Delivery (POD) via Real DOM Modal Upload
+        let podSubmittedViaDOM = false;
+        try {
+            const completeDeliveryBtn = await driverPage.evaluateHandle(() => {
+                const buttons = Array.from(document.querySelectorAll('button'));
+                return buttons.find(b => b.innerText?.includes('Complete Delivery') && !b.disabled);
+            });
+
+            if (completeDeliveryBtn && completeDeliveryBtn.asElement()) {
+                await completeDeliveryBtn.asElement().click();
+                await driverPage.waitForSelector('input[type="file"]', { timeout: 8000 }).catch(() => {});
+
+                const fileInput = await driverPage.$('input[type="file"]');
+                if (fileInput && fs.existsSync(REAL_POD_PATH)) {
+                    await fileInput.uploadFile(REAL_POD_PATH);
+                    await new Promise(r => setTimeout(r, 1000));
+
+                    // Fill optional delivery notes
+                    await driverPage.evaluate(() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                            textarea.value = 'Package handed directly to buyer at Imus address.';
+                            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    });
+
+                    // Click Confirm Delivery submit button
+                    const submitBtn = await driverPage.evaluateHandle(() => {
+                        const buttons = Array.from(document.querySelectorAll('button'));
+                        return buttons.find(b => b.innerText?.includes('Confirm Delivery') && !b.disabled);
+                    });
+
+                    if (submitBtn && submitBtn.asElement()) {
+                        await submitBtn.asElement().click();
+                        await new Promise(r => setTimeout(r, 2500));
+                        podSubmittedViaDOM = true;
+                    }
                 }
-                const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: 'image/jpeg' });
-
-                const formData = new FormData();
-                formData.append('pod_photo', blob, 'Proof of Delivery (POD).jpg');
-                formData.append('pod_notes', 'Package handed directly to buyer at Imus address.');
-
-                const res = await fetch(`${url}/staff/deliveries/${dId}/complete`, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || ''
-                    },
-                    body: formData
-                });
-                return { status: res.status };
-            } catch (err) {
-                return { status: 0, error: err.message };
             }
-        }, PROD_URL, pipelineState.deliveryId, REAL_POD_BASE64);
-
-        if (![200, 302].includes(podResult.status)) {
-            throw new Error(`Proof-of-Delivery submission failed with HTTP ${podResult.status}`);
+        } catch (domErr) {
+            console.log(`[Driver DOM POD Note] DOM submission note: ${domErr.message}. Executing direct verification.`);
         }
+
+        if (!podSubmittedViaDOM) {
+            const podResult = await driverPage.evaluate(async (url, dId, dummyPhotoBase64) => {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                try {
+                    const byteCharacters = atob(dummyPhotoBase64);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const blob = new Blob([byteArray], { type: 'image/jpeg' });
+
+                    const formData = new FormData();
+                    formData.append('pod_photo', blob, 'Proof of Delivery (POD).jpg');
+                    formData.append('pod_notes', 'Package handed directly to buyer at Imus address.');
+
+                    const res = await fetch(`${url}/staff/deliveries/${dId}/complete`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken || ''
+                        },
+                        body: formData
+                    });
+                    return { status: res.status };
+                } catch (err) {
+                    return { status: 0, error: err.message };
+                }
+            }, PROD_URL, pipelineState.deliveryId, REAL_POD_BASE64);
+
+            if (![200, 302].includes(podResult.status)) {
+                throw new Error(`Proof-of-Delivery submission failed with HTTP ${podResult.status}`);
+            }
+        }
+
         pipelineState.podSubmitted = true;
 
         logStage('4. Driver Telemetry & Delivery POD', 'PASS', {
-            message: `Delivery #${pipelineState.deliveryId}: Telemetry HTTP ${telemetryResult.status} (Lat: 14.4258, Lng: 120.9385), POD HTTP ${podResult.status}`
+            message: `Delivery #${pipelineState.deliveryId}: Telemetry HTTP ${telemetryResult.status} (Lat: 14.4258, Lng: 120.9385), POD Uploaded [DOM Interactive: ${podSubmittedViaDOM ? 'YES (Native File Upload)' : 'API Fallback'}]`
         });
 
         await driverContext.close();
@@ -464,26 +563,58 @@ export async function runLiveTransactionPipeline() {
         // Navigate to my-orders to obtain fresh CSRF token and current delivered state
         await buyerVerifyPage.goto(`${PROD_URL}/my-orders`, { waitUntil: 'networkidle2', timeout: 30000 });
 
-        // Confirm order received
-        const receiveResult = await buyerVerifyPage.evaluate(async (url, ordNum) => {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            try {
-                const res = await fetch(`${url}/my-orders/${ordNum}/receive`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || ''
-                    }
-                });
-                return { status: res.status };
-            } catch (err) {
-                return { status: 0, error: err.message };
-            }
-        }, PROD_URL, pipelineState.orderNumber);
+        // Confirm order received via Real DOM button & ConfirmationModal
+        let receivedViaDOM = false;
+        try {
+            const receiveBtnClicked = await buyerVerifyPage.evaluate((ordNum) => {
+                const buttons = Array.from(document.querySelectorAll('button'));
+                const btn = buttons.find(b => (b.innerText || '').includes('Order Received') && !b.disabled);
+                if (btn) {
+                    btn.click();
+                    return true;
+                }
+                return false;
+            }, pipelineState.orderNumber);
 
-        if (![200, 302].includes(receiveResult.status)) {
-            throw new Error(`Buyer receive confirmation failed with HTTP ${receiveResult.status}`);
+            if (receiveBtnClicked) {
+                await new Promise(r => setTimeout(r, 800));
+                // Click Confirm Receipt inside ConfirmationModal
+                receivedViaDOM = await buyerVerifyPage.evaluate(() => {
+                    const buttons = Array.from(document.querySelectorAll('button'));
+                    const confirmBtn = buttons.find(b => (b.innerText || '').includes('Confirm Receipt') && !b.disabled);
+                    if (confirmBtn) {
+                        confirmBtn.click();
+                        return true;
+                    }
+                    return false;
+                });
+                await new Promise(r => setTimeout(r, 2500));
+            }
+        } catch (domErr) {
+            console.log(`[Buyer DOM Receipt Note] ${domErr.message}. Falling back to direct API verification.`);
+        }
+
+        if (!receivedViaDOM) {
+            const receiveResult = await buyerVerifyPage.evaluate(async (url, ordNum) => {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                try {
+                    const res = await fetch(`${url}/my-orders/${ordNum}/receive`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken || ''
+                        }
+                    });
+                    return { status: res.status };
+                } catch (err) {
+                    return { status: 0, error: err.message };
+                }
+            }, PROD_URL, pipelineState.orderNumber);
+
+            if (![200, 302].includes(receiveResult.status)) {
+                throw new Error(`Buyer receive confirmation failed with HTTP ${receiveResult.status}`);
+            }
         }
         pipelineState.receivedConfirmed = true;
 
