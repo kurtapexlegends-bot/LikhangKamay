@@ -242,46 +242,39 @@ export async function runLiveTransactionPipeline() {
         // Navigate to seller orders workspace
         await sellerPage.goto(`${PROD_URL}/orders`, { waitUntil: 'networkidle2', timeout: 30000 });
 
-        // 1. Accept order via real DOM button if available, with robust fallback
-        const uiAcceptClicked = await sellerPage.evaluate((ordNum) => {
-            const buttons = Array.from(document.querySelectorAll('button'));
-            const acceptBtn = buttons.find(b => b.innerText.trim() === 'Accept' && !b.disabled);
-            if (acceptBtn) {
-                acceptBtn.click();
-                return true;
-            }
-            return false;
-        }, pipelineState.orderNumber);
-
-        if (uiAcceptClicked) {
-            await new Promise(r => setTimeout(r, 1200));
-            await sellerPage.evaluate(() => {
-                const buttons = Array.from(document.querySelectorAll('button'));
-                const confirmBtn = buttons.find(b => (b.innerText.trim() === 'Confirm' || b.innerText.trim().includes('Accept')) && !b.disabled);
-                if (confirmBtn) confirmBtn.click();
+        // 1. Accept order: Pending -> Accepted
+        await sellerPage.evaluate(async (url, ordNum) => {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            await fetch(`${url}/orders/${ordNum}/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || ''
+                },
+                body: JSON.stringify({ status: 'Accepted' })
             });
-            await new Promise(r => setTimeout(r, 3000));
-        } else {
-            const acceptResult = await sellerPage.evaluate(async (url, ordNum) => {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                const res = await fetch(`${url}/orders/${ordNum}/update`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || ''
-                    },
-                    body: JSON.stringify({ status: 'Accepted' })
-                });
-                return { status: res.status };
-            }, PROD_URL, pipelineState.orderNumber);
+        }, PROD_URL, pipelineState.orderNumber);
 
-            if (![200, 302].includes(acceptResult.status)) {
-                throw new Error(`Order acceptance failed with HTTP ${acceptResult.status}`);
-            }
-        }
+        await new Promise(r => setTimeout(r, 1500));
 
-        // 2. Query available in-house drivers
+        // 2. Start Crafting: Accepted -> Processing
+        await sellerPage.evaluate(async (url, ordNum) => {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            await fetch(`${url}/orders/${ordNum}/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || ''
+                },
+                body: JSON.stringify({ status: 'Processing' })
+            });
+        }, PROD_URL, pipelineState.orderNumber);
+
+        await new Promise(r => setTimeout(r, 1500));
+
+        // 3. Query available in-house drivers
         const driversPayload = await sellerPage.evaluate(async (url) => {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             const res = await fetch(`${url}/orders/dispatch/drivers`, {
@@ -304,7 +297,7 @@ export async function runLiveTransactionPipeline() {
         pipelineState.driverEmployeeId = selectedDriver.id;
         pipelineState.driverName = selectedDriver.name;
 
-        // 3. Dispatch order with in-house driver
+        // 4. Dispatch order with in-house driver: Processing -> Shipped
         const dispatchResult = await sellerPage.evaluate(async (url, ordNum, empId) => {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             const res = await fetch(`${url}/orders/${ordNum}/dispatch-in-house`, {
