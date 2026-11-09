@@ -5,6 +5,7 @@ namespace App\Actions\Consumer;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\Review;
+use App\Services\OrderPaymentReconciliationService;
 use App\Services\PayMongoService;
 use App\Services\OrderLogisticsService;
 use App\Services\StorageUrl;
@@ -15,11 +16,16 @@ class GetBuyerOrders
 {
     private PayMongoService $payMongoService;
     private OrderLogisticsService $orderLogisticsService;
+    private OrderPaymentReconciliationService $reconciliationService;
 
-    public function __construct(PayMongoService $payMongoService, OrderLogisticsService $orderLogisticsService)
-    {
+    public function __construct(
+        PayMongoService $payMongoService,
+        OrderLogisticsService $orderLogisticsService,
+        OrderPaymentReconciliationService $reconciliationService
+    ) {
         $this->payMongoService = $payMongoService;
         $this->orderLogisticsService = $orderLogisticsService;
+        $this->reconciliationService = $reconciliationService;
     }
 
     /**
@@ -55,82 +61,7 @@ class GetBuyerOrders
 
     private function reconcilePendingOnlinePaymentsForUser(User $user): void
     {
-        Order::query()
-            ->where('user_id', $user->id)
-            ->whereIn('payment_method', ['GCash', 'Maya'])
-            ->where('payment_status', 'pending')
-            ->whereNotNull('paymongo_session_id')
-            ->whereIn('status', ['Pending', 'Accepted'])
-            ->get()
-            ->each(function (Order $order) {
-                try {
-                    $session = $this->payMongoService->retrieveCheckoutSession($order->paymongo_session_id);
-                    $attributes = $session['attributes'] ?? [];
-                    $referenceNumber = $attributes['reference_number'] ?? null;
-
-                    if ($referenceNumber && $referenceNumber !== $order->order_number) {
-                        return;
-                    }
-
-                    $isPaid = ($attributes['payment_status'] ?? 'unpaid') === 'paid';
-                    $hasPaidPayment = collect($session['included'] ?? [])
-                        ->contains(fn (array $included) => ($included['type'] ?? null) === 'payment'
-                            && (($included['attributes']['status'] ?? null) === 'paid'));
-
-                    if (!$hasPaidPayment && !empty($attributes['payments']) && is_array($attributes['payments'])) {
-                        $hasPaidPayment = collect($attributes['payments'])
-                            ->contains(function ($payment) {
-                                $paymentStatus = $payment['status'] ?? ($payment['attributes']['status'] ?? null);
-                                return $paymentStatus === 'paid';
-                            });
-                    }
-
-                    $resolveMethodFromPayment = function ($payment) {
-                        $sourceType = $payment['attributes']['source']['type']
-                            ?? ($payment['source']['type']
-                            ?? ($payment['attributes']['payment_method_type'] ?? null));
-                        return match (strtolower((string) $sourceType)) {
-                            'paymaya', 'maya' => 'Maya',
-                            'gcash' => 'GCash',
-                            'card' => 'Card',
-                            'grab_pay' => 'GrabPay',
-                            default => null,
-                        };
-                    };
-
-                    $paymentId = null;
-                    $detectedMethod = null;
-                    foreach ($session['included'] ?? [] as $included) {
-                        if (($included['type'] ?? null) === 'payment' && !empty($included['id'])) {
-                            $paymentId = $included['id'];
-                            $detectedMethod = $resolveMethodFromPayment($included);
-                            break;
-                        }
-                    }
-                    if (!$paymentId && !empty($attributes['payments']) && is_array($attributes['payments'])) {
-                        foreach ($attributes['payments'] as $payment) {
-                            if (!empty($payment['id'])) {
-                                $paymentId = $payment['id'];
-                                $detectedMethod = $resolveMethodFromPayment($payment);
-                                break;
-                            }
-                        }
-                    }
-
-                    if ($isPaid || $hasPaidPayment) {
-                        $updateData = [
-                            'payment_status' => 'paid',
-                            'payment_method' => $detectedMethod ?: ($order->payment_method ?: 'GCash'),
-                        ];
-                        if ($paymentId) {
-                            $updateData['payment_id'] = $paymentId;
-                        }
-                        $order->update($updateData);
-                    }
-                } catch (\Throwable $e) {
-                    report($e);
-                }
-            });
+        $this->reconciliationService->reconcilePendingOrdersForBuyer($user);
     }
 
     private function getBuyerReviewsByProduct(int $userId, Collection $orders): Collection

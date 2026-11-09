@@ -435,6 +435,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
         // PAYMENT ROUTES
         Route::get('/payment/{orderId}/pay', [\App\Http\Controllers\Consumer\PaymentController::class, 'pay'])->name('payment.pay');
+        Route::post('/payment/{orderNumber}/verify', [\App\Http\Controllers\Consumer\PaymentController::class, 'verifyOnlinePayment'])->name('payment.verify');
         
         Route::get('/my-orders', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'myOrders'])->name('my-orders.index');
         Route::post('/my-orders/{id}/receive', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'buyerReceiveOrder'])->name('my-orders.receive');

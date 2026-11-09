@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderDelivery;
 use App\Models\User;
 use App\Services\OrderLogisticsService;
+use App\Services\OrderPaymentReconciliationService;
 use App\Services\StorageUrl;
 use App\Services\VehicleTypeResolver;
 use App\Support\OrderWorkflowHelper;
@@ -15,10 +16,14 @@ use Illuminate\Support\Facades\Schema;
 class ListSellerOrders
 {
     private OrderLogisticsService $orderLogisticsService;
+    private OrderPaymentReconciliationService $reconciliationService;
 
-    public function __construct(OrderLogisticsService $orderLogisticsService)
-    {
+    public function __construct(
+        OrderLogisticsService $orderLogisticsService,
+        OrderPaymentReconciliationService $reconciliationService
+    ) {
         $this->orderLogisticsService = $orderLogisticsService;
+        $this->reconciliationService = $reconciliationService;
     }
 
     /**
@@ -31,6 +36,8 @@ class ListSellerOrders
      */
     public function execute(int $sellerId, ?User $seller, array $filters): array
     {
+        $this->reconciliationService->reconcilePendingOrdersForSeller($sellerId);
+
         $seller?->loadMissing('addresses');
         $hasB2BSupport = rescue(fn () => Schema::hasTable('order_items') && Schema::hasColumn('order_items', 'is_b2b_supply'), false);
 

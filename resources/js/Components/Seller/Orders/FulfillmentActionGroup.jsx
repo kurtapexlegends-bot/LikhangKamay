@@ -1,4 +1,5 @@
 import React from "react";
+import { router } from "@inertiajs/react";
 import {
     AlertTriangle,
     LoaderCircle,
@@ -9,7 +10,8 @@ import {
     Truck,
     MapPin,
     MessageCircle,
-    Printer
+    Printer,
+    RefreshCw
 } from "lucide-react";
 import {
     sellerDeliverySummary,
@@ -36,6 +38,20 @@ export default function FulfillmentActionGroup({
 }) {
     const bomWarnings = getBOMWarning(order);
     const deliverySummary = sellerDeliverySummary(order);
+    const [isVerifyingPayment, setIsVerifyingPayment] = React.useState(false);
+
+    const handleVerifyPayment = () => {
+        if (isVerifyingPayment) return;
+        setIsVerifyingPayment(true);
+        router.post(
+            route('payment.verify', order.order_number),
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setIsVerifyingPayment(false),
+            }
+        );
+    };
 
     // Wrapper for sticky bottom layout on mobile for primary quick-actions
     const renderStickyActions = (children) => {
@@ -156,6 +172,17 @@ export default function FulfillmentActionGroup({
                             <p className="text-[10px] text-red-500 font-medium">
                                 Wait for payment before shipping.
                             </p>
+                            {order.paymongo_session_id && (
+                                <button
+                                    type="button"
+                                    onClick={handleVerifyPayment}
+                                    disabled={isVerifyingPayment}
+                                    className="mt-2.5 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md border border-red-200 bg-white text-[11px] font-bold text-red-700 hover:bg-red-50 transition shadow-2xs w-full min-h-[32px]"
+                                >
+                                    <RefreshCw size={12} className={isVerifyingPayment ? "animate-spin text-red-600" : "text-red-500"} />
+                                    {isVerifyingPayment ? 'Checking PayMongo...' : 'Check Payment Status'}
+                                </button>
+                            )}
                         </div>
                     ) : order.shipping_method === "Pick Up" ? (
                         <button

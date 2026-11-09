@@ -7,10 +7,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Order;
 use App\Models\SubscriptionTransaction;
+use App\Services\OrderPaymentReconciliationService;
 use App\Services\SubscriptionService;
 
 class PaymongoWebhookController extends Controller
 {
+    protected OrderPaymentReconciliationService $reconciliationService;
+
+    public function __construct(OrderPaymentReconciliationService $reconciliationService)
+    {
+        $this->reconciliationService = $reconciliationService;
+    }
     public function handle(Request $request)
     {
         if ($signatureResponse = $this->verifyWebhookSignature($request)) {
@@ -97,73 +104,20 @@ class PaymongoWebhookController extends Controller
     private function handleCheckoutSessionPaid(array $sessionData): \Illuminate\Http\JsonResponse
     {
         $sessionId = $sessionData['id'] ?? null;
+        $order = $this->reconciliationService->handleWebhookSession($sessionData);
+
+        if ($order) {
+            Log::info('Order reconciled and marked as paid via checkout_session.payment.paid Webhook', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'session_id' => $sessionId,
+            ]);
+            return response()->json(['status' => 'success']);
+        }
+
+        // Check if it's a SubscriptionTransaction
         $status = $sessionData['attributes']['payment_status'] ?? ($sessionData['attributes']['status'] ?? null);
-
         if ($sessionId && $status === 'paid') {
-            $paymentId = null;
-            $detectedMethod = null;
-            $payments = $sessionData['attributes']['payments'] ?? [];
-            if (is_array($payments) && !empty($payments)) {
-                $firstPayment = reset($payments);
-                $paymentId = $firstPayment['id'] ?? ($firstPayment['attributes']['id'] ?? null);
-                $sourceType = $firstPayment['attributes']['source']['type']
-                    ?? ($firstPayment['source']['type']
-                    ?? ($firstPayment['attributes']['payment_method_type'] ?? null));
-                $detectedMethod = match (strtolower((string) $sourceType)) {
-                    'paymaya', 'maya' => 'Maya',
-                    'gcash' => 'GCash',
-                    'card' => 'Card',
-                    'grab_pay' => 'GrabPay',
-                    default => null,
-                };
-            }
-            if (!$paymentId && !empty($sessionData['relationships']['payments']['data'])) {
-                $relPayments = $sessionData['relationships']['payments']['data'];
-                if (is_array($relPayments)) {
-                    $firstRel = reset($relPayments);
-                    $paymentId = $firstRel['id'] ?? null;
-                }
-            }
-
-            // Check if it's one or more Orders
-            $orderIds = Order::where('paymongo_session_id', $sessionId)->pluck('id');
-            if ($orderIds->isNotEmpty()) {
-                $receiptOrders = [];
-                \Illuminate\Support\Facades\DB::transaction(function () use ($orderIds, $paymentId, $detectedMethod, &$receiptOrders) {
-                    $lockedOrders = Order::whereIn('id', $orderIds)->lockForUpdate()->get();
-                    foreach ($lockedOrders as $order) {
-                        $wasUnpaid = $order->payment_status !== 'paid';
-                        if ($wasUnpaid || ($paymentId && empty($order->payment_id)) || ($detectedMethod && $order->payment_method !== $detectedMethod)) {
-                            $updateData = ['payment_status' => 'paid'];
-                            if ($detectedMethod) {
-                                $updateData['payment_method'] = $detectedMethod;
-                            }
-                            if ($paymentId && empty($order->payment_id)) {
-                                $updateData['payment_id'] = $paymentId;
-                            }
-                            $order->update($updateData);
-                            Log::info('Order marked as paid via Webhook', [
-                                'order_id' => $order->id,
-                                'order_number' => $order->order_number,
-                                'payment_id' => $paymentId,
-                                'payment_method' => $order->payment_method,
-                            ]);
-
-                            if ($wasUnpaid) {
-                                $receiptOrders[] = $order;
-                            }
-                        }
-                    }
-                });
-
-                foreach ($receiptOrders as $receiptOrder) {
-                    $this->sendPaymentReceipt($receiptOrder->fresh());
-                }
-
-                return response()->json(['status' => 'success']);
-            }
-
-            // Check if it's a SubscriptionTransaction
             $ref = $sessionData['attributes']['metadata']['reference_number'] ?? null;
             $transaction = SubscriptionTransaction::query()
                 ->where(function ($q) use ($sessionId, $ref) {
@@ -190,6 +144,18 @@ class PaymongoWebhookController extends Controller
 
     private function handlePaymentPaid(array $paymentData): \Illuminate\Http\JsonResponse
     {
+        // 1. Try reconciling as Order first
+        $order = $this->reconciliationService->handleWebhookPayment($paymentData);
+        if ($order) {
+            Log::info('Order marked as paid via payment.paid Webhook', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'payment_id' => $order->payment_id,
+            ]);
+            return response()->json(['status' => 'success']);
+        }
+
+        // 2. Try reconciling as SubscriptionTransaction
         $sessionId = $paymentData['attributes']['checkout_session_id'] ?? null;
         $ref = $paymentData['attributes']['metadata']['reference_number'] ?? ($paymentData['attributes']['description'] ?? null);
 

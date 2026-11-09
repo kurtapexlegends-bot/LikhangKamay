@@ -27,16 +27,21 @@ This document outlines the operational flows, validation rules, and webhook beha
 *   **Maya**: Mapped to `paymaya` in PayMongo checkout sessions.
 *   **Dynamic Source Reconciliation**:
     When a customer checks out choosing Maya or GCash, PayMongo's session dynamically returns the actual source type in `data.attributes.payments[].attributes.source.type` or `data.attributes.payment_intent.attributes.payments[].attributes.source.type`.
-    - Both [PaymentController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/PaymentController.php) and [PaymongoWebhookController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Webhooks/PaymongoWebhookController.php) inspect this telemetry.
+    - Both [PaymentController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/PaymentController.php) and [PaymongoWebhookController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Webhooks/PaymongoWebhookController.php) delegate to [OrderPaymentReconciliationService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OrderPaymentReconciliationService.php) to inspect this telemetry.
     - If a user selected Maya at checkout but completed payment via GCash (or vice-versa in test/production gateway environments), `orders.payment_method` is automatically reconciled to reflect the true wallet provider (`Maya`, `GCash`, `Card`).
-    - [GetBuyerOrders.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Consumer/GetBuyerOrders.php) also applies this reconciliation when resolving lingering pending sessions upon viewing `/my-orders`.
+    - [OrderPaymentReconciliationService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OrderPaymentReconciliationService.php) reconciles online payments for both `Pending` and `Processing` (manufactured/BOM deducted) orders, ensuring inventory-deducted orders whose webhook was delayed or missed are immediately marked as `Paid` upon verification.
+    - Dedicated verification endpoint: `GET /payment/{orderNumber}/verify` routed to `PaymentController::verify()` allows buyers and sellers to re-verify payment status on demand.
+    - [GetBuyerOrders.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Consumer/GetBuyerOrders.php) and [ListSellerOrders.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Orders/ListSellerOrders.php) also apply this reconciliation when listing orders.
+    - Scheduled command [VerifyPaymongoPayments.php](file:///c:/laragon/www/LikhangKamay/app/Console/Commands/VerifyPaymongoPayments.php) polls recent unpaid online orders via bounded queries (`chunkById(25)`).
 
 ### Webhook & Signature Verification
 *   **Webhook Controller**: [PaymongoWebhookController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Webhooks/PaymongoWebhookController.php)
 *   **Endpoint Route**: POST `/webhooks/paymongo` (exempt from CSRF in `bootstrap/app.php`).
 *   **Signature Security**:
-    > [!IMPORTANT]
+*   **Payment Reconciliation Service**: [OrderPaymentReconciliationService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OrderPaymentReconciliationService.php)
+
 ### Integration & Regression Suites
+*   [OrderPaymentReconciliationTest.php](file:///c:/laragon/www/LikhangKamay/tests/Feature/Payments/OrderPaymentReconciliationTest.php): Tests automated reconciliation of online checkout sessions for both `Pending` and `Processing` orders with source type updates.
 *   [MayaPaymentIntegrationTest.php](file:///c:/laragon/www/LikhangKamay/tests/Feature/Payments/MayaPaymentIntegrationTest.php): Tests end-to-end Maya checkout, session generation, webhook handling, and dynamic source reconciliation.
 *   [PaymongoWebhookSignatureTest.php](file:///c:/laragon/www/LikhangKamay/tests/Feature/Payments/PaymongoWebhookSignatureTest.php): Tests HMAC signature verification and attack payload rejection.
 *   [PaymentConvenienceFeeTest.php](file:///c:/laragon/www/LikhangKamay/tests/Feature/Payments/PaymentConvenienceFeeTest.php): Tests online payment convenience fee computation and guest session handling.

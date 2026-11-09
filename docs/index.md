@@ -30,4 +30,5 @@ Welcome to the LikhangKamay Second Brain vault. This documentation map is design
 
 *   **Config Files**: [composer.json](file:///c:/laragon/www/LikhangKamay/composer.json) | [package.json](file:///c:/laragon/www/LikhangKamay/package.json) | [vite.config.js](file:///c:/laragon/www/LikhangKamay/vite.config.js)
 *   **Main Entrypoints**: [web.php](file:///c:/laragon/www/LikhangKamay/routes/web.php) | [auth.php](file:///c:/laragon/www/LikhangKamay/routes/auth.php)
+*   **Key Services**: [OrderPaymentReconciliationService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OrderPaymentReconciliationService.php) | [PayMongoService.php](file:///c:/laragon/www/LikhangKamay/app/Services/PayMongoService.php) | [LalamoveService.php](file:///c:/laragon/www/LikhangKamay/app/Services/LalamoveService.php)
 *   **Application Boot**: [app.php](file:///c:/laragon/www/LikhangKamay/bootstrap/app.php)

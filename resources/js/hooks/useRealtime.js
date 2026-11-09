@@ -102,6 +102,7 @@ export const useRealtime = () => {
         let notificationChannel = null;
         let sellerNotificationChannel = null;
         let orderChannel = null;
+        let buyerOrderChannel = null;
         let adminChannel = null;
         let fallbackPollTimeout = null;
         let isDisposed = false;
@@ -113,8 +114,8 @@ export const useRealtime = () => {
             if (path.includes('/products')) {
                 reloadKeys.push('products', 'metrics');
             }
-            if (path.includes('/orders')) {
-                reloadKeys.push('orders');
+            if (path.includes('/orders') || path.includes('/my-orders')) {
+                reloadKeys.push('orders', 'tabCounts');
             }
             if (path.includes('/admin/catalog')) {
                 reloadKeys.push('products');
@@ -329,6 +330,28 @@ export const useRealtime = () => {
                     .subscribe();
             }
 
+            // Order Listener (for Buyers)
+            if (!isSellerActor && user?.id) {
+                buyerOrderChannel = supabase
+                    .channel(`orders:user_id=eq.${user.id}`)
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'orders',
+                            filter: `user_id=eq.${user.id}`,
+                        },
+                        () => {
+                            router.reload({
+                                only: ['orders'],
+                                preserveScroll: true,
+                            });
+                        }
+                    )
+                    .subscribe();
+            }
+
             // Admin Activity Listener
             if (user.role === 'super_admin') {
                 adminChannel = supabase
@@ -371,6 +394,7 @@ export const useRealtime = () => {
                 if (notificationChannel) supabase.removeChannel(notificationChannel);
                 if (sellerNotificationChannel) supabase.removeChannel(sellerNotificationChannel);
                 if (orderChannel) supabase.removeChannel(orderChannel);
+                if (buyerOrderChannel) supabase.removeChannel(buyerOrderChannel);
                 if (adminChannel) supabase.removeChannel(adminChannel);
                 stopFallbackPolling();
             };

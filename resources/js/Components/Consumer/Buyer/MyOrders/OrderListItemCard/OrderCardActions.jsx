@@ -3,7 +3,7 @@ import React from 'react';
 import { router } from '@inertiajs/react';
 import { 
     Download, MessageCircle, CreditCard, XCircle, PackageCheck, 
-    CheckCircle, ShoppingBag, Star, RotateCcw, AlertTriangle, EllipsisVertical, Clock 
+    CheckCircle, ShoppingBag, Star, RotateCcw, AlertTriangle, EllipsisVertical, Clock, RefreshCw 
 } from 'lucide-react';
 import Dropdown from '@/Components/Dropdown';
 
@@ -18,6 +18,24 @@ export default function OrderCardActions({
     onOpenRatingModal,
 }) {
     const [isAcceptingReplacement, setIsAcceptingReplacement] = React.useState(false);
+    const [isVerifyingPayment, setIsVerifyingPayment] = React.useState(false);
+
+    const isPayableOnline = ['Pending', 'Accepted', 'Processing', 'Ready for Pickup'].includes(order.status)
+        && order.payment_status === 'pending'
+        && order.payment_method !== 'COD';
+
+    const handleVerifyPayment = () => {
+        if (isVerifyingPayment) return;
+        setIsVerifyingPayment(true);
+        router.post(
+            route('payment.verify', order.order_number),
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setIsVerifyingPayment(false),
+            }
+        );
+    };
 
     const handleAcceptReplacement = () => {
         if (isAcceptingReplacement || !order.dispute?.id) return;
@@ -154,14 +172,28 @@ export default function OrderCardActions({
                     </button>
                 )}
 
-                {/* PENDING/ACCEPTED: Pay Now */}
-                {['Pending', 'Accepted'].includes(order.status) && order.payment_status === 'pending' && order.payment_method !== 'COD' && (
-                    <a 
-                        href={route('payment.pay', order.order_number)}
-                        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-all hover:-translate-y-0.5 min-h-[38px]"
-                    >
-                        <CreditCard size={15} /> Pay Now
-                    </a>
+                {/* ONLINE PAYMENT: Pay Now & Check Status */}
+                {isPayableOnline && (
+                    <div className="inline-flex items-center gap-1.5">
+                        <a 
+                            href={route('payment.pay', order.order_number)}
+                            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-all hover:-translate-y-0.5 min-h-[38px]"
+                        >
+                            <CreditCard size={15} /> Pay Now
+                        </a>
+                        {order.paymongo_session_id && (
+                            <button
+                                type="button"
+                                onClick={handleVerifyPayment}
+                                disabled={isVerifyingPayment}
+                                title="Check payment status with GCash/Maya"
+                                className="inline-flex h-9 shrink-0 items-center justify-center gap-1 px-3 border border-stone-200 bg-white rounded-lg text-[11px] font-bold text-stone-600 hover:bg-stone-50 hover:border-stone-300 transition shadow-2xs min-h-[38px]"
+                            >
+                                <RefreshCw size={12} className={isVerifyingPayment ? "animate-spin text-blue-600" : "text-stone-500"} />
+                                {isVerifyingPayment ? 'Checking...' : 'Check'}
+                            </button>
+                        )}
+                    </div>
                 )}
 
                 {/* PENDING / GRACE PERIOD: Cancel */}
@@ -271,14 +303,28 @@ export default function OrderCardActions({
             {/* --- MOBILE FOOTER ACTIONS WITH DROPDOWN (Sticky Bottom Bar Pattern on Mobile) --- */}
             <div className="sticky bottom-0 sm:relative bg-white z-10 border-t border-stone-100 sm:border-t-0 py-2.5 px-4 sm:p-0 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] sm:shadow-none flex sm:hidden w-full flex-row items-center gap-2 justify-end">
                 {/* Primary Actions Promoted directly on Mobile */}
-                {/* 1. Pay Now */}
-                {['Pending', 'Accepted'].includes(order.status) && order.payment_status === 'pending' && order.payment_method !== 'COD' && (
-                    <a 
-                        href={route('payment.pay', order.order_number)}
-                        className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-all active:scale-95 min-h-[44px]"
-                    >
-                        <CreditCard size={15} /> Pay Now
-                    </a>
+                {/* 1. Pay Now & Check Status */}
+                {isPayableOnline && (
+                    <div className="flex-1 flex items-center gap-1.5">
+                        <a 
+                            href={route('payment.pay', order.order_number)}
+                            className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-4 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-all active:scale-95 min-h-[44px]"
+                        >
+                            <CreditCard size={15} /> Pay Now
+                        </a>
+                        {order.paymongo_session_id && (
+                            <button
+                                type="button"
+                                onClick={handleVerifyPayment}
+                                disabled={isVerifyingPayment}
+                                title="Check payment status with GCash/Maya"
+                                className="inline-flex h-11 items-center justify-center gap-1 px-3 border border-stone-200 bg-white rounded-lg text-[11px] font-bold text-stone-600 hover:bg-stone-50 hover:border-stone-300 transition shadow-xs min-h-[44px]"
+                            >
+                                <RefreshCw size={13} className={isVerifyingPayment ? "animate-spin text-blue-600" : "text-stone-500"} />
+                                {isVerifyingPayment ? '...' : 'Check'}
+                            </button>
+                        )}
+                    </div>
                 )}
 
                 {/* 2. Confirm Receipt / Pick Up */}
@@ -331,7 +377,7 @@ export default function OrderCardActions({
 
                 {/* Promoted Secondary Actions when no direct primary action is available */}
                 {/* Promoting Chat */}
-                {(!(['Pending', 'Accepted'].includes(order.status) && order.payment_status === 'pending' && order.payment_method !== 'COD') &&
+                {(!isPayableOnline &&
                  !(order.status === 'Delivered' && !order.received_at) &&
                  !(order.status === 'Completed' && !order.replacement_in_progress && hasRateOrReviewActions) &&
                  !(order.status === 'Refund/Return') &&
@@ -357,7 +403,7 @@ export default function OrderCardActions({
 
                 {/* Secondary Dropdown Actions */}
                 {(() => {
-                    const isChatPromoted = !(['Pending', 'Accepted'].includes(order.status) && order.payment_status === 'pending' && order.payment_method !== 'COD') &&
+                    const isChatPromoted = !isPayableOnline &&
                          !(order.status === 'Delivered' && !order.received_at) &&
                          !(order.status === 'Completed' && !order.replacement_in_progress && hasRateOrReviewActions) &&
                          !(order.status === 'Refund/Return') &&

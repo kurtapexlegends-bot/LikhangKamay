@@ -45,6 +45,11 @@ export default function MyOrders({ auth, orders = [] }) {
         return !['COMPLETED', 'CANCELED', 'REJECTED', 'EXPIRED'].includes(status);
     });
 
+    const hasActiveOrders = activeOrders.some((order) => {
+        return !['Completed', 'Cancelled', 'Rejected'].includes(order.status)
+            || ['Refund/Return', 'Refunded', 'Replaced'].includes(order.status);
+    });
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
             try {
@@ -69,25 +74,46 @@ export default function MyOrders({ auth, orders = [] }) {
         }
     }, [activeOrders]);
 
+    // Active order polling and tab focus sync
     useEffect(() => {
-        if (!hasActiveCourierTracking || typeof window === 'undefined') {
+        if (typeof window === 'undefined') {
             return undefined;
         }
 
-        const intervalId = window.setInterval(() => {
-            if (document.hidden) {
-                return;
-            }
-
+        const reloadOrders = () => {
+            if (document.hidden) return;
             router.reload({
                 only: ['orders'],
                 preserveState: true,
                 preserveScroll: true,
             });
-        }, 15000);
+        };
 
-        return () => window.clearInterval(intervalId);
-    }, [hasActiveCourierTracking]);
+        const handleFocus = () => {
+            if (!document.hidden && navigator.onLine) {
+                reloadOrders();
+            }
+        };
+
+        window.addEventListener('focus', handleFocus);
+        document.addEventListener('visibilitychange', handleFocus);
+
+        if (!hasActiveOrders && !hasActiveCourierTracking) {
+            return () => {
+                window.removeEventListener('focus', handleFocus);
+                document.removeEventListener('visibilitychange', handleFocus);
+            };
+        }
+
+        const pollInterval = hasActiveCourierTracking ? 6000 : 8000;
+        const intervalId = window.setInterval(reloadOrders, pollInterval);
+
+        return () => {
+            window.clearInterval(intervalId);
+            window.removeEventListener('focus', handleFocus);
+            document.removeEventListener('visibilitychange', handleFocus);
+        };
+    }, [hasActiveOrders, hasActiveCourierTracking]);
 
     const tabs = [
         { id: 'All', label: 'All Orders', count: activeOrders.length },

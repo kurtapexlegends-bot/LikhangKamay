@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Models\Order;
 use App\Mail\PaymentReceiptMail;
+use App\Services\OrderPaymentReconciliationService;
 use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,11 +17,15 @@ use Inertia\Inertia;
 class PaymentController extends Controller
 {
     protected PayMongoService $payMongoService;
-    private const PAYABLE_ONLINE_STATUSES = ['Pending', 'Accepted'];
+    protected OrderPaymentReconciliationService $reconciliationService;
+    private const PAYABLE_ONLINE_STATUSES = ['Pending', 'Accepted', 'Processing', 'Ready for Pickup'];
 
-    public function __construct(PayMongoService $payMongoService)
-    {
+    public function __construct(
+        PayMongoService $payMongoService,
+        OrderPaymentReconciliationService $reconciliationService
+    ) {
         $this->payMongoService = $payMongoService;
+        $this->reconciliationService = $reconciliationService;
     }
 
     /**
@@ -137,7 +142,7 @@ class PaymentController extends Controller
                 );
             }
 
-            if (!$this->canInitiateOnlinePayment($order)) {
+            if (in_array($order->status, [Order::STATUS_CANCELLED, Order::STATUS_REJECTED], true)) {
                 return $this->redirectAfterPaymentResolution(
                     $order,
                     'error',
@@ -146,13 +151,11 @@ class PaymentController extends Controller
                 );
             }
 
-            $paymentDetails = $this->extractPaymentDetailsFromSession($session, $orderId);
+            $reconciled = $this->reconciliationService->reconcileOrder($order, $session, force: true);
 
-            if ($paymentDetails['isPaid'] || $paymentDetails['hasPaidPayment']) {
-                $order = $this->finalizePaidOrder($order, $paymentDetails['paymentId'], $paymentDetails['detectedMethod']);
-
+            if ($reconciled || $order->fresh()->payment_status === 'paid') {
                 return $this->redirectAfterPaymentResolution(
-                    $order,
+                    $order->fresh(),
                     'success',
                     'Payment successful! Order #' . $orderId . ' is now paid.',
                     'Payment verified successfully. Sign in to view your updated order.'
@@ -310,6 +313,49 @@ class PaymentController extends Controller
         }
 
         return redirect()->route('login')->with('error', 'Payment was cancelled. Sign in to continue with your order.');
+    }
+
+    /**
+     * On-demand verification of an online payment order
+     */
+    public function verifyOnlinePayment(Request $request, string $orderNumber)
+    {
+        $user = Auth::user();
+        $order = Order::where(function ($q) use ($orderNumber) {
+            if (is_numeric($orderNumber)) {
+                $q->where('order_number', (string) $orderNumber)->orWhere('id', (int) $orderNumber);
+            } else {
+                $q->where('order_number', (string) $orderNumber);
+            }
+        })->firstOrFail();
+
+        $isBuyer = (int) $order->user_id === (int) $user->id;
+        $isArtisan = (int) $order->artisan_id === (int) $user->id;
+        $isAdmin = in_array($user->role, ['super_admin', 'admin'], true);
+
+        if (!$isBuyer && !$isArtisan && !$isAdmin) {
+            abort(403, 'Unauthorized.');
+        }
+
+        $this->reconciliationService->reconcileOrder($order, force: true);
+
+        $order->refresh();
+        $isPaid = $order->payment_status === 'paid';
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'is_paid' => $isPaid,
+                'payment_status' => $order->payment_status,
+                'message' => $isPaid ? 'Payment verified successfully.' : 'Payment is still pending on PayMongo.',
+            ]);
+        }
+
+        if ($isPaid) {
+            return redirect()->back()->with('success', "Payment for Order #{$order->order_number} verified and marked as paid.");
+        }
+
+        return redirect()->back()->with('info', "Payment for Order #{$order->order_number} is still pending on PayMongo.");
     }
 
     private function canInitiateOnlinePayment(Order $order): bool
