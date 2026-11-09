@@ -242,8 +242,24 @@ export async function runLiveTransactionPipeline() {
         // Navigate to seller orders workspace
         await sellerPage.goto(`${PROD_URL}/orders`, { waitUntil: 'networkidle2', timeout: 30000 });
 
-        // Helper: Click button with text inside page
-        const clickButtonByText = async (page, targetText, exact = false) => {
+        // Helper: Targeted action on a specific order card
+        const clickOrderCardButton = async (page, ordNum, targetText) => {
+            return await page.evaluate((orderNumber, btnText) => {
+                const allCards = Array.from(document.querySelectorAll('div.group, div.rounded-2xl'));
+                const card = allCards.find(c => (c.innerText || '').includes(orderNumber));
+                if (!card) return false;
+
+                const buttons = Array.from(card.querySelectorAll('button'));
+                const btn = buttons.find(b => (b.innerText || '').trim().includes(btnText) && !b.disabled);
+                if (btn) {
+                    btn.click();
+                    return true;
+                }
+                return false;
+            }, ordNum, targetText);
+        };
+
+        const clickModalButton = async (page, targetText, exact = false) => {
             return await page.evaluate((text, isExact) => {
                 const buttons = Array.from(document.querySelectorAll('button'));
                 const btn = buttons.find(b => {
@@ -258,15 +274,14 @@ export async function runLiveTransactionPipeline() {
             }, targetText, exact);
         };
 
-        // 1. Accept order: Pending -> Accepted via DOM button & confirmation modal
-        let acceptedClicked = await clickButtonByText(sellerPage, 'Accept');
-        if (acceptedClicked) {
+        // 1. Accept order: Pending -> Accepted via targeted card button & modal
+        let acceptClicked = await clickOrderCardButton(sellerPage, pipelineState.orderNumber, 'Accept');
+        if (acceptClicked) {
             await new Promise(r => setTimeout(r, 800));
-            // Confirm inside confirmation modal
-            await clickButtonByText(sellerPage, 'Confirm', true);
+            await clickModalButton(sellerPage, 'Confirm', true);
             await new Promise(r => setTimeout(r, 2000));
         } else {
-            // Fallback direct update if button not found in active tab view
+            // Direct API fallback scoped to this specific order
             await sellerPage.evaluate(async (url, ordNum) => {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                 await fetch(`${url}/orders/${ordNum}/update`, {
@@ -278,11 +293,14 @@ export async function runLiveTransactionPipeline() {
             await new Promise(r => setTimeout(r, 1500));
         }
 
-        // 2. Start Crafting: Accepted -> Processing via DOM button & confirmation modal
-        let startCraftingClicked = await clickButtonByText(sellerPage, 'Start Crafting');
+        // Reload to refresh card state if needed
+        await sellerPage.goto(`${PROD_URL}/orders`, { waitUntil: 'networkidle2', timeout: 30000 });
+
+        // 2. Start Crafting: Accepted -> Processing via targeted card button & modal
+        let startCraftingClicked = await clickOrderCardButton(sellerPage, pipelineState.orderNumber, 'Start Crafting');
         if (startCraftingClicked) {
             await new Promise(r => setTimeout(r, 800));
-            await clickButtonByText(sellerPage, 'Confirm', true);
+            await clickModalButton(sellerPage, 'Confirm', true);
             await new Promise(r => setTimeout(r, 2000));
         } else {
             await sellerPage.evaluate(async (url, ordNum) => {
@@ -319,27 +337,25 @@ export async function runLiveTransactionPipeline() {
         pipelineState.driverEmployeeId = selectedDriver.id;
         pipelineState.driverName = selectedDriver.name;
 
+        // Reload to ensure order card shows Dispatch Order button
+        await sellerPage.goto(`${PROD_URL}/orders`, { waitUntil: 'networkidle2', timeout: 30000 });
+
         // 4. Dispatch order: Processing -> Shipped via DOM Dispatch Modal
-        let dispatchBtnClicked = await clickButtonByText(sellerPage, 'Dispatch Order');
+        let dispatchBtnClicked = await clickOrderCardButton(sellerPage, pipelineState.orderNumber, 'Dispatch Order');
         let dispatchedViaModal = false;
 
         if (dispatchBtnClicked) {
             await new Promise(r => setTimeout(r, 1000));
             // Select driver card in modal
-            const driverSelected = await sellerPage.evaluate((driverId) => {
-                const driverCard = document.querySelector(`[draggable][role="button"], [role="button"]`);
+            await sellerPage.evaluate((driverId) => {
                 const allDriverCards = Array.from(document.querySelectorAll('div[role="button"]'));
                 const targetCard = allDriverCards.find(c => c.innerText?.includes('Logistics Rider') || c.innerText?.includes('Motorcycle'));
-                if (targetCard) {
-                    targetCard.click();
-                    return true;
-                }
-                return false;
+                if (targetCard) targetCard.click();
             }, selectedDriver.id);
 
             await new Promise(r => setTimeout(r, 600));
             // Click Confirm Studio Dispatch
-            dispatchedViaModal = await clickButtonByText(sellerPage, 'Confirm Studio Dispatch');
+            dispatchedViaModal = await clickModalButton(sellerPage, 'Confirm Studio Dispatch');
             await new Promise(r => setTimeout(r, 2000));
         }
 
