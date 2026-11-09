@@ -258,7 +258,7 @@ export async function runLiveB2BTransactionPipeline() {
 
         const clickWholesaleCardButton = async (page, ordIdentifier, btnText) => {
             return await page.evaluate((identifier, text) => {
-                const allCards = Array.from(document.querySelectorAll('div.rounded-2xl, div.group'));
+                const allCards = Array.from(document.querySelectorAll('div.group'));
                 const card = allCards.find(c => (c.innerText || '').includes(String(identifier)));
                 if (!card) return false;
                 const buttons = Array.from(card.querySelectorAll('button'));
