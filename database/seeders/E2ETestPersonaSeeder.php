@@ -120,6 +120,7 @@ class E2ETestPersonaSeeder extends Seeder
                 'cost_price' => 0.50,
                 'stock' => 999,
                 'status' => 'Active',
+                'is_b2b_supply' => false,
                 'lead_time' => 1,
                 'description' => 'Synthetic test product for automated E2E lifecycle and verification.',
                 'cover_photo_path' => 'products/cover/synthetic_bamboo.jpg',
