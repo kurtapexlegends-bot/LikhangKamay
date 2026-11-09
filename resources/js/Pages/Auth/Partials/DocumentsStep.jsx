@@ -3,7 +3,6 @@ import React, { useRef, useState, useEffect } from 'react';
 import { ShieldCheck, ArrowLeft, ArrowRight, UploadCloud, Eye, Trash2, Loader2, XCircle, FileText } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
-import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
 import DocumentViewerModal from '@/Components/Seller/Approvals/DocumentViewerModal';
 import { compressImage } from '@/utils/imageCompressor';
@@ -23,12 +22,11 @@ export default function DocumentsStep({
             <form onSubmit={submit} className="p-4 sm:p-8 md:p-10">
                 <div className="mb-5 sm:mb-6 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 sm:gap-3">
-                        <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-clay-50 border border-clay-200 text-clay-700 shadow-xs shrink-0">
+                        <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-clay-50 border border-clay-200 text-clay-700 shadow-xs shrink-0">
                             <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
                         </div>
                         <div>
-                            <h2 className="text-lg sm:text-xl font-bold text-stone-900 tracking-tight">Verification Documents</h2>
-                            <p className="text-xs text-stone-500 hidden sm:block">Upload clear scans or photos of your government credentials and permits.</p>
+                            <h2 className="text-base sm:text-lg font-bold text-stone-900 tracking-tight">Verification Documents</h2>
                         </div>
                     </div>
                     <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider sm:hidden">
@@ -36,17 +34,10 @@ export default function DocumentsStep({
                     </span>
                 </div>
 
-                <div className="mb-5 sm:mb-6 rounded-xl border border-stone-200 bg-stone-50/70 p-3.5 sm:p-4 flex items-start gap-2.5 sm:gap-3">
-                    <ShieldCheck size={16} className="mt-0.5 shrink-0 text-clay-600" />
-                    <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
-                        <strong className="text-stone-900 font-semibold">Buyer Protection & Authenticity:</strong> Credentials are securely stored and reviewed solely by LikhangKamay verification officers to ensure handmade craftsmanship standards.
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
                     <FileUploadField
-                        label="Business or Mayor's Permit"
-                        description="Or Barangay Micro-Business Certificate"
+                        label="Business / Mayor's Permit"
+                        description="or Barangay Micro-Business"
                         id="business_permit"
                         existingFileUrl={existingDocuments?.business_permit_url || auth?.user?.business_permit_url}
                         error={errors.business_permit}
@@ -54,15 +45,14 @@ export default function DocumentsStep({
                     />
                     <FileUploadField
                         label="DTI Registration Certificate"
-                        description="Department of Trade & Industry permit"
                         id="dti_registration"
                         existingFileUrl={existingDocuments?.dti_registration_url || auth?.user?.dti_registration_url}
                         error={errors.dti_registration}
                         onView={(doc) => setViewingDoc(doc)}
                     />
                     <FileUploadField
-                        label="Valid Government ID (Front)"
-                        description="PhilID, UMID, Driver's License, or Passport"
+                        label="Valid Government ID"
+                        description="Front"
                         id="valid_id"
                         existingFileUrl={existingDocuments?.valid_id_url || auth?.user?.valid_id_url}
                         error={errors.valid_id}
@@ -70,7 +60,7 @@ export default function DocumentsStep({
                     />
                     <FileUploadField
                         label="TIN / BIR Registration"
-                        description="TIN Card or BIR Certificate (Form 2303)"
+                        description="Form 2303 or TIN Card"
                         id="tin_id"
                         existingFileUrl={existingDocuments?.tin_id_url || auth?.user?.tin_id_url}
                         error={errors.tin_id}
@@ -304,25 +294,23 @@ const FileUploadField = React.memo(({ label, description, id, existingFileUrl, e
 
     return (
         <div className="flex flex-col">
-            <div className="flex items-center justify-between mb-1.5">
-                <div>
-                    <InputLabel htmlFor={id} value={label} />
-                    {description && <p className="text-[11px] text-stone-500">{description}</p>}
+            <div className="flex items-baseline justify-between mb-1.5 gap-2">
+                <div className="flex flex-wrap items-baseline gap-1.5 min-w-0">
+                    <label htmlFor={id} className="text-xs sm:text-sm font-semibold text-stone-900 cursor-pointer shrink-0">
+                        {label}
+                    </label>
+                    {description && <span className="text-[11px] text-stone-400 font-normal">({description})</span>}
                 </div>
-                {hasFile ? (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
+                {hasFile && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200 shrink-0">
                         Attached
-                    </span>
-                ) : (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-stone-600 border border-stone-200">
-                        Required
                     </span>
                 )}
             </div>
 
             <div
                 onClick={() => !uploading && !showConfirmDelete && inputRef.current?.click()}
-                className={`mt-1 relative flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-2xl border p-5 transition-all ${
+                className={`mt-1 relative flex min-h-[125px] cursor-pointer flex-col items-center justify-center rounded-xl border p-4 transition-all ${
                     uploading
                         ? 'border-clay-300 bg-clay-50/20 cursor-not-allowed'
                         : showConfirmDelete
@@ -429,11 +417,11 @@ const FileUploadField = React.memo(({ label, description, id, existingFileUrl, e
                     </div>
                 ) : (
                     <div className="flex flex-col items-center text-center">
-                        <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100 text-stone-500">
-                            <UploadCloud size={20} />
+                        <div className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-500">
+                            <UploadCloud size={17} />
                         </div>
-                        <p className="text-xs sm:text-sm font-semibold text-stone-800">Click or drag file to upload</p>
-                        <p className="mt-0.5 text-[11px] text-stone-500">PNG, JPG, WEBP, or PDF up to 4MB</p>
+                        <p className="text-xs font-semibold text-stone-800">Upload document</p>
+                        <p className="text-[10px] text-stone-400 mt-0.5">PDF, PNG, or JPG (max 4MB)</p>
                     </div>
                 )}
                 <input

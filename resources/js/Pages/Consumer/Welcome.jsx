@@ -97,7 +97,7 @@ export default function Welcome({ featuredProducts = [], sponsoredProducts = [],
                         <div className="py-6 sm:py-8 flex justify-center">
                             <Link 
                                 href={route('shop.index')}
-                                className="bg-clay-600 hover:bg-clay-700 text-white px-8 py-3 rounded-xl transition-all shadow-sm active:scale-95 text-xs sm:text-sm font-bold min-h-[44px] flex items-center justify-center gap-2"
+                                className="bg-stone-900 hover:bg-stone-800 text-white px-8 py-3 rounded-xl transition-all shadow-sm active:scale-95 text-xs sm:text-sm font-bold min-h-[44px] flex items-center justify-center gap-2"
                             >
                                 <span>View All Products</span>
                                 <ArrowRight size={14} />
