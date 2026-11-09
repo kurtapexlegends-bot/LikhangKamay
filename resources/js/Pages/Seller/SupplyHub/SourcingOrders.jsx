@@ -316,12 +316,13 @@ export default function SourcingOrders({
 
             {/* Confirm Delivery Modal */}
             <ConfirmationModal
-                show={confirmModal.isOpen}
+                isOpen={confirmModal.isOpen}
                 onClose={() => setConfirmModal({ isOpen: false, order: null })}
                 onConfirm={() => handleConfirmReceipt(confirmModal.order)}
                 title="Confirm Material Delivery & Restock"
                 message={`Have you inspected and received the materials for order #${confirmModal.order?.id} from ${confirmModal.order?.supplier_name || 'the supplier'}? Confirming receipt will automatically add or update these materials in your Studio Materials Inventory with weighted-average unit costing.`}
                 confirmText="Confirm & Restock Studio"
+                confirmColor="bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-200"
                 confirmVariant="primary"
             />
         </>

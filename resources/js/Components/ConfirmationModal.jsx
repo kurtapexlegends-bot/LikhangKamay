@@ -4,6 +4,7 @@ import axios from 'axios';
 
 export default function ConfirmationModal({ 
     isOpen, 
+    show,
     onClose, 
     onConfirm, 
     title, 
@@ -11,11 +12,13 @@ export default function ConfirmationModal({
     icon: Icon, 
     iconBg, 
     confirmText, 
-    confirmColor, 
+    confirmColor = 'bg-[#7A5037] hover:bg-[#68432E]', 
+    confirmVariant,
     processing,
     isHighRisk = false,
     isVeryHighRisk = false
 }) {
+    const isModalOpen = Boolean(isOpen ?? show);
     const [countdown, setCountdown] = useState(5);
     const [password, setPassword] = useState('');
     const [passwordError, setPasswordError] = useState('');
@@ -23,13 +26,13 @@ export default function ConfirmationModal({
 
     // Reset state on open/close
     useEffect(() => {
-        if (isOpen) {
+        if (isModalOpen) {
             setCountdown(5);
             setPassword('');
             setPasswordError('');
             setVerifying(false);
         }
-    }, [isOpen]);
+    }, [isModalOpen]);
 
     // Countdown timer effect
     useEffect(() => {
@@ -78,7 +81,7 @@ export default function ConfirmationModal({
         (isVeryHighRisk && !password);
 
     return (
-        <Modal show={isOpen} onClose={onClose} maxWidth="sm">
+        <Modal show={isModalOpen} onClose={onClose} maxWidth="sm">
             <form onSubmit={handleConfirm} className="p-6 text-center">
                 {Icon && (
                     <div className={`w-14 h-14 ${iconBg || ''} rounded-2xl flex items-center justify-center mx-auto mb-4 border border-stone-100 shadow-sm`}>

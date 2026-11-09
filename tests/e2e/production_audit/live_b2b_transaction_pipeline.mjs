@@ -167,12 +167,20 @@ export async function runLiveB2BTransactionPipeline() {
             throw new Error(`Expected ProcurementCheckout component, got: ${checkoutInertia?.component}`);
         }
 
-        // Ensure Cash on Delivery (COD) payment method is selected
-        const codRadio = await buyerPage.$('input[value="COD"]');
-        if (codRadio) {
-            await codRadio.click();
-            await new Promise(r => setTimeout(r, 500));
-        }
+        // Select Cash on Delivery (COD) payment method by clicking its option label
+        await buyerPage.evaluate(() => {
+            const labels = Array.from(document.querySelectorAll('label'));
+            const codLabel = labels.find(l => (l.innerText || '').includes('Cash on Delivery'));
+            if (codLabel) {
+                codLabel.click();
+            }
+            const codRadio = document.querySelector('input[value="COD"]');
+            if (codRadio) {
+                codRadio.click();
+                codRadio.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+        await new Promise(r => setTimeout(r, 800));
 
         // Wait for shipping quote to settle and Place Order submit button to be enabled
         await buyerPage.waitForFunction(() => {
@@ -248,73 +256,143 @@ export async function runLiveB2BTransactionPipeline() {
         // Navigate to /supply-hub/sales
         await sellerPage.goto(`${PROD_URL}/supply-hub/sales`, { waitUntil: 'networkidle2', timeout: 35000 });
 
-        // 1. Accept Wholesale Order
-        const acceptResult = await sellerPage.evaluate(async (url, ordId) => {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const res = await fetch(`${url}/supply-hub/sales/${ordId}/status`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || ''
-                },
-                body: JSON.stringify({ status: 'Accepted' })
-            });
-            return { status: res.status };
-        }, PROD_URL, pipelineState.orderId);
+        const clickWholesaleCardButton = async (page, ordIdentifier, btnText) => {
+            return await page.evaluate((identifier, text) => {
+                const allCards = Array.from(document.querySelectorAll('div.rounded-2xl, div.group'));
+                const card = allCards.find(c => (c.innerText || '').includes(String(identifier)));
+                if (!card) return false;
+                const buttons = Array.from(card.querySelectorAll('button'));
+                const btn = buttons.find(b => (b.innerText || '').trim().includes(text) && !b.disabled);
+                if (btn) {
+                    btn.click();
+                    return true;
+                }
+                return false;
+            }, ordIdentifier, btnText);
+        };
 
-        if (![200, 302].includes(acceptResult.status)) {
-            throw new Error(`Wholesale order acceptance failed with HTTP ${acceptResult.status}`);
+        const clickModalButton = async (page, btnText) => {
+            return await page.evaluate((text) => {
+                const buttons = Array.from(document.querySelectorAll('button'));
+                const btn = buttons.find(b => (b.innerText || '').trim().includes(text) && !b.disabled);
+                if (btn) {
+                    btn.click();
+                    return true;
+                }
+                return false;
+            }, btnText);
+        };
+
+        // 1. Accept Wholesale Order via DOM button & modal
+        let acceptClicked = await clickWholesaleCardButton(sellerPage, pipelineState.orderNumber || pipelineState.orderId, 'Accept');
+        let acceptViaDOM = false;
+        if (acceptClicked) {
+            await new Promise(r => setTimeout(r, 800));
+            acceptViaDOM = await clickModalButton(sellerPage, 'Confirm Accepted');
+            await new Promise(r => setTimeout(r, 2000));
         }
 
-        // 2. Mark Wholesale Order as Shipped
-        const shipResult = await sellerPage.evaluate(async (url, ordId) => {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const res = await fetch(`${url}/supply-hub/sales/${ordId}/status`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || ''
-                },
-                body: JSON.stringify({
-                    status: 'Shipped',
-                    tracking_number: 'B2B-EXP-001',
-                    shipping_notes: 'Workshop delivery in transit.'
-                })
-            });
-            return { status: res.status };
-        }, PROD_URL, pipelineState.orderId);
+        if (!acceptViaDOM) {
+            const acceptResult = await sellerPage.evaluate(async (url, ordId) => {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const res = await fetch(`${url}/supply-hub/sales/${ordId}/status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || ''
+                    },
+                    body: JSON.stringify({ status: 'Accepted' })
+                });
+                return { status: res.status };
+            }, PROD_URL, pipelineState.orderId);
 
-        if (![200, 302].includes(shipResult.status)) {
-            throw new Error(`Wholesale order ship failed with HTTP ${shipResult.status}`);
+            if (![200, 302].includes(acceptResult.status)) {
+                throw new Error(`Wholesale order acceptance failed with HTTP ${acceptResult.status}`);
+            }
         }
 
-        // 3. Mark Wholesale Order as Delivered
-        const deliverResult = await sellerPage.evaluate(async (url, ordId) => {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const res = await fetch(`${url}/supply-hub/sales/${ordId}/status`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || ''
-                },
-                body: JSON.stringify({
-                    status: 'Delivered',
-                    tracking_number: 'B2B-EXP-001',
-                    shipping_notes: 'Direct workshop delivery completed.'
-                })
-            });
-            return { status: res.status };
-        }, PROD_URL, pipelineState.orderId);
+        // Reload to refresh order card state
+        await sellerPage.goto(`${PROD_URL}/supply-hub/sales`, { waitUntil: 'networkidle2', timeout: 35000 });
 
-        if (![200, 302].includes(deliverResult.status)) {
-            throw new Error(`Wholesale order dispatch failed with HTTP ${deliverResult.status}`);
+        // 2. Mark Wholesale Order as Dispatched via DOM Dispatch Order Modal
+        let shipClicked = await clickWholesaleCardButton(sellerPage, pipelineState.orderNumber || pipelineState.orderId, 'Mark Dispatched');
+        let shipViaDOM = false;
+        if (shipClicked) {
+            await new Promise(r => setTimeout(r, 1200));
+            // Select driver card in DispatchOrderModal
+            await sellerPage.evaluate(() => {
+                const driverCards = Array.from(document.querySelectorAll('div[role="button"]'));
+                const targetCard = driverCards.find(c => c.innerText?.includes('Logistics Rider') || c.innerText?.includes('Motorcycle'));
+                if (targetCard) targetCard.click();
+            });
+            await new Promise(r => setTimeout(r, 600));
+            shipViaDOM = await clickModalButton(sellerPage, 'Confirm Studio Dispatch');
+            await new Promise(r => setTimeout(r, 2500));
+        }
+
+        if (!shipViaDOM) {
+            // Direct in-house dispatch fallback using driver employee ID 4
+            const shipResult = await sellerPage.evaluate(async (url, ordNum) => {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const res = await fetch(`${url}/orders/${ordNum}/dispatch-in-house`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || ''
+                    },
+                    body: JSON.stringify({
+                        employee_id: 4,
+                        dispatch_notes: 'B2B Wholesale Studio Fleet Delivery'
+                    })
+                });
+                return { status: res.status };
+            }, PROD_URL, pipelineState.orderNumber);
+
+            if (![200, 302].includes(shipResult.status)) {
+                throw new Error(`Wholesale order dispatch failed with HTTP ${shipResult.status}`);
+            }
+        }
+
+        // Reload to refresh order card state
+        await sellerPage.goto(`${PROD_URL}/supply-hub/sales`, { waitUntil: 'networkidle2', timeout: 35000 });
+
+        // 3. Mark Wholesale Order as Delivered via DOM button & modal
+        let deliverClicked = await clickWholesaleCardButton(sellerPage, pipelineState.orderNumber || pipelineState.orderId, 'Mark Delivered');
+        let deliverViaDOM = false;
+        if (deliverClicked) {
+            await new Promise(r => setTimeout(r, 800));
+            deliverViaDOM = await clickModalButton(sellerPage, 'Confirm Delivered');
+            await new Promise(r => setTimeout(r, 2000));
+        }
+
+        if (!deliverViaDOM) {
+            const deliverResult = await sellerPage.evaluate(async (url, ordId) => {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const res = await fetch(`${url}/supply-hub/sales/${ordId}/status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || ''
+                    },
+                    body: JSON.stringify({
+                        status: 'Delivered',
+                        tracking_number: 'B2B-EXP-001',
+                        shipping_notes: 'Direct workshop delivery completed.'
+                    })
+                });
+                return { status: res.status };
+            }, PROD_URL, pipelineState.orderNumber || pipelineState.orderId);
+
+            if (![200, 302].includes(deliverResult.status)) {
+                throw new Error(`Wholesale order deliver failed with HTTP ${deliverResult.status}`);
+            }
         }
 
         logStage('4. Wholesale Order Dispatched', 'PASS', {
-            message: `Order #${pipelineState.orderNumber} accepted, shipped, and marked Delivered by seller.`
+            message: `Order #${pipelineState.orderNumber} accepted, shipped, and marked Delivered by seller. [DOM Interactive: ${deliverViaDOM ? 'YES' : 'API Fallback'}]`
         });
 
         await sellerContext.close();
@@ -336,22 +414,32 @@ export async function runLiveB2BTransactionPipeline() {
         // Navigate to /supply-hub/orders
         await buyerVerifyPage.goto(`${PROD_URL}/supply-hub/orders`, { waitUntil: 'networkidle2', timeout: 35000 });
 
-        // Click Confirm Delivery via POST /supply-hub/orders/{id}/confirm-delivery
-        const confirmResult = await buyerVerifyPage.evaluate(async (url, ordId) => {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const res = await fetch(`${url}/supply-hub/orders/${ordId}/confirm-delivery`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || ''
-                }
-            });
-            return { status: res.status };
-        }, PROD_URL, pipelineState.orderId);
+        // Click Confirm Delivery via DOM button & modal
+        let buyerConfirmClicked = await clickWholesaleCardButton(buyerVerifyPage, pipelineState.orderNumber || pipelineState.orderId, 'Confirm Delivery');
+        let buyerConfirmViaDOM = false;
+        if (buyerConfirmClicked) {
+            await new Promise(r => setTimeout(r, 800));
+            buyerConfirmViaDOM = await clickModalButton(buyerVerifyPage, 'Confirm');
+            await new Promise(r => setTimeout(r, 2000));
+        }
 
-        if (![200, 302].includes(confirmResult.status)) {
-            throw new Error(`Confirm Delivery failed with HTTP ${confirmResult.status}`);
+        if (!buyerConfirmViaDOM) {
+            const confirmResult = await buyerVerifyPage.evaluate(async (url, ordId) => {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const res = await fetch(`${url}/supply-hub/orders/${ordId}/confirm-delivery`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || ''
+                    }
+                });
+                return { status: res.status };
+            }, PROD_URL, pipelineState.orderId);
+
+            if (![200, 302].includes(confirmResult.status)) {
+                throw new Error(`Confirm Delivery failed with HTTP ${confirmResult.status}`);
+            }
         }
 
         // Reload /supply-hub/orders to verify status is Completed
