@@ -122,7 +122,7 @@ class StaffSecurityController extends Controller
         ]);
     }
 
-    public function resumeAttendance(Request $request, StaffAttendanceService $attendanceService): RedirectResponse
+    public function resumeAttendance(Request $request, StaffAttendanceService $attendanceService): RedirectResponse|JsonResponse
     {
         $user = $this->getStaffUser($request);
 
@@ -139,6 +139,14 @@ class StaffSecurityController extends Controller
 
         $attendanceService->ensureClockedIn($user, $request->only(['photo_data', 'latitude', 'longitude', 'workplace_pin', 'otp_code', 'liveness_verified']));
 
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Shift resumed.',
+                'state' => 'active',
+            ]);
+        }
+
         $intended = $request->session()->pull('staff.attendance.intended');
 
         if (is_string($intended) && $intended !== '') {
@@ -148,13 +156,21 @@ class StaffSecurityController extends Controller
         return $this->redirectToWorkspaceReferrer($request);
     }
 
-    public function pauseAttendance(Request $request, StaffAttendanceService $attendanceService): RedirectResponse
+    public function pauseAttendance(Request $request, StaffAttendanceService $attendanceService): RedirectResponse|JsonResponse
     {
         $user = $this->getStaffUser($request);
 
         abort_unless($user->canAccessSellerWorkspace(), 403, 'Staff workspace access only.');
 
         $attendanceService->closeOpenSession($user, StaffAttendanceService::MODE_PAUSED);
+
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Shift paused on break.',
+                'state' => 'paused',
+            ]);
+        }
 
         return redirect()->route('staff.dashboard');
     }

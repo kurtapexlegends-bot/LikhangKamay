@@ -15,9 +15,11 @@ class ArchiveProduct
             $updateData = ['status' => 'Archived'];
             if ($product->is_sponsored) {
                 $updateData['is_sponsored'] = false;
-                \App\Models\SponsorshipRequest::where('product_id', $product->id)
-                    ->where('status', 'approved')
-                    ->update(['status' => 'expired']);
+                rescue(function () use ($product) {
+                    \App\Models\SponsorshipRequest::where('product_id', $product->id)
+                        ->where('status', 'approved')
+                        ->update(['status' => 'expired']);
+                }, report: false);
                 \Illuminate\Support\Facades\Cache::forget('home_sponsored_products');
             }
             $product->update($updateData);

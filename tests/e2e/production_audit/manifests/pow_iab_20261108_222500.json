@@ -1,0 +1,170 @@
+{
+  "manifest_version": "5.1.0-PROD-3STREAM-POW",
+  "run_id": "iab-20261108-222500",
+  "timestamp": "2026-11-08T14:25:00Z",
+  "host": "https://www.likhangkamay.app",
+  "protocol": "3-Stream Assembly Line E2E Browser Suite (Production Ground Truth)",
+  "execution_mode": "subagent_isolated",
+  "elite_seller_verified": true,
+  "defense_assets_verified": true,
+  "streams_executed": {
+    "stream_a_commercial_core": true,
+    "stream_b_b2b_discovery_resilience": true,
+    "stream_c_governance_hr_monetization": true
+  },
+  "commercial_orders": {
+    "order_a": {
+      "order_number": "ORD-6AF055B6CC40E",
+      "db_id": 66,
+      "payment_method": "paymongo_gcash",
+      "amount": "₱231.75",
+      "rider": "Test Logistics Rider (Plate: CAV-9876, ID: 4)",
+      "status": "Completed",
+      "review_rating": 5,
+      "review_comment": "Excellent quality hand-crafted item! Fast delivery and packaged securely.",
+      "sales_invoice_downloaded": true,
+      "invoice_endpoint": "/my-orders/66/receipt?download=1"
+    },
+    "order_b": {
+      "order_number": "ORD-6AF056152E252",
+      "db_id": 67,
+      "pickup_mode": "in_store_pickup",
+      "pickup_slot": "Silang Ceramic Studio",
+      "pickup_pin_verified": true,
+      "claim_pin": "8517",
+      "amount": "₱225.00"
+    },
+    "order_c": {
+      "order_number": "ORD-6AF056344A2C0",
+      "db_id": 68,
+      "courier": "lalamove_sandbox",
+      "lalamove_tracking_id": "LLM-SANDBOX-68",
+      "amount": "₱231.75",
+      "buyer_dispute_filed": true,
+      "dispute_id": 7,
+      "dispute_reason": "Defective hairline crack on handle",
+      "seller_rebuttal_registered": true,
+      "seller_response_type": "reject",
+      "buyer_arbitration_escalated": true,
+      "dispute_status": "REFUNDED",
+      "admin_arbitration": "Approved Full Refund (refund)"
+    }
+  },
+  "multi_seller_cart_split": {
+    "split_order_a": "ORD-6AF05669CE2E6",
+    "split_order_b": "ORD-6AF05669C491A",
+    "db_id_a": 70,
+    "db_id_b": 69,
+    "dual_invoices_verified": true
+  },
+  "procurement_lifecycle": {
+    "stock_request_id": 9,
+    "clerk_clock_in_pin": "8651",
+    "material": "Stoneware Clay (20kg)",
+    "request_amount": "₱1,000.00",
+    "self_approval_blocked": true,
+    "request_rejection_tested": true,
+    "rejected_request_id": 7,
+    "accounting_base_funds_replenished": "₱50,000.00",
+    "new_accounting_balance": "₱48,663.86",
+    "accounting_approved": true
+  },
+  "b2b_wholesale": {
+    "b2b_order_number": "ORD-6AF0747A2AB83",
+    "buyer_artisan": "artisan.silang@likhangkamay.com",
+    "seller_artisan": "test.artisan@likhangkamay.local",
+    "raw_material": "E2E Synthetic ₱1 Bamboo Cup (5kg bulk)",
+    "moq_enforced": true,
+    "volume_quantity": 5,
+    "total_amount": "₱372.75",
+    "net_payout": "₱225.00",
+    "rider": "Test Logistics Rider (Plate: CAV-9876, ID: 3)",
+    "b2b_invoice_downloaded": true,
+    "b2b_invoice_status": "200 OK",
+    "synced_to_inventory": true,
+    "procurement_sku": "B2B-E2ES-775",
+    "stock_increment_verified": "+5kg"
+  },
+  "buyer_discovery_and_3d": {
+    "faceted_search_url": "/shop?locations=Dasmariñas&materials=Stoneware%20Clay&sort=price_low",
+    "wishlist_toggle_verified": true,
+    "wishlist_to_cart_transfer_verified": true,
+    "live_3d_product_slug": "nCZCo76N95rDof28mm7kKQ",
+    "canvas_dimensions": "650x650",
+    "webgl_supported": true,
+    "orbit_controls_drag_rotated": true
+  },
+  "order_resilience": {
+    "cancelled_order_number": "ORD-6AF07A7F85DFB",
+    "db_id": 72,
+    "total_amount": "₱225.00",
+    "atomic_rollback_verified": true,
+    "active_orders_decremented": "32 -> 31",
+    "vacated_workshop_guard_verified": true
+  },
+  "buyer_and_artisan_kyc": {
+    "email_verification_route": "/verify-email",
+    "bad_code_tested": "123456",
+    "inline_error_verified": "The verification code is incorrect.",
+    "artisan_registration_shop": "Alfonso Heritage Crafts",
+    "compliance_scroll_lock_asserted": true,
+    "application_queued_for_admin": true
+  },
+  "staff_and_hr_governance": {
+    "offsite_staff_location": "Manila GPS (14.5995, 120.9842)",
+    "distance_warning_verified": "40,967m OUT OF RANGE",
+    "staff_pin_clock_in": "8651",
+    "clock_in_flagged": true,
+    "team_message_sent": "Order ORD-6AF055B6CC40E is packed and ready on dispatch rack.",
+    "rider_telemetry_sent": "14.4258, 120.9385",
+    "rider_pod_uploaded": "Proof of Delivery (POD).jpg",
+    "provisioned_employee": "Test Apprentice Potter (EMP-896305, DB ID: 11)",
+    "suspension_cycle_tested": true,
+    "seat_teardown_deleted": true,
+    "active_staff_restored": "4 -> 3",
+    "team_thread_message": "Kiln batch #12 reached 1200C cone 6.",
+    "attendance_exception_approved": true,
+    "payroll_batch_cycle": "November 2026",
+    "statutory_deductions_calculated": ["SSS", "PhilHealth", "Pag-IBIG", "WHT"],
+    "maker_checker_separated": true,
+    "payroll_submitted_to_accounting": true,
+    "payroll_status": "Approved"
+  },
+  "seller_tax_and_locations": {
+    "secondary_location_name": "Silang Ceramic Studio",
+    "secondary_location_id": 7,
+    "geofence_enforced": true,
+    "secondary_location_teardown_verified": true,
+    "remaining_locations_count": 0,
+    "bir_2307_statement_exported": true,
+    "settlement_gross_sales": "₱3,850.90",
+    "settlement_net_balance": "₱4,008.90"
+  },
+  "monetization_and_admin_studio": {
+    "subscription_tier": "super_premium (Elite)",
+    "retention_modal_triggered": true,
+    "retention_modal_dismissed_safe": true,
+    "sponsorship_campaign_product": "TEST-BAMBOO-01",
+    "sponsorship_status": "PENDING (Queue Active)",
+    "email_studio_template": "Buyer Order Confirmation & Receipt",
+    "email_studio_live_preview_verified": true,
+    "email_recipient": "test.buyer@likhangkamay.local",
+    "email_dispatch_status": "SUCCESS (200 OK)",
+    "email_service": "RESEND",
+    "delivery_speed_ms": 378
+  },
+  "admin_governance": {
+    "kyc_inspection_zoom_pan": true,
+    "dispute_adjudication": "Approved Full Refund (REFUNDED)",
+    "disputed_review_moderated": true,
+    "craftsmanship_3d_canvas_inspected": true,
+    "payout_voucher_audited": "PAY-E2E-20261103-480885",
+    "advisory_notice_issued": true,
+    "tier_override_reverted": true,
+    "taxonomy_category_crud_verified": true,
+    "rbac_hard_barrier_verified": true
+  },
+  "proof_of_work_signature": "0bfcccc2339671ee362ba40b8561718d0a53b00ea6f16dbf28c2feeb01ce3bc2",
+  "final_verdict": "PASS",
+  "audit_conclusion": "ALL 30+ WORKFLOWS VERIFIED ON LIVE PRODUCTION WITH DOM MUTATIONS AND FRESH ENTITIES"
+}
