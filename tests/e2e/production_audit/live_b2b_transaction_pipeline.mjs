@@ -420,7 +420,17 @@ export async function runLiveB2BTransactionPipeline() {
         if (buyerConfirmClicked) {
             await new Promise(r => setTimeout(r, 800));
             buyerConfirmViaDOM = await clickModalButton(buyerVerifyPage, 'Confirm');
-            await new Promise(r => setTimeout(r, 2000));
+            
+            // Wait for Inertia request to settle and status to transition to Completed
+            try {
+                await buyerVerifyPage.waitForFunction((ordNum) => {
+                    const text = document.body.innerText || '';
+                    return text.includes(ordNum) && (text.includes('Synced to Inventory') || text.includes('Completed'));
+                }, { timeout: 15000 }, pipelineState.orderNumber);
+            } catch {
+                // If toast/live DOM update didn't trigger within 15s, reload once
+                await buyerVerifyPage.goto(`${PROD_URL}/supply-hub/orders`, { waitUntil: 'networkidle2', timeout: 35000 });
+            }
         }
 
         if (!buyerConfirmViaDOM) {
@@ -440,6 +450,7 @@ export async function runLiveB2BTransactionPipeline() {
             if (![200, 302].includes(confirmResult.status)) {
                 throw new Error(`Confirm Delivery failed with HTTP ${confirmResult.status}`);
             }
+            await new Promise(r => setTimeout(r, 3000));
         }
 
         // Reload /supply-hub/orders to verify status is Completed

@@ -36,7 +36,7 @@ export default function ConfirmationModal({
 
     // Countdown timer effect
     useEffect(() => {
-        if (!isOpen || !isHighRisk) return;
+        if (!isModalOpen || !isHighRisk) return;
         if (countdown <= 0) return;
 
         const timer = setTimeout(() => {
@@ -44,7 +44,7 @@ export default function ConfirmationModal({
         }, 1000);
 
         return () => clearTimeout(timer);
-    }, [countdown, isOpen, isHighRisk]);
+    }, [countdown, isModalOpen, isHighRisk]);
 
     const handleConfirm = async (e) => {
         if (e) e.preventDefault();
@@ -134,6 +134,7 @@ export default function ConfirmationModal({
                     </button>
                     <button
                         type="submit"
+                        onClick={handleConfirm}
                         disabled={isConfirmDisabled}
                         className={`px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-95 ${confirmColor} disabled:opacity-50 min-h-[44px] flex items-center justify-center`}
                     >
