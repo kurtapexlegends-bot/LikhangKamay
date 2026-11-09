@@ -97,8 +97,6 @@ export async function runLiveTransactionPipeline() {
         if (!product) {
             throw new Error(`Synthetic ₱1 product ${pipelineState.sku} (${targetSlug}) not accessible. Ensure test personas are seeded.`);
         }
-            throw new Error('Failed to load product detail props for synthetic test item.');
-        }
 
         pipelineState.stockBefore = Number(product.stock);
         const targetProductId = product.id;

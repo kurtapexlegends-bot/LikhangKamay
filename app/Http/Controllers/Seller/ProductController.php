@@ -46,7 +46,7 @@ class ProductController extends Controller
         try {
             $query = Product::where('user_id', $seller->id)
                 ->select([
-                    'id', 'sku', 'name', 'description', 'category', 'status',
+                    'id', 'slug', 'sku', 'name', 'description', 'category', 'status',
                     'clay_type', 'glaze_type', 'firing_method', 'food_safe', 'colors',
                     'height', 'width', 'weight', 'price', 'cost_price', 'stock',
                     'lead_time', 'sold', 'cover_photo_path', 'gallery_paths', 'model_3d_path',
