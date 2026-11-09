@@ -2,6 +2,7 @@
 
 use App\Models\Product;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -10,12 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Product::withTrashed()->where('sku', 'TEST-BAMBOO-01')->update([
-            'slug' => 'test-bamboo-01-synthetic-cup',
-            'status' => 'Active',
-            'is_b2b_supply' => false,
-            'deleted_at' => null,
-        ]);
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("
+                UPDATE products 
+                SET slug = 'test-bamboo-01-synthetic-cup', 
+                    status = 'Active', 
+                    is_b2b_supply = false, 
+                    deleted_at = NULL 
+                WHERE sku = 'TEST-BAMBOO-01'
+            ");
+        } else {
+            DB::statement("
+                UPDATE products 
+                SET slug = 'test-bamboo-01-synthetic-cup', 
+                    status = 'Active', 
+                    is_b2b_supply = 0, 
+                    deleted_at = NULL 
+                WHERE sku = 'TEST-BAMBOO-01'
+            ");
+        }
     }
 
     /**
