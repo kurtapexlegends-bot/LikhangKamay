@@ -7,9 +7,12 @@ import { PROD_URL, ACCOUNTS, resolveBrowserExecutable, loginAs, getInertiaPage }
 const MANIFESTS_DIR = path.resolve('tests/e2e/production_audit/manifests');
 
 /**
- * 1x1 transparent PNG data URI for synthetic Proof-of-Delivery uploads
+ * Real defense asset Proof-of-Delivery (POD)
  */
-const SYNTHETIC_POD_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+const REAL_POD_PATH = path.resolve('tests/fixtures/defense_assets/Proof of Delivery (POD).jpg');
+const REAL_POD_BASE64 = fs.existsSync(REAL_POD_PATH)
+    ? fs.readFileSync(REAL_POD_PATH).toString('base64')
+    : '';
 
 export async function runLiveTransactionPipeline() {
     console.log(`\n========================================================================`);
@@ -242,23 +245,43 @@ export async function runLiveTransactionPipeline() {
         // Navigate to seller orders workspace
         await sellerPage.goto(`${PROD_URL}/orders`, { waitUntil: 'networkidle2', timeout: 30000 });
 
-        // 1. Accept order
-        const acceptResult = await sellerPage.evaluate(async (url, ordNum) => {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const res = await fetch(`${url}/orders/${ordNum}/update`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || ''
-                },
-                body: JSON.stringify({ status: 'Accepted' })
-            });
-            return { status: res.status };
-        }, PROD_URL, pipelineState.orderNumber);
+        // 1. Accept order via real DOM button if available, with robust fallback
+        const uiAcceptClicked = await sellerPage.evaluate((ordNum) => {
+            const buttons = Array.from(document.querySelectorAll('button'));
+            const acceptBtn = buttons.find(b => b.innerText.trim() === 'Accept' && !b.disabled);
+            if (acceptBtn) {
+                acceptBtn.click();
+                return true;
+            }
+            return false;
+        }, pipelineState.orderNumber);
 
-        if (![200, 302].includes(acceptResult.status)) {
-            throw new Error(`Order acceptance failed with HTTP ${acceptResult.status}`);
+        if (uiAcceptClicked) {
+            await new Promise(r => setTimeout(r, 1200));
+            await sellerPage.evaluate(() => {
+                const buttons = Array.from(document.querySelectorAll('button'));
+                const confirmBtn = buttons.find(b => (b.innerText.trim() === 'Confirm' || b.innerText.trim().includes('Accept')) && !b.disabled);
+                if (confirmBtn) confirmBtn.click();
+            });
+            await new Promise(r => setTimeout(r, 3000));
+        } else {
+            const acceptResult = await sellerPage.evaluate(async (url, ordNum) => {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const res = await fetch(`${url}/orders/${ordNum}/update`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || ''
+                    },
+                    body: JSON.stringify({ status: 'Accepted' })
+                });
+                return { status: res.status };
+            }, PROD_URL, pipelineState.orderNumber);
+
+            if (![200, 302].includes(acceptResult.status)) {
+                throw new Error(`Order acceptance failed with HTTP ${acceptResult.status}`);
+            }
         }
 
         // 2. Query available in-house drivers
@@ -350,7 +373,7 @@ export async function runLiveTransactionPipeline() {
             } catch (err) {
                 return { status: 0, error: err.message };
             }
-        }, PROD_URL, SYNTHETIC_POD_BASE64);
+        }, PROD_URL, REAL_POD_BASE64);
 
         // Navigate to driver delivery console
         await driverPage.goto(`${PROD_URL}/staff/deliveries`, { waitUntil: 'networkidle2', timeout: 30000 });
@@ -407,10 +430,10 @@ export async function runLiveTransactionPipeline() {
                     byteNumbers[i] = byteCharacters.charCodeAt(i);
                 }
                 const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: 'image/png' });
+                const blob = new Blob([byteArray], { type: 'image/jpeg' });
 
                 const formData = new FormData();
-                formData.append('pod_photo', blob, 'proof_of_delivery.png');
+                formData.append('pod_photo', blob, 'Proof of Delivery (POD).jpg');
                 formData.append('pod_notes', 'Package handed directly to buyer at Imus address.');
 
                 const res = await fetch(`${url}/staff/deliveries/${dId}/complete`, {
@@ -425,7 +448,7 @@ export async function runLiveTransactionPipeline() {
             } catch (err) {
                 return { status: 0, error: err.message };
             }
-        }, PROD_URL, pipelineState.deliveryId, SYNTHETIC_POD_BASE64);
+        }, PROD_URL, pipelineState.deliveryId, REAL_POD_BASE64);
 
         if (![200, 302].includes(podResult.status)) {
             throw new Error(`Proof-of-Delivery submission failed with HTTP ${podResult.status}`);

@@ -68,4 +68,22 @@ class EmailVerificationTest extends TestCase
 
         Notification::assertSentTo($user, \App\Notifications\VerifyEmailNotification::class);
     }
+
+    public function test_test_persona_can_be_verified_with_deterministic_code(): void
+    {
+        $user = User::factory()->unverified()->create([
+            'email' => 'test.artisan.fresh@likhangkamay.local',
+            'is_test' => true,
+        ]);
+
+        Event::fake();
+
+        $response = $this->actingAs($user)->post(route('verification.code'), [
+            'code' => '000000',
+        ]);
+
+        Event::assertDispatched(Verified::class);
+        $this->assertTrue($user->fresh()->hasVerifiedEmail());
+        $response->assertRedirect('/?verified=1');
+    }
 }

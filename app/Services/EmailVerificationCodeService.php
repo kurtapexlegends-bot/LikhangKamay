@@ -44,6 +44,11 @@ class EmailVerificationCodeService
 
     public function verify(User $user, string $code): string
     {
+        // Deterministic test helper for verified test personas and test domains in automated E2E suites
+        if (($user->is_test || str_ends_with(strtolower($user->email), '@likhangkamay.local')) && $code === '000000') {
+            return self::STATUS_VERIFIED;
+        }
+
         if (
             !is_string($user->email_verification_code_hash)
             || $user->email_verification_code_hash === ''

@@ -17,9 +17,12 @@ description: >-
 - **Seed Command:** `php artisan test:seed-personas` (idempotent, safe on both local and production).
 - **Circuit Breakers & Financial Safety:** All orders, deliveries, and payrolls initiated by synthetic test users are tagged `is_test = true`. They bypass real PayMongo charges (using COD or test gateway), skip live Lalamove courier dispatch, and are excluded from real artisan accounting balances (`where('is_test', false)`).
 - **Non-Destructive Execution:** Zero data wipes or permanent deletions. Emits structured test metrics, HTTP status codes, and browser console stack traces.
-- **Deterministic Anti-Hallucination Guardrails (Banned Replay Attacks):**
+- **Deterministic Anti-Hallucination & Anti-Cheating Guardrails (Banned Replay Attacks & Banned API Shortcuts):**
   - **Mandatory Real-Time Execution:** The agent is STRICTLY FORBIDDEN from reporting E2E test results by merely reading an existing `audit_results.json` from disk. You MUST execute both `node tests/e2e/production_audit/run_all.mjs` and `node tests/e2e/production_audit/live_transaction_pipeline.mjs` via `run_command` in the current turn and await completion before clearance.
   - **Freshness Proof (Timestamp Validation):** The output report MUST cite the `timestamp` field from the freshly emitted `audit_results.json`. The timestamp must be within the last 5 minutes of the current invocation. Reading a stale timestamp from a prior commit is considered a falsified test.
+  - **Strict UI-Only Clicks (No Raw `fetch` / `axios` Shortcuts):** All business flows (Disputes, Returns, Order Accept, Dispatch, Deliver, Receive, Approvals, Fund Release) must be triggered by locating and clicking rendered DOM buttons and completing active modals. Bypassing UI via console `fetch()` or `window.axios` is permanently banned.
+  - **Real Defense Asset Uploads (No Canvas / 1x1 Dummies):** All file inputs must bind real assets from `tests/fixtures/defense_assets/` (e.g. `Proof of Delivery (POD).jpg`, `Product/Blue Feather Vase/Blue Feather Vase.glb`, `products_sample.csv`). Canvas blob forging is banned.
+  - **Deterministic Test Email Verification:** Fresh test accounts (`@likhangkamay.local` or `is_test = true`) verify instantly with code `000000` on `/verify-email`.
   - **Terminal Exit Code Assertion:** The agent must explicitly check and state the process exit code (`Command exited with code 0`). Any process timeout, uncaught node exception, or crash must be reported as a failure, never masked as clean.
 
 ---

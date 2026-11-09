@@ -51,6 +51,9 @@ Audit all domain models and queries for crashes caused by missing, deactivated, 
 4. **Content Safety Moderation & Takedown Exclusions:**
    - Scan public catalog, product reviews, and artisan rating aggregates across `ProductReviewService`, `BuyerReviewsController`, and `HomepageMerchandisingService`.
    - Verify public queries strictly filter out reviews flagged as hidden (`where('is_hidden', false)` or `where('moderation_status', 'approved')`), preventing toxic or under-moderation content from leaking to public storefronts or corrupting average star ratings.
+5. **PostgreSQL Enum Check Constraint Traps (`SQLSTATE[23514]`):**
+   - In Laravel migrations, altering an enum column to string (`$table->string('status')->change()`) removes enum checks on MySQL but leaves check constraints on Neon PostgreSQL (`stock_requests_status_check`, `sponsorship_requests_status_check`).
+   - Audit migrations and queries to ensure check constraints are dropped via additive migrations when new status strings are added.
 
 ### Vector 3: Concurrency, Race Conditions & Transaction Integrity
 Audit mutations for multi-user race conditions and partial state writes:
