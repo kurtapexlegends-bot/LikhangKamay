@@ -114,6 +114,7 @@ class E2ETestPersonaSeeder extends Seeder
             [
                 'user_id' => $artisan->id,
                 'name' => 'E2E Synthetic ₱1 Bamboo Cup',
+                'slug' => 'test-bamboo-01-synthetic-cup',
                 'category' => $category?->name ?? 'Pottery & Ceramics',
                 'price' => 1.00,
                 'cost_price' => 0.50,
@@ -121,6 +122,12 @@ class E2ETestPersonaSeeder extends Seeder
                 'status' => 'Active',
                 'lead_time' => 1,
                 'description' => 'Synthetic test product for automated E2E lifecycle and verification.',
+                'cover_photo_path' => 'products/cover/synthetic_bamboo.jpg',
+                'gallery_paths' => [
+                    'products/gallery/synthetic_bamboo_1.jpg',
+                    'products/gallery/synthetic_bamboo_2.jpg',
+                    'products/gallery/synthetic_bamboo_3.jpg',
+                ],
                 'deleted_at' => null,
             ]
         );
