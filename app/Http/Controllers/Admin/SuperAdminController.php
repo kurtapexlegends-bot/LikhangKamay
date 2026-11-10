@@ -126,7 +126,11 @@ class SuperAdminController extends Controller
 
     public function rejectArtisan(RejectArtisanRequest $request, int|string $id, RejectArtisan $rejectArtisan)
     {
-        $rejectArtisan->execute($id, strip_tags((string) $request->validated('reason')));
+        $rejectArtisan->execute(
+            $id,
+            strip_tags((string) $request->validated('reason', '')),
+            $request->validated('revision_items', []) ?? []
+        );
 
         return back()->with('success', 'Artisan application returned for revision.');
     }

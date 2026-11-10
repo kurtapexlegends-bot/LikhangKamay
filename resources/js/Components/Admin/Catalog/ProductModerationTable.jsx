@@ -177,23 +177,24 @@ export default function ProductModerationTable({ products, filters, statusCounts
     };
 
     const handleDrawerApprove = (productId) => {
-        executeSingleModeration(productId, 'approve', '');
+        executeSingleModeration(productId, 'approve', '', []);
     };
 
-    const handleDrawerReject = (productId, feedbackReason) => {
-        executeSingleModeration(productId, 'reject', feedbackReason);
+    const handleDrawerReject = (productId, feedbackReason, revisionItems = []) => {
+        executeSingleModeration(productId, 'reject', feedbackReason, revisionItems);
     };
 
-    const handleDrawerFlag = (productId, feedbackReason) => {
-        executeSingleModeration(productId, 'flag', feedbackReason);
+    const handleDrawerFlag = (productId, feedbackReason, revisionItems = []) => {
+        executeSingleModeration(productId, 'flag', feedbackReason, revisionItems);
     };
 
-    const executeSingleModeration = (productId, actionType, feedbackText = '') => {
+    const executeSingleModeration = (productId, actionType, feedbackText = '', revisionItems = []) => {
         setIsModifyingProduct(true);
         router.post(route('admin.catalog.moderate'), {
             ids: [productId],
             action: actionType,
-            feedback: feedbackText
+            feedback: feedbackText,
+            revision_items: revisionItems,
         }, {
             preserveScroll: true,
             preserveState: true,

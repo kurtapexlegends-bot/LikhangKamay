@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 use App\Traits\Searchable;
 use App\Traits\HasTransformableImages;
+use App\Traits\HasTargetedRevisions;
 
 /**
  * @property int $id
@@ -44,7 +45,7 @@ use App\Traits\HasTransformableImages;
  */
 class Product extends Model
 {
-    use HasFactory, SoftDeletes, HasTransformableImages, Searchable;
+    use HasFactory, SoftDeletes, HasTransformableImages, Searchable, HasTargetedRevisions;
 
     public static $bypassReview = false;
 

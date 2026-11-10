@@ -5,7 +5,14 @@ import { generateChallengeSequence } from './livenessChallengeConfig';
 import LivenessChallengePrompt from './LivenessChallengePrompt';
 import { loadCachedFaceModels } from '@/lib/faceModelCache';
 
-export default function LivenessFaceScanner({ onVerified, onError, onRequestOtpFallback }) {
+export default function LivenessFaceScanner({
+    onVerified,
+    onError,
+    onRequestOtpFallback,
+    computeDescriptor = false,
+    fallbackLabel = null,
+    onFallbackAction = null,
+}) {
     const videoRef = useRef(null);
     const streamRef = useRef(null);
     const isCompletedRef = useRef(false);
@@ -65,7 +72,7 @@ export default function LivenessFaceScanner({ onVerified, onError, onRequestOtpF
     }, []);
 
     // Take High-Resolution Snapshot with Visual Timestamp Watermark
-    const executeCapture = useCallback(() => {
+    const executeCapture = useCallback(async () => {
         if (isCompletedRef.current) return;
         isCompletedRef.current = true;
 
@@ -73,24 +80,33 @@ export default function LivenessFaceScanner({ onVerified, onError, onRequestOtpF
         if (!video || video.readyState < 2) return;
 
         try {
+            const width = video.videoWidth || 640;
+            const height = video.videoHeight || 480;
+
+            const cleanCanvas = document.createElement('canvas');
+            cleanCanvas.width = width;
+            cleanCanvas.height = height;
+            const cleanCtx = cleanCanvas.getContext('2d');
+
+            // Draw mirrored camera frame onto unwatermarked canvas for clean analysis
+            cleanCtx.translate(width, 0);
+            cleanCtx.scale(-1, 1);
+            cleanCtx.drawImage(video, 0, 0, width, height);
+            cleanCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+            // Copy frame and stamp official verification watermark
             const captureCanvas = document.createElement('canvas');
-            captureCanvas.width = video.videoWidth || 640;
-            captureCanvas.height = video.videoHeight || 480;
+            captureCanvas.width = width;
+            captureCanvas.height = height;
             const ctx = captureCanvas.getContext('2d');
+            ctx.drawImage(cleanCanvas, 0, 0);
 
-            // Draw mirrored camera frame
-            ctx.translate(captureCanvas.width, 0);
-            ctx.scale(-1, 1);
-            ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-            // Subtle official verification watermark
             ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-            ctx.fillRect(10, captureCanvas.height - 35, 260, 25);
+            ctx.fillRect(10, height - 35, 260, 25);
             ctx.font = '12px sans-serif';
             ctx.fillStyle = '#FFFFFF';
             const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            ctx.fillText(`LikhangKamay • Face Check Verified • ${now}`, 20, captureCanvas.height - 18);
+            ctx.fillText(`LikhangKamay • Face Check Verified • ${now}`, 20, height - 18);
 
             const photoData = captureCanvas.toDataURL('image/jpeg', 0.88);
 
@@ -99,18 +115,34 @@ export default function LivenessFaceScanner({ onVerified, onError, onRequestOtpF
             setScanPhase('completed');
             stopCamera();
 
+            let descriptor = null;
+            if (computeDescriptor) {
+                try {
+                    const detection = await faceapi
+                        .detectSingleFace(cleanCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
+                        .withFaceLandmarks(true)
+                        .withFaceDescriptor();
+                    if (detection?.descriptor) {
+                        descriptor = Array.from(detection.descriptor);
+                    }
+                } catch (descErr) {
+                    console.warn('Face descriptor extraction skipped:', descErr);
+                }
+            }
+
             if (onVerifiedRef.current) {
                 onVerifiedRef.current({
                     photoData,
                     livenessVerified: true,
+                    descriptor,
                 });
             }
         } catch (err) {
             console.error('Snapshot capture error:', err);
         }
-    }, [stopCamera]);
+    }, [stopCamera, computeDescriptor]);
 
-    // 5-second timer to offer Email Security Code fallback if models or camera take longer than normal
+    // 5-second timer to offer fallback if models or camera take longer than normal
     useEffect(() => {
         if (cameraReady && !modelLoading) {
             setShowSlowNotice(false);
@@ -133,7 +165,7 @@ export default function LivenessFaceScanner({ onVerified, onError, onRequestOtpF
         const loadModels = async () => {
             try {
                 setModelLoading(true);
-                await loadCachedFaceModels('/models/face');
+                await loadCachedFaceModels('/models/face', { loadRecognitionNet: computeDescriptor });
 
                 if (isMounted) {
                     isModelLoadedRef.current = true;
@@ -152,7 +184,7 @@ export default function LivenessFaceScanner({ onVerified, onError, onRequestOtpF
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [computeDescriptor]);
 
     // Start user camera stream
     const startCamera = useCallback(async () => {
@@ -544,14 +576,25 @@ export default function LivenessFaceScanner({ onVerified, onError, onRequestOtpF
                     <div className="absolute inset-0 bg-stone-950/95 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center">
                         <AlertCircle size={26} className="text-rose-400 mb-2" />
                         <p className="text-xs text-white leading-relaxed font-medium">{cameraError}</p>
-                        <button
-                            type="button"
-                            onClick={handleRestart}
-                            className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white text-stone-900 text-xs font-bold shadow-xs hover:bg-stone-100 cursor-pointer"
-                        >
-                            <RefreshCw size={13} />
-                            Try Again
-                        </button>
+                        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                            <button
+                                type="button"
+                                onClick={handleRestart}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-white text-stone-900 text-xs font-bold shadow-xs hover:bg-stone-100 cursor-pointer"
+                            >
+                                <RefreshCw size={13} />
+                                Try Again
+                            </button>
+                            {fallbackLabel && onFallbackAction && (
+                                <button
+                                    type="button"
+                                    onClick={onFallbackAction}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-amber-600 text-white text-xs font-bold shadow-xs hover:bg-amber-700 cursor-pointer"
+                                >
+                                    {fallbackLabel}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
@@ -568,7 +611,7 @@ export default function LivenessFaceScanner({ onVerified, onError, onRequestOtpF
             />
 
             {/* 5-Second Slow-Connection Fallback Prompt */}
-            {showSlowNotice && onRequestOtpFallback && scanPhase !== 'completed' && (
+            {showSlowNotice && (onRequestOtpFallback || (fallbackLabel && onFallbackAction)) && scanPhase !== 'completed' && (
                 <div className="w-full max-w-[310px] mt-2.5 p-2.5 rounded-xl bg-amber-50/95 border border-amber-200/90 shadow-2xs flex items-center justify-between gap-2 text-left">
                     <div className="flex items-center gap-2 min-w-0">
                         <Mail size={15} className="text-amber-600 shrink-0" />
@@ -576,13 +619,23 @@ export default function LivenessFaceScanner({ onVerified, onError, onRequestOtpF
                             Camera taking longer than usual?
                         </p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={onRequestOtpFallback}
-                        className="px-2.5 py-1 text-[10px] font-bold text-white bg-amber-600 hover:bg-amber-700 active:scale-95 rounded-lg shrink-0 transition shadow-2xs cursor-pointer"
-                    >
-                        Use Email Code
-                    </button>
+                    {onRequestOtpFallback ? (
+                        <button
+                            type="button"
+                            onClick={onRequestOtpFallback}
+                            className="px-2.5 py-1.5 text-[10px] font-bold text-white bg-amber-600 hover:bg-amber-700 active:scale-95 rounded-lg shrink-0 transition shadow-2xs cursor-pointer"
+                        >
+                            Use Email Code
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={onFallbackAction}
+                            className="px-2.5 py-1.5 text-[10px] font-bold text-white bg-amber-600 hover:bg-amber-700 active:scale-95 rounded-lg shrink-0 transition shadow-2xs cursor-pointer"
+                        >
+                            {fallbackLabel}
+                        </button>
+                    )}
                 </div>
             )}
         </div>

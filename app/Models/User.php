@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Schema;
 
 use App\Traits\Searchable;
 use App\Traits\HasTransformableImages;
+use App\Traits\HasTargetedRevisions;
 use App\Models\Traits\ManagesStaffAccountFlags;
 use App\Models\Traits\HasStaffCapabilities;
 use App\Models\Traits\HasArtisanSubscriptions;
@@ -69,7 +70,7 @@ use App\Models\Traits\HasWorkspaceNotifications;
  */
 class User extends Authenticatable implements AuthenticatableContract, MustVerifyEmail
 {
-    use HasFactory, Notifiable, SoftDeletes, HasTransformableImages, Searchable;
+    use HasFactory, Notifiable, SoftDeletes, HasTransformableImages, Searchable, HasTargetedRevisions;
     use ManagesStaffAccountFlags, HasStaffCapabilities, HasArtisanSubscriptions, HasWorkspaceNotifications;
 
     protected static ?bool $hasSplitNameColumns = null;
@@ -146,6 +147,11 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'business_permit',
         'dti_registration',
         'valid_id',
+        'kyc_selfie_path',
+        'kyc_liveness_verified_at',
+        'requires_checkout_face_check',
+        'face_descriptor',
+        'kyc_verification_meta',
         'tin_id',
         'tin',
         'is_vat_registered',
@@ -207,6 +213,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     protected $hidden = [
         'password',
         'remember_token',
+        'face_descriptor',
     ];
 
     /**
@@ -223,6 +230,10 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'password' => 'hashed',
             'setup_completed_at' => 'datetime',
             'approved_at' => 'datetime',
+            'kyc_liveness_verified_at' => 'datetime',
+            'requires_checkout_face_check' => \App\Casts\PostgresCompatibleBoolean::class,
+            'face_descriptor' => 'array',
+            'kyc_verification_meta' => 'array',
             'subscription_expires_at' => 'datetime',
             'subscription_cancelled_at' => 'datetime',
             'modules_enabled' => 'array',
@@ -635,6 +646,18 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         }
 
         return static::$hasSplitNameColumns;
+    }
+
+    /**
+     * Whether this user must complete their one-time face liveness check before checkout.
+     */
+    public function requiresCheckoutFaceVerification(): bool
+    {
+        if ($this->is_test || $this->kyc_liveness_verified_at !== null) {
+            return false;
+        }
+
+        return (bool) $this->requires_checkout_face_check;
     }
 
     protected static function booted()

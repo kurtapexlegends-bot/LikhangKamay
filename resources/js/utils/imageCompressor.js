@@ -24,6 +24,7 @@ export async function compressImage(file, maxWidth = 1600, maxHeight = 1600, qua
 
     return new Promise((resolve) => {
         let objectUrl = null;
+        let settled = false;
         const img = new Image();
 
         const cleanup = () => {
@@ -31,6 +32,20 @@ export async function compressImage(file, maxWidth = 1600, maxHeight = 1600, qua
                 URL.revokeObjectURL(objectUrl);
                 objectUrl = null;
             }
+        };
+
+        const safetyTimer = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            resolve(file);
+        }, 4000);
+
+        const finishResolve = (result) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(safetyTimer);
+            resolve(result);
         };
 
         img.onload = () => {
@@ -53,7 +68,7 @@ export async function compressImage(file, maxWidth = 1600, maxHeight = 1600, qua
 
             const ctx = canvas.getContext('2d');
             if (!ctx) {
-                resolve(file);
+                finishResolve(file);
                 return;
             }
 
@@ -62,7 +77,7 @@ export async function compressImage(file, maxWidth = 1600, maxHeight = 1600, qua
             canvas.toBlob(
                 (blob) => {
                     if (!blob) {
-                        resolve(file);
+                        finishResolve(file);
                         return;
                     }
                     const fileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
@@ -70,7 +85,7 @@ export async function compressImage(file, maxWidth = 1600, maxHeight = 1600, qua
                         type: 'image/jpeg',
                         lastModified: Date.now(),
                     });
-                    resolve(compressedFile);
+                    finishResolve(compressedFile);
                 },
                 'image/jpeg',
                 quality
@@ -79,7 +94,7 @@ export async function compressImage(file, maxWidth = 1600, maxHeight = 1600, qua
 
         img.onerror = () => {
             cleanup();
-            resolve(file);
+            finishResolve(file);
         };
 
         if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {

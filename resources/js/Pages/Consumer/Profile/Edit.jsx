@@ -5,6 +5,7 @@ import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 import UpdateAddressForm from './Partials/UpdateAddressForm';
+import AccountFaceCheckCard from './Partials/AccountFaceCheckCard';
 import UserAvatar from '@/Components/UserAvatar';
 import { 
     User, Shield, MapPin, AlertTriangle, ShoppingBag, Star 
@@ -201,6 +202,10 @@ export default function Edit({ mustVerifyEmail, status, addresses = [] }) {
                                 {activeTab === 'security' && (
                                     <div className="animate-in fade-in duration-200">
                                         <UpdatePasswordForm className="max-w-2xl" />
+                                        <AccountFaceCheckCard
+                                            user={user}
+                                            requiresCheckoutFaceCheck={Boolean(auth?.requiresCheckoutFaceCheck)}
+                                        />
                                     </div>
                                 )}
 

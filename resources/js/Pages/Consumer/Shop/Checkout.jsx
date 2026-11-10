@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, ScanFace } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
+import CheckoutFaceCheckModal from '@/Components/Consumer/Shop/Checkout/CheckoutFaceCheckModal';
 
 // Extracted Subcomponents & Hooks
 import ShippingMethodSelector from '@/Components/Consumer/Shop/Checkout/ShippingMethodSelector';
@@ -39,7 +40,9 @@ export default function Checkout({ auth, pricing }) {
 
     const convenienceFeeRate = pricing?.convenience_fee_rate ?? 0.03;
     const defaultAddress = auth?.user?.addresses?.find((address) => address.is_default) || null;
+    const requiresCheckoutFaceCheck = Boolean(auth?.requiresCheckoutFaceCheck);
     const [showNotes, setShowNotes] = useState(false);
+    const [showFaceCheckModal, setShowFaceCheckModal] = useState(false);
 
     // Dynamic items and cart syncing hook
     const {
@@ -263,6 +266,22 @@ export default function Checkout({ auth, pricing }) {
     const needsDeliveryContactDetails = data.shipping_method === 'Delivery' && (!data.recipient_name.trim() || !data.phone_number.trim());
     const submitDisabled = processing || (data.shipping_method === 'Delivery' && shippingQuote.status !== 'ready');
 
+    const performOrderSubmission = () => {
+        clearErrors();
+        post(route('checkout.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                if (typeof window !== 'undefined') {
+                    try {
+                        window.localStorage.removeItem('lk_cart_backup');
+                    } catch {
+                        // ignore storage errors
+                    }
+                }
+            },
+        });
+    };
+
     const submitCheckout = (event) => {
         event.preventDefault();
         if (processing) return;
@@ -358,19 +377,12 @@ export default function Checkout({ auth, pricing }) {
             }
         }
 
-        clearErrors();
-        post(route('checkout.store'), {
-            preserveScroll: true,
-            onSuccess: () => {
-                if (typeof window !== 'undefined') {
-                    try {
-                        window.localStorage.removeItem('lk_cart_backup');
-                    } catch {
-                        // ignore storage errors
-                    }
-                }
-            },
-        });
+        if (requiresCheckoutFaceCheck) {
+            setShowFaceCheckModal(true);
+            return;
+        }
+
+        performOrderSubmission();
     };
 
     if (!checkoutItems || checkoutItems.length === 0) {
@@ -504,6 +516,16 @@ export default function Checkout({ auth, pricing }) {
                             setShowNotes={setShowNotes}
                         />
 
+                        {/* One-Time Safety Check Notice */}
+                        {requiresCheckoutFaceCheck && (
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 flex items-start gap-2.5 text-xs text-amber-900">
+                                <ScanFace size={16} className="text-amber-700 shrink-0 mt-0.5" />
+                                <p className="leading-snug font-medium">
+                                    One-Time Security Check: You will complete a quick face check right before placing your first order across any payment option.
+                                </p>
+                            </div>
+                        )}
+
                         {/* 4. Payment Method */}
                         <PaymentMethodSelector 
                             paymentMethod={data.payment_method}
@@ -553,6 +575,16 @@ export default function Checkout({ auth, pricing }) {
                 handleRemoveItem={handleRemoveItem}
                 updatingItemId={updatingItemId}
                 removingItemId={removingItemId}
+            />
+
+            <CheckoutFaceCheckModal
+                show={showFaceCheckModal}
+                onClose={() => setShowFaceCheckModal(false)}
+                onCompleted={() => {
+                    setShowFaceCheckModal(false);
+                    addToast('Quick face check verified. Placing your order...', 'success');
+                    performOrderSubmission();
+                }}
             />
         </div>
     );

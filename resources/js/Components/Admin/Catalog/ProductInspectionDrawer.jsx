@@ -20,6 +20,8 @@ import { resolveImageUrl } from '@/lib/media';
 import ProductImageLightboxModal from '@/Components/Consumer/Shop/ProductShow/ProductImageLightboxModal';
 import { ThreeDModelBoundary, ThreeDModelUnavailable } from '@/Components/ThreeD/ThreeDModelBoundary';
 import useNetworkStatus from '@/hooks/useNetworkStatus';
+import RevisionChecklistSelector from '@/Components/Common/RevisionChecklistSelector';
+import RevisionFeedbackBanner from '@/Components/Common/RevisionFeedbackBanner';
 
 const ProductViewer3D = lazy(() => import('@/Components/ThreeD/ProductViewer3D'));
 
@@ -43,6 +45,7 @@ export default function ProductInspectionDrawer({
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
     const [lightboxMode, setLightboxMode] = useState('image');
     const [feedback, setFeedback] = useState('');
+    const [revisionItems, setRevisionItems] = useState([]);
     const [actionError, setActionError] = useState('');
 
     if (product?.id !== prevProductId) {
@@ -50,6 +53,7 @@ export default function ProductInspectionDrawer({
         setActiveImageIndex(0);
         setViewingMode('image');
         setFeedback('');
+        setRevisionItems([]);
         setActionError('');
         setIsLightboxOpen(false);
         setHasConfirmed3D(false);
@@ -93,21 +97,21 @@ export default function ProductInspectionDrawer({
     };
 
     const handleReject = () => {
-        if (!feedback.trim()) {
-            setActionError('Please provide revision notes so the seller can update their listing.');
+        if (!feedback.trim() && revisionItems.length === 0) {
+            setActionError('Select at least one item or enter revision notes so the seller can update their listing.');
             return;
         }
         setActionError('');
-        onReject(product.id, feedback.trim());
+        onReject(product.id, feedback.trim(), revisionItems);
     };
 
     const handleFlag = () => {
-        if (!feedback.trim()) {
-            setActionError('Please provide a compliance reason for flagging this listing.');
+        if (!feedback.trim() && revisionItems.length === 0) {
+            setActionError('Select at least one issue or provide a compliance reason for flagging this listing.');
             return;
         }
         setActionError('');
-        onFlag(product.id, feedback.trim());
+        onFlag(product.id, feedback.trim(), revisionItems);
     };
 
     const renderFooter = () => (
@@ -523,33 +527,34 @@ export default function ProductInspectionDrawer({
                     </div>
                 )}
 
-                {product.rejection_reason && (
-                    <div className="p-4 bg-red-55/10 rounded-2xl border border-red-250/15">
-                        <p className="text-xs font-bold text-red-900 flex items-center gap-1.5">
-                            <XCircle size={14} className="text-red-700" /> Current Revision Feedback:
-                        </p>
-                        <p className="text-xs text-red-800 mt-1.5 font-medium">"{product.rejection_reason}"</p>
-                    </div>
+                {(product.active_revision || product.rejection_reason) && (
+                    <RevisionFeedbackBanner
+                        revision={product.active_revision}
+                        fallbackReason={product.rejection_reason}
+                        title="Current Revision Feedback"
+                        variant="rose"
+                    />
                 )}
 
-                {/* Feedback Input Block for Rejection / Flagging */}
-                <div className="pt-2">
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2">
-                        Moderation Feedback / Compliance Reason
-                    </label>
-                    <textarea
-                        value={feedback}
-                        onChange={(e) => {
-                            setFeedback(e.target.value);
+                {/* Targeted Revision Checklist & Notes */}
+                <div className="pt-2 rounded-2xl border border-stone-200 bg-stone-50/60 p-4">
+                    <RevisionChecklistSelector
+                        schemaKey="product"
+                        selectedItems={revisionItems}
+                        onChangeItems={(nextItems) => {
+                            setRevisionItems(nextItems);
                             setActionError('');
                         }}
-                        rows={3}
-                        className="w-full rounded-2xl border border-stone-200 focus:border-clay-500 focus:ring focus:ring-clay-500/10 text-xs p-3.5 transition-all"
-                        placeholder="Provide details or feedback if requesting revisions or flagging this product..."
+                        reason={feedback}
+                        onChangeReason={(val) => {
+                            setFeedback(val);
+                            setActionError('');
+                        }}
+                        reasonLabel="Moderation Notes / Compliance Feedback"
+                        reasonPlaceholder="Provide details if requesting revisions or flagging this product..."
+                        error={actionError}
+                        compact
                     />
-                    {actionError && (
-                        <p className="text-xs font-bold text-rose-600 mt-2">{actionError}</p>
-                    )}
                 </div>
             </div>
 

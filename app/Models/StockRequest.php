@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasTargetedRevisions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 class StockRequest extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTargetedRevisions;
 
     const STATUS_PENDING = 'pending';
 

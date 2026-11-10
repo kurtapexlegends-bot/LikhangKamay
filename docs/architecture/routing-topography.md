@@ -68,6 +68,7 @@ Protected under `auth`:
 *   **Review Mutations**: `PATCH /reviews/{id}` (`reviews.update`), `DELETE /reviews/{id}` (`reviews.destroy`)
 *   **Dispute Actions**: `/my-orders/{id}/dispute` (`name('disputes.buyer.create')`)
 *   **Buyer Notifications**: `/notifications` (`name('notifications.index')`)
+*   **Biometric Face Check**: `POST /profile/verify-face` (`name('profile.verify-face')`) handled by [FaceVerificationController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/FaceVerificationController.php) for one-time checkout and profile liveness completion.
 
 ### Seller Management Modules
 Protected under `seller.workspace` and feature-toggled via `seller.module`:

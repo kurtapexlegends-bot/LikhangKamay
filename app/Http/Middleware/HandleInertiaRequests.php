@@ -54,13 +54,19 @@ class HandleInertiaRequests extends Middleware
                         'has_dti_registration' => !empty($user->dti_registration),
                         'has_valid_id' => !empty($user->valid_id),
                         'has_tin_id' => !empty($user->tin_id),
+                        'kyc_liveness_verified_at' => $user->kyc_liveness_verified_at?->toIso8601String(),
+                        'kyc_selfie_url' => $user->kyc_selfie_path ? \App\Services\StorageUrl::url($user->kyc_selfie_path) : null,
                     ]
                 ) : null,
                 'isStaff' => $user?->isStaff() ?? false,
                 'effectiveSellerId' => $user?->getEffectiveSellerId(),
                 'requiresPasswordChange' => $user?->requiresStaffPasswordChange() ?? false,
+                'requiresCheckoutFaceCheck' => $user?->requiresCheckoutFaceVerification() ?? false,
                 'hasAcceptedCompliance' => $user ? ($user->isArtisan() ? $user->hasAcceptedComplianceTerms('seller_terms') : true) : true,
             ],
+
+            // Declarative targeted revision schemas (config-cached, zero DB queries)
+            'revisionSchemas' => fn () => $user ? \App\Support\RevisionSchemaRegistry::allSchemas() : null,
             
             // Lazy load subscription and sidebar to reduce DB overhead
             // Evaluate core metadata on initial visit for test compatibility

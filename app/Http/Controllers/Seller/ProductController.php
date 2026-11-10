@@ -52,7 +52,11 @@ class ProductController extends Controller
                     'lead_time', 'sold', 'cover_photo_path', 'gallery_paths', 'model_3d_path',
                     'track_as_supply', 'production_method', 'rejection_reason', 'created_at', 'updated_at',
                 ])
-                ->with(['recipes.supply', 'discounts'])
+                ->with(
+                    rescue(fn () => \Illuminate\Support\Facades\Schema::hasTable('revision_requests'), false)
+                        ? ['recipes.supply', 'discounts', 'activeRevision.reviewer']
+                        : ['recipes.supply', 'discounts']
+                )
                 ->withCount(['resubmissions as monthly_resubmission_count' => function ($q) {
                     $q->whereYear('created_at', now()->year)
                       ->whereMonth('created_at', now()->month);

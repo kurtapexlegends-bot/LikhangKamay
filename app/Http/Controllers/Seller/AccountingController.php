@@ -12,6 +12,7 @@ use App\Models\CapitalAdjustment;
 use App\Models\OwnerApproval;
 use App\Notifications\AccountingRejectedNotification;
 use App\Services\AccountingLedgerService;
+use App\Support\RevisionSchemaRegistry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -200,6 +201,7 @@ class AccountingController extends Controller
             }
 
             StockRequest::where('id', $stockRequest->id)->update(['status' => StockRequest::STATUS_ACCOUNTING_APPROVED]);
+            $stockRequest->resolveActiveRevisions();
 
             OwnerApproval::query()
                 ->where('seller_id', $lockedUser->id)
@@ -231,27 +233,29 @@ class AccountingController extends Controller
             return back()->with('error', 'Only pending stock requests can be declined.');
         }
 
-        $validated = $request->validate([
-            'reason' => 'required|string|max:1000',
-        ]);
+        [$rawNote, $normalizedItems, $formattedReason] = $this->validateAndFormatRevision($request, 'stock_request');
 
-        $stockRequest->update([
-            'status' => StockRequest::STATUS_REJECTED,
-            'rejection_reason' => $validated['reason'],
-        ]);
-
-        OwnerApproval::query()
-            ->where('seller_id', $this->sellerOwnerId())
-            ->where('domain', OwnerApproval::DOMAIN_PROCUREMENT)
-            ->where('approvable_type', StockRequest::class)
-            ->where('approvable_id', $stockRequest->id)
-            ->where('status', OwnerApproval::STATUS_PENDING)
-            ->update([
-                'status' => OwnerApproval::STATUS_REJECTED,
-                'reviewer_id' => $this->sellerActor()->id,
-                'reviewed_at' => now(),
-                'rejection_reason' => $validated['reason'],
+        DB::transaction(function () use ($stockRequest, $formattedReason, $normalizedItems, $rawNote) {
+            $stockRequest->update([
+                'status' => StockRequest::STATUS_REJECTED,
+                'rejection_reason' => $formattedReason,
             ]);
+
+            $stockRequest->recordRevision('stock_request', $normalizedItems, $rawNote, $this->sellerActor()->id);
+
+            OwnerApproval::query()
+                ->where('seller_id', $this->sellerOwnerId())
+                ->where('domain', OwnerApproval::DOMAIN_PROCUREMENT)
+                ->where('approvable_type', StockRequest::class)
+                ->where('approvable_id', $stockRequest->id)
+                ->where('status', OwnerApproval::STATUS_PENDING)
+                ->update([
+                    'status' => OwnerApproval::STATUS_REJECTED,
+                    'reviewer_id' => $this->sellerActor()->id,
+                    'reviewed_at' => now(),
+                    'rejection_reason' => $formattedReason,
+                ]);
+        });
 
         $stockRequest->loadMissing(['supply', 'requester', 'user']);
 
@@ -260,11 +264,11 @@ class AccountingController extends Controller
 
             $recipient->notify(new AccountingRejectedNotification(
                 'Stock Request Declined',
-                "Accounting declined stock request #{$stockRequest->id} for {$supplyName}. Reason: {$validated['reason']}",
+                "Accounting declined stock request #{$stockRequest->id} for {$supplyName}. Reason: {$formattedReason}",
                 route('stock-requests.index'),
                 'stock_request',
                 $stockRequest->id,
-                $validated['reason']
+                $formattedReason
             ));
         }
 
@@ -299,6 +303,7 @@ class AccountingController extends Controller
             }
 
             Payroll::where('id', $payroll->id)->update(['status' => 'Paid']);
+            $payroll->resolveActiveRevisions();
 
             OwnerApproval::query()
                 ->where('seller_id', $lockedUser->id)
@@ -332,42 +337,73 @@ class AccountingController extends Controller
             return back()->with('error', 'Only pending payroll requests can be declined.');
         }
 
-        $validated = $request->validate([
-            'reason' => 'required|string|max:1000',
-        ]);
+        [$rawNote, $normalizedItems, $formattedReason] = $this->validateAndFormatRevision($request, 'payroll');
 
-        $payroll->update([
-            'status' => 'Rejected',
-            'rejection_reason' => $validated['reason'],
-        ]);
-
-        OwnerApproval::query()
-            ->where('seller_id', $this->sellerOwnerId())
-            ->where('domain', OwnerApproval::DOMAIN_HR_PAYROLL)
-            ->where('approvable_type', Payroll::class)
-            ->where('approvable_id', $payroll->id)
-            ->where('status', OwnerApproval::STATUS_PENDING)
-            ->update([
-                'status' => OwnerApproval::STATUS_REJECTED,
-                'reviewer_id' => $this->sellerActor()->id,
-                'reviewed_at' => now(),
-                'rejection_reason' => $validated['reason'],
+        DB::transaction(function () use ($payroll, $formattedReason, $normalizedItems, $rawNote) {
+            $payroll->update([
+                'status' => 'Rejected',
+                'rejection_reason' => $formattedReason,
             ]);
+
+            $payroll->recordRevision('payroll', $normalizedItems, $rawNote, $this->sellerActor()->id);
+
+            OwnerApproval::query()
+                ->where('seller_id', $this->sellerOwnerId())
+                ->where('domain', OwnerApproval::DOMAIN_HR_PAYROLL)
+                ->where('approvable_type', Payroll::class)
+                ->where('approvable_id', $payroll->id)
+                ->where('status', OwnerApproval::STATUS_PENDING)
+                ->update([
+                    'status' => OwnerApproval::STATUS_REJECTED,
+                    'reviewer_id' => $this->sellerActor()->id,
+                    'reviewed_at' => now(),
+                    'rejection_reason' => $formattedReason,
+                ]);
+        });
 
         $payroll->loadMissing(['requester', 'user']);
 
         if ($recipient = $this->resolveRequester($payroll)) {
             $recipient->notify(new AccountingRejectedNotification(
                 'Payroll Request Declined',
-                "Accounting declined the payroll request for {$payroll->month}. Reason: {$validated['reason']}",
+                "Accounting declined the payroll request for {$payroll->month}. Reason: {$formattedReason}",
                 route('hr.index'),
                 'payroll',
                 $payroll->id,
-                $validated['reason']
+                $formattedReason
             ));
         }
 
         return back()->with('success', 'Payroll request declined.');
+    }
+
+    /**
+     * Validate revision checklist items and fallback reason for accounting rejections.
+     *
+     * @return array{0: string, 1: array, 2: string}
+     */
+    private function validateAndFormatRevision(Request $request, string $schemaKey): array
+    {
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:1000'],
+            'revision_items' => ['nullable', 'array', 'max:20'],
+            'revision_items.*.key' => ['required_with:revision_items', 'string', 'max:80'],
+            'revision_items.*.label' => ['nullable', 'string', 'max:120'],
+            'revision_items.*.note' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $rawNote = strip_tags((string) ($validated['reason'] ?? ''));
+        $rawItems = $validated['revision_items'] ?? [];
+        if (empty($rawItems) && trim($rawNote) === '') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'reason' => ['Select at least one revision item or provide feedback.'],
+            ]);
+        }
+
+        $normalized = RevisionSchemaRegistry::normalizeItems($schemaKey, $rawItems);
+        $formatted = RevisionSchemaRegistry::formatSummaryString($normalized, $rawNote);
+
+        return [$rawNote, $normalized, $formatted !== '' ? $formatted : $rawNote];
     }
 
     public function updateBaseFunds(Request $request) 

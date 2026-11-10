@@ -1,5 +1,5 @@
 import React from 'react';
-import { CreditCard, ArrowLeft, CheckCircle2, Wallet, Store, MapPin, ShieldCheck, Phone } from 'lucide-react';
+import { CreditCard, ArrowLeft, CheckCircle2, Wallet, Store, MapPin, ShieldCheck, Phone, AlertTriangle } from 'lucide-react';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
 import TextInput from '@/Components/TextInput';
@@ -11,6 +11,9 @@ export default function PaymentStep({
     submit,
     processing,
     setStep,
+    flaggedKeys = new Set(),
+    revisionNotes = {},
+    hasActiveRevision = false,
 }) {
     React.useEffect(() => {
         const errorKeys = Object.keys(errors);
@@ -68,6 +71,17 @@ export default function PaymentStep({
             </div>
 
             <div className="space-y-4 sm:space-y-6">
+                {hasActiveRevision && flaggedKeys.has('payout_info') && (
+                    <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-3.5 text-xs text-amber-950 space-y-1">
+                        <p className="font-bold flex items-center gap-1.5">
+                            <AlertTriangle size={14} className="text-amber-700 shrink-0" />
+                            <span>Payout Details Need Revision</span>
+                        </p>
+                        {revisionNotes.payout_info && (
+                            <p className="text-[11px] pl-5">{revisionNotes.payout_info}</p>
+                        )}
+                    </div>
+                )}
                 <div>
                     <InputLabel value="Select Payout Method *" className="mb-2" />
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

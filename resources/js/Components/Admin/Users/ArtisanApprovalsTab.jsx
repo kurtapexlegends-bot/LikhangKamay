@@ -39,6 +39,7 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
     const [viewingDoc, setViewingDoc] = useState(null);
     const [rejectingArtisan, setRejectingArtisan] = useState(null);
     const [rejectReason, setRejectReason] = useState('');
+    const [revisionItems, setRevisionItems] = useState([]);
     const [processing, setProcessing] = useState(false);
     const [approvalError, setApprovalError] = useState('');
     const [viewedDocumentsByArtisan, setViewedDocumentsByArtisan] = useState(() => buildViewedDocumentMap(artisans));
@@ -357,26 +358,34 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
     };
 
     const handleRejectArtisan = () => {
-        if (!rejectingArtisan || rejectReason.length < 10) return;
+        if (!rejectingArtisan || (revisionItems.length === 0 && rejectReason.trim().length < 10)) return;
 
         setProcessing(true);
-        router.post(route('admin.artisan.reject', rejectingArtisan.id), { reason: rejectReason }, {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                setViewingDoc(null);
-                setViewingArtisan(null);
-                setRejectingArtisan(null);
-                setRejectReason('');
-                addToast('Application returned to artisan for revision.', 'success');
+        router.post(
+            route('admin.artisan.reject', rejectingArtisan.id),
+            {
+                reason: rejectReason.trim(),
+                revision_items: revisionItems,
             },
-            onFinish: () => {
-                setProcessing(false);
-            },
-            onError: (errors) => {
-                addToast(errors.reason ?? 'Failed to send revision request. Please review and try again.', 'error');
-            },
-        });
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    setViewingDoc(null);
+                    setViewingArtisan(null);
+                    setRejectingArtisan(null);
+                    setRejectReason('');
+                    setRevisionItems([]);
+                    addToast('Application returned to artisan for revision.', 'success');
+                },
+                onFinish: () => {
+                    setProcessing(false);
+                },
+                onError: (errors) => {
+                    addToast(errors.reason ?? 'Failed to send revision request. Please review and try again.', 'error');
+                },
+            }
+        );
     };
 
     return (
@@ -478,9 +487,16 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                 viewingDoc={viewingDoc}
                 setViewingDoc={setViewingDoc}
                 rejectingArtisan={rejectingArtisan}
-                setRejectingArtisan={setRejectingArtisan}
+                setRejectingArtisan={(target) => {
+                    setRejectingArtisan(target);
+                    if (!target) {
+                        setRevisionItems([]);
+                    }
+                }}
                 rejectReason={rejectReason}
                 setRejectReason={setRejectReason}
+                revisionItems={revisionItems}
+                setRevisionItems={setRevisionItems}
                 handleRejectArtisan={handleRejectArtisan}
             />
         </div>

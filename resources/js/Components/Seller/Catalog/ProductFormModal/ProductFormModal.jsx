@@ -8,6 +8,16 @@ import ProductFormBasicDetails from "@/Components/Seller/Catalog/ProductFormModa
 import ProductFormClaySpecs from "@/Components/Seller/Catalog/ProductFormModal/ProductFormClaySpecs";
 import ProductFormRecipePanel from "@/Components/Seller/Catalog/ProductFormModal/ProductFormRecipePanel";
 import ProductFormMediaUploads from "@/Components/Seller/Catalog/ProductFormModal/ProductFormMediaUploads";
+import RevisionFeedbackBanner from "@/Components/Common/RevisionFeedbackBanner";
+
+const PRODUCT_FIELD_TAB_MAP = {
+    basic_info: "Essentials",
+    pricing_stock: "Essentials",
+    description: "Details",
+    materials_bom: "Production",
+    cover_media: "Media",
+    model_3d: "Media",
+};
 
 const modalCloseButtonClass =
     "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-400 transition hover:border-gray-300 hover:text-gray-700 min-h-[44px] min-w-[44px]";
@@ -41,6 +51,23 @@ export default function ProductFormModal({
     selectedProduct,
     subscription,
 }) {
+    const activeRevision = selectedProduct?.active_revision || null;
+    const flaggedTabs = React.useMemo(() => {
+        const tabs = new Set();
+        (activeRevision?.items || []).forEach((item) => {
+            const tabName = PRODUCT_FIELD_TAB_MAP[item.key];
+            if (tabName) tabs.add(tabName);
+        });
+        return tabs;
+    }, [activeRevision]);
+
+    const handleGoToRevisionField = React.useCallback((key) => {
+        const tabName = PRODUCT_FIELD_TAB_MAP[key];
+        if (tabName && setActiveFormTab) {
+            setActiveFormTab(tabName);
+        }
+    }, [setActiveFormTab]);
+
     React.useEffect(() => {
         if (!isOpen) return;
 
@@ -139,15 +166,27 @@ export default function ProductFormModal({
                                 key={tab}
                                 type="button"
                                 onClick={() => setActiveFormTab(tab)}
-                                className={`px-4 py-2.5 sm:py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap min-h-[44px] sm:min-h-0 flex-1 ${activeFormTab === tab ? "bg-white text-clay-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                className={`px-4 py-2.5 sm:py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap min-h-[44px] sm:min-h-0 flex-1 inline-flex items-center justify-center gap-1.5 ${activeFormTab === tab ? "bg-white text-clay-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                             >
-                                {tab}
+                                <span>{tab}</span>
+                                {flaggedTabs.has(tab) && (
+                                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" title="Revision requested in this section" />
+                                )}
                             </button>
                         ))}
                     </div>
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+                <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 space-y-4">
+                    {(activeRevision || selectedProduct?.rejection_reason) && (
+                        <RevisionFeedbackBanner
+                            revision={activeRevision}
+                            fallbackReason={selectedProduct?.rejection_reason}
+                            title={selectedProduct?.status === "flagged" ? "Compliance Flag Details" : "Specific Revisions Requested"}
+                            onGoToField={handleGoToRevisionField}
+                            variant={selectedProduct?.status === "flagged" ? "rose" : "amber"}
+                        />
+                    )}
                     {activeFormTab === "Essentials" && (
                         <ProductFormBasicDetails
                             data={data}

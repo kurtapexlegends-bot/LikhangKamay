@@ -137,9 +137,18 @@ class ApprovalController extends Controller
 
         $validated = $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
+            'revision_items' => ['nullable', 'array', 'max:20'],
+            'revision_items.*.key' => ['required_with:revision_items', 'string', 'max:80'],
+            'revision_items.*.label' => ['nullable', 'string', 'max:120'],
+            'revision_items.*.note' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $success = $approvalService->reject($approval, $user, $validated['reason'] ?? null);
+        $success = $approvalService->reject(
+            $approval,
+            $user,
+            $validated['reason'] ?? null,
+            $validated['revision_items'] ?? []
+        );
 
         if ($success) {
             return back()->with('success', "Declined: {$approval->title}");

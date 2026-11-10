@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/Components/Modal';
 import { AlertTriangle, XCircle, ShieldAlert, X } from 'lucide-react';
+import RevisionChecklistSelector from '@/Components/Common/RevisionChecklistSelector';
 
 const POLICY_PRESETS = [
     { label: 'Prohibited Item', text: 'This item violates marketplace terms regarding prohibited or restricted craft categories.' },
@@ -18,11 +19,13 @@ export default function ModerationRejectModal({
     isProcessing = false,
 }) {
     const [reason, setReason] = useState('');
+    const [revisionItems, setRevisionItems] = useState([]);
     const [error, setError] = useState('');
 
     useEffect(() => {
         if (isOpen) {
             setReason('');
+            setRevisionItems([]);
             setError('');
         }
     }, [isOpen, product?.id]);
@@ -36,12 +39,12 @@ export default function ModerationRejectModal({
     const handleSubmit = (e) => {
         e.preventDefault();
         const trimmed = reason.trim();
-        if (!trimmed) {
-            setError(`Please provide feedback so the seller knows what to update in their listing.`);
+        if (!trimmed && revisionItems.length === 0) {
+            setError('Select at least one revision item or enter feedback so the seller knows what to update.');
             return;
         }
         setError('');
-        onConfirm(product.id, actionType, trimmed);
+        onConfirm(product.id, actionType, trimmed, revisionItems);
     };
 
     return (
@@ -90,25 +93,23 @@ export default function ModerationRejectModal({
                         </div>
                     </div>
 
-                    {/* Textarea */}
-                    <div>
-                        <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                            Moderator Feedback &amp; Reason <span className="text-rose-600">*</span>
-                        </label>
-                        <textarea
-                            rows={4}
-                            value={reason}
-                            onChange={(e) => {
-                                setReason(e.target.value);
-                                if (error) setError('');
-                            }}
-                            placeholder="Explain why this listing is being returned or flagged..."
-                            className={`w-full rounded-xl text-xs p-3 border transition ${
-                                error ? 'border-rose-400 ring-1 ring-rose-300' : 'border-stone-200 focus:border-clay-500 focus:ring-1 focus:ring-clay-500'
-                            }`}
-                        />
-                        {error && <p className="mt-1 text-xs text-rose-600 font-medium">{error}</p>}
-                    </div>
+                    <RevisionChecklistSelector
+                        schemaKey="product"
+                        selectedItems={revisionItems}
+                        onChangeItems={(items) => {
+                            setRevisionItems(items);
+                            if (error) setError('');
+                        }}
+                        reason={reason}
+                        onChangeReason={(val) => {
+                            setReason(val);
+                            if (error) setError('');
+                        }}
+                        reasonLabel="Moderator Feedback & Reason"
+                        reasonPlaceholder="Explain why this listing is being returned or flagged..."
+                        error={error}
+                        compact
+                    />
 
                     {/* Policy Notice */}
                     <div className="p-3 bg-stone-50 rounded-xl border border-stone-200/80 text-[11px] text-stone-600 flex items-start gap-2">

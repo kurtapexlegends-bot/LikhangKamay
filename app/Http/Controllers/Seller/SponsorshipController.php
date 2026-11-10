@@ -43,11 +43,18 @@ class SponsorshipController extends Controller
         });
 
         // Get recent requests
+        $hasRevisionsTable = rescue(fn () => \Illuminate\Support\Facades\Schema::hasTable('revision_requests'), false);
         $requests = $user->sponsorshipRequests()
-            ->with('product:id,name,slug,cover_photo_path')
+            ->with($hasRevisionsTable ? ['product:id,name,slug,cover_photo_path', 'activeRevision.reviewer'] : ['product:id,name,slug,cover_photo_path'])
             ->latest()
             ->take(10)
-            ->get();
+            ->get()
+            ->map(function (SponsorshipRequest $req) {
+                $arr = $req->toArray();
+                $arr['active_revision'] = $req->formatActiveRevisionForFrontend();
+
+                return $arr;
+            });
 
         return Inertia::render('Seller/Settings/Sponsorships', [
             'creditsAvailable' => $creditsAvailable,

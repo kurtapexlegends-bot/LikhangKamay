@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasTargetedRevisions;
 use Illuminate\Database\Eloquent\Model;
 
 class SponsorshipRequest extends Model
 {
+    use HasTargetedRevisions;
     protected $fillable = [
         'user_id',
         'product_id',

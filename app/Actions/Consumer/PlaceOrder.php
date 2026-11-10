@@ -54,6 +54,12 @@ class PlaceOrder
             throw new \Illuminate\Auth\AuthenticationException('You must be logged in to place an order.');
         }
 
+        if ($buyer->requiresCheckoutFaceVerification()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'face_verification' => 'Please complete your one-time quick face check before placing your first order.',
+            ]);
+        }
+
         $lock = Cache::lock("checkout:user:{$buyer->id}", 15);
         if (!$lock->get()) {
             throw new \RuntimeException('An order is currently being processed for your account. Please wait a moment.');

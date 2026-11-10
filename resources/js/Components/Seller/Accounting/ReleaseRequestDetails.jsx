@@ -1,5 +1,5 @@
-import React from 'react';
-import { Users, FileText, Banknote, Download, LoaderCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, FileText, Banknote, Download, LoaderCircle, RotateCcw } from 'lucide-react';
 import {
     formatMoney,
     formatDate,
@@ -9,6 +9,8 @@ import {
 } from '@/utils/accountingFormatters';
 import OrderSettlementView from '@/Components/Seller/Accounting/OrderSettlementView';
 import PayrollReviewDetails from '@/Components/Seller/Accounting/PayrollReviewDetails';
+import RevisionChecklistSelector from '@/Components/Common/RevisionChecklistSelector';
+import RevisionFeedbackBanner from '@/Components/Common/RevisionFeedbackBanner';
 
 function DetailTile({ label, value }) {
     return (
@@ -41,12 +43,20 @@ export default function ReleaseRequestDetails({
     canEditAccounting,
     rejectReason,
     setRejectReason,
+    revisionItems = [],
+    setRevisionItems,
     onApprove,
     onReject,
     reviewProcessing,
     onClose,
     inline = false
 }) {
+    const [showRevisionChecklist, setShowRevisionChecklist] = useState(false);
+
+    useEffect(() => {
+        setShowRevisionChecklist(false);
+    }, [item?.id, item?.type]);
+
     if (!item) return null;
 
     const isPayroll = item.type === 'payroll';
@@ -204,44 +214,73 @@ export default function ReleaseRequestDetails({
         </div>
     );
 
+    const hasValidRevisionInput = Boolean(rejectReason?.trim()) || revisionItems.length > 0;
+
     // Container-Sticky Document Card Footer actions
     const footerActions = isPendingReview ? (
         <div className="sticky bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] z-20 rounded-xl border border-stone-200 bg-white/95 backdrop-blur-md shadow-lg overflow-hidden mt-4">
+            {showRevisionChecklist && (
+                <div className="p-4 border-b border-stone-200 bg-[#FDFBF9] max-h-[45vh] overflow-y-auto">
+                    <RevisionChecklistSelector
+                        schemaKey={isPayroll ? 'payroll' : 'stock_request'}
+                        selectedItems={revisionItems}
+                        onChangeItems={setRevisionItems}
+                        reason={rejectReason}
+                        onChangeReason={setRejectReason}
+                        reasonLabel="Decline Reason & Revision Notes"
+                        reasonPlaceholder="Explain what needs correction before release..."
+                        compact
+                    />
+                </div>
+            )}
             <div className="p-4 sm:p-4.5 bg-stone-50/90 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 w-full sm:w-auto">
                     <span className="text-[11px] text-stone-500 font-bold uppercase tracking-wider">Release Total:</span>
                     <span className="text-base font-bold text-stone-900">{formatMoney(item.amount)}</span>
                 </div>
-                <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">
-                    <input
-                        type="text"
-                        disabled={!canEditAccounting || !!reviewProcessing}
-                        className="w-full sm:w-72 rounded-xl border border-stone-200 bg-white py-2 px-3 text-xs font-medium text-stone-800 placeholder-stone-400 focus:border-stone-400 focus:ring-0 disabled:bg-stone-50 disabled:text-stone-400 shadow-2xs min-h-[44px]"
-                        placeholder="Reason required to decline..."
-                        value={rejectReason}
-                        onChange={(event) => setRejectReason(event.target.value)}
-                        title="A note is required to decline this release."
-                    />
-                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-                        <button
-                            type="button"
-                            onClick={onReject}
-                            disabled={!canEditAccounting || !rejectReason.trim() || !!reviewProcessing}
-                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition min-h-[44px]"
-                        >
-                            {reviewProcessing === 'reject' && <LoaderCircle size={14} className="animate-spin" />}
-                            Decline
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onApprove}
-                            disabled={!canEditAccounting || !!reviewProcessing}
-                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-700 hover:bg-clay-800 text-white px-5 py-2 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs min-h-[44px]"
-                        >
-                            {reviewProcessing === 'approve' && <LoaderCircle size={14} className="animate-spin" />}
-                            {reviewProcessing === 'approve' ? 'Processing...' : 'Approve & Release Funds'}
-                        </button>
-                    </div>
+                <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                    {showRevisionChecklist ? (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setShowRevisionChecklist(false)}
+                                disabled={!!reviewProcessing}
+                                className="inline-flex items-center justify-center rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-600 hover:bg-stone-100 transition min-h-[44px]"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onReject}
+                                disabled={!canEditAccounting || !hasValidRevisionInput || !!reviewProcessing}
+                                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition min-h-[44px]"
+                            >
+                                {reviewProcessing === 'reject' && <LoaderCircle size={14} className="animate-spin" />}
+                                Send Revision &amp; Decline
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setShowRevisionChecklist(true)}
+                                disabled={!canEditAccounting || !!reviewProcessing}
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition min-h-[44px]"
+                            >
+                                <RotateCcw size={14} />
+                                Request Revision
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onApprove}
+                                disabled={!canEditAccounting || !!reviewProcessing}
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-700 hover:bg-clay-800 text-white px-5 py-2 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs min-h-[44px]"
+                            >
+                                {reviewProcessing === 'approve' && <LoaderCircle size={14} className="animate-spin" />}
+                                {reviewProcessing === 'approve' ? 'Processing...' : 'Approve & Release Funds'}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
@@ -344,12 +383,14 @@ export default function ReleaseRequestDetails({
             {/* 3. Payroll review layout */}
             {isPayroll && <PayrollReviewDetails item={item} inline={inline} />}
 
-            {/* Stored Rejection Reason */}
-            {item.rejection_reason && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-red-500">Decline Reason</p>
-                    <p className="mt-1 text-xs font-bold text-red-800">{item.rejection_reason}</p>
-                </div>
+            {/* Stored Revision / Rejection Reason */}
+            {(item.active_revision || item.rejection_reason) && (
+                <RevisionFeedbackBanner
+                    revision={item.active_revision}
+                    fallbackReason={item.rejection_reason}
+                    title="Revision / Decline Notes"
+                    variant="rose"
+                />
             )}
         </div>
     );

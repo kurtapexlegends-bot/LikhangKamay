@@ -18,6 +18,7 @@ use App\Notifications\OwnerApprovalDecisionNotification;
 use App\Notifications\TeamRequestSubmittedNotification;
 use App\Services\AccountingLedgerService;
 use App\Support\HRWorkflowHelper;
+use App\Support\RevisionSchemaRegistry;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -287,6 +288,8 @@ class OwnerApprovalService
                 'rejection_reason' => null,
             ]);
 
+            $locked->resolveActiveRevisions();
+
             Cache::forget("seller_{$locked->seller_id}_pending_approvals_count");
 
             SellerActivityLog::recordEvent([
@@ -326,29 +329,47 @@ class OwnerApprovalService
     }
 
     /**
-     * Reject a pending request with an optional explanation note.
+     * Reject a pending request with targeted revision checklist items and optional explanation note.
      */
-    public function reject(OwnerApproval $approval, User $reviewer, ?string $reason = null): bool
+    public function reject(OwnerApproval $approval, User $reviewer, ?string $reason = null, array $revisionItems = []): bool
     {
         if ($approval->status !== OwnerApproval::STATUS_PENDING) {
             return false;
         }
 
-        return DB::transaction(function () use ($approval, $reviewer, $reason) {
+        $schemaKey = match ($approval->approvable_type) {
+            StockRequest::class => 'stock_request',
+            Payroll::class => 'payroll',
+            default => 'owner_approval',
+        };
+
+        $normalizedItems = RevisionSchemaRegistry::normalizeItems($schemaKey, $revisionItems);
+        $rawNote = trim(strip_tags((string) $reason));
+        $formattedReason = RevisionSchemaRegistry::formatSummaryString($normalizedItems, $rawNote);
+        $effectiveReason = $formattedReason !== '' ? $formattedReason : ($rawNote !== '' ? $rawNote : null);
+
+        return DB::transaction(function () use ($approval, $reviewer, $effectiveReason, $normalizedItems, $rawNote, $schemaKey) {
             $locked = OwnerApproval::query()->lockForUpdate()->findOrFail($approval->id);
             if ($locked->status !== OwnerApproval::STATUS_PENDING) {
                 return false;
             }
 
             // Apply underlying domain rejection side-effects
-            $this->executeRejectedDomainAction($locked, $reason);
+            $this->executeRejectedDomainAction($locked, $effectiveReason);
 
             $locked->update([
                 'status' => OwnerApproval::STATUS_REJECTED,
                 'reviewer_id' => $reviewer->id,
                 'reviewed_at' => now(),
-                'rejection_reason' => $reason,
+                'rejection_reason' => $effectiveReason,
             ]);
+
+            $locked->recordRevision($schemaKey, $normalizedItems, $rawNote, $reviewer->id);
+
+            $approvable = $locked->approvable;
+            if ($approvable && method_exists($approvable, 'recordRevision')) {
+                $approvable->recordRevision($schemaKey, $normalizedItems, $rawNote, $reviewer->id);
+            }
 
             Cache::forget("seller_{$locked->seller_id}_pending_approvals_count");
 
@@ -362,7 +383,7 @@ class OwnerApprovalService
                 'severity' => 'warning',
                 'status' => 'rejected',
                 'title' => 'Approval Declined',
-                'summary' => "Executive request declined for: {$locked->title}" . ($reason ? ": {$reason}" : ''),
+                'summary' => "Executive request declined for: {$locked->title}" . ($effectiveReason ? ": {$effectiveReason}" : ''),
                 'subject_type' => OwnerApproval::class,
                 'subject_id' => $locked->id,
                 'subject_label' => $locked->title,
@@ -370,7 +391,8 @@ class OwnerApprovalService
                 'details' => [
                     'domain' => $locked->domain,
                     'requester_id' => $locked->requester_id,
-                    'reason' => $reason,
+                    'reason' => $effectiveReason,
+                    'flagged_keys' => array_column($normalizedItems, 'key'),
                 ],
                 'target_url' => route('seller.approvals.index', ['status' => 'rejected']),
                 'target_label' => 'View Approvals',
@@ -382,7 +404,7 @@ class OwnerApprovalService
                     approval: $locked,
                     status: OwnerApproval::STATUS_REJECTED,
                     reviewer: $reviewer,
-                    reason: $reason
+                    reason: $effectiveReason
                 )));
             }
 
@@ -508,8 +530,11 @@ class OwnerApprovalService
         }
 
         try {
+            $hasRevisionsTable = rescue(fn () => Schema::hasTable('revision_requests'), false);
             $query = OwnerApproval::query()
-                ->with(['requester:id,name,email,role', 'reviewer:id,name,email,role'])
+                ->with($hasRevisionsTable
+                    ? ['requester:id,name,email,role', 'reviewer:id,name,email,role', 'activeRevision.reviewer']
+                    : ['requester:id,name,email,role', 'reviewer:id,name,email,role'])
                 ->where('seller_id', $seller->id);
 
             if (!empty($filters['status'])) {
@@ -533,7 +558,12 @@ class OwnerApprovalService
                 });
             }
 
-            return $query->latest()->paginate($perPage)->withQueryString();
+            return $query->latest()->paginate($perPage)->withQueryString()->through(function (OwnerApproval $approval) {
+                $arr = $approval->toArray();
+                $arr['active_revision'] = $approval->formatActiveRevisionForFrontend();
+
+                return $arr;
+            });
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('OwnerApprovalService getPaginatedApprovals fallback: ' . $e->getMessage());
             return new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage);

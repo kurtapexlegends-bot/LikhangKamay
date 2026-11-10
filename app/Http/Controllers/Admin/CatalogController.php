@@ -10,6 +10,7 @@ use App\Models\PlatformActivity;
 use App\Models\SponsorshipRequest;
 use App\Models\User;
 use App\Notifications\SponsorshipStatusNotification;
+use App\Support\RevisionSchemaRegistry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +34,11 @@ class CatalogController extends Controller
         $shopFilter = $request->input('shop_id');
         $search = $request->input('search');
 
-        $productQuery = Product::with(['user:id,name,shop_name,email,avatar,premium_tier', 'latestResubmission'])
+        $hasRevisionsTable = rescue(fn () => \Illuminate\Support\Facades\Schema::hasTable('revision_requests'), false);
+
+        $productQuery = Product::with($hasRevisionsTable
+                ? ['user:id,name,shop_name,email,avatar,premium_tier', 'latestResubmission', 'activeRevision.reviewer']
+                : ['user:id,name,shop_name,email,avatar,premium_tier', 'latestResubmission'])
             ->when($statusFilter && $statusFilter !== 'all', function ($q) use ($statusFilter) {
                 $q->where('status', $statusFilter);
             })
@@ -71,15 +76,36 @@ class CatalogController extends Controller
             ->orderBy('shop_name')
             ->get();
 
+        $requestsPaginator = SponsorshipRequest::with($hasRevisionsTable ? [
+            'user:id,name,email,shop_name,created_at,role,artisan_status',
+            'product:id,user_id,name,slug,description,category,status,price,stock,sold,rating,reviews_count,cover_photo_path,gallery_paths,model_3d_path,is_sponsored,sponsored_until,created_at,height,width',
+            'activeRevision.reviewer',
+        ] : [
+            'user:id,name,email,shop_name,created_at,role,artisan_status',
+            'product:id,user_id,name,slug,description,category,status,price,stock,sold,rating,reviews_count,cover_photo_path,gallery_paths,model_3d_path,is_sponsored,sponsored_until,created_at,height,width',
+        ])
+            ->latest()
+            ->paginate(10, ['*'], 'requests_page')
+            ->through(function (SponsorshipRequest $req) {
+                $arr = $req->toArray();
+                $arr['active_revision'] = $req->formatActiveRevisionForFrontend();
+
+                return $arr;
+            });
+
+        $productsPaginator = $productQuery
+            ->paginate(10, ['*'], 'products_page')
+            ->through(function (Product $product) {
+                $arr = $product->toArray();
+                $arr['active_revision'] = $product->formatActiveRevisionForFrontend();
+
+                return $arr;
+            });
+
         return Inertia::render('Admin/Catalog/CatalogManager', [
             'categories' => Inertia::defer(fn() => Category::withCount('products')->orderBy('name')->get()),
-            'requests' => SponsorshipRequest::with([
-                'user:id,name,email,shop_name,created_at,role,artisan_status',
-                'product:id,user_id,name,slug,description,category,status,price,stock,sold,rating,reviews_count,cover_photo_path,gallery_paths,model_3d_path,is_sponsored,sponsored_until,created_at,height,width'
-            ])
-                ->latest()
-                ->paginate(10, ['*'], 'requests_page'),
-            'products' => $productQuery->paginate(10, ['*'], 'products_page'),
+            'requests' => $requestsPaginator,
+            'products' => $productsPaginator,
             'statusCounts' => $statusCounts,
             'shops' => $shops,
             'filters' => [
@@ -247,6 +273,8 @@ class CatalogController extends Controller
                 'rejection_reason' => null,
             ]);
 
+            $sponsorshipRequest->resolveActiveRevisions();
+
             // Sponsor for 7 days
             $sponsorshipRequest->product->update([
                 'is_sponsored' => true,
@@ -277,14 +305,31 @@ class CatalogController extends Controller
         }
 
         $validated = $request->validate([
-            'rejection_reason' => ['required', 'string', 'max:500'],
+            'rejection_reason' => ['nullable', 'string', 'max:500'],
+            'revision_items' => ['nullable', 'array', 'max:20'],
+            'revision_items.*.key' => ['required_with:revision_items', 'string', 'max:80'],
+            'revision_items.*.label' => ['nullable', 'string', 'max:120'],
+            'revision_items.*.note' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $sponsorshipRequest->update([
-            'status' => 'rejected',
-            'approved_at' => null,
-            'rejection_reason' => strip_tags($validated['rejection_reason']),
-        ]);
+        $rawNote = strip_tags((string) ($validated['rejection_reason'] ?? ''));
+        $rawItems = $validated['revision_items'] ?? [];
+        if (empty($rawItems) && trim($rawNote) === '') {
+            return back()->withErrors(['rejection_reason' => 'Select at least one revision item or enter a feedback reason.']);
+        }
+
+        $normalizedItems = RevisionSchemaRegistry::normalizeItems('sponsorship', $rawItems);
+        $formattedReason = RevisionSchemaRegistry::formatSummaryString($normalizedItems, $rawNote);
+
+        DB::transaction(function () use ($sponsorshipRequest, $formattedReason, $normalizedItems, $rawNote) {
+            $sponsorshipRequest->update([
+                'status' => 'rejected',
+                'approved_at' => null,
+                'rejection_reason' => $formattedReason,
+            ]);
+
+            $sponsorshipRequest->recordRevision('sponsorship', $normalizedItems, $rawNote, auth()->id());
+        });
 
         $sponsorshipRequest->loadMissing('product');
         $sponsorshipRequest->user?->notify(new SponsorshipStatusNotification($sponsorshipRequest));
@@ -292,7 +337,7 @@ class CatalogController extends Controller
         PlatformActivity::log(
             'sponsorship_returned_with_feedback',
             "Administrator returned sponsorship request for '{$sponsorshipRequest->product?->name}' with revision feedback.",
-            ['sponsorship_id' => $sponsorshipRequest->id, 'product_id' => $sponsorshipRequest->product_id, 'feedback' => $validated['rejection_reason']]
+            ['sponsorship_id' => $sponsorshipRequest->id, 'product_id' => $sponsorshipRequest->product_id, 'feedback' => $formattedReason]
         );
 
         return back()->with('success', 'Feedback sent and request returned to artisan.');
@@ -307,11 +352,16 @@ class CatalogController extends Controller
 
         $validated = $request->validated();
         $action = $validated['action'];
-        $feedback = $validated['feedback'] ?? null;
+        $rawFeedback = strip_tags((string) ($validated['feedback'] ?? ''));
+        $rawItems = $validated['revision_items'] ?? [];
+        $normalizedItems = RevisionSchemaRegistry::normalizeItems('product', $rawItems);
+        $formattedFeedback = $action === 'approve'
+            ? null
+            : RevisionSchemaRegistry::formatSummaryString($normalizedItems, $rawFeedback);
 
         $products = Product::with('user')->whereIn('id', $validated['ids'])->get();
 
-        DB::transaction(function () use ($products, $action, $feedback) {
+        DB::transaction(function () use ($products, $action, $formattedFeedback, $normalizedItems, $rawFeedback) {
             Product::$bypassReview = true;
 
             foreach ($products as $product) {
@@ -323,14 +373,20 @@ class CatalogController extends Controller
 
                 $product->update([
                     'status' => $status,
-                    'rejection_reason' => $action === 'approve' ? null : strip_tags((string) $feedback),
+                    'rejection_reason' => $formattedFeedback,
                 ]);
+
+                if ($action === 'approve') {
+                    $product->resolveActiveRevisions();
+                } else {
+                    $product->recordRevision('product', $normalizedItems, $rawFeedback, auth()->id());
+                }
 
                 // Notify seller
                 $product->user?->notify(new \App\Notifications\ProductModerationNotification(
                     $product,
                     $action === 'approve' ? 'approved' : $action,
-                    $feedback
+                    $formattedFeedback
                 ));
 
                 // If approved, notify shop followers of new release

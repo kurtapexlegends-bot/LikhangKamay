@@ -58,6 +58,8 @@ class ApproveArtisan
                 'approved_by' => $adminId,
                 'setup_completed_at' => $artisan->setup_completed_at ?? now(),
             ]);
+
+            $artisan->resolveActiveRevisions();
         });
 
         session()->forget("artisan_review_docs_{$id}");

@@ -27,11 +27,17 @@ class StockRequestController extends Controller
         Gate::authorize('viewAny', StockRequest::class);
         $userId = $this->sellerOwnerId();
 
-        // Fetch requests with associated supply details
-        $requests = StockRequest::with(['supply', 'requester:id,name'])
+        $hasRevisionsTable = rescue(fn () => \Illuminate\Support\Facades\Schema::hasTable('revision_requests'), false);
+        $requests = StockRequest::with($hasRevisionsTable ? ['supply', 'requester:id,name', 'activeRevision.reviewer'] : ['supply', 'requester:id,name'])
             ->where('user_id', $userId)
             ->latest()
-            ->get();
+            ->get()
+            ->map(function (StockRequest $req) {
+                $arr = $req->toArray();
+                $arr['active_revision'] = $req->formatActiveRevisionForFrontend();
+
+                return $arr;
+            });
 
         return Inertia::render('Seller/StockRequest/Index', [
             'requests' => $requests

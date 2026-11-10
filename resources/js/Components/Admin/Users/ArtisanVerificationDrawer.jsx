@@ -5,6 +5,8 @@ import Modal from '@/Components/Modal';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import WorkspaceLoadingState from '@/Components/WorkspaceLoadingState';
 import { ActionTooltip } from '@/Components/Admin/Layout/BulkActionPill';
+import RevisionChecklistSelector from '@/Components/Common/RevisionChecklistSelector';
+import KycVerificationSummaryCard from '@/Components/Admin/Users/Partials/KycVerificationSummaryCard';
 
 export default function ArtisanVerificationDrawer({
     viewingArtisan,
@@ -24,6 +26,8 @@ export default function ArtisanVerificationDrawer({
     setRejectingArtisan,
     rejectReason,
     setRejectReason,
+    revisionItems = [],
+    setRevisionItems,
     handleRejectArtisan,
 }) {
     const [docZoom, setDocZoom] = useState(1);
@@ -158,6 +162,9 @@ export default function ArtisanVerificationDrawer({
                                 </div>
                             </div>
                         </div>
+
+                        {/* Identity & Photo Verification Summary */}
+                        <KycVerificationSummaryCard artisan={viewingArtisan} />
 
                         <div>
                             <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">Submitted Documents</h4>
@@ -385,21 +392,16 @@ export default function ArtisanVerificationDrawer({
                             </button>
                         </div>
 
-                        <div className="space-y-1">
-                            <label className="text-[11px] font-bold uppercase tracking-wider text-stone-600 ml-1">Revision Notes & Feedback</label>
-                            <textarea
-                                value={rejectReason}
-                                onChange={(e) => setRejectReason(e.target.value)}
-                                placeholder="E.g., The uploaded business permit details are unclear or belong to a different entity. Please upload a clear copy under your registered business name..."
-                                className="h-28 w-full resize-none rounded-xl border border-stone-200 bg-white p-3 text-[13px] focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20"
-                            />
-                            <div className="flex justify-between items-center px-1">
-                                <p className="text-[10px] text-stone-400">This feedback will be shared with the artisan so they can update and resubmit.</p>
-                                <span className={`text-[10px] font-bold ${rejectReason.length < 10 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                    {rejectReason.length} chars (min 10)
-                                </span>
-                            </div>
-                        </div>
+                        <RevisionChecklistSelector
+                            schemaKey="artisan_kyc"
+                            selectedItems={revisionItems}
+                            onChangeItems={setRevisionItems}
+                            reason={rejectReason}
+                            onChangeReason={setRejectReason}
+                            reasonLabel="Overall Revision Notes"
+                            reasonPlaceholder="Provide specific guidance on what documents or fields need correction (or check items above)..."
+                            compact
+                        />
 
                         <div className="flex justify-end gap-2 mt-5">
                             {processing && (
@@ -418,7 +420,7 @@ export default function ArtisanVerificationDrawer({
                             </button>
                             <button
                                 onClick={handleRejectArtisan}
-                                disabled={processing || rejectReason.length < 10}
+                                disabled={processing || (revisionItems.length === 0 && rejectReason.trim().length < 10)}
                                 className="flex items-center gap-1.5 rounded-lg bg-stone-900 px-5 py-2.5 text-[12px] font-bold text-white transition hover:bg-stone-850 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500/20 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
                             >
                                 {processing ? <LoaderCircle size={14} className="animate-spin" /> : <RotateCcw size={14} />}

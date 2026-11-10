@@ -18,6 +18,8 @@ use App\Mail\ArtisanApplicationReceivedMail;
 use App\Models\ArtisanStatusLog;
 use App\Models\User as UserModel;
 use App\Notifications\NewArtisanApplicationNotification;
+use App\Services\DocumentForensicsService;
+use App\Services\FaceDescriptorService;
 
 class ArtisanSetupController extends Controller
 {
@@ -47,6 +49,7 @@ class ArtisanSetupController extends Controller
 
         return Inertia::render('Auth/ArtisanSetup', [
             'rejectionReason' => $user->artisan_rejection_reason,
+            'activeRevision' => $user->formatActiveRevisionForFrontend(),
             'existingDocuments' => [
                 'business_permit_url' => $urlHelper($user->business_permit),
                 'dti_registration_url' => $urlHelper($user->dti_registration),
@@ -54,6 +57,9 @@ class ArtisanSetupController extends Controller
                 'tin_id_url' => $urlHelper($user->tin_id),
             ],
             'existingPayoutAccountNumber' => $user->payout_account_number,
+            'kycSelfieUrl' => $urlHelper($user->kyc_selfie_path),
+            'kycLivenessVerified' => !is_null($user->kyc_liveness_verified_at),
+            'kycVerificationMeta' => $user->kyc_verification_meta,
         ]);
     }
 
@@ -212,13 +218,19 @@ class ArtisanSetupController extends Controller
             return $user->{$key};
         };
 
-        $user->update([
+        $validIdFile = $request->hasFile('valid_id') ? $request->file('valid_id') : null;
+        $validIdCameraCaptured = $request->boolean('valid_id_camera_captured');
+
+        $updatePayload = [
             'business_permit' => $upload('business_permit'),
             'dti_registration' => $upload('dti_registration'),
             'valid_id' => $upload('valid_id'),
             'tin_id' => $upload('tin_id'),
             'document_flags' => $documentFlags,
-        ]);
+        ];
+
+        $biometricUpdates = $this->evaluateAndPersistKycBiometrics($user, $request, $validIdFile, $validIdCameraCaptured);
+        $user->update(array_merge($updatePayload, $biometricUpdates));
 
         return back();
     }
@@ -242,6 +254,7 @@ class ArtisanSetupController extends Controller
 
         $normalizedMethod = strtolower($validated['payout_method']) === 'maya' ? 'Maya' : 'GCash';
 
+        $previousStatus = $user->artisan_status;
         $user->update([
             'payout_method' => $normalizedMethod,
             'payout_account_name' => trim($validated['payout_account_name']),
@@ -251,9 +264,11 @@ class ArtisanSetupController extends Controller
             'artisan_rejection_reason' => null,
         ]);
 
+        $user->resolveActiveRevisions();
+
         ArtisanStatusLog::create([
             'user_id' => $user->id,
-            'previous_status' => $user->artisan_status,
+            'previous_status' => $previousStatus,
             'new_status' => 'pending',
         ]);
 
@@ -434,9 +449,36 @@ class ArtisanSetupController extends Controller
                 Storage::disk('public')->delete($user->{$type});
             }
 
-            $user->update([
-                $type => $path,
-            ]);
+            $updateData = [$type => $path];
+            if ($type === 'valid_id') {
+                $ext = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+                $forensics = $ext === 'pdf'
+                    ? ['status' => 'clean', 'points' => 15, 'has_camera_exif' => false, 'has_editor_or_ai_tag' => false, 'signals' => ['Uploaded as PDF scan']]
+                    : rescue(function () use ($path, $request) {
+                        $tmpPath = sys_get_temp_dir() . '/kyc_' . basename($path);
+                        file_put_contents($tmpPath, Storage::disk('public')->get($path));
+                        try {
+                            return app(DocumentForensicsService::class)->inspectUploadedFile($tmpPath, $request->boolean('camera_captured'));
+                        } finally {
+                            @unlink($tmpPath);
+                        }
+                    }, null, report: false);
+
+                $updateData = array_merge($updateData, $this->evaluateAndPersistKycBiometrics($user, $request, null, $request->boolean('camera_captured'), $forensics));
+            }
+
+            $user->update($updateData);
+
+            if ($request->expectsJson()) {
+                $user->refresh();
+                return response()->json([
+                    'message' => ucfirst(str_replace('_', ' ', $type)) . ' uploaded successfully.',
+                    'type' => $type,
+                    'path' => $path,
+                    'url' => \App\Services\StorageUrl::url($path),
+                    'kyc_verification_meta' => $user->kyc_verification_meta,
+                ]);
+            }
 
             return back()->with('success', ucfirst(str_replace('_', ' ', $type)) . ' uploaded successfully.');
         }
@@ -466,6 +508,10 @@ class ArtisanSetupController extends Controller
             }
         }
 
+        $extraBiometrics = $type === 'valid_id'
+            ? $this->evaluateAndPersistKycBiometrics($user, $request, $file, $request->boolean('camera_captured'))
+            : [];
+
         // Delete old file if exists
         if ($user->{$type}) {
             Storage::disk('public')->delete($user->{$type});
@@ -477,12 +523,105 @@ class ArtisanSetupController extends Controller
         $documentFlags = $user->document_flags ?? [];
         $documentFlags[$type] = $flags;
 
-        $user->update([
+        $user->update(array_merge([
             $type => $path,
             'document_flags' => $documentFlags,
-        ]);
+        ], $extraBiometrics));
+
+        if ($request->expectsJson()) {
+            $user->refresh();
+            return response()->json([
+                'message' => ucfirst(str_replace('_', ' ', $type)) . ' uploaded successfully.',
+                'type' => $type,
+                'path' => $path,
+                'url' => \App\Services\StorageUrl::url($path),
+                'kyc_verification_meta' => $user->kyc_verification_meta,
+            ]);
+        }
 
         return back()->with('success', ucfirst(str_replace('_', ' ', $type)) . ' uploaded successfully.');
+    }
+
+    /**
+     * Evaluate liveness selfie, 128-D face match against Valid ID, banned duplicate screening,
+     * and document metadata forensics to compute a 100-point composite KYC authenticity score.
+     */
+    private function evaluateAndPersistKycBiometrics(
+        UserModel $user,
+        Request $request,
+        ?\Illuminate\Http\UploadedFile $validIdFile = null,
+        bool $cameraCaptured = false,
+        ?array $precomputedForensics = null
+    ): array {
+        $faceService = app(FaceDescriptorService::class);
+        $forensicsService = app(DocumentForensicsService::class);
+        $updates = [];
+
+        // 1. Store live selfie & 128-D descriptor if submitted during KYC step
+        $selfieDescriptor = $faceService->normalizeDescriptor($user->face_descriptor);
+        if ($request->filled('selfie_data_url')) {
+            $selfiePath = $faceService->storeSelfieDataUrl((string) $request->input('selfie_data_url'), "u{$user->id}");
+            if ($selfiePath) {
+                if ($user->kyc_selfie_path) {
+                    Storage::disk('public')->delete($user->kyc_selfie_path);
+                }
+                $updates['kyc_selfie_path'] = $selfiePath;
+                $updates['kyc_liveness_verified_at'] = now();
+                $updates['requires_checkout_face_check'] = false;
+            }
+        }
+
+        if ($request->filled('face_descriptor')) {
+            $incomingDesc = $faceService->normalizeDescriptor($request->input('face_descriptor'));
+            if ($incomingDesc) {
+                $selfieDescriptor = $incomingDesc;
+                $updates['face_descriptor'] = $incomingDesc;
+            }
+        }
+
+        // 2. Server-side match calculation when both Selfie and ID descriptors are available
+        $idDescriptor = $faceService->normalizeDescriptor($request->input('id_face_descriptor'));
+        $matchScore = $user->kyc_verification_meta['match_score'] ?? null;
+        $idFaceDetected = $user->kyc_verification_meta['id_face_detected'] ?? null;
+
+        if ($request->has('id_face_detected')) {
+            $idFaceDetected = $request->boolean('id_face_detected');
+        }
+
+        if ($selfieDescriptor && $idDescriptor) {
+            $distance = $faceService->euclideanDistance($selfieDescriptor, $idDescriptor);
+            $matchScore = $faceService->distanceToMatchPercentage($distance);
+            $idFaceDetected = true;
+        } elseif ($request->filled('face_match_score')) {
+            $matchScore = max(0, min(100, (int) $request->input('face_match_score')));
+        }
+
+        // 3. Document Forensics
+        $forensics = $precomputedForensics
+            ?? ($validIdFile ? $forensicsService->inspectUploadedFile($validIdFile, $cameraCaptured) : null)
+            ?? ($user->kyc_verification_meta['forensics'] ?? ['status' => 'clean', 'points' => 12, 'signals' => []]);
+
+        // 4. Duplicate Banned Account Screening
+        $bannedMatch = false;
+        if ($selfieDescriptor) {
+            $bannedCheck = $faceService->checkBannedDuplicate($selfieDescriptor, $user->id);
+            $bannedMatch = (bool) ($bannedCheck['matched_banned'] ?? false);
+        }
+
+        $livenessPassed = isset($updates['kyc_liveness_verified_at']) || $user->kyc_liveness_verified_at !== null;
+        $composite = $forensicsService->computeCompositeScore([
+            'liveness_passed' => $livenessPassed,
+            'match_score' => $matchScore,
+            'id_face_detected' => $idFaceDetected,
+            'forensics' => $forensics,
+            'banned_face_match' => $bannedMatch,
+            'camera_captured' => $cameraCaptured || (bool) ($user->kyc_verification_meta['camera_captured'] ?? false),
+        ]);
+
+        $composite['forensics'] = $forensics;
+        $updates['kyc_verification_meta'] = $composite;
+
+        return $updates;
     }
 
     /**

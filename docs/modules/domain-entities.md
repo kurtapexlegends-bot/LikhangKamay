@@ -154,6 +154,12 @@ All order operations are processed through dedicated single-responsibility Actio
 *   [VerifyEmailNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/VerifyEmailNotification.php): Emits custom branded registration verification loops.
 *   [ResetPasswordNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/ResetPasswordNotification.php): Dispatches custom branded password reset loops.
 
+### Biometric KYC, Liveness Gate & Document Forensics
+*   **Consumer Face Verification**: [FaceVerificationController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/FaceVerificationController.php) handles `POST /profile/verify-face` (`profile.verify-face`), recording live selfie paths, `kyc_liveness_verified_at`, 128-D normalized embeddings (`face_descriptor`), and clearing `requires_checkout_face_check`.
+*   **Face Embeddings & Banned Account Screening**: [FaceDescriptorService.php](file:///c:/laragon/www/LikhangKamay/app/Services/FaceDescriptorService.php) validates 128-dimension embeddings, maps Euclidean distance to a 0–100 similarity percentage, and screens against banned/suspended user accounts (`checkBannedDuplicate`).
+*   **Document Forensics Screening**: [DocumentForensicsService.php](file:///c:/laragon/www/LikhangKamay/app/Services/DocumentForensicsService.php) analyzes Valid ID and document images (`getimagesize`, EXIF/PNG/AI generator metadata tags such as C2PA, DALL-E, Midjourney, Photoshop, Canva) to compute non-blocking risk telemetry and warnings for [ArtisanVerificationDrawer.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Admin/Users/ArtisanVerificationDrawer.jsx).
+*   **Existing Buyer & OAuth Backfill**: Migration `2026_11_10_000003_backfill_requires_checkout_face_check_for_existing_buyers` + [SocialAuthController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Auth/SocialAuthController.php) require buyers lacking `kyc_liveness_verified_at` to pass a one-time face check before COD or online checkout via [PlaceOrder.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Consumer/PlaceOrder.php).
+
 ---
 
 ## 4. Payout Management

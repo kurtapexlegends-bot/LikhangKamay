@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\ArtisanStatusLog;
 use App\Models\PlatformActivity;
 use App\Mail\ArtisanRejected;
+use App\Support\RevisionSchemaRegistry;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -14,19 +15,24 @@ use Illuminate\Support\Facades\Gate;
 class RejectArtisan
 {
     /**
-     * Reject artisan application.
+     * Reject artisan application with targeted revision checklist items and feedback.
      *
      * @param int|string $id
      * @param string $reason
+     * @param array $revisionItems
      * @return void
      */
-    public function execute(int|string $id, string $reason): void
+    public function execute(int|string $id, string $reason, array $revisionItems = []): void
     {
         Gate::authorize('admin-action');
 
         $artisan = User::where('role', 'artisan')->where('artisan_status', 'pending')->findOrFail($id);
 
-        DB::transaction(function () use ($artisan, $reason) {
+        $normalizedItems = RevisionSchemaRegistry::normalizeItems('artisan_kyc', $revisionItems);
+        $formattedReason = RevisionSchemaRegistry::formatSummaryString($normalizedItems, $reason);
+        $effectiveReason = $formattedReason !== '' ? $formattedReason : trim(strip_tags($reason));
+
+        DB::transaction(function () use ($artisan, $effectiveReason, $reason, $normalizedItems) {
             ArtisanStatusLog::create([
                 'user_id' => $artisan->id,
                 'previous_status' => $artisan->artisan_status,
@@ -35,8 +41,10 @@ class RejectArtisan
 
             $artisan->update([
                 'artisan_status' => 'rejected',
-                'artisan_rejection_reason' => $reason,
+                'artisan_rejection_reason' => $effectiveReason,
             ]);
+
+            $artisan->recordRevision('artisan_kyc', $normalizedItems, $reason, auth()->id());
         });
 
         session()->forget("artisan_review_docs_{$id}");
@@ -50,7 +58,11 @@ class RejectArtisan
                 'artisan_id' => $artisan->id,
                 'shop_name' => $artisan->shop_name,
                 'before' => ['artisan_status' => 'pending'],
-                'after' => ['artisan_status' => 'rejected', 'reason' => $reason],
+                'after' => [
+                    'artisan_status' => 'rejected',
+                    'reason' => $effectiveReason,
+                    'flagged_keys' => array_column($normalizedItems, 'key'),
+                ],
             ],
             actorId: auth()->id(),
         );

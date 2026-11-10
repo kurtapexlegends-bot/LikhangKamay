@@ -9,6 +9,7 @@ import CompactPagination from '@/Components/CompactPagination';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import ApprovalDiffCard from '@/Components/Seller/Approvals/ApprovalDiffCard';
 import ApprovalDetailsDrawer from '@/Components/Seller/Approvals/ApprovalDetailsDrawer';
+import RevisionChecklistSelector from '@/Components/Common/RevisionChecklistSelector';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import { 
@@ -40,7 +41,7 @@ export default function ApprovalManager({
     // Modal States
     const [inspectModal, setInspectModal] = useState({ isOpen: false, approval: null });
     const [approveModal, setApproveModal] = useState({ isOpen: false, approval: null });
-    const [declineModal, setDeclineModal] = useState({ isOpen: false, approval: null, reason: '' });
+    const [declineModal, setDeclineModal] = useState({ isOpen: false, approval: null, reason: '', revisionItems: [] });
     const [batchModal, setBatchModal] = useState({ isOpen: false, count: 0 });
 
     const pendingTotal = stats?.pending_count ?? pendingCount ?? 0;
@@ -112,20 +113,28 @@ export default function ApprovalManager({
 
     // Open Decline Modal
     const handleOpenDeclineModal = (approval) => {
-        setDeclineModal({ isOpen: true, approval, reason: '' });
+        setDeclineModal({ isOpen: true, approval, reason: '', revisionItems: [] });
     };
 
     const handleConfirmDecline = () => {
         if (!declineModal.approval) return;
         const targetId = declineModal.approval.id;
         const reason = declineModal.reason;
+        const revisionItems = declineModal.revisionItems || [];
         setProcessingId(targetId);
-        setDeclineModal({ isOpen: false, approval: null, reason: '' });
+        setDeclineModal({ isOpen: false, approval: null, reason: '', revisionItems: [] });
 
-        router.post(route('seller.approvals.reject', targetId), { reason }, {
-            preserveScroll: true,
-            onFinish: () => setProcessingId(null),
-        });
+        router.post(
+            route('seller.approvals.reject', targetId),
+            {
+                reason,
+                revision_items: revisionItems,
+            },
+            {
+                preserveScroll: true,
+                onFinish: () => setProcessingId(null),
+            }
+        );
     };
 
     // Open Batch Modal
@@ -364,38 +373,37 @@ export default function ApprovalManager({
                 processing={isBatchProcessing}
             />
 
-            {/* Decline Request Modal with Feedback */}
+            {/* Decline Request Modal with Targeted Revision Checklist */}
             {declineModal.isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs">
-                    <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-stone-200 space-y-4">
+                    <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-stone-200 space-y-4">
                         <div className="flex items-center gap-2.5 text-stone-900 font-bold">
                             <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100">
                                 <XCircle size={20} />
                             </div>
                             <div>
-                                <h4 className="text-base font-bold text-stone-900">Decline Request</h4>
-                                <p className="text-[11px] text-stone-500 font-medium truncate max-w-[260px]">
+                                <h4 className="text-base font-bold text-stone-900">Decline &amp; Request Revision</h4>
+                                <p className="text-[11px] text-stone-500 font-medium truncate max-w-[300px]">
                                     {declineModal.approval?.title}
                                 </p>
                             </div>
                         </div>
 
-                        <p className="text-xs text-stone-600 font-medium leading-relaxed">
-                            Provide optional feedback to help your staff understand why this request was declined.
-                        </p>
-
-                        <textarea
-                            rows={3}
-                            value={declineModal.reason}
-                            onChange={(e) => setDeclineModal((prev) => ({ ...prev, reason: e.target.value }))}
-                            placeholder="e.g. Please verify the overtime hours first or adjust the restock quantity..."
-                            className="w-full text-xs rounded-xl border border-stone-200 focus:border-clay-500 focus:ring-0 p-3 font-medium resize-none text-stone-800 placeholder:text-stone-400"
+                        <RevisionChecklistSelector
+                            schemaKey="owner_approval"
+                            selectedItems={declineModal.revisionItems || []}
+                            onChangeItems={(revisionItems) => setDeclineModal((prev) => ({ ...prev, revisionItems }))}
+                            reason={declineModal.reason}
+                            onChangeReason={(reason) => setDeclineModal((prev) => ({ ...prev, reason }))}
+                            reasonLabel="Decline Feedback (Optional if items selected)"
+                            reasonPlaceholder="e.g. Please verify the overtime hours first or adjust the restock quantity..."
+                            compact
                         />
 
                         <div className="flex justify-end gap-2 pt-2">
                             <button
                                 type="button"
-                                onClick={() => setDeclineModal({ isOpen: false, approval: null, reason: '' })}
+                                onClick={() => setDeclineModal({ isOpen: false, approval: null, reason: '', revisionItems: [] })}
                                 className="px-4 py-2 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-100 transition min-h-[44px] sm:min-h-[38px]"
                             >
                                 Cancel

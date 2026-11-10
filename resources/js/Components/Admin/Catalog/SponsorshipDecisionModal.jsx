@@ -4,6 +4,7 @@ import ConfirmationModal from '@/Components/ConfirmationModal';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import Modal from '@/Components/Modal';
 import axios from 'axios';
+import RevisionChecklistSelector from '@/Components/Common/RevisionChecklistSelector';
 
 export default function SponsorshipDecisionModal({
     isOpen,
@@ -12,6 +13,8 @@ export default function SponsorshipDecisionModal({
     processing,
     rejectionReason,
     setRejectionReason,
+    revisionItems: externalRevisionItems,
+    setRevisionItems: setExternalRevisionItems,
     onClose,
     onConfirm
 }) {
@@ -19,6 +22,10 @@ export default function SponsorshipDecisionModal({
     const [password, setPassword] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const [verifying, setVerifying] = useState(false);
+    const [internalRevisionItems, setInternalRevisionItems] = useState([]);
+
+    const revisionItems = externalRevisionItems ?? internalRevisionItems;
+    const setRevisionItems = setExternalRevisionItems ?? setInternalRevisionItems;
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -71,7 +78,7 @@ export default function SponsorshipDecisionModal({
             try {
                 const response = await axios.post(route('password.confirm.ajax'), { password });
                 if (response.data?.valid) {
-                    onConfirm();
+                    onConfirm(revisionItems);
                 } else {
                     setPasswordError('Invalid password. Please try again.');
                 }
@@ -98,19 +105,16 @@ export default function SponsorshipDecisionModal({
                     </div>
                 </div>
 
-                <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-2">
-                        Decline Reason
-                    </label>
-                    <textarea
-                        value={rejectionReason}
-                        onChange={(e) => setRejectionReason(e.target.value)}
-                        rows={5}
-                        className="w-full rounded-xl border border-stone-200 focus:border-rose-400 focus:ring-rose-200 text-sm"
-                        placeholder="Explain why the request was declined so the seller knows what to improve."
-                        autoFocus
-                    />
-                </div>
+                <RevisionChecklistSelector
+                    schemaKey="sponsorship"
+                    selectedItems={revisionItems}
+                    onChangeItems={setRevisionItems}
+                    reason={rejectionReason}
+                    onChangeReason={setRejectionReason}
+                    reasonLabel="Decline Reason"
+                    reasonPlaceholder="Explain why the request was declined so the seller knows what to improve."
+                    compact
+                />
 
                 <div className="mt-4">
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-2">
@@ -142,7 +146,7 @@ export default function SponsorshipDecisionModal({
                     </button>
                     <button
                         type="submit"
-                        disabled={processing || verifying || !rejectionReason.trim() || !password}
+                        disabled={processing || verifying || (!rejectionReason.trim() && revisionItems.length === 0) || !password}
                         className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition disabled:opacity-50 min-h-[44px]"
                     >
                         {processing || verifying ? 'Verifying...' : 'Decline Request'}

@@ -113,6 +113,14 @@ class SocialAuthController extends Controller
             if (!$existingUser->hasVerifiedEmail()) {
                 $updateData['email_verified_at'] = now();
             }
+            if (
+                in_array($existingUser->role, ['user', 'buyer'], true)
+                && !$existingUser->is_test
+                && $existingUser->kyc_liveness_verified_at === null
+                && !$existingUser->requires_checkout_face_check
+            ) {
+                $updateData['requires_checkout_face_check'] = true;
+            }
             if (!empty($updateData)) {
                 $existingUser->update($updateData);
             }
@@ -223,6 +231,8 @@ class SocialAuthController extends Controller
         if ($isArtisan) {
             $userData['shop_name'] = $request->shop_name;
         }
+
+        $userData['requires_checkout_face_check'] = !$isArtisan;
 
         $user = \Illuminate\Support\Facades\DB::transaction(function () use ($userData, $isArtisan, $request) {
             $user = User::create($userData);

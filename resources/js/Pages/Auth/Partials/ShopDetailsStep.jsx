@@ -12,6 +12,9 @@ export default function ShopDetailsStep({
     submit,
     processing,
     shopNameValidation,
+    flaggedKeys = new Set(),
+    revisionNotes = {},
+    hasActiveRevision = false,
 }) {
     React.useEffect(() => {
         const errorKeys = Object.keys(errors);
@@ -48,6 +51,21 @@ export default function ShopDetailsStep({
             </div>
 
             <div className="space-y-4 sm:space-y-6">
+                {hasActiveRevision && (flaggedKeys.has('shop_details') || flaggedKeys.has('shop_address')) && (
+                    <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-3.5 text-xs text-amber-950 space-y-1">
+                        <p className="font-bold flex items-center gap-1.5">
+                            <AlertTriangle size={14} className="text-amber-700 shrink-0" />
+                            <span>Reviewer requested updates in Workshop Profile</span>
+                        </p>
+                        {flaggedKeys.has('shop_details') && revisionNotes.shop_details && (
+                            <p className="text-[11px] pl-5">• Shop Details: {revisionNotes.shop_details}</p>
+                        )}
+                        {flaggedKeys.has('shop_address') && revisionNotes.shop_address && (
+                            <p className="text-[11px] pl-5">• Workshop Address: {revisionNotes.shop_address}</p>
+                        )}
+                    </div>
+                )}
+
                 <div>
                     <div className="flex items-center justify-between mb-1.5">
                         <InputLabel htmlFor="shop_name" value="Shop Name *" />

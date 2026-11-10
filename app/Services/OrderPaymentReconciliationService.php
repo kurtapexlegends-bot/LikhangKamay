@@ -133,7 +133,7 @@ class OrderPaymentReconciliationService
             return null;
         }
 
-        $order = Order::query()
+        $orders = Order::query()
             ->where(function ($q) use ($sessionId, $ref) {
                 if ($sessionId) {
                     $q->where('paymongo_session_id', $sessionId);
@@ -142,19 +142,21 @@ class OrderPaymentReconciliationService
                     $sessionId ? $q->orWhere('order_number', $ref) : $q->where('order_number', $ref);
                 }
             })
-            ->first();
+            ->get();
 
-        if (!$order) {
+        if ($orders->isEmpty()) {
             return null;
         }
 
-        if (empty($order->paymongo_session_id) && $sessionId) {
-            $order->update(['paymongo_session_id' => $sessionId]);
+        foreach ($orders as $order) {
+            if (empty($order->paymongo_session_id) && $sessionId) {
+                $order->update(['paymongo_session_id' => $sessionId]);
+            }
+
+            $this->reconcileOrder($order, $sessionData, force: true);
         }
 
-        $this->reconcileOrder($order, $sessionData, force: true);
-
-        return $order->fresh();
+        return $orders->first()?->fresh();
     }
 
     /**
@@ -176,7 +178,7 @@ class OrderPaymentReconciliationService
             return null;
         }
 
-        $order = Order::query()
+        $orders = Order::query()
             ->where(function ($q) use ($sessionId, $ref) {
                 if ($sessionId) {
                     $q->where('paymongo_session_id', $sessionId);
@@ -185,9 +187,9 @@ class OrderPaymentReconciliationService
                     $sessionId ? $q->orWhere('order_number', $ref) : $q->where('order_number', $ref);
                 }
             })
-            ->first();
+            ->get();
 
-        if (!$order) {
+        if ($orders->isEmpty()) {
             return null;
         }
 
@@ -204,9 +206,11 @@ class OrderPaymentReconciliationService
             default => null,
         };
 
-        $this->finalizePaidOrder($order, $paymentId, $detectedMethod, $sessionId);
+        foreach ($orders as $order) {
+            $this->finalizePaidOrder($order, $paymentId, $detectedMethod, $sessionId);
+        }
 
-        return $order->fresh();
+        return $orders->first()?->fresh();
     }
 
     /**

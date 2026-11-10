@@ -40,13 +40,25 @@ export async function cachedModelFetch(url, init) {
  * Initializes the face-api environment with CacheStorage interception and loads required models.
  *
  * @param {string} [modelsPath='/models/face']
+ * @param {object} [options]
+ * @param {boolean} [options.loadRecognitionNet=false]
  * @returns {Promise<boolean>}
  */
-export async function loadCachedFaceModels(modelsPath = '/models/face') {
-    if (!isMonkeyPatched && typeof window !== 'undefined') {
+export async function loadCachedFaceModels(modelsPath = '/models/face', options = {}) {
+    const { loadRecognitionNet = false } = options || {};
+
+    if (!isMonkeyPatched && typeof window !== 'undefined' && typeof document !== 'undefined') {
         try {
             if (faceapi.env && typeof faceapi.env.monkeyPatch === 'function') {
-                faceapi.env.monkeyPatch({ fetch: cachedModelFetch });
+                faceapi.env.monkeyPatch({
+                    Canvas: window.HTMLCanvasElement,
+                    Image: window.HTMLImageElement,
+                    ImageData: window.ImageData,
+                    Video: window.HTMLVideoElement,
+                    createCanvasElement: () => document.createElement('canvas'),
+                    createImageElement: () => document.createElement('img'),
+                    fetch: cachedModelFetch,
+                });
                 isMonkeyPatched = true;
             }
         } catch (err) {
@@ -62,6 +74,9 @@ export async function loadCachedFaceModels(modelsPath = '/models/face') {
     if (!faceapi.nets.faceLandmark68TinyNet.isLoaded) {
         loadPromises.push(faceapi.nets.faceLandmark68TinyNet.loadFromUri(modelsPath));
     }
+    if (loadRecognitionNet && !faceapi.nets.faceRecognitionNet.isLoaded) {
+        loadPromises.push(faceapi.nets.faceRecognitionNet.loadFromUri(modelsPath));
+    }
 
     if (loadPromises.length > 0) {
         await Promise.all(loadPromises);
@@ -73,8 +88,14 @@ export async function loadCachedFaceModels(modelsPath = '/models/face') {
 /**
  * Checks whether both tinyFaceDetector and faceLandmark68TinyNet are already loaded in memory.
  *
+ * @param {boolean} [includeRecognitionNet=false]
  * @returns {boolean}
  */
-export function areFaceModelsLoaded() {
-    return Boolean(faceapi.nets.tinyFaceDetector.isLoaded && faceapi.nets.faceLandmark68TinyNet.isLoaded);
+export function areFaceModelsLoaded(includeRecognitionNet = false) {
+    const baseLoaded = Boolean(faceapi.nets.tinyFaceDetector.isLoaded && faceapi.nets.faceLandmark68TinyNet.isLoaded);
+    if (!includeRecognitionNet) {
+        return baseLoaded;
+    }
+
+    return baseLoaded && Boolean(faceapi.nets.faceRecognitionNet.isLoaded);
 }

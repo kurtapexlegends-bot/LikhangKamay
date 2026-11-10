@@ -86,3 +86,13 @@ The dedicated Buyer Reviews Portal (`GET /my-reviews`, `name('buyer.reviews')`) 
 *   **Notification Integration & Deep-Linking**:
     *   When an artisan submits a response, [ArtisanReviewReplyNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/ArtisanReviewReplyNotification.php) is queued.
     *   Notifications deep-link directly to `/my-reviews?review={id}`, auto-scrolling to the card and focusing it.
+
+---
+
+## 5. Polymorphic Targeted Revision Requests Engine
+
+Instead of free-text-only rejections, reviewers can select exact itemized checklist fields and per-item reviewer notes across approvals and workflows via a shared polymorphic engine:
+
+*   **Model & Trait**: [RevisionRequest.php](file:///c:/laragon/www/LikhangKamay/app/Models/RevisionRequest.php) & [HasTargetedRevisions.php](file:///c:/laragon/www/LikhangKamay/app/Traits/HasTargetedRevisions.php) attach polymorphic `revisionRequests()` and `activeRevision()` relations (`revisable_type`, `revisable_id`, `reviewer_id`, `revision_items`, `summary_note`, `resolved_at`), guarded by `rescue(fn () => Schema::hasTable('revision_requests'), false)` for schema parity.
+*   **Declarative Schema Registry**: [revisions.php](file:///c:/laragon/www/LikhangKamay/config/revisions.php) and [RevisionSchemaRegistry.php](file:///c:/laragon/www/LikhangKamay/app/Support/RevisionSchemaRegistry.php) define grouped checklist schemas (plus custom reviewer items) for `artisan_kyc`, `product`, `sponsorship`, `stock_request`, `payroll`, and `owner_approval`.
+*   **Frontend Shared UI**: Reviewers use [RevisionChecklistSelector.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Common/RevisionChecklistSelector.jsx) inside [ArtisanVerificationDrawer.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Admin/Users/ArtisanVerificationDrawer.jsx), [ModerationRejectModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Admin/Catalog/ModerationRejectModal.jsx), [SponsorshipDecisionModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Admin/Catalog/SponsorshipDecisionModal.jsx), and seller accounting/approval drawers; requesters view actionable checklists via [RevisionFeedbackBanner.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Common/RevisionFeedbackBanner.jsx), automatically resolved upon resubmission.

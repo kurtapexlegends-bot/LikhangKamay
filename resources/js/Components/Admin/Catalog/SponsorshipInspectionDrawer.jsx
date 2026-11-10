@@ -20,6 +20,8 @@ import { resolveImageUrl } from '@/lib/media';
 import ProductImageLightboxModal from '@/Components/Consumer/Shop/ProductShow/ProductImageLightboxModal';
 import { ThreeDModelBoundary, ThreeDModelUnavailable } from '@/Components/ThreeD/ThreeDModelBoundary';
 import useNetworkStatus from '@/hooks/useNetworkStatus';
+import RevisionChecklistSelector from '@/Components/Common/RevisionChecklistSelector';
+import RevisionFeedbackBanner from '@/Components/Common/RevisionFeedbackBanner';
 
 const ProductViewer3D = lazy(() => import('@/Components/ThreeD/ProductViewer3D'));
 
@@ -42,6 +44,7 @@ export default function SponsorshipInspectionDrawer({
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
     const [lightboxMode, setLightboxMode] = useState('image');
     const [rejectionReason, setRejectionReason] = useState('');
+    const [revisionItems, setRevisionItems] = useState([]);
     const [showRejectInput, setShowRejectInput] = useState(false);
     const [validationError, setValidationError] = useState('');
 
@@ -52,6 +55,7 @@ export default function SponsorshipInspectionDrawer({
         setIsLightboxOpen(false);
         setShowRejectInput(false);
         setRejectionReason('');
+        setRevisionItems([]);
         setValidationError('');
         setHasConfirmed3D(false);
     }
@@ -99,13 +103,13 @@ export default function SponsorshipInspectionDrawer({
             return;
         }
 
-        if (!rejectionReason.trim()) {
-            setValidationError('Please share constructive feedback for the artisan before returning this request.');
+        if (!rejectionReason.trim() && revisionItems.length === 0) {
+            setValidationError('Select at least one revision item or share constructive feedback before returning.');
             return;
         }
 
         setValidationError('');
-        onReject(request, rejectionReason.trim());
+        onReject(request, rejectionReason.trim(), revisionItems);
     };
 
     const handleApproveClick = () => {
@@ -120,6 +124,7 @@ export default function SponsorshipInspectionDrawer({
     const handleClose = () => {
         setShowRejectInput(false);
         setRejectionReason('');
+        setRevisionItems([]);
         setValidationError('');
         onClose();
     };
@@ -136,17 +141,22 @@ export default function SponsorshipInspectionDrawer({
             {isPending ? (
                 <div className="space-y-3">
                     {showRejectInput && (
-                        <div className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                            <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-500">
-                                Feedback for Artisan (Required)
-                            </label>
-                            <textarea
-                                rows={2}
-                                value={rejectionReason}
-                                onChange={(e) => setRejectionReason(e.target.value)}
-                                placeholder="Share constructive notes (e.g. lighting needs improvement, missing craft dimensions, low inventory)..."
-                                className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs text-stone-800 placeholder-stone-400 focus:border-amber-500 focus:ring-amber-500"
-                                autoFocus
+                        <div className="max-h-[42vh] overflow-y-auto rounded-2xl border border-stone-200 bg-stone-50/90 p-3.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                            <RevisionChecklistSelector
+                                schemaKey="sponsorship"
+                                selectedItems={revisionItems}
+                                onChangeItems={(nextItems) => {
+                                    setRevisionItems(nextItems);
+                                    setValidationError('');
+                                }}
+                                reason={rejectionReason}
+                                onChangeReason={(val) => {
+                                    setRejectionReason(val);
+                                    setValidationError('');
+                                }}
+                                reasonLabel="Feedback for Artisan"
+                                reasonPlaceholder="Share constructive notes (e.g. photo clarity, stock availability)..."
+                                compact
                             />
                         </div>
                     )}
@@ -486,15 +496,12 @@ export default function SponsorshipInspectionDrawer({
                 </div>
 
                 {/* Existing feedback if previously returned for revision */}
-                {request.status === 'rejected' && request.rejection_reason && (
-                    <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-xs space-y-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">
-                            Previous Feedback Provided to Artisan
-                        </span>
-                        <p className="font-semibold text-stone-900 leading-relaxed">
-                            {request.rejection_reason}
-                        </p>
-                    </div>
+                {request.status === 'rejected' && (request.active_revision || request.rejection_reason) && (
+                    <RevisionFeedbackBanner
+                        revision={request.active_revision}
+                        fallbackReason={request.rejection_reason}
+                        title="Previous Feedback Provided to Artisan"
+                    />
                 )}
             </div>
 

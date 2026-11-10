@@ -21,6 +21,7 @@ import RestockModal from "@/Components/Seller/Catalog/RestockModal";
 import ArchiveModal from "@/Components/Seller/Catalog/ArchiveModal";
 import LimitModal from "@/Components/Seller/Catalog/LimitModal";
 import ProductFormModal from "@/Components/Seller/Catalog/ProductFormModal/ProductFormModal";
+import RevisionFeedbackBanner from "@/Components/Common/RevisionFeedbackBanner";
 
 // Custom Hook
 import useProductManager from "@/hooks/useProductManager";
@@ -282,21 +283,12 @@ export default function ProductManager({
                         return (
                             <form onSubmit={state.submitResubmission} className="space-y-6 animate-fadeIn">
                                 <div className="space-y-4">
-                                    <div className={`rounded-xl border p-4 ${isFlagged ? "border-amber-100 bg-amber-50/50" : "border-red-100 bg-rose-50/50"}`}>
-                                        <div className="flex items-center gap-1.5 mb-1">
-                                            {isFlagged ? (
-                                                <AlertTriangle className="h-4 w-4 text-amber-800 shrink-0" />
-                                            ) : (
-                                                <AlertOctagon className="h-4 w-4 text-red-800 shrink-0" />
-                                            )}
-                                            <p className={`text-xs font-bold uppercase tracking-wider ${isFlagged ? "text-amber-800" : "text-red-800"}`}>
-                                                {reasonLabel}
-                                            </p>
-                                        </div>
-                                        <p className={`text-sm font-medium leading-relaxed ${isFlagged ? "text-stone-700" : "text-red-750"}`}>
-                                            {state.selectedResubmitProduct.rejection_reason || "No specific reason provided."}
-                                        </p>
-                                    </div>
+                                    <RevisionFeedbackBanner
+                                        revision={state.selectedResubmitProduct.active_revision}
+                                        fallbackReason={state.selectedResubmitProduct.rejection_reason || "No specific reason provided."}
+                                        title={reasonLabel}
+                                        variant={isFlagged ? "amber" : "rose"}
+                                    />
 
                                     <div className="rounded-xl border border-stone-250 bg-stone-50 p-4 space-y-2">
                                         <div className="flex items-center justify-between text-xs">

@@ -177,6 +177,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     Route::post('/staff/deliveries/verify-vehicle', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'verifyVehicle'])->name('staff.deliveries.verify-vehicle');
     Route::put('/staff/deliveries/{id}/telemetry', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'updateTelemetry'])->middleware('throttle:30,1')->name('staff.deliveries.telemetry');
     Route::get('/deliveries/{id}/telemetry', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'getTelemetry'])->name('deliveries.telemetry');
+    Route::post('/profile/verify-face', [\App\Http\Controllers\Consumer\FaceVerificationController::class, 'store'])->middleware('throttle:10,1')->name('profile.verify-face');
     Route::middleware(['ensure.not.pending.artisan'])->group(function () {
         // PROFILE
         Route::get('/profile', [\App\Http\Controllers\Core\ProfileController::class, 'edit'])->name('profile.edit');

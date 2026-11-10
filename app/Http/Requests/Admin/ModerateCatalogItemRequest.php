@@ -28,6 +28,10 @@ class ModerateCatalogItemRequest extends FormRequest
             'ids.*' => ['exists:products,id'],
             'action' => ['required', 'string', 'in:approve,reject,flag'],
             'feedback' => ['nullable', 'string', 'max:1000'],
+            'revision_items' => ['nullable', 'array', 'max:20'],
+            'revision_items.*.key' => ['required_with:revision_items', 'string', 'max:80'],
+            'revision_items.*.label' => ['nullable', 'string', 'max:120'],
+            'revision_items.*.note' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -39,9 +43,10 @@ class ModerateCatalogItemRequest extends FormRequest
         $validator->after(function ($validator) {
             $action = $this->input('action');
             $feedback = trim((string) $this->input('feedback', ''));
+            $items = $this->input('revision_items', []);
 
-            if (in_array($action, ['reject', 'flag'], true) && empty($feedback)) {
-                $validator->errors()->add('feedback', 'Feedback/reason is required when rejecting or flagging products.');
+            if (in_array($action, ['reject', 'flag'], true) && empty($feedback) && empty($items)) {
+                $validator->errors()->add('feedback', 'Select at least one revision item or enter feedback when rejecting or flagging products.');
             }
         });
     }

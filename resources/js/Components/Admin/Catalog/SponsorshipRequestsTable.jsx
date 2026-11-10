@@ -77,36 +77,43 @@ export default function SponsorshipRequestsTable({ requests }) {
         });
     };
 
-    const handleDrawerReject = (req, reason) => {
+    const handleDrawerReject = (req, reason, revisionItems = []) => {
         setProcessingSponsorship(true);
         setPendingActionId(req.id);
-        router.post(route('admin.sponsorships.reject', req.id), { rejection_reason: reason }, {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                const processedAt = new Date().toISOString();
-                setRequestRows((currentRows) => currentRows.map((row) => (
-                    row.id === req.id
-                        ? {
-                            ...row,
-                            status: 'rejected',
-                            rejection_reason: reason,
-                            updated_at: processedAt,
-                        }
-                        : row
-                )));
-                setRecentlyUpdatedId(req.id);
-                setInspectRequest(null);
-                addToast('Feedback sent and request returned to artisan.', 'success');
+        router.post(
+            route('admin.sponsorships.reject', req.id),
+            {
+                rejection_reason: reason,
+                revision_items: revisionItems,
             },
-            onError: (err) => {
-                addToast(err?.error || err?.message || 'Failed to submit feedback.', 'error');
-            },
-            onFinish: () => {
-                setProcessingSponsorship(false);
-                setPendingActionId(null);
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    const processedAt = new Date().toISOString();
+                    setRequestRows((currentRows) => currentRows.map((row) => (
+                        row.id === req.id
+                            ? {
+                                ...row,
+                                status: 'rejected',
+                                rejection_reason: reason,
+                                updated_at: processedAt,
+                            }
+                            : row
+                    )));
+                    setRecentlyUpdatedId(req.id);
+                    setInspectRequest(null);
+                    addToast('Feedback sent and request returned to artisan.', 'success');
+                },
+                onError: (err) => {
+                    addToast(err?.error || err?.message || 'Failed to submit feedback.', 'error');
+                },
+                onFinish: () => {
+                    setProcessingSponsorship(false);
+                    setPendingActionId(null);
+                }
             }
-        });
+        );
     };
 
     const getStatusBadge = (status) => {

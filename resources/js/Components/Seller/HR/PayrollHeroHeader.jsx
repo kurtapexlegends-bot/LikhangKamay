@@ -1,6 +1,7 @@
 import React from 'react';
 import { router } from '@inertiajs/react';
-import { ArrowLeft, Clock3, Send, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Clock3, Send } from 'lucide-react';
+import RevisionFeedbackBanner from '@/Components/Common/RevisionFeedbackBanner';
 
 const shortDateTime = (value) => value
     ? new Intl.DateTimeFormat('en-PH', {
@@ -135,12 +136,14 @@ export default function PayrollHeroHeader({ payroll }) {
                 </div>
             )}
 
-            {payroll?.rejection_reason && (
-                <div className="mt-3.5 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
-                    <AlertCircle size={15} className="text-rose-600 shrink-0 mt-0.5" />
-                    <div>
-                        <span className="font-bold">Decline Reason:</span> {payroll.rejection_reason}
-                    </div>
+            {(payroll?.active_revision || payroll?.rejection_reason) && (
+                <div className="mt-3.5">
+                    <RevisionFeedbackBanner
+                        revision={payroll?.active_revision}
+                        fallbackReason={payroll?.rejection_reason}
+                        title="Payroll Revision / Decline Notes"
+                        variant="rose"
+                    />
                 </div>
             )}
         </div>

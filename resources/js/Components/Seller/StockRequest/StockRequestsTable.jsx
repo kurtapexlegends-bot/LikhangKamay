@@ -5,6 +5,7 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import StatusBadge from './StatusBadge';
 import RequestDetailsCard from './RequestDetailsCard';
 import { formatPeso } from '@/utils/stockRequestHelpers';
+import RevisionFeedbackBanner from '@/Components/Common/RevisionFeedbackBanner';
 
 export default function StockRequestsTable({
     filteredRequests,
@@ -81,14 +82,13 @@ export default function StockRequestsTable({
                         {/* Request Details Block */}
                         <RequestDetailsCard request={req} isMobile={true} />
 
-                        {req.status === 'rejected' && req.rejection_reason && (
-                            <div className="rounded-xl border border-red-200/80 bg-red-50/60 p-3 shadow-2xs">
-                                <div className="flex items-center gap-1.5 mb-1 text-red-600">
-                                    <AlertTriangle size={12} strokeWidth={2.5} />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider">Decline Reason</span>
-                                </div>
-                                <span className="block text-xs font-medium leading-relaxed text-red-800">{req.rejection_reason}</span>
-                            </div>
+                        {req.status === 'rejected' && (req.active_revision || req.rejection_reason) && (
+                            <RevisionFeedbackBanner
+                                revision={req.active_revision}
+                                fallbackReason={req.rejection_reason}
+                                title="Revision Requested"
+                                variant="rose"
+                            />
                         )}
 
                         {/* Action Buttons on Mobile */}
@@ -196,15 +196,26 @@ export default function StockRequestsTable({
                                 <td className="px-4 py-3.5 align-middle">
                                     <div className="flex flex-col items-start gap-1.5 max-w-[200px]">
                                         <StatusBadge status={req.status} />
-                                        {req.status === 'rejected' && req.rejection_reason && (
-                                            <div className="rounded-xl border border-red-200/80 bg-red-50/60 p-2 shadow-2xs w-full">
-                                                <div className="flex items-center gap-1 mb-0.5 text-red-600">
+                                        {req.status === 'rejected' && (req.active_revision || req.rejection_reason) && (
+                                            <div className="rounded-xl border border-red-200/80 bg-red-50/60 p-2 shadow-2xs w-full space-y-1">
+                                                <div className="flex items-center gap-1 text-red-600">
                                                     <AlertTriangle size={10} strokeWidth={2.5} />
-                                                    <span className="text-[9px] font-bold uppercase tracking-wider">Reason</span>
+                                                    <span className="text-[9px] font-bold uppercase tracking-wider">Revision Needed</span>
                                                 </div>
-                                                <span className="block text-[10px] font-medium leading-relaxed text-red-800 break-words line-clamp-2" title={req.rejection_reason}>
-                                                    {req.rejection_reason}
-                                                </span>
+                                                {req.active_revision?.items?.length > 0 && (
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {req.active_revision.items.map((item, idx) => (
+                                                            <span key={item.key || idx} className="inline-block rounded bg-white border border-red-200 px-1.5 py-0.5 text-[9px] font-bold text-red-800">
+                                                                {item.label}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {(req.active_revision?.summary_note || req.active_revision?.summary_reason || req.rejection_reason) && (
+                                                    <span className="block text-[10px] font-medium leading-relaxed text-red-800 break-words line-clamp-2" title={req.active_revision?.summary_note || req.active_revision?.summary_reason || req.rejection_reason}>
+                                                        {req.active_revision?.summary_note || req.active_revision?.summary_reason || req.rejection_reason}
+                                                    </span>
+                                                )}
                                             </div>
                                         )}
                                     </div>

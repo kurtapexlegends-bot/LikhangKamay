@@ -3,11 +3,12 @@ import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import UserAvatar from '@/Components/UserAvatar';
 import { 
     Banknote, User, ShoppingBag, Tag, AlertCircle, 
-    FileText, Clock, CheckCircle2, XCircle, AlertTriangle
+    FileText, Clock, CheckCircle2, XCircle
 } from 'lucide-react';
 import DocumentViewerModal from './DocumentViewerModal';
 import ApprovalActionFooter from './ApprovalActionFooter';
 import ApprovalDomainBreakdown from './ApprovalDomainBreakdown';
+import RevisionFeedbackBanner from '@/Components/Common/RevisionFeedbackBanner';
 
 const DOMAIN_CONFIG = {
     hr_payroll: {
@@ -154,14 +155,13 @@ export default function ApprovalDetailsDrawer({
                     </div>
 
                     {/* Rejection Note (If Rejected) */}
-                    {isRejected && approval.rejection_reason && (
-                        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-1">
-                            <div className="flex items-center gap-1.5 font-bold">
-                                <AlertTriangle size={14} className="text-rose-600" />
-                                <span>Reason for Declining:</span>
-                            </div>
-                            <p className="leading-relaxed pl-5 font-medium">{approval.rejection_reason}</p>
-                        </div>
+                    {isRejected && (approval.active_revision || approval.rejection_reason) && (
+                        <RevisionFeedbackBanner
+                            revision={approval.active_revision}
+                            fallbackReason={approval.rejection_reason}
+                            title="Reason for Declining"
+                            variant="rose"
+                        />
                     )}
 
                     {/* Domain Specific Data */}

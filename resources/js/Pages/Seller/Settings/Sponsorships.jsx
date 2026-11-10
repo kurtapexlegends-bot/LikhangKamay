@@ -11,6 +11,7 @@ import useFlashToast from '@/hooks/useFlashToast';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import SellerHeader from '@/Layouts/SellerHeader';
 import { resolveImageUrl } from '@/lib/media';
+import RevisionFeedbackBanner from '@/Components/Common/RevisionFeedbackBanner';
 
 export default function Sponsorships({ auth, creditsAvailable, activeProducts, requests }) {
     const { addToast } = useToast();
@@ -315,10 +316,14 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                         <div className="mt-3.5 border-t border-stone-100/80 pt-2 flex flex-col justify-between">
                                             <span className="text-[9px] text-stone-400 font-semibold uppercase tracking-wider">Timeline details</span>
                                             <div className="mt-1 text-[11px] text-stone-600 leading-normal">
-                                                {req.status === 'rejected' && req.rejection_reason ? (
-                                                    <div className="mt-1 rounded-lg bg-rose-50/30 border border-rose-100/50 p-2 text-rose-700 text-[10px]">
-                                                        <span className="font-bold uppercase tracking-wider block text-[9px] mb-0.5">Reason:</span>
-                                                        {req.rejection_reason}
+                                                {req.status === 'rejected' && (req.active_revision || req.rejection_reason) ? (
+                                                    <div className="mt-1">
+                                                        <RevisionFeedbackBanner
+                                                            revision={req.active_revision}
+                                                            fallbackReason={req.rejection_reason}
+                                                            title="Revision Requested"
+                                                            variant="rose"
+                                                        />
                                                     </div>
                                                 ) : req.status === 'approved' ? (
                                                     <p className="text-emerald-700 font-medium">Approved for a 7-day featured run.</p>

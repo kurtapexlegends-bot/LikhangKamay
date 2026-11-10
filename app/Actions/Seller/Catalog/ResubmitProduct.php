@@ -28,6 +28,8 @@ class ResubmitProduct
             ]);
             Product::$bypassReview = false;
 
+            $product->resolveActiveRevisions();
+
             $admins = User::where('role', 'super_admin')->get();
             Notification::send($admins, new \App\Notifications\ProductPendingReviewNotification($product));
 

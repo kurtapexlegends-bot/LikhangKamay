@@ -400,6 +400,7 @@ class HREmployeeLoader
             'total_amount' => $netPaySum > 0 ? $netPaySum : (float) $payroll->total_amount,
             'employee_count' => (int) ($payroll->employee_count ?: $lineItems->count()),
             'rejection_reason' => $payroll->rejection_reason,
+            'active_revision' => $payroll->formatActiveRevisionForFrontend(),
             'created_at' => $payroll->created_at?->toIso8601String(),
             'updated_at' => $payroll->updated_at?->toIso8601String(),
             'submitted_at' => $payroll->submitted_at?->toIso8601String(),

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\FaceDescriptorService;
 use App\Support\PersonName;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -54,19 +55,51 @@ class RegisteredUserController extends Controller
             'terms' => 'accepted', // <--- CRITICAL: Enforces terms acceptance on server
         ]);
 
+        $faceService = app(FaceDescriptorService::class);
+        $faceDescriptor = $faceService->normalizeDescriptor($request->input('face_descriptor'));
+        $selfieDataUrl = $request->input('selfie_data_url');
+
+        if ($faceDescriptor) {
+            $bannedCheck = $faceService->checkBannedDuplicate($faceDescriptor, $existingUser?->id);
+            if (!empty($bannedCheck['matched_banned'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'face_verification' => 'Registration cannot be completed because this identity matches a restricted account.',
+                ]);
+            }
+        }
+
+        $kycSelfiePath = is_string($selfieDataUrl) && $selfieDataUrl !== ''
+            ? $faceService->storeSelfieDataUrl($selfieDataUrl, 'reg_' . time())
+            : null;
+        $livenessVerifiedAt = ($kycSelfiePath && $faceDescriptor) ? now() : null;
+        $requiresCheckoutFaceCheck = $livenessVerifiedAt === null;
+
         $name = PersonName::normalize(
             $request->input('first_name'),
             $request->input('last_name'),
             $request->input('name'),
         );
 
-        $user = \Illuminate\Support\Facades\DB::transaction(function () use ($name, $request, $role, $existingUser) {
+        $user = \Illuminate\Support\Facades\DB::transaction(function () use (
+            $name,
+            $request,
+            $role,
+            $existingUser,
+            $kycSelfiePath,
+            $faceDescriptor,
+            $livenessVerifiedAt,
+            $requiresCheckoutFaceCheck
+        ) {
             if ($existingUser && is_null($existingUser->email_verified_at)) {
                 $existingUser->update([
                     ...User::persistableNameAttributes($name),
                     'password' => Hash::make($request->password),
                     'role' => $role,
                     'shop_name' => $request->shop_name,
+                    'kyc_selfie_path' => $kycSelfiePath ?? $existingUser->kyc_selfie_path,
+                    'kyc_liveness_verified_at' => $livenessVerifiedAt ?? $existingUser->kyc_liveness_verified_at,
+                    'requires_checkout_face_check' => $livenessVerifiedAt ? false : $requiresCheckoutFaceCheck,
+                    'face_descriptor' => $faceDescriptor ?? $existingUser->face_descriptor,
                 ]);
 
                 if ($role === 'artisan') {
@@ -89,6 +122,10 @@ class RegisteredUserController extends Controller
                 'password' => Hash::make($request->password),
                 'role' => $role,
                 'shop_name' => $request->shop_name,
+                'kyc_selfie_path' => $kycSelfiePath,
+                'kyc_liveness_verified_at' => $livenessVerifiedAt,
+                'requires_checkout_face_check' => $requiresCheckoutFaceCheck,
+                'face_descriptor' => $faceDescriptor,
             ]);
 
             if ($role === 'artisan') {

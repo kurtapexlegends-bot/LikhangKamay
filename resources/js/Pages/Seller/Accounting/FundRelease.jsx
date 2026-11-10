@@ -38,6 +38,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
     const [baseFundsValue, setBaseFundsValue] = useState(finances.baseFunds || 0);
     const [reviewModal, setReviewModal] = useState({ open: false, item: null, source: 'pending' });
     const [rejectReason, setRejectReason] = useState('');
+    const [revisionItems, setRevisionItems] = useState([]);
     const [baseFundsProcessing, setBaseFundsProcessing] = useState(false);
     const [reviewProcessing, setReviewProcessing] = useState(null);
     const [searchTerm, setSearchTerm] = useState(() => getInitialQueryParam('search', ''));
@@ -138,16 +139,19 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
 
     const closeReviewModal = () => {
         setReviewModal({ open: false, item: null, source: 'pending' });
+        setRevisionItems([]);
     };
 
     const resetReviewModal = () => {
         setReviewModal({ open: false, item: null, source: 'pending' });
         setRejectReason('');
+        setRevisionItems([]);
     };
 
     const openReviewModal = (item, source = 'pending') => {
         setReviewModal({ open: true, item, source });
         setRejectReason(item?.rejection_reason || '');
+        setRevisionItems([]);
     };
 
     const applyFilters = (filterObj) => {
@@ -235,16 +239,22 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
     };
 
     const handleReject = () => {
-        if (!reviewModal.item || !rejectReason.trim() || !canEditAccounting) return;
+        if (!reviewModal.item || (!rejectReason.trim() && revisionItems.length === 0) || !canEditAccounting) return;
 
-        router.post(route(reviewModal.item.type === 'payroll' ? 'accounting.rejectPayroll' : 'accounting.reject', reviewModal.item.id), {
-            reason: rejectReason.trim(),
-        }, {
-            onStart: () => setReviewProcessing('reject'),
-            onShadow: true,
-            onSuccess: closeReviewModal,
-            onFinish: () => setReviewProcessing(null),
-        });
+        router.post(
+            route(reviewModal.item.type === 'payroll' ? 'accounting.rejectPayroll' : 'accounting.reject', reviewModal.item.id),
+            {
+                reason: rejectReason.trim(),
+                revision_items: revisionItems,
+            },
+            {
+                preserveScroll: true,
+                onStart: () => setReviewProcessing('reject'),
+                onShadow: true,
+                onSuccess: resetReviewModal,
+                onFinish: () => setReviewProcessing(null),
+            }
+        );
     };
 
     const handleUpdateBaseFunds = (event) => {
@@ -297,6 +307,8 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                             canEditAccounting={canEditAccounting}
                             rejectReason={rejectReason}
                             setRejectReason={setRejectReason}
+                            revisionItems={revisionItems}
+                            setRevisionItems={setRevisionItems}
                             onApprove={handleApprove}
                             onReject={handleReject}
                             reviewProcessing={reviewProcessing}

@@ -9,8 +9,18 @@ import StepPill from '@/Pages/Auth/Partials/StepPill';
 import ShopDetailsStep from '@/Pages/Auth/Partials/ShopDetailsStep';
 import DocumentsStep from '@/Pages/Auth/Partials/DocumentsStep';
 import PaymentStep from '@/Pages/Auth/Partials/PaymentStep';
+import RevisionFeedbackBanner from '@/Components/Common/RevisionFeedbackBanner';
 
-export default function ArtisanSetup({ auth, rejectionReason, existingDocuments, existingPayoutAccountNumber }) {
+export default function ArtisanSetup({
+    auth,
+    rejectionReason,
+    activeRevision = null,
+    existingDocuments,
+    existingPayoutAccountNumber,
+    kycSelfieUrl = null,
+    kycLivenessVerified = false,
+    kycVerificationMeta = null,
+}) {
     const user = auth?.user || {};
     const [step, setStep] = React.useState(1);
     const [showRejection, setShowRejection] = React.useState(true);
@@ -22,6 +32,32 @@ export default function ArtisanSetup({ auth, rejectionReason, existingDocuments,
         : defaultRegion === CAVITE_REGION
             ? 'Dasmarinas City'
             : '';
+
+    const revisionItems = React.useMemo(
+        () => (Array.isArray(activeRevision?.items) ? activeRevision.items : []),
+        [activeRevision]
+    );
+    const flaggedKeys = React.useMemo(
+        () => new Set(revisionItems.map((item) => item.key)),
+        [revisionItems]
+    );
+    const revisionNotesMap = React.useMemo(() => {
+        const map = {};
+        revisionItems.forEach((item) => {
+            if (item.key) map[item.key] = item.note || '';
+        });
+        return map;
+    }, [revisionItems]);
+
+    const handleGoToField = React.useCallback((key) => {
+        if (key === 'shop_details' || key === 'shop_address') {
+            setStep(1);
+        } else if (key === 'payout_info') {
+            setStep(3);
+        } else {
+            setStep(2);
+        }
+    }, []);
 
     const { data, setData, post, processing, errors, transform } = useForm({
         current_step: 1,
@@ -38,6 +74,12 @@ export default function ArtisanSetup({ auth, rejectionReason, existingDocuments,
         dti_registration: null,
         valid_id: null,
         tin_id: null,
+        selfie_data_url: null,
+        face_descriptor: null,
+        id_face_descriptor: null,
+        id_face_detected: kycVerificationMeta?.id_face_detected ?? null,
+        face_match_score: kycVerificationMeta?.match_score ?? null,
+        valid_id_camera_captured: false,
         payout_method: user.payout_method || 'GCash',
         payout_account_name: user.payout_account_name || '',
         payout_account_number: existingPayoutAccountNumber || user.payout_account_number || '',
@@ -278,18 +320,16 @@ export default function ArtisanSetup({ auth, rejectionReason, existingDocuments,
                                 </button>
                                 
                                 {showRejection && (
-                                    <div className="px-6 pb-6 sm:px-10 sm:pb-8">
-                                        <div className="rounded-xl border border-rose-200 bg-white p-4 shadow-xs">
-                                            <p className="text-xs font-semibold uppercase tracking-wider text-rose-800 mb-1">Reviewer Feedback:</p>
-                                            <p className="text-sm font-medium text-stone-800">
-                                                {effectiveRejectionReason || 'Please verify that your uploaded documents are legible and business credentials match your shop name.'}
-                                            </p>
-                                        </div>
-                                        <p className="mt-2.5 text-xs font-medium text-rose-700">
-                                            Make the requested updates below and resubmit for verification.
-                                        </p>
+                                    <div className="px-6 pb-6 sm:px-10 sm:pb-8 space-y-4">
+                                        <RevisionFeedbackBanner
+                                            revision={activeRevision}
+                                            fallbackReason={effectiveRejectionReason || 'Please verify that your uploaded documents are legible and business credentials match your shop name.'}
+                                            title="Specific Revisions Requested"
+                                            onGoToField={handleGoToField}
+                                            variant="rose"
+                                        />
 
-                                        <div className="mt-4 pt-4 border-t border-rose-200/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                        <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                             <div>
                                                 <p className="text-xs font-bold text-stone-800">Prefer to shop instead?</p>
                                                 <p className="text-[11px] text-stone-500">You can convert your account to a standard customer account.</p>
@@ -324,17 +364,28 @@ export default function ArtisanSetup({ auth, rejectionReason, existingDocuments,
                                         submit={submit}
                                         processing={processing}
                                         shopNameValidation={shopNameValidation}
+                                        flaggedKeys={flaggedKeys}
+                                        revisionNotes={revisionNotesMap}
+                                        hasActiveRevision={Boolean(activeRevision)}
                                     />
                                 )}
 
                                 {step === 2 && (
                                     <DocumentsStep
+                                        data={data}
+                                        setData={setData}
                                         errors={errors}
                                         submit={submit}
                                         processing={processing}
                                         setStep={setStep}
                                         auth={auth}
                                         existingDocuments={existingDocuments}
+                                        flaggedKeys={flaggedKeys}
+                                        revisionNotes={revisionNotesMap}
+                                        hasActiveRevision={Boolean(activeRevision)}
+                                        kycSelfieUrl={kycSelfieUrl}
+                                        kycLivenessVerified={kycLivenessVerified}
+                                        kycVerificationMeta={kycVerificationMeta}
                                     />
                                 )}
 
@@ -346,6 +397,9 @@ export default function ArtisanSetup({ auth, rejectionReason, existingDocuments,
                                         submit={submit}
                                         processing={processing}
                                         setStep={setStep}
+                                        flaggedKeys={flaggedKeys}
+                                        revisionNotes={revisionNotesMap}
+                                        hasActiveRevision={Boolean(activeRevision)}
                                     />
                                 )}
                             </motion.div>

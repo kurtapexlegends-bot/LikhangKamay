@@ -52,6 +52,7 @@ class SellerProductResource extends JsonResource
             'track_as_supply' => (bool) $this->track_as_supply,
             'production_method' => $this->production_method ?? 'resell',
             'rejection_reason' => $this->rejection_reason,
+            'active_revision' => $this->formatActiveRevisionForFrontend(),
             'monthly_resubmission_count' => (int) $this->monthly_resubmission_count,
             'recipes' => $this->recipes->map(fn($r) => [
                 'id' => $r->id,
