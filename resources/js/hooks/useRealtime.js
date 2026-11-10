@@ -120,11 +120,17 @@ export const useRealtime = () => {
             if (path.includes('/admin/catalog')) {
                 reloadKeys.push('products');
             }
+            if (path.includes('/admin/disputes')) {
+                reloadKeys.push('disputes');
+            }
+            if (path.includes('/admin/payouts')) {
+                reloadKeys.push('payouts');
+            }
             if (path.includes('/hr')) {
                 reloadKeys.push('staff', 'payrolls', 'locations');
             }
             if (path.includes('/procurement')) {
-                reloadKeys.push('supplies', 'requests', 'finances');
+                reloadKeys.push('supplies', 'requests', 'finances', 'totalItems', 'lowStockItems', 'totalValue');
             }
             if (path.includes('/accounting')) {
                 reloadKeys.push('pendingRequests', 'history', 'finances');
@@ -132,11 +138,29 @@ export const useRealtime = () => {
             if (path.includes('/reviews')) {
                 reloadKeys.push('reviews');
             }
+            if (path.includes('/approvals')) {
+                reloadKeys.push('approvals', 'pendingCount', 'stats');
+            }
+            if (path.includes('/stock-request')) {
+                reloadKeys.push('requests');
+            }
+            if (path.includes('/wholesale-sales')) {
+                reloadKeys.push('orders', 'activeSalesCount', 'pendingSalesCount', 'processingSalesCount', 'shippedSalesCount', 'deliveredSalesCount', 'completedSalesCount', 'cancelledSalesCount');
+            }
+            if (path.includes('/sourcing-orders')) {
+                reloadKeys.push('orders', 'activeOrdersCount', 'deliveredOrdersCount', 'completedOrdersCount', 'cancelledOrdersCount', 'openOrdersCount');
+            }
+            if (path.includes('/driver-deliveries') || path.includes('/deliveries')) {
+                reloadKeys.push('activeDeliveries', 'completedToday', 'driverProfile');
+            }
+            if (path.includes('/staff') && !path.includes('/driver-deliveries')) {
+                reloadKeys.push('attendance', 'hub');
+            }
 
             if (user.role === 'super_admin') {
                 reloadKeys.push('pendingArtisanCount', 'logs', 'adminStats');
             } else if (user.role === 'artisan' || user.role === 'staff') {
-                reloadKeys.push('stats', 'recentOrders');
+                reloadKeys.push('metrics', 'stats', 'recentOrders');
             }
             return reloadKeys;
         };
@@ -322,7 +346,7 @@ export const useRealtime = () => {
                             }
 
                             router.reload({
-                                only: ['orders', 'stats', 'recentOrders'],
+                                only: ['orders', 'metrics', 'stats', 'recentOrders', 'tabCounts'],
                                 preserveScroll: true,
                             });
                         }
