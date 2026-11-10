@@ -37,6 +37,12 @@ Scan all asynchronous operations, API hooks, and form controllers across the sys
    - Scan every `<input type="file">` and multi-file form (disputes, returns, product media, legal docs).
    - Verify forms calculate cumulative byte size across all attached raw `File` instances (<4MB total aggregate) before invoking Inertia `post()` to prevent edge gateway HTTP 413 drops that crash silently without Inertia error handling.
    - Verify image files use `URL.createObjectURL(file)` with `URL.revokeObjectURL(url)` instead of massive base64 `readAsDataURL` strings that crash mobile memory.
+5. **Inertia `useRealtime` Polling Whitelist & Prop Name Mismatch Trap:**
+   - In production (Vercel + Neon PostgreSQL), background state sync is driven by `useRealtime.js` fallback polling (`router.reload({ only: getPollKeys() })`).
+   - Audit `getPollKeys()` in `resources/js/hooks/useRealtime.js`:
+     - Every authenticated page requiring live updates must match a path condition in `getPollKeys()`.
+     - The keys requested in `reloadKeys` MUST strictly match the exact prop names returned by the corresponding Inertia controller (e.g. `metrics` vs `stats` in `DashboardController`, `activeDeliveries` in `DriverDeliveryController`, `approvals` in `ApprovalController`).
+     - Mismatched prop names result in silent data discard by Inertia without any JavaScript or PHP errors, causing the UI to appear frozen in a stale state.
 
 ### Vector 2: Data Lifecycle, Soft-Deletes & Orphaned Entity Traps
 Audit all domain models and queries for crashes caused by missing, deactivated, or soft-deleted relationships:

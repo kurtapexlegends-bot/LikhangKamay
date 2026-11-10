@@ -25,10 +25,15 @@ export async function runLiveTransactionPipeline() {
         fs.mkdirSync(MANIFESTS_DIR, { recursive: true });
     }
 
+    const isHeaded = process.argv.includes('--headed') || process.env.HEADED === '1';
+
     const browser = await puppeteer.launch({
         executablePath: resolveBrowserExecutable(),
-        headless: 'new',
+        headless: isHeaded ? false : 'new',
+        slowMo: isHeaded ? 60 : 0,
+        defaultViewport: isHeaded ? { width: 1366, height: 850 } : null,
         args: [
+            ...(isHeaded ? ['--start-maximized', '--disable-infobars'] : []),
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
