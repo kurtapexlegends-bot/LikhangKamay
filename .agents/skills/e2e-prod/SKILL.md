@@ -42,6 +42,7 @@ description: >-
 - Tests Address Book loading and structured Cavite address form validation.
 - Navigates to `/checkout`, asserting that asynchronous shipping quote calculations resolve without swallowing 422 errors or locking buttons in infinite spinners.
 - Validates workshop pickup checkout, verifying support for instant online prepayment (GCash/Maya) alongside Cash on Pickup with 4-digit PIN verification.
+- Verifies biometric checkout safety gate isolation: synthetic `is_test = true` accounts bypass blocking `CheckoutFaceCheckModal` prompts via `User::requiresCheckoutFaceCheck()`, while unverified non-test buyers without `kyc_liveness_verified_at` must pass `POST /profile/verify-face` (`profile.verify-face`) once before COD or online prepayment checkout.
 - Validates Philippine BIR 12% VAT-inclusive pricing disclosures on checkout summary.
 - Validates that Inertia shared props (`auth`, `cart`, `flash`) are intact.
 - Audits My Orders management, live courier tracking map contracts (`/my-orders/{id}/route-preview`), and verified BIR Computerized Sales Invoice printable HTML generation (`/my-orders/{id}/receipt`, returning `view('pdf.receipt')`).
@@ -74,13 +75,13 @@ description: >-
 - Tests Time Card loading and Attendance clock-in modal with camera face check initialization and PIN fallback (`0000`).
 - **Off-Site Attendance Flagging & HR Override:** Simulates off-site clock-in coordinates outside Cavite bounds (`is_flagged = true`), verifying that HR receives flagged attendance and can execute override approvals (`POST /hr/attendance-sessions/{id}/approve`).
 - **Staff Provisioning Lifecycle & Granular Matrix:** Validates artisan provisioning of apprentice staff accounts (`test.apprentice.lk@gmail.com`) with custom permissions matrix (orders, products, hr), account suspension toggle, and clean seat termination (`DELETE /hr/employees/{id}`) to prevent production seat leaks.
-- **Payroll Maker-Checker Rejection Loop:** Tests accountant rejection of draft payroll run batches (`POST /accounting/payroll/{payroll}/reject`) with revision remarks, before HR resubmission and final accounting approval (`POST /accounting/payroll/{payroll}/approve`).
+- **Payroll Maker-Checker Rejection & Targeted Revision Loop:** Tests accountant rejection of draft payroll run batches (`POST /accounting/payroll/{payroll}/reject`) and stock requests (`POST /accounting/reject/{stockRequest}`) using `RevisionRequest` checklists (`config/revisions.php`), asserting `RevisionFeedbackBanner` rendering before HR/requester resubmission clears active revisions and leads to final approval (`POST /accounting/payroll/{payroll}/approve`).
 - Validates Driver Logistics dispatch console (`/staff/driver-deliveries` or `/staff/deliveries`), verifying background real-time sync (`activeDeliveries`, `completedToday`) via `useRealtime`, turn-by-turn navigation route modal, real-time GPS telemetry broadcast hook, and delivery transitions. For in-house studio driver deliveries, asserts customer-paid delivery fee is credited to artisan payout balance upon POD completion (`IN_HOUSE_SHIPPING_CREDITED`). Attendance clock-ins and POD completions strictly require native file uploads with real defense image assets (banning 1x1 base64 dummy pixels).
 - Asserts that staff/driver test personas authenticate cleanly; any failure to authenticate triggers a hard `FAIL` and halts clearance with exit code 1.
 
 ### Phase 5: Super Admin Platform Governance & Moderation
 - Authenticates with super admin credentials (`ACCOUNTS.admin`).
-- Tests Catalog Approval queues, user role assignment tables, and Dispute Escalation arbitration dashboard.
+- Tests Catalog Approval queues, user role assignment tables, Artisan KYC inspection (`KycVerificationSummaryCard` composite score, 1:1 selfie-to-ID face match, and forensics flags + itemized `RevisionRequest` rejection), and Dispute Escalation arbitration dashboard.
 - **Counter-Evidence Dispute Arbitration:** Arbitrates buyer disputes evaluating both buyer damage evidence and seller packaging rebuttal, with plain-language action labels (`Approve Full Refund`, `50% Partial Refund`, `Decline Claim (Pay Shop)`). For 50% partial refunds, asserts order transitions to `Completed` with `payment_status = 'partially_refunded'` and seller retains 50% net split in accounting revenue.
 - **Content Safety & Customer Review Moderation Desk:** Navigates to `/admin/compliance`, asserts empty state displays when no ticket is selected (zero ghost auto-selection), evaluates disputed customer reviews, and executes uphold/dismiss actions (`PATCH /admin/review-moderation/{id}`).
 - **Catalog Moderation Queue Takedown:** Tests direct listing takedown (`POST /admin/moderation-queue/{id}/takedown`) from the moderation queue.
@@ -122,6 +123,8 @@ node tests/e2e/production_audit/live_transaction_pipeline.mjs
 # Dedicated Feature Verification Tests:
 php artisan test --filter=AnalyticsTestOrderIsolationTest
 php artisan test --filter=LiveTransactionFlowTest
+php artisan test --filter=TargetedRevisionTest
+php artisan test --filter=KycBiometricsAndForensicsTest
 ```
 
 ---

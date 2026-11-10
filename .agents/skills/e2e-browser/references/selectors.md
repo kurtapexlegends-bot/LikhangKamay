@@ -6,16 +6,24 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 
 ## 1. Stable DOM Selector Dictionary
 
-### Authentication & Onboarding
+### Authentication, Face Check & Onboarding
 - **Login Email Input:** `input#email` or `input[type="email"]`
 - **Login Password Input:** `input#password` or `input[type="password"]`
 - **Login Submit Button:** `button[type="submit"]`
+- **Buyer Register Face Check Start Button:** `button:has-text("Start Quick Face Check")`
+- **Buyer Register Camera Fallback Skip Button:** `button:has-text("Skip until first order")` / `button:has-text("No camera? Skip for now")`
 - **Email Verification Code Inputs:** `input[data-index="0"]`, `input[data-index="1"]`, `input[data-index="2"]`, `input[data-index="3"]`, `input[data-index="4"]`, `input[data-index="5"]`
 - **KYC Business Permit Input:** `input#business_permit`
 - **KYC DTI Certificate Input:** `input#dti_registration`
 - **KYC Government ID Input:** `input#valid_id`
 - **KYC TIN Registration Input:** `input#tin_id`
+- **KYC Cancel Upload Trigger (`FileUploadField.jsx`):** `button:has-text("Cancel Upload")`
+- **KYC Face Check Card Trigger:** `button:has-text("Start Quick Face Check")` / `button:has-text("Retake Face Check")`
+- **KYC Face Card Fallback:** `button:has-text("Camera unavailable — continue with manual review")`
 - **KYC Submit Application Button:** `button:has-text("Submit Application")`
+- **Checkout One-Time Face Check Modal Header:** `div[role="dialog"]:has-text("One-Time Quick Face Check")`
+- **Targeted Revision Checklist Custom Item Input:** `input[placeholder="Add custom item to revise..."]` + `button:has-text("Add")`
+- **Targeted Revision Summary Textarea:** `textarea[placeholder*="Provide clear instructions"]`
 
 ### Storefront & Consumer Catalog
 - **Storefront Search Bar:** `input[placeholder*="Search"]`

@@ -27,7 +27,7 @@ description: >-
   - **Logistics Rider:** `test.driver@likhangkamay.local` (Motorcycle `CAV-9876`)
 
 ### B. Permanent Bans & Guardrails
-1. **No Real Webcam Recognition:** Use PIN `0000` or `"Use Email Code"` (`000000` for test accounts); `allow_remote_clock_in` bypasses physical geofences.
+1. **No Real Webcam Recognition Required for Standard Relays:** Use PIN `0000` or `"Use Email Code"` (`000000` for test accounts); `allow_remote_clock_in` bypasses physical geofences. Synthetic test buyers (`is_test = true`) also bypass the one-time `CheckoutFaceCheckModal` (`User::requiresCheckoutFaceCheck()`), while non-test buyers without a prior live face check are prompted once before COD or online checkout (`POST /profile/verify-face`).
 2. **No Global Admin Fee Manipulation:** Never alter platform commission/fee rates or maintenance mode on `/admin/settings`.
 3. **No Social OAuth / No Credit Cards / No Destructive Account Deletes:** Online payments strictly test PayMongo GCash/Maya sandboxes.
 
@@ -53,7 +53,8 @@ Users demand **real visible browser action** (zero dark-box headless skipping). 
 4. **Real Binary Uploads Only:** Never generate 1x1 dummy PNGs or canvas rectangles for POD or attendance. Bind real assets from `tests/fixtures/defense_assets/` (see [`references/selectors.md`](file:///c:/laragon/www/LikhangKamay/.agents/skills/e2e-browser/references/selectors.md)).
 5. **UI & System Contracts:**
    - **Full-System Real-Time Polling Whitelist:** `useRealtime.js` syncs `activeDeliveries` (`/staff/driver-deliveries`), `metrics` (`/seller/dashboard`), `approvals` (`/seller/approvals`), `requests` (`/seller/stock-requests`), wholesale orders (`/supply-hub/wholesale-sales`), and admin queues (`/admin/disputes`, `/admin/payouts`) every 5s. Assert live DOM transitions via polling without synthetic full-page refreshes.
-   - **Streamlined Documents Step:** `DocumentsStep.jsx` uses 125px compact dropzones (`input#business_permit`, `input#dti_registration`, `input#valid_id`, `input#tin_id`) without repetitive "Required" badges or bulky callout boxes.
+   - **Streamlined Documents & Biometric KYC Step:** `DocumentsStep.jsx` mounts abort-safe `FileUploadField.jsx` dropzones (`input#business_permit`, `input#dti_registration`, `input#valid_id`, `input#tin_id` with Axios uploads and `Cancel Upload`) alongside `KycFaceAndIdCheckCard.jsx` (`Start Quick Face Check` / manual review fallback) without repetitive "Required" badges or bulky callout boxes.
+   - **Targeted Revision Checklists:** Rejections across Admin KYC (`ArtisanVerificationDrawer.jsx`), Catalog/Sponsorship moderation (`ModerationRejectModal.jsx`, `SponsorshipDecisionModal.jsx`), Stock Requests, and Payroll use `RevisionChecklistSelector.jsx` (`config/revisions.php`) paired with requester `RevisionFeedbackBanner.jsx` checklists.
    - **Welcome Button Token:** Storefront "View All Products" uses `bg-stone-900 hover:bg-stone-800`.
    - **ConfirmationModal:** Target buttons inside `div[role="dialog"]` to avoid mis-clicking card buttons.
 
