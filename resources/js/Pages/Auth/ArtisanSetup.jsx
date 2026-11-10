@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { Head, useForm, Link, router } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, LogOut, AlertTriangle, ChevronDown, Store, ShieldCheck, CreditCard } from 'lucide-react';
+import { Clock, LogOut, Store, ShieldCheck, CreditCard } from 'lucide-react';
 import axios from 'axios';
 import { CAVITE_REGION, normalizeCaviteAddressText } from '@/lib/caviteAddresses';
 import StepPill from '@/Pages/Auth/Partials/StepPill';
@@ -10,6 +10,7 @@ import ShopDetailsStep from '@/Pages/Auth/Partials/ShopDetailsStep';
 import DocumentsStep from '@/Pages/Auth/Partials/DocumentsStep';
 import PaymentStep from '@/Pages/Auth/Partials/PaymentStep';
 import RevisionFeedbackBanner from '@/Components/Common/RevisionFeedbackBanner';
+import useArtisanRevisionProgress from '@/Pages/Auth/Partials/useArtisanRevisionProgress';
 
 export default function ArtisanSetup({
     auth,
@@ -22,10 +23,23 @@ export default function ArtisanSetup({
     kycVerificationMeta = null,
 }) {
     const user = auth?.user || {};
-    const [step, setStep] = React.useState(1);
-    const [showRejection, setShowRejection] = React.useState(true);
     const isRejected = user.artisan_status === 'rejected';
     const effectiveRejectionReason = rejectionReason || user.artisan_rejection_reason;
+
+    const revisionItems = React.useMemo(
+        () => (Array.isArray(activeRevision?.items) ? activeRevision.items : []),
+        [activeRevision]
+    );
+    const initialStep = React.useMemo(() => {
+        if (!isRejected || revisionItems.length === 0) return 1;
+        const keys = revisionItems.map((i) => i.key);
+        if (keys.some((k) => k === 'shop_details' || k === 'shop_address')) return 1;
+        if (keys.some((k) => ['business_permit', 'dti_registration', 'valid_id', 'tin_id', 'face_verification'].includes(k))) return 2;
+        if (keys.includes('payout_info')) return 3;
+        return 1;
+    }, [isRejected, revisionItems]);
+
+    const [step, setStep] = React.useState(initialStep);
     const defaultRegion = user.region || CAVITE_REGION;
     const defaultCity = user.city
         ? normalizeCaviteAddressText(user.city)
@@ -33,14 +47,17 @@ export default function ArtisanSetup({
             ? 'Dasmarinas City'
             : '';
 
-    const revisionItems = React.useMemo(
-        () => (Array.isArray(activeRevision?.items) ? activeRevision.items : []),
-        [activeRevision]
-    );
     const flaggedKeys = React.useMemo(
         () => new Set(revisionItems.map((item) => item.key)),
         [revisionItems]
     );
+
+    const activeStepKeys = React.useMemo(() => {
+        if (step === 1) return new Set(['shop_details', 'shop_address']);
+        if (step === 2) return new Set(['business_permit', 'dti_registration', 'valid_id', 'tin_id', 'face_verification']);
+        return new Set(['payout_info']);
+    }, [step]);
+
     const revisionNotesMap = React.useMemo(() => {
         const map = {};
         revisionItems.forEach((item) => {
@@ -48,16 +65,6 @@ export default function ArtisanSetup({
         });
         return map;
     }, [revisionItems]);
-
-    const handleGoToField = React.useCallback((key) => {
-        if (key === 'shop_details' || key === 'shop_address') {
-            setStep(1);
-        } else if (key === 'payout_info') {
-            setStep(3);
-        } else {
-            setStep(2);
-        }
-    }, []);
 
     const { data, setData, post, processing, errors, transform } = useForm({
         current_step: 1,
@@ -83,6 +90,54 @@ export default function ArtisanSetup({
         payout_method: user.payout_method || 'GCash',
         payout_account_name: user.payout_account_name || '',
         payout_account_number: existingPayoutAccountNumber || user.payout_account_number || '',
+    });
+
+    const initialUserSnapshot = React.useMemo(() => ({
+        shop_name: user.shop_name,
+        phone_number: user.phone_number,
+        street_address: user.street_address,
+        city: defaultCity,
+        barangay: user.barangay,
+        zip_code: user.zip_code,
+        latitude: user.latitude,
+        longitude: user.longitude,
+        payout_method: user.payout_method,
+        payout_account_name: user.payout_account_name,
+        payout_account_number: existingPayoutAccountNumber || user.payout_account_number,
+    }), [
+        user.shop_name,
+        user.phone_number,
+        user.street_address,
+        defaultCity,
+        user.barangay,
+        user.zip_code,
+        user.latitude,
+        user.longitude,
+        user.payout_method,
+        user.payout_account_name,
+        existingPayoutAccountNumber,
+        user.payout_account_number,
+    ]);
+
+    const {
+        addressedKeys,
+        stepTotalCounts,
+        stepRemainingCounts,
+        highlightedKey,
+        handleGoToField,
+        handleDocumentUploaded,
+        handleDocumentRemoved,
+    } = useArtisanRevisionProgress({
+        userId: user.id,
+        activeRevision,
+        revisionItems,
+        isRejected,
+        step,
+        setStep,
+        data,
+        existingDocuments,
+        kycSelfieUrl,
+        initialUserSnapshot,
     });
 
     const [shopNameValidation, setShopNameValidation] = React.useState({ isValid: null, message: '' });
@@ -203,43 +258,57 @@ export default function ArtisanSetup({
                                 ].map((s) => {
                                     const isPast = step > s.num;
                                     const isCurrent = step === s.num;
+                                    const canNavigate = isRejected || isPast;
+                                    const remainingCount = stepRemainingCounts[s.num] || 0;
+                                    const stepDone = (stepTotalCounts[s.num] || 0) > 0 && remainingCount === 0;
                                     return (
                                         <button
                                             key={s.num}
                                             type="button"
-                                            disabled={!isPast}
-                                            onClick={isPast ? () => setStep(s.num) : undefined}
+                                            disabled={!canNavigate}
+                                            onClick={canNavigate ? () => setStep(s.num) : undefined}
                                             className={`flex flex-col gap-1.5 p-2 rounded-xl border text-left transition-all ${
                                                 isCurrent
                                                     ? 'bg-clay-50/90 border-clay-300 ring-1 ring-clay-300/40 shadow-2xs'
-                                                    : isPast
+                                                    : canNavigate
                                                         ? 'bg-white border-stone-200 hover:bg-stone-50 cursor-pointer shadow-2xs'
                                                         : 'bg-stone-50/50 border-stone-200/60 opacity-60 cursor-default'
                                             }`}
                                         >
-                                            <div className="flex items-center gap-1.5">
-                                                <span
-                                                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-                                                        isCurrent
-                                                            ? 'bg-clay-600 text-white'
-                                                            : isPast
-                                                                ? 'bg-emerald-600 text-white'
-                                                                : 'bg-stone-200 text-stone-600'
-                                                    }`}
-                                                >
-                                                    {isPast ? '✓' : s.num}
-                                                </span>
-                                                <span
-                                                    className={`text-xs font-bold truncate ${
-                                                        isCurrent
-                                                            ? 'text-clay-900'
-                                                            : isPast
-                                                                ? 'text-stone-800'
-                                                                : 'text-stone-500'
-                                                    }`}
-                                                >
-                                                    {s.label}
-                                                </span>
+                                            <div className="flex items-center justify-between gap-1">
+                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                    <span
+                                                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                                                            isCurrent
+                                                                ? 'bg-clay-600 text-white'
+                                                                : isPast
+                                                                    ? 'bg-emerald-600 text-white'
+                                                                    : 'bg-stone-200 text-stone-600'
+                                                        }`}
+                                                    >
+                                                        {isPast && remainingCount === 0 ? '✓' : s.num}
+                                                    </span>
+                                                    <span
+                                                        className={`text-xs font-bold truncate ${
+                                                            isCurrent
+                                                                ? 'text-clay-900'
+                                                                : canNavigate
+                                                                    ? 'text-stone-800'
+                                                                    : 'text-stone-500'
+                                                        }`}
+                                                    >
+                                                        {s.label}
+                                                    </span>
+                                                </div>
+                                                {remainingCount > 0 ? (
+                                                    <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-100 px-1 text-[9px] font-bold text-rose-700 shrink-0">
+                                                        {remainingCount}
+                                                    </span>
+                                                ) : stepDone ? (
+                                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[9px] font-bold text-emerald-700 shrink-0">
+                                                        ✓
+                                                    </span>
+                                                ) : null}
                                             </div>
                                             <div className="h-1 w-full rounded-full bg-stone-200/80 overflow-hidden">
                                                 <div
@@ -265,26 +334,33 @@ export default function ArtisanSetup({
                                     number={1}
                                     icon={<Store size={14} />}
                                     label="Shop Info"
-                                    active={step >= 1}
+                                    active={step >= 1 || isRejected}
                                     current={step === 1}
-                                    onClick={step > 1 ? () => setStep(1) : undefined}
+                                    badgeCount={stepRemainingCounts[1]}
+                                    stepResolved={stepTotalCounts[1] > 0 && stepRemainingCounts[1] === 0}
+                                    onClick={(step > 1 || isRejected) && step !== 1 ? () => setStep(1) : undefined}
                                 />
                                 <div className={`h-0.5 w-6 shrink-0 ${step >= 2 ? 'bg-clay-600' : 'bg-stone-200'}`} />
                                 <StepPill
                                     number={2}
                                     icon={<ShieldCheck size={14} />}
                                     label="Documents"
-                                    active={step >= 2}
+                                    active={step >= 2 || isRejected}
                                     current={step === 2}
-                                    onClick={step > 2 ? () => setStep(2) : undefined}
+                                    badgeCount={stepRemainingCounts[2]}
+                                    stepResolved={stepTotalCounts[2] > 0 && stepRemainingCounts[2] === 0}
+                                    onClick={(step > 2 || isRejected) && step !== 2 ? () => setStep(2) : undefined}
                                 />
                                 <div className={`h-0.5 w-6 shrink-0 ${step >= 3 ? 'bg-clay-600' : 'bg-stone-200'}`} />
                                 <StepPill
                                     number={3}
                                     icon={<CreditCard size={14} />}
                                     label="Payouts"
-                                    active={step >= 3}
+                                    active={step >= 3 || isRejected}
                                     current={step === 3}
+                                    badgeCount={stepRemainingCounts[3]}
+                                    stepResolved={stepTotalCounts[3] > 0 && stepRemainingCounts[3] === 0}
+                                    onClick={isRejected && step !== 3 ? () => setStep(3) : undefined}
                                 />
                                 <div className="h-0.5 w-6 shrink-0 bg-stone-200" />
                                 <StepPill
@@ -300,52 +376,16 @@ export default function ArtisanSetup({
                     {/* Main Wizard Container */}
                     <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-stone-200 bg-white shadow-xs">
                         {isRejected && (
-                            <div className="border-b border-rose-200 bg-rose-50/70 transition-all duration-300">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowRejection(!showRejection)}
-                                    className="flex w-full items-center justify-between px-6 py-4 sm:px-10 hover:bg-rose-50 transition-colors text-left cursor-pointer"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <AlertTriangle size={20} className="shrink-0 text-rose-600" />
-                                        <div>
-                                            <h3 className="text-sm font-bold text-rose-900">Application Needs Revisions</h3>
-                                            <p className="text-xs text-rose-700">Please review reviewer remarks and update your details.</p>
-                                        </div>
-                                    </div>
-                                    <ChevronDown
-                                        size={18}
-                                        className={`text-rose-500 transition-transform duration-300 ${showRejection ? 'rotate-180' : ''}`}
-                                    />
-                                </button>
-                                
-                                {showRejection && (
-                                    <div className="px-6 pb-6 sm:px-10 sm:pb-8 space-y-4">
-                                        <RevisionFeedbackBanner
-                                            revision={activeRevision}
-                                            fallbackReason={effectiveRejectionReason || 'Please verify that your uploaded documents are legible and business credentials match your shop name.'}
-                                            title="Specific Revisions Requested"
-                                            onGoToField={handleGoToField}
-                                            variant="rose"
-                                        />
-
-                                        <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                            <div>
-                                                <p className="text-xs font-bold text-stone-800">Prefer to shop instead?</p>
-                                                <p className="text-[11px] text-stone-500">You can convert your account to a standard customer account.</p>
-                                            </div>
-                                            <Link
-                                                href={route('artisan.convert-to-buyer')}
-                                                method="post"
-                                                as="button"
-                                                className="inline-flex items-center justify-center rounded-xl bg-stone-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-stone-800 whitespace-nowrap shadow-xs cursor-pointer"
-                                            >
-                                                Convert to Buyer Account
-                                            </Link>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                            <RevisionFeedbackBanner
+                                revision={activeRevision}
+                                fallbackReason={effectiveRejectionReason || 'Please verify that your uploaded documents are legible and business credentials match your shop name.'}
+                                title="Application Needs Revisions"
+                                onGoToField={handleGoToField}
+                                activeKeys={activeStepKeys}
+                                addressedKeys={addressedKeys}
+                                variant="rose"
+                                embedded
+                            />
                         )}
 
                         <AnimatePresence mode="wait">
@@ -365,6 +405,8 @@ export default function ArtisanSetup({
                                         processing={processing}
                                         shopNameValidation={shopNameValidation}
                                         flaggedKeys={flaggedKeys}
+                                        addressedKeys={addressedKeys}
+                                        highlightedKey={highlightedKey}
                                         revisionNotes={revisionNotesMap}
                                         hasActiveRevision={Boolean(activeRevision)}
                                     />
@@ -381,8 +423,12 @@ export default function ArtisanSetup({
                                         auth={auth}
                                         existingDocuments={existingDocuments}
                                         flaggedKeys={flaggedKeys}
+                                        addressedKeys={addressedKeys}
+                                        highlightedKey={highlightedKey}
                                         revisionNotes={revisionNotesMap}
                                         hasActiveRevision={Boolean(activeRevision)}
+                                        onDocumentUploaded={handleDocumentUploaded}
+                                        onDocumentRemoved={handleDocumentRemoved}
                                         kycSelfieUrl={kycSelfieUrl}
                                         kycLivenessVerified={kycLivenessVerified}
                                         kycVerificationMeta={kycVerificationMeta}
@@ -398,6 +444,8 @@ export default function ArtisanSetup({
                                         processing={processing}
                                         setStep={setStep}
                                         flaggedKeys={flaggedKeys}
+                                        addressedKeys={addressedKeys}
+                                        highlightedKey={highlightedKey}
                                         revisionNotes={revisionNotesMap}
                                         hasActiveRevision={Boolean(activeRevision)}
                                     />
@@ -405,6 +453,20 @@ export default function ArtisanSetup({
                             </motion.div>
                         </AnimatePresence>
                     </div>
+
+                    {isRejected && (
+                        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-stone-500">
+                            <span>Prefer to shop as a customer instead?</span>
+                            <Link
+                                href={route('artisan.convert-to-buyer')}
+                                method="post"
+                                as="button"
+                                className="font-semibold text-stone-700 underline underline-offset-2 hover:text-stone-900 transition cursor-pointer"
+                            >
+                                Convert to Buyer Account
+                            </Link>
+                        </div>
+                    )}
 
                     {/* Legal Footer */}
                     <div className="mt-8 text-center text-xs text-stone-500">

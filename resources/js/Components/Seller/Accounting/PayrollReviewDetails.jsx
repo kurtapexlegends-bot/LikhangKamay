@@ -7,8 +7,14 @@ import {
     formatRole
 } from '@/utils/accountingFormatters';
 import PayrollCalculationModal from '@/Components/Seller/HR/PayrollCalculationModal';
+import InlineRevisionCard from '@/Components/Common/InlineRevisionCard';
 
-export default function PayrollReviewDetails({ item, inline = false }) {
+export default function PayrollReviewDetails({
+    item,
+    inline = false,
+    revisionMode = false,
+    revisionSelection = null,
+}) {
     const [selectedAuditItem, setSelectedAuditItem] = useState(null);
     const isSufficient = Number(item?.fund_snapshot?.remaining_balance ?? 0) >= 0;
 
@@ -34,7 +40,15 @@ export default function PayrollReviewDetails({ item, inline = false }) {
     return (
         <div className="space-y-4">
             {/* Executive Summary Header — 3 High-Level Metrics */}
-            <div className="rounded-xl border border-stone-200 bg-white shadow-xs overflow-hidden">
+            <InlineRevisionCard
+                active={revisionMode}
+                selected={Boolean(revisionSelection?.isSelected('pay_period_totals'))}
+                label="Pay Period Dates & Total Disbursement"
+                note={revisionSelection?.getNote('pay_period_totals') || ''}
+                onToggle={() => revisionSelection?.toggleItem('pay_period_totals', 'Pay Period Dates & Total Disbursement')}
+                onChangeNote={(val) => revisionSelection?.updateItemNote('pay_period_totals', val)}
+            >
+            <div className={revisionMode ? 'bg-white overflow-hidden' : 'rounded-xl border border-stone-200 bg-white shadow-xs overflow-hidden'}>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 bg-stone-50/80 border-b border-stone-200">
                     <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-200 text-stone-700 font-bold text-xs">
@@ -83,10 +97,19 @@ export default function PayrollReviewDetails({ item, inline = false }) {
                     </div>
                 </div>
             </div>
+            </InlineRevisionCard>
 
             {/* Statutory Summary Card if statutory deductions exist */}
             {Number(item.statutory_summary?.total_statutory_ee || 0) > 0 && (
-                <div className="rounded-xl border border-clay-200/80 bg-[#FCF7F2]/60 p-3.5 shadow-2xs space-y-2">
+                <InlineRevisionCard
+                    active={revisionMode}
+                    selected={Boolean(revisionSelection?.isSelected('statutory_deductions'))}
+                    label="SSS, PhilHealth, Pag-IBIG & Tax Breakdown"
+                    note={revisionSelection?.getNote('statutory_deductions') || ''}
+                    onToggle={() => revisionSelection?.toggleItem('statutory_deductions', 'SSS, PhilHealth, Pag-IBIG & Tax Breakdown')}
+                    onChangeNote={(val) => revisionSelection?.updateItemNote('statutory_deductions', val)}
+                >
+                <div className={`${revisionMode ? 'bg-[#FCF7F2]/60 p-3.5 space-y-2' : 'rounded-xl border border-clay-200/80 bg-[#FCF7F2]/60 p-3.5 shadow-2xs space-y-2'}`}>
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-clay-800">
                             Philippine Statutory Deductions &amp; Tax Summary
@@ -114,10 +137,19 @@ export default function PayrollReviewDetails({ item, inline = false }) {
                         </div>
                     </div>
                 </div>
+                </InlineRevisionCard>
             )}
 
             {/* Employee Line Ledger Table */}
-            <div className="rounded-xl border border-stone-200 bg-white shadow-xs overflow-hidden">
+            <InlineRevisionCard
+                active={revisionMode}
+                selected={Boolean(revisionSelection?.isSelected('employee_roster'))}
+                label="Included Staff Members & Salaries"
+                note={revisionSelection?.getNote('employee_roster') || ''}
+                onToggle={() => revisionSelection?.toggleItem('employee_roster', 'Included Staff Members & Salaries')}
+                onChangeNote={(val) => revisionSelection?.updateItemNote('employee_roster', val)}
+            >
+            <div className={revisionMode ? 'bg-white overflow-hidden' : 'rounded-xl border border-stone-200 bg-white shadow-xs overflow-hidden'}>
                 <div className="px-5 py-3 border-b border-stone-200 bg-stone-50/50 flex items-center justify-between">
                     <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Employee Line Ledger</h4>
                     {item.line_items?.length > 0 && (
@@ -237,6 +269,7 @@ export default function PayrollReviewDetails({ item, inline = false }) {
                     )}
                 </div>
             </div>
+            </InlineRevisionCard>
 
             {/* Audit Formula Modal */}
             {selectedAuditItem && (

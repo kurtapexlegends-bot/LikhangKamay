@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { X, CheckCircle, XCircle, FileText, Eye, AlertTriangle, Download, LoaderCircle, RotateCcw, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
-import Modal from '@/Components/Modal';
+import React from 'react';
+import { X, CheckCircle, FileText, Eye, AlertTriangle, LoaderCircle, RotateCcw } from 'lucide-react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
-import WorkspaceLoadingState from '@/Components/WorkspaceLoadingState';
 import { ActionTooltip } from '@/Components/Admin/Layout/BulkActionPill';
-import RevisionChecklistSelector from '@/Components/Common/RevisionChecklistSelector';
 import KycVerificationSummaryCard from '@/Components/Admin/Users/Partials/KycVerificationSummaryCard';
+import InlineRevisionCard from '@/Components/Common/InlineRevisionCard';
+import InlineRevisionFooter from '@/Components/Common/InlineRevisionFooter';
+import DocumentMagnifierModal from '@/Components/Common/DocumentMagnifierModal';
+import { useRevisionSelection } from '@/hooks/useRevisionSelection';
 
 export default function ArtisanVerificationDrawer({
     viewingArtisan,
@@ -30,58 +30,61 @@ export default function ArtisanVerificationDrawer({
     setRevisionItems,
     handleRejectArtisan,
 }) {
-    const [docZoom, setDocZoom] = useState(1);
-    const [docPosition, setDocPosition] = useState({ x: 0, y: 0 });
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const revisionMode = Boolean(rejectingArtisan && viewingArtisan && rejectingArtisan.id === viewingArtisan.id);
+    const { isSelected, getNote, toggleItem, updateItemNote, addCustomItem, removeItem } = useRevisionSelection(
+        revisionItems,
+        setRevisionItems
+    );
 
-    useEffect(() => {
-        setDocZoom(1);
-        setDocPosition({ x: 0, y: 0 });
-        setIsDragging(false);
-    }, [viewingDoc?.key]);
-
-    const handleZoomIn = () => setDocZoom((prev) => Math.min(prev + 0.35, 3.5));
-    const handleZoomOut = () => {
-        setDocZoom((prev) => {
-            const next = Math.max(prev - 0.35, 1);
-            if (next === 1) setDocPosition({ x: 0, y: 0 });
-            return next;
-        });
+    const handleInspectSummaryPhoto = (photo) => {
+        if (!photo?.url) return;
+        if (photo.key === 'valid_id') {
+            const validIdDoc = currentDocuments.find((doc) => doc.key === 'valid_id');
+            if (validIdDoc?.url) {
+                openDocumentPreview(validIdDoc);
+                return;
+            }
+        }
+        setViewingDoc(photo);
     };
-    const handleResetZoom = () => {
-        setDocZoom(1);
-        setDocPosition({ x: 0, y: 0 });
-    };
-
-    const handleMouseDown = (e) => {
-        if (docZoom <= 1) return;
-        setIsDragging(true);
-        setDragStart({ x: e.clientX - docPosition.x, y: e.clientY - docPosition.y });
-    };
-
-    const handleMouseMove = (e) => {
-        if (!isDragging || docZoom <= 1) return;
-        setDocPosition({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-    };
-
-    const handleMouseUp = () => setIsDragging(false);
 
     const renderFooter = () => {
         if (!viewingArtisan) return null;
+
+        if (revisionMode) {
+            return (
+                <InlineRevisionFooter
+                    items={revisionItems}
+                    onRemoveItem={removeItem}
+                    onAddCustomItem={addCustomItem}
+                    reason={rejectReason}
+                    onChangeReason={setRejectReason}
+                    reasonPlaceholder="Revision note (required if no cards are flagged above)..."
+                    processing={processing}
+                    canSubmit={revisionItems.length > 0 || rejectReason.trim().length >= 10}
+                    submitLabel="Send Revision Request"
+                    submitTone="stone"
+                    onCancel={() => setRejectingArtisan(null)}
+                    onSubmit={handleRejectArtisan}
+                />
+            );
+        }
+
         return (
             <div className="flex gap-3">
                 <button
+                    type="button"
                     onClick={() => setRejectingArtisan(viewingArtisan)}
                     disabled={processing}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white py-3 text-sm font-bold text-stone-600 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-200 transition min-h-[44px]"
+                    className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white py-3 text-sm font-bold text-stone-600 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-200 transition min-h-[44px] cursor-pointer"
                 >
                     <RotateCcw size={16} /> Request Revision
                 </button>
                 <button
+                    type="button"
                     onClick={confirmApprove}
                     disabled={processing || !allSubmittedDocumentsViewed}
-                    className="flex-[2] flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-700 disabled:bg-stone-200 disabled:shadow-none transition min-h-[44px]"
+                    className="flex-[2] flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-700 disabled:bg-stone-200 disabled:shadow-none transition min-h-[44px] cursor-pointer"
                 >
                     {processing ? <LoaderCircle size={18} className="animate-spin" /> : <CheckCircle size={18} />}
                     {processing ? 'Processing...' : 'Approve Application'}
@@ -94,109 +97,180 @@ export default function ArtisanVerificationDrawer({
         <>
             <SlideOverDrawer
                 show={!!viewingArtisan}
-                onClose={() => !viewingDoc && onClose()}
+                onClose={() => !viewingDoc && !processing && onClose()}
                 title={viewingArtisan ? `${viewingArtisan.shop_name} Verification` : 'Review Application'}
                 widthClass="max-w-2xl"
+                bodyClassName="relative flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5"
                 footer={renderFooter()}
             >
                 {viewingArtisan && (
-                    <div className="space-y-6">
-                        <div className="rounded-2xl bg-stone-50 p-4 border border-stone-100">
-                            <div className="flex items-center gap-3">
-                                {viewingArtisan.avatar_url ? (
-                                    <img
-                                        src={viewingArtisan.avatar_url}
-                                        alt={viewingArtisan.shop_name}
-                                        className="h-12 w-12 rounded-2xl object-cover border border-clay-100 shadow-sm shrink-0"
-                                        onError={(e) => {
-                                            e.currentTarget.onerror = null;
-                                            e.currentTarget.src = '/images/placeholder.svg';
-                                        }}
-                                    />
-                                ) : (
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-clay-100 bg-clay-50 text-lg font-bold text-clay-700 shadow-sm shrink-0">
-                                        {viewingArtisan.shop_name?.charAt(0).toUpperCase()}
+                    <div className="space-y-3">
+                        <InlineRevisionCard
+                            active={revisionMode}
+                            selected={isSelected('shop_details')}
+                            label="Shop Name & Contact Info"
+                            note={getNote('shop_details')}
+                            onToggle={() => toggleItem('shop_details', 'Shop Name & Contact Info')}
+                            onChangeNote={(val) => updateItemNote('shop_details', val)}
+                        >
+                            <div className={`${revisionMode ? 'bg-stone-50/70 p-3' : 'rounded-xl bg-stone-50 p-3 border border-stone-100'}`}>
+                                <div className="flex items-center gap-2.5">
+                                    {viewingArtisan.avatar_url ? (
+                                        <img
+                                            src={viewingArtisan.avatar_url}
+                                            alt={viewingArtisan.shop_name}
+                                            className="h-10 w-10 rounded-xl object-cover border border-clay-100 shadow-2xs shrink-0"
+                                            onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.src = '/images/placeholder.svg';
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-clay-100 bg-clay-50 text-sm font-bold text-clay-700 shadow-2xs shrink-0">
+                                            {viewingArtisan.shop_name?.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                    <div className="min-w-0">
+                                        <h4 className="text-xs sm:text-sm font-bold text-stone-900 truncate">{viewingArtisan.shop_name}</h4>
+                                        <p className="text-[11px] text-stone-500 font-medium truncate">{viewingArtisan.name} • {viewingArtisan.email}</p>
                                     </div>
-                                )}
-                                <div className="min-w-0">
-                                    <h4 className="text-sm font-bold text-stone-900 truncate">{viewingArtisan.shop_name}</h4>
-                                    <p className="text-xs text-stone-500 font-medium truncate mt-0.5">{viewingArtisan.name} • {viewingArtisan.email}</p>
                                 </div>
                             </div>
-                        </div>
+                        </InlineRevisionCard>
 
                         {/* Contact & Location Profile Details */}
-                        <div className="rounded-2xl border border-stone-200 bg-white p-5 space-y-3">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400">Contact & Location</h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                                <div>
-                                    <span className="block text-stone-500 font-medium">Phone Number</span>
-                                    <span className="font-bold text-stone-900">{viewingArtisan.phone_number || 'N/A'}</span>
-                                </div>
-                                <div>
-                                    <span className="block text-stone-500 font-medium">Submitted On</span>
-                                    <span className="font-bold text-stone-900">{viewingArtisan.submitted_at || 'N/A'}</span>
-                                </div>
-                                <div className="col-span-2">
-                                    <span className="block text-stone-500 font-medium">Registered Address</span>
-                                    <span className="font-bold text-stone-950 leading-relaxed">{viewingArtisan.address || 'N/A'}</span>
+                        <InlineRevisionCard
+                            active={revisionMode}
+                            selected={isSelected('shop_address')}
+                            label="Workshop Address & Cavite Map Pin"
+                            note={getNote('shop_address')}
+                            onToggle={() => toggleItem('shop_address', 'Workshop Address & Cavite Map Pin')}
+                            onChangeNote={(val) => updateItemNote('shop_address', val)}
+                        >
+                            <div className={`${revisionMode ? 'bg-white p-3.5 space-y-2' : 'rounded-xl border border-stone-200 bg-white p-3.5 space-y-2'}`}>
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400">Contact &amp; Location</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                                    <div>
+                                        <span className="block text-[11px] text-stone-500 font-medium">Phone Number</span>
+                                        <span className="font-bold text-stone-900">{viewingArtisan.phone_number || 'N/A'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="block text-[11px] text-stone-500 font-medium">Submitted On</span>
+                                        <span className="font-bold text-stone-900">{viewingArtisan.submitted_at || 'N/A'}</span>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <span className="block text-[11px] text-stone-500 font-medium">Registered Address</span>
+                                        <span className="font-bold text-stone-950 leading-snug">{viewingArtisan.address || 'N/A'}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </InlineRevisionCard>
 
                         {/* Payout Preferences Section */}
-                        <div className="rounded-2xl border border-stone-200 bg-white p-5 space-y-3">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400">Payout Preferences</h4>
-                            <div className="grid grid-cols-2 gap-4 text-xs">
-                                <div>
-                                    <span className="block text-stone-500 font-medium">Method</span>
-                                    <span className="font-bold text-stone-900">{viewingArtisan.payout_method || 'GCash'}</span>
-                                </div>
-                                <div>
-                                    <span className="block text-stone-500 font-medium">Account Name</span>
-                                    <span className="font-bold text-stone-900">{viewingArtisan.payout_account_name || 'N/A'}</span>
-                                </div>
-                                <div className="col-span-2">
-                                    <span className="block text-stone-500 font-medium">Account/Phone Number</span>
-                                    <span className="font-bold text-stone-900 tracking-wider">{viewingArtisan.payout_account_number || 'N/A'}</span>
+                        <InlineRevisionCard
+                            active={revisionMode}
+                            selected={isSelected('payout_info')}
+                            label="GCash / Maya Payout Account Details"
+                            note={getNote('payout_info')}
+                            onToggle={() => toggleItem('payout_info', 'GCash / Maya Payout Account Details')}
+                            onChangeNote={(val) => updateItemNote('payout_info', val)}
+                        >
+                            <div className={`${revisionMode ? 'bg-white p-3.5 space-y-2' : 'rounded-xl border border-stone-200 bg-white p-3.5 space-y-2'}`}>
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400">Payout Preferences</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-xs">
+                                    <div>
+                                        <span className="block text-[11px] text-stone-500 font-medium">Method</span>
+                                        <span className="font-bold text-stone-900 capitalize">{viewingArtisan.payout_method || 'GCash'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="block text-[11px] text-stone-500 font-medium">Account Name</span>
+                                        <span className="font-bold text-stone-900 truncate block">{viewingArtisan.payout_account_name || 'N/A'}</span>
+                                    </div>
+                                    <div className="col-span-2 sm:col-span-1">
+                                        <span className="block text-[11px] text-stone-500 font-medium">Account/Phone Number</span>
+                                        <span className="font-bold text-stone-900 tracking-wide">{viewingArtisan.payout_account_number || 'N/A'}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </InlineRevisionCard>
 
                         {/* Identity & Photo Verification Summary */}
-                        <KycVerificationSummaryCard artisan={viewingArtisan} />
+                        <InlineRevisionCard
+                            active={revisionMode}
+                            selected={isSelected('face_verification')}
+                            label="Quick Face Check / Identity Photo Match"
+                            note={getNote('face_verification')}
+                            onToggle={() => toggleItem('face_verification', 'Quick Face Check / Identity Photo Match')}
+                            onChangeNote={(val) => updateItemNote('face_verification', val)}
+                        >
+                            <KycVerificationSummaryCard
+                                artisan={viewingArtisan}
+                                onInspectPhoto={handleInspectSummaryPhoto}
+                            />
+                        </InlineRevisionCard>
 
                         <div>
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3">Submitted Documents</h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2">Submitted Documents</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                 {currentDocuments.map(doc => (
-                                    <div
+                                    <InlineRevisionCard
                                         key={doc.key}
-                                        onClick={() => documentPreviewingKey !== doc.key && openDocumentPreview(doc)}
-                                        className={`group relative overflow-hidden rounded-xl border border-stone-200 p-5 transition min-h-[120px] flex flex-col justify-between ${
-                                            doc.url 
-                                                ? 'cursor-pointer bg-white hover:border-clay-300 hover:shadow-md' 
-                                                : 'bg-stone-50/50 opacity-60'
-                                        } ${documentPreviewingKey === doc.key ? 'pointer-events-none' : ''}`}
+                                        active={revisionMode}
+                                        selected={isSelected(doc.key)}
+                                        label={doc.label}
+                                        note={getNote(doc.key)}
+                                        onToggle={() => toggleItem(doc.key, doc.label)}
+                                        onChangeNote={(val) => updateItemNote(doc.key, val)}
+                                        secondaryAction={doc.url ? (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    openDocumentPreview(doc);
+                                                }}
+                                                className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-stone-700 hover:bg-stone-50 cursor-pointer shrink-0"
+                                            >
+                                                <Eye size={11} />
+                                                <span>View</span>
+                                            </button>
+                                        ) : null}
                                     >
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div className="p-2 bg-stone-50 rounded-lg group-hover:bg-clay-50 border border-stone-50 group-hover:border-clay-100 flex items-center gap-2">
-                                                <doc.icon size={16} className="text-stone-400 group-hover:text-clay-600" />
-                                                {doc.flags.length > 0 && (
-                                                    <ActionTooltip text={`Automated check: ${doc.flags.join(', ').replace(/_/g, ' ')}`}>
-                                                        <AlertTriangle size={14} className="text-amber-500 fill-amber-50" />
-                                                    </ActionTooltip>
-                                                )}
+                                        <div
+                                            onClick={() => {
+                                                if (revisionMode) {
+                                                    toggleItem(doc.key, doc.label);
+                                                    return;
+                                                }
+                                                if (documentPreviewingKey !== doc.key) {
+                                                    openDocumentPreview(doc);
+                                                }
+                                            }}
+                                            className={`group relative overflow-hidden p-3 transition flex flex-col justify-between gap-2 ${
+                                                revisionMode ? '' : 'rounded-xl border border-stone-200'
+                                            } ${
+                                                doc.url
+                                                    ? 'cursor-pointer bg-white hover:bg-stone-50/40'
+                                                    : `bg-stone-50/50 ${revisionMode ? 'cursor-pointer' : 'opacity-60'}`
+                                            } ${documentPreviewingKey === doc.key && !revisionMode ? 'pointer-events-none' : ''}`}
+                                        >
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <div className="p-1.5 bg-stone-50 rounded-md group-hover:bg-clay-50 border border-stone-100 shrink-0 flex items-center gap-1">
+                                                        <doc.icon size={13} className="text-stone-400 group-hover:text-clay-600" />
+                                                        {doc.flags.length > 0 && (
+                                                            <ActionTooltip text={`Automated check: ${doc.flags.join(', ').replace(/_/g, ' ')}`}>
+                                                                <AlertTriangle size={12} className="text-amber-500 fill-amber-50" />
+                                                            </ActionTooltip>
+                                                        )}
+                                                    </div>
+                                                    <p className="font-bold text-xs text-stone-850 truncate">{doc.label}</p>
+                                                </div>
+                                                {doc.viewed && <CheckCircle size={14} className="text-emerald-500 shrink-0" />}
                                             </div>
-                                            {doc.viewed && <CheckCircle size={16} className="text-emerald-500" />}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-[12px] text-stone-850 truncate mb-1">{doc.label}</p>
-                                            
                                             {doc.url ? (
-                                                <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-stone-100 bg-stone-50 mt-2">
+                                                <div className="relative h-24 w-full overflow-hidden rounded-lg border border-stone-100 bg-stone-50">
                                                     {doc.url.endsWith('.pdf') ? (
-                                                        <div className="w-full h-full flex items-center justify-center bg-white"><FileText size={24} className="text-clay-200" /></div>
+                                                        <div className="w-full h-full flex items-center justify-center bg-white"><FileText size={20} className="text-clay-200" /></div>
                                                     ) : (
                                                         <img
                                                             src={doc.url}
@@ -208,36 +282,35 @@ export default function ArtisanVerificationDrawer({
                                                             }}
                                                         />
                                                     )}
-                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 group-hover:bg-black/10 group-hover:opacity-100 transition duration-200">
-                                                        <Eye size={20} className="text-white drop-shadow-md" />
-                                                    </div>
+                                                    {!revisionMode && (
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 group-hover:bg-black/10 group-hover:opacity-100 transition duration-200">
+                                                            <Eye size={18} className="text-white drop-shadow-md" />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ) : (
-                                                <div className="aspect-video w-full rounded-lg border border-dashed border-stone-200 bg-stone-50 flex items-center justify-center mt-2"><X size={16} className="text-stone-300" /></div>
+                                                <div className="h-24 w-full rounded-lg border border-dashed border-stone-200 bg-stone-50 flex items-center justify-center"><X size={14} className="text-stone-300" /></div>
                                             )}
                                         </div>
-                                    </div>
+                                    </InlineRevisionCard>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="rounded-2xl bg-stone-50 border border-stone-100 p-5 space-y-3">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-400">Review Status</h4>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between text-xs font-bold">
-                                    <span className="text-stone-600">Verification Progress</span>
-                                    <span className={allSubmittedDocumentsViewed ? 'text-emerald-600' : 'text-amber-600'}>
-                                        {viewedDocumentsCount} / {submittedDocumentsCount}
-                                    </span>
-                                </div>
-                                <div className="h-2 w-full overflow-hidden rounded-full bg-stone-200">
-                                    <div
-                                        className={`h-full transition-all duration-500 ${allSubmittedDocumentsViewed ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'bg-amber-400'}`}
-                                        style={{ width: `${submittedDocumentsCount > 0 ? (viewedDocumentsCount / submittedDocumentsCount) * 100 : 0}%` }}
-                                    />
-                                </div>
+                        <div className="rounded-xl bg-stone-50 border border-stone-100 p-3.5 space-y-2">
+                            <div className="flex items-center justify-between text-xs font-bold">
+                                <span className="text-stone-600">Verification Progress</span>
+                                <span className={allSubmittedDocumentsViewed ? 'text-emerald-600' : 'text-amber-600'}>
+                                    {viewedDocumentsCount} / {submittedDocumentsCount}
+                                </span>
                             </div>
-                            <p className={`text-xs font-bold leading-tight ${allSubmittedDocumentsViewed ? 'text-emerald-600' : 'text-stone-400'}`}>
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
+                                <div
+                                    className={`h-full transition-all duration-500 ${allSubmittedDocumentsViewed ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'bg-amber-400'}`}
+                                    style={{ width: `${submittedDocumentsCount > 0 ? (viewedDocumentsCount / submittedDocumentsCount) * 100 : 0}%` }}
+                                />
+                            </div>
+                            <p className={`text-[11px] font-semibold leading-tight ${allSubmittedDocumentsViewed ? 'text-emerald-600' : 'text-stone-400'}`}>
                                 {allSubmittedDocumentsViewed ? 'All documents reviewed. Ready for approval.' : 'Review all submitted files before approving.'}
                             </p>
                         </div>
@@ -246,190 +319,11 @@ export default function ArtisanVerificationDrawer({
                 )}
             </SlideOverDrawer>
 
-            {/* Document Preview Modal with Interactive Magnifier */}
-            <Modal show={!!viewingDoc} onClose={() => setViewingDoc(null)} maxWidth="7xl">
-                {viewingDoc && (
-                    <div className="h-[88vh] flex flex-col bg-stone-950 select-none">
-                        <div className="bg-stone-900/90 backdrop-blur-md px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 border-b border-stone-800 shrink-0">
-                            <div>
-                                <h3 className="text-sm sm:text-base font-bold text-white leading-tight">{viewingDoc.label}</h3>
-                                <p className="text-[11px] text-stone-400 mt-0.5">Permit & ID Inspection Magnifier</p>
-                            </div>
-
-                            {/* Magnifier Controls (for Images) */}
-                            {!viewingDoc.url.endsWith('.pdf') && (
-                                <div className="flex items-center gap-1.5 bg-stone-800/80 p-1 rounded-xl border border-stone-700/60">
-                                    <button
-                                        type="button"
-                                        onClick={handleZoomOut}
-                                        disabled={docZoom <= 1}
-                                        className="p-1.5 rounded-lg text-stone-300 hover:text-white hover:bg-stone-700/60 transition disabled:opacity-40"
-                                        title="Zoom Out (-)"
-                                    >
-                                        <ZoomOut size={16} />
-                                    </button>
-
-                                    <span className="text-[11px] font-mono font-bold text-stone-300 px-2 min-w-[50px] text-center">
-                                        {Math.round(docZoom * 100)}%
-                                    </span>
-
-                                    <button
-                                        type="button"
-                                        onClick={handleZoomIn}
-                                        disabled={docZoom >= 3.5}
-                                        className="p-1.5 rounded-lg text-stone-300 hover:text-white hover:bg-stone-700/60 transition disabled:opacity-40"
-                                        title="Zoom In (+)"
-                                    >
-                                        <ZoomIn size={16} />
-                                    </button>
-
-                                    <div className="h-4 w-[1px] bg-stone-700 mx-0.5" />
-
-                                    <button
-                                        type="button"
-                                        onClick={handleResetZoom}
-                                        disabled={docZoom === 1 && docPosition.x === 0 && docPosition.y === 0}
-                                        className="p-1.5 rounded-lg text-stone-300 hover:text-white hover:bg-stone-700/60 transition disabled:opacity-40"
-                                        title="Fit to Screen"
-                                    >
-                                        <Maximize2 size={15} />
-                                    </button>
-                                </div>
-                            )}
-
-                            <div className="flex items-center gap-2">
-                                <a
-                                    href={viewingDoc.url}
-                                    download
-                                    className="p-2 hover:bg-white/10 rounded-full transition text-stone-400 hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
-                                    title="Download Document"
-                                >
-                                    <Download size={18} />
-                                </a>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setViewingDoc(null); }}
-                                    className="p-2 hover:bg-white/10 rounded-full transition text-stone-400 hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
-                                    title="Close Preview"
-                                >
-                                    <X size={18} />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Document Display Canvas */}
-                        <div 
-                            className="flex-1 overflow-hidden relative flex items-center justify-center bg-stone-950 p-4"
-                            onMouseDown={handleMouseDown}
-                            onMouseMove={handleMouseMove}
-                            onMouseUp={handleMouseUp}
-                            onMouseLeave={handleMouseUp}
-                        >
-                            {viewingDoc.url.endsWith('.pdf') ? (
-                                <iframe
-                                    src={viewingDoc.url}
-                                    className="h-full w-full rounded-lg bg-white"
-                                    title={viewingDoc.label}
-                                />
-                            ) : (
-                                <div className="h-full w-full flex items-center justify-center overflow-hidden">
-                                    <img
-                                        src={viewingDoc.url}
-                                        alt={viewingDoc.label}
-                                        draggable={false}
-                                        style={{
-                                            transform: `scale(${docZoom}) translate(${docPosition.x / docZoom}px, ${docPosition.y / docZoom}px)`,
-                                            cursor: docZoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
-                                            transition: isDragging ? 'none' : 'transform 0.15s ease-out',
-                                        }}
-                                        className="max-h-full max-w-full rounded-lg object-contain select-none shadow-2xl"
-                                        onError={(e) => {
-                                            e.currentTarget.onerror = null;
-                                            e.currentTarget.src = '/images/placeholder.svg';
-                                        }}
-                                    />
-                                </div>
-                            )}
-
-                            {/* Floating Helper when Zoomed */}
-                            {docZoom > 1 && (
-                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-stone-900/90 border border-stone-700/70 text-stone-300 text-[11px] font-medium px-3.5 py-1.5 rounded-full shadow-lg backdrop-blur-md flex items-center gap-2">
-                                    <span>Click and drag to pan across document details</span>
-                                    <button
-                                        type="button"
-                                        onClick={handleResetZoom}
-                                        className="text-amber-400 hover:text-amber-300 font-bold underline ml-1"
-                                    >
-                                        Reset (100%)
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </Modal>
-
-            {/* Rejection / Revision Request Modal */}
-            <Modal
-                show={!!rejectingArtisan}
-                onClose={() => setRejectingArtisan(null)}
-                maxWidth="lg"
-                bottomSheet
-            >
-                {rejectingArtisan && (
-                    <div className="p-5 sm:p-6 bg-[#FDFBF9]">
-                        <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl flex items-center justify-center shrink-0">
-                                    <AlertTriangle size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="text-[15px] font-bold text-stone-900 leading-tight">Request Application Revision</h3>
-                                    <p className="text-stone-500 text-[11px]">Specify revision feedback for <span className="font-bold text-stone-700">{rejectingArtisan.shop_name}</span></p>
-                                </div>
-                            </div>
-                            <button onClick={() => setRejectingArtisan(null)} className="rounded border border-stone-200 bg-white p-2 text-stone-400 transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 min-h-[36px] min-w-[36px] flex items-center justify-center">
-                                <X size={14} />
-                            </button>
-                        </div>
-
-                        <RevisionChecklistSelector
-                            schemaKey="artisan_kyc"
-                            selectedItems={revisionItems}
-                            onChangeItems={setRevisionItems}
-                            reason={rejectReason}
-                            onChangeReason={setRejectReason}
-                            reasonLabel="Overall Revision Notes"
-                            reasonPlaceholder="Provide specific guidance on what documents or fields need correction (or check items above)..."
-                            compact
-                        />
-
-                        <div className="flex justify-end gap-2 mt-5">
-                            {processing && (
-                                <WorkspaceLoadingState
-                                    label="Sending revision request"
-                                    detail="Delivering feedback to applicant"
-                                    className="mr-auto"
-                                />
-                            )}
-                             <button
-                                onClick={() => setRejectingArtisan(null)}
-                                disabled={processing}
-                                className="rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-[12px] font-bold text-stone-600 transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/30 min-h-[44px] flex items-center"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleRejectArtisan}
-                                disabled={processing || (revisionItems.length === 0 && rejectReason.trim().length < 10)}
-                                className="flex items-center gap-1.5 rounded-lg bg-stone-900 px-5 py-2.5 text-[12px] font-bold text-white transition hover:bg-stone-850 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500/20 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px]"
-                            >
-                                {processing ? <LoaderCircle size={14} className="animate-spin" /> : <RotateCcw size={14} />}
-                                {processing ? 'Sending...' : 'Send Revision Request'}
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </Modal>
+            {/* Document & Identity Photo Preview Modal with Interactive Magnifier */}
+            <DocumentMagnifierModal
+                viewingDoc={viewingDoc}
+                onClose={() => setViewingDoc(null)}
+            />
         </>
     );
 }

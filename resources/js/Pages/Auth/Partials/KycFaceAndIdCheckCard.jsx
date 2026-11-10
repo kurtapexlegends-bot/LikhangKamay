@@ -11,6 +11,8 @@ export default function KycFaceAndIdCheckCard({
     idFaceDetected,
     hasValidId,
     flaggedByAdmin = false,
+    isAddressed = false,
+    isHighlighted = false,
     adminNote = null,
     onSelfieCaptured,
     error = null,
@@ -28,16 +30,21 @@ export default function KycFaceAndIdCheckCard({
         onSelfieCaptured?.(payload);
     };
 
+    const flaggedAndAddressed = Boolean(flaggedByAdmin && isAddressed);
+
     return (
         <div
             id="face_verification"
-            className={`mt-6 rounded-2xl border p-4 sm:p-5 space-y-4 transition-colors ${
-                flaggedByAdmin
+            data-revision-target="face_verification"
+            className={`scroll-mt-20 mt-6 rounded-2xl border p-4 sm:p-5 space-y-4 transition-all duration-300 ${
+                flaggedAndAddressed
+                    ? 'border-emerald-300 bg-emerald-50/35'
+                    : flaggedByAdmin
                     ? 'border-amber-300 bg-amber-50/40'
                     : isVerified
                     ? 'border-emerald-200 bg-emerald-50/30'
                     : 'border-stone-200 bg-stone-50/60'
-            }`}
+            } ${isHighlighted ? 'ring-2 ring-clay-500 ring-offset-2' : ''}`}
         >
             <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex items-start gap-2.5">
@@ -53,16 +60,19 @@ export default function KycFaceAndIdCheckCard({
                             <h3 className="text-xs sm:text-sm font-bold text-stone-900">
                                 Quick Face Check &amp; Identity Photo Match
                             </h3>
-                            {flaggedByAdmin && (
+                            {flaggedAndAddressed ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-300 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                                    <CheckCircle2 size={11} /> Updated
+                                </span>
+                            ) : flaggedByAdmin ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-bold text-amber-900">
                                     Needs Update
                                 </span>
-                            )}
-                            {!flaggedByAdmin && isVerified && (
+                            ) : isVerified ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                                     <CheckCircle2 size={11} /> Face Check Completed
                                 </span>
-                            )}
+                            ) : null}
                         </div>
                         <p className="text-[11px] text-stone-500 mt-0.5">
                             Take a quick live selfie to confirm you match your uploaded Valid Government ID.
@@ -83,8 +93,16 @@ export default function KycFaceAndIdCheckCard({
             </div>
 
             {flaggedByAdmin && adminNote && (
-                <div className="rounded-xl border border-amber-300 bg-amber-100/70 px-3 py-2 text-xs text-amber-950 font-medium flex items-start gap-2">
-                    <AlertTriangle size={14} className="text-amber-700 shrink-0 mt-0.5" />
+                <div className={`rounded-xl border px-3 py-2 text-xs font-medium flex items-start gap-2 transition-colors ${
+                    flaggedAndAddressed
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                        : 'border-amber-300 bg-amber-100/70 text-amber-950'
+                }`}>
+                    {flaggedAndAddressed ? (
+                        <CheckCircle2 size={14} className="text-emerald-700 shrink-0 mt-0.5" />
+                    ) : (
+                        <AlertTriangle size={14} className="text-amber-700 shrink-0 mt-0.5" />
+                    )}
                     <span>{adminNote}</span>
                 </div>
             )}

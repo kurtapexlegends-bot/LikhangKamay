@@ -48,8 +48,8 @@ export default function ModerationRejectModal({
     };
 
     return (
-        <Modal show={isOpen} onClose={onClose} maxWidth="lg">
-            <div className="p-6 bg-white rounded-2xl border border-stone-200 shadow-xl">
+        <Modal show={isOpen} onClose={onClose} maxWidth="xl">
+            <div className="p-5 sm:p-6 bg-[#FDFBF9]">
                 {/* Header */}
                 <div className="flex items-center justify-between pb-4 border-b border-stone-100">
                     <div className="flex items-center gap-3">
@@ -66,9 +66,10 @@ export default function ModerationRejectModal({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
+                        aria-label="Close modal"
+                        className="rounded-lg border border-stone-200 bg-white p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-50 min-h-[38px] min-w-[38px] flex items-center justify-center transition cursor-pointer"
                     >
-                        <X size={18} />
+                        <X size={16} />
                     </button>
                 </div>
 
@@ -118,19 +119,19 @@ export default function ModerationRejectModal({
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-stone-100">
+                    <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2.5 pt-4 border-t border-stone-200/80">
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={isProcessing}
-                            className="px-4 py-2 rounded-xl border border-stone-200 bg-white text-stone-700 text-xs font-bold hover:bg-stone-50 transition"
+                            className="px-4 py-2.5 rounded-xl border border-stone-200 bg-white text-stone-700 text-xs font-bold hover:bg-stone-50 transition min-h-[44px] cursor-pointer"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isProcessing}
-                            className={`px-5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition active:scale-95 disabled:opacity-50 ${
+                            className={`px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm transition active:scale-95 disabled:opacity-50 min-h-[44px] cursor-pointer ${
                                 isFlag ? 'bg-rose-700 hover:bg-rose-800' : 'bg-red-700 hover:bg-red-800'
                             }`}
                         >

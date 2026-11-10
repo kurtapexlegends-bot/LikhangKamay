@@ -1,25 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Users, FileText, Banknote, Download, LoaderCircle, RotateCcw } from 'lucide-react';
 import {
     formatMoney,
     formatDate,
-    formatDateTime,
     formatRole,
     statusTone
 } from '@/utils/accountingFormatters';
 import OrderSettlementView from '@/Components/Seller/Accounting/OrderSettlementView';
 import PayrollReviewDetails from '@/Components/Seller/Accounting/PayrollReviewDetails';
-import RevisionChecklistSelector from '@/Components/Common/RevisionChecklistSelector';
 import RevisionFeedbackBanner from '@/Components/Common/RevisionFeedbackBanner';
-
-function DetailTile({ label, value }) {
-    return (
-        <div className="rounded-xl border border-stone-200 bg-white shadow-2xs px-3.5 py-2">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">{label}</p>
-            <p className="mt-0.5 text-xs font-bold text-stone-900">{value ?? 'N/A'}</p>
-        </div>
-    );
-}
+import InlineRevisionCard from '@/Components/Common/InlineRevisionCard';
+import InlineRevisionFooter from '@/Components/Common/InlineRevisionFooter';
+import { useRevisionSelection } from '@/hooks/useRevisionSelection';
 
 function AuditSheet({ title, rows }) {
     return (
@@ -48,14 +40,18 @@ export default function ReleaseRequestDetails({
     onApprove,
     onReject,
     reviewProcessing,
-    onClose,
     inline = false
 }) {
     const [showRevisionChecklist, setShowRevisionChecklist] = useState(false);
+    const [prevItemKey, setPrevItemKey] = useState(`${item?.type || ''}-${item?.id || ''}`);
 
-    useEffect(() => {
+    const currentItemKey = `${item?.type || ''}-${item?.id || ''}`;
+    if (currentItemKey !== prevItemKey) {
+        setPrevItemKey(currentItemKey);
         setShowRevisionChecklist(false);
-    }, [item?.id, item?.type]);
+    }
+
+    const revisionSelection = useRevisionSelection(revisionItems, setRevisionItems);
 
     if (!item) return null;
 
@@ -215,74 +211,70 @@ export default function ReleaseRequestDetails({
     );
 
     const hasValidRevisionInput = Boolean(rejectReason?.trim()) || revisionItems.length > 0;
+    const isRevisionMode = Boolean(showRevisionChecklist && isPendingReview);
+
+    const extraRevisionOptions = isPayroll
+        ? [
+            { key: 'attendance_hours', label: 'Rendered Hours, Lates & Overtime' },
+            ...(!Number(item.statutory_summary?.total_statutory_ee || 0)
+                ? [{ key: 'statutory_deductions', label: 'SSS, PhilHealth, Pag-IBIG & Tax Breakdown' }]
+                : []),
+        ]
+        : [
+            { key: 'unit_cost_budget', label: 'Unit Cost & Total Budget Allocation' },
+            ...(!item.notes ? [{ key: 'justification_notes', label: 'Purpose & Requisition Remarks' }] : []),
+        ];
 
     // Container-Sticky Document Card Footer actions
     const footerActions = isPendingReview ? (
         <div className="sticky bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] z-20 rounded-xl border border-stone-200 bg-white/95 backdrop-blur-md shadow-lg overflow-hidden mt-4">
-            {showRevisionChecklist && (
-                <div className="p-4 border-b border-stone-200 bg-[#FDFBF9] max-h-[45vh] overflow-y-auto">
-                    <RevisionChecklistSelector
-                        schemaKey={isPayroll ? 'payroll' : 'stock_request'}
-                        selectedItems={revisionItems}
-                        onChangeItems={setRevisionItems}
+            {isRevisionMode ? (
+                <div className="p-4 bg-[#FDFBF9]">
+                    <InlineRevisionFooter
+                        items={revisionItems}
+                        onRemoveItem={revisionSelection.removeItem}
+                        onAddCustomItem={revisionSelection.addCustomItem}
+                        extraOptions={extraRevisionOptions}
+                        onToggleExtraOption={revisionSelection.toggleItem}
                         reason={rejectReason}
                         onChangeReason={setRejectReason}
-                        reasonLabel="Decline Reason & Revision Notes"
-                        reasonPlaceholder="Explain what needs correction before release..."
-                        compact
+                        reasonPlaceholder="Revision notes (required if no cards flagged above)..."
+                        processing={reviewProcessing === 'reject'}
+                        canSubmit={canEditAccounting && hasValidRevisionInput && !reviewProcessing}
+                        submitLabel="Send Revision & Decline"
+                        submitTone="rose"
+                        onCancel={() => setShowRevisionChecklist(false)}
+                        onSubmit={onReject}
                     />
                 </div>
+            ) : (
+                <div className="p-4 sm:p-4.5 bg-stone-50/90 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                        <span className="text-[11px] text-stone-500 font-bold uppercase tracking-wider">Release Total:</span>
+                        <span className="text-base font-bold text-stone-900">{formatMoney(item.amount)}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                        <button
+                            type="button"
+                            onClick={() => setShowRevisionChecklist(true)}
+                            disabled={!canEditAccounting || !!reviewProcessing}
+                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition min-h-[44px] cursor-pointer"
+                        >
+                            <RotateCcw size={14} />
+                            Request Revision
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onApprove}
+                            disabled={!canEditAccounting || !!reviewProcessing}
+                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-700 hover:bg-clay-800 text-white px-5 py-2 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs min-h-[44px] cursor-pointer"
+                        >
+                            {reviewProcessing === 'approve' && <LoaderCircle size={14} className="animate-spin" />}
+                            {reviewProcessing === 'approve' ? 'Processing...' : 'Approve & Release Funds'}
+                        </button>
+                    </div>
+                </div>
             )}
-            <div className="p-4 sm:p-4.5 bg-stone-50/90 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 w-full sm:w-auto">
-                    <span className="text-[11px] text-stone-500 font-bold uppercase tracking-wider">Release Total:</span>
-                    <span className="text-base font-bold text-stone-900">{formatMoney(item.amount)}</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
-                    {showRevisionChecklist ? (
-                        <>
-                            <button
-                                type="button"
-                                onClick={() => setShowRevisionChecklist(false)}
-                                disabled={!!reviewProcessing}
-                                className="inline-flex items-center justify-center rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-bold text-stone-600 hover:bg-stone-100 transition min-h-[44px]"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                onClick={onReject}
-                                disabled={!canEditAccounting || !hasValidRevisionInput || !!reviewProcessing}
-                                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition min-h-[44px]"
-                            >
-                                {reviewProcessing === 'reject' && <LoaderCircle size={14} className="animate-spin" />}
-                                Send Revision &amp; Decline
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <button
-                                type="button"
-                                onClick={() => setShowRevisionChecklist(true)}
-                                disabled={!canEditAccounting || !!reviewProcessing}
-                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition min-h-[44px]"
-                            >
-                                <RotateCcw size={14} />
-                                Request Revision
-                            </button>
-                            <button
-                                type="button"
-                                onClick={onApprove}
-                                disabled={!canEditAccounting || !!reviewProcessing}
-                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-700 hover:bg-clay-800 text-white px-5 py-2 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition shadow-xs min-h-[44px]"
-                            >
-                                {reviewProcessing === 'approve' && <LoaderCircle size={14} className="animate-spin" />}
-                                {reviewProcessing === 'approve' ? 'Processing...' : 'Approve & Release Funds'}
-                            </button>
-                        </>
-                    )}
-                </div>
-            </div>
         </div>
     ) : (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end w-full gap-3 border-t border-stone-200 pt-4 mt-6">
@@ -302,8 +294,19 @@ export default function ReleaseRequestDetails({
         <div className="space-y-3">
             {/* 1. Inventory stock request review layout */}
             {!isPayroll && !isSale && (
-                <div className="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-white shadow-sm">
-                    <div className="grid divide-y divide-stone-100 md:grid-cols-2 md:divide-x md:divide-y-0">
+                <div className="space-y-3">
+                    <div className={isRevisionMode
+                        ? 'grid grid-cols-1 md:grid-cols-2 gap-3'
+                        : 'overflow-hidden rounded-[1.5rem] border border-stone-200 bg-white shadow-sm grid divide-y divide-stone-100 md:grid-cols-2 md:divide-x md:divide-y-0'}
+                    >
+                        <InlineRevisionCard
+                            active={isRevisionMode}
+                            selected={revisionSelection.isSelected('supplier_selection')}
+                            label="Vendor / Supply Selection"
+                            note={revisionSelection.getNote('supplier_selection')}
+                            onToggle={() => revisionSelection.toggleItem('supplier_selection', 'Vendor / Supply Selection')}
+                            onChangeNote={(val) => revisionSelection.updateItemNote('supplier_selection', val)}
+                        >
                         <AuditSheet
                             title="Request & Supply"
                             rows={[
@@ -341,7 +344,16 @@ export default function ReleaseRequestDetails({
                                 }
                             ]}
                         />
+                        </InlineRevisionCard>
 
+                        <InlineRevisionCard
+                            active={isRevisionMode}
+                            selected={revisionSelection.isSelected('quantity_requested')}
+                            label="Requested Quantity / Units"
+                            note={revisionSelection.getNote('quantity_requested')}
+                            onToggle={() => revisionSelection.toggleItem('quantity_requested', 'Requested Quantity / Units')}
+                            onChangeNote={(val) => revisionSelection.updateItemNote('quantity_requested', val)}
+                        >
                         <AuditSheet
                             title="Release & Inventory"
                             rows={[
@@ -366,13 +378,23 @@ export default function ReleaseRequestDetails({
                                 { label: 'Capacity', value: item.supply?.available_capacity }
                             ]}
                         />
+                        </InlineRevisionCard>
                     </div>
 
                     {item.notes && (
-                        <div className="mt-3.5 rounded-xl border border-stone-200 bg-[#FDFBF9] p-3.5">
+                        <InlineRevisionCard
+                            active={isRevisionMode}
+                            selected={revisionSelection.isSelected('justification_notes')}
+                            label="Purpose & Requisition Remarks"
+                            note={revisionSelection.getNote('justification_notes')}
+                            onToggle={() => revisionSelection.toggleItem('justification_notes', 'Purpose & Requisition Remarks')}
+                            onChangeNote={(val) => revisionSelection.updateItemNote('justification_notes', val)}
+                        >
+                        <div className={isRevisionMode ? 'bg-[#FDFBF9] p-3.5' : 'rounded-xl border border-stone-200 bg-[#FDFBF9] p-3.5'}>
                             <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Requester Context & Notes</p>
                             <p className="mt-1 text-xs text-stone-700 font-medium leading-relaxed">{item.notes}</p>
                         </div>
+                        </InlineRevisionCard>
                     )}
                 </div>
             )}
@@ -381,7 +403,14 @@ export default function ReleaseRequestDetails({
             {isSale && <OrderSettlementView item={item} />}
 
             {/* 3. Payroll review layout */}
-            {isPayroll && <PayrollReviewDetails item={item} inline={inline} />}
+            {isPayroll && (
+                <PayrollReviewDetails
+                    item={item}
+                    inline={inline}
+                    revisionMode={isRevisionMode}
+                    revisionSelection={revisionSelection}
+                />
+            )}
 
             {/* Stored Revision / Rejection Reason */}
             {(item.active_revision || item.rejection_reason) && (

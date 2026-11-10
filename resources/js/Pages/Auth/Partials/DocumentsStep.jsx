@@ -15,8 +15,12 @@ export default function DocumentsStep({
     auth,
     existingDocuments,
     flaggedKeys = new Set(),
+    addressedKeys = new Set(),
+    highlightedKey = null,
     revisionNotes = {},
     hasActiveRevision = false,
+    onDocumentUploaded = null,
+    onDocumentRemoved = null,
     kycSelfieUrl = null,
     kycLivenessVerified = false,
     kycVerificationMeta = null,
@@ -89,8 +93,12 @@ export default function DocumentsStep({
                         existingFileUrl={existingDocuments?.business_permit_url || auth?.user?.business_permit_url}
                         error={errors.business_permit}
                         isFlagged={hasActiveRevision && flaggedKeys.has('business_permit')}
+                        isAddressed={addressedKeys.has('business_permit')}
+                        isHighlighted={highlightedKey === 'business_permit'}
                         revisionNote={revisionNotes.business_permit}
                         isVerifiedClean={hasActiveRevision && !flaggedKeys.has('business_permit')}
+                        onUploaded={onDocumentUploaded}
+                        onRemoved={onDocumentRemoved}
                         onView={(doc) => setViewingDoc(doc)}
                     />
                     <FileUploadField
@@ -99,8 +107,12 @@ export default function DocumentsStep({
                         existingFileUrl={existingDocuments?.dti_registration_url || auth?.user?.dti_registration_url}
                         error={errors.dti_registration}
                         isFlagged={hasActiveRevision && flaggedKeys.has('dti_registration')}
+                        isAddressed={addressedKeys.has('dti_registration')}
+                        isHighlighted={highlightedKey === 'dti_registration'}
                         revisionNote={revisionNotes.dti_registration}
                         isVerifiedClean={hasActiveRevision && !flaggedKeys.has('dti_registration')}
+                        onUploaded={onDocumentUploaded}
+                        onRemoved={onDocumentRemoved}
                         onView={(doc) => setViewingDoc(doc)}
                     />
                     <FileUploadField
@@ -113,8 +125,12 @@ export default function DocumentsStep({
                         selfieDescriptor={data?.face_descriptor}
                         onBiometricAnalyzed={handleValidIdProcessed}
                         isFlagged={hasActiveRevision && flaggedKeys.has('valid_id')}
+                        isAddressed={addressedKeys.has('valid_id')}
+                        isHighlighted={highlightedKey === 'valid_id'}
                         revisionNote={revisionNotes.valid_id}
                         isVerifiedClean={hasActiveRevision && !flaggedKeys.has('valid_id')}
+                        onUploaded={onDocumentUploaded}
+                        onRemoved={onDocumentRemoved}
                         onView={(doc) => setViewingDoc(doc)}
                     />
                     <FileUploadField
@@ -124,8 +140,12 @@ export default function DocumentsStep({
                         existingFileUrl={existingDocuments?.tin_id_url || auth?.user?.tin_id_url}
                         error={errors.tin_id}
                         isFlagged={hasActiveRevision && flaggedKeys.has('tin_id')}
+                        isAddressed={addressedKeys.has('tin_id')}
+                        isHighlighted={highlightedKey === 'tin_id'}
                         revisionNote={revisionNotes.tin_id}
                         isVerifiedClean={hasActiveRevision && !flaggedKeys.has('tin_id')}
+                        onUploaded={onDocumentUploaded}
+                        onRemoved={onDocumentRemoved}
                         onView={(doc) => setViewingDoc(doc)}
                     />
                 </div>
@@ -138,6 +158,8 @@ export default function DocumentsStep({
                     idFaceDetected={data?.id_face_detected ?? kycVerificationMeta?.id_face_detected ?? null}
                     hasValidId={Boolean(existingDocuments?.valid_id_url || auth?.user?.valid_id_url || data?.valid_id)}
                     flaggedByAdmin={hasActiveRevision && flaggedKeys.has('face_verification')}
+                    isAddressed={addressedKeys.has('face_verification')}
+                    isHighlighted={highlightedKey === 'face_verification'}
                     adminNote={revisionNotes.face_verification}
                     onSelfieCaptured={handleSelfieCaptured}
                     error={errors.selfie_data_url}

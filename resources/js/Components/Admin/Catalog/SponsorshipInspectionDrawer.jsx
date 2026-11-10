@@ -20,8 +20,10 @@ import { resolveImageUrl } from '@/lib/media';
 import ProductImageLightboxModal from '@/Components/Consumer/Shop/ProductShow/ProductImageLightboxModal';
 import { ThreeDModelBoundary, ThreeDModelUnavailable } from '@/Components/ThreeD/ThreeDModelBoundary';
 import useNetworkStatus from '@/hooks/useNetworkStatus';
-import RevisionChecklistSelector from '@/Components/Common/RevisionChecklistSelector';
 import RevisionFeedbackBanner from '@/Components/Common/RevisionFeedbackBanner';
+import InlineRevisionCard from '@/Components/Common/InlineRevisionCard';
+import InlineRevisionFooter from '@/Components/Common/InlineRevisionFooter';
+import { useRevisionSelection } from '@/hooks/useRevisionSelection';
 
 const ProductViewer3D = lazy(() => import('@/Components/ThreeD/ProductViewer3D'));
 
@@ -60,6 +62,14 @@ export default function SponsorshipInspectionDrawer({
         setHasConfirmed3D(false);
     }
 
+    const { isSelected, getNote, toggleItem, updateItemNote, addCustomItem, removeItem } = useRevisionSelection(
+        revisionItems,
+        (next) => {
+            setRevisionItems(next);
+            if (validationError) setValidationError('');
+        }
+    );
+
     const product = request?.product;
     const user = request?.user;
     const isPending = request?.status === 'pending';
@@ -97,12 +107,8 @@ export default function SponsorshipInspectionDrawer({
 
     if (!request) return null;
 
-    const handleRejectClick = () => {
-        if (!showRejectInput) {
-            setShowRejectInput(true);
-            return;
-        }
-
+    const handleRejectSubmit = (e) => {
+        e?.preventDefault();
         if (!rejectionReason.trim() && revisionItems.length === 0) {
             setValidationError('Select at least one revision item or share constructive feedback before returning.');
             return;
@@ -110,6 +116,11 @@ export default function SponsorshipInspectionDrawer({
 
         setValidationError('');
         onReject(request, rejectionReason.trim(), revisionItems);
+    };
+
+    const handleOpenRejectModal = () => {
+        setValidationError('');
+        setShowRejectInput(true);
     };
 
     const handleApproveClick = () => {
@@ -129,81 +140,88 @@ export default function SponsorshipInspectionDrawer({
         onClose();
     };
 
-    const renderFooter = () => (
-        <div className="w-full space-y-3">
-            {validationError && (
-                <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 flex items-center gap-2">
-                    <AlertTriangle size={14} className="shrink-0" />
-                    <span>{validationError}</span>
-                </div>
-            )}
+    const isRevisionMode = Boolean(showRejectInput && isPending);
 
-            {isPending ? (
-                <div className="space-y-3">
-                    {showRejectInput && (
-                        <div className="max-h-[42vh] overflow-y-auto rounded-2xl border border-stone-200 bg-stone-50/90 p-3.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                            <RevisionChecklistSelector
-                                schemaKey="sponsorship"
-                                selectedItems={revisionItems}
-                                onChangeItems={(nextItems) => {
-                                    setRevisionItems(nextItems);
-                                    setValidationError('');
-                                }}
-                                reason={rejectionReason}
-                                onChangeReason={(val) => {
-                                    setRejectionReason(val);
-                                    setValidationError('');
-                                }}
-                                reasonLabel="Feedback for Artisan"
-                                reasonPlaceholder="Share constructive notes (e.g. photo clarity, stock availability)..."
-                                compact
-                            />
-                        </div>
-                    )}
+    const renderFooter = () => {
+        if (isRevisionMode) {
+            return (
+                <InlineRevisionFooter
+                    items={revisionItems}
+                    onRemoveItem={removeItem}
+                    onAddCustomItem={addCustomItem}
+                    extraOptions={[
+                        { key: 'stock_eligibility', label: 'Stock & Active Status' },
+                    ]}
+                    onToggleExtraOption={toggleItem}
+                    reason={rejectionReason}
+                    onChangeReason={(val) => {
+                        setRejectionReason(val);
+                        if (validationError) setValidationError('');
+                    }}
+                    reasonPlaceholder="Feedback for artisan (required if no cards flagged above)..."
+                    error={validationError}
+                    processing={isProcessing}
+                    canSubmit={revisionItems.length > 0 || Boolean(rejectionReason.trim())}
+                    submitLabel="Send Feedback & Return"
+                    submitTone="amber"
+                    onCancel={() => {
+                        setShowRejectInput(false);
+                        setValidationError('');
+                    }}
+                    onSubmit={handleRejectSubmit}
+                />
+            );
+        }
 
+        return (
+            <div className="w-full space-y-3">
+                {validationError && (
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 flex items-center gap-2">
+                        <AlertTriangle size={14} className="shrink-0" />
+                        <span>{validationError}</span>
+                    </div>
+                )}
+
+                {isPending ? (
                     <div className="flex items-center gap-2.5">
                         <button
                             type="button"
-                            onClick={handleRejectClick}
+                            onClick={handleOpenRejectModal}
                             disabled={isProcessing}
-                            className={`flex-1 py-2.5 px-4 text-xs font-bold rounded-xl transition border min-h-[44px] flex items-center justify-center gap-1.5 ${
-                                showRejectInput
-                                    ? 'bg-amber-600 text-white hover:bg-amber-700 border-amber-600 shadow-sm'
-                                    : 'text-amber-800 bg-amber-50 hover:bg-amber-100/80 border-amber-250/70'
-                            }`}
+                            className="flex-1 py-2.5 px-4 text-xs font-bold rounded-xl transition border min-h-[44px] flex items-center justify-center gap-1.5 text-amber-800 bg-amber-50 hover:bg-amber-100/80 border-amber-250/70 cursor-pointer disabled:opacity-50"
                         >
                             <RotateCcw size={15} />
-                            <span>{showRejectInput ? (isProcessing ? 'Sending Feedback...' : 'Send Feedback & Return') : 'Return with Feedback'}</span>
+                            <span>Return with Feedback</span>
                         </button>
 
                         <button
                             type="button"
                             onClick={handleApproveClick}
                             disabled={isProcessing || isOutOfStock}
-                            className="flex-1 py-2.5 px-4 text-xs font-bold rounded-xl transition bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 shadow-sm min-h-[44px] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 py-2.5 px-4 text-xs font-bold rounded-xl transition bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 shadow-sm min-h-[44px] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             title={isOutOfStock ? 'Cannot sponsor out-of-stock items' : 'Approve 7-day sponsorship'}
                         >
                             <CheckCircle2 size={15} />
                             <span>{isProcessing ? 'Approving...' : 'Approve (7 Days)'}</span>
                         </button>
                     </div>
-                </div>
-            ) : (
-                <div className="flex items-center justify-between text-xs text-stone-500">
-                    <span className="font-medium">
-                        Processed on {new Date(request.approved_at || request.updated_at).toLocaleDateString()}
-                    </span>
-                    <button
-                        type="button"
-                        onClick={handleClose}
-                        className="px-4 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 rounded-xl transition min-h-[40px]"
-                    >
-                        Close
-                    </button>
-                </div>
-            )}
-        </div>
-    );
+                ) : (
+                    <div className="flex items-center justify-between text-xs text-stone-500">
+                        <span className="font-medium">
+                            Processed on {new Date(request.approved_at || request.updated_at).toLocaleDateString()}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={handleClose}
+                            className="px-4 py-2 text-xs font-bold text-stone-700 hover:bg-stone-100 rounded-xl transition min-h-[40px]"
+                        >
+                            Close
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     return (
         <SlideOverDrawer
@@ -211,9 +229,11 @@ export default function SponsorshipInspectionDrawer({
             onClose={handleClose}
             title="Inspect Sponsorship Request"
             subtitle={`Request #${request.id} • Submitted ${new Date(request.created_at).toLocaleDateString()}`}
+            widthClass="max-w-xl"
+            bodyClassName="relative flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5"
             footer={renderFooter()}
         >
-            <div className="space-y-5 pb-4">
+            <div className="space-y-3 pb-4">
                 {/* Out of Stock Warning Banner */}
                 {isOutOfStock && isPending && (
                     <div className="rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-xs text-rose-800 flex items-start gap-3">
@@ -228,7 +248,15 @@ export default function SponsorshipInspectionDrawer({
                 )}
 
                 {/* Media Section (Images / 3D Model Toggle) */}
-                <div className="space-y-3">
+                <InlineRevisionCard
+                    active={isRevisionMode}
+                    selected={isSelected('product_media')}
+                    label="Product Cover Photo Quality & Presentation"
+                    note={getNote('product_media')}
+                    onToggle={() => toggleItem('product_media', 'Product Cover Photo Quality & Presentation')}
+                    onChangeNote={(val) => updateItemNote('product_media', val)}
+                >
+                <div className={`space-y-3 ${isRevisionMode ? 'p-3.5 bg-white' : ''}`}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-bold uppercase tracking-wider text-stone-600">Product Media</label>
@@ -281,7 +309,7 @@ export default function SponsorshipInspectionDrawer({
                         </div>
                     </div>
 
-                    <div className="w-full h-80 sm:h-96 rounded-2xl border border-stone-200 bg-stone-50 overflow-hidden relative flex items-center justify-center group">
+                    <div className="w-full h-56 sm:h-64 rounded-xl border border-stone-200 bg-stone-50 overflow-hidden relative flex items-center justify-center group">
                         {viewingMode === '3d' && has3D && model3dUrl ? (
                             showLowBandwidthPrompt ? (
                                 <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-stone-50">
@@ -417,9 +445,18 @@ export default function SponsorshipInspectionDrawer({
                         </div>
                     )}
                 </div>
+                </InlineRevisionCard>
 
                 {/* Product Essential Information */}
-                <div className="rounded-2xl border border-stone-200/90 bg-white p-4 shadow-sm space-y-3">
+                <InlineRevisionCard
+                    active={isRevisionMode}
+                    selected={isSelected('product_claims')}
+                    label="Listing Title, Pricing or Description Claims"
+                    note={getNote('product_claims')}
+                    onToggle={() => toggleItem('product_claims', 'Listing Title, Pricing or Description Claims')}
+                    onChangeNote={(val) => updateItemNote('product_claims', val)}
+                >
+                <div className={`${isRevisionMode ? 'bg-white p-4 space-y-3' : 'rounded-2xl border border-stone-200/90 bg-white p-4 shadow-sm space-y-3'}`}>
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-clay-700 bg-clay-50 border border-clay-200 px-2.5 py-1 rounded-lg">
@@ -469,9 +506,18 @@ export default function SponsorshipInspectionDrawer({
                         </div>
                     )}
                 </div>
+                </InlineRevisionCard>
 
                 {/* Artisan Workshop Profile */}
-                <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm space-y-3">
+                <InlineRevisionCard
+                    active={isRevisionMode}
+                    selected={isSelected('campaign_schedule')}
+                    label="Campaign Schedule / Featured Slot Policy"
+                    note={getNote('campaign_schedule')}
+                    onToggle={() => toggleItem('campaign_schedule', 'Campaign Schedule / Featured Slot Policy')}
+                    onChangeNote={(val) => updateItemNote('campaign_schedule', val)}
+                >
+                <div className={`${isRevisionMode ? 'bg-white p-4 space-y-3' : 'rounded-2xl border border-stone-200 bg-white p-4 shadow-sm space-y-3'}`}>
                     <div className="flex items-center gap-2 border-b border-stone-100 pb-2.5">
                         <Store size={15} className="text-stone-500" />
                         <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900">
@@ -494,6 +540,7 @@ export default function SponsorshipInspectionDrawer({
                         </div>
                     </div>
                 </div>
+                </InlineRevisionCard>
 
                 {/* Existing feedback if previously returned for revision */}
                 {request.status === 'rejected' && (request.active_revision || request.rejection_reason) && (

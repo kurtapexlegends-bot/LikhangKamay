@@ -12,6 +12,8 @@ export default function PaymentStep({
     processing,
     setStep,
     flaggedKeys = new Set(),
+    addressedKeys = new Set(),
+    highlightedKey = null,
     revisionNotes = {},
     hasActiveRevision = false,
 }) {
@@ -71,17 +73,34 @@ export default function PaymentStep({
             </div>
 
             <div className="space-y-4 sm:space-y-6">
-                {hasActiveRevision && flaggedKeys.has('payout_info') && (
-                    <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-3.5 text-xs text-amber-950 space-y-1">
-                        <p className="font-bold flex items-center gap-1.5">
-                            <AlertTriangle size={14} className="text-amber-700 shrink-0" />
-                            <span>Payout Details Need Revision</span>
-                        </p>
-                        {revisionNotes.payout_info && (
-                            <p className="text-[11px] pl-5">{revisionNotes.payout_info}</p>
-                        )}
-                    </div>
-                )}
+                {hasActiveRevision && flaggedKeys.has('payout_info') && (() => {
+                    const payoutDone = addressedKeys.has('payout_info');
+                    return (
+                        <div className={`rounded-xl border p-3.5 text-xs space-y-1 transition-colors ${
+                            payoutDone
+                                ? 'border-emerald-300 bg-emerald-50/80 text-emerald-950'
+                                : 'border-amber-300 bg-amber-50/80 text-amber-950'
+                        }`}>
+                            <p className="font-bold flex items-center gap-1.5">
+                                {payoutDone ? (
+                                    <CheckCircle2 size={14} className="text-emerald-700 shrink-0" />
+                                ) : (
+                                    <AlertTriangle size={14} className="text-amber-700 shrink-0" />
+                                )}
+                                <span>{payoutDone ? 'Payout Details Updated' : 'Payout Details Need Revision'}</span>
+                            </p>
+                            {revisionNotes.payout_info && (
+                                <p className="text-[11px] pl-5">{revisionNotes.payout_info}</p>
+                            )}
+                        </div>
+                    );
+                })()}
+                <div
+                    data-revision-target="payout_info"
+                    className={`scroll-mt-20 space-y-4 sm:space-y-6 rounded-2xl p-2.5 -m-2.5 transition-all duration-300 ${
+                        highlightedKey === 'payout_info' ? 'ring-2 ring-clay-500 bg-clay-50/35' : ''
+                    }`}
+                >
                 <div>
                     <InputLabel value="Select Payout Method *" className="mb-2" />
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -149,6 +168,7 @@ export default function PaymentStep({
                     </div>
                     <p className="mt-1.5 text-xs text-stone-500">Standard Philippine 11-digit mobile number starting with 09.</p>
                     <InputError message={errors.payout_account_number} className="mt-2" />
+                </div>
                 </div>
 
                 {/* Pre-submission Summary Review */}

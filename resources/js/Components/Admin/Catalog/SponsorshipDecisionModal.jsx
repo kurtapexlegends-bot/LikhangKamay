@@ -169,9 +169,9 @@ export default function SponsorshipDecisionModal({
         }
 
         return (
-            <Modal show={isOpen && type === 'reject'} onClose={onClose} maxWidth="md">
-                <div className="p-6">
-                    <h2 className="text-lg font-bold text-stone-900 mb-1">Decline Sponsorship Request</h2>
+            <Modal show={isOpen && type === 'reject'} onClose={onClose} maxWidth="xl">
+                <div className="p-5 sm:p-6 bg-[#FDFBF9]">
+                    <h2 className="text-base font-bold text-stone-900 mb-4">Decline Sponsorship Request</h2>
                     {renderRejectForm()}
                 </div>
             </Modal>

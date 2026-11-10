@@ -13,6 +13,8 @@ export default function ShopDetailsStep({
     processing,
     shopNameValidation,
     flaggedKeys = new Set(),
+    addressedKeys = new Set(),
+    highlightedKey = null,
     revisionNotes = {},
     hasActiveRevision = false,
 }) {
@@ -51,67 +53,103 @@ export default function ShopDetailsStep({
             </div>
 
             <div className="space-y-4 sm:space-y-6">
-                {hasActiveRevision && (flaggedKeys.has('shop_details') || flaggedKeys.has('shop_address')) && (
-                    <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-3.5 text-xs text-amber-950 space-y-1">
-                        <p className="font-bold flex items-center gap-1.5">
-                            <AlertTriangle size={14} className="text-amber-700 shrink-0" />
-                            <span>Reviewer requested updates in Workshop Profile</span>
-                        </p>
-                        {flaggedKeys.has('shop_details') && revisionNotes.shop_details && (
-                            <p className="text-[11px] pl-5">• Shop Details: {revisionNotes.shop_details}</p>
-                        )}
-                        {flaggedKeys.has('shop_address') && revisionNotes.shop_address && (
-                            <p className="text-[11px] pl-5">• Workshop Address: {revisionNotes.shop_address}</p>
-                        )}
-                    </div>
-                )}
+                {hasActiveRevision && (flaggedKeys.has('shop_details') || flaggedKeys.has('shop_address')) && (() => {
+                    const detailsDone = !flaggedKeys.has('shop_details') || addressedKeys.has('shop_details');
+                    const addressDone = !flaggedKeys.has('shop_address') || addressedKeys.has('shop_address');
+                    const allStepOneDone = detailsDone && addressDone;
 
-                <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                        <InputLabel htmlFor="shop_name" value="Shop Name *" />
-                        <span className={`text-[11px] font-semibold tracking-wide ${isCharCountValid ? 'text-stone-500' : 'text-amber-700'}`}>
-                            {charCount} / 30 chars (Min 3)
-                        </span>
-                    </div>
-                    <TextInput
-                        id="shop_name"
-                        value={data.shop_name}
-                        onChange={(event) => setData('shop_name', event.target.value)}
-                        placeholder="e.g. Silang Pottery Works"
-                        maxLength={30}
-                        icon={Store}
-                    />
-                    {shopNameValidation.isValid !== null && (
-                        <div className={`mt-2 flex items-center gap-1.5 text-xs font-semibold px-1 ${
-                            shopNameValidation.isValid ? 'text-emerald-700' : 'text-rose-600'
+                    return (
+                        <div className={`rounded-xl border p-3.5 text-xs space-y-1 transition-colors ${
+                            allStepOneDone
+                                ? 'border-emerald-300 bg-emerald-50/80 text-emerald-950'
+                                : 'border-amber-300 bg-amber-50/80 text-amber-950'
                         }`}>
-                            {shopNameValidation.isValid ? (
-                                <CheckCircle2 size={14} className="shrink-0" />
-                            ) : (
-                                <AlertTriangle size={14} className="shrink-0" />
+                            <p className="font-bold flex items-center gap-1.5">
+                                {allStepOneDone ? (
+                                    <CheckCircle2 size={14} className="text-emerald-700 shrink-0" />
+                                ) : (
+                                    <AlertTriangle size={14} className="text-amber-700 shrink-0" />
+                                )}
+                                <span>
+                                    {allStepOneDone
+                                        ? 'Workshop Profile updates ready — click Continue to save'
+                                        : 'Reviewer requested updates in Workshop Profile'}
+                                </span>
+                            </p>
+                            {flaggedKeys.has('shop_details') && revisionNotes.shop_details && (
+                                <p className="text-[11px] pl-5 flex items-start gap-1.5">
+                                    <span>{addressedKeys.has('shop_details') ? '✓' : '•'}</span>
+                                    <span>Shop Details: {revisionNotes.shop_details}</span>
+                                </p>
                             )}
-                            <span>{shopNameValidation.message}</span>
+                            {flaggedKeys.has('shop_address') && revisionNotes.shop_address && (
+                                <p className="text-[11px] pl-5 flex items-start gap-1.5">
+                                    <span>{addressedKeys.has('shop_address') ? '✓' : '•'}</span>
+                                    <span>Workshop Address: {revisionNotes.shop_address}</span>
+                                </p>
+                            )}
                         </div>
-                    )}
-                    <InputError message={errors.shop_name} className="mt-2" />
-                </div>
+                    );
+                })()}
 
-                <div>
-                    <InputLabel htmlFor="phone_number" value="Contact Number *" />
-                    <div className="mt-1">
+                <div
+                    data-revision-target="shop_details"
+                    className={`scroll-mt-20 space-y-4 sm:space-y-6 rounded-2xl p-2.5 -m-2.5 transition-all duration-300 ${
+                        highlightedKey === 'shop_details' ? 'ring-2 ring-clay-500 bg-clay-50/35' : ''
+                    }`}
+                >
+                    <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <InputLabel htmlFor="shop_name" value="Shop Name *" />
+                            <span className={`text-[11px] font-semibold tracking-wide ${isCharCountValid ? 'text-stone-500' : 'text-amber-700'}`}>
+                                {charCount} / 30 chars (Min 3)
+                            </span>
+                        </div>
                         <TextInput
-                            id="phone_number"
-                            value={data.phone_number}
-                            onChange={(event) => setData('phone_number', event.target.value)}
-                            placeholder="09XX XXX XXXX"
-                            icon={Phone}
+                            id="shop_name"
+                            value={data.shop_name}
+                            onChange={(event) => setData('shop_name', event.target.value)}
+                            placeholder="e.g. Silang Pottery Works"
+                            maxLength={30}
+                            icon={Store}
                         />
+                        {shopNameValidation.isValid !== null && (
+                            <div className={`mt-2 flex items-center gap-1.5 text-xs font-semibold px-1 ${
+                                shopNameValidation.isValid ? 'text-emerald-700' : 'text-rose-600'
+                            }`}>
+                                {shopNameValidation.isValid ? (
+                                    <CheckCircle2 size={14} className="shrink-0" />
+                                ) : (
+                                    <AlertTriangle size={14} className="shrink-0" />
+                                )}
+                                <span>{shopNameValidation.message}</span>
+                            </div>
+                        )}
+                        <InputError message={errors.shop_name} className="mt-2" />
                     </div>
-                    <p className="mt-1.5 text-xs text-stone-500">Used for pickup coordination and account alerts.</p>
-                    <InputError message={errors.phone_number} className="mt-2" />
+
+                    <div>
+                        <InputLabel htmlFor="phone_number" value="Contact Number *" />
+                        <div className="mt-1">
+                            <TextInput
+                                id="phone_number"
+                                value={data.phone_number}
+                                onChange={(event) => setData('phone_number', event.target.value)}
+                                placeholder="09XX XXX XXXX"
+                                icon={Phone}
+                            />
+                        </div>
+                        <p className="mt-1.5 text-xs text-stone-500">Used for pickup coordination and account alerts.</p>
+                        <InputError message={errors.phone_number} className="mt-2" />
+                    </div>
                 </div>
 
-                <div className="pt-2">
+                <div
+                    data-revision-target="shop_address"
+                    className={`scroll-mt-20 pt-2 rounded-2xl p-2.5 -m-2.5 transition-all duration-300 ${
+                        highlightedKey === 'shop_address' ? 'ring-2 ring-clay-500 bg-clay-50/35' : ''
+                    }`}
+                >
                     <div className="mb-3 flex items-center gap-2">
                         <MapPin size={16} className="text-stone-400" />
                         <h3 className="text-xs font-bold uppercase tracking-wider text-stone-600">Primary Workshop Location</h3>

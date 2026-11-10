@@ -22,8 +22,9 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 - **KYC Face Card Fallback:** `button:has-text("Camera unavailable — continue with manual review")`
 - **KYC Submit Application Button:** `button:has-text("Submit Application")`
 - **Checkout One-Time Face Check Modal Header:** `div[role="dialog"]:has-text("One-Time Quick Face Check")`
-- **Targeted Revision Checklist Custom Item Input:** `input[placeholder="Add custom item to revise..."]` + `button:has-text("Add")`
-- **Targeted Revision Summary Textarea:** `textarea[placeholder*="Provide clear instructions"]`
+- **Targeted Revision Inline Trigger / Custom Item (`InlineRevisionFooter.jsx`):** `button:has-text("Other issue")` -> `input[placeholder="Specify other item to revise..."]` + `button:has-text("Add")` (Checklist modal variant: `input[placeholder="Add other item..."]`)
+- **Targeted Revision Summary Input (`InlineRevisionFooter.jsx` / Modal):** `input[placeholder*="summary guidance"]`, `textarea[placeholder*="clear guidance"]`, `textarea[placeholder*="Provide clear instructions"]`
+- **Targeted Revision Field Jump Targets (`ArtisanSetup.jsx`):** `[data-revision-target="shop_details"]`, `[data-revision-target="shop_address"]`, `[data-revision-target="valid_id"]`, `[data-revision-target="face_verification"]`, `[data-revision-target="payout_info"]`
 
 ### Storefront & Consumer Catalog
 - **Storefront Search Bar:** `input[placeholder*="Search"]`

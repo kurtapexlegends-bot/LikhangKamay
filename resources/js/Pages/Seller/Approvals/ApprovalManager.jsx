@@ -376,7 +376,7 @@ export default function ApprovalManager({
             {/* Decline Request Modal with Targeted Revision Checklist */}
             {declineModal.isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs">
-                    <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-stone-200 space-y-4">
+                    <div className="bg-[#FDFBF9] rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-xl border border-stone-200 space-y-4">
                         <div className="flex items-center gap-2.5 text-stone-900 font-bold">
                             <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100">
                                 <XCircle size={20} />

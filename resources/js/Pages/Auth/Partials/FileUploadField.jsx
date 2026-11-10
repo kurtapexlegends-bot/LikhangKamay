@@ -20,8 +20,12 @@ const FileUploadField = React.memo(({
     selfieDescriptor = null,
     onBiometricAnalyzed = null,
     isFlagged = false,
+    isAddressed = false,
+    isHighlighted = false,
     revisionNote = null,
     isVerifiedClean = false,
+    onUploaded = null,
+    onRemoved = null,
 }) => {
     const inputRef = useRef(null);
     const cameraInputRef = useRef(null);
@@ -168,6 +172,9 @@ const FileUploadField = React.memo(({
                 setUploadedUrl(responseData.url);
                 const returnedIsPdf = isPdf || String(responseData.url).toLowerCase().includes('.pdf');
                 setPreviewUrl(returnedIsPdf ? null : responseData.url);
+                onUploaded?.(id, responseData.url);
+            } else {
+                onUploaded?.(id, null);
             }
 
             router.reload({
@@ -221,6 +228,7 @@ const FileUploadField = React.memo(({
                 onSuccess: () => {
                     setUploadedUrl(null);
                     setPreviewUrl(null);
+                    onRemoved?.(id);
                 },
                 onFinish: () => setUploading(false),
             });
@@ -248,7 +256,12 @@ const FileUploadField = React.memo(({
     const hasFile = Boolean(effectiveFileUrl);
 
     return (
-        <div className="flex flex-col">
+        <div
+            data-revision-target={id}
+            className={`scroll-mt-20 flex flex-col rounded-2xl p-2 -m-2 transition-all duration-300 ${
+                isHighlighted ? 'ring-2 ring-clay-500 bg-clay-50/35' : ''
+            }`}
+        >
             <div className="flex items-baseline justify-between mb-1.5 gap-2">
                 <div className="flex flex-wrap items-baseline gap-1.5 min-w-0">
                     <label htmlFor={id} className="text-xs sm:text-sm font-semibold text-stone-900 cursor-pointer shrink-0">
@@ -256,7 +269,11 @@ const FileUploadField = React.memo(({
                     </label>
                     {description && <span className="text-[11px] text-stone-400 font-normal">({description})</span>}
                 </div>
-                {isFlagged ? (
+                {isFlagged && isAddressed && hasFile ? (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-300 shrink-0">
+                        <CheckCircle2 size={10} /> Updated
+                    </span>
+                ) : isFlagged ? (
                     <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-300 shrink-0">
                         <AlertTriangle size={10} /> Needs Revision
                     </span>
@@ -272,7 +289,11 @@ const FileUploadField = React.memo(({
             </div>
 
             {isFlagged && revisionNote && (
-                <p className="mb-1.5 rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-1.5 text-[11px] font-medium text-amber-900">
+                <p className={`mb-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                    isAddressed && hasFile
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                        : 'bg-amber-50 border-amber-200 text-amber-900'
+                }`}>
                     {revisionNote}
                 </p>
             )}
@@ -280,7 +301,9 @@ const FileUploadField = React.memo(({
             <div
                 onClick={() => !uploading && !showConfirmDelete && inputRef.current?.click()}
                 className={`mt-1 relative flex min-h-[125px] cursor-pointer flex-col items-center justify-center rounded-xl border p-4 transition-all ${
-                    isFlagged
+                    isFlagged && isAddressed && hasFile
+                        ? 'border-emerald-300 bg-emerald-50/25 hover:border-emerald-400'
+                        : isFlagged
                         ? 'border-amber-300 bg-amber-50/30 hover:border-amber-400'
                         : uploading
                         ? 'border-clay-300 bg-clay-50/20 cursor-not-allowed'

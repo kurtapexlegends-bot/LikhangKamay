@@ -67,6 +67,9 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
     const openReviewModal = (artisan) => {
         setViewingArtisan(artisan);
         setViewingDoc(null);
+        setRejectingArtisan(null);
+        setRejectReason('');
+        setRevisionItems([]);
         setApprovalError('');
     };
 
@@ -474,7 +477,12 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
             {/* Artisan Onboarding Review Drawer */}
             <ArtisanVerificationDrawer
                 viewingArtisan={viewingArtisan}
-                onClose={() => setViewingArtisan(null)}
+                onClose={() => {
+                    setViewingArtisan(null);
+                    setRejectingArtisan(null);
+                    setRejectReason('');
+                    setRevisionItems([]);
+                }}
                 currentDocuments={currentDocuments}
                 viewedDocumentsCount={viewedDocumentsCount}
                 submittedDocumentsCount={submittedDocumentsCount}

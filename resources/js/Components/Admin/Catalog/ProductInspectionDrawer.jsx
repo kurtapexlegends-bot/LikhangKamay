@@ -20,8 +20,10 @@ import { resolveImageUrl } from '@/lib/media';
 import ProductImageLightboxModal from '@/Components/Consumer/Shop/ProductShow/ProductImageLightboxModal';
 import { ThreeDModelBoundary, ThreeDModelUnavailable } from '@/Components/ThreeD/ThreeDModelBoundary';
 import useNetworkStatus from '@/hooks/useNetworkStatus';
-import RevisionChecklistSelector from '@/Components/Common/RevisionChecklistSelector';
 import RevisionFeedbackBanner from '@/Components/Common/RevisionFeedbackBanner';
+import InlineRevisionCard from '@/Components/Common/InlineRevisionCard';
+import InlineRevisionFooter from '@/Components/Common/InlineRevisionFooter';
+import { useRevisionSelection } from '@/hooks/useRevisionSelection';
 
 const ProductViewer3D = lazy(() => import('@/Components/ThreeD/ProductViewer3D'));
 
@@ -44,6 +46,7 @@ export default function ProductInspectionDrawer({
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
     const [lightboxMode, setLightboxMode] = useState('image');
+    const [actionMode, setActionMode] = useState(null); // null | 'reject' | 'flag'
     const [feedback, setFeedback] = useState('');
     const [revisionItems, setRevisionItems] = useState([]);
     const [actionError, setActionError] = useState('');
@@ -52,12 +55,21 @@ export default function ProductInspectionDrawer({
         setPrevProductId(product?.id);
         setActiveImageIndex(0);
         setViewingMode('image');
+        setActionMode(null);
         setFeedback('');
         setRevisionItems([]);
         setActionError('');
         setIsLightboxOpen(false);
         setHasConfirmed3D(false);
     }
+
+    const { isSelected, getNote, toggleItem, updateItemNote, addCustomItem, removeItem } = useRevisionSelection(
+        revisionItems,
+        (next) => {
+            setRevisionItems(next);
+            if (actionError) setActionError('');
+        }
+    );
 
     const coverUrl = product?.img || (product?.cover_photo_path ? resolveImageUrl(product.cover_photo_path) : '/images/placeholder.svg');
     const rawGalleryUrls = (product?.gallery_urls && product.gallery_urls.length > 0)
@@ -97,25 +109,66 @@ export default function ProductInspectionDrawer({
     };
 
     const handleReject = () => {
-        if (!feedback.trim() && revisionItems.length === 0) {
-            setActionError('Select at least one item or enter revision notes so the seller can update their listing.');
-            return;
-        }
         setActionError('');
-        onReject(product.id, feedback.trim(), revisionItems);
+        setActionMode('reject');
     };
 
     const handleFlag = () => {
+        setActionError('');
+        setActionMode('flag');
+    };
+
+    const handleSubmitInlineAction = () => {
         if (!feedback.trim() && revisionItems.length === 0) {
-            setActionError('Select at least one issue or provide a compliance reason for flagging this listing.');
+            setActionError('Select at least one section above or enter feedback.');
             return;
         }
         setActionError('');
-        onFlag(product.id, feedback.trim(), revisionItems);
+        if (actionMode === 'flag') {
+            onFlag(product.id, feedback.trim(), revisionItems);
+            return;
+        }
+        onReject(product.id, feedback.trim(), revisionItems);
     };
 
-    const renderFooter = () => (
-        <div className="flex items-center justify-between gap-3 w-full">
+    const exitActionMode = () => {
+        setActionMode(null);
+        setActionError('');
+    };
+
+    const isRevisionMode = Boolean(actionMode);
+
+    const renderFooter = () => {
+        if (isRevisionMode) {
+            return (
+                <InlineRevisionFooter
+                    items={revisionItems}
+                    onRemoveItem={removeItem}
+                    onAddCustomItem={addCustomItem}
+                    extraOptions={[
+                        { key: 'model_3d', label: '3D Model' },
+                        { key: 'materials_bom', label: 'Materials / Recipe' },
+                    ]}
+                    onToggleExtraOption={toggleItem}
+                    reason={feedback}
+                    onChangeReason={(val) => {
+                        setFeedback(val);
+                        if (actionError) setActionError('');
+                    }}
+                    reasonPlaceholder={actionMode === 'flag' ? 'Reason for flagging this listing...' : 'Summary feedback for seller...'}
+                    error={actionError}
+                    processing={isProcessing}
+                    canSubmit={revisionItems.length > 0 || Boolean(feedback.trim())}
+                    submitLabel={actionMode === 'flag' ? 'Flag Listing' : 'Send Revision Request'}
+                    submitTone={actionMode === 'flag' ? 'amber' : 'rose'}
+                    onCancel={exitActionMode}
+                    onSubmit={handleSubmitInlineAction}
+                />
+            );
+        }
+
+        return (
+            <div className="flex items-center justify-between gap-3 w-full">
             <button
                 type="button"
                 onClick={onClose}
@@ -201,7 +254,8 @@ export default function ProductInspectionDrawer({
                 )}
             </div>
         </div>
-    );
+        );
+    };
 
     return (
         <SlideOverDrawer
@@ -209,12 +263,13 @@ export default function ProductInspectionDrawer({
             onClose={onClose}
             title="Inspect Product Listing"
             widthClass="max-w-2xl"
+            bodyClassName="relative flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5"
             position="bottom"
             footer={renderFooter()}
         >
-            <div className="space-y-6 pb-6">
+            <div className="space-y-3 pb-4">
                 {/* Header Status & Artisan Summary */}
-                <div className="flex items-center justify-between p-4 bg-stone-50 rounded-2xl border border-stone-200/80">
+                <div className="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-200/80">
                     <div className="flex items-center gap-3">
                         <UserAvatar user={product.user} className="w-10 h-10" />
                         <div>
@@ -262,7 +317,15 @@ export default function ProductInspectionDrawer({
                 </div>
 
                 {/* Media Section (Images / 3D Model Toggle) */}
-                <div className="space-y-3">
+                <InlineRevisionCard
+                    active={isRevisionMode}
+                    selected={isSelected('cover_media')}
+                    label="Cover Photo & Product Gallery"
+                    note={getNote('cover_media')}
+                    onToggle={() => toggleItem('cover_media', 'Cover Photo & Product Gallery')}
+                    onChangeNote={(val) => updateItemNote('cover_media', val)}
+                >
+                <div className={`space-y-3 ${isRevisionMode ? 'p-3.5 bg-white' : ''}`}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-bold uppercase tracking-wider text-stone-600">Product Media</label>
@@ -315,7 +378,7 @@ export default function ProductInspectionDrawer({
                         </div>
                     </div>
 
-                    <div className="w-full h-80 sm:h-96 rounded-2xl border border-stone-200 bg-stone-50 overflow-hidden relative flex items-center justify-center group">
+                    <div className="w-full h-56 sm:h-64 rounded-xl border border-stone-200 bg-stone-50 overflow-hidden relative flex items-center justify-center group">
                         {viewingMode === '3d' && has3D && model3dUrl ? (
                             showLowBandwidthPrompt ? (
                                 <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-stone-50">
@@ -451,9 +514,18 @@ export default function ProductInspectionDrawer({
                         </div>
                     )}
                 </div>
+                </InlineRevisionCard>
 
                 {/* Product Name & Basic Info Banner */}
-                <div className="space-y-1">
+                <InlineRevisionCard
+                    active={isRevisionMode}
+                    selected={isSelected('basic_info')}
+                    label="Product Title & Category"
+                    note={getNote('basic_info')}
+                    onToggle={() => toggleItem('basic_info', 'Product Title & Category')}
+                    onChangeNote={(val) => updateItemNote('basic_info', val)}
+                >
+                <div className={`space-y-1 ${isRevisionMode ? 'p-3.5 bg-white' : ''}`}>
                     <h2 className="text-lg font-black text-stone-900 tracking-tight leading-snug">{product.name}</h2>
                     <div className="flex flex-wrap items-center gap-1.5 mt-2">
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-150 text-stone-700 text-[10px] font-bold uppercase tracking-wider">
@@ -467,55 +539,74 @@ export default function ProductInspectionDrawer({
                         </span>
                     </div>
                 </div>
+                </InlineRevisionCard>
 
                 {/* Description Block */}
                 {product.description && (
-                    <div className="space-y-2">
+                    <InlineRevisionCard
+                        active={isRevisionMode}
+                        selected={isSelected('description')}
+                        label="Description & Craft Story"
+                        note={getNote('description')}
+                        onToggle={() => toggleItem('description', 'Description & Craft Story')}
+                        onChangeNote={(val) => updateItemNote('description', val)}
+                    >
+                    <div className={`space-y-1.5 ${isRevisionMode ? 'p-3 bg-white' : ''}`}>
                         <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Description</label>
-                        <div className="p-4 bg-stone-50/50 rounded-2xl border border-stone-200/80 text-xs text-stone-700 leading-relaxed whitespace-pre-line">
+                        <div className="p-3 bg-stone-50/50 rounded-xl border border-stone-200/80 text-xs text-stone-700 leading-relaxed whitespace-pre-line">
                             {product.description}
                         </div>
                     </div>
+                    </InlineRevisionCard>
                 )}
 
                 {/* Craftsmanship & Spec Sections */}
-                <div className="space-y-4">
+                <InlineRevisionCard
+                    active={isRevisionMode}
+                    selected={isSelected('pricing_stock')}
+                    label="Pricing, Weight & Stock Units"
+                    note={getNote('pricing_stock')}
+                    onToggle={() => toggleItem('pricing_stock', 'Pricing, Weight & Stock Units')}
+                    onChangeNote={(val) => updateItemNote('pricing_stock', val)}
+                >
+                <div className={`space-y-3 ${isRevisionMode ? 'p-3 bg-white' : ''}`}>
                     <div>
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400 block mb-2 flex items-center gap-1.5">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400 block mb-1.5 flex items-center gap-1.5">
                             <Flame size={13} className="text-clay-600" /> Craftsmanship Details
                         </label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                            <div className="p-3.5 bg-stone-50/40 rounded-xl border border-stone-200/60">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            <div className="p-2.5 bg-stone-50/40 rounded-lg border border-stone-200/60">
                                 <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">Clay Type</p>
-                                <p className="text-xs font-bold text-stone-800 mt-1">{product.clay_type || 'N/A'}</p>
+                                <p className="text-xs font-bold text-stone-800 mt-0.5">{product.clay_type || 'N/A'}</p>
                             </div>
-                            <div className="p-3.5 bg-stone-50/40 rounded-xl border border-stone-200/60">
+                            <div className="p-2.5 bg-stone-50/40 rounded-lg border border-stone-200/60">
                                 <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">Glaze Finish</p>
-                                <p className="text-xs font-bold text-stone-800 mt-1">{product.glaze_type || 'N/A'}</p>
+                                <p className="text-xs font-bold text-stone-800 mt-0.5">{product.glaze_type || 'N/A'}</p>
                             </div>
-                            <div className="p-3.5 bg-stone-50/40 rounded-xl border border-stone-200/60">
+                            <div className="p-2.5 bg-stone-50/40 rounded-lg border border-stone-200/60">
                                 <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">Firing Method</p>
-                                <p className="text-xs font-bold text-stone-800 mt-1">{product.firing_method || 'N/A'}</p>
+                                <p className="text-xs font-bold text-stone-800 mt-0.5">{product.firing_method || 'N/A'}</p>
                             </div>
-                            <div className="p-3.5 bg-stone-50/40 rounded-xl border border-stone-200/60">
+                            <div className="p-2.5 bg-stone-50/40 rounded-lg border border-stone-200/60">
                                 <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">Food Safe</p>
-                                <p className={`text-xs font-bold mt-1 ${product.food_safe ? 'text-emerald-700' : 'text-stone-500'}`}>
+                                <p className={`text-xs font-bold mt-0.5 ${product.food_safe ? 'text-emerald-700' : 'text-stone-500'}`}>
                                     {product.food_safe ? 'Yes (Food Safe)' : 'No'}
                                 </p>
                             </div>
-                            <div className="p-3.5 bg-stone-50/40 rounded-xl border border-stone-200/60">
+                            <div className="p-2.5 bg-stone-50/40 rounded-lg border border-stone-200/60">
                                 <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">Lead Time</p>
-                                <p className="text-xs font-bold text-stone-800 mt-1">{product.lead_time ? `${product.lead_time} days` : 'Ready stock'}</p>
+                                <p className="text-xs font-bold text-stone-800 mt-0.5">{product.lead_time ? `${product.lead_time} days` : 'Ready stock'}</p>
                             </div>
-                            <div className="p-3.5 bg-stone-50/40 rounded-xl border border-stone-200/60">
+                            <div className="p-2.5 bg-stone-50/40 rounded-lg border border-stone-200/60">
                                 <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">Dimensions / Weight</p>
-                                <p className="text-xs font-bold text-stone-800 mt-1">
+                                <p className="text-xs font-bold text-stone-800 mt-0.5">
                                     {product.height || product.width ? `${product.height || 0}×${product.width || 0} cm` : 'N/A'} {product.weight ? `(${Number(product.weight) >= 1000 ? `${(Number(product.weight) / 1000).toFixed(1)} kg` : `${product.weight} g`})` : ''}
                                 </p>
                             </div>
                         </div>
                     </div>
                 </div>
+                </InlineRevisionCard>
 
                 {/* Seller Resubmission Notes / Rejection Reason (if any) */}
                 {product.latest_resubmission?.notes && (
@@ -535,27 +626,6 @@ export default function ProductInspectionDrawer({
                         variant="rose"
                     />
                 )}
-
-                {/* Targeted Revision Checklist & Notes */}
-                <div className="pt-2 rounded-2xl border border-stone-200 bg-stone-50/60 p-4">
-                    <RevisionChecklistSelector
-                        schemaKey="product"
-                        selectedItems={revisionItems}
-                        onChangeItems={(nextItems) => {
-                            setRevisionItems(nextItems);
-                            setActionError('');
-                        }}
-                        reason={feedback}
-                        onChangeReason={(val) => {
-                            setFeedback(val);
-                            setActionError('');
-                        }}
-                        reasonLabel="Moderation Notes / Compliance Feedback"
-                        reasonPlaceholder="Provide details if requesting revisions or flagging this product..."
-                        error={actionError}
-                        compact
-                    />
-                </div>
             </div>
 
             {/* Lightbox Carousel Modal: Expansive zoom, pan, rotate, scale measurement, 3D orbit */}
