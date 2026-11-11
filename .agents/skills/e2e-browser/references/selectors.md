@@ -25,6 +25,13 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 - **Targeted Revision Inline Trigger / Custom Item (`InlineRevisionFooter.jsx`):** `button:has-text("Other issue")` -> `input[placeholder="Specify other item to revise..."]` + `button:has-text("Add")` (Checklist modal variant: `input[placeholder="Add other item..."]`)
 - **Targeted Revision Summary Input (`InlineRevisionFooter.jsx` / Modal):** `input[placeholder*="summary guidance"]`, `textarea[placeholder*="clear guidance"]`, `textarea[placeholder*="Provide clear instructions"]`
 - **Targeted Revision Field Jump Targets (`ArtisanSetup.jsx`):** `[data-revision-target="shop_details"]`, `[data-revision-target="shop_address"]`, `[data-revision-target="valid_id"]`, `[data-revision-target="face_verification"]`, `[data-revision-target="payout_info"]`
+- **Super Admin Resubmission Banner:** `div:has-text("Resubmitted Listing Under Review")`, `div:has-text("Resubmitted Application Under Review")`, `span:has-text("Revision Addressed")`
+- **Super Admin Updated Field Pill (`InlineRevisionCard.jsx`):** `span:has-text("Updated")`, `span:has-text("Changed in Resubmission")`
+- **Revision Audit Memo Banner (`RevisionFeedbackBanner.jsx`):** `div:has-text("Revision Requested")`, `span:has-text("Items Flagged")`, `span:has-text("Item Flagged")`
+- **Restock Requests Table Feedback Trigger:** `td button:has-text("View Feedback")`, mobile card `button:has-text("View Notes")`
+- **Restock Requests Feedback Drawer:** `div[role="dialog"] h2:has-text("Restock Request")`
+- **Sponsorships Sidebar Feedback Trigger:** `div:has-text("Campaign History") button:has-text("View Feedback")`
+- **Sponsorships Feedback Drawer:** `div[role="dialog"] h2:has-text("Sponsorship Application Notes")`
 
 ### Storefront & Consumer Catalog
 - **Storefront Search Bar:** `input[placeholder*="Search"]`

@@ -179,12 +179,12 @@
 
 1. **Authentication:** Log in as `test.admin@likhangkamay.local` (`/admin/dashboard`).
 2. **KYC Document Viewer, Biometric Telemetry & Targeted Revision (`/admin/users-manager?tab=approvals`):**
-   - Assert `KycVerificationSummaryCard.jsx` renders 100-point composite score, 1:1 face-match indicator, and forensics badges; assert document zoom viewer renders `Business Permit.png` and `DTI.png`. Test rejection using `RevisionChecklistSelector` (checking specific items like `Valid Government ID (Front)` with per-item notes + overall revision summary).
+   - Assert `KycVerificationSummaryCard.jsx` renders 100-point composite score, 1:1 face-match indicator, and forensics badges; assert document zoom viewer renders `Business Permit.png` and `DTI.png`. Test rejection using `RevisionChecklistSelector` (checking specific items like `Valid Government ID (Front)` with per-item notes + overall revision summary). If viewing a resubmission, assert top banner displays `Resubmitted Application Under Review` with the `Revision Addressed` badge, and updated documents display the green `[✓ Updated]` pill (`InlineRevisionCard.jsx`).
 3. **Dispute Arbitration Desk (`/admin/disputes`):**
    - Issue arbitration ruling (`50% Partial Refund` / `Approve Full Refund` / `Decline Claim`). For `50% Partial Refund`, verify order status transitions to `Completed` (`payment_status = 'partially_refunded'`) and 50% seller net retention.
 4. **Content Safety Moderation Desk (`/admin/compliance`):**
    - Verify `"Select a Moderation Ticket"` empty state renders when no ticket is selected. Uphold/remove disputed review (`PATCH /admin/review-moderation/{id}`).
-5. **Catalog & Sponsorship Moderation (`/admin/moderation-queue`, `/admin/catalog`, `/admin/sponsorships`):** Test listing rejection (`ModerationRejectModal`) / sponsorship rejection (`SponsorshipDecisionModal`) with itemized revision checklist fields and direct catalog takedown (`POST /admin/moderation-queue/{id}/takedown`).
+5. **Catalog & Sponsorship Moderation (`/admin/moderation-queue`, `/admin/catalog`, `/admin/sponsorships`):** Test listing rejection (`ModerationRejectModal`) / sponsorship rejection (`SponsorshipDecisionModal`) with itemized revision checklist fields and direct catalog takedown (`POST /admin/moderation-queue/{id}/takedown`). On resubmitted product listings and sponsorships, assert top banner renders `Resubmitted Listing Under Review` with the `Revision Addressed` badge, and revised fields display the green `[✓ Updated]` pill.
 6. **Payout Voucher Generation (`/admin/payouts`):** Verify payout voucher preview (`/seller/payouts/{id}/voucher`) and real-time sync.
 7. **User Directory & Atomic Tier Reversion (`/admin/users-manager`):**
    - Add disciplinary note. Override tier `super_premium -> premium` then **immediately revert to `super_premium`**.
@@ -199,7 +199,7 @@
 
 1. **Staff Restock Request (`/procurement`):** Request `20kg` `"Stoneware Clay"` (`POST /procurement/supplies/{id}/request`).
 2. **PO Ordered & Inward Receiving:** Mark PO ordered (`POST /procurement/stock-requests/{id}/ordered`) -> Click `Receive Inward Goods` (`POST /procurement/stock-requests/{id}/receive`) -> assert `+20kg` stock increment.
-3. **Accounting Maker-Checker Stock Rejection:** Reject redundant release (`POST /accounting/reject/{stockRequest}`) using `RevisionChecklistSelector` itemized fields + overall revision note.
+3. **Accounting Maker-Checker Stock Rejection & Drawer Decoupling:** Reject redundant release (`POST /accounting/reject/{stockRequest}`) using `RevisionChecklistSelector` itemized fields + overall revision note. On `/procurement/stock-requests`, verify the table row keeps clean cell height with `• Declined` badge and `View Feedback` action (avoiding crammed table cells), clicking which opens the `SlideOverDrawer` with the request summary and warm stone audit memo banner.
 4. **Wholesale Listing (`/supply-hub/my-listings`):** Configure wholesale listing (`MOQ: 5`, `₱45/kg`).
 5. **Buyer Artisan B2B Sourcing (`/supply-hub`):** Log in as `artisan.silang@likhangkamay.com` (`LikhangKamay2026!`). Verify `/product/{id}` access clearance (404 for guests/buyers). Test MOQ guardrail (qty `3` blocked, `5` allowed). Add to `/supply-hub/cart`, checkout COD at `/supply-hub/checkout`. Capture `B2B-ORD-XXXXX`.
 6. **Wholesale Sales Dispatch (`/supply-hub/sales`):** Switch back to `test.artisan`. Verify `useRealtime` real-time sales sync, expand accordions (`Pricing Details`, `Timeline`), accept & open `DispatchOrderModal`, select rider & click `Confirm Studio Dispatch`, download wholesale invoice (`/supply-hub/sales/{id}/invoice`).
@@ -255,7 +255,7 @@
 2. **Staff Password Reset & Atomic Reversion (`/staff/password`):** Update to `TempPass2026!`, then **immediately revert to `LikhangKamayTest2026!`**.
 3. **Team Messages Channels & Threads (`/team-messages`):** Create channel `pottery-kiln-qc`, post message, add emoji reaction, reply in `ThreadSidebar.jsx`.
 4. **HR Attendance Approval & Timecard (`/hr`):** Approve flagged off-site attendance session (`POST /hr/attendance-sessions/{id}/approve`). Audit employee timecard (`/hr/employees/{employee}/time-card`).
-5. **Payroll Gen -> Accounting Rejection -> Approval:** Generate payroll dry run (assert SSS, PhilHealth, Pag-IBIG, BIR TRAIN deductions), submit for approval (`POST /hr/payroll/{payroll}/submit`), reject from accounting (`POST /accounting/payroll/{payroll}/reject`) with itemized `RevisionChecklistSelector` items, verify `RevisionFeedbackBanner` renders on HR payroll view, resubmit, and approve (`POST /accounting/payroll/{payroll}/approve`).
+5. **Payroll Gen -> Accounting Rejection -> Approval:** Generate payroll dry run (assert SSS, PhilHealth, Pag-IBIG, BIR TRAIN deductions), submit for approval (`POST /hr/payroll/{payroll}/submit`), reject from accounting (`POST /accounting/payroll/{payroll}/reject`) with itemized `RevisionChecklistSelector` items, verify `RevisionFeedbackBanner` renders on HR payroll view styled as an earthy warm stone audit memo (`bg-stone-50/90`, `border-stone-200/90`, `dot: bg-clay-600` instead of harsh pink wash), resubmit, and approve (`POST /accounting/payroll/{payroll}/approve`).
 6. **Stock Release Approval & BIR 2307 Export:** Approve stock release (`POST /accounting/release/{stockRequest}`) and export BIR 2307 statement (`GET /accounting/settlement/export`).
 7. **Location Cleanup & Trash Recovery (`/shop-locations`, `/admin/trash`):** Delete `"Silang Ceramic Studio"`, test trash restoration (`POST /admin/trash/restore`).
 
@@ -265,5 +265,5 @@
 *Personas:* `test.artisan` $\rightarrow$ `test.admin`
 
 1. **Subscription & Retention (`/subscription`):** Verify `Elite Tier (All 16 Modules Unlocked)`. Trigger retention modal (`Manage Auto-Renewal` -> `Cancel Auto-Renewal`), dismiss cleanly.
-2. **Ad Sponsorship Boost (`/sponsorships`):** Create ₱50/day campaign on `TEST-BAMBOO-01`.
+2. **Ad Sponsorship Boost & Feedback Drawer (`/sponsorships`):** Create ₱50/day campaign on `TEST-BAMBOO-01`. For declined/returned sponsorships in the campaign history sidebar, assert status displays `Revision requested` + `View Feedback` action (avoiding squished sidebar text), clicking which opens the `SlideOverDrawer` with the product summary card and warm stone audit memo banner.
 3. **Admin Email Studio (`/admin/settings/email-templates`):** Inspect variable replacement (`{{buyer_name}}`, `{{order_number}}`), test live email dispatch (`POST /admin/settings/email-templates/dispatch`) to `test.buyer@likhangkamay.local`.
