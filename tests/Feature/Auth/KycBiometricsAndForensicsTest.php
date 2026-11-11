@@ -233,6 +233,7 @@ class KycBiometricsAndForensicsTest extends TestCase
         $this->assertIsArray($artisan->kyc_verification_meta);
         $this->assertSame('strong', $artisan->kyc_verification_meta['band']);
         $this->assertGreaterThanOrEqual(75, $artisan->kyc_verification_meta['confidence_score']);
+        $this->assertCount(128, $artisan->kyc_verification_meta['id_face_descriptor']);
     }
 
     public function test_backfill_migration_flags_existing_unverified_buyers_but_skips_test_and_verified_accounts(): void

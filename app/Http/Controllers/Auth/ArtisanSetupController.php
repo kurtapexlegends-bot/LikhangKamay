@@ -180,6 +180,10 @@ class ArtisanSetupController extends Controller
 
         $documentFlags = $user->document_flags ?? [];
         $upload = function ($key) use ($request, $user, &$documentFlags) {
+            if ($this->isLockedApprovedField($user, $key)) {
+                return $user->{$key};
+            }
+
             if ($request->hasFile($key)) {
                 $file = $request->file($key);
                 $flags = [];
@@ -254,15 +258,19 @@ class ArtisanSetupController extends Controller
 
         $normalizedMethod = strtolower($validated['payout_method']) === 'maya' ? 'Maya' : 'GCash';
 
+        $biometricUpdates = ($request->filled('selfie_data_url') || $request->filled('face_descriptor') || $request->filled('id_face_descriptor'))
+            ? $this->evaluateAndPersistKycBiometrics($user, $request)
+            : [];
+
         $previousStatus = $user->artisan_status;
-        $user->update([
+        $user->update(array_merge($biometricUpdates, [
             'payout_method' => $normalizedMethod,
             'payout_account_name' => trim($validated['payout_account_name']),
             'payout_account_number' => $validated['payout_account_number'],
             'setup_completed_at' => now(),
             'artisan_status' => 'pending',
             'artisan_rejection_reason' => null,
-        ]);
+        ]));
 
         $user->resolveActiveRevisions();
 
@@ -410,6 +418,10 @@ class ArtisanSetupController extends Controller
         if (!in_array($type, ['business_permit', 'dti_registration', 'valid_id', 'tin_id'])) {
             return back()->withErrors(['error' => 'Invalid document type.']);
         }
+
+        if ($this->isLockedApprovedField($user, $type)) {
+            return back()->withErrors([$type => 'This document has already been approved and is locked.']);
+        }
         
         if ($user->{$type}) {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($user->{$type});
@@ -428,6 +440,16 @@ class ArtisanSetupController extends Controller
         
         if (!in_array($type, ['business_permit', 'dti_registration', 'valid_id', 'tin_id'])) {
             return back()->withErrors([$type => 'Invalid document type.']);
+        }
+
+        if ($this->isLockedApprovedField($user, $type)) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'This document has already been approved and is locked.',
+                    'errors' => [$type => ['This document has already been approved and is locked.']],
+                ], 422);
+            }
+            return back()->withErrors([$type => 'This document has already been approved and is locked.']);
         }
 
         if ($request->filled('document_key')) {
@@ -559,7 +581,9 @@ class ArtisanSetupController extends Controller
 
         // 1. Store live selfie & 128-D descriptor if submitted during KYC step
         $selfieDescriptor = $faceService->normalizeDescriptor($user->face_descriptor);
-        if ($request->filled('selfie_data_url')) {
+        $faceVerificationLocked = $this->isLockedApprovedField($user, 'face_verification');
+
+        if (!$faceVerificationLocked && $request->filled('selfie_data_url')) {
             $selfiePath = $faceService->storeSelfieDataUrl((string) $request->input('selfie_data_url'), "u{$user->id}");
             if ($selfiePath) {
                 if ($user->kyc_selfie_path) {
@@ -571,7 +595,7 @@ class ArtisanSetupController extends Controller
             }
         }
 
-        if ($request->filled('face_descriptor')) {
+        if (!$faceVerificationLocked && $request->filled('face_descriptor')) {
             $incomingDesc = $faceService->normalizeDescriptor($request->input('face_descriptor'));
             if ($incomingDesc) {
                 $selfieDescriptor = $incomingDesc;
@@ -580,7 +604,8 @@ class ArtisanSetupController extends Controller
         }
 
         // 2. Server-side match calculation when both Selfie and ID descriptors are available
-        $idDescriptor = $faceService->normalizeDescriptor($request->input('id_face_descriptor'));
+        $idDescriptor = $faceService->normalizeDescriptor($request->input('id_face_descriptor'))
+            ?? $faceService->normalizeDescriptor($user->kyc_verification_meta['id_face_descriptor'] ?? null);
         $matchScore = $user->kyc_verification_meta['match_score'] ?? null;
         $idFaceDetected = $user->kyc_verification_meta['id_face_detected'] ?? null;
 
@@ -619,9 +644,39 @@ class ArtisanSetupController extends Controller
         ]);
 
         $composite['forensics'] = $forensics;
+        if ($idDescriptor) {
+            $composite['id_face_descriptor'] = $idDescriptor;
+        }
         $updates['kyc_verification_meta'] = $composite;
 
         return $updates;
+    }
+
+    /**
+     * Determine whether a KYC document or face check field is already approved and locked
+     * during an active targeted revision request.
+     */
+    private function isLockedApprovedField(UserModel $user, string $fieldKey): bool
+    {
+        if ($user->artisan_status !== 'rejected') {
+            return false;
+        }
+
+        $activeRevision = $user->formatActiveRevisionForFrontend();
+        $flaggedKeys = $activeRevision['flagged_keys'] ?? [];
+        if (empty($flaggedKeys)) {
+            return false;
+        }
+
+        if (in_array($fieldKey, $flaggedKeys, true)) {
+            return false;
+        }
+
+        if ($fieldKey === 'face_verification') {
+            return $user->kyc_liveness_verified_at !== null || !empty($user->kyc_selfie_path);
+        }
+
+        return !empty($user->{$fieldKey});
     }
 
     /**

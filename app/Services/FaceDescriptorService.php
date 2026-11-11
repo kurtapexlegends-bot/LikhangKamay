@@ -136,8 +136,8 @@ class FaceDescriptorService
         }
 
         $filename = 'kyc_selfies/' . $ownerTag . '_' . Str::random(12) . '.' . $ext;
-        Storage::disk('public')->put($filename, $binary);
+        $stored = rescue(fn () => Storage::disk('public')->put($filename, $binary), false, report: false);
 
-        return $filename;
+        return $stored ? $filename : null;
     }
 }

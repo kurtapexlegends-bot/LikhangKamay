@@ -83,7 +83,7 @@ export default function ArtisanSetup({
         tin_id: null,
         selfie_data_url: null,
         face_descriptor: null,
-        id_face_descriptor: null,
+        id_face_descriptor: kycVerificationMeta?.id_face_descriptor ?? null,
         id_face_detected: kycVerificationMeta?.id_face_detected ?? null,
         face_match_score: kycVerificationMeta?.match_score ?? null,
         valid_id_camera_captured: false,

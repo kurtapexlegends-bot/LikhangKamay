@@ -1,6 +1,6 @@
 /* global route, AbortController */
 import React, { useRef, useState, useEffect } from 'react';
-import { UploadCloud, Eye, Trash2, Loader2, XCircle, FileText, Camera, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { UploadCloud, Eye, Trash2, Loader2, XCircle, FileText, Camera, AlertTriangle, CheckCircle2, Lock } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
 import InputError from '@/Components/InputError';
@@ -254,6 +254,7 @@ const FileUploadField = React.memo(({
     };
 
     const hasFile = Boolean(effectiveFileUrl);
+    const isLocked = Boolean(isVerifiedClean && hasFile && !isFlagged);
 
     const renderFileActions = () => (
         <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
@@ -264,7 +265,7 @@ const FileUploadField = React.memo(({
             >
                 <Eye size={13} /> View
             </button>
-            {enableCameraCapture && (
+            {enableCameraCapture && !isLocked && (
                 <button
                     type="button"
                     onClick={(e) => {
@@ -276,13 +277,15 @@ const FileUploadField = React.memo(({
                     <Camera size={13} /> Retake
                 </button>
             )}
-            <button
-                type="button"
-                onClick={handleRemove}
-                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-xs transition hover:bg-rose-100 cursor-pointer"
-            >
-                <Trash2 size={13} /> Remove
-            </button>
+            {!isLocked && (
+                <button
+                    type="button"
+                    onClick={handleRemove}
+                    className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-xs transition hover:bg-rose-100 cursor-pointer"
+                >
+                    <Trash2 size={13} /> Remove
+                </button>
+            )}
         </div>
     );
 
@@ -295,7 +298,7 @@ const FileUploadField = React.memo(({
         >
             <div className="flex items-start justify-between mb-2 gap-2 sm:min-h-[38px]">
                 <div className="min-w-0">
-                    <label htmlFor={id} className="block text-xs sm:text-sm font-semibold text-stone-900 cursor-pointer leading-snug">
+                    <label htmlFor={id} className={`block text-xs sm:text-sm font-semibold text-stone-900 leading-snug ${isLocked ? 'cursor-default' : 'cursor-pointer'}`}>
                         {label}
                     </label>
                     {description && (
@@ -313,9 +316,9 @@ const FileUploadField = React.memo(({
                         <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-300">
                             <AlertTriangle size={10} /> Needs Revision
                         </span>
-                    ) : isVerifiedClean && hasFile ? (
+                    ) : isLocked ? (
                         <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 size={10} /> Verified — No Changes
+                            <Lock size={10} /> Approved
                         </span>
                     ) : hasFile ? (
                         <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
@@ -326,19 +329,21 @@ const FileUploadField = React.memo(({
             </div>
 
             <div
-                onClick={() => !uploading && !showConfirmDelete && inputRef.current?.click()}
-                className={`relative flex-1 min-h-[196px] cursor-pointer flex flex-col items-center justify-center rounded-xl border p-4 transition-all ${
+                onClick={() => !isLocked && !uploading && !showConfirmDelete && inputRef.current?.click()}
+                className={`relative flex-1 min-h-[196px] flex flex-col items-center justify-center rounded-xl border p-4 transition-all ${
                     isFlagged && isAddressed && hasFile
-                        ? 'border-emerald-300 bg-emerald-50/25 hover:border-emerald-400'
+                        ? 'cursor-pointer border-emerald-300 bg-emerald-50/25 hover:border-emerald-400'
                         : isFlagged
-                        ? 'border-amber-300 bg-amber-50/30 hover:border-amber-400'
+                        ? 'cursor-pointer border-amber-300 bg-amber-50/30 hover:border-amber-400'
                         : uploading
                         ? 'border-clay-300 bg-clay-50/20 cursor-not-allowed'
                         : showConfirmDelete
                             ? 'border-rose-300 bg-rose-50/20 cursor-default'
-                            : hasFile
-                                ? 'border-stone-200 bg-stone-50/40 hover:bg-white hover:border-stone-300'
-                                : 'border-dashed border-stone-300 bg-white hover:border-clay-400 hover:bg-stone-50/50'
+                            : isLocked
+                                ? 'border-stone-200 bg-stone-50/60 cursor-default'
+                                : hasFile
+                                    ? 'cursor-pointer border-stone-200 bg-stone-50/40 hover:bg-white hover:border-stone-300'
+                                    : 'cursor-pointer border-dashed border-stone-300 bg-white hover:border-clay-400 hover:bg-stone-50/50'
                 }`}
             >
                 {isFlagged && revisionNote && !uploading && !showConfirmDelete && (
@@ -450,7 +455,7 @@ const FileUploadField = React.memo(({
                     className="hidden"
                     onChange={(e) => handleFileSelect(e, false)}
                     accept="image/*,.pdf"
-                    disabled={uploading}
+                    disabled={uploading || isLocked}
                 />
                 {enableCameraCapture && (
                     <input
@@ -460,7 +465,7 @@ const FileUploadField = React.memo(({
                         onChange={(e) => handleFileSelect(e, true)}
                         accept="image/*"
                         capture="environment"
-                        disabled={uploading}
+                        disabled={uploading || isLocked}
                     />
                 )}
             </div>

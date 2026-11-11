@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import GuestLayout from '@/Layouts/GuestLayout';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -7,12 +7,13 @@ import Checkbox from '@/Components/Checkbox';
 import LegalModal from '@/Components/LegalModal';
 import PasswordStrengthIndicator from '@/Components/PasswordStrengthIndicator';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { Loader2, Mail, Lock, User, CheckCircle2, AlertCircle, ScanFace } from 'lucide-react';
+import { Loader2, Mail, Lock, User, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import useEmailAvailability from '@/Components/Auth/hooks/useEmailAvailability';
+import useLegalAcceptanceFlow from '@/Components/Auth/hooks/useLegalAcceptanceFlow';
 import RegisterSocialAndLinks from '@/Components/Auth/RegisterSocialAndLinks';
-import LivenessFaceScanner from '@/Components/Staff/Dashboard/LivenessFaceScanner';
+import RegisterFaceCheckCard from '@/Components/Auth/RegisterFaceCheckCard';
 
 export default function Register() {
     const { flash } = usePage().props;
@@ -27,7 +28,6 @@ export default function Register() {
         face_check_skipped: false,
         terms: false,
     });
-    const [showFaceScanner, setShowFaceScanner] = useState(false);
 
     const firstNameRef = useRef(null);
     const lastNameRef = useRef(null);
@@ -35,12 +35,17 @@ export default function Register() {
     const passwordRef = useRef(null);
     const confirmPasswordRef = useRef(null);
 
-    const [legalModal, setLegalModal] = useState({ isOpen: false, type: 'terms' });
-    const [, setIsGuidingTermsAcceptance] = useState(false);
-    const [acceptedLegalDocuments, setAcceptedLegalDocuments] = useState({
-        terms: false,
-        privacy: false,
-    });
+    const {
+        legalModal,
+        openLegalModal,
+        handleLegalModalClose,
+        handleLegalAccept,
+        handleLegalBack,
+        handleTermsCheckboxChange,
+        modalStep,
+        modalTotalSteps,
+        modalHasNextStep,
+    } = useLegalAcceptanceFlow((accepted) => setData('terms', accepted));
 
     useEffect(() => {
         return () => {
@@ -49,109 +54,6 @@ export default function Register() {
     }, []);
 
     const emailValidation = useEmailAvailability(data.email);
-
-    const openLegalModal = (type) => {
-        setLegalModal({ isOpen: true, type });
-    };
-
-    const closeLegalModal = () => {
-        setLegalModal((previous) => ({ ...previous, isOpen: false }));
-    };
-
-    const openNextRequiredLegalModal = (documents = acceptedLegalDocuments) => {
-        if (!documents.terms) {
-            setLegalModal({ isOpen: true, type: 'terms' });
-            return;
-        }
-
-        if (!documents.privacy) {
-            setLegalModal({ isOpen: true, type: 'privacy' });
-            return;
-        }
-
-        setIsGuidingTermsAcceptance(false);
-        setLegalModal((previous) => ({ ...previous, isOpen: false }));
-        setData('terms', true);
-    };
-
-    const handleLegalModalClose = (payload = {}) => {
-        if (!payload.accepted) {
-            setIsGuidingTermsAcceptance(false);
-        }
-        closeLegalModal();
-    };
-
-    const handleLegalAccept = () => {
-        const currentType = legalModal.type;
-        const updatedDocuments = {
-            ...acceptedLegalDocuments,
-            [currentType]: true,
-        };
-
-        setAcceptedLegalDocuments(updatedDocuments);
-
-        if (currentType === 'terms' && !updatedDocuments.privacy) {
-            setLegalModal({ isOpen: true, type: 'privacy' });
-            return false;
-        }
-
-        if (currentType === 'privacy' && !updatedDocuments.terms) {
-            setLegalModal({ isOpen: true, type: 'terms' });
-            return false;
-        }
-
-        setIsGuidingTermsAcceptance(false);
-        setLegalModal((previous) => ({ ...previous, isOpen: false }));
-        setData('terms', true);
-        return true;
-    };
-
-    const handleLegalBack = () => {
-        const previousType = legalModal.type === 'terms' ? 'privacy' : 'terms';
-        setLegalModal({ isOpen: true, type: previousType });
-    };
-
-    const canEnableTermsCheckbox = acceptedLegalDocuments.terms && acceptedLegalDocuments.privacy;
-
-    const handleTermsCheckboxChange = (e) => {
-        if (!e.target.checked) {
-            setData('terms', false);
-            return;
-        }
-
-        if (canEnableTermsCheckbox) {
-            setData('terms', true);
-            return;
-        }
-
-        setData('terms', false);
-        setIsGuidingTermsAcceptance(true);
-        openNextRequiredLegalModal();
-    };
-
-    const isTermsAgreed = Boolean(acceptedLegalDocuments.terms);
-    const isPrivacyAgreed = Boolean(acceptedLegalDocuments.privacy);
-    const isBothAgreed = isTermsAgreed && isPrivacyAgreed;
-    const currentDocAccepted = Boolean(acceptedLegalDocuments[legalModal.type]);
-    const counterpartAccepted = legalModal.type === 'terms' ? isPrivacyAgreed : isTermsAgreed;
-
-    let modalStep = null;
-    let modalTotalSteps = null;
-    let modalHasNextStep = false;
-
-    if (!isBothAgreed) {
-        modalTotalSteps = 2;
-        if (!counterpartAccepted && !currentDocAccepted) {
-            modalStep = 1;
-            modalHasNextStep = true;
-        } else if (counterpartAccepted && !currentDocAccepted) {
-            modalStep = 2;
-            modalHasNextStep = false;
-        } else {
-            modalStep = 1;
-            modalHasNextStep = true;
-        }
-    }
 
     const submit = (e) => {
         e.preventDefault();
@@ -420,102 +322,30 @@ export default function Register() {
                     )}
 
                     {/* Quick Live Face Check (Anti-Bot Shield with Camera-less Checkout Fallback) */}
-                    <motion.div variants={itemVariants} className="rounded-xl border border-stone-200 bg-stone-50/70 p-4 space-y-3">
-                        <div className="flex items-start justify-between gap-2.5">
-                            <div className="flex items-start gap-2.5">
-                                <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${
-                                    data.selfie_data_url
-                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                        : 'bg-white border-stone-200 text-clay-700'
-                                }`}>
-                                    <ScanFace size={16} />
-                                </div>
-                                <div>
-                                    <p className="text-xs font-bold text-stone-900">Quick Account Face Check</p>
-                                    <p className="text-[11px] text-stone-500 leading-snug mt-0.5">
-                                        {data.selfie_data_url
-                                            ? 'Face check passed. Your first order checkout is ready.'
-                                            : data.face_check_skipped
-                                            ? 'Skipped for now — we will ask once before your first checkout.'
-                                            : 'Verify once now so future checkouts go straight through.'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {data.selfie_data_url && !showFaceScanner && (
-                                <button
-                                    type="button"
-                                    onClick={() => setShowFaceScanner(true)}
-                                    className="text-[11px] font-bold text-stone-600 hover:text-stone-900 underline shrink-0 cursor-pointer"
-                                >
-                                    Retake
-                                </button>
-                            )}
-                        </div>
-
-                        {data.selfie_data_url && !showFaceScanner ? (
-                            <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-2.5">
-                                <img
-                                    src={data.selfie_data_url}
-                                    alt="Captured verification selfie"
-                                    className="w-11 h-11 rounded-lg object-cover border border-emerald-200 shrink-0"
-                                />
-                                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
-                                    <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                                    <span>Quick Face Check Verified</span>
-                                </div>
-                            </div>
-                        ) : showFaceScanner ? (
-                            <div className="rounded-xl border border-stone-200 bg-white p-3">
-                                <LivenessFaceScanner
-                                    computeDescriptor={true}
-                                    onVerified={({ photoData, descriptor }) => {
-                                        setData((prev) => ({
-                                            ...prev,
-                                            selfie_data_url: photoData || '',
-                                            face_descriptor: descriptor || null,
-                                            face_check_skipped: false,
-                                        }));
-                                        setShowFaceScanner(false);
-                                        if (errors.face_verification) clearErrors('face_verification');
-                                    }}
-                                    fallbackLabel="No camera? Skip for now"
-                                    onFallbackAction={() => {
-                                        setShowFaceScanner(false);
-                                        setData((prev) => ({
-                                            ...prev,
-                                            selfie_data_url: '',
-                                            face_descriptor: null,
-                                            face_check_skipped: true,
-                                        }));
-                                    }}
-                                />
-                            </div>
-                        ) : (
-                            <div className="flex flex-wrap items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowFaceScanner(true);
-                                        setData('face_check_skipped', false);
-                                    }}
-                                    className="flex-1 min-h-[40px] px-3 py-2 rounded-xl bg-white border border-stone-200 hover:border-clay-300 text-xs font-bold text-stone-800 transition cursor-pointer"
-                                >
-                                    {data.face_check_skipped ? 'Turn On Camera' : 'Start Quick Face Check'}
-                                </button>
-                                {!data.face_check_skipped && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setData('face_check_skipped', true)}
-                                        className="min-h-[40px] px-3 py-2 rounded-xl text-[11px] font-semibold text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition cursor-pointer"
-                                    >
-                                        Skip until first order
-                                    </button>
-                                )}
-                            </div>
-                        )}
-
-                        <InputError message={errors.face_verification} />
+                    <motion.div variants={itemVariants}>
+                        <RegisterFaceCheckCard
+                            selfieDataUrl={data.selfie_data_url}
+                            faceCheckSkipped={data.face_check_skipped}
+                            error={errors.face_verification}
+                            onVerified={({ photoData, descriptor }) => {
+                                setData((prev) => ({
+                                    ...prev,
+                                    selfie_data_url: photoData || '',
+                                    face_descriptor: descriptor || null,
+                                    face_check_skipped: false,
+                                }));
+                                if (errors.face_verification) clearErrors('face_verification');
+                            }}
+                            onSkipped={() => {
+                                setData((prev) => ({
+                                    ...prev,
+                                    selfie_data_url: '',
+                                    face_descriptor: null,
+                                    face_check_skipped: true,
+                                }));
+                            }}
+                            onResetSkip={() => setData('face_check_skipped', false)}
+                        />
                     </motion.div>
 
                     {/* Terms Checkbox Row */}

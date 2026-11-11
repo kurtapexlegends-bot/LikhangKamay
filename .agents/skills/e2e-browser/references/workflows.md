@@ -241,7 +241,7 @@
      - `DTI.png` $\rightarrow$ `input#dti_registration`
      - `Tin ID.png` $\rightarrow$ `input#tin_id`
      - `Valid ID.png` $\rightarrow$ `input#valid_id`
-     - Trigger `KycFaceAndIdCheckCard` (`Start Quick Face Check` or manual review fallback if headless without webcam). If prior application was returned with `RevisionRequest`, verify `RevisionFeedbackBanner` highlights flagged items cleanly.
+     - Trigger `KycFaceAndIdCheckCard` (`Start Quick Face Check` or manual review fallback if headless without webcam). If prior application was returned with `RevisionRequest`, verify `RevisionFeedbackBanner` highlights flagged items cleanly, while unflagged approved documents render the `<Lock /> Approved` badge and are strictly locked against modification or deletion.
    - **Step 3 (Terms & Submission):** Accept Artisan Terms (`POST /artisan/accept-terms`) and click `Submit Application`. Assert status updates to `pending` / `Application Pending Admin Verification` and active revisions resolve cleanly (`resolveActiveRevisions()`).
 
 ---

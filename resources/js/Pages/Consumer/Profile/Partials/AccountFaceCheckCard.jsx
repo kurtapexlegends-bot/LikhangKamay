@@ -1,7 +1,8 @@
+/* global route */
 import React, { useState } from 'react';
 import { ScanFace, CheckCircle2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { router } from '@inertiajs/react';
-import LivenessFaceScanner from '@/Components/Staff/Dashboard/LivenessFaceScanner';
+import FaceCaptureModal from '@/Components/Common/FaceCaptureModal';
 
 export default function AccountFaceCheckCard({ user, requiresCheckoutFaceCheck = false }) {
     const [showScanner, setShowScanner] = useState(false);
@@ -67,17 +68,15 @@ export default function AccountFaceCheckCard({ user, requiresCheckoutFaceCheck =
                     </div>
                 </div>
 
-                {!showScanner && (
-                    <button
-                        type="button"
-                        onClick={() => setShowScanner(true)}
-                        disabled={submitting}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-800 hover:bg-stone-50 transition min-h-[42px] cursor-pointer"
-                    >
-                        <RefreshCw size={13} />
-                        {isVerified ? 'Update Face Photo' : 'Complete Face Check Now'}
-                    </button>
-                )}
+                <button
+                    type="button"
+                    onClick={() => setShowScanner(true)}
+                    disabled={submitting}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-800 hover:bg-stone-50 transition min-h-[42px] cursor-pointer"
+                >
+                    <RefreshCw size={13} />
+                    {isVerified ? 'Update Face Photo' : 'Complete Face Check Now'}
+                </button>
             </div>
 
             {statusMessage && (
@@ -92,7 +91,7 @@ export default function AccountFaceCheckCard({ user, requiresCheckoutFaceCheck =
                 </div>
             )}
 
-            {isVerified && user?.kyc_selfie_url && !showScanner && (
+            {isVerified && user?.kyc_selfie_url && (
                 <div className="flex items-center gap-3 rounded-xl border border-stone-200 bg-stone-50/70 p-3">
                     <img
                         src={user.kyc_selfie_url}
@@ -109,16 +108,18 @@ export default function AccountFaceCheckCard({ user, requiresCheckoutFaceCheck =
                 </div>
             )}
 
-            {showScanner && (
-                <div className="rounded-2xl border border-stone-200 bg-stone-50/70 p-4">
-                    <LivenessFaceScanner
-                        computeDescriptor={true}
-                        onVerified={handleVerified}
-                        fallbackLabel="Cancel"
-                        onFallbackAction={() => setShowScanner(false)}
-                    />
-                </div>
-            )}
+            <FaceCaptureModal
+                show={showScanner}
+                onClose={() => setShowScanner(false)}
+                title={isVerified ? 'Update Account Face Photo' : 'Complete Quick Face Check'}
+                subtitle="Position your face inside the frame and follow the prompt to verify your account."
+                computeDescriptor={true}
+                onVerified={handleVerified}
+                fallbackLabel="Cancel"
+                onFallbackAction={() => setShowScanner(false)}
+                submitting={submitting}
+                errorMessage={errorMessage || ''}
+            />
         </div>
     );
 }

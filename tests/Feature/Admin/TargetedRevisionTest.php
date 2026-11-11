@@ -76,6 +76,12 @@ class TargetedRevisionTest extends TestCase
                 ->has('activeRevision.items', 2)
             );
 
+        // Unflagged already-approved documents (e.g. dti_registration) are locked against deletion or overwrite
+        $this->actingAs($artisan)
+            ->delete(route('artisan.setup.delete-document', ['type' => 'dti_registration']))
+            ->assertSessionHasErrors('dti_registration');
+        $this->assertSame('legal_docs/dti.jpg', $artisan->fresh()->dti_registration);
+
         // Resubmitting Step 3 marks active revision resolved
         $this->actingAs($artisan)->post(route('artisan.setup.store'), [
             'current_step' => 3,

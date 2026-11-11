@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ScanFace, CheckCircle2, RefreshCw, AlertTriangle, Info } from 'lucide-react';
-import LivenessFaceScanner from '@/Components/Staff/Dashboard/LivenessFaceScanner';
+import { ScanFace, CheckCircle2, RefreshCw, AlertTriangle, Info, Lock } from 'lucide-react';
+import FaceCaptureModal from '@/Components/Common/FaceCaptureModal';
 import { classifyMatchScore } from '@/lib/faceVerification';
 
 export default function KycFaceAndIdCheckCard({
@@ -13,6 +13,7 @@ export default function KycFaceAndIdCheckCard({
     flaggedByAdmin = false,
     isAddressed = false,
     isHighlighted = false,
+    isVerifiedClean = false,
     adminNote = null,
     onSelfieCaptured,
     error = null,
@@ -22,6 +23,7 @@ export default function KycFaceAndIdCheckCard({
 
     const effectiveSelfieUrl = selfieDataUrl || kycSelfieUrl;
     const isVerified = Boolean(selfieDataUrl || kycLivenessVerified);
+    const isLocked = Boolean(isVerifiedClean && isVerified && !flaggedByAdmin);
     const matchTier = classifyMatchScore(matchScore);
 
     const handleVerified = (payload) => {
@@ -41,6 +43,8 @@ export default function KycFaceAndIdCheckCard({
                     ? 'border-emerald-300 bg-emerald-50/35'
                     : flaggedByAdmin
                     ? 'border-amber-300 bg-amber-50/40'
+                    : isLocked
+                    ? 'border-stone-200 bg-stone-50/60'
                     : isVerified
                     ? 'border-emerald-200 bg-emerald-50/30'
                     : 'border-stone-200 bg-stone-50/60'
@@ -68,6 +72,10 @@ export default function KycFaceAndIdCheckCard({
                                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-bold text-amber-900">
                                     Needs Update
                                 </span>
+                            ) : isLocked ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                                    <Lock size={11} /> Approved
+                                </span>
                             ) : isVerified ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                                     <CheckCircle2 size={11} /> Face Check Completed
@@ -80,7 +88,7 @@ export default function KycFaceAndIdCheckCard({
                     </div>
                 </div>
 
-                {isVerified && !showScanner && (
+                {isVerified && !isLocked && !showScanner && (
                     <button
                         type="button"
                         onClick={() => setShowScanner(true)}
@@ -107,19 +115,7 @@ export default function KycFaceAndIdCheckCard({
                 </div>
             )}
 
-            {showScanner ? (
-                <div className="rounded-2xl border border-stone-200 bg-white p-4">
-                    <LivenessFaceScanner
-                        computeDescriptor={true}
-                        onVerified={handleVerified}
-                        fallbackLabel="Camera unavailable — continue with manual review"
-                        onFallbackAction={() => {
-                            setShowScanner(false);
-                            setCameraSkipped(true);
-                        }}
-                    />
-                </div>
-            ) : !isVerified && !cameraSkipped ? (
+            {!isVerified && !cameraSkipped ? (
                 <div className="rounded-xl border border-stone-200 bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <p className="text-xs text-stone-600 leading-relaxed">
                         Start a quick camera check after or while attaching your documents to automatically pair your live selfie with your Valid ID.
@@ -170,7 +166,7 @@ export default function KycFaceAndIdCheckCard({
                                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold ${matchTier.badgeClass}`}>
                                         Identity Photo Match: {matchScore}% • {matchTier.label}
                                     </span>
-                                    {matchScore < 65 && (
+                                    {matchScore < 65 && !isLocked && (
                                         <p className="text-[11px] text-amber-800 leading-snug">
                                             Tip: Retake in brighter lighting or upload a clearer photo of your Valid ID front. Applications can still be submitted for team review.
                                         </p>
@@ -195,6 +191,20 @@ export default function KycFaceAndIdCheckCard({
             ) : null}
 
             {error && <p className="text-xs font-semibold text-rose-600">{error}</p>}
+
+            <FaceCaptureModal
+                show={showScanner}
+                onClose={() => setShowScanner(false)}
+                title="Quick Face Check & Identity Match"
+                subtitle="Take a quick live selfie to confirm you match your uploaded Valid Government ID."
+                computeDescriptor={true}
+                onVerified={handleVerified}
+                fallbackLabel="Camera unavailable — continue with manual review"
+                onFallbackAction={() => {
+                    setShowScanner(false);
+                    setCameraSkipped(true);
+                }}
+            />
         </div>
     );
 }

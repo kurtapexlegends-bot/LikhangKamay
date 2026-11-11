@@ -31,7 +31,7 @@ export default function DocumentsStep({
         const selfieDescriptor = payload?.descriptor || null;
         let nextScore = data?.face_match_score ?? kycVerificationMeta?.match_score ?? null;
         let nextIdDetected = data?.id_face_detected ?? kycVerificationMeta?.id_face_detected ?? null;
-        let nextIdDescriptor = data?.id_face_descriptor || null;
+        let nextIdDescriptor = data?.id_face_descriptor || kycVerificationMeta?.id_face_descriptor || null;
 
         if (selfieDescriptor && nextIdDescriptor) {
             const dist = computeDistance(selfieDescriptor, nextIdDescriptor);
@@ -160,6 +160,7 @@ export default function DocumentsStep({
                     flaggedByAdmin={hasActiveRevision && flaggedKeys.has('face_verification')}
                     isAddressed={addressedKeys.has('face_verification')}
                     isHighlighted={highlightedKey === 'face_verification'}
+                    isVerifiedClean={hasActiveRevision && !flaggedKeys.has('face_verification')}
                     adminNote={revisionNotes.face_verification}
                     onSelfieCaptured={handleSelfieCaptured}
                     error={errors.selfie_data_url}

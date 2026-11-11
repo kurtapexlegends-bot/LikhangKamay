@@ -18,10 +18,12 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 - **KYC Government ID Input:** `input#valid_id`
 - **KYC TIN Registration Input:** `input#tin_id`
 - **KYC Cancel Upload Trigger (`FileUploadField.jsx`):** `button:has-text("Cancel Upload")`
+- **KYC Locked Approved Document Badge (`FileUploadField.jsx`):** `span:has-text("Approved")`
 - **KYC Face Check Card Trigger:** `button:has-text("Start Quick Face Check")` / `button:has-text("Retake Face Check")`
+- **KYC Face Check Locked Badge (`KycFaceAndIdCheckCard.jsx`):** `span:has-text("Approved")`
 - **KYC Face Card Fallback:** `button:has-text("Camera unavailable — continue with manual review")`
 - **KYC Submit Application Button:** `button:has-text("Submit Application")`
-- **Checkout One-Time Face Check Modal Header:** `div[role="dialog"]:has-text("One-Time Quick Face Check")`
+- **Shared Face Capture Modal Header (`FaceCaptureModal.jsx`):** `div[role="dialog"]:has-text("Quick Face Check")`, `div[role="dialog"]:has-text("One-Time Quick Face Check")`
 - **Targeted Revision Inline Trigger / Custom Item (`InlineRevisionFooter.jsx`):** `button:has-text("Other issue")` -> `input[placeholder="Specify other item to revise..."]` + `button:has-text("Add")` (Checklist modal variant: `input[placeholder="Add other item..."]`)
 - **Targeted Revision Summary Input (`InlineRevisionFooter.jsx` / Modal):** `input[placeholder*="summary guidance"]`, `textarea[placeholder*="clear guidance"]`, `textarea[placeholder*="Provide clear instructions"]`
 - **Targeted Revision Field Jump Targets (`ArtisanSetup.jsx`):** `[data-revision-target="shop_details"]`, `[data-revision-target="shop_address"]`, `[data-revision-target="valid_id"]`, `[data-revision-target="face_verification"]`, `[data-revision-target="payout_info"]`
