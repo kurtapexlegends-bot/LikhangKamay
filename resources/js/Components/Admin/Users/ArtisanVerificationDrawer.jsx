@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { X, CheckCircle, FileText, Eye, AlertTriangle, LoaderCircle, RotateCcw } from 'lucide-react';
 import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import { ActionTooltip } from '@/Components/Admin/Layout/BulkActionPill';
@@ -35,6 +35,17 @@ export default function ArtisanVerificationDrawer({
         revisionItems,
         setRevisionItems
     );
+
+    const revisionReview = viewingArtisan?.revision_review || null;
+    const reviewItemsMap = useMemo(() => {
+        const map = {};
+        if (Array.isArray(revisionReview?.items)) {
+            revisionReview.items.forEach((item) => {
+                if (item?.key) map[item.key] = item;
+            });
+        }
+        return map;
+    }, [revisionReview]);
 
     const handleInspectSummaryPhoto = (photo) => {
         if (!photo?.url) return;
@@ -105,11 +116,36 @@ export default function ArtisanVerificationDrawer({
             >
                 {viewingArtisan && (
                     <div className="space-y-3">
+                        {/* Resubmission Review Banner for Super Admin */}
+                        {revisionReview?.has_resubmitted_revision && (
+                            <div className="p-3 rounded-xl border border-emerald-300 bg-emerald-50/70 text-emerald-950 flex items-center justify-between gap-3 transition-colors">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-emerald-100 text-emerald-700">
+                                        <CheckCircle size={15} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h4 className="text-xs sm:text-sm font-bold leading-snug">
+                                            Resubmitted for Review
+                                        </h4>
+                                        {revisionReview.summary_note && (
+                                            <p className="text-[11px] text-stone-600 truncate mt-0.5">
+                                                "{revisionReview.summary_note}"
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                                    Revision Addressed
+                                </span>
+                            </div>
+                        )}
+
                         <InlineRevisionCard
                             active={revisionMode}
                             selected={isSelected('shop_details')}
                             label="Shop Name & Contact Info"
                             note={getNote('shop_details')}
+                            reviewItem={reviewItemsMap['shop_details']}
                             onToggle={() => toggleItem('shop_details', 'Shop Name & Contact Info')}
                             onChangeNote={(val) => updateItemNote('shop_details', val)}
                         >
@@ -144,6 +180,7 @@ export default function ArtisanVerificationDrawer({
                             selected={isSelected('shop_address')}
                             label="Workshop Address & Cavite Map Pin"
                             note={getNote('shop_address')}
+                            reviewItem={reviewItemsMap['shop_address']}
                             onToggle={() => toggleItem('shop_address', 'Workshop Address & Cavite Map Pin')}
                             onChangeNote={(val) => updateItemNote('shop_address', val)}
                         >
@@ -172,6 +209,7 @@ export default function ArtisanVerificationDrawer({
                             selected={isSelected('payout_info')}
                             label="GCash / Maya Payout Account Details"
                             note={getNote('payout_info')}
+                            reviewItem={reviewItemsMap['payout_info']}
                             onToggle={() => toggleItem('payout_info', 'GCash / Maya Payout Account Details')}
                             onChangeNote={(val) => updateItemNote('payout_info', val)}
                         >
@@ -200,6 +238,7 @@ export default function ArtisanVerificationDrawer({
                             selected={isSelected('face_verification')}
                             label="Quick Face Check / Identity Photo Match"
                             note={getNote('face_verification')}
+                            reviewItem={reviewItemsMap['face_verification']}
                             onToggle={() => toggleItem('face_verification', 'Quick Face Check / Identity Photo Match')}
                             onChangeNote={(val) => updateItemNote('face_verification', val)}
                         >
@@ -219,6 +258,7 @@ export default function ArtisanVerificationDrawer({
                                         selected={isSelected(doc.key)}
                                         label={doc.label}
                                         note={getNote(doc.key)}
+                                        reviewItem={reviewItemsMap[doc.key]}
                                         onToggle={() => toggleItem(doc.key, doc.label)}
                                         onChangeNote={(val) => updateItemNote(doc.key, val)}
                                         secondaryAction={doc.url ? (

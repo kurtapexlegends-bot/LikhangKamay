@@ -1,5 +1,5 @@
 import React, { useId } from 'react';
-import { Check, MessageSquare } from 'lucide-react';
+import { Check, MessageSquare, CheckCircle2 } from 'lucide-react';
 
 export default function InlineRevisionCard({
     active = false,
@@ -9,10 +9,42 @@ export default function InlineRevisionCard({
     onToggle,
     onChangeNote,
     secondaryAction = null,
+    reviewItem = null,
     className = '',
     children,
 }) {
     const noteInputId = useId();
+
+    if (!active && reviewItem) {
+        return (
+            <div className={`rounded-xl border border-emerald-300 ring-1 ring-emerald-300/50 bg-white overflow-hidden transition-all ${className}`}>
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 bg-emerald-50/85 border-b border-emerald-200/80 text-emerald-950">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-bold uppercase tracking-wider">
+                            <CheckCircle2 size={11} strokeWidth={2.5} /> Updated
+                        </span>
+                        <span className="text-xs font-bold truncate">
+                            {label}
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                        {secondaryAction}
+                    </div>
+                </div>
+
+                {reviewItem.note && (
+                    <div className="px-3 py-1 text-[11px] border-b bg-emerald-50/40 border-emerald-100 text-emerald-900">
+                        <span className="font-semibold">Revision requested:</span> {reviewItem.note}
+                    </div>
+                )}
+
+                <div>
+                    {children}
+                </div>
+            </div>
+        );
+    }
 
     if (!active) {
         return <>{children}</>;

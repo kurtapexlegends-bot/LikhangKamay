@@ -50,6 +50,16 @@ export default function SponsorshipInspectionDrawer({
     const [showRejectInput, setShowRejectInput] = useState(false);
     const [validationError, setValidationError] = useState('');
 
+    const revisionReview = request?.revision_review;
+    const reviewItemsMap = useMemo(() => {
+        if (!revisionReview?.items) return {};
+        const map = {};
+        revisionReview.items.forEach(item => {
+            map[item.key] = item;
+        });
+        return map;
+    }, [revisionReview]);
+
     if (request?.id !== prevRequestId) {
         setPrevRequestId(request?.id);
         setViewingMode('image');
@@ -234,6 +244,30 @@ export default function SponsorshipInspectionDrawer({
             footer={renderFooter()}
         >
             <div className="space-y-3 pb-4">
+                {/* Resubmission Review Banner for Super Admin */}
+                {revisionReview?.has_resubmitted_revision && (
+                    <div className="p-3 rounded-xl border border-emerald-300 bg-emerald-50/70 text-emerald-950 flex items-center justify-between gap-3 transition-colors">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-emerald-100 text-emerald-700">
+                                <CheckCircle2 size={15} />
+                            </div>
+                            <div className="min-w-0">
+                                <h4 className="text-xs sm:text-sm font-bold leading-snug">
+                                    Resubmitted for Review
+                                </h4>
+                                {revisionReview.summary_note && (
+                                    <p className="text-[11px] text-stone-600 truncate mt-0.5">
+                                        "{revisionReview.summary_note}"
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                            Revision Addressed
+                        </span>
+                    </div>
+                )}
+
                 {/* Out of Stock Warning Banner */}
                 {isOutOfStock && isPending && (
                     <div className="rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-xs text-rose-800 flex items-start gap-3">
@@ -253,6 +287,7 @@ export default function SponsorshipInspectionDrawer({
                     selected={isSelected('product_media')}
                     label="Product Cover Photo Quality & Presentation"
                     note={getNote('product_media')}
+                    reviewItem={reviewItemsMap['product_media']}
                     onToggle={() => toggleItem('product_media', 'Product Cover Photo Quality & Presentation')}
                     onChangeNote={(val) => updateItemNote('product_media', val)}
                 >
@@ -453,6 +488,7 @@ export default function SponsorshipInspectionDrawer({
                     selected={isSelected('product_claims')}
                     label="Listing Title, Pricing or Description Claims"
                     note={getNote('product_claims')}
+                    reviewItem={reviewItemsMap['product_claims']}
                     onToggle={() => toggleItem('product_claims', 'Listing Title, Pricing or Description Claims')}
                     onChangeNote={(val) => updateItemNote('product_claims', val)}
                 >
@@ -514,6 +550,7 @@ export default function SponsorshipInspectionDrawer({
                     selected={isSelected('campaign_schedule')}
                     label="Campaign Schedule / Featured Slot Policy"
                     note={getNote('campaign_schedule')}
+                    reviewItem={reviewItemsMap['campaign_schedule']}
                     onToggle={() => toggleItem('campaign_schedule', 'Campaign Schedule / Featured Slot Policy')}
                     onChangeNote={(val) => updateItemNote('campaign_schedule', val)}
                 >

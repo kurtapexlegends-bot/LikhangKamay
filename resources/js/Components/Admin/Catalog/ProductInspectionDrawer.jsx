@@ -71,6 +71,17 @@ export default function ProductInspectionDrawer({
         }
     );
 
+    const revisionReview = product?.revision_review || null;
+    const reviewItemsMap = useMemo(() => {
+        const map = {};
+        if (Array.isArray(revisionReview?.items)) {
+            revisionReview.items.forEach((item) => {
+                if (item?.key) map[item.key] = item;
+            });
+        }
+        return map;
+    }, [revisionReview]);
+
     const coverUrl = product?.img || (product?.cover_photo_path ? resolveImageUrl(product.cover_photo_path) : '/images/placeholder.svg');
     const rawGalleryUrls = (product?.gallery_urls && product.gallery_urls.length > 0)
         ? product.gallery_urls
@@ -316,12 +327,37 @@ export default function ProductInspectionDrawer({
                     </div>
                 </div>
 
+                {/* Resubmission Review Banner for Super Admin */}
+                {revisionReview?.has_resubmitted_revision && (
+                    <div className="p-3 rounded-xl border border-emerald-300 bg-emerald-50/70 text-emerald-950 flex items-center justify-between gap-3 transition-colors">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-emerald-100 text-emerald-700">
+                                <CheckCircle2 size={15} />
+                            </div>
+                            <div className="min-w-0">
+                                <h4 className="text-xs sm:text-sm font-bold leading-snug">
+                                    Resubmitted for Review
+                                </h4>
+                                {revisionReview.summary_note && (
+                                    <p className="text-[11px] text-stone-600 truncate mt-0.5">
+                                        "{revisionReview.summary_note}"
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                            Revision Addressed
+                        </span>
+                    </div>
+                )}
+
                 {/* Media Section (Images / 3D Model Toggle) */}
                 <InlineRevisionCard
                     active={isRevisionMode}
                     selected={isSelected('cover_media')}
                     label="Cover Photo & Product Gallery"
                     note={getNote('cover_media')}
+                    reviewItem={reviewItemsMap['cover_media'] || reviewItemsMap['model_3d']}
                     onToggle={() => toggleItem('cover_media', 'Cover Photo & Product Gallery')}
                     onChangeNote={(val) => updateItemNote('cover_media', val)}
                 >
@@ -522,6 +558,7 @@ export default function ProductInspectionDrawer({
                     selected={isSelected('basic_info')}
                     label="Product Title & Category"
                     note={getNote('basic_info')}
+                    reviewItem={reviewItemsMap['basic_info']}
                     onToggle={() => toggleItem('basic_info', 'Product Title & Category')}
                     onChangeNote={(val) => updateItemNote('basic_info', val)}
                 >
@@ -548,6 +585,7 @@ export default function ProductInspectionDrawer({
                         selected={isSelected('description')}
                         label="Description & Craft Story"
                         note={getNote('description')}
+                        reviewItem={reviewItemsMap['description']}
                         onToggle={() => toggleItem('description', 'Description & Craft Story')}
                         onChangeNote={(val) => updateItemNote('description', val)}
                     >
@@ -566,6 +604,7 @@ export default function ProductInspectionDrawer({
                     selected={isSelected('pricing_stock')}
                     label="Pricing, Weight & Stock Units"
                     note={getNote('pricing_stock')}
+                    reviewItem={reviewItemsMap['pricing_stock'] || reviewItemsMap['materials_bom']}
                     onToggle={() => toggleItem('pricing_stock', 'Pricing, Weight & Stock Units')}
                     onChangeNote={(val) => updateItemNote('pricing_stock', val)}
                 >
