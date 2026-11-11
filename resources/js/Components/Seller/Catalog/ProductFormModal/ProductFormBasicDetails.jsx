@@ -22,6 +22,7 @@ export default function ProductFormBasicDetails({
     selectedProduct,
     subscription,
     setActiveFormTab,
+    highlightedKey = null,
 }) {
     const { auth } = usePage().props;
     const isVatRegistered = Boolean(auth?.user?.is_vat_registered);
@@ -48,7 +49,12 @@ export default function ProductFormBasicDetails({
     return (
         <div className="space-y-6 animate-fadeIn">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2">
+                <div
+                    data-product-revision-target="basic_info"
+                    className={`md:col-span-2 scroll-mt-6 rounded-xl transition-all duration-300 ${
+                        highlightedKey === "basic_info" ? "ring-2 ring-clay-500 ring-offset-4 bg-clay-50/35" : ""
+                    }`}
+                >
                     <div className="flex items-center justify-between mb-1">
                         <InputLabel value="Product Name *" />
                         <span className={`text-[10px] font-bold ${(data.name || '').length < 10 || (data.name || '').length > 60 ? 'text-amber-600' : 'text-emerald-600'}`}>
@@ -66,7 +72,12 @@ export default function ProductFormBasicDetails({
                     <InputError message={errors.name} className="mt-2" />
                 </div>
 
-                <div className="md:col-span-2">
+                <div
+                    data-product-revision-target="description"
+                    className={`md:col-span-2 scroll-mt-6 rounded-xl transition-all duration-300 ${
+                        highlightedKey === "description" ? "ring-2 ring-clay-500 ring-offset-4 bg-clay-50/35" : ""
+                    }`}
+                >
                     <InputLabel value="Description" />
                     <TextAreaWithCounter
                         className={modalTextareaClass}
@@ -201,21 +212,6 @@ export default function ProductFormBasicDetails({
                             </>
                         );
                     })()}
-                    {(data.status === 'rejected' || data.status === 'flagged') && (
-                        <div className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
-                            <p className="text-[11px] font-bold text-red-700">
-                                Listing {data.status === 'rejected' ? 'Needs Revision' : 'Flagged'}
-                            </p>
-                            {selectedProduct?.rejection_reason && (
-                                <p className="mt-1 text-[10px] text-red-600 font-semibold">
-                                    Reason: {selectedProduct.rejection_reason}
-                                </p>
-                            )}
-                            <p className="mt-1 text-[10px] text-stone-500 font-medium">
-                                Saving updates will keep this listing as {data.status === 'rejected' ? 'Needs Revision' : 'Flagged'}. Resubmit the listing once your changes are ready.
-                            </p>
-                        </div>
-                    )}
                     {data.status === 'pending_review' && (
                         <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
                             <p className="text-[11px] font-bold text-amber-700">
@@ -229,7 +225,12 @@ export default function ProductFormBasicDetails({
                 </div>
                 )}
 
-                <div className="md:col-span-2 border-t border-gray-100 pt-6 mt-2">
+                <div
+                    data-product-revision-target="pricing_stock"
+                    className={`md:col-span-2 scroll-mt-6 border-t border-gray-100 pt-6 mt-2 rounded-xl transition-all duration-300 ${
+                        highlightedKey === "pricing_stock" ? "ring-2 ring-clay-500 ring-offset-4 bg-clay-50/35" : ""
+                    }`}
+                >
                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">
                         Inventory & Pricing
                     </h3>

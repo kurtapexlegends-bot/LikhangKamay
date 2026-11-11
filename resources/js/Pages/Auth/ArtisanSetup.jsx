@@ -279,14 +279,16 @@ export default function ArtisanSetup({
                                                 <div className="flex items-center gap-1.5 min-w-0">
                                                     <span
                                                         className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-                                                            isCurrent
-                                                                ? 'bg-clay-600 text-white'
-                                                                : isPast
-                                                                    ? 'bg-emerald-600 text-white'
-                                                                    : 'bg-stone-200 text-stone-600'
+                                                            stepDone
+                                                                ? 'bg-emerald-600 text-white'
+                                                                : isCurrent
+                                                                    ? 'bg-clay-600 text-white'
+                                                                    : isPast
+                                                                        ? 'bg-emerald-600 text-white'
+                                                                        : 'bg-stone-200 text-stone-600'
                                                         }`}
                                                     >
-                                                        {isPast && remainingCount === 0 ? '✓' : s.num}
+                                                        {(stepDone || (isPast && remainingCount === 0)) ? '✓' : s.num}
                                                     </span>
                                                     <span
                                                         className={`text-xs font-bold truncate ${
@@ -300,24 +302,22 @@ export default function ArtisanSetup({
                                                         {s.label}
                                                     </span>
                                                 </div>
-                                                {remainingCount > 0 ? (
+                                                {remainingCount > 0 && (
                                                     <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-100 px-1 text-[9px] font-bold text-rose-700 shrink-0">
                                                         {remainingCount}
                                                     </span>
-                                                ) : stepDone ? (
-                                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[9px] font-bold text-emerald-700 shrink-0">
-                                                        ✓
-                                                    </span>
-                                                ) : null}
+                                                )}
                                             </div>
                                             <div className="h-1 w-full rounded-full bg-stone-200/80 overflow-hidden">
                                                 <div
                                                     className={`h-full transition-all duration-300 ${
-                                                        isCurrent
-                                                            ? 'bg-clay-600 w-full'
-                                                            : isPast
-                                                                ? 'bg-emerald-600 w-full'
-                                                                : 'w-0'
+                                                        stepDone
+                                                            ? 'bg-emerald-600 w-full'
+                                                            : isCurrent
+                                                                ? 'bg-clay-600 w-full'
+                                                                : isPast
+                                                                    ? 'bg-emerald-600 w-full'
+                                                                    : 'w-0'
                                                     }`}
                                                 />
                                             </div>

@@ -151,31 +151,46 @@ export default function ProductTable({
                             </td>
                             <td className="px-5 py-3">
                                 <div className="flex flex-col items-center gap-1">
-                                    <span
-                                        className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-                                            product.status === "Active"
-                                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                                                : product.status === "Draft"
-                                                ? "bg-gray-100 text-gray-600 border border-gray-200"
-                                                : product.status === "Archived"
-                                                ? "bg-amber-50 text-amber-700 border border-amber-200/60"
-                                                : product.status === "pending_review"
-                                                ? "bg-amber-50 text-amber-700 border border-amber-200/60"
+                                    {(product.status === "rejected" || product.status === "flagged") && canEditProducts && onResubmitClick ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => onResubmitClick(product)}
+                                            title="Click to view revision feedback and resubmit"
+                                            className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap cursor-pointer transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/50 ${
+                                                product.status === "rejected"
+                                                    ? "bg-rose-50 text-rose-700 border border-rose-200/80 hover:border-rose-300"
+                                                    : "bg-purple-50 text-purple-700 border border-purple-200/80 hover:border-purple-300"
+                                            }`}
+                                        >
+                                            {product.status === "rejected" ? "Needs Revision" : "Flagged"}
+                                        </button>
+                                    ) : (
+                                        <span
+                                            className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                                                product.status === "Active"
+                                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                                                    : product.status === "Draft"
+                                                    ? "bg-gray-100 text-gray-600 border border-gray-200"
+                                                    : product.status === "Archived"
+                                                    ? "bg-amber-50 text-amber-700 border border-amber-200/60"
+                                                    : product.status === "pending_review"
+                                                    ? "bg-amber-50 text-amber-700 border border-amber-200/60"
+                                                    : product.status === "rejected"
+                                                    ? "bg-rose-50 text-rose-700 border border-rose-200/60"
+                                                    : product.status === "flagged"
+                                                    ? "bg-purple-50 text-purple-700 border border-purple-200/60"
+                                                    : "bg-gray-50 text-gray-600 border border-gray-200"
+                                            }`}
+                                        >
+                                            {product.status === "pending_review"
+                                                ? "Pending Review"
                                                 : product.status === "rejected"
-                                                ? "bg-rose-50 text-rose-700 border border-rose-200/60"
+                                                ? "Needs Revision"
                                                 : product.status === "flagged"
-                                                ? "bg-purple-50 text-purple-700 border border-purple-200/60"
-                                                : "bg-gray-50 text-gray-600 border border-gray-200"
-                                        }`}
-                                    >
-                                        {product.status === "pending_review"
-                                            ? "Pending Review"
-                                            : product.status === "rejected"
-                                            ? "Needs Revision"
-                                            : product.status === "flagged"
-                                            ? "Flagged"
-                                            : product.status}
-                                    </span>
+                                                ? "Flagged"
+                                                : product.status}
+                                        </span>
+                                    )}
                                     {product.status === "Draft" && product.activation_readiness && (
                                         <span
                                             className={`text-[10px] font-semibold ${product.activation_readiness.canBeActive ? "text-emerald-700" : "text-stone-600"}`}

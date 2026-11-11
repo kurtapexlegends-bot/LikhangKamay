@@ -85,7 +85,7 @@ export default function DocumentsStep({
                     </span>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 items-stretch">
                     <FileUploadField
                         label="Business / Mayor's Permit"
                         description="or Barangay Micro-Business"

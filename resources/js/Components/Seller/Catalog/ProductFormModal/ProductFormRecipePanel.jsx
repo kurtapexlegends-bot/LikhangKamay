@@ -12,6 +12,7 @@ export default function ProductFormRecipePanel({
     addRecipeItem,
     removeRecipeItem,
     updateRecipeItem,
+    highlightedKey = null,
 }) {
     const { sellerSubscription, auth } = usePage().props;
     const currentTierKey = sellerSubscription?.tierKey 
@@ -23,7 +24,12 @@ export default function ProductFormRecipePanel({
 
     return (
         <div className="space-y-6 animate-fadeIn">
-            <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+            <div
+                data-product-revision-target="materials_bom"
+                className={`scroll-mt-6 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm transition-all duration-300 ${
+                    highlightedKey === "materials_bom" ? "ring-2 ring-clay-500 ring-offset-4 bg-clay-50/20" : ""
+                }`}
+            >
                 <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">

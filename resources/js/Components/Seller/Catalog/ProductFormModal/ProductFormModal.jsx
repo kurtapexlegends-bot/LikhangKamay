@@ -1,7 +1,7 @@
 import React from "react";
 import Modal from "@/Components/Modal";
 import PrimaryButton from "@/Components/PrimaryButton";
-import { X, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { X, Loader2, Check, CheckCircle2, AlertTriangle } from "lucide-react";
 
 // Subcomponents
 import ProductFormBasicDetails from "@/Components/Seller/Catalog/ProductFormModal/ProductFormBasicDetails";
@@ -9,15 +9,7 @@ import ProductFormClaySpecs from "@/Components/Seller/Catalog/ProductFormModal/P
 import ProductFormRecipePanel from "@/Components/Seller/Catalog/ProductFormModal/ProductFormRecipePanel";
 import ProductFormMediaUploads from "@/Components/Seller/Catalog/ProductFormModal/ProductFormMediaUploads";
 import RevisionFeedbackBanner from "@/Components/Common/RevisionFeedbackBanner";
-
-const PRODUCT_FIELD_TAB_MAP = {
-    basic_info: "Essentials",
-    pricing_stock: "Essentials",
-    description: "Details",
-    materials_bom: "Production",
-    cover_media: "Media",
-    model_3d: "Media",
-};
+import useProductRevisionProgress from "@/Components/Seller/Catalog/ProductFormModal/useProductRevisionProgress";
 
 const modalCloseButtonClass =
     "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-400 transition hover:border-gray-300 hover:text-gray-700 min-h-[44px] min-w-[44px]";
@@ -52,21 +44,22 @@ export default function ProductFormModal({
     subscription,
 }) {
     const activeRevision = selectedProduct?.active_revision || null;
-    const flaggedTabs = React.useMemo(() => {
-        const tabs = new Set();
-        (activeRevision?.items || []).forEach((item) => {
-            const tabName = PRODUCT_FIELD_TAB_MAP[item.key];
-            if (tabName) tabs.add(tabName);
-        });
-        return tabs;
-    }, [activeRevision]);
-
-    const handleGoToRevisionField = React.useCallback((key) => {
-        const tabName = PRODUCT_FIELD_TAB_MAP[key];
-        if (tabName && setActiveFormTab) {
-            setActiveFormTab(tabName);
-        }
-    }, [setActiveFormTab]);
+    const {
+        addressedKeys,
+        activeTabKeys,
+        tabRevisionStatus,
+        highlightedKey,
+        handleGoToRevisionField,
+    } = useProductRevisionProgress({
+        isOpen,
+        selectedProduct,
+        activeRevision,
+        data,
+        previews,
+        categories,
+        activeFormTab,
+        setActiveFormTab,
+    });
 
     React.useEffect(() => {
         if (!isOpen) return;
@@ -161,19 +154,37 @@ export default function ProductFormModal({
                             "Details",
                             "Production",
                             "Media",
-                        ].map((tab) => (
-                            <button
-                                key={tab}
-                                type="button"
-                                onClick={() => setActiveFormTab(tab)}
-                                className={`px-4 py-2.5 sm:py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap min-h-[44px] sm:min-h-0 flex-1 inline-flex items-center justify-center gap-1.5 ${activeFormTab === tab ? "bg-white text-clay-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-                            >
-                                <span>{tab}</span>
-                                {flaggedTabs.has(tab) && (
-                                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" title="Revision requested in this section" />
-                                )}
-                            </button>
-                        ))}
+                        ].map((tab) => {
+                            const tabTotal = tabRevisionStatus.totals[tab] || 0;
+                            const tabRemaining = tabRevisionStatus.remaining[tab] || 0;
+                            const tabResolved = tabTotal > 0 && tabRemaining === 0;
+                            return (
+                                <button
+                                    key={tab}
+                                    type="button"
+                                    onClick={() => setActiveFormTab(tab)}
+                                    className={`px-4 py-2.5 sm:py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap min-h-[44px] sm:min-h-0 flex-1 inline-flex items-center justify-center gap-1.5 ${activeFormTab === tab ? "bg-white text-clay-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                >
+                                    <span>{tab}</span>
+                                    {tabRemaining > 0 && (
+                                        <span
+                                            className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-100 px-1 text-[10px] font-bold text-rose-700 shrink-0"
+                                            title={`${tabRemaining} item(s) need revision in ${tab}`}
+                                        >
+                                            {tabRemaining}
+                                        </span>
+                                    )}
+                                    {tabResolved && (
+                                        <span
+                                            className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 shrink-0"
+                                            title={`Revisions updated in ${tab}`}
+                                        >
+                                            <Check size={10} strokeWidth={3} />
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -184,6 +195,8 @@ export default function ProductFormModal({
                             fallbackReason={selectedProduct?.rejection_reason}
                             title={selectedProduct?.status === "flagged" ? "Compliance Flag Details" : "Specific Revisions Requested"}
                             onGoToField={handleGoToRevisionField}
+                            activeKeys={activeTabKeys}
+                            addressedKeys={addressedKeys}
                             variant={selectedProduct?.status === "flagged" ? "rose" : "amber"}
                         />
                     )}
@@ -198,6 +211,7 @@ export default function ProductFormModal({
                             selectedProduct={selectedProduct}
                             subscription={subscription}
                             setActiveFormTab={setActiveFormTab}
+                            highlightedKey={highlightedKey}
                         />
                     )}
 
@@ -217,6 +231,7 @@ export default function ProductFormModal({
                             addRecipeItem={addRecipeItem}
                             removeRecipeItem={removeRecipeItem}
                             updateRecipeItem={updateRecipeItem}
+                            highlightedKey={highlightedKey}
                         />
                     )}
 
@@ -231,6 +246,7 @@ export default function ProductFormModal({
                             handleRemoveGalleryImage={handleRemoveGalleryImage}
                             handleRemoveCover={handleRemoveCover}
                             handleRemoveModel3D={handleRemoveModel3D}
+                            highlightedKey={highlightedKey}
                         />
                     )}
                 </div>

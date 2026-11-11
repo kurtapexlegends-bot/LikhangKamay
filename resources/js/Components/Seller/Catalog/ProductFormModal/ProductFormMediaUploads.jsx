@@ -27,6 +27,7 @@ export default function ProductFormMediaUploads({
     handleRemoveGalleryImage,
     handleRemoveCover,
     handleRemoveModel3D,
+    highlightedKey = null,
 }) {
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -171,7 +172,12 @@ export default function ProductFormMediaUploads({
             {/* Upload Controls Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Cover Photo */}
-                <div>
+                <div
+                    data-product-revision-target="cover_media"
+                    className={`scroll-mt-6 rounded-2xl transition-all duration-300 ${
+                        highlightedKey === "cover_media" ? "ring-2 ring-clay-500 ring-offset-4 bg-clay-50/35" : ""
+                    }`}
+                >
                     <InputLabel value="Cover Photo (Main)" className="mb-2" />
                     <div className="relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 hover:border-clay-400 transition group bg-gray-50">
                         {previews?.cover ? (
@@ -302,7 +308,12 @@ export default function ProductFormMediaUploads({
                         </div>
                     </div>
 
-                    <div className="pt-6 border-t border-gray-100">
+                    <div
+                        data-product-revision-target="model_3d"
+                        className={`scroll-mt-6 pt-6 border-t border-gray-100 rounded-2xl transition-all duration-300 ${
+                            highlightedKey === "model_3d" ? "ring-2 ring-clay-500 ring-offset-4 bg-clay-50/35" : ""
+                        }`}
+                    >
                         <InputLabel value="3D Model" className="mb-2" />
                         {data.model_3d ? (
                             <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-xl">

@@ -255,52 +255,79 @@ const FileUploadField = React.memo(({
 
     const hasFile = Boolean(effectiveFileUrl);
 
+    const renderFileActions = () => (
+        <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
+            <button
+                type="button"
+                onClick={handleView}
+                className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-xs transition hover:bg-stone-50 cursor-pointer"
+            >
+                <Eye size={13} /> View
+            </button>
+            {enableCameraCapture && (
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        cameraInputRef.current?.click();
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-xs transition hover:bg-stone-50 cursor-pointer"
+                >
+                    <Camera size={13} /> Retake
+                </button>
+            )}
+            <button
+                type="button"
+                onClick={handleRemove}
+                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-xs transition hover:bg-rose-100 cursor-pointer"
+            >
+                <Trash2 size={13} /> Remove
+            </button>
+        </div>
+    );
+
     return (
         <div
             data-revision-target={id}
-            className={`scroll-mt-20 flex flex-col rounded-2xl p-2 -m-2 transition-all duration-300 ${
-                isHighlighted ? 'ring-2 ring-clay-500 bg-clay-50/35' : ''
+            className={`scroll-mt-20 h-full flex flex-col rounded-2xl transition-all duration-300 ${
+                isHighlighted ? 'ring-2 ring-clay-500 ring-offset-4 bg-clay-50/35' : ''
             }`}
         >
-            <div className="flex items-baseline justify-between mb-1.5 gap-2">
-                <div className="flex flex-wrap items-baseline gap-1.5 min-w-0">
-                    <label htmlFor={id} className="text-xs sm:text-sm font-semibold text-stone-900 cursor-pointer shrink-0">
+            <div className="flex items-start justify-between mb-2 gap-2 sm:min-h-[38px]">
+                <div className="min-w-0">
+                    <label htmlFor={id} className="block text-xs sm:text-sm font-semibold text-stone-900 cursor-pointer leading-snug">
                         {label}
                     </label>
-                    {description && <span className="text-[11px] text-stone-400 font-normal">({description})</span>}
+                    {description && (
+                        <span className="block text-[11px] text-stone-400 font-normal leading-tight mt-0.5">
+                            {description}
+                        </span>
+                    )}
                 </div>
-                {isFlagged && isAddressed && hasFile ? (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-300 shrink-0">
-                        <CheckCircle2 size={10} /> Updated
-                    </span>
-                ) : isFlagged ? (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-300 shrink-0">
-                        <AlertTriangle size={10} /> Needs Revision
-                    </span>
-                ) : isVerifiedClean && hasFile ? (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200 shrink-0">
-                        <CheckCircle2 size={10} /> Verified — No Changes
-                    </span>
-                ) : hasFile ? (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200 shrink-0">
-                        Attached
-                    </span>
-                ) : null}
+                <div className="shrink-0 mt-0.5">
+                    {isFlagged && isAddressed && hasFile ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-300">
+                            <CheckCircle2 size={10} /> Updated
+                        </span>
+                    ) : isFlagged ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-300">
+                            <AlertTriangle size={10} /> Needs Revision
+                        </span>
+                    ) : isVerifiedClean && hasFile ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 size={10} /> Verified — No Changes
+                        </span>
+                    ) : hasFile ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+                            Attached
+                        </span>
+                    ) : null}
+                </div>
             </div>
-
-            {isFlagged && revisionNote && (
-                <p className={`mb-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
-                    isAddressed && hasFile
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                        : 'bg-amber-50 border-amber-200 text-amber-900'
-                }`}>
-                    {revisionNote}
-                </p>
-            )}
 
             <div
                 onClick={() => !uploading && !showConfirmDelete && inputRef.current?.click()}
-                className={`mt-1 relative flex min-h-[125px] cursor-pointer flex-col items-center justify-center rounded-xl border p-4 transition-all ${
+                className={`relative flex-1 min-h-[196px] cursor-pointer flex flex-col items-center justify-center rounded-xl border p-4 transition-all ${
                     isFlagged && isAddressed && hasFile
                         ? 'border-emerald-300 bg-emerald-50/25 hover:border-emerald-400'
                         : isFlagged
@@ -314,6 +341,18 @@ const FileUploadField = React.memo(({
                                 : 'border-dashed border-stone-300 bg-white hover:border-clay-400 hover:bg-stone-50/50'
                 }`}
             >
+                {isFlagged && revisionNote && !uploading && !showConfirmDelete && (
+                    <p
+                        onClick={(e) => e.stopPropagation()}
+                        className={`w-full mb-3 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium text-left transition-colors ${
+                            isAddressed && hasFile
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                                : 'bg-amber-50 border-amber-200 text-amber-900'
+                        }`}
+                    >
+                        {revisionNote}
+                    </p>
+                )}
                 {uploading ? (
                     <div className="flex flex-col items-center justify-center text-center" onClick={(e) => e.stopPropagation()}>
                         <Loader2 size={28} className="mb-2 text-clay-600 animate-spin" />
@@ -367,22 +406,7 @@ const FileUploadField = React.memo(({
                         <p className="max-w-full truncate text-xs font-semibold text-stone-800">
                             Document on File (Photo)
                         </p>
-                        <div className="mt-2.5 flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={handleView}
-                                className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-xs transition hover:bg-stone-50 cursor-pointer"
-                            >
-                                <Eye size={13} /> View
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleRemove}
-                                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-xs transition hover:bg-rose-100 cursor-pointer"
-                            >
-                                <Trash2 size={13} /> Remove
-                            </button>
-                        </div>
+                        {renderFileActions()}
                     </div>
                 ) : hasFile ? (
                     <div className="flex w-full flex-col items-center text-center">
@@ -392,30 +416,30 @@ const FileUploadField = React.memo(({
                         <p className="max-w-full truncate text-xs font-semibold text-stone-800">
                             Document on File (PDF)
                         </p>
-                        <div className="mt-2.5 flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={handleView}
-                                className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-xs transition hover:bg-stone-50 cursor-pointer"
-                            >
-                                <Eye size={13} /> View
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleRemove}
-                                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-xs transition hover:bg-rose-100 cursor-pointer"
-                            >
-                                <Trash2 size={13} /> Remove
-                            </button>
-                        </div>
+                        {renderFileActions()}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center text-center">
+                    <div className="flex flex-col items-center text-center w-full">
                         <div className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-500">
                             <UploadCloud size={17} />
                         </div>
                         <p className="text-xs font-semibold text-stone-800">Upload document</p>
                         <p className="text-[10px] text-stone-400 mt-0.5">PDF, PNG, or JPG (max 4MB)</p>
+                        {enableCameraCapture && (
+                            <div className="mt-3 pt-2.5 border-t border-stone-200/70 w-full flex justify-center">
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        cameraInputRef.current?.click();
+                                    }}
+                                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-2xs transition cursor-pointer min-h-[34px]"
+                                >
+                                    <Camera size={13} />
+                                    <span>Take Live Photo of Valid ID</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
                 <input
@@ -440,16 +464,6 @@ const FileUploadField = React.memo(({
                     />
                 )}
             </div>
-            {enableCameraCapture && !uploading && (
-                <button
-                    type="button"
-                    onClick={() => cameraInputRef.current?.click()}
-                    className="mt-2 w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-stone-50 hover:bg-stone-100 py-2 px-3 text-xs font-semibold text-stone-700 transition cursor-pointer min-h-[38px]"
-                >
-                    <Camera size={13} />
-                    <span>Take Live Photo of Valid ID</span>
-                </button>
-            )}
             <InputError message={uploadError || error} className="mt-2" />
         </div>
     );

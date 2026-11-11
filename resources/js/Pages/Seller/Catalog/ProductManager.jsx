@@ -275,77 +275,80 @@ export default function ProductManager({
                         return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
                     };
 
-                    const renderForm = () => {
-                        if (!state.selectedResubmitProduct) return null;
-                        const count = state.selectedResubmitProduct.monthly_resubmission_count || 0;
-                        const limitReached = count >= 3;
-                        const remaining = Math.max(0, 3 - count);
+                    const selectedResubmitProduct = state.selectedResubmitProduct;
+                    const count = selectedResubmitProduct?.monthly_resubmission_count || 0;
+                    const limitReached = count >= 3;
+                    const remaining = Math.max(0, 3 - count);
+
+                    const renderActions = (inDrawer = false) => (
+                        <div className={`flex items-center justify-end gap-2.5 ${inDrawer ? 'w-full' : 'pt-4 border-t border-stone-100'}`}>
+                            <button
+                                type="button"
+                                onClick={state.closeResubmitModal}
+                                className="px-4 py-2 border border-stone-200 bg-white rounded-xl text-xs sm:text-sm font-bold text-stone-700 hover:bg-stone-50 transition min-h-[44px] cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            {!limitReached && (
+                                <button
+                                    type="submit"
+                                    form="product-resubmit-form"
+                                    disabled={state.resubmitForm.processing}
+                                    className="px-5 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-clay-600 hover:bg-clay-700 transition disabled:opacity-50 min-h-[44px] cursor-pointer"
+                                >
+                                    {state.resubmitForm.processing ? "Submitting..." : buttonText}
+                                </button>
+                            )}
+                        </div>
+                    );
+
+                    const renderFormBody = () => {
+                        if (!selectedResubmitProduct) return null;
                         return (
-                            <form onSubmit={state.submitResubmission} className="space-y-6 animate-fadeIn">
-                                <div className="space-y-4">
-                                    <RevisionFeedbackBanner
-                                        revision={state.selectedResubmitProduct.active_revision}
-                                        fallbackReason={state.selectedResubmitProduct.rejection_reason || "No specific reason provided."}
-                                        title={reasonLabel}
-                                        variant={isFlagged ? "amber" : "rose"}
-                                    />
+                            <form id="product-resubmit-form" onSubmit={state.submitResubmission} className="space-y-4 animate-fadeIn">
+                                <RevisionFeedbackBanner
+                                    revision={selectedResubmitProduct.active_revision}
+                                    fallbackReason={selectedResubmitProduct.rejection_reason || "No specific reason provided."}
+                                    title={reasonLabel}
+                                    variant={isFlagged ? "amber" : "rose"}
+                                />
 
-                                    <div className="rounded-xl border border-stone-250 bg-stone-50 p-4 space-y-2">
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="font-bold text-stone-600 uppercase tracking-wider">
-                                                Monthly Revisions
-                                            </span>
-                                            <span className={`font-extrabold ${limitReached ? "text-rose-600" : "text-stone-700"}`}>
-                                                {count} / 3 submitted
-                                            </span>
-                                        </div>
-                                        <p className="text-[11px] text-stone-500 leading-normal">
-                                            You can submit revisions up to 3 times per month.
-                                            {limitReached 
-                                                ? " You have reached the limit for this month." 
-                                                : ` You have ${remaining} revision(s) remaining for this month.`}
-                                        </p>
-                                        {count > 0 && (
-                                            <p className="text-[11px] text-amber-700 font-semibold mt-1 flex items-center gap-1">
-                                                <span>•</span> Resets on {getResetDate()}.
-                                            </p>
-                                        )}
+                                <div className="rounded-xl border border-stone-200 bg-stone-50 p-3.5 space-y-1.5">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="font-bold text-stone-600 uppercase tracking-wider">
+                                            Monthly Revisions
+                                        </span>
+                                        <span className={`font-extrabold ${limitReached ? "text-rose-600" : "text-stone-700"}`}>
+                                            {count} / 3 submitted
+                                        </span>
                                     </div>
-
-                                    {!limitReached && (
-                                        <div>
-                                            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-                                                {notesLabel}
-                                            </label>
-                                            <textarea
-                                                value={state.resubmitForm.data.notes}
-                                                onChange={(e) => state.resubmitForm.setData("notes", e.target.value)}
-                                                rows={4}
-                                                className="w-full rounded-xl border border-stone-200 focus:border-clay-400 focus:ring-clay-400/20 text-sm placeholder-stone-400"
-                                                placeholder={notesPlaceholder}
-                                            />
-                                        </div>
+                                    <p className="text-[11px] text-stone-500 leading-normal">
+                                        You can submit revisions up to 3 times per month.
+                                        {limitReached
+                                            ? " You have reached the limit for this month."
+                                            : ` You have ${remaining} revision(s) remaining for this month.`}
+                                    </p>
+                                    {count > 0 && (
+                                        <p className="text-[11px] text-amber-700 font-semibold flex items-center gap-1">
+                                            <span>•</span> Resets on {getResetDate()}.
+                                        </p>
                                     )}
                                 </div>
 
-                                <div className="flex justify-end gap-3 pt-4 border-t border-stone-100">
-                                    <button
-                                        type="button"
-                                        onClick={state.closeResubmitModal}
-                                        className="px-4 py-2.5 border border-stone-200 rounded-xl text-sm font-bold text-stone-700 hover:bg-stone-50 transition min-h-[44px]"
-                                    >
-                                        Cancel
-                                    </button>
-                                    {!limitReached && (
-                                        <button
-                                            type="submit"
-                                            disabled={state.resubmitForm.processing}
-                                            className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-clay-600 hover:bg-clay-700 transition disabled:opacity-50 min-h-[44px]"
-                                        >
-                                            {state.resubmitForm.processing ? "Submitting..." : buttonText}
-                                        </button>
-                                    )}
-                                </div>
+                                {!limitReached && (
+                                    <div>
+                                        <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                                            {notesLabel}
+                                        </label>
+                                        <textarea
+                                            value={state.resubmitForm.data.notes}
+                                            onChange={(e) => state.resubmitForm.setData("notes", e.target.value)}
+                                            rows={3}
+                                            className="w-full rounded-xl border border-stone-200 focus:border-clay-400 focus:ring-clay-400/20 text-sm placeholder-stone-400"
+                                            placeholder={notesPlaceholder}
+                                        />
+                                    </div>
+                                )}
                             </form>
                         );
                     };
@@ -356,18 +359,19 @@ export default function ProductManager({
                             onClose={state.closeResubmitModal}
                             title={titleText}
                             widthClass="max-w-md"
+                            bodyClassName="relative flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5"
+                            footer={renderActions(true)}
                         >
-                            <div className="p-4">
-                                {renderForm()}
-                            </div>
+                            {renderFormBody()}
                         </SlideOverDrawer>
                     ) : (
                         <Modal show={state.resubmitModalOpen} onClose={state.closeResubmitModal} maxWidth="md">
-                            <div className="p-6">
-                                <h2 className="text-lg font-bold text-stone-900 mb-4">
+                            <div className="p-5 sm:p-6 space-y-4">
+                                <h2 className="text-lg font-bold text-stone-900">
                                     {titleText}
                                 </h2>
-                                {renderForm()}
+                                {renderFormBody()}
+                                {renderActions(false)}
                             </div>
                         </Modal>
                     );
