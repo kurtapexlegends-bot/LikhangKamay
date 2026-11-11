@@ -7,6 +7,7 @@ import {
 import InputLabel from '@/Components/InputLabel';
 import { useToast } from '@/Components/ToastContext';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
+import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import useFlashToast from '@/hooks/useFlashToast';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
 import SellerHeader from '@/Layouts/SellerHeader';
@@ -18,6 +19,7 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
     const { filters = {} } = usePage().props;
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [productSearch, setProductSearch] = useState('');
+    const [selectedFeedbackRequest, setSelectedFeedbackRequest] = useState(null);
     const { openSidebar } = useSellerWorkspaceShell();
 
     // Sync search from URL (for Global Search support)
@@ -317,13 +319,20 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                                             <span className="text-[9px] text-stone-400 font-semibold uppercase tracking-wider">Timeline details</span>
                                             <div className="mt-1 text-[11px] text-stone-600 leading-normal">
                                                 {req.status === 'rejected' && (req.active_revision || req.rejection_reason) ? (
-                                                    <div className="mt-1">
-                                                        <RevisionFeedbackBanner
-                                                            revision={req.active_revision}
-                                                            fallbackReason={req.rejection_reason}
-                                                            title="Revision Requested"
-                                                            variant="rose"
-                                                        />
+                                                    <div className="mt-1 flex items-center justify-between gap-2">
+                                                        <span className="text-[11px] font-semibold text-stone-700">Revision requested</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setSelectedFeedbackRequest(req)}
+                                                            className="inline-flex items-center gap-1 text-[11px] font-bold text-clay-700 hover:text-clay-900 underline underline-offset-2 transition cursor-pointer"
+                                                        >
+                                                            <span>View Feedback</span>
+                                                            {req.active_revision?.items?.length > 0 && (
+                                                                <span className="inline-flex items-center justify-center rounded-full bg-clay-100 text-clay-800 text-[10px] px-1.5 py-0.2 font-extrabold">
+                                                                    {req.active_revision.items.length}
+                                                                </span>
+                                                            )}
+                                                        </button>
                                                     </div>
                                                 ) : req.status === 'approved' ? (
                                                     <p className="text-emerald-700 font-medium">Approved for a 7-day featured run.</p>
@@ -350,6 +359,56 @@ export default function Sponsorships({ auth, creditsAvailable, activeProducts, r
                 </div>
 
             </main>
+
+            {/* Sponsorship Revision Feedback Drawer */}
+            <SlideOverDrawer
+                show={Boolean(selectedFeedbackRequest)}
+                onClose={() => setSelectedFeedbackRequest(null)}
+                title="Sponsorship Application Notes"
+                subtitle={selectedFeedbackRequest?.product?.name || 'Campaign History'}
+                widthClass="max-w-lg"
+            >
+                {selectedFeedbackRequest && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3 p-3.5 rounded-xl border border-stone-200/90 bg-stone-50/70">
+                            <div className="w-12 h-12 rounded-lg bg-white border border-stone-200/80 overflow-hidden shrink-0 flex items-center justify-center">
+                                {selectedFeedbackRequest.product?.cover_image_url ? (
+                                    <img
+                                        src={selectedFeedbackRequest.product.cover_image_url}
+                                        alt=""
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = '/images/placeholder.svg';
+                                        }}
+                                    />
+                                ) : (
+                                    <Package size={20} className="text-stone-300" />
+                                )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <h4 className="text-xs font-bold text-stone-900 truncate">
+                                    {selectedFeedbackRequest.product?.name || 'Unknown Product'}
+                                </h4>
+                                <p className="text-[11px] text-stone-500 font-mono mt-0.5">
+                                    {selectedFeedbackRequest.product?.sku || 'No SKU'}
+                                </p>
+                            </div>
+                            <div className="shrink-0">{getStatusBadge(selectedFeedbackRequest.status)}</div>
+                        </div>
+
+                        <div>
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">Reviewer Feedback</h4>
+                            <RevisionFeedbackBanner
+                                revision={selectedFeedbackRequest.active_revision}
+                                fallbackReason={selectedFeedbackRequest.rejection_reason}
+                                title="Revision Requested"
+                                variant="rose"
+                            />
+                        </div>
+                    </div>
+                )}
+            </SlideOverDrawer>
         </>
     );
 }

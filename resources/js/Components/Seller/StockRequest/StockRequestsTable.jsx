@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
-import { AlertTriangle, Truck, Package, ArrowRight, Inbox, Store, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Truck, Package, ArrowRight, Inbox, Store } from 'lucide-react';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
+import SlideOverDrawer from '@/Components/SlideOverDrawer';
 import StatusBadge from './StatusBadge';
 import RequestDetailsCard from './RequestDetailsCard';
 import { formatPeso } from '@/utils/stockRequestHelpers';
@@ -16,6 +17,7 @@ export default function StockRequestsTable({
     onReceiveClick,
     onTransferClick,
 }) {
+    const [viewingRevisionRequest, setViewingRevisionRequest] = useState(null);
     if (filteredRequests.length === 0) {
         const descriptions = {
             'all': 'Stock requests from inventory will appear here once created.',
@@ -83,12 +85,19 @@ export default function StockRequestsTable({
                         <RequestDetailsCard request={req} isMobile={true} />
 
                         {req.status === 'rejected' && (req.active_revision || req.rejection_reason) && (
-                            <RevisionFeedbackBanner
-                                revision={req.active_revision}
-                                fallbackReason={req.rejection_reason}
-                                title="Revision Requested"
-                                variant="rose"
-                            />
+                            <div className="flex items-center justify-between rounded-xl border border-stone-200/90 bg-stone-50/80 px-3.5 py-2.5 shadow-2xs">
+                                <div className="flex items-center gap-2 text-stone-700 min-w-0">
+                                    <AlertTriangle size={14} className="text-clay-600 shrink-0" />
+                                    <span className="text-xs font-semibold truncate">Revision feedback available</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setViewingRevisionRequest(req)}
+                                    className="text-xs font-bold text-clay-700 hover:text-clay-900 underline underline-offset-2 shrink-0 ml-2"
+                                >
+                                    View Notes
+                                </button>
+                            </div>
                         )}
 
                         {/* Action Buttons on Mobile */}
@@ -194,29 +203,21 @@ export default function StockRequestsTable({
                                     <span className="text-sm font-black text-clay-700">{formatPeso(req.total_cost)}</span>
                                 </td>
                                 <td className="px-4 py-3.5 align-middle">
-                                    <div className="flex flex-col items-start gap-1.5 max-w-[200px]">
+                                    <div className="flex flex-col items-start gap-1">
                                         <StatusBadge status={req.status} />
                                         {req.status === 'rejected' && (req.active_revision || req.rejection_reason) && (
-                                            <div className="rounded-xl border border-red-200/80 bg-red-50/60 p-2 shadow-2xs w-full space-y-1">
-                                                <div className="flex items-center gap-1 text-red-600">
-                                                    <AlertTriangle size={10} strokeWidth={2.5} />
-                                                    <span className="text-[9px] font-bold uppercase tracking-wider">Revision Needed</span>
-                                                </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setViewingRevisionRequest(req)}
+                                                className="inline-flex items-center gap-1.5 text-[11px] font-bold text-clay-700 hover:text-clay-900 underline underline-offset-2 transition cursor-pointer mt-0.5"
+                                            >
+                                                <span>View Feedback</span>
                                                 {req.active_revision?.items?.length > 0 && (
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {req.active_revision.items.map((item, idx) => (
-                                                            <span key={item.key || idx} className="inline-block rounded bg-white border border-red-200 px-1.5 py-0.5 text-[9px] font-bold text-red-800">
-                                                                {item.label}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                                {(req.active_revision?.summary_note || req.active_revision?.summary_reason || req.rejection_reason) && (
-                                                    <span className="block text-[10px] font-medium leading-relaxed text-red-800 break-words line-clamp-2" title={req.active_revision?.summary_note || req.active_revision?.summary_reason || req.rejection_reason}>
-                                                        {req.active_revision?.summary_note || req.active_revision?.summary_reason || req.rejection_reason}
+                                                    <span className="inline-flex items-center justify-center rounded-full bg-clay-100 text-clay-800 text-[10px] px-1.5 py-0.2 font-extrabold">
+                                                        {req.active_revision.items.length}
                                                     </span>
                                                 )}
-                                            </div>
+                                            </button>
                                         )}
                                     </div>
                                 </td>
@@ -270,6 +271,48 @@ export default function StockRequestsTable({
                     </tbody>
                 </table>
             </div>
+
+            {/* Revision Feedback Slide-over Drawer */}
+            <SlideOverDrawer
+                show={Boolean(viewingRevisionRequest)}
+                onClose={() => setViewingRevisionRequest(null)}
+                title={`Restock Request #${viewingRevisionRequest?.id || ''}`}
+                subtitle={viewingRevisionRequest?.supply?.name ? `${viewingRevisionRequest.supply.name} • ${viewingRevisionRequest.quantity} ${viewingRevisionRequest.supply.unit || 'units'}` : 'Revision Details'}
+                widthClass="max-w-lg"
+            >
+                {viewingRevisionRequest && (
+                    <div className="space-y-4">
+                        <div className="rounded-xl border border-stone-200/90 bg-stone-50/70 p-3.5 space-y-2.5">
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-stone-500 font-medium">Status</span>
+                                <StatusBadge status={viewingRevisionRequest.status} />
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-stone-500 font-medium">Material Supply</span>
+                                <span className="font-bold text-stone-900">{viewingRevisionRequest.supply?.name || 'Item'}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-stone-500 font-medium">Quantity Requested</span>
+                                <span className="font-bold text-stone-900">{viewingRevisionRequest.quantity} {viewingRevisionRequest.supply?.unit || 'pcs'}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-stone-500 font-medium">Total Cost</span>
+                                <span className="font-bold text-clay-700">{formatPeso(viewingRevisionRequest.total_cost)}</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">Reviewer Feedback</h4>
+                            <RevisionFeedbackBanner
+                                revision={viewingRevisionRequest.active_revision}
+                                fallbackReason={viewingRevisionRequest.rejection_reason}
+                                title="Revision Requested"
+                                variant="rose"
+                            />
+                        </div>
+                    </div>
+                )}
+            </SlideOverDrawer>
         </>
     );
 }
