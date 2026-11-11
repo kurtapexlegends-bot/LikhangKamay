@@ -452,6 +452,7 @@ class SuperAdminService
                 'raw_submitted_at' => $user->setup_completed_at?->toIso8601String(),
                 'viewed_documents' => $this->getViewedArtisanDocumentKeys($user->id),
                 'viewed_document_keys' => $this->getViewedArtisanDocumentKeys($user->id),
+                'revision_review' => $user->formatRevisionReviewForAdmin('artisan_kyc'),
             ]);
     }
 

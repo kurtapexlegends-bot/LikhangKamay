@@ -89,6 +89,7 @@ class CatalogController extends Controller
             ->through(function (SponsorshipRequest $req) {
                 $arr = $req->toArray();
                 $arr['active_revision'] = $req->formatActiveRevisionForFrontend();
+                $arr['revision_review'] = $req->formatRevisionReviewForAdmin('sponsorship');
 
                 return $arr;
             });
@@ -98,6 +99,7 @@ class CatalogController extends Controller
             ->through(function (Product $product) {
                 $arr = $product->toArray();
                 $arr['active_revision'] = $product->formatActiveRevisionForFrontend();
+                $arr['revision_review'] = $product->formatRevisionReviewForAdmin('product');
 
                 return $arr;
             });

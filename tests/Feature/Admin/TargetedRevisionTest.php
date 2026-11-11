@@ -328,4 +328,124 @@ class TargetedRevisionTest extends TestCase
             'revisable_id' => $approval->id,
         ]);
     }
+
+    public function test_super_admin_receives_revision_feedback_for_resubmitted_artisan_kyc(): void
+    {
+        Mail::fake();
+        Notification::fake();
+
+        $admin = User::factory()->superAdmin()->create();
+        $artisan = User::factory()->artisanPending()->create([
+            'shop_name' => 'Original Pottery Shop',
+            'phone_number' => '09171112222',
+            'business_permit' => 'legal_docs/permit_v1.jpg',
+            'valid_id' => 'legal_docs/id_v1.jpg',
+            'setup_completed_at' => now()->subHours(2),
+        ]);
+
+        // Super Admin requests revisions on valid_id and shop_details
+        $this->actingAs($admin)->post(route('admin.artisan.reject', $artisan->id), [
+            'reason' => 'Fix ID photo and update shop name.',
+            'revision_items' => [
+                ['key' => 'valid_id', 'label' => 'Valid Government ID (Front)', 'note' => 'Blurry photo.'],
+                ['key' => 'shop_details', 'label' => 'Shop Name & Contact Info', 'note' => 'Needs to match DTI.'],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $artisan->refresh();
+        $this->assertSame('rejected', $artisan->artisan_status);
+
+        // Artisan fulfills the revisions and resubmits
+        $artisan->update([
+            'valid_id' => 'legal_docs/id_v2_crystal_clear.jpg',
+            'shop_name' => 'Renamed Pottery Studio',
+            'setup_completed_at' => now(),
+            'artisan_status' => 'pending',
+            'artisan_rejection_reason' => null,
+        ]);
+        $artisan->resolveActiveRevisions();
+
+        // Admin inspects the resubmitted artisan
+        $reviewData = $artisan->fresh()->formatRevisionReviewForAdmin('artisan_kyc');
+
+        $this->assertNotNull($reviewData);
+        $this->assertTrue($reviewData['has_resubmitted_revision']);
+        $this->assertSame(2, $reviewData['total_items_count']);
+        $this->assertContains('valid_id', $reviewData['revised_keys']);
+        $this->assertContains('shop_details', $reviewData['revised_keys']);
+
+        // Check evaluated items
+        $validIdItem = collect($reviewData['items'])->firstWhere('key', 'valid_id');
+        $this->assertTrue($validIdItem['is_changed']);
+        $this->assertSame('New document uploaded', $validIdItem['change_summary']);
+
+        $shopDetailsItem = collect($reviewData['items'])->firstWhere('key', 'shop_details');
+        $this->assertTrue($shopDetailsItem['is_changed']);
+        $this->assertSame('Shop details updated', $shopDetailsItem['change_summary']);
+    }
+
+    public function test_super_admin_receives_revision_feedback_for_resubmitted_product(): void
+    {
+        Mail::fake();
+        Notification::fake();
+        Product::$bypassReview = true;
+        Category::create(['name' => 'Vases', 'slug' => 'vases']);
+
+        $admin = User::factory()->superAdmin()->create();
+        $seller = User::factory()->artisanApproved()->create();
+        $product = Product::create([
+            'user_id' => $seller->id,
+            'name' => 'Blue Ming Vase',
+            'slug' => 'blue-ming-vase',
+            'sku' => 'VASE-123',
+            'category' => 'Vases',
+            'description' => 'Original description for craft piece.',
+            'price' => 1500,
+            'cost_price' => 800,
+            'stock' => 10,
+            'weight' => 500,
+            'cover_photo_path' => 'products/cover_v1.jpg',
+            'gallery_paths' => ['products/g1.jpg'],
+            'status' => 'pending_review',
+        ]);
+        Product::$bypassReview = false;
+
+        // Super Admin requests revisions on pricing_stock and description
+        $this->actingAs($admin)->post(route('admin.catalog.moderate'), [
+            'ids' => [$product->id],
+            'action' => 'reject',
+            'rejection_reason' => 'Lower price and improve description.',
+            'revision_items' => [
+                ['key' => 'pricing_stock', 'label' => 'Pricing, Weight & Stock Units', 'note' => 'Please lower price.'],
+                ['key' => 'description', 'label' => 'Description & Craft Story', 'note' => 'Provide more craft story details.'],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $product->refresh();
+        $this->assertSame('rejected', $product->status);
+
+        // Seller updates the requested fields and resubmits
+        $product->update([
+            'price' => 1200,
+            'description' => 'Updated artisanal craft story highlighting Cavite clay heritage.',
+            'status' => 'pending_review',
+            'rejection_reason' => null,
+        ]);
+        $product->resolveActiveRevisions();
+
+        $reviewData = $product->fresh()->formatRevisionReviewForAdmin('product');
+        $this->assertNotNull($reviewData);
+        $this->assertTrue($reviewData['has_resubmitted_revision']);
+        $this->assertSame(2, $reviewData['total_items_count']);
+        $this->assertContains('pricing_stock', $reviewData['revised_keys']);
+        $this->assertContains('description', $reviewData['revised_keys']);
+
+        $pricingItem = collect($reviewData['items'])->firstWhere('key', 'pricing_stock');
+        $this->assertTrue($pricingItem['is_changed']);
+        $this->assertSame('Price / inventory updated', $pricingItem['change_summary']);
+
+        $descItem = collect($reviewData['items'])->firstWhere('key', 'description');
+        $this->assertTrue($descItem['is_changed']);
+        $this->assertSame('Description updated', $descItem['change_summary']);
+    }
 }

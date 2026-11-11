@@ -103,4 +103,127 @@ class RevisionSchemaRegistry
 
         return implode(' ', $parts);
     }
+
+    /**
+     * Snapshot the current field value of a model for revision diffing.
+     */
+    public static function snapshotField(object $model, string $schemaKey, string $fieldKey): mixed
+    {
+        if ($schemaKey === 'artisan_kyc') {
+            return match ($fieldKey) {
+                'shop_details' => [
+                    'shop_name' => trim((string) ($model->shop_name ?? '')),
+                    'phone_number' => trim((string) ($model->phone_number ?? '')),
+                ],
+                'shop_address' => [
+                    'street_address' => trim((string) ($model->street_address ?? '')),
+                    'city' => trim((string) ($model->city ?? '')),
+                    'barangay' => trim((string) ($model->barangay ?? '')),
+                    'zip_code' => trim((string) ($model->zip_code ?? '')),
+                    'latitude' => $model->latitude !== null ? (string) $model->latitude : null,
+                    'longitude' => $model->longitude !== null ? (string) $model->longitude : null,
+                ],
+                'business_permit' => trim((string) ($model->business_permit ?? '')),
+                'dti_registration' => trim((string) ($model->dti_registration ?? '')),
+                'valid_id' => trim((string) ($model->valid_id ?? '')),
+                'tin_id' => trim((string) ($model->tin_id ?? '')),
+                'face_verification' => [
+                    'selfie' => trim((string) ($model->kyc_selfie_path ?? '')),
+                    'liveness' => $model->kyc_liveness_verified_at ? (string) $model->kyc_liveness_verified_at : null,
+                ],
+                'payout_info' => [
+                    'method' => strtolower(trim((string) ($model->payout_method ?? ''))),
+                    'account_name' => trim((string) ($model->payout_account_name ?? '')),
+                    'account_number' => trim((string) ($model->payout_account_number ?? '')),
+                ],
+                default => null,
+            };
+        }
+
+        if ($schemaKey === 'product') {
+            return match ($fieldKey) {
+                'basic_info' => [
+                    'name' => trim((string) ($model->name ?? '')),
+                    'category' => trim((string) ($model->category ?? '')),
+                ],
+                'description' => trim((string) ($model->description ?? '')),
+                'pricing_stock' => [
+                    'price' => $model->price !== null ? (string) $model->price : '',
+                    'cost_price' => $model->cost_price !== null ? (string) $model->cost_price : '',
+                    'stock' => $model->stock !== null ? (string) $model->stock : '',
+                    'weight' => $model->weight !== null ? (string) $model->weight : '',
+                ],
+                'cover_media' => [
+                    'cover' => trim((string) ($model->cover_photo_path ?? '')),
+                    'gallery' => is_array($model->gallery_paths) ? array_values($model->gallery_paths) : [],
+                ],
+                'model_3d' => trim((string) ($model->model_3d_path ?? '')),
+                'materials_bom' => [
+                    'production_method' => (string) ($model->production_method ?? 'resell'),
+                    'track_as_supply' => (bool) ($model->track_as_supply ?? false),
+                    'recipes' => method_exists($model, 'relationLoaded') && $model->relationLoaded('recipes')
+                        ? $model->recipes->map(fn ($r) => ['supply_id' => (string) $r->supply_id, 'qty' => (string) $r->quantity_required])->values()->all()
+                        : [],
+                ],
+                default => null,
+            };
+        }
+
+        return null;
+    }
+
+    /**
+     * Attach field snapshots to each normalized revision item.
+     */
+    public static function attachSnapshots(object $model, string $schemaKey, array $normalizedItems): array
+    {
+        foreach ($normalizedItems as &$item) {
+            $key = $item['key'] ?? '';
+            if ($key !== '') {
+                $item['snapshot'] = self::snapshotField($model, $schemaKey, $key);
+            }
+        }
+        unset($item);
+
+        return $normalizedItems;
+    }
+
+    /**
+     * Compare a model's current field value against a recorded snapshot.
+     * Returns true if changed, false if unchanged.
+     */
+    public static function compareField(object $model, string $schemaKey, string $fieldKey, mixed $snapshot): bool
+    {
+        if ($snapshot === null) {
+            return false;
+        }
+
+        $current = self::snapshotField($model, $schemaKey, $fieldKey);
+        if ($current === null) {
+            return false;
+        }
+
+        return $current != $snapshot;
+    }
+
+    /**
+     * Generate concise change summary text for reviewers.
+     */
+    public static function summarizeChange(string $schemaKey, string $fieldKey, bool $isChanged = true): string
+    {
+        return match ($fieldKey) {
+            'business_permit', 'dti_registration', 'valid_id', 'tin_id' => 'New document uploaded',
+            'face_verification' => 'New live selfie captured',
+            'shop_details' => 'Shop details updated',
+            'shop_address' => 'Workshop address/pin updated',
+            'payout_info' => 'Payout details updated',
+            'cover_media', 'product_media' => 'Media assets updated',
+            'model_3d' => '3D model file updated',
+            'basic_info' => 'Title / category updated',
+            'description' => 'Description updated',
+            'pricing_stock' => 'Price / inventory updated',
+            'materials_bom' => 'Materials recipe updated',
+            default => 'Updated in resubmission',
+        };
+    }
 }
