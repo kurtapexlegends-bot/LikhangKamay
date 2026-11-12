@@ -51,7 +51,9 @@ class PolicyController extends Controller
 
         $policiesByType = [];
         foreach (PlatformPolicy::ALL_TYPES as $type) {
-            $versions = ($grouped->get($type) ?? collect())
+            $typeRecords = $grouped->get($type) ?? collect();
+            $activeRecord = $typeRecords->first(fn (PlatformPolicy $p) => (bool) $p->is_active);
+            $versions = $typeRecords
                 ->map(fn (PlatformPolicy $p) => [
                     'id' => $p->id,
                     'type' => $p->type,
@@ -65,7 +67,7 @@ class PolicyController extends Controller
                 ]);
 
             $policiesByType[$type] = [
-                'active' => $this->policyService->getSerializedActivePolicy($type),
+                'active' => $this->policyService->serializePolicyRecord($activeRecord, $type),
                 'versions' => $versions->values()->all(),
             ];
         }

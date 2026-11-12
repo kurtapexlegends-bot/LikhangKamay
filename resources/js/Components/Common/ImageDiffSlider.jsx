@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MoveHorizontal, RotateCcw, ImageIcon, AlertCircle } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/media';
 
 /**
  * Reusable Side-by-Side Image Diff Slider for visual dispute inspections.
@@ -20,16 +21,27 @@ export default function ImageDiffSlider({
 }) {
     const [sliderPosition, setSliderPosition] = useState(50);
     const [isDragging, setIsDragging] = useState(false);
+    const [containerWidth, setContainerWidth] = useState(null);
     const containerRef = useRef(null);
 
-    const normalizeUrl = (url) => {
-        if (!url) return '';
-        if (typeof url !== 'string') return '';
-        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/storage') || url.startsWith('data:')) {
-            return url;
+    useEffect(() => {
+        const node = containerRef.current;
+        if (!node) return undefined;
+
+        const updateWidth = () => setContainerWidth(node.clientWidth || null);
+        updateWidth();
+
+        if (typeof window !== 'undefined' && typeof window.ResizeObserver !== 'undefined') {
+            const observer = new window.ResizeObserver(updateWidth);
+            observer.observe(node);
+            return () => observer.disconnect();
         }
-        return `/storage/${url.replace(/^\/+/, '')}`;
-    };
+
+        window.addEventListener('resize', updateWidth);
+        return () => window.removeEventListener('resize', updateWidth);
+    }, []);
+
+    const normalizeUrl = (url) => resolveImageUrl(url, '');
 
     const beforeSrc = normalizeUrl(beforeImage);
     const afterSrc = normalizeUrl(afterImage);
@@ -163,7 +175,7 @@ export default function ImageDiffSlider({
                     <div
                         className="absolute inset-0 h-full"
                         style={{
-                            width: containerRef.current ? `${containerRef.current.clientWidth}px` : '100%',
+                            width: containerWidth ? `${containerWidth}px` : '100%',
                             maxWidth: 'none'
                         }}
                     >

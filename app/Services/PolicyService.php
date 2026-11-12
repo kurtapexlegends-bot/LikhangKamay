@@ -22,6 +22,11 @@ class PolicyService
 {
     private const CACHE_TTL_SECONDS = 300;
 
+    /**
+     * @var array<string, bool>
+     */
+    private array $tableExistsMemo = [];
+
     public static function cacheKey(string $type): string
     {
         return "platform_policy_active_{$type}";
@@ -29,6 +34,8 @@ class PolicyService
 
     public function clearPolicyCache(?string $type = null): void
     {
+        $this->tableExistsMemo = [];
+
         if ($type !== null) {
             Cache::forget(self::cacheKey($type));
             return;
@@ -39,16 +46,46 @@ class PolicyService
         }
     }
 
+    /**
+     * Execute a database/cache callback inside a savepoint when already inside an
+     * outer transaction so caught failures never leave PostgreSQL in 25P02 aborted state.
+     *
+     * @template T
+     * @param  callable(): T  $callback
+     * @param  T  $fallback
+     * @return T
+     */
+    private function rescueSavepointSafe(callable $callback, mixed $fallback = null): mixed
+    {
+        return rescue(
+            fn () => DB::transactionLevel() > 0 ? DB::transaction($callback) : $callback(),
+            $fallback,
+            report: false
+        );
+    }
+
     private function tableExists(string $table): bool
     {
-        $cacheKey = "policy_service_table_exists_{$table}";
-        if (Cache::get($cacheKey) === true) {
+        if (isset($this->tableExistsMemo[$table])) {
             return true;
         }
 
-        $exists = rescue(fn () => Schema::hasTable($table), false, report: false);
+        $cacheKey = "policy_service_table_exists_{$table}";
+        if ($this->rescueSavepointSafe(fn () => Cache::get($cacheKey) === true, false)) {
+            $this->tableExistsMemo[$table] = true;
+            return true;
+        }
+
+        $exists = rescue(
+            fn () => DB::transactionLevel() > 0
+                ? DB::transaction(fn () => Schema::hasTable($table))
+                : Schema::hasTable($table),
+            false,
+            report: false
+        );
         if ($exists) {
-            Cache::put($cacheKey, true, self::CACHE_TTL_SECONDS);
+            $this->tableExistsMemo[$table] = true;
+            $this->rescueSavepointSafe(fn () => Cache::put($cacheKey, true, self::CACHE_TTL_SECONDS));
         }
 
         return $exists;
@@ -56,44 +93,39 @@ class PolicyService
 
     public function getActivePolicy(string $type): ?PlatformPolicy
     {
-        return rescue(function () use ($type) {
-            $cached = Cache::get(self::cacheKey($type));
-            if ($cached instanceof PlatformPolicy) {
-                return $cached;
-            }
-            if ($cached === false) {
+        $cached = $this->rescueSavepointSafe(fn () => Cache::get(self::cacheKey($type)), null);
+        if ($cached instanceof PlatformPolicy) {
+            return $cached;
+        }
+        if ($cached === false) {
+            return null;
+        }
+
+        $policy = $this->rescueSavepointSafe(function () use ($type) {
+            if (!$this->tableExists('platform_policies')) {
                 return null;
             }
 
-            $lookup = function () use ($type) {
-                if (!$this->tableExists('platform_policies')) {
-                    return null;
-                }
+            return PlatformPolicy::query()
+                ->ofType($type)
+                ->active()
+                ->orderByDesc('published_at')
+                ->orderByDesc('id')
+                ->first();
+        }, null);
 
-                return PlatformPolicy::query()
-                    ->ofType($type)
-                    ->active()
-                    ->orderByDesc('published_at')
-                    ->orderByDesc('id')
-                    ->first();
-            };
+        $this->rescueSavepointSafe(
+            fn () => Cache::put(self::cacheKey($type), $policy ?? false, self::CACHE_TTL_SECONDS)
+        );
 
-            $policy = DB::transactionLevel() > 0
-                ? DB::transaction($lookup)
-                : $lookup();
-
-            Cache::put(self::cacheKey($type), $policy ?? false, self::CACHE_TTL_SECONDS);
-
-            return $policy;
-        }, null, report: false);
+        return $policy;
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function getSerializedActivePolicy(string $type): array
+    public function serializePolicyRecord(?PlatformPolicy $policy, string $type): array
     {
-        $policy = $this->getActivePolicy($type);
         $fallback = self::defaultPolicyDefinitions()[$type] ?? [
             'title' => Str::headline($type),
             'version' => '1.0',
@@ -121,6 +153,14 @@ class PolicyService
             'published_at' => $policy?->published_at?->toIso8601String(),
             'published_at_formatted' => $policy?->published_at?->format('F j, Y'),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getSerializedActivePolicy(string $type): array
+    {
+        return $this->serializePolicyRecord($this->getActivePolicy($type), $type);
     }
 
     /**
@@ -433,7 +473,7 @@ class PolicyService
                     'key' => $key,
                     'label' => (string) ($item['label'] ?? $key),
                     'required' => (bool) ($item['required'] ?? true),
-                    'confirmed' => $hasStructuredSubmission ? in_array($key, $confirmedKeys, true) : true,
+                    'confirmed' => $hasStructuredSubmission && in_array($key, $confirmedKeys, true),
                 ];
             })
             ->values()

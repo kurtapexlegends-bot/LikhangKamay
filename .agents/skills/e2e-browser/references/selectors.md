@@ -136,5 +136,5 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 | **Chat Commission Attachment** | `tests\fixtures\defense_assets\Custom Commission Sketch (Chat Attachment).jpg` | `input[type="file"]` in chat |
 | **Staff Attendance Face Scan** | `tests\fixtures\defense_assets\ArtisanStaff\HR.png` | Camera upload trigger / face verification |
 | **Driver Proof of Delivery** | `tests\fixtures\defense_assets\Proof of Delivery (POD).jpg` | `input[name="pod_photo"]`, POD Modal File Input |
-| **Dispute Damage Proof** | `tests\fixtures\defense_assets\ArtisanStaff\Dispute Damage Photo.jpg` | `input#dispute_photo` |
-| **Dispute Packaging Proof** | `tests\fixtures\defense_assets\ArtisanStaff\Packaging Proof.jpg` | `input#packaging_proof` |
+| **Dispute Damage Proof** | `tests\fixtures\defense_assets\Product\Broken Image.png` | `input[type="file"][accept="image/*"]` (Slot 1: Item Defect / Damage Close-up) |
+| **Dispute Packaging Proof** | `tests\fixtures\defense_assets\Proof of Delivery (POD).jpg` | `input[type="file"][accept="image/*"]` (Slot 2: Shipping Packaging & Waybill) |

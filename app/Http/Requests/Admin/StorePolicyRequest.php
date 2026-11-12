@@ -53,8 +53,11 @@ class StorePolicyRequest extends FormRequest
         return [
             'structured_criteria.return_window_hours' => 'return inspection window',
             'structured_criteria.max_photos' => 'proof photo ceiling',
+            'structured_criteria.eligible_reasons' => 'eligible claim reasons',
             'structured_criteria.eligible_reasons.*.label' => 'claim reason label',
+            'structured_criteria.mandatory_photo_angles' => 'mandatory photo angles',
             'structured_criteria.mandatory_photo_angles.*.label' => 'photo angle label',
+            'structured_criteria.checklist_items' => 'eligibility checklist',
             'structured_criteria.checklist_items.*.label' => 'eligibility checklist statement',
         ];
     }

@@ -704,4 +704,113 @@ class DynamicPolicyAndDisputeGatingTest extends TestCase
                 ->where('disputes.0.order.items.0.product_img', $expectedProductImgUrl)
             );
     }
+
+    public function test_policy_service_cache_failures_inside_outer_transaction_are_savepoint_safe_and_legacy_return_marks_unconfirmed(): void
+    {
+        Storage::fake('public');
+        Mail::fake();
+
+        $seller = User::factory()->artisanApproved()->create();
+        $buyer = User::factory()->create(['role' => 'buyer', 'email_verified_at' => now()]);
+
+        $order = Order::create([
+            'artisan_id' => $seller->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-SAVEPOINT-001',
+            'customer_name' => $buyer->name,
+            'merchandise_subtotal' => 400,
+            'total_amount' => 400,
+            'status' => 'Completed',
+            'payment_method' => 'COD',
+            'payment_status' => 'paid',
+            'shipping_address' => 'Cavite',
+            'shipping_method' => 'Delivery',
+            'received_at' => now()->subHours(2),
+            'warranty_expires_at' => now()->addHours(22),
+        ]);
+
+        // 1. Failing Cache::get inside an active DB::transaction must not poison the outer transaction
+        $originalCache = \Illuminate\Support\Facades\Cache::getFacadeRoot();
+        try {
+            \Illuminate\Support\Facades\Cache::shouldReceive('get')->andThrow(new \RuntimeException('Simulated cache read failure'));
+            \Illuminate\Support\Facades\Cache::shouldReceive('put')->andThrow(new \RuntimeException('Simulated cache write failure'));
+            \Illuminate\Support\Facades\Cache::shouldReceive('forget')->andReturnUsing(fn (...$args) => $originalCache->forget(...$args));
+
+            $resolvedHours = \Illuminate\Support\Facades\DB::transaction(function () use ($order) {
+                $hours = app(PolicyService::class)->resolveDeliveryWindowHoursForOrder($order);
+                $order->update(['shipping_notes' => 'Savepoint safe']);
+                return $hours;
+            });
+
+            $this->assertSame(24, $resolvedHours);
+            $this->assertSame('Savepoint safe', $order->fresh()->shipping_notes);
+        } finally {
+            \Illuminate\Support\Facades\Cache::swap($originalCache);
+        }
+
+        // 2. Legacy return submission without structured fields records has_explicit_consent=false and confirmed=false
+        $this->actingAs($buyer)
+            ->post(route('my-orders.return', $order->id), [
+                'return_reason' => 'Legacy return submission without checklist.',
+                'return_proof_image' => UploadedFile::fake()->image('legacy.jpg'),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $consent = UserPolicyConsent::where('order_id', $order->id)
+            ->where('context', 'return_request')
+            ->latest('id')
+            ->firstOrFail();
+
+        $this->assertFalse((bool) ($consent->criteria_acknowledged['has_explicit_consent'] ?? true));
+        foreach ($consent->criteria_acknowledged['criteria_checklist'] ?? [] as $item) {
+            $this->assertFalse((bool) ($item['confirmed'] ?? true));
+        }
+    }
+
+    public function test_dispute_upload_failure_returning_false_aborts_cleanly_without_creating_corrupt_dispute(): void
+    {
+        $seller = User::factory()->artisanApproved()->create();
+        $buyer = User::factory()->create(['role' => 'buyer', 'email_verified_at' => now()]);
+
+        $order = Order::create([
+            'artisan_id' => $seller->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-FAIL-UPLOAD-001',
+            'customer_name' => $buyer->name,
+            'merchandise_subtotal' => 350,
+            'total_amount' => 350,
+            'status' => 'Completed',
+            'payment_method' => 'COD',
+            'payment_status' => 'paid',
+            'shipping_address' => 'Cavite',
+            'shipping_method' => 'Delivery',
+            'received_at' => now()->subHours(2),
+            'warranty_expires_at' => now()->addHours(22),
+        ]);
+
+        $failingFile = new class(UploadedFile::fake()->image('fail.jpg')->getPathname(), 'fail.jpg', 'image/jpeg', null, true) extends UploadedFile {
+            public function store($path = '', $options = [])
+            {
+                return false;
+            }
+        };
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Failed to upload dispute proof photo');
+
+        try {
+            app(\App\Actions\Disputes\BuyerInitiateDispute::class)->execute(
+                (string) $order->id,
+                'Cracked bowl',
+                [$failingFile],
+                $buyer->id,
+                [],
+                false
+            );
+        } finally {
+            $this->assertSame(0, Dispute::where('order_id', $order->id)->count());
+            $this->assertSame('Completed', $order->fresh()->status);
+        }
+    }
 }

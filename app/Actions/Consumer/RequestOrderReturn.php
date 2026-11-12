@@ -62,6 +62,9 @@ class RequestOrderReturn
             foreach ($photosForEvaluation as $item) {
                 if ($item instanceof UploadedFile) {
                     $path = $item->store('returns', 'public');
+                    if (!is_string($path) || $path === '') {
+                        throw new \RuntimeException('Failed to upload return proof photo. Please try again.');
+                    }
                     $storedPaths[] = $path;
                     $uploadedPathsToCleanup[] = $path;
                 } elseif (is_string($item) && $item !== '') {

@@ -156,7 +156,7 @@
    - Verify Content Safety Badges (`Public Review`, `Under Moderation Review`, `Passed Safety Review`, `Hidden from Storefront`).
    - Test Edit Review (`PATCH /reviews/{id}`), Delete Review (`DELETE /reviews/{id}`), and Notification Dropdown (`See previous notifications` cursor expansion & deep-link `/my-reviews?review={id}`).
 4. **File Return/Dispute on Order C (`/my-orders`):**
-   - Click `Return` button on completed `ORD-C-XXXXX`. Select eligible claim reason (`input[name="damage_reason_code"]`, e.g., `damaged_in_transit`), enter details `"Item arrived with hairline crack along base."`, attach required photo angles (`Item Defect / Damage Close-up` + `Shipping Packaging & Waybill`) using `tests\fixtures\defense_assets\Product\Broken Image.png` and `tests\fixtures\defense_assets\ArtisanStaff\Packaging Proof.jpg`, confirm all eligibility checklist checkboxes, and click `Submit Return Request` (`POST /my-orders/{id}/dispute`).
+   - Click `Return` button on completed `ORD-C-XXXXX`. Select eligible claim reason (`input[name="damage_reason_code"]`, e.g., `damaged_in_transit`), enter details `"Item arrived with hairline crack along base."`, attach required photo angles (`Item Defect / Damage Close-up` + `Shipping Packaging & Waybill`) using `tests\fixtures\defense_assets\Product\Broken Image.png` and `tests\fixtures\defense_assets\Proof of Delivery (POD).jpg`, confirm all eligibility checklist checkboxes, and click `Submit Return Request` (`POST /my-orders/{id}/dispute`).
 5. **Cancel Return & Route Preview:**
    - Test `Cancel Return Request` (`POST /my-orders/{id}/cancel-return`).
    - Test `Track Delivery` (`GET /my-orders/{id}/route-preview`) Leaflet modal.

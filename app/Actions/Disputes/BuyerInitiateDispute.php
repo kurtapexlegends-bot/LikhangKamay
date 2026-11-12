@@ -66,7 +66,11 @@ class BuyerInitiateDispute
         $storedPaths = [];
         try {
             foreach (array_values($proofPhotos) as $file) {
-                $storedPaths[] = $file->store('disputes', 'public');
+                $path = $file->store('disputes', 'public');
+                if (!is_string($path) || $path === '') {
+                    throw new \RuntimeException('Failed to upload dispute proof photo. Please try again.');
+                }
+                $storedPaths[] = $path;
             }
         } catch (\Throwable $uploadError) {
             foreach ($storedPaths as $uploadedPath) {
