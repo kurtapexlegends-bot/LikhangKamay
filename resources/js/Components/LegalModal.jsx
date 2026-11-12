@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { X, ChevronDown, ChevronUp, FileText, Shield, Store, Lock, Box, Check, AlertTriangle, ArrowRight, ArrowDown } from 'lucide-react';
 import Modal from '@/Components/Modal';
 
-export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = 'terms', step = null, totalSteps = null, hasNextStep = null }) {
+export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = 'terms', step = null, totalSteps = null, hasNextStep = null, policies = null }) {
     const [expandedSections, setExpandedSections] = useState({});
     const [hasReachedBottom, setHasReachedBottom] = useState(false);
     const [isAutoAdvancing, setIsAutoAdvancing] = useState(false);
@@ -136,8 +136,23 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
         }
     };
 
-    const doc = content[type];
-    const Icon = doc.icon;
+    const policyTypeKeyMap = {
+        terms: 'terms_of_service',
+        privacy: 'privacy_policy',
+        seller: 'seller_agreement',
+        sellerPrivacy: 'seller_privacy',
+    };
+    const baseDoc = content[type];
+    const dynamicPolicy = policies?.[policyTypeKeyMap[type]] || null;
+    const doc = {
+        ...baseDoc,
+        title: dynamicPolicy?.title || baseDoc.title,
+        version: dynamicPolicy?.version || '1.0',
+        updatedLabel: dynamicPolicy?.published_at_formatted || 'September 2026',
+        sections: Array.isArray(dynamicPolicy?.sections) && dynamicPolicy.sections.length > 0
+            ? dynamicPolicy.sections
+            : baseDoc.sections,
+    };
     const buildExpandedSections = (sections) =>
         Object.fromEntries(sections.map((_, index) => [index, true]));
 
@@ -199,7 +214,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
                         )}
                         <div>
                             <h3 className="text-lg font-serif font-bold text-stone-900">{doc.title}</h3>
-                            <p className="text-stone-500 text-xs mt-0.5 font-medium">Last updated: September 2026</p>
+                            <p className="text-stone-500 text-xs mt-0.5 font-medium">Version {doc.version} • Last updated: {doc.updatedLabel}</p>
                         </div>
                     </div>
                     <button 
@@ -249,7 +264,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
                             </button>
                             {expandedSections[idx] && (
                                 <div className="px-3 pb-3 text-gray-600 text-xs leading-relaxed border-t border-gray-100 bg-gray-50/50">
-                                    <p className="pt-3">{section.content}</p>
+                                    <p className="pt-3 whitespace-pre-line">{section.content}</p>
                                 </div>
                             )}
                         </div>

@@ -9,6 +9,7 @@ use App\Actions\Disputes\BuyerInitiateDispute;
 use App\Actions\Disputes\SellerRespondToDispute;
 use App\Actions\Disputes\BuyerReactToDispute;
 use App\Actions\Disputes\AdminArbitrateDispute;
+use App\Services\StorageUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -31,6 +32,12 @@ class DisputeController extends Controller
             'proof_photos.*' => 'nullable|image|max:4096', // 4MB max each
             'return_proof_image' => 'required_without_all:proof_photos,proof_photo|nullable|image|max:4096',
             'proof_photo' => 'nullable|image|max:4096',
+            'policy_id' => 'nullable|integer',
+            'damage_reason_code' => 'nullable|string|max:100',
+            'checklist_confirmations' => 'nullable|array',
+            'checklist_confirmations.*' => 'nullable|string|max:100',
+            'photo_angle_keys' => 'nullable|array|max:5',
+            'photo_angle_keys.*' => 'nullable|string|max:100',
         ]);
 
         $reason = (string) ($request->input('reason') ?: $request->input('return_reason'));
@@ -42,8 +49,23 @@ class DisputeController extends Controller
             $photos = [$photos];
         }
 
+        $criteriaInput = $request->only([
+            'policy_id',
+            'damage_reason_code',
+            'checklist_confirmations',
+            'photo_angle_keys',
+        ]);
+
         try {
-            $action->execute($orderId, $reason, $photos, Auth::id());
+            $action->execute(
+                $orderId,
+                $reason,
+                $photos,
+                Auth::id(),
+                $criteriaInput,
+                true,
+                $request
+            );
             return back()->with('success', 'Dispute request submitted successfully.');
         } catch (\Throwable $e) {
             Log::error("Dispute initiation failed: " . $e->getMessage());
@@ -135,7 +157,55 @@ class DisputeController extends Controller
                 });
             })
             ->latest('updated_at')
-            ->get();
+            ->get()
+            ->map(function (Dispute $dispute) {
+                $payload = $dispute->toArray();
+                $payload['proof_photos'] = collect($dispute->proof_photos ?? [])
+                    ->map(fn ($p) => StorageUrl::url($p))
+                    ->filter()
+                    ->values()
+                    ->all();
+
+                if (is_array($dispute->photo_angles)) {
+                    $payload['photo_angles'] = collect($dispute->photo_angles)
+                        ->map(function ($angle) {
+                            if (is_array($angle) && !empty($angle['path'])) {
+                                $angle['url'] = StorageUrl::url($angle['path']);
+                            }
+                            return $angle;
+                        })
+                        ->values()
+                        ->all();
+                }
+
+                if ($dispute->order && isset($payload['order']) && is_array($payload['order'])) {
+                    $payload['order']['proof_of_delivery'] = StorageUrl::url($dispute->order->proof_of_delivery);
+
+                    if (isset($payload['order']['packing_photos']) && is_array($payload['order']['packing_photos'])) {
+                        $payload['order']['packing_photos'] = collect($payload['order']['packing_photos'])
+                            ->map(fn ($p) => StorageUrl::url($p))
+                            ->filter()
+                            ->values()
+                            ->all();
+                    }
+
+                    if (isset($payload['order']['items']) && is_array($payload['order']['items'])) {
+                        foreach ($dispute->order->items as $idx => $item) {
+                            if (!isset($payload['order']['items'][$idx])) {
+                                continue;
+                            }
+                            $resolvedItemImg = StorageUrl::url($item->product_img ?: $item->product?->cover_photo_path);
+                            $payload['order']['items'][$idx]['product_img'] = $resolvedItemImg;
+
+                            if ($item->product && isset($payload['order']['items'][$idx]['product']) && is_array($payload['order']['items'][$idx]['product'])) {
+                                $payload['order']['items'][$idx]['product']['cover_photo_path'] = StorageUrl::url($item->product->cover_photo_path);
+                            }
+                        }
+                    }
+                }
+
+                return $payload;
+            });
 
         return Inertia::render('Admin/Disputes/DisputeEscalationDashboard', [
             'disputes' => $disputes,

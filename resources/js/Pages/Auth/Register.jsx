@@ -15,7 +15,7 @@ import useLegalAcceptanceFlow from '@/Components/Auth/hooks/useLegalAcceptanceFl
 import RegisterSocialAndLinks from '@/Components/Auth/RegisterSocialAndLinks';
 import RegisterFaceCheckCard from '@/Components/Auth/RegisterFaceCheckCard';
 
-export default function Register() {
+export default function Register({ legalPolicies = null }) {
     const { flash } = usePage().props;
     const { data, setData, post, processing, errors, reset, setError, clearErrors } = useForm({
         first_name: '',
@@ -416,6 +416,7 @@ export default function Register() {
                 step={modalStep}
                 totalSteps={modalTotalSteps}
                 hasNextStep={modalHasNextStep}
+                policies={legalPolicies}
             />
         </GuestLayout>
     );

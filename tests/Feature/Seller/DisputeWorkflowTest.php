@@ -47,7 +47,10 @@ class DisputeWorkflowTest extends TestCase
 
         $response = $this->actingAs($buyer)
             ->post(route('my-orders.dispute', $order->id), [
+                'damage_reason_code' => 'damaged_in_transit',
                 'reason' => 'Item arrived completely shattered.',
+                'checklist_confirmations' => ['within_window', 'unmodified_item', 'accurate_evidence'],
+                'photo_angle_keys' => ['item_defect', 'shipping_packaging'],
                 'proof_photos' => [$file1, $file2],
             ]);
 

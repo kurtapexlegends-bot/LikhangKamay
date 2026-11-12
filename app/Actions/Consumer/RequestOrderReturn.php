@@ -3,12 +3,17 @@
 namespace App\Actions\Consumer;
 
 use App\Models\Order;
+use App\Models\PlatformPolicy;
 use App\Models\User;
 use App\Models\SellerActivityLog;
 use App\Mail\ReturnRequested;
+use App\Services\PolicyService;
+use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class RequestOrderReturn
 {
@@ -19,74 +24,159 @@ class RequestOrderReturn
      * @param string $returnReason
      * @param string|null $proofPath
      * @param User $buyer
+     * @param array<int, UploadedFile|string> $proofPhotos
+     * @param array<string, mixed> $criteriaInput
+     * @param Request|null $request
      * @return void
      */
-    public function execute(string $id, string $returnReason, ?string $proofPath, User $buyer): void
-    {
-        DB::transaction(function () use ($id, $returnReason, $proofPath, $buyer) {
-            $order = Order::lockForUpdate()->where('id', $id)
-                ->where('user_id', $buyer->id)
-                ->firstOrFail();
+    public function execute(
+        string $id,
+        string $returnReason,
+        ?string $proofPath,
+        User $buyer,
+        array $proofPhotos = [],
+        array $criteriaInput = [],
+        ?Request $request = null
+    ): void {
+        $policyService = app(PolicyService::class);
+        $photosForEvaluation = !empty($proofPhotos)
+            ? array_values($proofPhotos)
+            : ($proofPath ? [$proofPath] : []);
 
-            if ($order->status !== 'Completed') {
-                throw new \RuntimeException('This order is not completed.');
+        // 1. Pre-flight validation & policy criteria evaluation before external S3 upload
+        $precheckOrder = Order::where('id', $id)
+            ->where('user_id', $buyer->id)
+            ->firstOrFail();
+
+        $policyService->evaluateReturnCriteria(
+            $precheckOrder,
+            $criteriaInput,
+            $photosForEvaluation,
+            false
+        );
+
+        // 2. Store newly uploaded proof files outside DB::transaction() / lockForUpdate()
+        $storedPaths = [];
+        $uploadedPathsToCleanup = [];
+        try {
+            foreach ($photosForEvaluation as $item) {
+                if ($item instanceof UploadedFile) {
+                    $path = $item->store('returns', 'public');
+                    $storedPaths[] = $path;
+                    $uploadedPathsToCleanup[] = $path;
+                } elseif (is_string($item) && $item !== '') {
+                    $storedPaths[] = $item;
+                }
             }
-
-            $completionDate = $order->received_at ?? $order->updated_at;
-            $warrantyExpires = ($order->warranty_expires_at && $completionDate && $order->warranty_expires_at->greaterThan($completionDate))
-                ? $order->warranty_expires_at
-                : ($completionDate ? $completionDate->copy()->addDay() : null);
-
-            if (!$warrantyExpires || now()->greaterThan($warrantyExpires)) {
-                throw new \RuntimeException('Return window has expired. Returns must be requested within 1 day of receiving your order.');
+        } catch (\Throwable $uploadError) {
+            foreach ($uploadedPathsToCleanup as $uploadedPath) {
+                rescue(fn () => Storage::disk('public')->delete($uploadedPath), report: false);
             }
+            throw $uploadError;
+        }
 
-            $updateData = [
-                'status' => 'Refund/Return',
-                'return_reason' => $returnReason
-            ];
+        $primaryProofPath = $storedPaths[0] ?? $proofPath;
 
-            if ($proofPath) {
-                $updateData['return_proof_image'] = $proofPath;
-            }
-
-            $order->update($updateData);
-            $order->refresh();
-
-            $this->recordOrderAuditEvent(
-                $order,
+        // 3. Atomic DB update inside transaction
+        try {
+            [$order, $evaluation, $photoAngles] = DB::transaction(function () use (
+                $id,
+                $returnReason,
+                $primaryProofPath,
+                $storedPaths,
                 $buyer,
-                eventType: 'return_requested',
-                severity: 'warning',
-                title: 'Buyer Requested Return',
-                summary: "{$order->order_number} was moved to return review.",
-                status: 'refund_return',
-                details: [
-                    'before' => [
-                        'status' => 'Completed',
-                    ],
-                    'after' => [
-                        'status' => $order->status,
-                        'return_reason' => $order->return_reason,
-                    ],
-                    'lines' => array_values(array_filter([
-                        $order->return_reason ? "Reason: {$order->return_reason}" : null,
-                        $proofPath ? 'Buyer submitted return proof image.' : null,
-                    ])),
-                ],
-            );
+                $criteriaInput,
+                $policyService
+            ) {
+                $order = Order::lockForUpdate()->where('id', $id)
+                    ->where('user_id', $buyer->id)
+                    ->firstOrFail();
 
-            $order->load('items');
-            $seller = User::withTrashed()->find($order->artisan_id);
-            if ($seller && $seller->email) {
-                $this->sendMailSilently(
-                    $seller->email,
-                    new ReturnRequested($order),
-                    'return_requested',
-                    ['order_id' => $order->id, 'order_number' => $order->order_number]
+                $evaluation = $policyService->evaluateReturnCriteria(
+                    $order,
+                    $criteriaInput,
+                    $storedPaths,
+                    false
                 );
+
+                $photoAngles = $evaluation['photo_angles'] ?? [];
+                foreach ($storedPaths as $index => $path) {
+                    if (isset($photoAngles[$index])) {
+                        $photoAngles[$index]['path'] = $path;
+                    }
+                }
+
+                $updateData = [
+                    'status' => 'Refund/Return',
+                    'return_reason' => $returnReason,
+                ];
+
+                if ($primaryProofPath) {
+                    $updateData['return_proof_image'] = $primaryProofPath;
+                }
+
+                $order->update($updateData);
+                $order->refresh();
+
+                $this->recordOrderAuditEvent(
+                    $order,
+                    $buyer,
+                    eventType: 'return_requested',
+                    severity: 'warning',
+                    title: 'Buyer Requested Return',
+                    summary: "{$order->order_number} was moved to return review.",
+                    status: 'refund_return',
+                    details: [
+                        'before' => [
+                            'status' => 'Completed',
+                        ],
+                        'after' => [
+                            'status' => $order->status,
+                            'return_reason' => $order->return_reason,
+                        ],
+                        'lines' => array_values(array_filter([
+                            $order->return_reason ? "Reason: {$order->return_reason}" : null,
+                            $primaryProofPath ? 'Buyer submitted return proof image.' : null,
+                        ])),
+                    ],
+                );
+
+                return [$order, $evaluation, $photoAngles];
+            });
+        } catch (\Throwable $dbError) {
+            foreach ($uploadedPathsToCleanup as $uploadedPath) {
+                rescue(fn () => Storage::disk('public')->delete($uploadedPath), report: false);
             }
-        });
+            throw $dbError;
+        }
+
+        // 4. Record policy consent & dispatch notifications strictly after transaction commit
+        $policyService->recordUserConsent(
+            $buyer,
+            PlatformPolicy::TYPE_RETURN_REFUND,
+            'return_request',
+            $request,
+            $order->id,
+            [
+                'damage_reason_code' => $evaluation['damage_reason_code'] ?? null,
+                'damage_reason_label' => $evaluation['damage_reason_label'] ?? null,
+                'criteria_checklist' => $evaluation['criteria_checklist'] ?? [],
+                'photo_angles' => $photoAngles,
+                'has_explicit_consent' => $evaluation['has_explicit_consent'] ?? false,
+            ],
+            $evaluation['policy'] ?? null
+        );
+
+        $order->load('items');
+        $seller = User::withTrashed()->find($order->artisan_id);
+        if ($seller && $seller->email) {
+            $this->sendMailSilently(
+                $seller->email,
+                new ReturnRequested($order),
+                'return_requested',
+                ['order_id' => $order->id, 'order_number' => $order->order_number]
+            );
+        }
     }
 
     private function recordOrderAuditEvent(

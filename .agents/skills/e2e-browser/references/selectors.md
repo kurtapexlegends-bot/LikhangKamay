@@ -80,10 +80,14 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 - **Driver Deliveries Complete Button:** `button:has-text("Confirm Delivery")`
 - **Driver Proof of Delivery (POD) Input:** `input[name="pod_photo"]`, `input[type="file"][accept*="image"]`
 
-### Dispute & Review Operations
-- **Buyer Report Issue / Dispute Button:** `button:has-text("Report Issue / Return")`
-- **Dispute Damage Proof Input:** `input#dispute_photo`, `input[type="file"]`
-- **Submit Dispute Button:** `button:has-text("Submit Dispute")`
+### Dispute, Return Criteria & Review Operations
+- **Buyer Request Return Button:** `button:has-text("Return")`
+- **Return Modal Claim Reason Radio (`ReturnCriteriaFields.jsx`):** `input[name="damage_reason_code"]`
+- **Return Modal Issue Details Textarea:** `textarea[placeholder*="Describe the defect"]`
+- **Return Modal Photo Angle Slots (`ReturnPhotoAngleSlots.jsx`):** `input[type="file"][accept="image/*"]`
+- **Return Modal Eligibility Checklist Buttons (`ReturnCriteriaFields.jsx`):** `button:has-text("I am submitting this claim")`
+- **Submit Return Request Button (`ReturnRequestModal.jsx`):** `button:has-text("Submit Return Request")`
+- **Admin Policies & Terms Page (`/admin/settings/policies`):** `button:has-text("Return & Refund Criteria")`, `button:has-text("Publish v")`, `button:has-text("Activate")`
 - **Artisan Dispute Defense Button:** `button:has-text("Submit Counter-Evidence")`
 - **Admin Arbitrate 50% Refund Button:** `button:has-text("50% Partial Refund")`
 - **Admin Arbitrate Full Refund Button:** `button:has-text("Approve Full Refund")`

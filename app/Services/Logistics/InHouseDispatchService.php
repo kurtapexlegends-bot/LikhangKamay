@@ -351,11 +351,12 @@ class InHouseDispatchService
                 ],
             ]);
 
+            $warrantyExpiry = app(\App\Services\PolicyService::class)->getWarrantyExpirationTimestamp();
             $orderUpdates = [
                 'status' => 'Delivered',
                 'delivered_at' => now(),
-                'auto_complete_at' => now()->addDays(1),
-                'warranty_expires_at' => now()->addDays(1),
+                'auto_complete_at' => $warrantyExpiry->copy(),
+                'warranty_expires_at' => $warrantyExpiry->copy(),
             ];
 
             // For in-house fulfillment, the artisan studio absorbs rider and fuel expenses.

@@ -33,16 +33,19 @@ class ApprovalConsentSourceTest extends TestCase
     public function test_registration_sources_open_legal_flow_from_checkbox_until_both_documents_are_accepted(): void
     {
         $buyerSource = file_get_contents(base_path('resources/js/Pages/Auth/Register.jsx'));
+        $legalFlowSource = file_get_contents(base_path('resources/js/Components/Auth/hooks/useLegalAcceptanceFlow.js'));
         $artisanSource = file_get_contents(base_path('resources/js/Pages/Auth/ArtisanRegister.jsx'));
 
         $this->assertNotFalse($buyerSource);
+        $this->assertNotFalse($legalFlowSource);
         $this->assertNotFalse($artisanSource);
 
+        $this->assertStringContainsString('useLegalAcceptanceFlow', $buyerSource);
         $this->assertStringContainsString('onChange={handleTermsCheckboxChange}', $buyerSource);
         $this->assertStringContainsString('onChange={handleTermsCheckboxChange}', $artisanSource);
-        $this->assertStringContainsString('setIsGuidingTermsAcceptance(true);', $buyerSource);
+        $this->assertStringContainsString('setIsGuidingTermsAcceptance(true);', $legalFlowSource);
         $this->assertStringContainsString('setIsGuidingTermsAcceptance(true);', $artisanSource);
-        $this->assertStringContainsString('openNextRequiredLegalModal();', $buyerSource);
+        $this->assertStringContainsString('openNextRequiredLegalModal();', $legalFlowSource);
         $this->assertStringContainsString('openNextRequiredLegalModal();', $artisanSource);
         $this->assertStringNotContainsString('Open both documents and scroll to the bottom of each one to enable this checkbox.', $buyerSource);
         $this->assertStringNotContainsString('Open both documents and scroll to the bottom of each one to enable this checkbox.', $artisanSource);

@@ -156,7 +156,7 @@
    - Verify Content Safety Badges (`Public Review`, `Under Moderation Review`, `Passed Safety Review`, `Hidden from Storefront`).
    - Test Edit Review (`PATCH /reviews/{id}`), Delete Review (`DELETE /reviews/{id}`), and Notification Dropdown (`See previous notifications` cursor expansion & deep-link `/my-reviews?review={id}`).
 4. **File Return/Dispute on Order C (`/my-orders`):**
-   - Click `Return` button on completed `ORD-C-XXXXX`. Reason: `"Defective or Damaged Item"`, Description: `"Item arrived with hairline crack along base."`, attach `tests\fixtures\defense_assets\Product\Broken Image.png`. Submit (`POST /my-orders/{id}/dispute`).
+   - Click `Return` button on completed `ORD-C-XXXXX`. Select eligible claim reason (`input[name="damage_reason_code"]`, e.g., `damaged_in_transit`), enter details `"Item arrived with hairline crack along base."`, attach required photo angles (`Item Defect / Damage Close-up` + `Shipping Packaging & Waybill`) using `tests\fixtures\defense_assets\Product\Broken Image.png` and `tests\fixtures\defense_assets\ArtisanStaff\Packaging Proof.jpg`, confirm all eligibility checklist checkboxes, and click `Submit Return Request` (`POST /my-orders/{id}/dispute`).
 5. **Cancel Return & Route Preview:**
    - Test `Cancel Return Request` (`POST /my-orders/{id}/cancel-return`).
    - Test `Track Delivery` (`GET /my-orders/{id}/route-preview`) Leaflet modal.
@@ -181,8 +181,9 @@
 1. **Authentication:** Log in as `test.admin@likhangkamay.local` (`/admin/dashboard`).
 2. **KYC Document Viewer, Biometric Telemetry & Targeted Revision (`/admin/users-manager?tab=approvals`):**
    - Assert `KycVerificationSummaryCard.jsx` renders 100-point composite score, 1:1 face-match indicator, and forensics badges; assert document zoom viewer renders `Business Permit.png` and `DTI.png`. Test rejection using `RevisionChecklistSelector` (checking specific items like `Valid Government ID (Front)` with per-item notes + overall revision summary). If viewing a resubmission, assert top banner displays `Resubmitted Application Under Review` with the `Revision Addressed` badge, and updated documents display the green `[✓ Updated]` pill (`InlineRevisionCard.jsx`).
-3. **Dispute Arbitration Desk (`/admin/disputes`):**
-   - Issue arbitration ruling (`50% Partial Refund` / `Approve Full Refund` / `Decline Claim`). For `50% Partial Refund`, verify order status transitions to `Completed` (`payment_status = 'partially_refunded'`) and 50% seller net retention.
+3. **Dispute Arbitration Desk (`/admin/disputes`) & Dynamic Policies (`/admin/settings/policies`):**
+   - Verify policy checklist confirmation badges and resolved proof photo thumbnails render cleanly in `DisputeInspectorContent.jsx`. Issue arbitration ruling (`50% Partial Refund` / `Approve Full Refund` / `Decline Claim`). For `50% Partial Refund`, verify order status transitions to `Completed` (`payment_status = 'partially_refunded'`) and 50% seller net retention.
+   - Open `/admin/settings/policies`: verify `Return & Refund Criteria` editor, legal policy tabs, and version history (`Publish` / `Activate`) work without dot-notation validation errors.
 4. **Content Safety Moderation Desk (`/admin/compliance`):**
    - Verify `"Select a Moderation Ticket"` empty state renders when no ticket is selected. Uphold/remove disputed review (`PATCH /admin/review-moderation/{id}`).
 5. **Catalog & Sponsorship Moderation (`/admin/moderation-queue`, `/admin/catalog`, `/admin/sponsorships`):** Test listing rejection (`ModerationRejectModal`) / sponsorship rejection (`SponsorshipDecisionModal`) with itemized revision checklist fields and direct catalog takedown (`POST /admin/moderation-queue/{id}/takedown`). On resubmitted product listings and sponsorships, assert top banner renders `Resubmitted Listing Under Review` with the `Revision Addressed` badge, and revised fields display the green `[✓ Updated]` pill.

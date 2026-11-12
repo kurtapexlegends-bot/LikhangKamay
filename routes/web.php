@@ -123,27 +123,23 @@ Route::match(['get', 'post'], '/api/geocode/reverse', [\App\Http\Controllers\Cor
 
 // --- AUTHENTICATION ---
 Route::get('/artisan/register', function () {
-    return Inertia::render('Auth/ArtisanRegister');
+    $legalPolicies = app(\App\Services\PolicyService::class)->getSerializedActivePolicies([
+        \App\Models\PlatformPolicy::TYPE_SELLER_AGREEMENT,
+        \App\Models\PlatformPolicy::TYPE_SELLER_PRIVACY,
+    ]);
+
+    return Inertia::render('Auth/ArtisanRegister', [
+        'legalPolicies' => $legalPolicies,
+    ]);
 })->middleware('guest')->name('artisan.register');
 
 // Legal Pages
 // Webhooks (Exempt from CSRF in bootstrap/app.php)
 
-Route::get('/terms', function () {
-    return Inertia::render('Consumer/Legal/TermsOfService');
-})->name('terms');
-
-Route::get('/privacy', function () {
-    return Inertia::render('Consumer/Legal/GeneralPrivacy');
-})->name('privacy');
-
-Route::get('/seller-agreement', function () {
-    return Inertia::render('Consumer/Legal/SellerAgreement');
-})->name('seller.agreement');
-
-Route::get('/seller-privacy', function () {
-    return Inertia::render('Consumer/Legal/SellerPrivacy');
-})->name('seller.privacy');
+Route::get('/terms', [\App\Http\Controllers\Core\LegalPolicyController::class, 'terms'])->name('terms');
+Route::get('/privacy', [\App\Http\Controllers\Core\LegalPolicyController::class, 'privacy'])->name('privacy');
+Route::get('/seller-agreement', [\App\Http\Controllers\Core\LegalPolicyController::class, 'sellerAgreement'])->name('seller.agreement');
+Route::get('/seller-privacy', [\App\Http\Controllers\Core\LegalPolicyController::class, 'sellerPrivacy'])->name('seller.privacy');
 
 
 // --- SOCIAL AUTH (Google/Facebook) ---
@@ -655,6 +651,11 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::get('/settings', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'index'])->name('admin.settings.index');
     Route::post('/settings', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'update'])->name('admin.settings.update');
     Route::post('/settings/mail/test', [\App\Http\Controllers\Admin\TestMailDispatchController::class, 'dispatchTestEmail'])->middleware('throttle:admin.heavy')->name('admin.settings.mail.test');
+
+    // Dynamic Policies & Return Criteria
+    Route::get('/settings/policies', [\App\Http\Controllers\Admin\PolicyController::class, 'index'])->name('admin.policies.index');
+    Route::post('/settings/policies', [\App\Http\Controllers\Admin\PolicyController::class, 'store'])->name('admin.policies.store');
+    Route::post('/settings/policies/{policy}/activate', [\App\Http\Controllers\Admin\PolicyController::class, 'activate'])->name('admin.policies.activate');
     
     // Email Studio & Audience Broadcast
     Route::get('/settings/email-templates', [\App\Http\Controllers\Admin\EmailStudioController::class, 'index'])->name('admin.email-templates.index');

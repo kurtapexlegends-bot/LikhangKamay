@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import UserAvatar from '@/Components/UserAvatar';
 import ImageDiffSlider from '@/Components/Common/ImageDiffSlider';
+import { resolveImageUrl } from '@/lib/media';
 import {
     AlertTriangle,
     Package,
@@ -165,7 +166,7 @@ export default function DisputeInspectorContent({
                                         <div className="flex items-center gap-3 min-w-0">
                                             {imgSrc ? (
                                                 <img
-                                                    src={imgSrc.startsWith('http') || imgSrc.startsWith('/storage') ? imgSrc : `/storage/${imgSrc}`}
+                                                    src={resolveImageUrl(imgSrc)}
                                                     alt={item.product_name}
                                                     className="w-10 h-10 object-cover rounded-lg border border-stone-200 shrink-0"
                                                     loading="lazy"
@@ -241,15 +242,51 @@ export default function DisputeInspectorContent({
 
                         {/* Stated Reason */}
                         <div>
-                            <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">
-                                Customer&apos;s Issue
-                            </span>
+                            <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1">
+                                <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                                    Customer&apos;s Issue
+                                </span>
+                                {dispute.damage_reason_code && (
+                                    <span className="inline-flex items-center rounded bg-clay-50 px-2 py-0.5 text-[10px] font-bold text-clay-800 border border-clay-200">
+                                        {dispute.damage_reason_code.replace(/_/g, ' ')}
+                                        {dispute.policy_version ? ` · v${dispute.policy_version}` : ''}
+                                    </span>
+                                )}
+                            </div>
                             <div className="bg-amber-50/50 p-3 rounded-xl border border-amber-200/60">
                                 <p className="text-xs font-bold text-stone-900 leading-relaxed">
                                     &ldquo;{dispute.reason}&rdquo;
                                 </p>
                             </div>
                         </div>
+
+                        {Array.isArray(dispute.criteria_checklist) && dispute.criteria_checklist.length > 0 && (
+                            <div>
+                                <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">
+                                    Verified Policy Criteria
+                                </span>
+                                <div className="space-y-1 bg-stone-50 p-2.5 rounded-xl border border-stone-200/70">
+                                    {dispute.criteria_checklist.map((item, cIdx) => {
+                                        const isConfirmed = Boolean(item?.confirmed);
+                                        return (
+                                            <div key={cIdx} className={`flex items-start gap-1.5 text-[11px] ${isConfirmed ? 'text-stone-700' : 'text-stone-400'}`}>
+                                                {isConfirmed ? (
+                                                    <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-emerald-600" />
+                                                ) : (
+                                                    <X size={12} className="mt-0.5 shrink-0 text-stone-400" />
+                                                )}
+                                                <span>
+                                                    {item.label}
+                                                    {!isConfirmed && (
+                                                        <span className="ml-1 text-[10px] font-semibold text-stone-400">(Not confirmed)</span>
+                                                    )}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Customer Additional Notes / Escalation Reason */}
                         {dispute.escalation_reason && (
@@ -273,27 +310,34 @@ export default function DisputeInspectorContent({
                             {proofPhotos.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
                                     {proofPhotos.map((photo, pIdx) => {
-                                        const photoUrl = photo.startsWith('http') || photo.startsWith('/storage') ? photo : `/storage/${photo}`;
+                                        const photoUrl = resolveImageUrl(photo);
+                                        const angleMeta = Array.isArray(dispute.photo_angles) ? dispute.photo_angles[pIdx] : null;
                                         return (
-                                            <button
-                                                key={pIdx}
-                                                type="button"
-                                                onClick={() => openLightbox(proofPhotos, pIdx)}
-                                                className="relative group border border-stone-200 bg-white rounded-xl overflow-hidden h-16 w-16 shadow-2xs hover:ring-2 hover:ring-clay-500 transition-all shrink-0 cursor-pointer"
-                                            >
-                                                <img
-                                                    src={photoUrl}
-                                                    className="h-full w-full object-cover"
-                                                    alt={`Customer Evidence ${pIdx + 1}`}
-                                                    onError={(e) => {
-                                                        e.currentTarget.onerror = null;
-                                                        e.currentTarget.src = '/images/placeholder.svg';
-                                                    }}
-                                                />
-                                                <div className="absolute inset-0 bg-stone-900/20 group-hover:bg-stone-900/40 transition-colors flex items-center justify-center text-white opacity-0 group-hover:opacity-100">
-                                                    <Eye size={14} />
-                                                </div>
-                                            </button>
+                                            <div key={pIdx} className="flex flex-col items-center gap-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openLightbox(proofPhotos, pIdx)}
+                                                    className="relative group border border-stone-200 bg-white rounded-xl overflow-hidden h-16 w-16 shadow-2xs hover:ring-2 hover:ring-clay-500 transition-all shrink-0 cursor-pointer"
+                                                >
+                                                    <img
+                                                        src={photoUrl}
+                                                        className="h-full w-full object-cover"
+                                                        alt={angleMeta?.angle_label || `Customer Evidence ${pIdx + 1}`}
+                                                        onError={(e) => {
+                                                            e.currentTarget.onerror = null;
+                                                            e.currentTarget.src = '/images/placeholder.svg';
+                                                        }}
+                                                    />
+                                                    <div className="absolute inset-0 bg-stone-900/20 group-hover:bg-stone-900/40 transition-colors flex items-center justify-center text-white opacity-0 group-hover:opacity-100">
+                                                        <Eye size={14} />
+                                                    </div>
+                                                </button>
+                                                {angleMeta?.angle_label && (
+                                                    <span className="max-w-[72px] truncate text-[9px] font-semibold text-stone-500" title={angleMeta.angle_label}>
+                                                        {angleMeta.angle_label}
+                                                    </span>
+                                                )}
+                                            </div>
                                         );
                                     })}
                                 </div>
@@ -361,7 +405,7 @@ export default function DisputeInspectorContent({
                             {sellerPhotos.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
                                     {sellerPhotos.map((photo, sIdx) => {
-                                        const photoUrl = photo.startsWith('http') || photo.startsWith('/storage') ? photo : `/storage/${photo}`;
+                                        const photoUrl = resolveImageUrl(photo);
                                         return (
                                             <button
                                                 key={sIdx}

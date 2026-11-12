@@ -12,7 +12,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { Eye, EyeOff, Loader2, CheckCircle, Store, Mail, Lock, User, Briefcase, XCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function CompleteProfile({ email, suggestedName, suggestedFirstName, suggestedLastName, provider, isArtisan = false }) {
+export default function CompleteProfile({ email, suggestedName, suggestedFirstName, suggestedLastName, provider, isArtisan = false, legalPolicies = null }) {
     const suggestedNameParts = typeof suggestedName === 'string'
         ? suggestedName.trim().split(/\s+/).filter(Boolean)
         : [];
@@ -553,6 +553,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                     onClose={() => handleLegalModalClose({ accepted: false })}
                     onAccept={handleLegalAccept}
                     onBack={modalStep === 2 ? handleLegalBack : undefined}
+                    policies={legalPolicies}
                 />
             ) : (
                 <LegalModal 
@@ -564,6 +565,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                     step={modalStep}
                     totalSteps={modalTotalSteps}
                     hasNextStep={modalHasNextStep}
+                    policies={legalPolicies}
                 />
             )}
         </GuestLayout>

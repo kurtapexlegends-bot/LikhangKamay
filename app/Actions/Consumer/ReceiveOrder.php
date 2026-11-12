@@ -50,10 +50,11 @@ class ReceiveOrder
                 throw new \RuntimeException('Cannot confirm receipt until payment is completed.');
             }
 
+            $resolvedWindowHours = app(\App\Services\PolicyService::class)->resolveDeliveryWindowHoursForOrder($order);
             $updateData = [
                 'status' => 'Completed',
                 'received_at' => now(),
-                'warranty_expires_at' => now()->addDay()
+                'warranty_expires_at' => now()->addHours($resolvedWindowHours),
             ];
 
             if ($order->replacement_started_at !== null && $order->replacement_resolved_at === null) {
@@ -90,9 +91,12 @@ class ReceiveOrder
                 );
             }
 
+            $windowLabel = $resolvedWindowHours % 24 === 0
+                ? (($resolvedWindowHours / 24) === 1 ? '1 day' : ($resolvedWindowHours / 24) . ' days')
+                : "{$resolvedWindowHours} hours";
             $successMessage = $order->replacement_started_at !== null && $order->replacement_resolved_at !== null
                 ? 'Replacement received and order marked as completed.'
-                : 'Order marked as received! You have 1 day to request a return if needed.';
+                : "Order marked as received! You have {$windowLabel} to request a return if needed.";
         });
         try {
             $freshOrder = Order::where(function ($q) use ($id) {

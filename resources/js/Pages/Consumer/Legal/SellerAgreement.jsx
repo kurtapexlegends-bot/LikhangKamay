@@ -7,8 +7,8 @@ import {
 } from 'lucide-react';
 
 
-export default function SellerAgreement() {
-    const sections = [
+export default function SellerAgreement({ policy = null }) {
+    const defaultSections = [
         {
             title: "Seller Eligibility",
             icon: UserCheck,
@@ -91,6 +91,19 @@ export default function SellerAgreement() {
         }
     ];
 
+    const iconPool = [UserCheck, Box, Layers, Percent, CreditCard, Truck, Truck, Award, RefreshCw, MessageSquare, Banknote, ShieldAlert, AlertTriangle, FileText, Edit3, Mail];
+    const sections = Array.isArray(policy?.sections) && policy.sections.length > 0
+        ? policy.sections.map((sec, idx) => ({
+            title: sec.title,
+            content: sec.content,
+            icon: defaultSections[idx]?.icon || iconPool[idx % iconPool.length],
+        }))
+        : defaultSections;
+
+    const versionLabel = policy?.version ? `Version ${policy.version}` : 'Version 1.0';
+    const updatedLabel = policy?.published_at_formatted || 'September 2026';
+    const introText = policy?.intro || 'This agreement governs your status as an artisan partner on LikhangKamay. Please read this carefully to understand your obligations regarding product quality, fulfillment, payouts, and compliance.';
+
     const scrollToSection = (idx) => {
         const element = document.getElementById(`section-${idx}`);
         if (element) {
@@ -123,9 +136,9 @@ export default function SellerAgreement() {
                     {/* Sidebar / Left Column */}
                     <aside className="lg:col-span-4 lg:sticky lg:top-8 space-y-6 print:hidden">
                         <div className="border-b border-stone-200/80 pb-5">
-                            <span className="text-[10px] font-bold tracking-widest text-clay-600 uppercase">Artisan Partner</span>
-                            <h1 className="font-serif text-3xl font-bold text-stone-900 mt-1">Seller Agreement</h1>
-                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: September 2026</p>
+                            <span className="text-[10px] font-bold tracking-widest text-clay-600 uppercase">Artisan Partner • {versionLabel}</span>
+                            <h1 className="font-serif text-3xl font-bold text-stone-900 mt-1">{policy?.title || 'Seller Agreement'}</h1>
+                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: {updatedLabel}</p>
                         </div>
 
                         {/* 3D Product Showcase Alert (Highly Visible in Sidebar) */}
@@ -198,13 +211,13 @@ export default function SellerAgreement() {
                     <main className="lg:col-span-8 bg-white border border-stone-200/60 rounded-3xl p-6 sm:p-8 shadow-sm space-y-8 print:border-none print:shadow-none print:p-0">
                         {/* Mobile Header */}
                         <div className="lg:hidden border-b border-stone-200/80 pb-5 mb-6">
-                            <span className="text-[9px] font-bold tracking-widest text-clay-600 uppercase">Artisan Partner</span>
-                            <h1 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">Seller Agreement</h1>
-                            <p className="text-[10px] text-stone-500 mt-1">Last updated: September 2026</p>
+                            <span className="text-[9px] font-bold tracking-widest text-clay-600 uppercase">Artisan Partner • {versionLabel}</span>
+                            <h1 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">{policy?.title || 'Seller Agreement'}</h1>
+                            <p className="text-[10px] text-stone-500 mt-1">Last updated: {updatedLabel}</p>
                         </div>
 
-                        <p className="text-stone-600 text-sm leading-relaxed pb-4 border-b border-stone-100">
-                            This agreement governs your status as an artisan partner on LikhangKamay. Please read this carefully to understand your obligations regarding product quality, fulfillment, payouts, and compliance.
+                        <p className="text-stone-600 text-sm leading-relaxed pb-4 border-b border-stone-100 whitespace-pre-line">
+                            {introText}
                         </p>
 
                         <div className="space-y-8">
@@ -225,7 +238,7 @@ export default function SellerAgreement() {
                                                 {section.title}
                                             </span>
                                         </h2>
-                                        <p className="text-stone-600 text-sm leading-relaxed mt-3 pl-0 sm:pl-10">
+                                        <p className="text-stone-600 text-sm leading-relaxed mt-3 pl-0 sm:pl-10 whitespace-pre-line">
                                             {section.content}
                                         </p>
                                     </section>

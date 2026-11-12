@@ -53,9 +53,10 @@ class GetBuyerOrders
 
         $this->orderLogisticsService->syncVisibleDeliveries($rawOrders->pluck('delivery')->filter());
         $reviewsByProduct = $this->getBuyerReviewsByProduct($buyer->id, $rawOrders);
+        $defaultReturnWindowHours = app(\App\Services\PolicyService::class)->getReturnWindowHours();
 
-        return $rawOrders->map(function ($order) use ($reviewsByProduct) {
-            return $this->serializeOrderForBuyer($order, $reviewsByProduct);
+        return $rawOrders->map(function ($order) use ($reviewsByProduct, $defaultReturnWindowHours) {
+            return $this->serializeOrderForBuyer($order, $reviewsByProduct, $defaultReturnWindowHours);
         });
     }
 
@@ -79,11 +80,19 @@ class GetBuyerOrders
             ->keyBy('product_id');
     }
 
-    private function serializeOrderForBuyer(Order $order, Collection $reviewsByProduct): array
+    private function serializeOrderForBuyer(Order $order, Collection $reviewsByProduct, int $defaultReturnWindowHours): array
     {
         $canReturn = false;
         if ($order->status === 'Completed' && $order->warranty_expires_at) {
             $canReturn = now()->lessThanOrEqualTo($order->warranty_expires_at);
+        }
+
+        $returnWindowHours = $defaultReturnWindowHours;
+        if ($order->delivered_at && $order->warranty_expires_at && $order->warranty_expires_at->greaterThan($order->delivered_at)) {
+            $diffHours = (int) round($order->delivered_at->diffInMinutes($order->warranty_expires_at) / 60);
+            if ($diffHours >= 1) {
+                $returnWindowHours = $diffHours;
+            }
         }
 
         $replacementInProgress = $order->replacement_started_at !== null && $order->replacement_resolved_at === null;
@@ -153,10 +162,15 @@ class GetBuyerOrders
             'cancellation_reason' => $order->cancellation_reason,
             'received_at' => $order->received_at?->format('M d, Y h:i A'),
             'warranty_expires_at' => $order->warranty_expires_at?->format('M d, Y h:i A'),
+            'warranty_expires_iso' => $order->warranty_expires_at?->toIso8601String(),
             'dispute' => $order->dispute ? [
                 'id' => $order->dispute->id,
                 'status' => $order->dispute->status,
                 'reason' => $order->dispute->reason,
+                'damage_reason_code' => $order->dispute->damage_reason_code,
+                'policy_version' => $order->dispute->policy_version,
+                'criteria_checklist' => $order->dispute->criteria_checklist ?? [],
+                'photo_angles' => $order->dispute->photo_angles ?? [],
                 'proof_photos' => collect($order->dispute->proof_photos ?? [])->map(fn($p) => StorageUrl::url($p))->filter()->values()->toArray(),
                 'seller_response_type' => $order->dispute->seller_response_type,
                 'seller_explanation' => $order->dispute->seller_explanation,
@@ -200,6 +214,7 @@ class GetBuyerOrders
                 ];
             }),
             'can_return' => $canReturn,
+            'return_window_hours' => $returnWindowHours,
             'can_cancel' => $order->status === 'Pending' || ($order->status === 'Accepted' && $order->accepted_at && $order->accepted_at->greaterThanOrEqualTo(now()->subMinutes(15))),
             'cancellation_grace_expires_at' => ($order->status === 'Accepted' && $order->accepted_at)
                 ? $order->accepted_at->copy()->addMinutes(15)->toIso8601String()

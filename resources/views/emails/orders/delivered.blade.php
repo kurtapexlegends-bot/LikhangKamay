@@ -51,7 +51,7 @@
             </div>
 
             <div style="background-color: #F7F4F0; border-left: 3px solid #C2783F; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0; font-size: 13px; color: #7C6D62; line-height: 1.5;">
-                <strong>Return Window:</strong> You have until {{ $order->warranty_expires_at ? $order->warranty_expires_at->format('F d, Y h:i A') : now()->addDay()->format('F d, Y h:i A') }} to request a return if there are any issues with your order.
+                <strong>Return Window:</strong> You have until {{ $order->warranty_expires_at ? $order->warranty_expires_at->format('F d, Y h:i A') : app(\App\Services\PolicyService::class)->getWarrantyExpirationTimestamp()->format('F d, Y h:i A') }} to request a return if there are any issues with your order.
             </div>
 
             <p style="margin-top: 24px; text-align: center; font-size: 15px; color: #5C524A;">We'd love to hear your feedback! Consider leaving a review for the products you purchased.</p>

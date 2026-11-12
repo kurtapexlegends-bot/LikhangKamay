@@ -39,7 +39,8 @@ import {
     ShoppingBag,
     Star,
     MessageSquare,
-    Trash2
+    Trash2,
+    FileText
 } from 'lucide-react';
 
 const MotionLink = motion(Link);
@@ -251,6 +252,7 @@ export default function AdminLayout({ title, children }) {
         {
             title: 'System Settings',
             items: [
+                { name: 'Policies & Terms', href: route('admin.policies.index'), icon: FileText, current: route().current('admin.policies.*') },
                 { name: 'System Config', href: route('admin.settings.index'), icon: Settings, current: isTabActive('admin.settings.index', null, url) && !isTabActive('admin.settings.index', 'monetization', url) },
             ]
         }
@@ -412,7 +414,8 @@ export default function AdminLayout({ title, children }) {
                                     'Content Safety': "Review user-reported flags, safety queues, and disputed reviews.",
                                     'Order Disputes': "Review and resolve return and refund claims between customers and artisans.",
                                     'Deleted Items': "Restore or permanently delete removed database records.",
-                                    'System Config': "Manage platform operations, subscription plans, and email automation."
+                                    'System Config': "Manage platform operations, subscription plans, and email automation.",
+                                    'Policies & Terms': "Manage legal agreements, return inspection windows, and dispute evidence rules."
                                 }[resolvedTitle] || ""}
                             </p>
                         </div>
@@ -537,7 +540,7 @@ const CategoryGroup = ({ title, open, onToggle, isFirst, children, isCollapsed }
                 opacity: (isCollapsed || open) ? 1 : 0 
             }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="overflow-hidden space-y-1 pt-1.5"
+            className="overflow-hidden space-y-1 pt-1.5 pb-2"
         >
             {children}
         </motion.div>

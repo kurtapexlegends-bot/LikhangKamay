@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import ArtisanBusinessStep from './Partials/ArtisanBusinessStep';
 import ArtisanDocumentsStep from './Partials/ArtisanDocumentsStep';
 
-export default function ArtisanRegister() {
+export default function ArtisanRegister({ legalPolicies = null }) {
     const { data, setData, post, processing, errors, reset, setError, clearErrors } = useForm({
         first_name: '',
         last_name: '',
@@ -434,6 +434,7 @@ export default function ArtisanRegister() {
                 onClose={() => handleLegalModalClose({ accepted: false })}
                 onAccept={handleLegalAccept}
                 onBack={modalStep === 2 ? handleLegalBack : undefined}
+                policies={legalPolicies}
             />
         </GuestLayout>
     );

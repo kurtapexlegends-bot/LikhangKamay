@@ -66,7 +66,9 @@ Protected under `auth`:
 *   **My Orders Portal**: `/my-orders` (`name('my-orders.index')`)
 *   **Buyer Reviews Portal**: `/my-reviews` (`name('buyer.reviews')`) with deep-linking query `/my-reviews?review={id}`
 *   **Review Mutations**: `PATCH /reviews/{id}` (`reviews.update`), `DELETE /reviews/{id}` (`reviews.destroy`)
-*   **Dispute Actions**: `/my-orders/{id}/dispute` (`name('disputes.buyer.create')`)
+*   **Dispute Actions**: `/my-orders/{id}/dispute` (`name('my-orders.dispute')`) & `/my-orders/{id}/return` (`name('my-orders.return')`)
+*   **Public Legal Policy Pages**: `/terms` (`terms`), `/privacy` (`privacy`), `/seller-agreement` (`seller.agreement`), and `/seller-privacy` (`seller.privacy`) served by [LegalPolicyController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Core/LegalPolicyController.php).
+*   **Admin Policy Management**: `/admin/settings/policies` (`admin.policies.index`), `POST /admin/settings/policies` (`admin.policies.store`), `POST /admin/settings/policies/{policy}/activate` (`admin.policies.activate`) handled by [PolicyController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Admin/PolicyController.php) and [Policies.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Admin/Settings/Policies.jsx) with lazy Inertia `policiesByType` evaluation.
 *   **Buyer Notifications**: `/notifications` (`name('notifications.index')`)
 *   **Biometric Face Check**: `POST /profile/verify-face` (`name('profile.verify-face')`) handled by [FaceVerificationController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/FaceVerificationController.php) for one-time checkout and profile liveness completion.
 

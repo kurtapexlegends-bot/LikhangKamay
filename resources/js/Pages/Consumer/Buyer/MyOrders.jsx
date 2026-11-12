@@ -17,7 +17,7 @@ import ReturnRequestModal from '@/Components/Consumer/Buyer/MyOrders/ReturnReque
 import EscalateDisputeModal from '@/Components/Consumer/Buyer/MyOrders/EscalateDisputeModal';
 import CancelOrderModal from '@/Components/Consumer/Buyer/MyOrders/CancelOrderModal';
 
-export default function MyOrders({ auth, orders = [] }) {
+export default function MyOrders({ auth, orders = [], returnPolicy = null }) {
     const activeOrders = Array.isArray(orders) ? orders : [];
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
@@ -83,7 +83,7 @@ export default function MyOrders({ auth, orders = [] }) {
         const reloadOrders = () => {
             if (document.hidden) return;
             router.reload({
-                only: ['orders'],
+                only: ['orders', 'returnPolicy'],
                 preserveState: true,
                 preserveScroll: true,
             });
@@ -175,10 +175,23 @@ export default function MyOrders({ auth, orders = [] }) {
     const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
     const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+    const confirmReceiveOrder = activeOrders.find((o) => o.id === confirmModal.orderId);
+    const receiveWindowHours = Math.max(
+        1,
+        Number(
+            confirmReceiveOrder?.return_window_hours
+            ?? returnPolicy?.structured_criteria?.return_window_hours
+            ?? 24
+        ) || 24
+    );
+    const receiveWindowLabel = receiveWindowHours % 24 === 0
+        ? (receiveWindowHours / 24 === 1 ? '1 day' : `${receiveWindowHours / 24} days`)
+        : `${receiveWindowHours} hours`;
+
     const modalConfigs = {
         receive: {
             title: 'Confirm Order Received',
-            message: 'By confirming, you acknowledge receiving this order in good condition. You will have 1 day to request a return if there are any issues.',
+            message: `By confirming, you acknowledge receiving this order in good condition. You will have ${receiveWindowLabel} to request a return if there are any issues.`,
             icon: CheckCircle,
             iconBg: 'bg-green-100 text-green-600',
             confirmText: 'Confirm Receipt',
@@ -515,6 +528,7 @@ export default function MyOrders({ auth, orders = [] }) {
                 isOpen={returnModalState.isOpen}
                 onClose={() => setReturnModalState({ isOpen: false, order: null })}
                 order={returnModalState.order}
+                returnPolicy={returnPolicy}
             />
 
             {/* --- ESCALATE DISPUTE MODAL --- */}

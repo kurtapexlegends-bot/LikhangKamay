@@ -121,9 +121,10 @@ class UpdateOrderStatus
             } elseif ($status === 'Shipped' || $status === 'Ready for Pickup') {
                 $updateData['shipped_at'] = now();
             } elseif ($status === 'Delivered') {
+                $warrantyExpiry = app(\App\Services\PolicyService::class)->getWarrantyExpirationTimestamp();
                 $updateData['delivered_at'] = now();
-                $updateData['auto_complete_at'] = now()->addDays(1);
-                $updateData['warranty_expires_at'] = now()->addDay();
+                $updateData['auto_complete_at'] = $warrantyExpiry->copy();
+                $updateData['warranty_expires_at'] = $warrantyExpiry->copy();
                 if ($lockedOrder->shipping_method === 'Pick Up' && $lockedOrder->payment_method === 'COD') {
                     $updateData['payment_status'] = 'paid';
                 }

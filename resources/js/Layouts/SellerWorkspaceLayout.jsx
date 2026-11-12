@@ -12,7 +12,7 @@ const SellerWorkspaceShellContext = createContext({
 });
 
 export default function SellerWorkspaceLayout({ active, children, sidebarUser = null, overflowHidden = false }) {
-    const { auth } = usePage().props;
+    const { auth, sellerCompliancePolicies = null } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(() => {
         if (typeof window === 'undefined') return false;
@@ -158,6 +158,7 @@ export default function SellerWorkspaceLayout({ active, children, sidebarUser = 
                     show={true}
                     onClose={handleRejectTerms}
                     onAccept={handleAcceptTerms}
+                    policies={sellerCompliancePolicies}
                 />
             )}
         </SellerWorkspaceShellContext.Provider>

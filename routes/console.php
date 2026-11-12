@@ -29,10 +29,11 @@ Artisan::command('orders:auto-complete', function () {
             foreach ($orders as $order) {
                 $user = $order->user ?? \App\Models\User::withTrashed()->find($order->user_id);
                 if (!$user) {
+                    $resolvedHours = app(\App\Services\PolicyService::class)->resolveDeliveryWindowHoursForOrder($order);
                     $order->update([
                         'status' => 'Completed',
                         'received_at' => now(),
-                        'warranty_expires_at' => now()->addDay(),
+                        'warranty_expires_at' => now()->addHours($resolvedHours),
                         'payment_status' => $order->payment_method === 'COD' ? 'paid' : $order->payment_status,
                     ]);
                     $count++;

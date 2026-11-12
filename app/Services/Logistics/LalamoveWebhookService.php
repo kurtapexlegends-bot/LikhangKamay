@@ -274,11 +274,12 @@ class LalamoveWebhookService
 
             $order = $delivery->order()->lockForUpdate()->first();
             if ($order && !in_array($order->status, ['Delivered', 'Completed', 'Cancelled', 'Refunded', 'Rejected'], true)) {
+                $warrantyExpiry = app(\App\Services\PolicyService::class)->getWarrantyExpirationTimestamp();
                 $order->update([
                     'status' => 'Delivered',
                     'delivered_at' => now(),
-                    'auto_complete_at' => now()->addDays(1),
-                    'warranty_expires_at' => now()->addDay(),
+                    'auto_complete_at' => $warrantyExpiry->copy(),
+                    'warranty_expires_at' => $warrantyExpiry->copy(),
                 ]);
 
                 $order->user?->notify(new OrderDeliveryUpdateNotification(

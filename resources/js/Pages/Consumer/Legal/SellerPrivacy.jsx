@@ -5,8 +5,8 @@ import {
     Clock, AlertTriangle, Mail, ArrowLeft, BarChart3, UserCheck, Camera
 } from 'lucide-react';
 
-export default function SellerPrivacy() {
-    const sections = [
+export default function SellerPrivacy({ policy = null }) {
+    const defaultSections = [
         {
             title: "Seller Data We Collect",
             icon: Database,
@@ -64,6 +64,19 @@ export default function SellerPrivacy() {
         }
     ];
 
+    const iconPool = [Database, UserCheck, Camera, Settings, Share2, Lock, BarChart3, Clock, Scale, AlertTriangle, Mail];
+    const sections = Array.isArray(policy?.sections) && policy.sections.length > 0
+        ? policy.sections.map((sec, idx) => ({
+            title: sec.title,
+            content: sec.content,
+            icon: defaultSections[idx]?.icon || iconPool[idx % iconPool.length],
+        }))
+        : defaultSections;
+
+    const versionLabel = policy?.version ? `Version ${policy.version}` : 'Version 1.0';
+    const updatedLabel = policy?.published_at_formatted || 'September 2026';
+    const introText = policy?.intro || 'As a partner artisan on LikhangKamay, we process your business and personal data to support your operations and remain compliant with local regulations.';
+
     const scrollToSection = (idx) => {
         const element = document.getElementById(`section-${idx}`);
         if (element) {
@@ -100,9 +113,9 @@ export default function SellerPrivacy() {
                     {/* Sidebar / Left Column */}
                     <aside className="lg:col-span-4 lg:sticky lg:top-8 space-y-6 print:hidden">
                         <div className="border-b border-stone-200/80 pb-5">
-                            <span className="text-[10px] font-bold tracking-widest text-sage-600 uppercase">Artisan Partner</span>
-                            <h1 className="font-serif text-3xl font-bold text-stone-900 mt-1">Seller Privacy</h1>
-                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: September 2026</p>
+                            <span className="text-[10px] font-bold tracking-widest text-sage-600 uppercase">Artisan Partner • {versionLabel}</span>
+                            <h1 className="font-serif text-3xl font-bold text-stone-900 mt-1">{policy?.title || 'Seller Privacy'}</h1>
+                            <p className="text-xs text-stone-500 mt-1.5 font-medium">Last updated: {updatedLabel}</p>
                         </div>
 
                         {/* DPA Notice */}
@@ -172,13 +185,13 @@ export default function SellerPrivacy() {
                     <main className="lg:col-span-8 bg-white border border-stone-200/60 rounded-3xl p-6 sm:p-8 shadow-sm space-y-8 print:border-none print:shadow-none print:p-0">
                         {/* Mobile Header */}
                         <div className="lg:hidden border-b border-stone-200/80 pb-5 mb-6">
-                            <span className="text-[9px] font-bold tracking-widest text-sage-600 uppercase">Artisan Partner</span>
-                            <h1 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">Seller Data Privacy</h1>
-                            <p className="text-[10px] text-stone-500 mt-1">Last updated: September 2026</p>
+                            <span className="text-[9px] font-bold tracking-widest text-sage-600 uppercase">Artisan Partner • {versionLabel}</span>
+                            <h1 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">{policy?.title || 'Seller Data Privacy'}</h1>
+                            <p className="text-[10px] text-stone-500 mt-1">Last updated: {updatedLabel}</p>
                         </div>
 
-                        <p className="text-stone-600 text-sm leading-relaxed pb-4 border-b border-stone-100">
-                            As a partner artisan on LikhangKamay, we process your business and personal data to support your operations and remain compliant with local regulations.
+                        <p className="text-stone-600 text-sm leading-relaxed pb-4 border-b border-stone-100 whitespace-pre-line">
+                            {introText}
                         </p>
 
                         <div className="space-y-8">
@@ -199,7 +212,7 @@ export default function SellerPrivacy() {
                                                 {section.title}
                                             </span>
                                         </h2>
-                                        <p className="text-stone-600 text-sm leading-relaxed mt-3 pl-0 sm:pl-10">
+                                        <p className="text-stone-600 text-sm leading-relaxed mt-3 pl-0 sm:pl-10 whitespace-pre-line">
                                             {section.content}
                                         </p>
                                     </section>

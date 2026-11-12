@@ -64,6 +64,12 @@ class HandleInertiaRequests extends Middleware
                 'requiresCheckoutFaceCheck' => $user?->requiresCheckoutFaceVerification() ?? false,
                 'hasAcceptedCompliance' => $user ? ($user->isArtisan() ? $user->hasAcceptedComplianceTerms('seller_terms') : true) : true,
             ],
+            'sellerCompliancePolicies' => fn () => ($user && $user->isArtisan() && !$user->hasAcceptedComplianceTerms('seller_terms'))
+                ? app(\App\Services\PolicyService::class)->getSerializedActivePolicies([
+                    \App\Models\PlatformPolicy::TYPE_SELLER_AGREEMENT,
+                    \App\Models\PlatformPolicy::TYPE_SELLER_PRIVACY,
+                ])
+                : null,
 
             // Declarative targeted revision schemas (config-cached, zero DB queries)
             'revisionSchemas' => fn () => $user ? \App\Support\RevisionSchemaRegistry::allSchemas() : null,

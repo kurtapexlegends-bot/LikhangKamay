@@ -30,6 +30,12 @@ class RequestReturnRequest extends FormRequest
             'proof_photos' => ['required_without_all:return_proof_image,proof_photo', 'nullable', 'array', 'min:1', 'max:5'],
             'proof_photos.*' => ['nullable', 'image', 'max:4096'],
             'proof_photo' => ['nullable', 'image', 'max:4096'],
+            'policy_id' => ['nullable', 'integer'],
+            'damage_reason_code' => ['nullable', 'string', 'max:100'],
+            'checklist_confirmations' => ['nullable', 'array'],
+            'checklist_confirmations.*' => ['nullable', 'string', 'max:100'],
+            'photo_angle_keys' => ['nullable', 'array', 'max:5'],
+            'photo_angle_keys.*' => ['nullable', 'string', 'max:100'],
         ];
     }
 }

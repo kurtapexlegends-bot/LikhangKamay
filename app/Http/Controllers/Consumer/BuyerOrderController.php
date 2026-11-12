@@ -165,9 +165,11 @@ class BuyerOrderController extends Controller
     public function myOrders(GetBuyerOrders $getBuyerOrders)
     {
         $orders = $getBuyerOrders->execute(Auth::user());
+        $returnPolicy = app(\App\Services\PolicyService::class)->getSerializedActivePolicy(\App\Models\PlatformPolicy::TYPE_RETURN_REFUND);
 
         return Inertia::render('Consumer/Buyer/MyOrders', [
             'orders' => $orders,
+            'returnPolicy' => $returnPolicy,
         ]);
     }
 
@@ -189,23 +191,32 @@ class BuyerOrderController extends Controller
      */
     public function buyerRequestReturn(RequestReturnRequest $request, string $id, RequestOrderReturn $requestOrderReturn)
     {
-        $proofPath = null;
-        if ($request->hasFile('return_proof_image')) {
-            $proofPath = $request->file('return_proof_image')->store('returns', 'public');
-        } elseif ($request->hasFile('proof_photos')) {
-            $photos = $request->file('proof_photos');
-            $firstPhoto = is_array($photos) ? ($photos[0] ?? null) : $photos;
-            if ($firstPhoto) {
-                $proofPath = $firstPhoto->store('returns', 'public');
-            }
-        } elseif ($request->hasFile('proof_photo')) {
-            $proofPath = $request->file('proof_photo')->store('returns', 'public');
+        $photos = $request->file('proof_photos');
+        if (empty($photos)) {
+            $single = $request->file('return_proof_image') ?: $request->file('proof_photo');
+            $photos = $single ? [$single] : [];
+        } elseif (!is_array($photos)) {
+            $photos = [$photos];
         }
 
         $reason = (string) ($request->input('return_reason') ?: $request->input('reason'));
+        $criteriaInput = $request->only([
+            'policy_id',
+            'damage_reason_code',
+            'checklist_confirmations',
+            'photo_angle_keys',
+        ]);
 
         try {
-            $requestOrderReturn->execute($id, $reason, $proofPath, $request->user());
+            $requestOrderReturn->execute(
+                $id,
+                $reason,
+                null,
+                $request->user(),
+                $photos,
+                $criteriaInput,
+                $request
+            );
             return redirect()->back()->with('success', 'Return request submitted. Please chat with the seller to negotiate.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());

@@ -519,6 +519,11 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         return $this->hasMany(\App\Models\SellerComplianceAgreement::class);
     }
 
+    public function policyConsents()
+    {
+        return $this->hasMany(\App\Models\UserPolicyConsent::class);
+    }
+
     public function sellerOwner()
     {
         return $this->belongsTo(self::class, 'seller_owner_id');

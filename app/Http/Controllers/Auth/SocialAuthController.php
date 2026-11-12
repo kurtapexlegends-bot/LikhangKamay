@@ -166,6 +166,10 @@ class SocialAuthController extends Controller
 
         $isArtisan = ($socialData['role'] ?? 'buyer') === 'artisan';
         [$suggestedFirstName, $suggestedLastName] = PersonName::split($socialData['name']);
+        $policyService = app(\App\Services\PolicyService::class);
+        $legalPolicies = $policyService->getSerializedActivePolicies($isArtisan
+            ? [\App\Models\PlatformPolicy::TYPE_SELLER_AGREEMENT, \App\Models\PlatformPolicy::TYPE_SELLER_PRIVACY]
+            : [\App\Models\PlatformPolicy::TYPE_TERMS_OF_SERVICE, \App\Models\PlatformPolicy::TYPE_PRIVACY_POLICY]);
 
         return Inertia::render('Auth/CompleteProfile', [
             'email' => $socialData['email'],
@@ -174,6 +178,7 @@ class SocialAuthController extends Controller
             'suggestedLastName' => $suggestedLastName,
             'provider' => $socialData['provider'],
             'isArtisan' => $isArtisan,
+            'legalPolicies' => $legalPolicies,
         ]);
     }
 
@@ -248,6 +253,14 @@ class SocialAuthController extends Controller
 
             return $user;
         });
+
+        $policyService = app(\App\Services\PolicyService::class);
+        $policyTypes = $isArtisan
+            ? [\App\Models\PlatformPolicy::TYPE_SELLER_AGREEMENT, \App\Models\PlatformPolicy::TYPE_SELLER_PRIVACY]
+            : [\App\Models\PlatformPolicy::TYPE_TERMS_OF_SERVICE, \App\Models\PlatformPolicy::TYPE_PRIVACY_POLICY];
+        foreach ($policyTypes as $policyType) {
+            $policyService->recordUserConsent($user, $policyType, 'social_registration', $request);
+        }
 
         // Clear session
         session()->forget([

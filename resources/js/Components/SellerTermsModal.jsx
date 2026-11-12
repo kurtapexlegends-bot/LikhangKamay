@@ -2,12 +2,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowRight, Check } from 'lucide-react';
 import Modal from '@/Components/Modal';
 
-export default function SellerTermsModal({ show, onClose, onAccept, onBack, type = 'seller', step = null, totalSteps = null, hasNextStep = null }) {
+export default function SellerTermsModal({ show, onClose, onAccept, onBack, type = 'seller', step = null, totalSteps = null, hasNextStep = null, policies = null }) {
     const contentRef = useRef(null);
     const [hasReachedBottom, setHasReachedBottom] = useState(false);
     const [isAutoAdvancing, setIsAutoAdvancing] = useState(false);
     const autoAdvanceTimerRef = useRef(null);
     const isPrivacy = type === 'sellerPrivacy';
+    const dynamicPolicy = policies?.[isPrivacy ? 'seller_privacy' : 'seller_agreement'] || null;
+    const dynamicSections = Array.isArray(dynamicPolicy?.sections) && dynamicPolicy.sections.length > 0
+        ? dynamicPolicy.sections
+        : null;
     const hasNext = hasNextStep !== null ? hasNextStep : (step ? step < totalSteps : !isPrivacy);
     const nextLabel = isPrivacy ? 'Next: Seller Agreement' : 'Next: Data Privacy Policy';
 
@@ -92,7 +96,7 @@ export default function SellerTermsModal({ show, onClose, onAccept, onBack, type
                             </button>
                         )}
                         <h3 className="text-lg font-serif font-bold text-stone-900">
-                            {isPrivacy ? 'Seller Data Privacy Policy' : 'Artisan Seller Agreement'}
+                            {dynamicPolicy?.title || (isPrivacy ? 'Seller Data Privacy Policy' : 'Artisan Seller Agreement')}
                         </h3>
                     </div>
                     <button onClick={onClose} className="text-stone-400 hover:text-stone-600 transition">
@@ -102,9 +106,23 @@ export default function SellerTermsModal({ show, onClose, onAccept, onBack, type
 
                 {/* Scrollable Legal Text */}
                 <div ref={contentRef} onScroll={handleScroll} className="p-6 overflow-y-auto text-sm text-stone-600 leading-relaxed space-y-6 flex-1 min-h-0" style={{ scrollbarWidth: 'thin' }}>
-                    <p className="font-bold text-stone-900">Last Updated: September 2026</p>
+                    <p className="font-bold text-stone-900">
+                        {dynamicPolicy ? `Version ${dynamicPolicy.version} • Last Updated: ${dynamicPolicy.published_at_formatted || 'September 2026'}` : 'Last Updated: September 2026'}
+                    </p>
 
-                    {isPrivacy ? (
+                    {dynamicSections ? (
+                        <>
+                            {dynamicPolicy?.intro && (
+                                <p className="text-stone-600 leading-relaxed">{dynamicPolicy.intro}</p>
+                            )}
+                            {dynamicSections.map((sec, idx) => (
+                                <section key={idx}>
+                                    <h4 className="font-bold text-stone-900 mb-2">{idx + 1}. {sec.title}</h4>
+                                    <p className="whitespace-pre-line">{sec.content}</p>
+                                </section>
+                            ))}
+                        </>
+                    ) : isPrivacy ? (
                         <>
                             <section>
                                 <h4 className="font-bold text-stone-900 mb-2">1. Seller Data We Collect</h4>

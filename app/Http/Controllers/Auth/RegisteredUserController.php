@@ -24,7 +24,14 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('Auth/Register');
+        $legalPolicies = app(\App\Services\PolicyService::class)->getSerializedActivePolicies([
+            \App\Models\PlatformPolicy::TYPE_TERMS_OF_SERVICE,
+            \App\Models\PlatformPolicy::TYPE_PRIVACY_POLICY,
+        ]);
+
+        return Inertia::render('Auth/Register', [
+            'legalPolicies' => $legalPolicies,
+        ]);
     }
 
     /**
@@ -139,6 +146,14 @@ class RegisteredUserController extends Controller
 
             return $user;
         });
+
+        $policyService = app(\App\Services\PolicyService::class);
+        $policyTypes = $role === 'artisan'
+            ? [\App\Models\PlatformPolicy::TYPE_SELLER_AGREEMENT, \App\Models\PlatformPolicy::TYPE_SELLER_PRIVACY]
+            : [\App\Models\PlatformPolicy::TYPE_TERMS_OF_SERVICE, \App\Models\PlatformPolicy::TYPE_PRIVACY_POLICY];
+        foreach ($policyTypes as $policyType) {
+            $policyService->recordUserConsent($user, $policyType, 'registration', $request);
+        }
 
         Auth::login($user);
         $request->session()->regenerate();

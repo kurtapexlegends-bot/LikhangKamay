@@ -405,6 +405,10 @@ class ArtisanSetupController extends Controller
                     'user_agent' => $request->userAgent(),
                 ]
             );
+
+            $policyService = app(\App\Services\PolicyService::class);
+            $policyService->recordUserConsent($user, \App\Models\PlatformPolicy::TYPE_SELLER_AGREEMENT, 'seller_terms', $request);
+            $policyService->recordUserConsent($user, \App\Models\PlatformPolicy::TYPE_SELLER_PRIVACY, 'seller_terms', $request);
         }
 
         return back()->with('success', 'Terms accepted successfully.');
